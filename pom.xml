@@ -9,7 +9,7 @@
         <version>3.5.3</version>
     </parent>
     <groupId>dev.ulloasp</groupId>
-    <artifactId>mlsuite-backend</artifactId>
+    <artifactId>mlsuite</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>mlsuite</name>
     <description>API para la gestion de modelos de ML</description>
@@ -21,15 +21,15 @@
         <developer />
     </developers>
     <scm>
-        <connection>scm:git:https://gitlab.irlab.org/pablo.ulloa/mlsuite-backend.git</connection>
-        <developerConnection>scm:git:https://gitlab.irlab.org/pablo.ulloa/mlsuite-backend.git</developerConnection>
+        <connection>scm:git:https://gitlab.irlab.org/pablo.ulloa/mlsuite.git</connection>
+        <developerConnection>scm:git:https://gitlab.irlab.org/pablo.ulloa/mlsuite.git</developerConnection>
         <tag>head</tag>
-        <url>https://gitlab.irlab.org/pablo.ulloa/mlsuite-backend</url>
+        <url>https://gitlab.irlab.org/pablo.ulloa/mlsuite</url>
     </scm>
 
     <ciManagement>
         <system>jenkins</system>
-        <url>https://jenkins.irlab.org/job/mlsuite-backend/</url>
+        <url>https://jenkins.irlab.org/job/mlsuite/</url>
     </ciManagement>
 
     <properties>
