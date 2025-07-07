@@ -1,0 +1,43 @@
+:root {
+  --sidebar-width: 80px;
+  --color-bg: #ffffff;
+  --color-bg-dark: #1f2937;
+  --color-text: #111827;
+  --color-text-dark: #f9fafb;
+
+  --color-accent: #3b82f6; /* blue-500 */
+  --color-accent-bg: #dbeafe; /* blue-100 */
+  --color-accent-bg-dark: #1e40af; /* blue-900 */
+
+  --color-sidebar-bg: #f3f4f6; /* gray-100 */
+  --color-sidebar-bg-dark: #374151; /* gray-700 */
+
+  --color-divider: #d1d5db; /* gray-300 */
+  --color-divider-dark: #4b5563; /* gray-600 */
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+html.dark {
+  background: var(--color-bg-dark);
+  color: var(--color-text-dark);
+}
+
+/* Utility classes for transitions */
+.fade-in {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.fade-out {
+  opacity: 0;
+  transform: scale(0.8);
+}
