@@ -11,5 +11,24 @@ target/
 .springBeans
 .sts4-cache
 
-### VS Code ###
-.vscode/
+# Logs
+logs
+*.log
+frontend/npm-debug.log*
+
+frontend/node_modules
+frontend/dist
+frontend/dist-ssr
+frontend/package-lock.json
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

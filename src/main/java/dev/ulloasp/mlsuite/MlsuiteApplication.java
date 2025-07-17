@@ -9,5 +9,4 @@ public class MlsuiteApplication {
     public static void main(String[] args) {
         SpringApplication.run(MlsuiteApplication.class, args);
     }
-
 }

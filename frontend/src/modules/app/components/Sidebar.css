@@ -1,0 +1,63 @@
+.sidebar {
+  background: var(--color-sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border-left: 1px solid var(--color-divider);
+  gap: 0.75rem;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+html.dark .sidebar {
+  background: var(--color-sidebar-bg-dark);
+  border-left: 1px solid var(--color-divider-dark);
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #9ca3af; /* gray‑400 placeholder */
+  margin-bottom: 0.5rem;
+}
+
+.nav-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+  border-radius: 0.75rem;
+}
+
+.nav-button:hover {
+  color: var(--color-accent);
+}
+
+.nav-button.active {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+}
+
+html.dark .nav-button.active {
+  background: var(--color-accent-bg-dark);
+  color: var(--color-accent);
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background: var(--color-divider);
+}
+
+html.dark .divider {
+  background: var(--color-divider-dark);
+}
