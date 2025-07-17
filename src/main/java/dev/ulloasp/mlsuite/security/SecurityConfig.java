@@ -1,19 +1,19 @@
-package dev.ulloasp.mlsuite.config;
+package dev.ulloasp.mlsuite.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import dev.ulloasp.mlsuite.security.jwt.JwtFilter;
 import dev.ulloasp.mlsuite.security.oauth2.OAuth2AuthenticationSuccessHandler;
 
 @Configuration
@@ -21,22 +21,31 @@ import dev.ulloasp.mlsuite.security.oauth2.OAuth2AuthenticationSuccessHandler;
 public class SecurityConfig {
 
     @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity http, JwtFilter jwtFilter,
+    protected SecurityFilterChain securityFilterChain(HttpSecurity http,
             OAuth2AuthenticationSuccessHandler oauth2SuccessHandler) throws Exception {
 
-        http.cors(cors -> corsConfigurationSource()).csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/oauth2/**").permitAll()
-                .requestMatchers("/login/**").permitAll()
-                .requestMatchers("/", "/static/**", "/assets/**").permitAll()
-                .anyRequest().authenticated())
+                .requestMatchers("/", "/assets/**").permitAll()
+                .anyRequest().authenticated()
+                )
                 .oauth2Login(oauth2 -> oauth2
-                .successHandler(oauth2SuccessHandler)
-                .failureUrl("/login?error=oauth2_failed"));
+                .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
+                .redirectionEndpoint(redir -> redir.baseUri("/login/oauth2/code/*"))
+                .successHandler(oauth2SuccessHandler))
+                .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessHandler(
+                        new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+                .deleteCookies("JSESSIONID")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .logoutSuccessUrl("/")
+                );
         return http.build();
     }
 
@@ -54,7 +63,7 @@ public class SecurityConfig {
 
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedOrigin("http://localhost:8080");
+        config.addAllowedOrigin("https://localhost:8443");
         config.addAllowedHeader("*");
         config.addAllowedMethod("OPTIONS");
         config.addAllowedMethod("GET");

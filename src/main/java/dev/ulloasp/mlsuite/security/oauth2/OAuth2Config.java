@@ -1,4 +1,4 @@
-package dev.ulloasp.mlsuite.config;
+package dev.ulloasp.mlsuite.security.oauth2;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
