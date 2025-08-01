@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -33,18 +34,16 @@ public class SecurityConfig {
                 .requestMatchers("/", "/assets/**").permitAll()
                 .anyRequest().authenticated()
                 )
+                .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2Login(oauth2 -> oauth2
                 .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
                 .redirectionEndpoint(redir -> redir.baseUri("/login/oauth2/code/*"))
                 .successHandler(oauth2SuccessHandler))
                 .logout(logout -> logout
-                .logoutUrl("/logout")
+                .logoutUrl("/api/logout")
                 .logoutSuccessHandler(
                         new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
                 .deleteCookies("JSESSIONID")
-                .invalidateHttpSession(true)
-                .clearAuthentication(true)
-                .logoutSuccessUrl("/")
                 );
         return http.build();
     }
@@ -77,5 +76,4 @@ public class SecurityConfig {
         return source;
 
     }
-
 }
