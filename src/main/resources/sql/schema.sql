@@ -81,3 +81,79 @@ CREATE TRIGGER set_updated_at
 BEFORE UPDATE ON app_user
 FOR EACH ROW
 EXECUTE FUNCTION trg_set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS model (
+    id            BIGINT GENERATED ALWAYS AS IDENTITY,
+    user_id       BIGINT NOT NULL,
+    name          VARCHAR(100) NOT NULL,
+    blob          BYTEA NOT NULL,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_model
+        PRIMARY KEY (id),
+
+    CONSTRAINT fk_model_user
+        FOREIGN KEY (user_id) REFERENCES app_user(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE DEFERRABLE,
+
+    CONSTRAINT uq_model_name_user
+        UNIQUE (user_id, name)
+);
+
+DROP TRIGGER IF EXISTS set_updated_at ON model;
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE ON model
+FOR EACH ROW
+EXECUTE FUNCTION trg_set_updated_at();
+
+CREATE TABLE IF NOT EXISTS signature (
+    id           BIGINT GENERATED ALWAYS AS IDENTITY,
+    model_id      BIGINT NOT NULL,
+    input_signature JSONB NOT NULL,
+    output_signature JSONB NOT NULL,
+    version      BIGINT NOT NULL DEFAULT 1,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_signature
+        PRIMARY KEY (id),
+    CONSTRAINT fk_signature_model
+        FOREIGN KEY (model_id) REFERENCES model(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE DEFERRABLE,
+
+    CONSTRAINT uq_signature_model
+        UNIQUE (model_id, input_signature, output_signature)
+);
+
+DROP TRIGGER IF EXISTS set_updated_at ON signature;
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE ON signature
+FOR EACH ROW
+EXECUTE FUNCTION trg_set_updated_at();
+
+CREATE TABLE IF NOT EXISTS prediction (
+    id           BIGINT GENERATED ALWAYS AS IDENTITY,
+    signature_id      BIGINT NOT NULL,
+    data         JSONB NOT NULL,
+    prediction   JSONB NOT NULL,
+    real_value   JSONB,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_prediction
+        PRIMARY KEY (id),
+    CONSTRAINT fk_prediction_signature
+        FOREIGN KEY (signature_id) REFERENCES signature(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE DEFERRABLE
+);
+
+DROP TRIGGER IF EXISTS set_updated_at ON prediction;
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE ON prediction
+FOR EACH ROW
+EXECUTE FUNCTION trg_set_updated_at();

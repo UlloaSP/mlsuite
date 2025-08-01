@@ -32,3 +32,6 @@ frontend/package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+# Custom
+backend/__pycache__/
