@@ -13,7 +13,7 @@ export function SidebarHeader() {
                     referrerPolicy="no-referrer"
                 />
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {user?.displayName || user?.userName || user?.fullName || "Guest"}
+                    {user?.userName || user?.fullName || "Guest"}
                 </span>
             </div>
         </div>
