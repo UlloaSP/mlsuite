@@ -2,7 +2,6 @@ import { appFetch, config } from "../../app/api/appFetch";
 
 export interface UserDTO {
     id: string;
-    displayName: string;
     fullName: string;
     userName: string;
     email: string;
