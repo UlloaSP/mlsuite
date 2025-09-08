@@ -15,7 +15,7 @@ export const themeAtom = atomWithStorage<"light" | "dark">(
 
 /* 3. Efecto inmediato al primer montaje                         */
 themeAtom.onMount = (set) => {
-    set((theme) => {
+    set(() => {
         const root = document.documentElement.classList;
         prefersDark ? root.add("dark") : root.remove("dark");
         return prefersDark ? "dark" : "light";

@@ -105,9 +105,9 @@ export function UploadFile({ acceptedFormats, selectedFile, setSelectedFile }: U
                         <div>
                             <p className="font-medium text-gray-700 dark:text-gray-300">
                                 {UPLOAD_FILE_HINT}
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {SUPPORTED_FORMATS_HINT.replace("<<formats>>", acceptedFormats?.join(", ") || "any")}
-                                </p>
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {SUPPORTED_FORMATS_HINT.replace("<<formats>>", acceptedFormats?.join(", ") || "any")}
                             </p>
                         </div>
                     </div>

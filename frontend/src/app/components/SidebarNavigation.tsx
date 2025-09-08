@@ -1,6 +1,6 @@
 // src/app/components/SidebarNavigation.tsx
 import { useAtom } from "jotai";
-import { BrainCircuit, Database, Home, Maximize, Minimize, Moon, Sun, User } from "lucide-react";
+import { BrainCircuit, Home, Maximize, Minimize, Moon, Sun, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { fullscreenAtom, themeWithHtmlAtom } from "../atoms";
 import { SidebarSection } from "./SidebarSection";
@@ -14,7 +14,6 @@ export function SidebarNavigation() {
     const navigation = [
         { to: "/", icon: Home, label: "Home" },
         { to: "/profile", icon: User, label: "Profile" },
-        { to: "/analyzer", icon: Database, label: "Analyzer" },
         { to: "/models", icon: BrainCircuit, label: "Models" },
     ];
 
