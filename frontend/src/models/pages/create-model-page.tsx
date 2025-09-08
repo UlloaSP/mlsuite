@@ -1,9 +1,10 @@
 
-import { ArrowLeft, FileText, Save, Table2, Type, UploadCloud } from "lucide-react";
+import { ArrowLeft, FileText, RefreshCcw, Save, Table2, Type, UploadCloud } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { UploadFile } from "../components/UploadFile";
+import { useCreateModelMutation } from "../hooks";
 
 const CREATE_MODEL_HEADER = "Create New Model";
 const CREATE_MODEL_SUBHEADER = "Upload your model file and configure its details.";
@@ -25,7 +26,7 @@ const item = {
 const steps = [
     { icon: UploadCloud, label: "Upload model file" },
     { icon: Table2, label: "Attach dataframe (optional)" },
-    { icon: Type, label: "Model name auto‑filled" },
+    { icon: Type, label: "Model name auto-filled" },
     { icon: Save, label: "Save model" },
 ];
 
@@ -33,14 +34,24 @@ export function CreateModelPage() {
     const [selectedModelFile, setSelectedModelFile] = useState<File | null>(null)
     const [selectedDataframeFile, setSelectedDataframeFile] = useState<File | null>(null)
     const [name, setName] = useState("")
+    const [isLoading, setIsLoading] = useState(false);
 
+    const mutation = useCreateModelMutation();
     const navigate = useNavigate()
 
-    const handleSave = () => {
-        if (selectedModelFile && name.trim()) {
-            console.log({ name: name.trim(), file: selectedModelFile })
+    const handleSave = async () => {
+        if (!selectedModelFile || !name) return;
+
+        setIsLoading(true);
+        try {
+            await mutation.mutateAsync({ name, modelFile: selectedModelFile, dataframeFile: selectedDataframeFile ?? undefined });
+            navigate("/models");
+        } catch (err) {
+            console.error("Error creating model:", err);
+        } finally {
+            setIsLoading(false);
         }
-    }
+    };
 
     const isFormValid = selectedModelFile && name.trim()
 
@@ -204,7 +215,7 @@ export function CreateModelPage() {
 
                             <motion.button
                                 onClick={handleSave}
-                                disabled={!isFormValid}
+                                disabled={!isFormValid || isLoading}
                                 className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${isFormValid
                                     ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
                                     : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
@@ -212,7 +223,13 @@ export function CreateModelPage() {
                                 whileHover={isFormValid ? { scale: 1.02 } : {}}
                                 whileTap={isFormValid ? { scale: 0.98 } : {}}
                             >
-                                <Save size={18} />
+                                {isLoading ? (
+                                    <span className="animate-spin">
+                                        <RefreshCcw size={18} />
+                                    </span>
+                                ) : (
+                                    <Save size={18} />
+                                )}
                                 <span>Guardar Modelo</span>
                             </motion.button>
                         </div>

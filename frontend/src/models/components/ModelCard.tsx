@@ -1,12 +1,12 @@
 import { Database, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
-import type { Model } from "../hooks";
+import type { ModelDto } from "../api/modelService";
 
 const getModelIcon = (type: string) => {
     switch (type) {
-        case "classification":
+        case "classifier":
             return Database
-        case "regression":
+        case "regressor":
             return TrendingUp
     }
 }
@@ -25,7 +25,7 @@ const getStatusColor = (status: string) => {
 }
 
 interface ModelCardProps {
-    item: Model;
+    item: ModelDto;
     index: number;
     selectedItemId: string | null;
     onItemSelect: (modelId: string) => void;
@@ -38,7 +38,7 @@ export function ModelCard({ item, index, selectedItemId, onItemSelect }: ModelCa
         <motion.button
             key={item.id}
             onClick={() => onItemSelect(item.id)}
-            className={`w-full text-left p-4 rounded-xl border transition-all grid grid-cols-[2fr_6fr_1fr] duration-300 ${isSelected
+            className={`items-start text-left p-4 rounded-xl border transition-all grid grid-cols-[2fr_12fr_2fr] duration-300 ${isSelected
                 ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 shadow-md"
                 : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                 }`}
@@ -50,11 +50,11 @@ export function ModelCard({ item, index, selectedItemId, onItemSelect }: ModelCa
         >
             {/* Icon Section */}
             <div
-                className={`flex items-center justify-center m-4 rounded-sm ${isSelected ? "bg-blue-100 dark:bg-blue-800" : "bg-gray-200 dark:bg-gray-700"}`}
+                className={`flex items-left p-2 max-w-fit rounded-lg ${isSelected ? "bg-blue-100 dark:bg-blue-800" : "bg-gray-200 dark:bg-gray-700"}`}
             >
                 {Icon && (
                     <Icon
-                        size={24}
+                        size={16}
                         className={isSelected ? "text-blue-600 dark:text-blue-400" : "text-gray-600 dark:text-gray-400"} />
                 )}
             </div>
@@ -66,18 +66,17 @@ export function ModelCard({ item, index, selectedItemId, onItemSelect }: ModelCa
                     <span className="capitalize">{item.type}</span>
 
                     <div className="flex flex-col text-xs text-gray-500 dark:text-gray-500 font-mono truncate">
-                        <span>Version: v1.0.0</span>
-                        <span>Trained: {new Date(item.lastTrained).toLocaleDateString()}</span>
+                        <span>Estimator: {item.specificType}</span>
+                        <span>Created At: {new Date(item.createdAt).toLocaleDateString()}</span>
                         <span>{item.fileName}</span>
                     </div>
                 </div>
             </div>
             {/* Status Section */}
             <div className="flex flex-col justify-between items-center">
-                <span className={`p-2 text-xs justify-center w-fit rounded-md ${getStatusColor(item.status)}`}>
-                    {item.status}
+                <span className={`p-2 text-xs justify-center w-fit rounded-md ${getStatusColor("active")}`}>
+                    {"active"}
                 </span>
-                <span className="font-mono text-xs">{(item.accuracy * 100).toFixed(1)}%</span>
             </div>
         </motion.button>
     );
