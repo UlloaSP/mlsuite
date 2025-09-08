@@ -10,20 +10,30 @@ import {
 	User,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useUser } from "../../user/hooks";
 import { fullscreenAtom, themeWithHtmlAtom } from "../atoms";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarTile } from "./SidebarTile";
 
 export function SidebarNavigation() {
 	const location = useLocation();
+	const { data: user } = useUser();
 	const [theme, setTheme] = useAtom(themeWithHtmlAtom);
 	const [isFullscreen, setIsFullscreen] = useAtom(fullscreenAtom);
 
-	const navigation = [
-		{ to: "/", icon: Home, label: "Home" },
-		{ to: "/profile", icon: User, label: "Profile" },
-		{ to: "/models", icon: BrainCircuit, label: "Catalog" },
-	];
+	let navigation = [];
+	if (!user) {
+		navigation = [
+			{ to: "/", icon: Home, label: "Home" },
+		];
+	} else {
+		navigation = [
+			{ to: "/", icon: Home, label: "Home" },
+			{ to: "/profile", icon: User, label: "Profile" },
+			{ to: "/models", icon: BrainCircuit, label: "Catalog" },
+		];
+	}
+
 
 	return (
 		<div className="flex-1 flex flex-col overflow-hidden">

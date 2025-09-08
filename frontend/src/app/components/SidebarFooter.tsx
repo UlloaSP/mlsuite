@@ -1,11 +1,14 @@
 import { LogOut } from "lucide-react";
 import { motion } from "motion/react";
+import { useNavigate } from "react-router";
 import { useLogout, useUser } from "../../user/hooks";
 import { AuthButton } from "./AuthButton";
 
 export function SidebarFooter() {
 	const { data: user } = useUser();
 	const { mutate: logout } = useLogout();
+
+	const navigate = useNavigate();
 
 	const handleLogin = (provider: any) => {
 		window.location.href = `https://localhost:8443/oauth2/authorization/${provider}`;
@@ -42,10 +45,12 @@ export function SidebarFooter() {
 						</span>
 					</div>
 					<motion.button
-						onClick={() => logout()}
-						className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${
-							getProviderColors().bg
-						} ${getProviderColors().hover} ${getProviderColors().text}`}
+						onClick={() => {
+							logout();
+							navigate("/");
+						}}
+						className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${getProviderColors().bg
+							} ${getProviderColors().hover} ${getProviderColors().text}`}
 						whileHover={{ scale: 1.02 }}
 						whileTap={{ scale: 0.98 }}
 					>
@@ -72,7 +77,8 @@ export function SidebarFooter() {
 						onLogout={logout}
 					/>
 				</>
-			)}
-		</div>
+			)
+			}
+		</div >
 	);
 }
