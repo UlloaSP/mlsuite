@@ -112,6 +112,22 @@ async def build_schema(
     builder.register(DateStrategy())
 
     schema = builder.build(data_df)
+
+    if isinstance(model, ClassifierMixin):
+    
+        schema["outputs"] = [{
+            "type": "classifier",  # Placeholder for execution time
+            "title": "Predicted class",
+            "mapping": [str(c) for c in model.classes_],
+            "details": False,
+        }]
+    
+    elif isinstance(model, RegressorMixin):
+        schema["outputs"] = [{
+                "type": "regressor",
+                "title": "Predicted value",
+            }]
+
     return schema
 
 @app.post("/predict")
@@ -189,7 +205,6 @@ async def predict(
         }
     else:
         output = {"predictions": preds.tolist()}
-    print(output)
     return output
 
 

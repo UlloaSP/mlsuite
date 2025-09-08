@@ -9,14 +9,14 @@
  */
 
 export interface ErrorPayload {
-    globalError?: string;
-    fieldErrors?: Record<string, string>;
+	globalError?: string;
+	fieldErrors?: Record<string, string>;
 }
 
 type NetworkErrorHandler = () => void;
 type ReauthenticationHandler = () => void;
 
-let networkErrorCallback: NetworkErrorHandler = () => { };
+let networkErrorCallback: NetworkErrorHandler = () => {};
 let reauthenticationCallback: ReauthenticationHandler | null = null;
 
 /**
@@ -24,7 +24,7 @@ let reauthenticationCallback: ReauthenticationHandler | null = null;
  * (e.g. DNS failure, CORS blockage, server unreachable).
  */
 export const initNetworkErrorHandler = (cb: NetworkErrorHandler): void => {
-    networkErrorCallback = cb;
+	networkErrorCallback = cb;
 };
 
 /**
@@ -32,19 +32,19 @@ export const initNetworkErrorHandler = (cb: NetworkErrorHandler): void => {
  * is detected. Typical use case: launch a silent refresh or redirect to login.
  */
 export const setReauthenticationCallback = (
-    cb: ReauthenticationHandler
+	cb: ReauthenticationHandler,
 ): void => {
-    reauthenticationCallback = cb;
+	reauthenticationCallback = cb;
 };
 
 type HttpMethod =
-    | 'GET'
-    | 'POST'
-    | 'PUT'
-    | 'PATCH'
-    | 'DELETE'
-    | 'OPTIONS'
-    | 'HEAD';
+	| "GET"
+	| "POST"
+	| "PUT"
+	| "PATCH"
+	| "DELETE"
+	| "OPTIONS"
+	| "HEAD";
 
 /**
  * Builds a `RequestInit` object that enforces cookie propagation and negotiates
@@ -55,28 +55,28 @@ type HttpMethod =
  *                 (serialised as JSON).
  */
 export const config = (
-    method: HttpMethod = 'GET',
-    body?: FormData | Record<string, unknown>
+	method: HttpMethod = "GET",
+	body?: FormData | Record<string, unknown>,
 ): RequestInit => {
-    const headers: Record<string, string> = {};
-    let cfgBody: BodyInit | undefined;
+	const headers: Record<string, string> = {};
+	let cfgBody: BodyInit | undefined;
 
-    if (body !== undefined) {
-        if (body instanceof FormData) {
-            // Browser takes care of boundary & content‑type.
-            cfgBody = body;
-        } else {
-            headers['Content-Type'] = 'application/json';
-            cfgBody = JSON.stringify(body);
-        }
-    }
+	if (body !== undefined) {
+		if (body instanceof FormData) {
+			// Browser takes care of boundary & content‑type.
+			cfgBody = body;
+		} else {
+			headers["Content-Type"] = "application/json";
+			cfgBody = JSON.stringify(body);
+		}
+	}
 
-    return {
-        method,
-        credentials: 'include', // ⇒ cookies travel with the request
-        headers: Object.keys(headers).length > 0 ? headers : undefined,
-        body: cfgBody,
-    };
+	return {
+		method,
+		credentials: "include", // ⇒ cookies travel with the request
+		headers: Object.keys(headers).length > 0 ? headers : undefined,
+		body: cfgBody,
+	};
 };
 
 // ---------------------------------------------------------------------------
@@ -84,29 +84,26 @@ export const config = (
 // ---------------------------------------------------------------------------
 
 const isJson = (r: Response): boolean =>
-    r.headers.get('content-type')?.includes('application/json') ?? false;
+	r.headers.get("content-type")?.includes("application/json") ?? false;
 
 /**
  * Handles successful responses (2xx).
  * • If `onSuccess` is supplied, forwards the parsed payload.
  * • For 204 No Content, simply fires the callback without arguments.
  */
-const handleOk = <T>(
-    r: Response,
-    onSuccess?: (data?: T) => void
-): boolean => {
-    if (!r.ok) return false;
-    if (!onSuccess) return true;
+const handleOk = <T>(r: Response, onSuccess?: (data?: T) => void): boolean => {
+	if (!r.ok) return false;
+	if (!onSuccess) return true;
 
-    if (r.status === 204) {
-        onSuccess();
-        return true;
-    }
+	if (r.status === 204) {
+		onSuccess();
+		return true;
+	}
 
-    if (isJson(r)) {
-        r.json().then(onSuccess as unknown as (value: unknown) => void);
-    }
-    return true;
+	if (isJson(r)) {
+		r.json().then(onSuccess as unknown as (value: unknown) => void);
+	}
+	return true;
 };
 
 /**
@@ -115,37 +112,37 @@ const handleOk = <T>(
  * • For JSON error payloads, forwards structured information to `onErrors`.
  */
 const handle4xx = (
-    r: Response,
-    onErrors?: (errors: ErrorPayload) => void
+	r: Response,
+	onErrors?: (errors: ErrorPayload) => void,
 ): boolean => {
-    if (r.status < 400 || r.status >= 500) return false;
+	if (r.status < 400 || r.status >= 500) return false;
 
-    if (r.status === 401 && reauthenticationCallback) {
-        reauthenticationCallback();
-        return true;
-    }
+	if (r.status === 401 && reauthenticationCallback) {
+		reauthenticationCallback();
+		return true;
+	}
 
-    if (!isJson(r)) throw new Error('NetworkError');
+	if (!isJson(r)) throw new Error("NetworkError");
 
-    if (onErrors) {
-        r.json().then((payload: ErrorPayload) => {
-            if (payload.globalError || payload.fieldErrors) {
-                onErrors(payload);
-            }
-        });
-    }
-    return true;
+	if (onErrors) {
+		r.json().then((payload: ErrorPayload) => {
+			if (payload.globalError || payload.fieldErrors) {
+				onErrors(payload);
+			}
+		});
+	}
+	return true;
 };
 
 /** Orchestrates the response‑handling chain. */
 const handleResponse = <T>(
-    r: Response,
-    onSuccess?: (data?: T) => void,
-    onErrors?: (errors: ErrorPayload) => void
+	r: Response,
+	onSuccess?: (data?: T) => void,
+	onErrors?: (errors: ErrorPayload) => void,
 ): void => {
-    if (handleOk<T>(r, onSuccess)) return;
-    if (handle4xx(r, onErrors)) return;
-    throw new Error('NetworkError');
+	if (handleOk<T>(r, onSuccess)) return;
+	if (handle4xx(r, onErrors)) return;
+	throw new Error("NetworkError");
 };
 
 // ---------------------------------------------------------------------------
@@ -163,20 +160,20 @@ const handleResponse = <T>(
  * @param onErrors   Callback for business errors (4xx with JSON body).
  */
 export const appFetch = <T = unknown>(
-    path: string,
-    options: RequestInit = {},
-    onSuccess?: (data?: T) => void,
-    onErrors?: (errors: ErrorPayload) => void
+	path: string,
+	options: RequestInit = {},
+	onSuccess?: (data?: T) => void,
+	onErrors?: (errors: ErrorPayload) => void,
 ): Promise<void> => {
-    const finalOptions: RequestInit = {
-        credentials: 'include',
-        ...options,
-        headers: {
-            ...(options.headers || {}),
-        },
-    };
+	const finalOptions: RequestInit = {
+		credentials: "include",
+		...options,
+		headers: {
+			...(options.headers || {}),
+		},
+	};
 
-    return fetch(`${import.meta.env.VITE_BACKEND_URL}${path}`, finalOptions)
-        .then((r) => handleResponse<T>(r, onSuccess, onErrors))
-        .catch(networkErrorCallback);
+	return fetch(`${import.meta.env.VITE_BACKEND_URL}${path}`, finalOptions)
+		.then((r) => handleResponse<T>(r, onSuccess, onErrors))
+		.catch(networkErrorCallback);
 };

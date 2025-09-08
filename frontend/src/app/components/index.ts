@@ -6,4 +6,3 @@ export { SidebarHeader } from "./SidebarHeader";
 export { SidebarNavigation } from "./SidebarNavigation";
 export { SidebarSection } from "./SidebarSection";
 export { SidebarTile } from "./SidebarTile";
-

@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
 import { useAtom } from "jotai";
+import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useParams } from "react-router";
@@ -8,53 +8,52 @@ import { schemaAtom } from "../../editor/atoms";
 import { showModalAtom } from "../atoms";
 import { CreatePredictionModal } from "./CreatePredictionModal";
 
+export function CreatePredictionBodyForm() {
+	const { modelId } = useParams<{ modelId: string }>();
 
-export type CreatePredictionBodyFormProps = {}
+	const [schema] = useAtom(schemaAtom);
+	const [showModal, setShowModal] = useAtom(showModalAtom);
 
-export function CreatePredictionBodyForm({ }: CreatePredictionBodyFormProps) {
-    const { modelId } = useParams<{ modelId: string }>()
+	const containerRef = useRef<HTMLDivElement>(null);
 
-    const [schema] = useAtom(schemaAtom);
-    const [, setShowModal] = useAtom(showModalAtom);
+	const mlform = initMLForm(modelId!);
 
-    const containerRef = useRef<HTMLDivElement>(null);
+	const [response, setResponse] = useState<Map<string, object>>(new Map());
+	const [inputs, setInputs] = useState<Map<string, object>>(new Map());
 
-    const mlform = initMLForm(modelId!);
+	const handleSubmit = useCallback(
+		async (inputs: Map<string, object>, response: Map<string, object>) => {
+			setInputs(inputs);
+			setResponse(response);
+			console.log("Response:", response);
+			setShowModal(true);
+		},
+		[setShowModal],
+	);
 
-    const [response, setResponse] = useState<Map<string, object>>(new Map());
-    const [inputs, setInputs] = useState<Map<string, object>>(new Map());
+	useEffect(() => {
+		if (containerRef.current) {
+			mlform.toHTMLElement(schema, containerRef.current);
+		}
+	}, [schema, mlform.toHTMLElement]);
 
-    const handleSubmit = useCallback(
-        async (inputs: Map<string, object>, response: Map<string, object>) => {
-            setInputs(inputs);
-            setResponse(response);
-            setShowModal(true);
-        },
-        []                     // ← sin deps ⇒ referencia estable
-    );
+	useEffect(() => {
+		const unsubscribe = mlform.onSubmit(handleSubmit);
+		return unsubscribe;
+	}, [mlform, handleSubmit]);
 
-    useEffect(() => {
-        if (containerRef.current) {
-            mlform.toHTMLElement(schema, containerRef.current);
-        }
-    }, [schema]);
-
-    useEffect(() => {
-        const unsubscribe = mlform.onSubmit(handleSubmit);
-        return unsubscribe;
-    }, [mlform, handleSubmit]);
-
-    return (
-        <>
-            <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                className="flex overflow-hidden size-full"
-                ref={containerRef}
-            />
-
-            <CreatePredictionModal prediction={response} inputs={inputs} />
-        </>
-    )
+	return (
+		<>
+			<motion.div
+				initial={{ y: 30, opacity: 0 }}
+				animate={{ y: 0, opacity: 1 }}
+				transition={{ delay: 0.2, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+				className="flex overflow-hidden size-full"
+				ref={containerRef}
+			/>
+			{showModal && (
+				<CreatePredictionModal prediction={response} inputs={inputs} />
+			)}
+		</>
+	);
 }

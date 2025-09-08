@@ -42,7 +42,6 @@ public class AnalyzerControllerImpl implements AnalyzerController {
             OAuth2AuthenticationToken authentication,
             @RequestParam Long modelId,
             @RequestBody Map<String, Object> data) {
-        System.out.println(data);
         Map<String, Object> prediction = analyzerService.predict(
                 OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
                 authentication.getPrincipal().getName(),

@@ -7,6 +7,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -29,7 +31,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Target {
 
-    public Target(Prediction prediction, int order, Object value) {
+    public Target(Prediction prediction, int order, JsonNode value) {
         this.prediction = prediction;
         this.order = order;
         this.value = value;
@@ -48,11 +50,11 @@ public class Target {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "data_value", nullable = false)
-    private Object value;
+    private JsonNode value;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "real_value", nullable = true)
-    private Object realValue;
+    private JsonNode realValue;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
