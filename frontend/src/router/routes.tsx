@@ -1,8 +1,8 @@
 import { createBrowserRouter, type RouteObject } from "react-router-dom"
 import { HomePage } from "../app/pages/homePage"
-import { ModelAnalyzerPage } from "../form/pages/model-analyzer-page"
 import Layout from "../Layout"
 import { CreateModelPage } from "../models/pages/create-model-page"
+import { CreatePredictionPage } from "../models/pages/create-prediction-page"
 import { CreateSignaturePage } from "../models/pages/create-signature-page"
 import { ModelsPage } from "../models/pages/models-page"
 import { ProfilePage } from "../user/pages/profilePage"
@@ -21,10 +21,6 @@ export const routes: RouteObject[] = [
                 element: <ProfilePage />,
             },
             {
-                path: "analyzer",
-                element: <ModelAnalyzerPage />,
-            },
-            {
                 path: "models",
                 element: <ModelsPage />,
             },
@@ -33,9 +29,17 @@ export const routes: RouteObject[] = [
                 element: <CreateModelPage />,
             },
             {
-                path: "models/signatures/create",
+                path: "models/:modelId/signatures/create",
                 element: <CreateSignaturePage />,
-            }
+            },
+            {
+                path: "models/:modelId/signatures/:signatureId/predictions/create",
+                element: <CreatePredictionPage />,
+            },
+            {
+                path: "models/:modelId/signatures/:signatureId/predictions/create/:inputs",
+                element: <CreatePredictionPage />,
+            },
         ],
     },
 ]

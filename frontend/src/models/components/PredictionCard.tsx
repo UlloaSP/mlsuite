@@ -1,15 +1,16 @@
-import { AlertCircle, CheckCircle, Clock, Target, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Goal, LibraryBig, Target, XCircle, Zap } from "lucide-react";
 import { motion } from "motion/react";
-import type { Prediction } from "../hooks";
-
+import { useEffect, useState } from "react";
+import type { PredictionDto } from "../api/modelService";
+import { useGetTargets } from "../hooks";
 
 const getStatusIcon = (status: string) => {
-    switch (status) {
-        case "correct":
+    switch (status.toString()) {
+        case "COMPLETED":
             return CheckCircle
-        case "incorrect":
+        case "FAILED":
             return XCircle
-        case "pending":
+        case "PENDING":
             return AlertCircle
         default:
             return AlertCircle
@@ -17,35 +18,69 @@ const getStatusIcon = (status: string) => {
 }
 
 const getStatusColor = (status: string) => {
-    switch (status) {
-        case "correct":
+    switch (status.toString()) {
+        case "COMPLETED":
             return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-        case "incorrect":
+        case "FAILED":
             return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-        case "pending":
+        case "PENDING":
             return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
         default:
             return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
     }
 }
 
-const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.9) return "text-green-600 dark:text-green-400"
-    if (confidence >= 0.7) return "text-yellow-600 dark:text-yellow-400"
-    return "text-red-600 dark:text-red-400"
-}
-
 
 type PredictionCardProps = {
-    item: Prediction;
+    item: PredictionDto;
     index: number;
     selectedItemId: string | null;
     onItemSelect: (predictionId: string) => void;
 }
 
 export function PredictionCard({ item, index, selectedItemId, onItemSelect }: PredictionCardProps) {
+    const [value, setValue] = useState<string>("");
     const isSelected = selectedItemId === item.id
-    const StatusIcon = getStatusIcon(item.status)
+    const StatusIcon = getStatusIcon(item.status.toString())
+
+    const { data: targets = [] } = useGetTargets({ predictionId: item.id || "" });
+
+    useEffect(() => {
+
+        let outputs: any[] = [];
+        // @ts-ignore
+        if (item.prediction && Array.isArray(item.prediction.outputs)) {
+            // @ts-ignore
+            outputs = item.prediction.outputs;
+        }
+
+        if (outputs.length > 0 && outputs[0]?.type === "classifier") {
+            const probabilities = outputs[0].probabilities ?? [];
+            if (Array.isArray(probabilities) && probabilities.length > 0) {
+                const maxProb = probabilities[0].reduce((max: number, current: number) => (current > max ? current : max), 0);
+                setValue(maxProb);
+            }
+        } else if (outputs.length > 0 && outputs[0]?.type === "regressor") {
+            const values = outputs[0].values ?? [];
+            if (Array.isArray(values) && values.length > 0) {
+                setValue(values.toString());
+            }
+        }
+    }, [item, value]);
+
+    const formatExecutionTime = (time: number) => {
+        if (time < 1000) {
+            return `${time.toFixed(2).toLocaleString()} ms`
+        }
+        if (time < 60000) {
+            return `${(time / 1000).toFixed(2).toLocaleString()} s`
+        }
+        if (time < 3600000) {
+            return `${(time / 60000).toFixed(2).toLocaleString()} min`
+        }
+
+        return `${(time / 3600000).toFixed(2).toLocaleString()} h`
+    }
 
     return (
         <motion.button
@@ -76,68 +111,43 @@ export function PredictionCard({ item, index, selectedItemId, onItemSelect }: Pr
             {/* Info Section */}
 
             <div className="space-y-2">
-                <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    Output:{" "}
-                    <span className={`font-mono ${item.status === "correct"
-                        ? "text-green-500"
-                        : item.status === "incorrect"
-                            ? "text-red-500"
-                            : "text-yellow-500"}`}>
-                        {typeof item.output === "number"
-                            ? item.output.toLocaleString()
-                            : item.output}
-                    </span>
-                </div>
-
-                <div className="flex items-start gap-3 text-xs">
-                    <span className="text-gray-500 dark:text-gray-500">Confidence:</span>
-                    <span className={`font-mono font-medium ${getConfidenceColor(item.confidence)}`}>
-                        {(item.confidence * 100).toFixed(1)}%
-                    </span>
+                <div className={`text-sm font-medium text-gray-900`}>
+                    <span className={`${getStatusColor(item.status.toString()).replace(/bg-\S+/g, '').replace(/dark:bg-\S+/g, '')}`}>{item.name}</span>
                 </div>
 
                 <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
                     <Clock size={12} />
-                    <span>{new Date(item.timestamp).toLocaleString()}</span>
+                    <span>{new Date(item.createdAt).toLocaleString()}</span>
                 </div>
 
-                <div className="text-xs text-gray-500 dark:text-gray-500">
-                    {Object.keys(item.inputs).length} inputs •{" "}
-                    {(item.executionTime * 1000).toFixed(1)}ms
+                <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+                    <Zap size={12} />
+                    {/* @ts-ignore */}
+                    <span>{formatExecutionTime(item.prediction.outputs[0].execution_time)}</span>
                 </div>
 
-                {item.status === "incorrect" && item.actualValue && (
-                    <div className="flex items-center gap-1">
-                        <span className="text-xs">{"Actual: "}</span>
-                        <div className="text-xs text-green-600 dark:text-green-400">
-                            {typeof item.actualValue === "number"
-                                ? item.actualValue.toLocaleString()
-                                : item.actualValue}
-                        </div>
-                    </div>
-                )}
+                <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+                    <LibraryBig size={12} />
+                    <span>{`${(Object.keys(item.inputs).length).toLocaleString()} ${Object.keys(item.inputs).length > 1 ? "features" : "feature"}`}</span>
+                </div>
+
+                <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+                    <Goal size={12} />
+                    <span>{`${targets.length.toLocaleString()} ${targets.length > 1 ? "targets" : "target"}`}</span>
+                </div>
             </div>
-
-            {/* Prediction Status */}
-
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                         <StatusIcon
                             size={14}
-                            className={
-                                item.status === "correct"
-                                    ? "text-green-500"
-                                    : item.status === "incorrect"
-                                        ? "text-red-500"
-                                        : "text-yellow-500"
-                            }
+                            className={`${getStatusColor(item.status.toString())}`}
                         />
                         <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status)}`}
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status.toString())}`}
                         >
-                            {item.status}
+                            {item.status.toString().toLocaleLowerCase()}
                         </span>
                     </div>
                 </div>
