@@ -1,5 +1,6 @@
-import { appFetch, config } from "../../app/api/appFetch";
+import { appFetch } from "../../app/api/appFetch";
 
+/** ---------- DTOs ---------- */
 export interface CreateModelRequest {
 	name: string;
 	modelFile: File;
@@ -26,7 +27,7 @@ export interface CreatePredictionRequest {
 export interface CreateTargetRequest {
 	predictionId: string;
 	order: number;
-	value: string;
+	value: string;          // If your backend expects JSON here, change to `unknown` and pass an object.
 }
 
 export interface UpdatePredictionRequest {
@@ -36,24 +37,13 @@ export interface UpdatePredictionRequest {
 
 export interface UpdateTargetRequest {
 	targetId: string;
-	realValue: object;
+	realValue: object;      // If JSONB, this is fine. Ensure it’s serializable.
 }
 
-export interface GetAllSignaturesRequest {
-	modelId: string;
-}
-
-export interface GetPredictionsRequest {
-	signatureId: string;
-}
-
-export interface GetTargetsRequest {
-	predictionId: string;
-}
-
-export interface GetSignatureRequest {
-	signatureId: string;
-}
+export interface GetAllSignaturesRequest { modelId: string; }
+export interface GetPredictionsRequest { signatureId: string; }
+export interface GetTargetsRequest { predictionId: string; }
+export interface GetSignatureRequest { signatureId: string; }
 
 export interface ModelDto {
 	id: string;
@@ -68,7 +58,7 @@ export interface SignatureDto {
 	id: string;
 	modelId: string;
 	name: string;
-	inputSignature: Map<string, object>;
+	inputSignature: Record<string, unknown>;  // prefer plain object on the wire
 	major: number;
 	minor: number;
 	patch: number;
@@ -81,9 +71,9 @@ export interface PredictionDto {
 	signatureId: string;
 	modelId: string;
 	name: string;
-	inputs: Map<string, object>;
-	prediction: Map<string, object>;
-	status: object;
+	inputs: Record<string, unknown>;
+	prediction: Record<string, unknown>;
+	status: unknown;
 	createdAt: string;
 	updatedAt?: string;
 }
@@ -92,8 +82,8 @@ export interface TargetDto {
 	id: string;
 	predictionId: string;
 	order: number;
-	value: object;
-	realValue?: object;
+	value: unknown;
+	realValue?: unknown;
 	createdAt: string;
 	updatedAt?: string;
 }
@@ -104,7 +94,18 @@ export interface CreateModelDto {
 	signatureFromDataframe: SignatureDto;
 }
 
-export const createModel = ({
+/** ---------- helpers ---------- */
+const json = (method: "POST" | "PUT" | "PATCH", body: unknown): RequestInit => ({
+	method,
+	headers: { "Content-Type": "application/json" },
+	body: JSON.stringify(body),
+});
+
+const mapToObject = (m: Map<string, object>): Record<string, unknown> =>
+	Object.fromEntries(m.entries());
+
+/** ---------- services ---------- */
+export const createModel = async ({
 	name,
 	modelFile,
 	dataframeFile,
@@ -112,148 +113,63 @@ export const createModel = ({
 	const formData = new FormData();
 	formData.append("name", name);
 	formData.append("modelFile", modelFile);
-	if (dataframeFile) {
-		formData.append("dataframeFile", dataframeFile);
-	}
+	if (dataframeFile) formData.append("dataframeFile", dataframeFile);
 
-	return new Promise((resolve, reject) => {
-		appFetch<CreateModelDto>(
-			"/api/model/create",
-			config("POST", formData),
-			(data) => resolve(data!),
-			(errors) => reject(errors),
-		);
-	});
+	// Browser sets multipart boundary; do not set Content-Type manually
+	return appFetch<CreateModelDto>("/api/model/create", { method: "POST", body: formData });
 };
 
-export const createSignature = (
-	request: CreateSignatureRequest,
-): Promise<SignatureDto> => {
-	return new Promise((resolve, reject) => {
-		appFetch<SignatureDto>(
-			"/api/signature/create",
-			config("POST", request as Record<string, any>),
-			(data) => resolve(data!),
-			(errors) => reject(errors),
-		);
-	});
+export const createSignature = async (req: CreateSignatureRequest): Promise<SignatureDto> => {
+	const payload = {
+		...req,
+		inputSignature: mapToObject(req.inputSignature),
+	};
+	return appFetch<SignatureDto>("/api/signature/create", json("POST", payload));
 };
 
-export const createPrediction = (
-	params: CreatePredictionRequest,
-): Promise<PredictionDto> => {
-	return new Promise((resolve, reject) => {
-		appFetch<PredictionDto>(
-			"/api/prediction/create",
-			config("POST", params as Record<string, any>),
-			(data) => resolve(data!),
-			(errors) => reject(errors),
-		);
-	});
+export const createPrediction = async (req: CreatePredictionRequest): Promise<PredictionDto> => {
+	const payload = {
+		...req,
+		inputs: mapToObject(req.inputs),
+		prediction: mapToObject(req.prediction),
+	};
+	return appFetch<PredictionDto>("/api/prediction/create", json("POST", payload));
 };
 
-export const createTarget = (
-	params: CreateTargetRequest,
-): Promise<TargetDto> => {
-	return new Promise((resolve, reject) => {
-		appFetch<TargetDto>(
-			"/api/target/create",
-			config("POST", params as Record<string, any>),
-			(data) => resolve(data!),
-			(errors) => reject(errors),
-		);
-	});
+export const createTarget = async (req: CreateTargetRequest): Promise<TargetDto> => {
+	// If `value` must be JSONB server-side, consider changing its type to `unknown`
+	// and sending an object instead of a bare string.
+	return appFetch<TargetDto>("/api/target/create", json("POST", req));
 };
 
-export const updatePrediction = (
-	params: UpdatePredictionRequest,
-): Promise<PredictionDto> => {
-	return new Promise((resolve, reject) => {
-		appFetch<PredictionDto>(
-			"/api/prediction/update",
-			config("POST", params as Record<string, any>),
-			(data) => resolve(data!),
-			(errors) => reject(errors),
-		);
-	});
+export const updatePrediction = async (req: UpdatePredictionRequest): Promise<PredictionDto> => {
+	return appFetch<PredictionDto>("/api/prediction/update", json("POST", req));
 };
 
-export const updateTarget = (
-	params: UpdateTargetRequest,
-): Promise<TargetDto> => {
-	return new Promise((resolve, reject) => {
-		appFetch<TargetDto>(
-			"/api/target/update",
-			config("POST", params as Record<string, any>),
-			(data) => resolve(data!),
-			(errors) => reject(errors),
-		);
-	});
+export const updateTarget = async (req: UpdateTargetRequest): Promise<TargetDto> => {
+	return appFetch<TargetDto>("/api/target/update", json("POST", req));
 };
 
-export const getModels = (): Promise<ModelDto[]> => {
-	return new Promise((resolve, reject) => {
-		appFetch<ModelDto[]>(
-			"/api/model/all",
-			config("GET"),
-			(data) => resolve(data!),
-			(error) => reject(error),
-		);
-	});
+export const getModels = async (): Promise<ModelDto[]> => {
+	return appFetch<ModelDto[]>("/api/model/all");
 };
 
-export const getSignatures = ({
-	modelId,
-}: GetAllSignaturesRequest): Promise<SignatureDto[]> => {
-	return new Promise((resolve, reject) => {
-		const url = `/api/signature/all?modelId=${encodeURIComponent(modelId)}`;
-		appFetch<SignatureDto[]>(
-			url,
-			config("GET"),
-			(data) => resolve(data!),
-			(error) => reject(error),
-		);
-	});
+export const getSignatures = async ({ modelId }: GetAllSignaturesRequest): Promise<SignatureDto[]> => {
+	const url = `/api/signature/all?modelId=${encodeURIComponent(modelId)}`;
+	return appFetch<SignatureDto[]>(url);
 };
 
-export const getPredictions = ({
-	signatureId,
-}: GetPredictionsRequest): Promise<PredictionDto[]> => {
-	return new Promise((resolve, reject) => {
-		const url = `/api/prediction/all?signatureId=${encodeURIComponent(signatureId)}`;
-		appFetch<PredictionDto[]>(
-			url,
-			config("GET"),
-			(data) => resolve(data!),
-			(error) => reject(error),
-		);
-	});
+export const getPredictions = async ({ signatureId }: GetPredictionsRequest): Promise<PredictionDto[]> => {
+	const url = `/api/prediction/all?signatureId=${encodeURIComponent(signatureId)}`;
+	return appFetch<PredictionDto[]>(url);
 };
 
-export const getTargets = ({
-	predictionId,
-}: GetTargetsRequest): Promise<TargetDto[]> => {
-	return new Promise((resolve, reject) => {
-		const url = `/api/target/all?predictionId=${encodeURIComponent(predictionId)}`;
-		appFetch<TargetDto[]>(
-			url,
-			config("GET"),
-			(data) => resolve(data!),
-			(error) => reject(error),
-		);
-	});
+export const getTargets = async ({ predictionId }: GetTargetsRequest): Promise<TargetDto[]> => {
+	const url = `/api/target/all?predictionId=${encodeURIComponent(predictionId)}`;
+	return appFetch<TargetDto[]>(url);
 };
 
-export const getSignature = ({
-	signatureId,
-}: GetSignatureRequest): Promise<SignatureDto> => {
-	return new Promise((resolve, reject) => {
-		const url = `/api/signature/${encodeURIComponent(signatureId)}`;
-		appFetch<SignatureDto>(
-			url,
-			config("GET"),
-			(data) => resolve(data!),
-			(error) => reject(error),
-		);
-	});
+export const getSignature = async ({ signatureId }: GetSignatureRequest): Promise<SignatureDto> => {
+	const url = `/api/signature/${encodeURIComponent(signatureId)}`;
+	return appFetch<SignatureDto>(url);
 };

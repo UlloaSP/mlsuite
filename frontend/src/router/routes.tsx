@@ -1,4 +1,5 @@
 import { createBrowserRouter, type RouteObject } from "react-router-dom";
+import { NotFoundError } from "../app/pages/error-page";
 import { HomePage } from "../app/pages/homePage";
 import Layout from "../Layout";
 import { CreateModelPage } from "../models/pages/create-model-page";
@@ -11,6 +12,8 @@ export const routes: RouteObject[] = [
 	{
 		path: "/",
 		element: <Layout />,
+		errorElement: <NotFoundError />,
+
 		children: [
 			{
 				index: true,

@@ -1,4 +1,4 @@
-import { appFetch, config } from "../../app/api/appFetch";
+import { appFetch } from "../../app/api/appFetch";
 
 export interface UserDTO {
 	id: string;
@@ -12,20 +12,7 @@ export interface UserDTO {
 }
 
 export const getProfile = (): Promise<UserDTO> =>
-	new Promise((resolve, reject) => {
-		appFetch<UserDTO>(
-			"/api/user/profile",
-			config("GET"),
-			(data?: UserDTO) => {
-				if (data !== undefined) {
-					resolve(data);
-				} else {
-					reject(new Error("No user data returned"));
-				}
-			},
-			reject,
-		);
-	});
+	appFetch<UserDTO>("/api/user/profile");
 
 export const logout = (): Promise<void> =>
-	appFetch<void>("/api/logout", config("POST"));
+	appFetch<void>("/api/logout", { method: "POST" });

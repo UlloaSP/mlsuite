@@ -10,6 +10,8 @@ import {
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { Unauthorized } from "../../app/pages/Unauthorized";
+import { useUser } from "../../user/hooks";
 import { UploadFile } from "../components/UploadFile";
 import { useCreateModelMutation } from "../hooks";
 
@@ -47,6 +49,9 @@ export function CreateModelPage() {
 
 	const mutation = useCreateModelMutation();
 	const navigate = useNavigate();
+
+	const { data: user, error } = useUser();
+	if (!user || error) return <Unauthorized />;
 
 	const handleSave = async () => {
 		if (!selectedModelFile || !name) return;
@@ -238,11 +243,10 @@ export function CreateModelPage() {
 							<motion.button
 								onClick={handleSave}
 								disabled={!isFormValid || isLoading}
-								className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${
-									isFormValid
-										? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
-										: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-								}`}
+								className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${isFormValid
+									? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
+									: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+									}`}
 								whileHover={isFormValid ? { scale: 1.02 } : {}}
 								whileTap={isFormValid ? { scale: 0.98 } : {}}
 							>

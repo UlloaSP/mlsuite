@@ -1,20 +1,13 @@
 import { motion } from "motion/react";
+import { Unauthorized } from "../../app/pages/Unauthorized";
 import { ProfileBody } from "../components/ProfileBody";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { useUser } from "../hooks"; // Adjust the import path as necessary
 
 export function ProfilePage() {
-	const { data: user, isLoading, isError } = useUser();
+	const { data: user, isError } = useUser();
 
-	if (isLoading) {
-		return <div className="text-center text-gray-500">Loading...</div>;
-	}
-
-	if (isError || !user) {
-		return (
-			<div className="text-center text-red-500">Error loading profile</div>
-		);
-	}
+	if (!user || isError) return <Unauthorized />;
 
 	return (
 		<motion.div className="flex flex-1 size-full overflow-hidden bg-gradient-to-br from-slate-50 via-yellow-50 to-amber-50 dark:from-gray-900 dark:via-slate-800 dark:to-amber-900">

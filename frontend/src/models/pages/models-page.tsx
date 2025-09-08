@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { Unauthorized } from "../../app/pages/Unauthorized";
+import { useUser } from "../../user/hooks";
 import { Column } from "../components/Column";
 import { ModelCard } from "../components/ModelCard";
 import { PredictionCard } from "../components/PredictionCard";
@@ -20,6 +22,9 @@ export function ModelsPage() {
 	const { data: predictions = [] } = useGetPredictions({
 		signatureId: selectedSignatureId,
 	});
+
+	const { data: user, error } = useUser();
+	if (!user || error) return <Unauthorized />;
 
 	const handleModelSelect = (modelId: string) => {
 		setSelectedModelId(modelId);

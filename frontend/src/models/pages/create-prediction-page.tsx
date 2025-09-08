@@ -2,12 +2,14 @@ import { useAtom } from "jotai";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { Unauthorized } from "../../app/pages/Unauthorized";
 import {
 	schemaAtom,
 	schemaErrorsAtom,
 	schemaTextAtom,
 } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
+import { useUser } from "../../user/hooks";
 import { CreatePredictionBodyForm } from "../components/CreatePredictionBodyForm";
 import { CreatePredictionHeader } from "../components/CreatePredictionHeader";
 import { useGetSignature } from "../hooks";
@@ -24,6 +26,9 @@ export function CreatePredictionPage() {
 
 	const [isEditorActive, setIsEditorActive] = useState(true);
 	const [schemaReceived, setSchemaReceived] = useState(false);
+
+	const { data: user, error } = useUser();
+	if (!user || error) return <Unauthorized />;
 
 	useEffect(() => {
 		if (signature) {
