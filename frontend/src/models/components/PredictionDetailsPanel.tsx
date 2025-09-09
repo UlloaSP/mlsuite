@@ -16,7 +16,6 @@ import {
 	useUpdatePredictionMutation,
 	useUpdateTargetMutation,
 } from "../hooks";
-import { ExportButton } from "./ExportButton";
 
 interface PredictionDetailPanelProps {
 	prediction: PredictionDto;
@@ -108,7 +107,6 @@ export function PredictionDetailPanel({
 			}
 			return next;
 		});
-		console.log(targs);
 	}, [targs]);
 
 	if (!prediction) return null;
@@ -287,17 +285,6 @@ export function PredictionDetailPanel({
 								)}
 							</div>
 
-							{/* Exports Section */}
-							<div className="space-y-4"></div>
-							<h3 className="font-semibold text-gray-900 dark:text-white">
-								Export
-							</h3>
-							<ExportButton
-								name={prediction.name}
-								inputs={prediction.inputs}
-								targs={targs}
-							/>
-
 							{/* Feedback Section */}
 							<div className="space-y-4">
 								<div className="flex items-center justify-between">
@@ -325,8 +312,8 @@ export function PredictionDetailPanel({
 											<motion.button
 												onClick={() => setFeedbackState("COMPLETED")}
 												className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg border transition-all duration-200 ${feedbackState === "COMPLETED"
-														? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-400"
-														: "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+													? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 text-green-700 dark:text-green-400"
+													: "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
 													}`}
 												whileHover={{ scale: 1.02 }}
 												whileTap={{ scale: 0.98 }}
@@ -338,8 +325,8 @@ export function PredictionDetailPanel({
 											<motion.button
 												onClick={() => setFeedbackState("FAILED")}
 												className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg border transition-all duration-200 ${feedbackState === "FAILED"
-														? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 text-red-700 dark:text-red-400"
-														: "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+													? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700 text-red-700 dark:text-red-400"
+													: "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
 													}`}
 												whileHover={{ scale: 1.02 }}
 												whileTap={{ scale: 0.98 }}

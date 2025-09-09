@@ -16,7 +16,7 @@ export function EditorErrorBar({ expanded, setExpanded }: EditorErrorBarProps) {
 
 	useEffect(() => {
 		!hasErrors ? setExpanded(false) : {};
-	}, [hasErrors, setExpanded]);
+	}, [hasErrors]);
 
 	return (
 		<motion.button
@@ -24,11 +24,10 @@ export function EditorErrorBar({ expanded, setExpanded }: EditorErrorBarProps) {
 			disabled={!hasErrors}
 			onClick={() => hasErrors && setExpanded(!expanded)}
 			className={`flex flex-row h-8 w-full px-4 flex items-center justify-between text-white
-          ${
-						hasErrors
-							? "bg-red-600 dark:bg-red-700 cursor-pointer"
-							: "bg-emerald-400 dark:bg-emerald-400 cursor-default"
-					}`}
+          ${hasErrors
+					? "bg-red-600 dark:bg-red-700 cursor-pointer"
+					: "bg-emerald-400 dark:bg-emerald-400 cursor-default"
+				}`}
 		>
 			{hasErrors ? (
 				<>

@@ -86,7 +86,7 @@ export function ToggleButton({
 							duration: 1,
 							ease: isTransitioning ? "easeInOut" : "easeOut",
 						}}
-						className="absolute h-10 rounded-full bg-emerald-500 shadow-sm z-20"
+						className={`absolute h-10 rounded-full ${disabled ? "bg-gray-500" : "bg-emerald-500"} shadow-sm z-20`}
 						style={{
 							top: 4,
 						}}

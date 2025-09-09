@@ -7,8 +7,8 @@ import { showModalAtom } from "../atoms";
 import { useCreatePredictionMutation, useCreateTargetMutation } from "../hooks";
 
 export type CreatePredictionModalProps = {
-	prediction: Map<string, object>;
-	inputs: Map<string, object>;
+	prediction: Record<string, object>;
+	inputs: Record<string, object>;
 };
 
 export function CreatePredictionModal({
@@ -225,11 +225,10 @@ export function CreatePredictionModal({
 									<motion.button
 										onClick={handleSave}
 										disabled={!predictionName}
-										className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${
-											predictionName
+										className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${predictionName
 												? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
 												: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-										}`}
+											}`}
 										whileHover={predictionName ? { scale: 1.02 } : {}}
 										whileTap={predictionName ? { scale: 0.98 } : {}}
 									>

@@ -18,24 +18,23 @@ export function CreatePredictionBodyForm() {
 
 	const mlform = initMLForm(modelId!);
 
-	const [response, setResponse] = useState<Map<string, object>>(new Map());
-	const [inputs, setInputs] = useState<Map<string, object>>(new Map());
+	const [response, setResponse] = useState<Record<string, object>>({});
+	const [inputs, setInputs] = useState<Record<string, object>>({});
 
 	const handleSubmit = useCallback(
-		async (inputs: Map<string, object>, response: Map<string, object>) => {
+		async (inputs: Record<string, object>, response: Record<string, object>) => {
 			setInputs(inputs);
 			setResponse(response);
-			console.log("Response:", response);
 			setShowModal(true);
 		},
-		[setShowModal],
+		[],
 	);
 
 	useEffect(() => {
 		if (containerRef.current) {
 			mlform.toHTMLElement(schema, containerRef.current);
 		}
-	}, [schema, mlform.toHTMLElement]);
+	}, [schema]);
 
 	useEffect(() => {
 		const unsubscribe = mlform.onSubmit(handleSubmit);

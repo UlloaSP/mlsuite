@@ -19,7 +19,7 @@ const TIMELINE_NODES = [
 	{ icon: Save, label: "Save signature" },
 ];
 
-const BEST_PRACTICES_TITLE = "Upload Best Practices";
+const BEST_PRACTICES_TITLE = "Schema Best Practices";
 const BEST_PRACTICES = [
 	"Ensure the JSON follows the schema.",
 	"Use descriptive names for fields.",

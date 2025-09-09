@@ -71,7 +71,7 @@ export function CreateSignatureActionSection() {
 		setSchemaText(JSON.stringify(sig.inputSignature, null, 2));
 		setVersion("");
 		setSignatureName("");
-	}, [signatureId, signatures, setSchemaText, setSchema]);
+	}, [signatureId, signatures]);
 
 	return (
 		<motion.div className="flex flex-col flex-1 justify-between px-6">
@@ -140,11 +140,10 @@ export function CreateSignatureActionSection() {
 			<motion.button
 				onClick={handleSaveSignature}
 				disabled={!isFormValid}
-				className={`flex flex-row w-full items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${
-					isFormValid
-						? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl"
-						: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-				}`}
+				className={`flex flex-row w-full items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${isFormValid
+					? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl"
+					: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+					}`}
 				whileHover={isFormValid ? { scale: 1.02 } : {}}
 				whileTap={isFormValid ? { scale: 0.98 } : {}}
 			>

@@ -5,6 +5,7 @@ import { Unauthorized } from "../../app/pages/Unauthorized";
 import { useUser } from "../../user/hooks";
 import { Column } from "../components/Column";
 import { ModelCard } from "../components/ModelCard";
+import { PredColumn } from "../components/PredColumn";
 import { PredictionCard } from "../components/PredictionCard";
 import { PredictionDetailPanel } from "../components/PredictionDetailsPanel";
 import { SignatureCard } from "../components/SignatureCard";
@@ -76,7 +77,7 @@ export function ModelsPage() {
 
 				{/* Predictions Column - Visible when signature is selected */}
 				{!!selectedModelId && !!selectedSignatureId && (
-					<Column
+					<PredColumn
 						key={`predictions-${selectedSignatureId}`}
 						title="Prediction History"
 						onClick={() =>

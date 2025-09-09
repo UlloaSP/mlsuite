@@ -125,54 +125,57 @@ export function EditorBody() {
 
 			const zodMarkers: monaco.editor.IMarkerData[] = [];
 			const refineCards: EditorErrorCard[] = [];
+			let parsed: any = null;
+			try {
+				parsed = JSON.parse(text);
 
-			const parsed = JSON.parse(text);
-			const res = await f.validateSchema(parsed);
-			if (res.success && res.data) {
-				setSchema(parsed);
-			}
-
-			if (!res.success && res.error) {
-				const customIssues = res.error.issues.filter(
-					(issue: any) => issue.code === "custom",
-				);
-				if (customIssues.length > 0) {
-					customIssues.map((issue: any) => {
-						const path: any[] = ["inputs", ...(issue.path ?? [])];
-						const { line, column } = pathToPos(text, path);
-						const pathStr = path.length ? path.join(".") : "root";
-
-						refineCards.push({
-							line,
-							column,
-							path: pathStr,
-							message: issue.message,
-						});
-						zodMarkers.push({
-							startLineNumber: line,
-							// Move startColumn to the first quote after the colon
-							startColumn: (() => {
-								const lineContent = text.split("\n")[line - 1] || "";
-								const colonIdx = lineContent.indexOf(":");
-								if (colonIdx !== -1) {
-									const quoteIdx = lineContent.indexOf('"', colonIdx);
-									return quoteIdx !== -1 ? quoteIdx + 1 : column;
-								}
-								return column;
-							})(),
-							endLineNumber: line,
-							endColumn: model.getLineMaxColumn(line),
-							message: issue.message,
-							severity: monacoNs.MarkerSeverity.Error,
-							source: "zod",
-							code: pathStr,
-						});
-					});
+				const res = await f.validateSchema(parsed);
+				if (res.success && res.data) {
+					setSchema(parsed);
 				}
-			}
 
-			monacoNs.editor.setModelMarkers(model, "zod", zodMarkers);
-			refineCardsRef.current = refineCards;
+				if (!res.success && res.error) {
+					const customIssues = res.error.issues.filter(
+						(issue: any) => issue.code === "custom",
+					);
+					if (customIssues.length > 0) {
+						customIssues.map((issue: any) => {
+							const path: any[] = ["inputs", ...(issue.path ?? [])];
+							const { line, column } = pathToPos(text, path);
+							const pathStr = path.length ? path.join(".") : "root";
+
+							refineCards.push({
+								line,
+								column,
+								path: pathStr,
+								message: issue.message,
+							});
+							zodMarkers.push({
+								startLineNumber: line,
+								// Move startColumn to the first quote after the colon
+								startColumn: (() => {
+									const lineContent = text.split("\n")[line - 1] || "";
+									const colonIdx = lineContent.indexOf(":");
+									if (colonIdx !== -1) {
+										const quoteIdx = lineContent.indexOf('"', colonIdx);
+										return quoteIdx !== -1 ? quoteIdx + 1 : column;
+									}
+									return column;
+								})(),
+								endLineNumber: line,
+								endColumn: model.getLineMaxColumn(line),
+								message: issue.message,
+								severity: monacoNs.MarkerSeverity.Error,
+								source: "zod",
+								code: pathStr,
+							});
+						});
+					}
+				}
+
+				monacoNs.editor.setModelMarkers(model, "zod", zodMarkers);
+				refineCardsRef.current = refineCards;
+			} catch (e) { }
 		}
 	};
 

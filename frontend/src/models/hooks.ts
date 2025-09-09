@@ -9,8 +9,8 @@ import * as modelApi from "./api/modelService";
 /** -------------------- Query Keys -------------------- */
 export const GET_MODELS_QUERY_KEY = ["getModels"] as const;
 
-export const GET_SIGNATURES_QUERY_KEY = (p: modelApi.GetAllSignaturesRequest) =>
-	["getSignatures", { modelId: p.modelId }] as const;
+export const GET_SIGNATURES_QUERY_KEY = ({ modelId }: modelApi.GetAllSignaturesRequest) =>
+	["getSignatures", { modelId }] as const;
 
 export const GET_PREDICTIONS_QUERY_KEY = (p: modelApi.GetPredictionsRequest) =>
 	["getPredictions", { signatureId: p.signatureId }] as const;
@@ -18,15 +18,14 @@ export const GET_PREDICTIONS_QUERY_KEY = (p: modelApi.GetPredictionsRequest) =>
 export const GET_TARGETS_QUERY_KEY = (p: modelApi.GetTargetsRequest) =>
 	["getTargets", { predictionId: p.predictionId }] as const;
 
-export const GET_SIGNATURE_QUERY_KEY = (p: modelApi.GetSignatureRequest) =>
-	["getSignature", { signatureId: p.signatureId }] as const;
+export const GET_SIGNATURE_QUERY_KEY = ({ signatureId }: modelApi.GetSignatureRequest) =>
+	["getSignature", { signatureId }] as const;
 
 /** -------------------- Reads -------------------- */
 export const useGetModels = () =>
 	useQuery({
 		queryKey: GET_MODELS_QUERY_KEY,
 		queryFn: modelApi.getModels,
-		staleTime: 5 * 60_000,
 		gcTime: 10 * 60_000,
 		retry: (count, err: any) => {
 			const s = err?.status ?? err?.response?.status;
@@ -41,7 +40,6 @@ export const useGetSignatures = ({ modelId }: modelApi.GetAllSignaturesRequest) 
 		queryFn: () => modelApi.getSignatures({ modelId }),
 		enabled: Boolean(modelId),
 		placeholderData: [],
-		staleTime: 5 * 60_000,
 		gcTime: 10 * 60_000,
 		retry: (count, err: any) => {
 			const s = err?.status ?? err?.response?.status;
@@ -56,7 +54,6 @@ export const useGetPredictions = ({ signatureId }: modelApi.GetPredictionsReques
 		queryFn: () => modelApi.getPredictions({ signatureId }),
 		enabled: Boolean(signatureId),
 		placeholderData: [],
-		staleTime: 5 * 60_000,
 		gcTime: 10 * 60_000,
 		retry: (count, err: any) => {
 			const s = err?.status ?? err?.response?.status;
@@ -71,7 +68,6 @@ export const useGetTargets = ({ predictionId }: modelApi.GetTargetsRequest) =>
 		queryFn: () => modelApi.getTargets({ predictionId }),
 		enabled: Boolean(predictionId),
 		placeholderData: [],
-		staleTime: 5 * 60_000,
 		gcTime: 10 * 60_000,
 		retry: (count, err: any) => {
 			const s = err?.status ?? err?.response?.status;
@@ -85,7 +81,6 @@ export const useGetSignature = ({ signatureId }: modelApi.GetSignatureRequest) =
 		queryKey: GET_SIGNATURE_QUERY_KEY({ signatureId }),
 		queryFn: () => modelApi.getSignature({ signatureId }),
 		enabled: Boolean(signatureId),
-		staleTime: 5 * 60_000,
 		gcTime: 10 * 60_000,
 		retry: (count, err: any) => {
 			const s = err?.status ?? err?.response?.status;
@@ -122,6 +117,8 @@ export function useCreateModelMutation() {
 					return [fromDf, fromModel, ...(prev as SignatureDto[])];
 				},
 			);
+			qc.invalidateQueries({ queryKey: ["getModels"] });
+			qc.invalidateQueries({ queryKey: ["getSignatures"] });
 		},
 	});
 }
@@ -138,6 +135,7 @@ export function useCreateSignatureMutation() {
 				GET_SIGNATURES_QUERY_KEY({ modelId: signature.modelId }),
 				(prev) => (prev ? [signature, ...prev] : [signature]),
 			);
+			qc.invalidateQueries({ queryKey: ["getSignatures"] });
 		},
 	});
 }
@@ -154,6 +152,7 @@ export function useCreatePredictionMutation() {
 				GET_PREDICTIONS_QUERY_KEY({ signatureId: prediction.signatureId }),
 				(prev) => (prev ? [prediction, ...prev] : [prediction]),
 			);
+			qc.invalidateQueries({ queryKey: ["getPredictions"] });
 		},
 	});
 }
@@ -170,7 +169,9 @@ export function useCreateTargetMutation() {
 				GET_TARGETS_QUERY_KEY({ predictionId: target.predictionId }),
 				(prev) => (prev ? [target, ...prev] : [target]),
 			);
+			qc.invalidateQueries({ queryKey: ["getTargets"] });
 		},
+
 	});
 }
 
@@ -189,6 +190,8 @@ export function useUpdatePredictionMutation() {
 						? prev.map((p) => (p.id === prediction.id ? prediction : p))
 						: [prediction],
 			);
+			qc.invalidateQueries({ queryKey: ["getPredictions"] });
+			qc.invalidateQueries({ queryKey: ["getTargets"] });
 		},
 	});
 }
@@ -206,6 +209,8 @@ export function useUpdateTargetMutation() {
 				(prev) =>
 					prev ? prev.map((t) => (t.id === target.id ? target : t)) : [target],
 			);
+			qc.invalidateQueries({ queryKey: ["getPredictions"] });
+			qc.invalidateQueries({ queryKey: ["getTargets"] });
 		},
 	});
 }

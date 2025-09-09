@@ -1,23 +1,19 @@
 import {
-	ArrowLeft,
 	FileText,
 	RefreshCcw,
-	Save,
-	Table2,
-	Type,
-	UploadCloud,
+	Save
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Unauthorized } from "../../app/pages/Unauthorized";
 import { useUser } from "../../user/hooks";
+import { CreateModelHeader } from "../components/CreateModelHeader";
+import { CreateModelInfoSection } from "../components/CreateModelInfoSection";
 import { UploadFile } from "../components/UploadFile";
 import { useCreateModelMutation } from "../hooks";
 
-const CREATE_MODEL_HEADER = "Create New Model";
-const CREATE_MODEL_SUBHEADER =
-	"Upload your model file and configure its details.";
+
 
 const container = {
 	hidden: { opacity: 0, x: -40 },
@@ -33,13 +29,6 @@ const item = {
 	show: { opacity: 1, y: 0 },
 };
 
-const steps = [
-	{ icon: UploadCloud, label: "Upload model file" },
-	{ icon: Table2, label: "Attach dataframe (optional)" },
-	{ icon: Type, label: "Model name auto-filled" },
-	{ icon: Save, label: "Save model" },
-];
-
 export function CreateModelPage() {
 	const [selectedModelFile, setSelectedModelFile] = useState<File | null>(null);
 	const [selectedDataframeFile, setSelectedDataframeFile] =
@@ -51,7 +40,6 @@ export function CreateModelPage() {
 	const navigate = useNavigate();
 
 	const { data: user, error } = useUser();
-	if (!user || error) return <Unauthorized />;
 
 	const handleSave = async () => {
 		if (!selectedModelFile || !name) return;
@@ -86,6 +74,9 @@ export function CreateModelPage() {
 		);
 	}, [selectedModelFile]);
 
+
+	if (!user || error) return <Unauthorized />;
+
 	return (
 		<div className="flex flex-1 size-full overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-800 dark:to-indigo-900">
 			<motion.div
@@ -111,72 +102,10 @@ export function CreateModelPage() {
 						variants={container}
 						initial="hidden"
 						animate="show"
-						className="flex flex-1 flex-col justify-between px-10"
+						className="grid grid-rows-[1fr_2fr] justify-between px-10"
 					>
-						<motion.div
-							variants={item}
-							className="flex-start justify-self-start flex flex-col gap-4"
-						>
-							<motion.button
-								variants={item}
-								onClick={() => navigate("/models")}
-								className="self-start inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
-							>
-								<ArrowLeft size={18} />
-								Back
-							</motion.button>
-
-							{/* Title */}
-							<motion.h1
-								variants={item}
-								className="text-6xl font-bold bg-gradient-to-r from-gray-900 to-blue-600 dark:from-white dark:to-blue-400 bg-clip-text text-transparent"
-							>
-								{CREATE_MODEL_HEADER}
-							</motion.h1>
-
-							{/* Subtitle */}
-							<motion.p variants={item} className="text-slate-400">
-								{CREATE_MODEL_SUBHEADER}
-							</motion.p>
-						</motion.div>
-						<motion.ul
-							variants={container}
-							initial="hidden"
-							animate="show"
-							className="flex-center justify-self-center space-y-7"
-						>
-							{steps.map(({ icon: Icon, label }, idx) => (
-								<motion.li
-									key={idx}
-									variants={item}
-									className="flex items-center gap-3"
-								>
-									<span className="flex items-center justify-center w-12 h-12 rounded-full bg-slate-800/60 backdrop-blur ring-1 ring-inset ring-slate-700 shadow-inner">
-										<Icon size={22} />
-									</span>
-									<span className="text-sm md:text-base text-slate-300">
-										{label}
-									</span>
-								</motion.li>
-							))}
-						</motion.ul>
-
-						{/* Best‑practice card */}
-						<motion.div
-							variants={item}
-							className="flex-end justify-self-end max-w-fit p-4 rounded-2xl bg-slate-800/50 backdrop-blur-sm ring-1 ring-inset ring-slate-700 shadow-md"
-						>
-							<h2 className="text-slate-200 font-semibold mb-2 text-sm">
-								Upload best practices
-							</h2>
-							<ul className="list-disc list-inside text-xs text-slate-400 space-y-1">
-								<li>Ensure the file is under 100&nbsp;MB.</li>
-								<li>Version your model before uploading.</li>
-								<li>
-									Provide the final feature set in the optional dataframe.
-								</li>
-							</ul>
-						</motion.div>
+						<CreateModelHeader />
+						<CreateModelInfoSection />
 					</motion.div>
 
 					{/* File Upload Section */}

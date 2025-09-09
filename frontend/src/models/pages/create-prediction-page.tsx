@@ -18,57 +18,47 @@ export function CreatePredictionPage() {
 	const { signatureId } = useParams<{ signatureId: string }>();
 	const { inputs } = useParams<{ inputs: string }>();
 
-	const [schema, setSchema] = useAtom(schemaAtom);
+	const [, setSchema] = useAtom(schemaAtom);
 	const [, setSchemaText] = useAtom(schemaTextAtom);
 	const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
 
 	const { data: signature } = useGetSignature({ signatureId: signatureId! });
 
 	const [isEditorActive, setIsEditorActive] = useState(true);
-	const [schemaReceived, setSchemaReceived] = useState(false);
 
 	const { data: user, error } = useUser();
-	if (!user || error) return <Unauthorized />;
 
 	useEffect(() => {
-		if (signature) {
-			setSchemaErrors([]);
-			setSchema(signature.inputSignature);
-			setSchemaText(JSON.stringify(signature.inputSignature, null, 2));
-			setSchemaReceived(true);
+		if (!signature) return;
 
-			if (!!inputs && schemaReceived) {
-				const parsedInputs = JSON.parse(decodeURIComponent(inputs));
+		setSchemaErrors([]);
 
-				const nextSchema = {
-					...schema,
-					inputs: schema.inputs.map(
-						(item: {
-							title: string;
-							value?: unknown;
-							[key: string]: unknown;
-						}) => {
-							const value = (parsedInputs as Record<string, unknown>)[
-								item.title
-							];
-							return value !== undefined ? { ...item, value } : item;
-						},
-					),
-				};
+		// Base schema from the fetched signature (not from state)
+		const base: any = signature.inputSignature;
 
-				setSchema(nextSchema);
-				setSchemaText(JSON.stringify(nextSchema, null, 2));
-			}
+		// Optionally prefill from URL param
+		let next = base;
+		if (inputs) {
+			const parsed = JSON.parse(decodeURIComponent(inputs));
+			next = {
+				...base,
+				inputs: base.inputs?.map(
+					(item: { title: string; value?: unknown;[k: string]: unknown }) => {
+						const v = (parsed as Record<string, unknown>)[item.title];
+						return v !== undefined ? { ...item, value: v } : item;
+					}
+				),
+			};
 		}
+
+		setSchema(next);
+		setSchemaText(JSON.stringify(next, null, 2));
 	}, [
 		inputs,
 		signature,
-		schemaReceived,
-		setSchemaErrors,
-		schema,
-		setSchemaText,
-		setSchema,
 	]);
+
+	if (!user || error) return <Unauthorized />;
 
 	return (
 		<div className="relative flex flex-1 size-full">

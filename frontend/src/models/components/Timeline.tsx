@@ -29,7 +29,7 @@ export function Timeline({ steps }: TimelineProps) {
 			className="justify-self-start relative space-y-7"
 		>
 			{/* Vertical line */}
-			<span className="absolute left-5 top-0 bottom-0 w-px bg-gray-300 dark:bg-slate-700/40" />
+			<span className="absolute left-5 top-0 bottom-0 w-px bg-gray-800 dark:bg-slate-700/40" />
 			{/* Steps */}
 			{steps.map(({ icon: Icon, label }, idx) => (
 				<motion.li
@@ -37,10 +37,10 @@ export function Timeline({ steps }: TimelineProps) {
 					variants={item}
 					className="flex items-center gap-3"
 				>
-					<span className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-gray-200/60 dark:bg-slate-800/60 backdrop-blur ring-1 ring-inset ring-gray-300 dark:ring-slate-700 shadow-inner">
+					<span className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black dark:bg-slate-800/60 backdrop-blur ring-1 ring-inset dark:ring-slate-700 shadow-inner">
 						<Icon size={18} />
 					</span>
-					<span className="text-sm text-gray-700 dark:text-slate-300 md:text-base">
+					<span className="text-sm text-black dark:text-slate-300 md:text-base">
 						{label}
 					</span>
 				</motion.li>

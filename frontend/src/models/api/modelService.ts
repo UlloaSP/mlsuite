@@ -10,7 +10,7 @@ export interface CreateModelRequest {
 export interface CreateSignatureRequest {
 	modelId: string;
 	name: string;
-	inputSignature: Map<string, object>;
+	inputSignature: Record<string, unknown>;
 	major: number;
 	minor: number;
 	patch: number;
@@ -20,8 +20,8 @@ export interface CreateSignatureRequest {
 export interface CreatePredictionRequest {
 	signatureId: string;
 	name: string;
-	inputs: Map<string, object>;
-	prediction: Map<string, object>;
+	inputs: Record<string, unknown>;
+	prediction: Record<string, unknown>;
 }
 
 export interface CreateTargetRequest {
@@ -58,7 +58,7 @@ export interface SignatureDto {
 	id: string;
 	modelId: string;
 	name: string;
-	inputSignature: Record<string, unknown>;  // prefer plain object on the wire
+	inputSignature: Record<string, unknown>;
 	major: number;
 	minor: number;
 	patch: number;
@@ -101,9 +101,6 @@ const json = (method: "POST" | "PUT" | "PATCH", body: unknown): RequestInit => (
 	body: JSON.stringify(body),
 });
 
-const mapToObject = (m: Map<string, object>): Record<string, unknown> =>
-	Object.fromEntries(m.entries());
-
 /** ---------- services ---------- */
 export const createModel = async ({
 	name,
@@ -122,32 +119,32 @@ export const createModel = async ({
 export const createSignature = async (req: CreateSignatureRequest): Promise<SignatureDto> => {
 	const payload = {
 		...req,
-		inputSignature: mapToObject(req.inputSignature),
+		inputSignature: req.inputSignature,
 	};
-	return appFetch<SignatureDto>("/api/signature/create", json("POST", payload));
+	return appFetch<SignatureDto>("/api/signature/create", json("POST", payload as Record<string, any>));
 };
 
 export const createPrediction = async (req: CreatePredictionRequest): Promise<PredictionDto> => {
 	const payload = {
 		...req,
-		inputs: mapToObject(req.inputs),
-		prediction: mapToObject(req.prediction),
+		inputs: req.inputs,
+		prediction: req.prediction,
 	};
-	return appFetch<PredictionDto>("/api/prediction/create", json("POST", payload));
+	return appFetch<PredictionDto>("/api/prediction/create", json("POST", payload as Record<string, any>));
 };
 
 export const createTarget = async (req: CreateTargetRequest): Promise<TargetDto> => {
 	// If `value` must be JSONB server-side, consider changing its type to `unknown`
 	// and sending an object instead of a bare string.
-	return appFetch<TargetDto>("/api/target/create", json("POST", req));
+	return appFetch<TargetDto>("/api/target/create", json("POST", req as Record<string, any>));
 };
 
 export const updatePrediction = async (req: UpdatePredictionRequest): Promise<PredictionDto> => {
-	return appFetch<PredictionDto>("/api/prediction/update", json("POST", req));
+	return appFetch<PredictionDto>("/api/prediction/update", json("POST", req as Record<string, any>));
 };
 
 export const updateTarget = async (req: UpdateTargetRequest): Promise<TargetDto> => {
-	return appFetch<TargetDto>("/api/target/update", json("POST", req));
+	return appFetch<TargetDto>("/api/target/update", json("POST", req as Record<string, any>));
 };
 
 export const getModels = async (): Promise<ModelDto[]> => {

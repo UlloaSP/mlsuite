@@ -101,11 +101,10 @@ export function PredictionCard({
 		<motion.button
 			key={item.id}
 			onClick={() => onItemSelect(item.id)}
-			className={`grid grid-cols-[3fr_16fr_5fr] items-start text-left p-4 overflow-hidden rounded-xl border transition-all duration-300 ${
-				isSelected
-					? "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 shadow-md"
-					: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-			}`}
+			className={`grid grid-cols-[3fr_16fr_5fr] min-h-fit items-start text-left p-4 rounded-xl border transition-all duration-300 ${isSelected
+				? "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 shadow-md"
+				: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+				}`}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: index * 0.1, duration: 0.3 }}
@@ -172,7 +171,7 @@ export function PredictionCard({
 						<span
 							className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status.toString())}`}
 						>
-							{item.status.toString().toLocaleLowerCase()}
+							{(item.status.toString() === "COMPLETED") ? "success" : item.status.toString().toLocaleLowerCase()}
 						</span>
 					</div>
 				</div>
