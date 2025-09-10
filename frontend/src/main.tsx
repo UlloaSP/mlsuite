@@ -10,7 +10,11 @@ import { router } from "./router/routes";
 
 const queryClient = new QueryClient({
 	queryCache: new QueryCache({
-		onError: (error, _query) => {
+		onError: (error, query) => {
+			// Skip error handling for user query
+			if (query.queryKey[0] === "user") {
+				return;
+			}
 			// `error` is whatever your fetcher threw (HttpError in your case)
 			emitErrorFromUnknown(error);
 		},

@@ -23,10 +23,6 @@ public class UvicornRunner {
                 return;
             }
 
-            String command = isWindows()
-                    ? "cmd /c cd /d ./backend && uvicorn main:app --reload --host 127.0.0.1 --port 8000"
-                    : "bash -lc 'cd ./backend && uvicorn main:app --reload --host 127.0.0.1 --port 8000'";
-
             ProcessBuilder pb = isWindows()
                     ? new ProcessBuilder("cmd", "/c", "cd", "/d", "./backend", "&&",
                             "uvicorn", "main:app", "--reload", "--host", "127.0.0.1", "--port", "8000")
