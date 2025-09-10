@@ -96,14 +96,6 @@ export function ErrorModal({ open, error, onClose }: Props) {
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-neutral-800 bg-slate-50/60 dark:bg-neutral-900/60 rounded-b-2xl">
                     <button
-                        onClick={async () => {
-                            try { await navigator.clipboard.writeText(JSON.stringify(error, null, 2)); } catch { }
-                        }}
-                        className={`${buttonBase} border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:shadow-sm`}
-                    >
-                        Copy JSON
-                    </button>
-                    <button
                         onClick={onClose}
                         className={`${buttonBase} bg-slate-900 text-white dark:bg-white dark:text-neutral-900 hover:shadow-sm`}
                     >
