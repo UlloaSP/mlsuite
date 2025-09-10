@@ -25,7 +25,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String registrationId = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
 
@@ -57,7 +58,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             userService.signIn(OAuthProvider.fromString(registrationId), oauthId);
         } catch (UserDoesNotExistException ex) {
             try {
-                userService.signUp(userName, email, OAuthProvider.fromString(registrationId), oauthId, userName, avatarUrl, name);
+                userService.signUp(userName, email, OAuthProvider.fromString(registrationId), oauthId, avatarUrl, name);
             } catch (UserAlreadyExistsException e) {
                 // Raza: otro hilo lo creó; volvemos a intentar login
                 userService.signIn(OAuthProvider.fromString(registrationId), oauthId);

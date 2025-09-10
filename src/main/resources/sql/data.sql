@@ -5,10 +5,7 @@ INSERT INTO
         email,
         oauth_provider,
         oauth_id,
-        display_name,
         avatar_url,
-        created_by,
-        updated_by
     )
 SELECT
     'SYSTEM',
@@ -17,8 +14,6 @@ SELECT
     0,
     'System',
     NULL,
-    NULL,
-    NULL
 WHERE
     NOT EXISTS (
         SELECT
