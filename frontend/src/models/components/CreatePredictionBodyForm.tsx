@@ -16,25 +16,25 @@ export function CreatePredictionBodyForm() {
 
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	const mlform = initMLForm(modelId!);
+	const mlform = useRef(initMLForm(modelId!)).current;
 
 	const [response, setResponse] = useState<Record<string, object>>({});
 	const [inputs, setInputs] = useState<Record<string, object>>({});
 
 	const handleSubmit = useCallback(
-		async (inputs: Record<string, object>, response: Record<string, object>) => {
+		(inputs: Record<string, object>, response: Record<string, object>) => {
 			setInputs(inputs);
 			setResponse(response);
 			setShowModal(true);
 		},
-		[],
+		[setShowModal]
 	);
 
 	useEffect(() => {
 		if (containerRef.current) {
 			mlform.toHTMLElement(schema, containerRef.current);
 		}
-	}, [schema]);
+	}, [schema, mlform]);
 
 	useEffect(() => {
 		const unsubscribe = mlform.onSubmit(handleSubmit);
