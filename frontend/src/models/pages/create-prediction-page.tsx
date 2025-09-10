@@ -2,85 +2,92 @@ import { useAtom } from "jotai";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
+import { Unauthorized } from "../../app/pages/Unauthorized";
+import {
+	schemaAtom,
+	schemaErrorsAtom,
+	schemaTextAtom,
+} from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
+import { useUser } from "../../user/hooks";
 import { CreatePredictionBodyForm } from "../components/CreatePredictionBodyForm";
 import { CreatePredictionHeader } from "../components/CreatePredictionHeader";
 import { useGetSignature } from "../hooks";
 
-export type CreatePredictionPageProps = {}
+export function CreatePredictionPage() {
+	const { signatureId } = useParams<{ signatureId: string }>();
+	const { inputs } = useParams<{ inputs: string }>();
 
-export function CreatePredictionPage({ }: CreatePredictionPageProps) {
-    const { signatureId } = useParams<{ signatureId: string }>()
-    const { inputs } = useParams<{ inputs: string }>();
+	const [, setSchema] = useAtom(schemaAtom);
+	const [, setSchemaText] = useAtom(schemaTextAtom);
+	const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
 
-    const [schema, setSchema] = useAtom(schemaAtom);
-    const [, setSchemaText] = useAtom(schemaTextAtom)
-    const [, setSchemaErrors] = useAtom(schemaErrorsAtom)
+	const { data: signature } = useGetSignature({ signatureId: signatureId! });
 
-    const { data: signature } = useGetSignature({ signatureId: signatureId! });
+	const [isEditorActive, setIsEditorActive] = useState(true);
 
-    const [isEditorActive, setIsEditorActive] = useState(true);
-    const [schemaReceived, setSchemaReceived] = useState(false);
+	const { data: user, error } = useUser();
 
-    useEffect(() => {
+	useEffect(() => {
+		if (!signature) return;
 
+		setSchemaErrors([]);
 
-        if (signature) {
-            setSchemaErrors([]);
-            setSchema(signature.inputSignature);
-            setSchemaText(JSON.stringify(signature.inputSignature, null, 2));
-            setSchemaReceived(true);
+		// Base schema from the fetched signature (not from state)
+		const base: any = signature.inputSignature;
 
-            if (!!inputs && schemaReceived) {
-                try {
-                    const parsedInputs = JSON.parse(decodeURIComponent(inputs));
+		// Optionally prefill from URL param
+		let next = base;
+		if (inputs) {
+			const parsed = JSON.parse(decodeURIComponent(inputs));
+			next = {
+				...base,
+				inputs: base.inputs?.map(
+					(item: { title: string; value?: unknown;[k: string]: unknown }) => {
+						const v = (parsed as Record<string, unknown>)[item.title];
+						return v !== undefined ? { ...item, value: v } : item;
+					}
+				),
+			};
+		}
 
-                    const nextSchema = {
-                        ...schema,
-                        inputs: schema.inputs.map((item: { title: string; value?: unknown;[key: string]: unknown }) => {
-                            const value = (parsedInputs as Record<string, unknown>)[item.title];
-                            return value !== undefined ? { ...item, value } : item;
-                        }),
-                    };
+		setSchema(next);
+		setSchemaText(JSON.stringify(next, null, 2));
+	}, [
+		inputs,
+		signature,
+	]);
 
-                    setSchema(nextSchema);
-                    setSchemaText(JSON.stringify(nextSchema, null, 2));
-                } catch (err) { }
-            }
-        }
+	if (!user || error) return <Unauthorized />;
 
-    }, [inputs, signature, schemaReceived]);
-
-    return (
-        < div className="relative flex flex-1 size-full" >
-            < motion.div
-                className="absolute inset-0 flex flex-1 size-full overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-violet-50 dark:from-gray-900 dark:via-slate-800 dark:to-violet-500"
-                initial={false}
-                animate={{ padding: isEditorActive ? '3rem' : '0rem' }
-                }
-                transition={{ duration: 0.5, ease: 'easeInOut' }}
-            >
-                <motion.div
-                    className="flex flex-col flex-1 gap-4 overflow-hidden
+	return (
+		<div className="relative flex flex-1 size-full">
+			<motion.div
+				className="absolute inset-0 flex flex-1 size-full overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-violet-50 dark:from-gray-900 dark:via-slate-800 dark:to-violet-500"
+				initial={false}
+				animate={{ padding: isEditorActive ? "3rem" : "0rem" }}
+				transition={{ duration: 0.5, ease: "easeInOut" }}
+			>
+				<motion.div
+					className="flex flex-col flex-1 gap-4 overflow-hidden
         bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl
         rounded-md shadow-2xl border border-white/20
         dark:border-gray-700/20"
-                    initial={false}
-                    animate={{
-                        opacity: 1,
-                        y: 0,
-                        padding: isEditorActive ? '3rem' : '0rem',
-                    }}
-                    transition={{ duration: 1, ease: 'easeInOut' }}
-                >
-                    <CreatePredictionHeader
-                        isEditorActive={isEditorActive}
-                        onToggleMode={() => setIsEditorActive(!isEditorActive)}
-                    />
-                    {isEditorActive ? <EditorWrapper /> : <CreatePredictionBodyForm />}
-                </motion.div>
-            </motion.div >
-        </div >
-    );
+					initial={false}
+					animate={{
+						opacity: 1,
+						y: 0,
+						padding: isEditorActive ? "3rem" : "0rem",
+					}}
+					transition={{ duration: 1, ease: "easeInOut" }}
+				>
+					<CreatePredictionHeader
+						isEditorActive={isEditorActive}
+						onToggleMode={() => setIsEditorActive(!isEditorActive)}
+					/>
+					{isEditorActive ? <EditorWrapper /> : <CreatePredictionBodyForm />}
+				</motion.div>
+			</motion.div>
+		</div>
+	);
 }

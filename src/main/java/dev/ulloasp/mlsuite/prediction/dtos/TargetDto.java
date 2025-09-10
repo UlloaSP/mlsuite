@@ -4,6 +4,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import dev.ulloasp.mlsuite.prediction.entities.Target;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,8 +20,8 @@ public class TargetDto {
     private Long id;
     private Long predictionId;
     private int order;
-    private Object value;
-    private Object realValue;
+    private JsonNode value;
+    private JsonNode realValue;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 

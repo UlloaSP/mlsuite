@@ -14,6 +14,7 @@ import dev.ulloasp.mlsuite.signature.entities.Signature;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureAlreadyExistsException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureNotFromUserException;
+import dev.ulloasp.mlsuite.signature.exceptions.SignatureNotSemVerException;
 import dev.ulloasp.mlsuite.signature.repositories.SignatureRepository;
 import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import dev.ulloasp.mlsuite.user.entity.User;
@@ -61,6 +62,14 @@ public class SignatureServiceImpl implements SignatureService {
             throw new SignatureAlreadyExistsException(model.getId(), inputSignature);
         }
 
+        if (signatureRepository.existsByModelIdAndMajorAndMinorAndPatch(model.getId(), major, minor, patch)) {
+            throw new SignatureAlreadyExistsException(model.getId(), major, minor, patch);
+        }
+
+        if (major < 0 || minor < 0 || patch < 0) {
+            throw new SignatureNotSemVerException(name);
+        }
+
         Signature signature = new Signature(model, name, inputSignature);
 
         signature.setMajor(major);
@@ -74,34 +83,6 @@ public class SignatureServiceImpl implements SignatureService {
             }
             signature.setOrigin(optionalOrigin.get());
         }
-
-        return signatureRepository.save(signature);
-    }
-
-    @Override
-    public Signature updateSignature(OAuthProvider oauthProvider, String oauthId, Long signatureId,
-            Map<String, Object> inputSignature) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Signature> optionalSignature = signatureRepository.findById(signatureId);
-
-        if (optionalSignature.isEmpty()) {
-            throw new SignatureDoesNotExistsException(signatureId);
-        }
-
-        Signature signature = optionalSignature.get();
-
-        if (!signature.getModel().getUser().getId().equals(user.getId())) {
-            throw new SignatureNotFromUserException(signatureId, user.getUsername());
-        }
-
-        signature.setInputSignature(inputSignature);
 
         return signatureRepository.save(signature);
     }
@@ -154,31 +135,6 @@ public class SignatureServiceImpl implements SignatureService {
         }
 
         return signatureRepository.findByModelId(model.getId());
-    }
-
-    @Override
-    public void deleteSignature(OAuthProvider oauthProvider, String oauthId, Long signatureId) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Signature> optionalSignature = signatureRepository.findById(signatureId);
-
-        if (optionalSignature.isEmpty()) {
-            throw new SignatureDoesNotExistsException(signatureId);
-        }
-
-        Signature signature = optionalSignature.get();
-
-        if (!signature.getModel().getUser().getId().equals(user.getId())) {
-            throw new SignatureNotFromUserException(signatureId, user.getUsername());
-        }
-
-        signatureRepository.delete(signature);
     }
 
 }

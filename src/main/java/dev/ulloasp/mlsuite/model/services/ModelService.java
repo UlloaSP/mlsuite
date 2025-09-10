@@ -11,11 +11,5 @@ public interface ModelService {
 
     public Model createModel(OAuthProvider oauthProvider, String oauthId, String name, MultipartFile modelFile);
 
-    public Model updateModel(OAuthProvider oauthProvider, String oauthId, Long modelId, String name);
-
-    public Model getModel(OAuthProvider oauthProvider, String oauthId, Long modelId);
-
-    public List<Model> getModelByUserId(OAuthProvider oauthProvider, String oauthId);
-
-    public void deleteModel(OAuthProvider oauthProvider, String oauthId, Long modelId);
+    public List<Model> getModels(OAuthProvider oauthProvider, String oauthId);
 }

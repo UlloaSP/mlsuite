@@ -8,4 +8,9 @@ public class SignatureAlreadyExistsException extends RuntimeException {
         super("Signature with input '" + inputSignature + "' already exists for model ID: " + modelId);
     }
 
+    public SignatureAlreadyExistsException(Long modelId, int major, int minor, int patch) {
+        super("Signature with version '" + major + "." + minor + "." + patch + " already exists for model ID: "
+                + modelId);
+    }
+
 }

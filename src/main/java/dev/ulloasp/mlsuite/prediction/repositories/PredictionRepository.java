@@ -15,4 +15,6 @@ public interface PredictionRepository extends JpaRepository<Prediction, Long> {
 
     @Query("SELECT p FROM Prediction p WHERE p.id = :predictionId AND p.signature.model.user.id = :userId")
     Optional<Prediction> findByIdAndUserId(Long predictionId, Long userId);
+
+    boolean existsBySignatureIdAndName(Long signatureId, String name);
 }

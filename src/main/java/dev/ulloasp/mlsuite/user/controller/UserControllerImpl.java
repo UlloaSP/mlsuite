@@ -13,7 +13,8 @@ import dev.ulloasp.mlsuite.user.entity.User;
 import dev.ulloasp.mlsuite.user.exceptions.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.service.UserService;
-import dev.ulloasp.mlsuite.util.ErrorsDto;
+import dev.ulloasp.mlsuite.util.ErrorDto;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class UserControllerImpl implements UserController {
@@ -37,14 +38,18 @@ public class UserControllerImpl implements UserController {
 
     @ExceptionHandler(UserDoesNotExistException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorsDto handleUserDoesNotExistException(UserDoesNotExistException e) {
-        return new ErrorsDto(e.getMessage());
+    public ResponseEntity<ErrorDto> handleUserDoesNotExistException(UserDoesNotExistException e,
+            HttpServletRequest req) {
+        ErrorDto dto = ErrorDto.of(HttpStatus.NOT_FOUND.value(), e.getMessage(), req.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorsDto handleUserAlreadyExistsException(UserAlreadyExistsException e) {
-        return new ErrorsDto(e.getMessage());
+    public ResponseEntity<ErrorDto> handleUserAlreadyExistsException(UserAlreadyExistsException e,
+            HttpServletRequest req) {
+        ErrorDto dto = ErrorDto.of(HttpStatus.CONFLICT.value(), e.getMessage(), req.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(dto);
     }
 
 }

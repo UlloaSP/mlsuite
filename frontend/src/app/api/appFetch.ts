@@ -1,182 +1,100 @@
-/**
- * Corporate Fetch Wrapper – ‘Cookies’ edition
- *
- * Consolidated HTTP client built on top of the Fetch API.
- * ▸ Propagates cookies cross‑origin (SameSite=None) via `credentials: 'include'`.
- * ▸ Centralises response handling (2xx, 4xx, 5xx) behind a single access point.
- * ▸ Exposes hooks for global network errors and re‑authentication flows.
- * ▸ Written in strict TypeScript for safer integrations going forward.
- */
+// ---- Server contract (exact) ----
+export type ErrorDto = {
+	timestamp: string;
+	status: number;
+	message: string;
+	path: string;
+};
 
-export interface ErrorPayload {
-    globalError?: string;
-    fieldErrors?: Record<string, string>;
+// ---- Single error type for the app ----
+export class HttpError extends Error {
+	readonly dto: ErrorDto;
+
+	constructor(dto: ErrorDto) {
+		super(dto.message);
+		this.name = "HttpError";
+		this.dto = dto;
+	}
+
+	get status() { return this.dto.status; }
+	get timestamp() { return this.dto.timestamp; }
+	get path() { return this.dto.path; }
 }
 
-type NetworkErrorHandler = () => void;
+// Optional helper for narrowing
+export const isHttpError = (e: unknown): e is HttpError =>
+	e instanceof HttpError;
+
 type ReauthenticationHandler = () => void;
+type NetworkErrorHandler = () => void;
 
-let networkErrorCallback: NetworkErrorHandler = () => { };
-let reauthenticationCallback: ReauthenticationHandler | null = null;
+let reauthCb: ReauthenticationHandler | null = null;
+let netErrCb: NetworkErrorHandler = () => { };
 
-/**
- * Registers a global handler that will be fired on low‑level connectivity issues
- * (e.g. DNS failure, CORS blockage, server unreachable).
- */
-export const initNetworkErrorHandler = (cb: NetworkErrorHandler): void => {
-    networkErrorCallback = cb;
-};
+export const setReauthenticationCallback = (cb: ReauthenticationHandler) => (reauthCb = cb);
+export const initNetworkErrorHandler = (cb: NetworkErrorHandler) => (netErrCb = cb);
 
-/**
- * Sets a callback to be invoked automatically whenever a 401 (Unauthorized)
- * is detected. Typical use case: launch a silent refresh or redirect to login.
- */
-export const setReauthenticationCallback = (
-    cb: ReauthenticationHandler
-): void => {
-    reauthenticationCallback = cb;
-};
+const BASE = import.meta.env.VITE_BACKEND_URL;
 
-type HttpMethod =
-    | 'GET'
-    | 'POST'
-    | 'PUT'
-    | 'PATCH'
-    | 'DELETE'
-    | 'OPTIONS'
-    | 'HEAD';
+const buildInit = (init?: RequestInit): RequestInit => ({
+	credentials: "include",
+	...init,
+	headers: {
+		...(init?.headers || {}),
+	},
+});
 
-/**
- * Builds a `RequestInit` object that enforces cookie propagation and negotiates
- * the appropriate content type depending on the supplied body.
- *
- * @param method – HTTP verb. Defaults to 'GET'.
- * @param body   – Either `FormData` (sent as multipart) or a plain object
- *                 (serialised as JSON).
- */
-export const config = (
-    method: HttpMethod = 'GET',
-    body?: FormData | Record<string, unknown>
-): RequestInit => {
-    const headers: Record<string, string> = {};
-    let cfgBody: BodyInit | undefined;
+const isJson = (res: Response) =>
+	res.headers.get("content-type")?.includes("application/json") ?? false;
 
-    if (body !== undefined) {
-        if (body instanceof FormData) {
-            // Browser takes care of boundary & content‑type.
-            cfgBody = body;
-        } else {
-            headers['Content-Type'] = 'application/json';
-            cfgBody = JSON.stringify(body);
-        }
-    }
+const nowIso = () => new Date().toISOString();
 
-    return {
-        method,
-        credentials: 'include', // ⇒ cookies travel with the request
-        headers: Object.keys(headers).length > 0 ? headers : undefined,
-        body: cfgBody,
-    };
-};
+function fabricateDto(res: Response, path: string, msg: string): ErrorDto {
+	return {
+		timestamp: nowIso(),
+		status: res.status,
+		message: msg,
+		path: new URL(path, BASE).pathname,
+	};
+}
 
-// ---------------------------------------------------------------------------
-// Internal helpers – not exported
-// ---------------------------------------------------------------------------
+function fabricateNetworkDto(path: string, msg = "Network Error"): ErrorDto {
+	return {
+		timestamp: nowIso(),
+		status: 0, // non-HTTP failure
+		message: msg,
+		path: new URL(path, BASE).pathname,
+	};
+}
 
-const isJson = (r: Response): boolean =>
-    r.headers.get('content-type')?.includes('application/json') ?? false;
+/** Query-ready fetcher that only throws HttpError wrapping ErrorDto */
+export async function appFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
+	try {
+		const res = await fetch(`${BASE}${path}`, buildInit(init));
 
-/**
- * Handles successful responses (2xx).
- * • If `onSuccess` is supplied, forwards the parsed payload.
- * • For 204 No Content, simply fires the callback without arguments.
- */
-const handleOk = <T>(
-    r: Response,
-    onSuccess?: (data?: T) => void
-): boolean => {
-    if (!r.ok) return false;
-    if (!onSuccess) return true;
+		// Success
+		if (res.ok) {
+			if (res.status === 204) return undefined as T;
+			if (isJson(res)) return (await res.json()) as T;
+			return undefined as T;
+		}
 
-    if (r.status === 204) {
-        onSuccess();
-        return true;
-    }
+		// Auth hook
+		if (res.status === 401 && reauthCb) reauthCb();
 
-    if (isJson(r)) {
-        r.json().then(onSuccess as unknown as (value: unknown) => void);
-    }
-    return true;
-};
+		// Error: prefer server ErrorDto JSON
+		if (isJson(res)) {
+			const dto = (await res.json()) as ErrorDto;
+			throw new HttpError(dto);
+		}
 
-/**
- * Handles client‑side errors (4xx).
- * • Triggers re‑authentication on 401 if a handler is present.
- * • For JSON error payloads, forwards structured information to `onErrors`.
- */
-const handle4xx = (
-    r: Response,
-    onErrors?: (errors: ErrorPayload) => void
-): boolean => {
-    if (r.status < 400 || r.status >= 500) return false;
-
-    if (r.status === 401 && reauthenticationCallback) {
-        reauthenticationCallback();
-        return true;
-    }
-
-    if (!isJson(r)) throw new Error('NetworkError');
-
-    if (onErrors) {
-        r.json().then((payload: ErrorPayload) => {
-            if (payload.globalError || payload.fieldErrors) {
-                onErrors(payload);
-            }
-        });
-    }
-    return true;
-};
-
-/** Orchestrates the response‑handling chain. */
-const handleResponse = <T>(
-    r: Response,
-    onSuccess?: (data?: T) => void,
-    onErrors?: (errors: ErrorPayload) => void
-): void => {
-    if (handleOk<T>(r, onSuccess)) return;
-    if (handle4xx(r, onErrors)) return;
-    throw new Error('NetworkError');
-};
-
-// ---------------------------------------------------------------------------
-//  appFetch – single entry point for REST calls
-// ---------------------------------------------------------------------------
-
-/**
- * Executes a REST request against the back‑end.
- *
- * @template T Expected type of a successful JSON payload.
- * @param path       Relative URL (e.g. `/users/42`).
- * @param options    Custom `RequestInit` overrides. `credentials` is enforced
- *                   to be `'include'` regardless of caller input.
- * @param onSuccess  Callback for 2xx responses. Receives parsed payload of type T.
- * @param onErrors   Callback for business errors (4xx with JSON body).
- */
-export const appFetch = <T = unknown>(
-    path: string,
-    options: RequestInit = {},
-    onSuccess?: (data?: T) => void,
-    onErrors?: (errors: ErrorPayload) => void
-): Promise<void> => {
-    const finalOptions: RequestInit = {
-        credentials: 'include',
-        ...options,
-        headers: {
-            ...(options.headers || {}),
-        },
-    };
-
-    return fetch(`${import.meta.env.VITE_BACKEND_URL}${path}`, finalOptions)
-        .then((r) => handleResponse<T>(r, onSuccess, onErrors))
-        .catch(networkErrorCallback);
-};
+		// Fallback: synthesize ErrorDto from Response
+		throw new HttpError(fabricateDto(res, path, res.statusText || "Request error"));
+	} catch (e) {
+		// Network / CORS / DNS, etc.
+		netErrCb();
+		// If it's already our HttpError, bubble it; otherwise wrap as network HttpError
+		if (isHttpError(e)) throw e;
+		throw new HttpError(fabricateNetworkDto(path));
+	}
+}

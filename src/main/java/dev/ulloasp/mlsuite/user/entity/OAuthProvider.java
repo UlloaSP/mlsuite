@@ -35,7 +35,7 @@ public enum OAuthProvider {
      */
     public static OAuthProvider fromString(String provider) {
         if (provider == null) {
-            return null;
+            throw new IllegalArgumentException("Unsupported OAuth provider: " + provider);
         }
 
         try {

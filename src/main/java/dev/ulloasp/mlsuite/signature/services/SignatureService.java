@@ -12,12 +12,7 @@ public interface SignatureService {
                         Map<String, Object> inputSignature, String name,
                         int major, int minor, int patch, Long origin);
 
-        public Signature updateSignature(OAuthProvider oauthProvider, String oauthId, Long signatureId,
-                        Map<String, Object> inputSignature);
-
         public Signature getSignature(OAuthProvider oauthProvider, String oauthId, Long signatureId);
 
         public List<Signature> getSignatureByModelId(OAuthProvider oauthProvider, String oauthId, Long modelId);
-
-        public void deleteSignature(OAuthProvider oauthProvider, String oauthId, Long signatureId);
 }

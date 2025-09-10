@@ -29,7 +29,7 @@ async def get_model_metadata(
     incluyendo tipo de modelo, clases (si es clasificador) y nombres de características.
     """
     if not model_file.filename.endswith('.joblib'):
-        raise HTTPException(400, "El archivo debe ser .joblib")
+        raise HTTPException(400, "File must be .joblib")
     
     with tempfile.NamedTemporaryFile(suffix='.joblib', delete=False) as tmp:
         tmp.write(await model_file.read())
@@ -38,7 +38,7 @@ async def get_model_metadata(
     model = joblib.load(model_path)
     
     if not isinstance(model, BaseEstimator):
-        raise HTTPException(400, "No es un estimador de sklearn.")
+        raise HTTPException(400, "Not a sklearn estimator.")
     
     metadata = {
         "fileName": model_file.filename,
@@ -61,15 +61,15 @@ async def build_schema(
     """
     # Validación y carga del modelo
     if not model_file.filename.endswith('.joblib'):
-        raise HTTPException(400, "El archivo de modelo debe ser .joblib")
+        raise HTTPException(400, "Model file must be .joblib")
     with tempfile.NamedTemporaryFile(suffix='.joblib', delete=False) as tmp:
         tmp.write(await model_file.read())
         model_path = tmp.name
     model = joblib.load(model_path)
     if not isinstance(model, BaseEstimator):
-        raise HTTPException(400, "No es un estimador de sklearn.")
+        raise HTTPException(400, "Not a sklearn estimator.")
     if not (isinstance(model, ClassifierMixin) or isinstance(model, RegressorMixin)):
-        raise HTTPException(400, "El modelo debe ser clasificador o regresor.")
+        raise HTTPException(400, "Model must be a classifier or regressor.")
 
     # Obtención de nombres de features
     if hasattr(model, 'feature_names_in_'):
@@ -77,7 +77,7 @@ async def build_schema(
     elif hasattr(model, 'get_feature_names_out'):
         features = list(model.get_feature_names_out())
     else:
-        raise HTTPException(400, "No hay nombres de características en el modelo.")
+        raise HTTPException(400, "No feature names found in the model.")
 
     # DataFrame vacío
     # Crear un DataFrame con una fila de datos no nulos y columnas igual a los nombres de las features
@@ -87,19 +87,19 @@ async def build_schema(
     # Carga opcional de DataFrame
     if df_file is not None:
         if not df_file.filename.endswith('.joblib'):
-            raise HTTPException(400, "El archivo de datos debe ser .joblib")
+            raise HTTPException(400, "Data file must be .joblib")
         with tempfile.NamedTemporaryFile(suffix='.joblib', delete=False) as tmpdf:
             tmpdf.write(await df_file.read())
             df_path = tmpdf.name
         candidate = joblib.load(df_path)
         if not isinstance(candidate, pd.DataFrame):
-            raise HTTPException(400, "El archivo no contiene un DataFrame.")
+            raise HTTPException(400, "File does not contain a DataFrame.")
         if candidate.empty:
-            raise HTTPException(400, "El DataFrame está vacío.")
+            raise HTTPException(400, "DataFrame is empty.")
         # Alinear columnas si es necesario
         missing_cols = set(features) - set(candidate.columns)
         if missing_cols:
-            raise HTTPException(400, f"El DataFrame no contiene todas las columnas requeridas: {missing_cols}")
+            raise HTTPException(400, f"DataFrame does not contain all required columns: {missing_cols}")
         # Reordenar columnas para que coincidan con las features
         data_df = candidate[features]
 
@@ -112,6 +112,22 @@ async def build_schema(
     builder.register(DateStrategy())
 
     schema = builder.build(data_df)
+
+    if isinstance(model, ClassifierMixin):
+    
+        schema["outputs"] = [{
+            "type": "classifier",  # Placeholder for execution time
+            "title": "Predicted class",
+            "mapping": [str(c) for c in model.classes_],
+            "details": False,
+        }]
+    
+    elif isinstance(model, RegressorMixin):
+        schema["outputs"] = [{
+                "type": "regressor",
+                "title": "Predicted value",
+            }]
+
     return schema
 
 @app.post("/predict")
@@ -129,7 +145,7 @@ async def predict(
     # Si no hay filename, asumimos que es un .joblib
     filename = getattr(model_file, "filename", None)
     if filename is not None and not filename.endswith(".joblib"):
-        raise HTTPException(400, "El modelo debe ser un .joblib")
+        raise HTTPException(400, "Model must be a .joblib file")
 
     with tempfile.NamedTemporaryFile(suffix=".joblib", delete=False) as tmp:
         # Leer los bytes del archivo
@@ -139,15 +155,15 @@ async def predict(
 
     model = joblib.load(model_path)
     if not isinstance(model, BaseEstimator):
-        raise HTTPException(400, "El archivo no contiene un estimador válido")
+        raise HTTPException(400, "File does not contain a valid estimator")
 
     # 2. Parsear el JSON recibido como string
     try:
         record = json.loads(data)
         if not isinstance(record, dict):
-            raise ValueError("El JSON debe ser un objeto (dict) con las features")
+            raise ValueError("JSON must be an object (dict) with features")
     except Exception as exc:
-        raise HTTPException(400, f"JSON inválido: {exc}")
+        raise HTTPException(400, f"Invalid JSON: {exc}")
 
     # 3. Preparar DataFrame (columnas ordenadas alfabéticamente)
     # Ordenar las columnas según el orden esperado por el modelo, si está disponible
@@ -164,7 +180,7 @@ async def predict(
         preds = model.predict(df)
         predict_time = time.perf_counter() - start
     except Exception as exc:
-        raise HTTPException(500, f"Error durante la inferencia: {exc}")
+        raise HTTPException(500, f"Error during inference: {exc}")
 
     # 5. Formatear la salida según el tipo de modelo
     if isinstance(model, ClassifierMixin):
@@ -189,7 +205,6 @@ async def predict(
         }
     else:
         output = {"predictions": preds.tolist()}
-    print(output)
     return output
 
 

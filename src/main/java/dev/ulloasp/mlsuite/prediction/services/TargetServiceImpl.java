@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import dev.ulloasp.mlsuite.prediction.entities.Prediction;
 import dev.ulloasp.mlsuite.prediction.entities.Target;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
@@ -32,7 +34,7 @@ public class TargetServiceImpl implements TargetService {
 
     @Override
     public Target createTarget(OAuthProvider oauthProvider, String oauthId, Long predictionId, int order,
-            Object value) {
+            JsonNode value) {
 
         Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
 
@@ -56,7 +58,7 @@ public class TargetServiceImpl implements TargetService {
     }
 
     @Override
-    public Target updateTarget(OAuthProvider oauthProvider, String oauthId, Long targetId, Object real_value) {
+    public Target updateTarget(OAuthProvider oauthProvider, String oauthId, Long targetId, JsonNode real_value) {
         Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
 
         if (optionalUser.isEmpty()) {

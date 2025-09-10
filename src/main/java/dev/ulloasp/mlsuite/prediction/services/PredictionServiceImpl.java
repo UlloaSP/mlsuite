@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import dev.ulloasp.mlsuite.prediction.entities.Prediction;
 import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
+import dev.ulloasp.mlsuite.prediction.exceptions.PredictionAlreadyExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
@@ -52,6 +53,10 @@ public class PredictionServiceImpl implements PredictionService {
         }
 
         Signature signature = optionalSignature.get();
+
+        if (predictionRepository.existsBySignatureIdAndName(signature.getId(), name)) {
+            throw new PredictionAlreadyExistsException(name, signature.getName());
+        }
 
         Prediction pred = new Prediction(signature, name, data, prediction);
 
