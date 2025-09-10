@@ -1,18 +1,29 @@
-// types
-export interface ErrorPayload {
-	globalError?: string;
-	fieldErrors?: Record<string, string>;
+// ---- Server contract (exact) ----
+export type ErrorDto = {
+	timestamp: string;
+	status: number;
+	message: string;
+	path: string;
+};
+
+// ---- Single error type for the app ----
+export class HttpError extends Error {
+	readonly dto: ErrorDto;
+
+	constructor(dto: ErrorDto) {
+		super(dto.message);
+		this.name = "HttpError";
+		this.dto = dto;
+	}
+
+	get status() { return this.dto.status; }
+	get timestamp() { return this.dto.timestamp; }
+	get path() { return this.dto.path; }
 }
 
-export class AppHttpError extends Error {
-	status: number;
-	payload?: ErrorPayload;
-	constructor(message: string, status: number, payload?: ErrorPayload) {
-		super(message);
-		this.status = status;
-		this.payload = payload;
-	}
-}
+// Optional helper for narrowing
+export const isHttpError = (e: unknown): e is HttpError =>
+	e instanceof HttpError;
 
 type ReauthenticationHandler = () => void;
 type NetworkErrorHandler = () => void;
@@ -36,37 +47,54 @@ const buildInit = (init?: RequestInit): RequestInit => ({
 const isJson = (res: Response) =>
 	res.headers.get("content-type")?.includes("application/json") ?? false;
 
-/** Query-ready fetcher */
+const nowIso = () => new Date().toISOString();
+
+function fabricateDto(res: Response, path: string, msg: string): ErrorDto {
+	return {
+		timestamp: nowIso(),
+		status: res.status,
+		message: msg,
+		path: new URL(path, BASE).pathname,
+	};
+}
+
+function fabricateNetworkDto(path: string, msg = "Network Error"): ErrorDto {
+	return {
+		timestamp: nowIso(),
+		status: 0, // non-HTTP failure
+		message: msg,
+		path: new URL(path, BASE).pathname,
+	};
+}
+
+/** Query-ready fetcher that only throws HttpError wrapping ErrorDto */
 export async function appFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
 	try {
 		const res = await fetch(`${BASE}${path}`, buildInit(init));
 
-		// Success path
+		// Success
 		if (res.ok) {
-			if (res.status === 204) return undefined as T; // widen T to T | undefined if needed
+			if (res.status === 204) return undefined as T;
 			if (isJson(res)) return (await res.json()) as T;
-			// Non-JSON success
 			return undefined as T;
 		}
 
-		// Error path
+		// Auth hook
 		if (res.status === 401 && reauthCb) reauthCb();
 
-		let payload: ErrorPayload | undefined;
+		// Error: prefer server ErrorDto JSON
 		if (isJson(res)) {
-			try { payload = (await res.json()) as ErrorPayload; } catch { /* ignore parse error */ }
+			const dto = (await res.json()) as ErrorDto;
+			throw new HttpError(dto);
 		}
 
-		const message =
-			payload?.globalError ||
-			res.statusText ||
-			(res.status >= 500 ? "Server error" : "Request error");
-
-		throw new AppHttpError(message, res.status, payload);
+		// Fallback: synthesize ErrorDto from Response
+		throw new HttpError(fabricateDto(res, path, res.statusText || "Request error"));
 	} catch (e) {
 		// Network / CORS / DNS, etc.
 		netErrCb();
-		// Re-throw so TanStack Query can handle it
-		throw e;
+		// If it's already our HttpError, bubble it; otherwise wrap as network HttpError
+		if (isHttpError(e)) throw e;
+		throw new HttpError(fabricateNetworkDto(path));
 	}
 }

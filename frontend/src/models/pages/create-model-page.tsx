@@ -53,7 +53,6 @@ export function CreateModelPage() {
 			});
 			navigate("/models");
 		} catch (err) {
-			console.error("Error creating model:", err);
 		} finally {
 			setIsLoading(false);
 		}
@@ -162,7 +161,8 @@ export function CreateModelPage() {
 						<div className="flex space-x-4 pt-6">
 							<motion.button
 								onClick={() => navigate(-1)}
-								className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+								disabled={isLoading}
+								className={`flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isLoading ? "cursor-not-allowed" : ""}`}
 								whileHover={{ scale: 1.02 }}
 								whileTap={{ scale: 0.98 }}
 							>
@@ -172,7 +172,7 @@ export function CreateModelPage() {
 							<motion.button
 								onClick={handleSave}
 								disabled={!isFormValid || isLoading}
-								className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${isFormValid
+								className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 ${isLoading ? "cursor-not-allowed" : ""} font-medium rounded-xl transition-all duration-300 ${isFormValid
 									? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
 									: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
 									}`}
@@ -180,13 +180,18 @@ export function CreateModelPage() {
 								whileTap={isFormValid ? { scale: 0.98 } : {}}
 							>
 								{isLoading ? (
-									<span className="animate-spin">
-										<RefreshCcw size={18} />
-									</span>
+									<>
+										<span className="animate-spin">
+											<RefreshCcw size={18} />
+										</span>
+										<span>Saving...</span>
+									</>
 								) : (
-									<Save size={18} />
+									<>
+										<Save size={18} />
+										<span>Save</span>
+									</>
 								)}
-								<span>Save</span>
 							</motion.button>
 						</div>
 					</div>

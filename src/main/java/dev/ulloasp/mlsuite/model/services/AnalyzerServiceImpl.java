@@ -10,11 +10,14 @@ import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
 import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import jakarta.annotation.Nullable;
@@ -48,9 +51,19 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
                 HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-                Object response = restTemplate.postForObject("http://localhost:8000/build_schema", requestEntity,
-                                Map.class);
+                Object response;
+                try {
+                        response = restTemplate.postForObject("http://localhost:8000/build_schema",
+                                        requestEntity,
+                                        Map.class);
+                } catch (RestClientResponseException ex) {
+                        // FastAPI returned 4xx/5xx (e.g., HTTPException(400, "Not a sklearn
+                        // estimator."))
+                        throw AnalyzerServiceException.fromRestClient(ex, "http://localhost:8000/build_schema");
+                } catch (ResourceAccessException ex) {
+                        // Network/unavailable
+                        throw AnalyzerServiceException.fromNetwork(ex, "http://localhost:8000/build_schema");
+                }
 
                 return (Map<String, Object>) response;
         }
@@ -84,7 +97,20 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 HttpEntity<MultiValueMap<String, HttpEntity<?>>> req = new HttpEntity<>(multipartBody);
 
                 // NO establezcas Content-Type ni Accept; los pone el builder
-                return restTemplate.postForObject("http://localhost:8000/predict", req, Map.class);
+                Object response;
+                try {
+                        response = restTemplate.postForObject("http://localhost:8000/predict", req, Map.class);
+
+                } catch (RestClientResponseException ex) {
+                        // FastAPI returned 4xx/5xx (e.g., HTTPException(400, "Not a sklearn
+                        // estimator."))
+                        throw AnalyzerServiceException.fromRestClient(ex, "http://localhost:8000/predict");
+                } catch (ResourceAccessException ex) {
+                        // Network/unavailable
+                        throw AnalyzerServiceException.fromNetwork(ex, "http://localhost:8000/predict");
+                }
+
+                return (Map<String, Object>) response;
         }
 
 }

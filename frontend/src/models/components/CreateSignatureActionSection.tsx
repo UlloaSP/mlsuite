@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { Save } from "lucide-react";
+import { RefreshCcw, Save } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -37,21 +37,28 @@ export function CreateSignatureActionSection() {
 	const [signatureName, setSignatureName] = useState("");
 	const [version, setVersion] = useState("");
 	const [signatureId, setSignatureId] = useState<string>("");
+	const [isLoading, setIsLoading] = useState(false);
 
 	const isFormValid =
 		schemaErrors <= 0 && signatureName && version && signatureId;
 
 	const handleSaveSignature = async () => {
 		const [major, minor, patch] = version.split(".").map(Number);
-		await mutation.mutateAsync({
-			modelId: modelId!,
-			name: signatureName,
-			inputSignature: schema,
-			major: major,
-			minor: minor,
-			patch: patch,
-			origin: signatureId,
-		});
+		setIsLoading(true);
+		try {
+			await mutation.mutateAsync({
+				modelId: modelId!,
+				name: signatureName,
+				inputSignature: schema,
+				major: major,
+				minor: minor,
+				patch: patch,
+				origin: signatureId,
+			});
+		} catch (err) {
+		} finally {
+			setIsLoading(false);
+		}
 		navigate("/models");
 	};
 
@@ -147,8 +154,19 @@ export function CreateSignatureActionSection() {
 				whileHover={isFormValid ? { scale: 1.02 } : {}}
 				whileTap={isFormValid ? { scale: 0.98 } : {}}
 			>
-				<Save size={18} />
-				<motion.span>Save</motion.span>
+				{isLoading ? (
+					<>
+						<span className="animate-spin">
+							<RefreshCcw size={18} />
+						</span>
+						<span>Saving...</span>
+					</>
+				) : (
+					<>
+						<Save size={18} />
+						<span>Save</span>
+					</>
+				)}
 			</motion.button>
 		</motion.div>
 	);

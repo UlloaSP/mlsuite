@@ -10,6 +10,10 @@ export function SidebarFooter() {
 
 	const navigate = useNavigate();
 
+
+
+
+
 	const handleLogin = (provider: any) => {
 		window.location.href = `https://localhost:8443/oauth2/authorization/${provider}`;
 	};

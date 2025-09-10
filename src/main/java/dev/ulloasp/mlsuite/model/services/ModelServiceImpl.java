@@ -11,14 +11,14 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.entities.Model;
+import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.exceptions.ModelAlreadyExistsException;
-import dev.ulloasp.mlsuite.model.exceptions.ModelDoesNotExistsException;
-import dev.ulloasp.mlsuite.model.exceptions.ModelNameAlreadyExistsException;
-import dev.ulloasp.mlsuite.model.exceptions.ModelNotFromUserException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
 import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import dev.ulloasp.mlsuite.user.entity.User;
@@ -68,16 +68,21 @@ public class ModelServiceImpl implements ModelService {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        Map<String, Object> response;
+        try {
+            Object responseObj = restTemplate.postForObject(
+                    "http://localhost:8000/model/metadata",
+                    requestEntity,
+                    Map.class);
 
-        Object responseObj = restTemplate.postForObject(
-                "http://localhost:8000/model/metadata",
-                requestEntity,
-                Map.class);
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> response = (Map<String, Object>) responseObj;
-        if (response == null) {
-            throw new IllegalStateException("Failed to retrieve model metadata from the analysis service");
+            response = (Map<String, Object>) responseObj;
+        } catch (RestClientResponseException ex) {
+            // FastAPI returned 4xx/5xx (e.g., HTTPException(400, "Not a sklearn
+            // estimator."))
+            throw AnalyzerServiceException.fromRestClient(ex, "http://localhost:8000/model/metadata");
+        } catch (ResourceAccessException ex) {
+            // Network/unavailable
+            throw AnalyzerServiceException.fromNetwork(ex, "http://localhost:8000/model/metadata");
         }
         String type = response.get("type") != null ? response.get("type").toString() : null;
         String specificType = response.get("specificType") != null ? response.get("specificType").toString() : null;
@@ -88,64 +93,7 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public Model updateModel(OAuthProvider oauthProvider, String oauthId, Long modelId, String name) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Model> optionalModel = modelRepository.findById(modelId);
-
-        if (optionalModel.isEmpty()) {
-            throw new ModelDoesNotExistsException(modelId, user.getUsername());
-        }
-
-        Model model = optionalModel.get();
-
-        if (!model.getUser().getId().equals(user.getId())) {
-            throw new ModelNotFromUserException(model.getId(), model.getName(), user.getUsername());
-        }
-
-        if (modelRepository.existsByNameAndUserId(name, user.getId())) {
-            throw new ModelNameAlreadyExistsException(model.getName(), user.getUsername());
-        }
-
-        model.setName(name);
-
-        return modelRepository.save(model);
-
-    }
-
-    @Override
-    public Model getModel(OAuthProvider oauthProvider, String oauthId, Long modelId) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Model> optionalModel = modelRepository.findById(modelId);
-
-        if (optionalModel.isEmpty()) {
-            throw new ModelDoesNotExistsException(modelId, user.getUsername());
-        }
-
-        Model model = optionalModel.get();
-
-        if (!model.getUser().getId().equals(user.getId())) {
-            throw new ModelNotFromUserException(model.getId(), model.getName(), user.getUsername());
-        }
-
-        return model;
-    }
-
-    @Override
-    public List<Model> getModelByUserId(OAuthProvider oauthProvider, String oauthId) {
+    public List<Model> getModels(OAuthProvider oauthProvider, String oauthId) {
         Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
 
         if (optionalUser.isEmpty()) {
@@ -155,31 +103,6 @@ public class ModelServiceImpl implements ModelService {
         User user = optionalUser.get();
 
         return modelRepository.findByUserId(user.getId());
-    }
-
-    @Override
-    public void deleteModel(OAuthProvider oauthProvider, String oauthId, Long modelId) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Model> optionalModel = modelRepository.findById(modelId);
-
-        if (optionalModel.isEmpty()) {
-            throw new ModelDoesNotExistsException(modelId, user.getUsername());
-        }
-
-        Model model = optionalModel.get();
-
-        if (!model.getUser().getId().equals(user.getId())) {
-            throw new ModelNotFromUserException(model.getId(), model.getName(), user.getUsername());
-        }
-
-        modelRepository.delete(model);
     }
 
 }
