@@ -13,14 +13,17 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://localhost:8443"],
+    allow_origins=["https://localhost:8443", "http://localhost:8443"],
     allow_credentials=True,
-    allow_methods=["POST"],
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
-@app.post("/model/metadata")
+@app.post("/metadata")
 async def get_model_metadata(
     model_file: UploadFile = File(...)
 ):

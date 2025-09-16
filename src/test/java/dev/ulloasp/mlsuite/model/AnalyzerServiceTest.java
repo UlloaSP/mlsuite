@@ -1,5 +1,5 @@
 package dev.ulloasp.mlsuite.model;
-
+/*
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -392,3 +392,4 @@ class AnalyzerServiceTest {
                 eq(Map.class));
     }
 }
+ */

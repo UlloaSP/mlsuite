@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.model.services;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -30,6 +31,9 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         @Autowired
         private RestTemplate restTemplate;
 
+        @Value("${analyzer.url}")
+        private String analyzerUrl;
+
         private final ModelRepository modelRepository;
 
         public AnalyzerServiceImpl(ModelRepository modelRepository) {
@@ -53,16 +57,16 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
                 Object response;
                 try {
-                        response = restTemplate.postForObject("http://localhost:8000/build_schema",
+                        response = restTemplate.postForObject(analyzerUrl + "/build_schema",
                                         requestEntity,
                                         Map.class);
                 } catch (RestClientResponseException ex) {
                         // FastAPI returned 4xx/5xx (e.g., HTTPException(400, "Not a sklearn
                         // estimator."))
-                        throw AnalyzerServiceException.fromRestClient(ex, "http://localhost:8000/build_schema");
+                        throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/build_schema");
                 } catch (ResourceAccessException ex) {
                         // Network/unavailable
-                        throw AnalyzerServiceException.fromNetwork(ex, "http://localhost:8000/build_schema");
+                        throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/build_schema");
                 }
 
                 return (Map<String, Object>) response;
@@ -99,15 +103,15 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 // NO establezcas Content-Type ni Accept; los pone el builder
                 Object response;
                 try {
-                        response = restTemplate.postForObject("http://localhost:8000/predict", req, Map.class);
+                        response = restTemplate.postForObject(analyzerUrl + "/predict", req, Map.class);
 
                 } catch (RestClientResponseException ex) {
                         // FastAPI returned 4xx/5xx (e.g., HTTPException(400, "Not a sklearn
                         // estimator."))
-                        throw AnalyzerServiceException.fromRestClient(ex, "http://localhost:8000/predict");
+                        throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/predict");
                 } catch (ResourceAccessException ex) {
                         // Network/unavailable
-                        throw AnalyzerServiceException.fromNetwork(ex, "http://localhost:8000/predict");
+                        throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/predict");
                 }
 
                 return (Map<String, Object>) response;
