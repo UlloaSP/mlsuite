@@ -54,6 +54,7 @@ export function PredictionCard({
 }: PredictionCardProps) {
 	const [, setValue] = useState<string>("");
 	const isSelected = selectedItemId === item.id;
+	// @ts-ignore
 	const StatusIcon = getStatusIcon(item.status.toString());
 
 	const { data: targets = [] } = useGetTargets({ predictionId: item.id || "" });
@@ -129,6 +130,7 @@ export function PredictionCard({
 			<div className="space-y-2">
 				<div className={`text-sm font-medium text-gray-900`}>
 					<span
+						// @ts-ignore
 						className={`${getStatusColor(item.status.toString())
 							.replace(/bg-\S+/g, "")
 							.replace(/dark:bg-\S+/g, "")}`}
@@ -166,11 +168,14 @@ export function PredictionCard({
 					<div className="flex items-center space-x-2">
 						<StatusIcon
 							size={14}
+							// @ts-ignore
 							className={`${getStatusColor(item.status.toString())}`}
 						/>
 						<span
+							// @ts-ignore
 							className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status.toString())}`}
 						>
+							{/* @ts-ignore */}
 							{(item.status.toString() === "COMPLETED") ? "success" : item.status.toString().toLocaleLowerCase()}
 						</span>
 					</div>

@@ -6,6 +6,6 @@ export default defineConfig({
 	plugins: [react(), tailwindcss()],
 	build: {
 		outDir: "../target/classes/public",
-		emptyOutDir: true,
+		emptyOutDir: false,
 	},
 });

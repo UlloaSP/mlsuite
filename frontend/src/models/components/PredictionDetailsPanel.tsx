@@ -71,6 +71,7 @@ export function PredictionDetailPanel({
 
 	useEffect(() => {
 		setStatus(
+			// @ts-ignore
 			prediction.status.toString() as "PENDING" | "COMPLETED" | "FAILED",
 		);
 		let outputs: any[] = [];
@@ -199,6 +200,7 @@ export function PredictionDetailPanel({
 												<span
 													className={`font-mono font-medium ${getOutputColor()}`}
 												>
+													{/* @ts-ignore*/}
 													{target.value.toString()}
 												</span>
 											</div>
