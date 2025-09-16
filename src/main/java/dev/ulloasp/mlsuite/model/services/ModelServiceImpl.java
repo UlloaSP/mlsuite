@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,6 +35,9 @@ public class ModelServiceImpl implements ModelService {
     private RestTemplate restTemplate;
     private final UserRepository userRepository;
     private final ModelRepository modelRepository;
+
+    @Value("${analyzer.url}")
+    private String analyzerUrl;
 
     public ModelServiceImpl(UserRepository userRepository, ModelRepository modelRepository) {
         this.userRepository = userRepository;
@@ -71,7 +75,7 @@ public class ModelServiceImpl implements ModelService {
         Map<String, Object> response;
         try {
             Object responseObj = restTemplate.postForObject(
-                    "http://localhost:8000/model/metadata",
+                    analyzerUrl + "/metadata",
                     requestEntity,
                     Map.class);
 
@@ -79,10 +83,10 @@ public class ModelServiceImpl implements ModelService {
         } catch (RestClientResponseException ex) {
             // FastAPI returned 4xx/5xx (e.g., HTTPException(400, "Not a sklearn
             // estimator."))
-            throw AnalyzerServiceException.fromRestClient(ex, "http://localhost:8000/model/metadata");
+            throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/metadata");
         } catch (ResourceAccessException ex) {
             // Network/unavailable
-            throw AnalyzerServiceException.fromNetwork(ex, "http://localhost:8000/model/metadata");
+            throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/metadata");
         }
         String type = response.get("type") != null ? response.get("type").toString() : null;
         String specificType = response.get("specificType") != null ? response.get("specificType").toString() : null;

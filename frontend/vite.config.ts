@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
 	build: {
-		outDir: "../target/classes/public",
+		outDir: "./dist",
 		emptyOutDir: false,
 	},
 });
