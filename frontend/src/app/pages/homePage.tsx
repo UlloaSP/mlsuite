@@ -77,7 +77,7 @@ export function HomePage() {
 					animate={{ y: 0, opacity: 1 }}
 					transition={{ delay: 0.35 }}
 				>
-					{FEATURES.map((f, i) => (
+					{FEATURES.map((f, _) => (
 						<motion.div
 							key={f.title}
 							className="bg-white/80 dark:bg-gray-800/80 backdrop-blur p-6 rounded-2xl shadow-lg text-left border border-gray-100 dark:border-gray-700"
