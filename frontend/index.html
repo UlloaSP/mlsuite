@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- 1. El navegador sabe que hay dos esquemas de color -->
+  <meta name="color-scheme" content="dark light">
+
+  <!-- 2. Dirección cromática de la UI del browser -->
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101828">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <title>ML Suite</title>
+  <style>
+    @import "tailwindcss";
+    @custom-variant dark (&:where(.dark, .dark *));
+
+    html {
+      background: #101828;
+    }
+
+    @media (prefers-color-scheme: light) {
+      html {
+        background: #ffffff;
+      }
+    }
+  </style>
+  <script>
+    (function () {
+      const KEY = 'ui/theme';
+      const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
+      const saved = localStorage.getItem(KEY);
+      const theme = saved ?? (sysDark ? 'dark' : 'light');
+
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+
+      /* opcional: sincronizar <meta name="theme-color"> en caliente */
+      const meta = document.querySelector('meta[name="theme-color"][media*="color-scheme"]');
+      if (meta) meta.setAttribute('content', theme === 'dark' ? '#101828' : '#ffffff');
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
