@@ -1,12 +1,14 @@
 networks:
   appnet:
 
+
 volumes:
   pg_data:
 
+
 services:
   postgres:
-    image: postgres:17.4
+    image: postgres:18
     container_name: db-postgres
     environment:
       POSTGRES_DB: ${DB_PROD}
@@ -18,11 +20,11 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_PROD}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_PROD}" ]
       interval: 10s
       timeout: 5s
       retries: 10
-    networks: [appnet]
+    networks: [ appnet ]
 
   py-analyzer:
     build:
@@ -34,7 +36,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks: [appnet]
+    networks: [ appnet ]
 
   spring-app:
     build:
@@ -51,7 +53,7 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
 
-      ANALYZER_BASE_URL: http://py-analyzer:8000
+      ANALYZER_BASE_URL: https://py-analyzer:8000
 
       # OAuth, pass-through from your task env
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
@@ -63,7 +65,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    networks: [appnet]
+    networks: [ appnet ]
 
   frontend:
     build:
@@ -77,4 +79,4 @@ services:
     depends_on:
       spring-app:
         condition: service_started
-    networks: [appnet]
+    networks: [ appnet ]

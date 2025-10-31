@@ -99,7 +99,7 @@ public class ModelServiceTest {
          * when(modelFile.getResource()).thenReturn(mock(org.springframework.core.io.
          * Resource.class));
          * when(restTemplate.postForObject(
-         * eq("http://localhost:8000/model/metadata"),
+         * eq("https://localhost:8000/model/metadata"),
          * any(HttpEntity.class),
          * eq(Map.class))).thenReturn(apiResponse);
          * when(modelRepository.save(any(Model.class))).thenReturn(testModel);
@@ -120,7 +120,7 @@ public class ModelServiceTest {
          * verify(modelRepository).existsByNameAndUserId(modelName, testUser.getId());
          * verify(modelFile).getBytes();
          * verify(restTemplate).postForObject(
-         * eq("http://localhost:8000/model/metadata"),
+         * eq("https://localhost:8000/model/metadata"),
          * any(HttpEntity.class),
          * eq(Map.class));
          * verify(modelRepository).save(any(Model.class));
@@ -212,7 +212,7 @@ public class ModelServiceTest {
          * when(modelFile.getResource()).thenReturn(mock(org.springframework.core.io.
          * Resource.class));
          * when(restTemplate.postForObject(
-         * eq("http://localhost:8000/model/metadata"),
+         * eq("https://localhost:8000/model/metadata"),
          * any(HttpEntity.class),
          * eq(Map.class))).thenThrow(restException);
          * 
@@ -223,7 +223,7 @@ public class ModelServiceTest {
          * modelFile));
          * 
          * assertEquals(400, exception.getStatus());
-         * assertEquals("http://localhost:8000/model/metadata",
+         * assertEquals("https://localhost:8000/model/metadata",
          * exception.getEndpoint());
          * assertEquals("Not a sklearn estimator", exception.getDetail());
          * 
@@ -231,7 +231,7 @@ public class ModelServiceTest {
          * verify(modelRepository).existsByNameAndUserId(modelName, testUser.getId());
          * verify(modelFile).getBytes();
          * verify(restTemplate).postForObject(
-         * eq("http://localhost:8000/model/metadata"),
+         * eq("https://localhost:8000/model/metadata"),
          * any(HttpEntity.class),
          * eq(Map.class));
          * verify(modelRepository, never()).save(any());
@@ -253,7 +253,7 @@ public class ModelServiceTest {
          * when(modelFile.getResource()).thenReturn(mock(org.springframework.core.io.
          * Resource.class));
          * when(restTemplate.postForObject(
-         * eq("http://localhost:8000/model/metadata"),
+         * eq("https://localhost:8000/model/metadata"),
          * any(HttpEntity.class),
          * eq(Map.class))).thenThrow(resourceException);
          * 
@@ -264,7 +264,7 @@ public class ModelServiceTest {
          * modelFile));
          * 
          * assertEquals(0, exception.getStatus()); // Network error has status 0
-         * assertEquals("http://localhost:8000/model/metadata",
+         * assertEquals("https://localhost:8000/model/metadata",
          * exception.getEndpoint());
          * assertEquals("Analyzer service unreachable", exception.getDetail());
          * 
@@ -272,7 +272,7 @@ public class ModelServiceTest {
          * verify(modelRepository).existsByNameAndUserId(modelName, testUser.getId());
          * verify(modelFile).getBytes();
          * verify(restTemplate).postForObject(
-         * eq("http://localhost:8000/model/metadata"),
+         * eq("https://localhost:8000/model/metadata"),
          * any(HttpEntity.class),
          * eq(Map.class));
          * verify(modelRepository, never()).save(any());
@@ -296,7 +296,7 @@ public class ModelServiceTest {
          * when(modelFile.getResource()).thenReturn(mock(org.springframework.core.io.
          * Resource.class));
          * when(restTemplate.postForObject(
-         * eq("http://localhost:8000/model/metadata"),
+         * eq("https://localhost:8000/model/metadata"),
          * any(HttpEntity.class),
          * eq(Map.class))).thenReturn(apiResponse);
          * when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> {

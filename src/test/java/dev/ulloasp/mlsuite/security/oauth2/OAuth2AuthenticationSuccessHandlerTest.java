@@ -74,7 +74,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         // Then
         verify(userService).signIn(eq(OAuthProvider.GITHUB), eq("12345"));
         verify(userService, never()).signUp(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-        verify(response).sendRedirect("http://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/");
     }
 
     @Test
@@ -98,7 +98,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         verify(userService).signIn(eq(OAuthProvider.GITHUB), eq("12345"));
         verify(userService).signUp(eq("johndoe"), eq("john@example.com"), eq(OAuthProvider.GITHUB),
                 eq("12345"), eq("https://avatar.url"), eq("John Doe"));
-        verify(response).sendRedirect("http://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/");
     }
 
     @Test
@@ -127,7 +127,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         verify(userService, times(2)).signIn(eq(OAuthProvider.GITHUB), eq("12345"));
         verify(userService).signUp(eq("johndoe"), eq("john@example.com"), eq(OAuthProvider.GITHUB),
                 eq("12345"), eq("https://avatar.url"), eq("John Doe"));
-        verify(response).sendRedirect("http://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/");
     }
 
     @Test
@@ -149,7 +149,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         // Then
         verify(userService).signIn(eq(OAuthProvider.GOOGLE), eq("google-sub-123"));
         verify(userService, never()).signUp(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-        verify(response).sendRedirect("http://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/");
     }
 
     @Test
@@ -173,7 +173,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         verify(userService).signIn(eq(OAuthProvider.GOOGLE), eq("google-sub-123"));
         verify(userService).signUp(eq("Jane"), eq("jane@example.com"), eq(OAuthProvider.GOOGLE),
                 eq("google-sub-123"), eq("https://picture.url"), eq("Jane Doe"));
-        verify(response).sendRedirect("http://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/");
     }
 
     @Test
@@ -197,7 +197,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         verify(userService).signIn(eq(OAuthProvider.GITHUB), eq(""));
         verify(userService).signUp(eq("johndoe"), eq("john@example.com"), eq(OAuthProvider.GITHUB),
                 eq(""), eq("https://avatar.url"), eq("John Doe"));
-        verify(response).sendRedirect("http://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/");
     }
 
     @Test
@@ -221,7 +221,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         verify(userService).signIn(eq(OAuthProvider.GOOGLE), eq(""));
         verify(userService).signUp(eq("Jane"), eq("jane@example.com"), eq(OAuthProvider.GOOGLE),
                 eq(""), eq("https://picture.url"), eq("Jane Doe"));
-        verify(response).sendRedirect("http://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/");
     }
 
     @Test
@@ -239,7 +239,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
 
         // Then
         verify(userService).signIn(eq(OAuthProvider.SYSTEM), eq(""));
-        verify(response).sendRedirect("http://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/");
     }
 
     @Test

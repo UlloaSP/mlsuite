@@ -64,6 +64,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 userService.signIn(OAuthProvider.fromString(registrationId), oauthId);
             }
         }
-        response.sendRedirect("http://localhost:5173/");
+        response.sendRedirect("https://localhost:5173/");
     }
 }

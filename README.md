@@ -1,93 +1,557 @@
-# mlsuite
+# MLSuite - Plataforma de Gestión de Modelos de Machine Learning
 
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Java](https://img.shields.io/badge/Java-25-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.7-green)
+![Python](https://img.shields.io/badge/Python-3.14+-blue)
+![React](https://img.shields.io/badge/React-19-61DAFB)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
 
+## 📋 Descripción General
 
-## Getting started
+**MLSuite** es una plataforma integral para la gestión, análisis y despliegue de modelos de Machine Learning. Proporciona una solución completa que integra:
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- **Backend Java**: API REST con Spring Boot 3.5.7 para gestión de modelos, predicciones y usuarios
+- **Backend Python**: Servicio FastAPI especializado en análisis y predicciones con scikit-learn
+- **Frontend React**: Interfaz moderna construida con React 19, Vite y TypeScript
+- **Base de datos**: PostgreSQL para persistencia de datos
+- **Infraestructura**: Docker Compose para despliegue containerizado
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## 🏗️ Arquitectura
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.irlab.org/pablo.ulloa/mlsuite.git
-git branch -M main
-git push -uf origin main
+┌─────────────────────────────────────────────────────────────────┐
+│                        Frontend (React + Vite)                   │
+│                   Puerto: 5173 (desarrollo)                      │
+└───────────────────────┬─────────────────────────────────────────┘
+                        │
+┌───────────────────────▼─────────────────────────────────────────┐
+│             Spring Boot API (Java 25 + Spring Boot 3.5.7)        │
+│             Puerto: 8443 | Base de datos: PostgreSQL             │
+├─────────────────────────────────────────────────────────────────┤
+│ Módulos:                                                         │
+│  • User: Gestión de usuarios y autenticación OAuth2             │
+│  • Model: CRUD de modelos de ML                                 │
+│  • Prediction: Motor de predicciones                            │
+│  • Signature: Firmas digitales de modelos                       │
+│  • Security: Autenticación (GitHub, Google)                    │
+│  • Analyzer: Integración con servicio de análisis               │
+└───────────────────────┬─────────────────────────────────────────┘
+                        │
+        ┌───────────────┴───────────────┐
+        │                               │
+┌───────▼──────────────┐    ┌──────────▼──────────────┐
+│ Python Analyzer API  │    │   PostgreSQL Database   │
+│ (FastAPI)            │    │   Puerto: 5432          │
+│ Puerto: 8000         │    │                         │
+│                      │    │                         │
+│ • Metadata Extract   │    │ • Users                │
+│ • Schema Building    │    │ • Models               │
+│ • Predictions       │    │ • Predictions          │
+└──────────────────────┘    │ • Targets              │
+                            │ • Signatures           │
+                            └────────────────────────┘
 ```
 
-## Integrate with your tools
+## 🚀 Tecnologías
 
-- [ ] [Set up project integrations](https://gitlab.irlab.org/pablo.ulloa/mlsuite/-/settings/integrations)
+### Backend Java (Spring Boot)
+- **Framework**: Spring Boot 3.5.7
+- **Java**: 25
+- **Seguridad**: Spring Security + OAuth2 (GitHub, Google)
+- **JWT**: jjwt 0.13.0 para tokens
+- **Database**: PostgreSQL + H2 (testing)
+- **ORM**: Spring Data JPA + Hibernate
+- **Testing**: JUnit 5 + TestContainers
+- **Validación**: Hibernate Validator
 
-## Collaborate with your team
+### Backend Python (FastAPI)
+- **Framework**: FastAPI 0.120.3
+- **ASGI**: Uvicorn 0.38.0
+- **ML**: scikit-learn 1.7.2 + joblib 1.5.2
+- **Data**: pandas 2.3.3
+- **Schema**: mlschema 0.1.2
+- **CORS**: Middleware para comunicación cross-origin
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+### Frontend (React + Vite)
+- **Framework**: React 19
+- **Build**: Vite 7.1.12
+- **Lenguaje**: TypeScript 5.9.3
+- **Estilos**: Tailwind CSS
+- **Editor**: Monaco Editor (React)
+- **Routing**: React Router v7
+- **Estado**: Jotai (atoms) + React Query
+- **Formularios**: mlform 0.1.2
+- **Animaciones**: Motion
 
-## Test and Deploy
+### Infraestructura
+- **Containerización**: Docker + Docker Compose
+- **Base de Datos**: PostgreSQL 18
+- **Networking**: Docker Network personalizada
+- **Volúmenes**: Persistencia de datos PostgreSQL
 
-Use the built-in continuous integration in GitLab.
+## 📁 Estructura del Proyecto
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+```
+mlsuite/
+├── README.md
+├── docker-compose.yml          # Configuración de servicios
+├── pom.xml                     # Maven - Backend Java
+│
+├── backend/                    # Servicio Python FastAPI
+│   ├── Dockerfile
+│   ├── main.py                 # Aplicación principal
+│   ├── pyproject.toml          # Dependencias Python
+│   └── README.md
+│
+├── frontend/                   # Aplicación React
+│   ├── Dockerfile
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   ├── package.json
+│   ├── index.html
+│   ├── src/
+│   │   ├── main.tsx
+│   │   ├── Layout.tsx
+│   │   ├── app/                # Lógica de aplicación
+│   │   │   ├── api/            # Llamadas API
+│   │   │   ├── atoms.ts        # Estado global (Jotai)
+│   │   │   ├── components/     # Componentes reutilizables
+│   │   │   ├── pages/          # Páginas principales
+│   │   │   ├── models/         # Tipos TypeScript
+│   │   │   ├── router/         # Configuración de rutas
+│   │   │   └── user/           # Lógica de usuario
+│   │   └── @types/             # Definiciones de tipos
+│   └── public/                 # Activos estáticos
+│
+├── src/                        # Backend Java
+│   ├── main/
+│   │   ├── java/dev/ulloasp/mlsuite/
+│   │   │   ├── MlsuiteApplication.java     # Clase principal
+│   │   │   ├── model/                      # Gestión de modelos
+│   │   │   │   ├── controllers/
+│   │   │   │   ├── services/
+│   │   │   │   └── entities/
+│   │   │   ├── prediction/                 # Motor de predicciones
+│   │   │   │   ├── controllers/
+│   │   │   │   ├── services/
+│   │   │   │   └── entities/
+│   │   │   ├── user/                       # Gestión de usuarios
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   └── entity/
+│   │   │   ├── signature/                  # Firmas de modelos
+│   │   │   │   ├── controllers/
+│   │   │   │   ├── services/
+│   │   │   │   └── entities/
+│   │   │   ├── security/                   # Configuración de seguridad
+│   │   │   └── util/                       # Utilidades
+│   │   └── resources/
+│   │       ├── application.properties      # Config producción
+│   │       └── application-test.properties # Config testing
+│   └── test/java/                          # Tests unitarios
+│
+└── Dockerfile                              # Dockerfile para Java
+```
 
-***
+## 🔧 Módulos Java
 
-# Editing this README
+### 1. **User Module**
+Gestión de usuarios y autenticación.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+**Entidades:**
+- `User`: Información del usuario y perfil
+- `OAuthProvider`: Proveedores OAuth (GitHub, Google)
 
-## Suggestions for a good README
+**Endpoints:**
+- `GET /api/users/{id}` - Obtener usuario
+- `POST /api/users` - Crear usuario
+- `PUT /api/users/{id}` - Actualizar usuario
+- `DELETE /api/users/{id}` - Eliminar usuario
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### 2. **Model Module**
+Gestión del ciclo de vida de modelos ML.
 
-## Name
-Choose a self-explaining name for your project.
+**Entidades:**
+- `Model`: Definición de modelo (nombre, versión, metadata)
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+**Controladores:**
+- `ModelController`: CRUD de modelos
+- `AnalyzerController`: Integración con servicio Python
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+**Endpoints:**
+- `GET /api/models` - Listar modelos
+- `POST /api/models` - Crear modelo
+- `GET /api/models/{id}` - Obtener modelo
+- `PUT /api/models/{id}` - Actualizar modelo
+- `DELETE /api/models/{id}` - Eliminar modelo
+- `POST /api/analyzer/metadata` - Extraer metadatos
+- `POST /api/analyzer/schema` - Generar esquema
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+### 3. **Prediction Module**
+Motor de predicciones y gestión de targets.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+**Entidades:**
+- `Prediction`: Resultado de predicción
+- `Target`: Variable objetivo para predicciones
+- `PredictionStatus`: Estado de predicción
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+**Endpoints:**
+- `POST /api/predictions` - Crear predicción
+- `GET /api/predictions/{id}` - Obtener predicción
+- `GET /api/predictions` - Listar predicciones
+- `GET /api/targets` - Listar targets
+- `POST /api/targets` - Crear target
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 4. **Signature Module**
+Firmas digitales de modelos para validación.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+**Entidades:**
+- `Signature`: Firma digital de modelo
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+**Endpoints:**
+- `POST /api/signatures` - Crear firma
+- `GET /api/signatures/{id}` - Verificar firma
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### 5. **Security Module**
+Autenticación OAuth2 y seguridad.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+**Componentes:**
+- `SecurityConfig`: Configuración Spring Security
+- `OAuth2AuthenticationSuccessHandler`: Manejo post-autenticación
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+**Proveedores soportados:**
+- GitHub
+- Google
 
-## License
-For open source projects, say how it is licensed.
+## 🐍 Endpoints Python (FastAPI)
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### Health Check
+- **GET `/health`** - Verifica el estado del servicio
+
+### Metadata Extraction
+- **POST `/metadata`** - Extrae metadatos de modelo sklearn
+  ```json
+  {
+    "fileName": "model.joblib",
+    "type": "classifier|regressor",
+    "specificType": "RandomForestClassifier"
+  }
+  ```
+
+### Schema Building
+- **POST `/build_schema`** - Genera esquema MLSchema
+  - Parámetros: modelo (.joblib) + datos opcionales (.joblib)
+  - Retorna: esquema JSON con tipos de datos y salidas
+
+### Predictions
+- **POST `/predict`** - Realiza predicciones
+  - Parámetros: modelo (.joblib) + datos JSON
+  - Retorna: predicción con probabilidades (clasificador) o valores (regresor)
+
+## 📦 Variables de Entorno
+
+Crear archivo `.env` en la raíz del proyecto:
+
+```env
+# Database
+DB_HOST=postgres
+DB_PORT=5432
+DB_PROD=mlsuite_db
+DB_USER=postgres
+DB_PASS=your_secure_password
+
+# Services
+SPRING_PORT=8443
+PYTHON_PORT=8000
+WEB_PORT=5173
+
+# OAuth2 - GitHub
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+
+# OAuth2 - Google
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+## 🐳 Docker Compose Services
+
+### PostgreSQL
+- **Puerto**: 5432 (configurable)
+- **Usuario**: postgres
+- **Base de datos**: mlsuite_db
+- **Volumen**: pg_data (persistencia)
+- **Health Check**: Activo
+
+### Python Analyzer
+- **Puerto**: 8000
+- **Dependencias**: PostgreSQL
+- **Volumen**: Código fuente
+
+### Spring Boot API
+- **Puerto**: 8443 (HTTPS)
+- **Dependencias**: PostgreSQL
+- **Variables de entorno**: OAuth2, database
+- **Volumen**: Código fuente
+
+### Frontend
+- **Puerto**: 5173 (desarrollo) / 80 (producción)
+- **Dependencias**: Spring Boot API
+- **Variables de entorno**: URL backend
+
+## 🚀 Inicio Rápido
+
+### Requisitos Previos
+- Docker y Docker Compose instalados
+- Java 25+ (para desarrollo local)
+- Python 3.14+ (para desarrollo local backend)
+- Node.js 18+ (para desarrollo local frontend)
+- Git
+
+### 1. Clonar el Repositorio
+```bash
+git clone https://github.com/UlloaSP/mlsuite.git
+cd mlsuite
+```
+
+### 2. Configurar Variables de Entorno
+```bash
+cp .env.example .env
+# Editar .env con tus valores
+```
+
+### 3. Iniciar con Docker Compose
+```bash
+# Iniciar todos los servicios
+docker compose up -d --build
+
+# Ver logs
+docker compose logs -f
+
+# Detener servicios
+docker compose down -v
+```
+
+### 4. Acceder a la Aplicación
+- **Frontend**: https://localhost:5173
+- **API Backend**: https://localhost:8443
+- **Python Analyzer**: https://localhost:8000
+- **Base de datos**: localhost:5432
+
+## 💻 Desarrollo Local
+
+### Backend Java
+
+```bash
+# Compilar
+mvn clean package
+
+# Ejecutar
+mvn spring-boot:run
+
+# Tests
+mvn test
+
+# Coverage
+mvn test jacoco:report
+```
+
+**Aplicación en**: http://localhost:8443
+
+### Backend Python
+
+```bash
+cd backend
+
+# Instalar dependencias
+pip install -r requirements.txt
+# o usar uv
+uv sync
+
+# Ejecutar
+uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+**API en**: http://localhost:8000/docs
+
+### Frontend
+
+```bash
+cd frontend
+
+# Instalar dependencias
+npm install
+
+# Desarrollo con hot reload
+npm run dev
+
+# Build producción
+npm run build
+
+# Preview producción
+npm run preview
+```
+
+**Aplicación en**: http://localhost:5173
+
+## 🧪 Testing
+
+### Java Tests
+```bash
+# Ejecutar todos los tests
+mvn test
+
+# Test específico
+mvn test -Dtest=UserServiceTest
+
+# Con covertura
+mvn test jacoco:report
+```
+
+**Tests disponibles:**
+- UserServiceTest, UserControllerTest
+- ModelServiceTest, ModelControllerTest
+- PredictionServiceTest, PredictionControllerTest
+- TargetServiceTest, TargetControllerTest
+- SignatureServiceTest, SignatureControllerTest
+- AnalyzerControllerTest
+- SecurityConfigTest
+- OAuth2AuthenticationSuccessHandlerTest
+- PredictionStatusTest
+- ErrorDtoTest
+- Múltiples exception tests
+
+### Python Tests
+```bash
+cd backend
+pytest
+```
+
+## 🔐 Seguridad
+
+### Autenticación
+- **OAuth2**: GitHub y Google
+- **JWT**: Tokens con JJWT
+- **HTTPS**: SSL/TLS obligatorio en producción
+- **CORS**: Configurado para desarrollo
+
+### Validación
+- **Validación de entrada**: Hibernate Validator
+- **Seguridad de base datos**: Prepared Statements
+- **Control de acceso**: Spring Security
+
+## 🔗 Flujo de Autenticación
+
+```
+1. Usuario hace login con GitHub/Google
+2. OAuth2AuthenticationSuccessHandler procesa el token
+3. Backend genera JWT
+4. Frontend almacena JWT
+5. Requests posteriores incluyen Authorization: Bearer <JWT>
+6. Spring Security valida JWT en cada request
+```
+
+## 📊 Flujo de Predicción
+
+```
+1. Usuario carga modelo (.joblib) en frontend
+2. Frontend envía a Spring API
+3. Spring invoca Python analyzer para extraer metadatos
+4. Metadata se almacena en BD
+5. Usuario envía datos para predicción
+6. Spring invoca Python analyzer con modelo + datos
+7. Python retorna predicción
+8. Spring almacena resultado en BD
+9. Frontend muestra resultado
+```
+
+## 📝 Logging
+
+### Spring Boot
+```properties
+# application.properties
+logging.level.root=INFO
+logging.level.dev.ulloasp.mlsuite=DEBUG
+logging.pattern.console=%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+```
+
+### Python
+```python
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+```
+
+## 🐛 Troubleshooting
+
+### Conexión rechazada a PostgreSQL
+```bash
+# Verificar que el contenedor está corriendo
+docker compose ps
+
+# Ver logs de PostgreSQL
+docker compose logs postgres
+```
+
+### Frontend no puede conectar a backend
+- Verificar `VITE_BACKEND_URL` en `.env`
+- Revisar CORS en Spring Security
+- Verificar SSL certificates
+
+### Modelo no tiene feature_names_in_
+- Asegurar que el modelo fue entrenado con pandas DataFrames
+- O usar `sklearn.preprocessing.ColumnTransformer`
+
+## 📈 Monitoreo
+
+### Spring Actuator
+- **GET `/actuator`** - Endpoints disponibles
+- **GET `/actuator/health`** - Estado de salud
+- **GET `/actuator/metrics`** - Métricas
+
+### Docker
+```bash
+# CPU, memoria, etc.
+docker compose stats
+
+# Logs en tiempo real
+docker compose logs -f [service_name]
+```
+
+## 🤝 Contribuir
+
+1. Fork el repositorio
+2. Crea una rama (`git checkout -b feature/AmazingFeature`)
+3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📄 Licencia
+
+Este proyecto está bajo licencia MIT.
+
+## 👥 Autores
+
+- **Autor**: UlloaSP
+- **Email**: [tu-email@example.com]
+
+## 🔗 Enlaces
+
+- [GitHub Repository](https://github.com/UlloaSP/mlsuite)
+- [Spring Boot Docs](https://spring.io/projects/spring-boot)
+- [FastAPI Docs](https://fastapi.tiangolo.com/)
+- [React Docs](https://react.dev)
+- [Docker Docs](https://docs.docker.com/)
+
+## 📞 Soporte
+
+Para reportar problemas o sugerencias:
+- Abre una [GitHub Issue](https://github.com/UlloaSP/mlsuite/issues)
+- Contacta al equipo de desarrollo
+
+---
+
+**Última actualización**: Octubre 2025
+**Versión**: 0.1.0
+**Estado**: En desarrollo

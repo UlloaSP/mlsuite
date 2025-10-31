@@ -35,3 +35,8 @@ frontend/package-lock.json
 
 # Custom
 backend/__pycache__/
+
+# Environment files
+.env.local
+.env.local.*.backup
+*.env.backup

@@ -30,21 +30,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/", "/assets/**").permitAll()
-                .anyRequest().authenticated()
-                )
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/", "/assets/**").permitAll()
+                        .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2Login(oauth2 -> oauth2
-                .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
-                .redirectionEndpoint(redir -> redir.baseUri("/login/oauth2/code/*"))
-                .successHandler(oauth2SuccessHandler))
+                        .authorizationEndpoint(authorization -> authorization.baseUri("/oauth2/authorization"))
+                        .redirectionEndpoint(redir -> redir.baseUri("/login/oauth2/code/*"))
+                        .successHandler(oauth2SuccessHandler))
                 .logout(logout -> logout
-                .logoutUrl("/api/logout")
-                .logoutSuccessHandler(
-                        new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
-                .deleteCookies("JSESSIONID")
-                );
+                        .logoutUrl("/api/logout")
+                        .logoutSuccessHandler(
+                                new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+                        .deleteCookies("JSESSIONID"));
         return http.build();
     }
 
@@ -61,7 +59,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:5173");
+        config.addAllowedOrigin("https://localhost:5173");
         config.addAllowedOrigin("https://localhost:8443");
         config.addAllowedHeader("*");
         config.addAllowedMethod("OPTIONS");
