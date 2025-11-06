@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { Editor } from "@monaco-editor/react";
 import { useAtom } from "jotai";
 import { parse as parseWithSourceMap } from "json-source-map";

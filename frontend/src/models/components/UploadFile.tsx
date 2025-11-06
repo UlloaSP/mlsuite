@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { CheckCircle, Upload } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -60,13 +65,12 @@ export function UploadFile({
 	};
 	return (
 		<div
-			className={`relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300 ${
-				isDragOver
+			className={`relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300 ${isDragOver
 					? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
 					: selectedFile
 						? "border-green-400 bg-green-50 dark:bg-green-900/20"
 						: "border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
-			}`}
+				}`}
 			onDrop={handleDrop}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}

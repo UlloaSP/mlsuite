@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 export { AuthButton } from "./AuthButton";
 export { PageTransition } from "./PageTransition";
 export { Sidebar } from "./Sidebar";
@@ -6,3 +11,4 @@ export { SidebarHeader } from "./SidebarHeader";
 export { SidebarNavigation } from "./SidebarNavigation";
 export { SidebarSection } from "./SidebarSection";
 export { SidebarTile } from "./SidebarTile";
+

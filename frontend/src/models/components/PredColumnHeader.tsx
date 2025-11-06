@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { motion } from "motion/react";
 import type { PredictionDto } from "../api/modelService";
 import { ColumnActionButton } from "./ColumnActionButton";

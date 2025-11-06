@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { Database, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
 import type { ModelDto } from "../api/modelService";
@@ -43,11 +48,10 @@ export function ModelCard({
 		<motion.button
 			key={item.id}
 			onClick={() => onItemSelect(item.id)}
-			className={`items-start text-left p-4 rounded-xl border transition-all grid grid-cols-[2fr_12fr_2fr] duration-300 ${
-				isSelected
+			className={`items-start text-left p-4 rounded-xl border transition-all grid grid-cols-[2fr_12fr_2fr] duration-300 ${isSelected
 					? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 shadow-md"
 					: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-			}`}
+				}`}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: index * 0.1, duration: 0.3 }}

@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { ArrowRight, Chrome, Github, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";

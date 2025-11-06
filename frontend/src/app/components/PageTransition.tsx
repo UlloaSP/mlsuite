@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { AnimatePresence, motion } from "motion/react";
 
 export function PageTransition({ children, pageKey, iconPosition }: any) {
@@ -11,15 +16,15 @@ export function PageTransition({ children, pageKey, iconPosition }: any) {
 				initial={
 					iconPosition
 						? {
-								scale: 0,
-								x: iconPosition.x - centerX,
-								y: iconPosition.y - centerY,
-								opacity: 0,
-							}
+							scale: 0,
+							x: iconPosition.x - centerX,
+							y: iconPosition.y - centerY,
+							opacity: 0,
+						}
 						: {
-								opacity: 0,
-								scale: 0.9,
-							}
+							opacity: 0,
+							scale: 0.9,
+						}
 				}
 				animate={{
 					scale: 1,
@@ -30,15 +35,15 @@ export function PageTransition({ children, pageKey, iconPosition }: any) {
 				exit={
 					iconPosition
 						? {
-								scale: 0,
-								x: iconPosition.x - centerX,
-								y: iconPosition.y - centerY,
-								opacity: 0,
-							}
+							scale: 0,
+							x: iconPosition.x - centerX,
+							y: iconPosition.y - centerY,
+							opacity: 0,
+						}
 						: {
-								opacity: 0,
-								scale: 0.9,
-							}
+							opacity: 0,
+							scale: 0.9,
+						}
 				}
 				transition={{
 					duration: 0.4,

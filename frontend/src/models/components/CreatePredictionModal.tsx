@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { useAtom } from "jotai";
 import { Save, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -226,8 +231,8 @@ export function CreatePredictionModal({
 										onClick={handleSave}
 										disabled={!predictionName}
 										className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${predictionName
-												? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
-												: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+											? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
+											: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
 											}`}
 										whileHover={predictionName ? { scale: 1.02 } : {}}
 										whileTap={predictionName ? { scale: 0.98 } : {}}

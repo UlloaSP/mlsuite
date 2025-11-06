@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { Calendar, FileCode } from "lucide-react";
 import { motion } from "motion/react";
 import type { SignatureDto } from "../api/modelService";
@@ -33,11 +38,10 @@ export function SignatureCard({
 		<motion.button
 			key={item.id}
 			onClick={() => onItemSelect(item.id)}
-			className={`grid grid-cols-[2fr_13fr] min-h-fit items-start text-left p-4 rounded-xl border transition-all duration-300 ${
-				isSelected
+			className={`grid grid-cols-[2fr_13fr] min-h-fit items-start text-left p-4 rounded-xl border transition-all duration-300 ${isSelected
 					? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700 shadow-md"
 					: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-			}`}
+				}`}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: index * 0.1, duration: 0.3 }}

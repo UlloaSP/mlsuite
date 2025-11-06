@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { useCallback, useEffect, useState } from "react";
 import type { ErrorDto } from "../api/appFetch";
 import { registerErrorListener, unregisterErrorListener } from "../utils/error-sink";

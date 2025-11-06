@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { useAtom } from "jotai";
 import { AnimatePresence, motion } from "motion/react";
 import { schemaErrorsAtom } from "../atoms";

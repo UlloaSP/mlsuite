@@ -26,8 +26,8 @@ jobs:
             context: ./frontend
             image-name: mlsuite-frontend
           - service: api
-            dockerfile: ./src/Dockerfile
-            context: .
+            dockerfile: ./api/Dockerfile
+            context: ./api
             image-name: mlsuite-api
           - service: backend
             dockerfile: ./backend/Dockerfile
