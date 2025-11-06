@@ -1,5 +1,12 @@
 # MLSuite
 
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Java](https://img.shields.io/badge/Java-25-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.7-green)
+![Python](https://img.shields.io/badge/Python-3.14+-blue)
+![React](https://img.shields.io/badge/React-19-61DAFB)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
+
 **MLSuite** is an open-source web platform for managing machine learning models and running live predictions with them. Its purpose is to simplify the **deployment, testing, and evaluation** of ML models by providing an end-to-end workflow: from model upload and input **signature** definition to executing predictions and collecting feedback on results. With MLSuite, data scientists and engineers can turn any trained ML model into an interactive web application for experimentation, without writing custom interfaces or deployment code. The system ensures **reproducibility and traceability** for all experiments, making it easy to track which model (and input schema) produced each result.
 
 In practical terms, MLSuite lets you upload a machine learning model (e.g. a scikit-learn model), automatically generates a typed input form for that model, and allows you to input data and get predictions through a friendly UI. All predictions, along with their inputs and outcomes, are stored in a database, enabling you to review model performance, mark predictions as correct or incorrect, and even export the collected data for retraining. The platform streamlines the typical model deployment and model validation process into a single cohesive application.
@@ -93,12 +100,12 @@ All components are containerized and defined in the Docker Compose configuration
 ```mermaid
 flowchart LR
     subgraph Client
-      UI[User Browser<br/>(React SPA)]
+      UI[User Browser<br/> React SPA]
     end
     subgraph Server
-      API[Spring Boot API<br/>(Java Backend)]
-      ML[FastAPI Analyzer<br/>(Python Service)]
-      DB[(PostgreSQL Database)]
+      API[Spring Boot API<br/> Java Backend ]
+      ML[FastAPI Analyzer<br/> Python Service ]
+      DB[PostgreSQL Database]
     end
     subgraph OAuth_Providers
       Google[Google OAuth] 
@@ -113,7 +120,6 @@ flowchart LR
     GitHub --OAuth Callback--> API
     API --DB Queries--> DB
     API --Prediction Job--> ML
-    ML --Model I/O--> DB
     ML --Result--> API
     API --Response--> UI
 ```
