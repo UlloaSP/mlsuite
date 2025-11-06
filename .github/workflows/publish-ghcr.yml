@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  OWNER: ${{ github.repository_owner }}
+  OWNER: ${{ github.repository_owner | lower }}
 
 jobs:
   build-and-push:
@@ -58,7 +58,7 @@ jobs:
             VERSION=latest
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "image-tag=${{ env.REGISTRY }}/${{ toLower(env.OWNER) }}/${{ matrix.image-name }}:${VERSION}" >> $GITHUB_OUTPUT
+          echo "image-tag=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.image-name }}:${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -68,6 +68,6 @@ jobs:
           push: true
           tags: |
             ${{ steps.version.outputs.image-tag }}
-            ${{ env.REGISTRY }}/${{ toLower(env.OWNER) }}/${{ matrix.image-name }}:latest
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.image-name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
