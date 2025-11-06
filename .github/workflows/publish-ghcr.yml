@@ -10,7 +10,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  OWNER: ${{ github.repository_owner | lower }}
 
 jobs:
   build-and-push:
@@ -39,6 +38,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Normalize repository owner to lowercase
+        id: repo_owner
+        run: |
+          OWNER_LOWER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+          echo "owner=${OWNER_LOWER}" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -58,7 +63,7 @@ jobs:
             VERSION=latest
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "image-tag=${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.image-name }}:${VERSION}" >> $GITHUB_OUTPUT
+          echo "image-tag=${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.owner }}/${{ matrix.image-name }}:${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -68,6 +73,6 @@ jobs:
           push: true
           tags: |
             ${{ steps.version.outputs.image-tag }}
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.image-name }}:latest
+            ${{ env.REGISTRY }}/${{ steps.repo_owner.outputs.owner }}/${{ matrix.image-name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
