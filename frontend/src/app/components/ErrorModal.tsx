@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 // components/ErrorModal.tsx
 import { AlertCircle } from "lucide-react";
 import { useEffect } from "react";

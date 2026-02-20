@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import { NotFoundError } from "../app/pages/error-page";
 import { HomePage } from "../app/pages/homePage";

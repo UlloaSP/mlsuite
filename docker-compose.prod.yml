@@ -1,0 +1,80 @@
+networks:
+  appnet:
+
+
+volumes:
+  pg_data:
+
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: db-postgres
+    environment:
+      POSTGRES_DB: ${DB_PROD}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_PROD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [ appnet ]
+    restart: unless-stopped
+
+  py-analyzer:
+    image: ${REGISTRY:-ghcr.io}/${OWNER}/${BACKEND_IMAGE:-mlsuite-sklearn-backend}:${BACKEND_VERSION:-latest}
+    container_name: py-analyzer
+    ports:
+      - ${PYTHON_PORT}:${PYTHON_PORT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [ appnet ]
+    restart: unless-stopped
+
+  spring-app:
+    image: ${REGISTRY:-ghcr.io}/${OWNER}/${API_IMAGE:-mlsuite-api}:${API_VERSION:-latest}
+    container_name: spring-app
+    environment:
+      SERVER_PORT: ${SPRING_PORT}
+      SPRING_PROFILES_ACTIVE: prod
+
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_PROD}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+
+      ANALYZER_BASE_URL: https://py-analyzer:8000
+
+      # OAuth, pass-through from your task env
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+    ports:
+      - ${SPRING_PORT}:${SPRING_PORT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [ appnet ]
+    restart: unless-stopped
+
+  frontend:
+    image: ${REGISTRY:-ghcr.io}/${OWNER}/${FRONTEND_IMAGE:-mlsuite-frontend}:${FRONTEND_VERSION:-latest}
+    container_name: web-frontend
+    environment:
+      VITE_BACKEND_URL: https://localhost:${SPRING_PORT}
+    ports:
+      - ${WEB_PORT}:5173
+    depends_on:
+      spring-app:
+        condition: service_started
+    networks: [ appnet ]
+    restart: unless-stopped

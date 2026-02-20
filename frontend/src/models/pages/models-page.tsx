@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { motion } from "motion/react";
 import { useState } from "react";
 import { useNavigate } from "react-router";

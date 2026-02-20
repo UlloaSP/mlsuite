@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { HttpError, isHttpError, type ErrorDto } from "../api/appFetch";
 
 type ErrorListener = (dto: ErrorDto) => void;

@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 // src/app/components/SidebarNavigation.tsx
 import { useAtom } from "jotai";
 import {

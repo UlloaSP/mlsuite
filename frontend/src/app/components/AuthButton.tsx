@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { Chrome, Github } from "lucide-react";
 import { motion } from "motion/react";
 

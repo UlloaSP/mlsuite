@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 // ---- Server contract (exact) ----
 export type ErrorDto = {
 	timestamp: string;

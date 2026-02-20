@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { useUser } from "../../user/hooks"; // Adjust the import path as necessary
 
 export function SidebarHeader() {

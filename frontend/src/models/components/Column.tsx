@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { motion } from "motion/react";
 import { ColumnBody } from "./ColumnBody";
 import { ColumnHeader } from "./ColumnHeader";

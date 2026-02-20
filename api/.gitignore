@@ -1,0 +1,42 @@
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# Logs
+logs
+*.log
+frontend/npm-debug.log*
+
+frontend/node_modules
+frontend/dist
+frontend/dist-ssr
+frontend/package-lock.json
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Custom
+backend/__pycache__/
+
+# Environment files
+.env.local
+.env.local.*.backup
+*.env.backup
