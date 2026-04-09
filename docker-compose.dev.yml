@@ -4,6 +4,7 @@ networks:
 
 volumes:
   pg_data:
+  minio_data:
 
 
 services:
@@ -38,6 +39,20 @@ services:
         condition: service_healthy
     networks: [ appnet ]
 
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-02-28T09-55-16Z
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
+    ports:
+      - ${MINIO_API_PORT:-9000}:9000
+      - ${MINIO_CONSOLE_PORT:-9001}:9001
+    volumes:
+      - minio_data:/data
+    networks: [ appnet ]
+
   spring-app:
     build:
       context: ./api
@@ -54,6 +69,13 @@ services:
       DB_PASS: ${DB_PASS}
 
       ANALYZER_BASE_URL: https://py-analyzer:8000
+      STORAGE_ENABLED: ${STORAGE_ENABLED:-true}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:9000}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-minioadmin}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-minioadmin}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-mlsuite-models}
+      STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET:-true}
+      STORAGE_BACKFILL_ON_STARTUP: ${STORAGE_BACKFILL_ON_STARTUP:-true}
 
       # OAuth, pass-through from your task env
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
@@ -65,12 +87,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started
     networks: [ appnet ]
 
   frontend:
     build:
       context: ./frontend
       dockerfile: ./Dockerfile
+      additional_contexts:
+        mlform: ../mlform
     container_name: web-frontend
     environment:
       VITE_BACKEND_URL: https://localhost:${SPRING_PORT}
