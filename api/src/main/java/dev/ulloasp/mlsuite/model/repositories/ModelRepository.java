@@ -18,6 +18,8 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     List<Model> findByUserId(Long userId);
 
+    List<Model> findTop10ByStorageObjectKeyIsNullOrderByIdAsc();
+
     boolean existsByNameAndUserId(String name, Long userId);
 
     Optional<Model> findByIdAndUserId(Long modelId, Long userId);

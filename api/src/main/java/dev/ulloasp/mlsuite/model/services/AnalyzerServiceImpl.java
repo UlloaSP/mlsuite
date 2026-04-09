@@ -23,8 +23,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
+import dev.ulloasp.mlsuite.storage.ObjectStorageException;
+import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
@@ -40,9 +43,11 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         private String analyzerUrl;
 
         private final ModelRepository modelRepository;
+        private final ObjectStorageService objectStorageService;
 
-        public AnalyzerServiceImpl(ModelRepository modelRepository) {
+        public AnalyzerServiceImpl(ModelRepository modelRepository, ObjectStorageService objectStorageService) {
                 this.modelRepository = modelRepository;
+                this.objectStorageService = objectStorageService;
         }
 
         @SuppressWarnings("unchecked")
@@ -82,9 +87,10 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         public Map<String, Object> predict(OAuthProvider oauthProvider, String oauthId, Long modelId,
                         Map<String, Object> data) {
 
-                byte[] bytes = modelRepository.findById(modelId)
-                                .orElseThrow(() -> new IllegalArgumentException("Modelo no encontrado"))
-                                .getModelFile();
+                Model model = modelRepository.findById(modelId)
+                                .orElseThrow(() -> new IllegalArgumentException("Modelo no encontrado"));
+
+                byte[] bytes = loadModelBytes(model);
 
                 MultipartBodyBuilder builder = new MultipartBodyBuilder();
 
@@ -120,6 +126,25 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 }
 
                 return (Map<String, Object>) response;
+        }
+
+        private byte[] loadModelBytes(Model model) {
+                if (model.hasStoredObject()) {
+                        try {
+                                return objectStorageService.load(model.getStorageBucket(), model.getStorageObjectKey());
+                        } catch (ObjectStorageException ex) {
+                                if (model.hasInlineModelFile()) {
+                                        return model.getModelFile();
+                                }
+                                throw ex;
+                        }
+                }
+
+                if (model.hasInlineModelFile()) {
+                        return model.getModelFile();
+                }
+
+                throw new IllegalStateException("El modelo no tiene binario en object storage ni en base de datos");
         }
 
 }
