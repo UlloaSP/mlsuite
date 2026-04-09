@@ -3,8 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { motion } from "motion/react";
-
 export function SidebarTile({
 	icon: Icon,
 	label,
@@ -29,14 +27,13 @@ export function SidebarTile({
 	};
 
 	return (
-		<motion.button
+		<button
+			type="button"
 			onClick={onClick}
-			className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${getVariantStyles()} ${className}`}
-			whileHover={{ scale: 1.02 }}
-			whileTap={{ scale: 0.98 }}
+			className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-all active:scale-[0.98] ${getVariantStyles()} ${className}`}
 		>
 			<Icon size={18} />
 			<span className="text-sm">{label}</span>
-		</motion.button>
+		</button>
 	);
 }

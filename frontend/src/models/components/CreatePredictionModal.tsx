@@ -12,8 +12,8 @@ import { showModalAtom } from "../atoms";
 import { useCreatePredictionMutation, useCreateTargetMutation } from "../hooks";
 
 export type CreatePredictionModalProps = {
-	prediction: Record<string, object>;
-	inputs: Record<string, object>;
+	prediction: Record<string, unknown>;
+	inputs: Record<string, unknown>;
 };
 
 export function CreatePredictionModal({

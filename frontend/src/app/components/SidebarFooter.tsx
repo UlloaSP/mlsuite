@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { LogOut } from "lucide-react";
-import { motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { useLogout, useUser } from "../../user/hooks";
 import { AuthButton } from "./AuthButton";
@@ -53,19 +52,18 @@ export function SidebarFooter() {
 							Logged in with {getProviderDisplayName()}
 						</span>
 					</div>
-					<motion.button
+					<button
+						type="button"
 						onClick={() => {
 							logout();
 							navigate("/");
 						}}
 						className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${getProviderColors().bg
-							} ${getProviderColors().hover} ${getProviderColors().text}`}
-						whileHover={{ scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
+							} ${getProviderColors().hover} ${getProviderColors().text} active:scale-[0.98]`}
 					>
 						<LogOut size={18} />
 						<span className="text-sm">Log Out</span>
-					</motion.button>
+					</button>
 				</div>
 			) : (
 				// Logged out state: Show all auth buttons

@@ -3,9 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Chrome, Github } from "lucide-react";
-import { motion } from "motion/react";
-
 export function AuthButton({
 	provider,
 	isLoggedIn,
@@ -14,12 +11,15 @@ export function AuthButton({
 	onLogout,
 }: any) {
 	const isCurrentProvider = isLoggedIn && currentProvider === provider;
+	const providerLogo =
+		provider === "google"
+			? "/chrome-filled-svgrepo-com.svg"
+			: "/github-svgrepo-com.svg";
 
 	const getProviderConfig = () => {
 		switch (provider) {
 			case "google":
 				return {
-					icon: <Chrome size={18} />,
 					name: "Google",
 					colors: {
 						bg: "bg-red-50 dark:bg-red-950",
@@ -30,7 +30,6 @@ export function AuthButton({
 				};
 			case "github":
 				return {
-					icon: <Github size={18} />,
 					name: "GitHub",
 					colors: {
 						bg: "bg-gray-50 dark:bg-gray-800",
@@ -52,16 +51,20 @@ export function AuthButton({
 	};
 
 	return (
-		<motion.button
+		<button
+			type="button"
 			onClick={handleClick}
-			className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${config.colors.bg} ${config.colors.hover} ${config.colors.text}`}
-			whileHover={{ scale: 1.02 }}
-			whileTap={{ scale: 0.98 }}
+			className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-all active:scale-[0.98] ${config.colors.bg} ${config.colors.hover} ${config.colors.text}`}
 		>
-			{config.icon}
+			<img
+				src={providerLogo}
+				alt=""
+				aria-hidden="true"
+				className="size-[18px] shrink-0"
+			/>
 			<span className="text-sm">
 				{isCurrentProvider ? "Logout" : `${config.name} Login`}
 			</span>
-		</motion.button>
+		</button>
 	);
 }

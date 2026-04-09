@@ -14,7 +14,7 @@ import {
 	Sun,
 	User,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { useUser } from "../../user/hooks";
 import { fullscreenAtom, themeWithHtmlAtom } from "../atoms";
 import { SidebarSection } from "./SidebarSection";

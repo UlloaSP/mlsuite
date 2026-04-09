@@ -7,7 +7,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@ta
 import { Provider } from "jotai";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { RouterProvider } from "react-router-dom";
+import { RouterProvider } from "react-router/dom";
 import { ErrorModalProvider } from "./app/components/ErrorModalProvider";
 import { emitErrorFromUnknown } from "./app/utils/error-sink";
 import { router } from "./router/routes";

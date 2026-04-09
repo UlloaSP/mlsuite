@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import { Sidebar } from "./app/components";
 
 function Layout() {

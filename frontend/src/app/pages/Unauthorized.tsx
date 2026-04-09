@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowRight, Chrome, Github, Lock } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { useUser } from "../../user/hooks";
@@ -101,7 +101,12 @@ export function Unauthorized() {
       dark:hover:bg-slate-700 dark:focus-visible:ring-primary/50
     "
                     >
-                        <Chrome aria-hidden className="mr-1.5 size-5 relative z-10" />
+                        <img
+                            src="/chrome-filled-svgrepo-com.svg"
+                            alt=""
+                            aria-hidden="true"
+                            className="mr-1.5 size-5 relative z-10 shrink-0"
+                        />
                         <span className="relative z-10">
                             {redirecting === "google" || isLoading ? "Signing…" : "Continue with Google"}
                         </span>
@@ -129,7 +134,12 @@ export function Unauthorized() {
       dark:hover:bg-slate-700 dark:focus-visible:ring-primary/50
     "
                     >
-                        <Github aria-hidden className="mr-1.5 size-5 relative z-10" />
+                        <img
+                            src="/github-svgrepo-com.svg"
+                            alt=""
+                            aria-hidden="true"
+                            className="mr-1.5 size-5 relative z-10 shrink-0"
+                        />
                         <span className="relative z-10">
                             {redirecting === "github" || isLoading ? "Signing…" : "Continue with GitHub"}
                         </span>

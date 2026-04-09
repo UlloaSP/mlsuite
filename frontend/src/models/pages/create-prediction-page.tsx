@@ -8,6 +8,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Unauthorized } from "../../app/pages/Unauthorized";
+import { applyPredictionInputsToSchema } from "../../app/utils/mlform";
 import {
 	schemaAtom,
 	schemaErrorsAtom,
@@ -44,16 +45,12 @@ export function CreatePredictionPage() {
 		// Optionally prefill from URL param
 		let next = base;
 		if (inputs) {
-			const parsed = JSON.parse(decodeURIComponent(inputs));
-			next = {
-				...base,
-				inputs: base.inputs?.map(
-					(item: { title: string; value?: unknown;[k: string]: unknown }) => {
-						const v = (parsed as Record<string, unknown>)[item.title];
-						return v !== undefined ? { ...item, value: v } : item;
-					}
-				),
-			};
+			try {
+				const parsed = JSON.parse(decodeURIComponent(inputs)) as Record<string, unknown>;
+				next = applyPredictionInputsToSchema(base, parsed);
+			} catch (error) {
+				console.error(error);
+			}
 		}
 
 		setSchema(next);

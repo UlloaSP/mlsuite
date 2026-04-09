@@ -1,7 +1,12 @@
+# syntax=docker/dockerfile:1.7
+
 FROM node:25-alpine3.21 AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm pkg delete dependencies.mlform && rm -f package-lock.json && npm install --ignore-scripts
+RUN npm install --no-save --ignore-scripts lit@3.3.2 zod@4.3.6
+COPY --from=mlform package.json /app/node_modules/mlform/package.json
+COPY --from=mlform dist /app/node_modules/mlform/dist
 COPY . .
 RUN npm run build
 

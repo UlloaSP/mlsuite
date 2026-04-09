@@ -7,20 +7,14 @@ import { Editor } from "@monaco-editor/react";
 import { useAtom } from "jotai";
 import { parse as parseWithSourceMap } from "json-source-map";
 import { getLocation } from "jsonc-parser";
-import { MLForm } from "mlform";
-import {
-	BooleanStrategy,
-	CategoryStrategy,
-	ClassifierStrategy,
-	DateStrategy,
-	NumberStrategy,
-	RegressorStrategy,
-	TextStrategy,
-} from "mlform/strategies";
-import * as monaco from "monaco-editor";
+import type * as Monaco from "monaco-editor";
 import { useEffect, useRef } from "react";
 
 import { themeWithHtmlAtom } from "../../app/atoms";
+import {
+	mlformJsonSchema,
+	validateMlformSchema,
+} from "../../app/utils/mlform";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
 import {
 	editorDarkTheme,
@@ -37,6 +31,8 @@ interface EditorErrorCard {
 	path: string;
 	message: string;
 }
+
+type MonacoNamespace = typeof import("monaco-editor");
 
 // ────────────────────────────────────────── Helpers ──
 const isInputTypePath = (p: (string | number)[]) =>
@@ -57,20 +53,6 @@ const pathToPos = (content: string, pathArr: (string | number)[]) => {
 
 // ────────────────────────────────────────── Componente ──
 export function EditorBody() {
-	/** MLForm + estrategias */
-	const f = new MLForm(
-		`${import.meta.env.VITE_BACKEND_URL}/api/analyzer/predict/by-blob`,
-	);
-	[
-		new DateStrategy(),
-		new RegressorStrategy(),
-		new ClassifierStrategy(),
-		new NumberStrategy(),
-		new TextStrategy(),
-		new CategoryStrategy(),
-		new BooleanStrategy(),
-	].forEach((s) => f.register(s));
-
 	/** Atoms */
 	const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
 	const [, setSchema] = useAtom(schemaAtom);
@@ -78,14 +60,14 @@ export function EditorBody() {
 	const [theme] = useAtom(themeWithHtmlAtom);
 
 	/** Refs */
-	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-	const monacoRef = useRef<typeof monaco | null>(null);
-	const refineCardsRef = useRef<EditorErrorCard[]>([]); // último resultado Zod
+	const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
+	const monacoRef = useRef<MonacoNamespace | null>(null);
+	const compatCardsRef = useRef<EditorErrorCard[]>([]);
 
 	// ────────────────────────────── Mount ──
 	const handleOnMount = (
-		editor: monaco.editor.IStandaloneCodeEditor,
-		monacoNs: typeof monaco,
+		editor: Monaco.editor.IStandaloneCodeEditor,
+		monacoNs: MonacoNamespace,
 	) => {
 		editorRef.current = editor;
 		monacoRef.current = monacoNs;
@@ -93,107 +75,102 @@ export function EditorBody() {
 		/* Temas corporativos */
 		monacoNs.editor.defineTheme(
 			"corporate-light",
-			editorLightTheme as monaco.editor.IStandaloneThemeData,
+			editorLightTheme as Monaco.editor.IStandaloneThemeData,
 		);
 		monacoNs.editor.defineTheme(
 			"corporate-dark",
-			editorDarkTheme as monaco.editor.IStandaloneThemeData,
+			editorDarkTheme as Monaco.editor.IStandaloneThemeData,
 		);
 		monacoNs.editor.setTheme(
 			theme === "dark" ? "corporate-dark" : "corporate-light",
 		);
 
 		/* JSON Schema generado por MLForm */
-		monacoNs.languages.json.jsonDefaults.setDiagnosticsOptions({
+		(monacoNs.languages as any).json.jsonDefaults.setDiagnosticsOptions({
 			validate: true,
 			enableSchemaRequest: false,
 			schemas: [
 				{
 					uri: "internal://root.schema.json",
 					fileMatch: ["*"],
-					schema: f.schema(),
+					schema: mlformJsonSchema,
 				},
 			],
 		});
 	};
 
 	// ────────────────────────────── Change ──
-	const handleOnChange = async (value?: string) => {
+	const handleOnChange = (value?: string) => {
 		const text = value ?? "";
 		setSchemaText(text);
 
-		/* Validación semántica (Zod) + markers owner "zod" */
+		/* Validación semántica + markers owner "mlform-compat" */
 		if (editorRef.current && monacoRef.current) {
 			const monacoNs = monacoRef.current;
 			const model = editorRef.current.getModel();
 			if (!model) return;
 
-			const zodMarkers: monaco.editor.IMarkerData[] = [];
-			const refineCards: EditorErrorCard[] = [];
-			let parsed: any = null;
+			const compatMarkers: Monaco.editor.IMarkerData[] = [];
+			const compatCards: EditorErrorCard[] = [];
 			try {
-				parsed = JSON.parse(text);
+				const parsed = JSON.parse(text);
 
-				const res = await f.validateSchema(parsed);
-				if (res.success && res.data) {
+				const res = validateMlformSchema(parsed);
+				if (res.success) {
 					setSchema(parsed);
 				}
 
-				if (!res.success && res.error) {
-					const customIssues = res.error.issues.filter(
-						(issue: any) => issue.code === "custom",
-					);
-					if (customIssues.length > 0) {
-						customIssues.map((issue: any) => {
-							const path: any[] = ["inputs", ...(issue.path ?? [])];
-							const { line, column } = pathToPos(text, path);
-							const pathStr = path.length ? path.join(".") : "root";
+				if (!res.success) {
+					res.issues.forEach((issue) => {
+						const { line, column } = pathToPos(text, issue.path);
+						const pathStr = issue.path.length ? issue.path.join(".") : "root";
 
-							refineCards.push({
-								line,
-								column,
-								path: pathStr,
-								message: issue.message,
-							});
-							zodMarkers.push({
-								startLineNumber: line,
-								// Move startColumn to the first quote after the colon
-								startColumn: (() => {
-									const lineContent = text.split("\n")[line - 1] || "";
-									const colonIdx = lineContent.indexOf(":");
-									if (colonIdx !== -1) {
-										const quoteIdx = lineContent.indexOf('"', colonIdx);
-										return quoteIdx !== -1 ? quoteIdx + 1 : column;
-									}
-									return column;
-								})(),
-								endLineNumber: line,
-								endColumn: model.getLineMaxColumn(line),
-								message: issue.message,
-								severity: monacoNs.MarkerSeverity.Error,
-								source: "zod",
-								code: pathStr,
-							});
+						compatCards.push({
+							line,
+							column,
+							path: pathStr,
+							message: issue.message,
 						});
-					}
+						compatMarkers.push({
+							startLineNumber: line,
+							startColumn: (() => {
+								const lineContent = text.split("\n")[line - 1] || "";
+								const colonIdx = lineContent.indexOf(":");
+								if (colonIdx !== -1) {
+									const quoteIdx = lineContent.indexOf('"', colonIdx);
+									return quoteIdx !== -1 ? quoteIdx + 1 : column;
+								}
+								return column;
+							})(),
+							endLineNumber: line,
+							endColumn: model.getLineMaxColumn(line),
+							message: issue.message,
+							severity: monacoNs.MarkerSeverity.Error,
+							source: "mlform-compat",
+							code: pathStr,
+						});
+					});
 				}
 
-				monacoNs.editor.setModelMarkers(model, "zod", zodMarkers);
-				refineCardsRef.current = refineCards;
-			} catch (e) { }
+				monacoNs.editor.setModelMarkers(model, "mlform-compat", compatMarkers);
+				compatCardsRef.current = compatCards;
+			} catch {
+				monacoNs.editor.setModelMarkers(model, "mlform-compat", []);
+				compatCardsRef.current = [];
+			}
 		}
 	};
 
 	// ─────────────────────────── Validate ──
-	const handleOnValidate = (markers: monaco.editor.IMarker[]) => {
+	const handleOnValidate = (markers: Monaco.editor.IMarker[]) => {
 		if (!editorRef.current) return;
 		const model = editorRef.current.getModel();
 		if (!model) return;
 		const content = model.getValue();
 
-		/* Solo markers del worker (fuente !== "zod") */
+		/* Solo markers del worker (fuente !== "mlform-compat") */
 		const workerCards: EditorErrorCard[] = markers
-			.filter((m) => m.source !== "zod")
+			.filter((m) => m.source !== "mlform-compat")
 			.map((m) => {
 				const pathArr = getLocation(
 					content,
@@ -213,7 +190,7 @@ export function EditorBody() {
 						: m.message,
 				};
 			});
-		setSchemaErrors([...workerCards, ...refineCardsRef.current]);
+		setSchemaErrors([...workerCards, ...compatCardsRef.current]);
 	};
 
 	// Cambio de tema en caliente

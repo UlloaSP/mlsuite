@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowLeft, Home } from "lucide-react"
 import { motion } from "motion/react"
-import { useNavigate, useRouteError } from "react-router-dom"
+import { useNavigate, useRouteError } from "react-router"
 
 export function NotFoundError() {
   const error = useRouteError() as any
@@ -100,25 +100,21 @@ export function NotFoundError() {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
           >
-            <motion.button
+            <button
               onClick={handleGoHome}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center"
+              className="bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground px-8 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center"
             >
               <Home className="w-5 h-5 mr-2" />
               Go Home
-            </motion.button>
+            </button>
 
-            <motion.button
+            <button
               onClick={handleGoBack}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              className="px-8 py-3 rounded-lg font-medium transition-all duration-200 bg-transparent border border-input hover:bg-muted flex items-center justify-center"
+              className="px-8 py-3 rounded-lg font-medium transition-all duration-200 active:scale-[0.98] bg-transparent border border-input hover:bg-muted flex items-center justify-center"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               Go Back
-            </motion.button>
+            </button>
           </motion.div>
         </motion.div>
 
