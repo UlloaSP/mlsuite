@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.storage;
 
+import java.util.List;
+import java.util.Optional;
+
 class DisabledObjectStorageService implements ObjectStorageService {
 
     private static final String MESSAGE = "Object storage is disabled";
@@ -12,6 +15,16 @@ class DisabledObjectStorageService implements ObjectStorageService {
 
     @Override
     public byte[] load(String bucket, String objectKey) {
+        throw new ObjectStorageException(MESSAGE);
+    }
+
+    @Override
+    public Optional<byte[]> loadOptional(String bucket, String objectKey) {
+        throw new ObjectStorageException(MESSAGE);
+    }
+
+    @Override
+    public List<StoredObjectItem> list(String prefix) {
         throw new ObjectStorageException(MESSAGE);
     }
 

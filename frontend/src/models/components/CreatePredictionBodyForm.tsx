@@ -9,7 +9,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useParams } from "react-router";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { mountPredictionForm } from "../../app/utils/mlform";
+import {
+	ensureExplanationReportInSchema,
+	mountPredictionForm,
+} from "../../app/utils/mlform";
 import { schemaAtom } from "../../editor/atoms";
 import { showModalAtom } from "../atoms";
 import { CreatePredictionModal } from "./CreatePredictionModal";
@@ -43,7 +46,7 @@ export function CreatePredictionBodyForm() {
 
 		const mounted = mountPredictionForm({
 			container: containerRef.current,
-			schema,
+			schema: ensureExplanationReportInSchema(schema),
 			modelId,
 			theme,
 			onSubmit: handleSubmit,

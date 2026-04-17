@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.model.dtos.ExplainRequest;
 import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
@@ -123,6 +124,50 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 } catch (ResourceAccessException ex) {
                         // Network/unavailable
                         throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/predict");
+                }
+
+                return (Map<String, Object>) response;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Map<String, Object> explain(OAuthProvider oauthProvider, String oauthId, Long modelId,
+                        ExplainRequest request) {
+
+                Model model = modelRepository.findById(modelId)
+                                .orElseThrow(() -> new IllegalArgumentException("Modelo no encontrado"));
+
+                byte[] bytes = loadModelBytes(model);
+
+                MultipartBodyBuilder builder = new MultipartBodyBuilder();
+                builder.part("model_file", bytes)
+                                .filename("model.joblib")
+                                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+
+                String instanceJson;
+                String tracesJson;
+                try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        instanceJson = mapper.writeValueAsString(request.getInstance());
+                        tracesJson = mapper.writeValueAsString(
+                                        request.getTraces() != null ? request.getTraces() : java.util.List.of());
+                } catch (Exception e) {
+                        throw new RuntimeException("Error serializing explain request", e);
+                }
+
+                builder.part("data", instanceJson).contentType(MediaType.APPLICATION_JSON);
+                builder.part("traces", tracesJson).contentType(MediaType.APPLICATION_JSON);
+
+                MultiValueMap<String, HttpEntity<?>> multipartBody = builder.build();
+                HttpEntity<MultiValueMap<String, HttpEntity<?>>> req = new HttpEntity<>(multipartBody);
+
+                Object response;
+                try {
+                        response = restTemplate.postForObject(analyzerUrl + "/explain", req, Map.class);
+                } catch (RestClientResponseException ex) {
+                        throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/explain");
+                } catch (ResourceAccessException ex) {
+                        throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/explain");
                 }
 
                 return (Map<String, Object>) response;

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, type RouteObject } from "react-router";
+import { CustomExplanationPage } from "../app/pages/custom-explanation-page";
 import { NotFoundError } from "../app/pages/error-page";
 import { HomePage } from "../app/pages/homePage";
 import Layout from "../Layout";
@@ -54,6 +55,10 @@ export const routes: RouteObject[] = [
 			{
 				path: "models/create",
 				element: <CreateModelPage />,
+			},
+			{
+				path: "custom-explanation",
+				element: <CustomExplanationPage />,
 			},
 			{
 				path: "models/:modelId/signatures/create",

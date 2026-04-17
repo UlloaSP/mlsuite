@@ -15,12 +15,136 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { ensureExplanationReportInSchema, toMlformSchema } from "../../app/utils/mlform";
 import type { PredictionDto, TargetDto } from "../api/modelService";
+import { PredictionExplanationReport } from "./PredictionExplanationReport";
 import {
+	useGetSignature,
 	useGetTargets,
 	useUpdatePredictionMutation,
 	useUpdateTargetMutation,
 } from "../hooks";
+
+type JsonRecord = Record<string, unknown>;
+
+type ExplanationReportSnapshot = {
+	label: string;
+	explanations: string[];
+	error: string | null;
+};
+
+type ExplanationPayload = {
+	explanations?: unknown;
+};
+
+type ExplanationReportDescriptor = {
+	label: string;
+	keys: string[];
+};
+
+const isRecord = (value: unknown): value is JsonRecord =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+const getPredictionOutputs = (value: unknown): JsonRecord[] => {
+	if (!isRecord(value) || !Array.isArray(value.outputs)) {
+		return [];
+	}
+
+	return value.outputs.filter(isRecord);
+};
+
+const getExecutionTimeFromPrediction = (value: unknown): number | null => {
+	const outputs = getPredictionOutputs(value);
+	const executionTime = outputs[0]?.execution_time;
+	return typeof executionTime === "number" ? executionTime : null;
+};
+
+const getExplanationSnapshot = (
+	predictionValue: unknown,
+	signatureSchema: unknown,
+): ExplanationReportSnapshot | null => {
+	if (!isRecord(predictionValue)) {
+		return null;
+	}
+
+	let report: ExplanationReportDescriptor | null = null;
+
+	try {
+		const schema = toMlformSchema(ensureExplanationReportInSchema(signatureSchema));
+		const explanationReport = schema.reports?.find(
+			(item) => "explanations" in item && item.explanations === true,
+		);
+		if (!explanationReport) {
+			return null;
+		}
+		report = {
+			label: explanationReport.label
+				? `${explanationReport.label} explanation`
+				: "Model explanation",
+			keys: [explanationReport.source, explanationReport.id, "model-explanation"].filter(
+				(value): value is string =>
+					typeof value === "string" && value.trim().length > 0,
+			),
+		};
+	} catch {
+		report = null;
+	}
+
+	const reports = isRecord(predictionValue.reports) ? predictionValue.reports : null;
+	const fallbackReportEntries =
+		reports
+			? Object.entries(reports).filter(([, value]) => {
+				if (!isRecord(value) || !Array.isArray(value.explanations)) {
+					return false;
+				}
+
+				return value.explanations.some(
+					(item) => typeof item === "string" && item.trim().length > 0,
+				);
+			})
+			: [];
+	const explanationPayload =
+		report && report.keys.length > 0
+			? report.keys.reduce<ExplanationPayload | null>(
+				(current, key) =>
+					current ??
+					(reports && isRecord(reports[key]) ? (reports[key] as ExplanationPayload) : null),
+				null,
+			)
+			: fallbackReportEntries.length > 0 && isRecord(fallbackReportEntries[0][1])
+				? (fallbackReportEntries[0][1] as ExplanationPayload)
+				: null;
+	const explanations =
+		explanationPayload && Array.isArray(explanationPayload.explanations)
+			? explanationPayload.explanations.filter(
+				(item): item is string => typeof item === "string" && item.trim().length > 0,
+			)
+			: [];
+
+	const meta = isRecord(predictionValue.meta) ? predictionValue.meta : null;
+	const explainErrors =
+		meta && isRecord(meta.explainErrors) ? meta.explainErrors : null;
+	const nextError =
+		report && report.keys.length > 0
+			? report.keys.reduce<unknown>(
+				(current, key) => current ?? explainErrors?.[key],
+				null,
+			)
+			: explainErrors
+				? Object.values(explainErrors).find((value) => typeof value === "string") ?? null
+				: null;
+	const error = typeof nextError === "string" ? nextError : null;
+
+	if (explanations.length === 0 && !error) {
+		return null;
+	}
+
+	return {
+		label: report?.label ?? "Model explanation",
+		explanations,
+		error,
+	};
+};
 
 interface PredictionDetailPanelProps {
 	prediction: PredictionDto;
@@ -52,6 +176,9 @@ export function PredictionDetailPanel({
 	const { data: targs = [] } = useGetTargets({
 		predictionId: prediction.id || "",
 	});
+	const { data: signature } = useGetSignature({
+		signatureId: prediction.signatureId || "",
+	});
 
 	const navigate = useNavigate();
 
@@ -79,12 +206,7 @@ export function PredictionDetailPanel({
 			// @ts-ignore
 			prediction.status.toString() as "PENDING" | "COMPLETED" | "FAILED",
 		);
-		let outputs: any[] = [];
-		// @ts-ignore
-		if (prediction.prediction && Array.isArray(prediction.prediction.outputs)) {
-			// @ts-ignore
-			outputs = prediction.prediction.outputs;
-		}
+		const outputs = getPredictionOutputs(prediction.prediction);
 
 		if (outputs.length > 0 && outputs[0]?.type === "classifier") {
 			const probabilities = outputs[0].probabilities ?? [];
@@ -151,6 +273,11 @@ export function PredictionDetailPanel({
 		return `${(time / 3600000).toFixed(2).toLocaleString()} h`;
 	};
 
+	const executionTime = getExecutionTimeFromPrediction(prediction.prediction);
+	const explanationSnapshot = signature
+		? getExplanationSnapshot(prediction.prediction, signature.inputSignature)
+		: null;
+
 	return (
 		<AnimatePresence>
 			{isVisible && (
@@ -215,13 +342,9 @@ export function PredictionDetailPanel({
 												Execution Time:
 											</span>
 											<span className="font-mono text-sm text-gray-900 dark:text-white">
-												{
-
-													formatExecutionTime(
-														/* @ts-ignore */
-														prediction.prediction.outputs[0].execution_time,
-													)
-												}
+												{executionTime !== null
+													? formatExecutionTime(executionTime)
+													: "N/A"}
 											</span>
 										</div>
 										<div className="flex items-center justify-between">
@@ -291,6 +414,19 @@ export function PredictionDetailPanel({
 									</div>
 								)}
 							</div>
+
+							{explanationSnapshot && (
+								<div className="space-y-4">
+									<h3 className="font-semibold text-gray-900 dark:text-white">
+										Reports
+									</h3>
+									<PredictionExplanationReport
+										label={explanationSnapshot.label}
+										explanations={explanationSnapshot.explanations}
+										error={explanationSnapshot.error}
+									/>
+								</div>
+							)}
 
 							{/* Feedback Section */}
 							<div className="space-y-4">

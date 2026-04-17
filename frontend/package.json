@@ -15,6 +15,7 @@
     "jsonc-parser": "^3.3.1",
     "lucide-react": "^1.8.0",
     "mlform": "file:../../mlform",
+    "monaco-editor": "^0.55.1",
     "motion": "^12.38.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -26,6 +27,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react-swc": "^4.3.0",
+    "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vite-plus": "latest"

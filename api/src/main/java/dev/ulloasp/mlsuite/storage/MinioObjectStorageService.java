@@ -1,14 +1,24 @@
 package dev.ulloasp.mlsuite.storage;
 
 import java.io.InputStream;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
+import io.minio.ListObjectsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
+import io.minio.Result;
+import io.minio.StatObjectArgs;
+import io.minio.errors.ErrorResponseException;
+import io.minio.messages.Item;
 
 class MinioObjectStorageService implements ObjectStorageService {
 
@@ -58,6 +68,61 @@ class MinioObjectStorageService implements ObjectStorageService {
             return inputStream.readAllBytes();
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudo cargar el modelo desde MinIO", ex);
+        }
+    }
+
+    @Override
+    public Optional<byte[]> loadOptional(String bucket, String objectKey) {
+        ensureBucketExists();
+
+        try {
+            minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectKey)
+                            .build());
+            return Optional.of(load(bucket, objectKey));
+        } catch (ErrorResponseException ex) {
+            if ("NoSuchKey".equals(ex.errorResponse().code()) || "NoSuchObject".equals(ex.errorResponse().code())) {
+                return Optional.empty();
+            }
+
+            throw new ObjectStorageException("No se pudo comprobar el objeto en MinIO", ex);
+        } catch (ObjectStorageException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ObjectStorageException("No se pudo comprobar el objeto en MinIO", ex);
+        }
+    }
+
+    @Override
+    public List<StoredObjectItem> list(String prefix) {
+        ensureBucketExists();
+
+        try {
+            List<StoredObjectItem> items = new ArrayList<>();
+            Iterable<Result<Item>> results = minioClient.listObjects(
+                    ListObjectsArgs.builder()
+                            .bucket(properties.getBucket())
+                            .prefix(prefix)
+                            .recursive(true)
+                            .build());
+
+            for (Result<Item> result : results) {
+                Item item = result.get();
+                items.add(new StoredObjectItem(
+                        properties.getBucket(),
+                        item.objectName(),
+                        item.size(),
+                        item.etag(),
+                        item.lastModified() == null
+                                ? null
+                                : OffsetDateTime.ofInstant(item.lastModified().toInstant(), ZoneOffset.UTC)));
+            }
+
+            return items;
+        } catch (Exception ex) {
+            throw new ObjectStorageException("No se pudieron listar objetos de MinIO", ex);
         }
     }
 

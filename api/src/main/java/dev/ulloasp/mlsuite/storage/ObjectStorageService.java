@@ -2,6 +2,8 @@ package dev.ulloasp.mlsuite.storage;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Optional;
 
 public interface ObjectStorageService {
 
@@ -12,6 +14,10 @@ public interface ObjectStorageService {
     }
 
     byte[] load(String bucket, String objectKey);
+
+    Optional<byte[]> loadOptional(String bucket, String objectKey);
+
+    List<StoredObjectItem> list(String prefix);
 
     void delete(String bucket, String objectKey);
 }

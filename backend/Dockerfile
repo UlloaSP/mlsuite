@@ -3,6 +3,10 @@ FROM python:3.14-slim
 # Instalar uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+# oNLY DEV: Instalar git (necesario para que uv pueda descargar repositorios)
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    rm -rf /var/lib/apt/lists/*
+
 # Crear directorio de trabajo
 WORKDIR /app
 

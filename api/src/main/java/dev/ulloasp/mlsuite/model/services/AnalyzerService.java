@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import dev.ulloasp.mlsuite.model.dtos.ExplainRequest;
 import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import jakarta.annotation.Nullable;
 
@@ -19,4 +20,7 @@ public interface AnalyzerService {
 
         Map<String, Object> predict(OAuthProvider oauthProvider, String oauthId, Long modelId,
                         Map<String, Object> data);
+
+        Map<String, Object> explain(OAuthProvider oauthProvider, String oauthId, Long modelId,
+                        ExplainRequest request);
 }

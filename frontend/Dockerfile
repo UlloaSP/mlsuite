@@ -2,13 +2,14 @@
 
 FROM node:25-alpine3.21 AS build
 WORKDIR /app
-COPY package*.json ./
-RUN npm pkg delete dependencies.mlform && rm -f package-lock.json && npm install --ignore-scripts
-RUN npm install --no-save --ignore-scripts lit@3.3.2 zod@4.3.6
-COPY --from=mlform package.json /app/node_modules/mlform/package.json
-COPY --from=mlform dist /app/node_modules/mlform/dist
+RUN npm install -g vite-plus@latest
+COPY package.json pnpm-lock.yaml ./
+COPY --from=mlform package.json /tmp/mlform/package.json
+COPY --from=mlform dist /tmp/mlform/dist
+RUN npm pkg set dependencies.mlform=file:/tmp/mlform
+RUN vp install --ignore-scripts --no-frozen-lockfile
 COPY . .
-RUN npm run build
+RUN vp run build
 
 FROM nginx:1.29.3-alpine
 COPY --from=build /app/dist /usr/share/nginx/html

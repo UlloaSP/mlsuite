@@ -7,6 +7,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import {
 	BrainCircuit,
+	FileCode2,
 	Home,
 	Maximize,
 	Minimize,
@@ -36,6 +37,7 @@ export function SidebarNavigation() {
 			{ to: "/", icon: Home, label: "Home" },
 			{ to: "/profile", icon: User, label: "Profile" },
 			{ to: "/models", icon: BrainCircuit, label: "Catalog" },
+			{ to: "/custom-explanation", icon: FileCode2, label: "Explanation" },
 		];
 	}
 

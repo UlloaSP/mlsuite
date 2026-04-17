@@ -35,11 +35,11 @@ interface EditorErrorCard {
 type MonacoNamespace = typeof import("monaco-editor");
 
 // ────────────────────────────────────────── Helpers ──
-const isInputTypePath = (p: (string | number)[]) =>
+const isFieldKindPath = (p: (string | number)[]) =>
 	p.length === 3 &&
-	p[0] === "inputs" &&
+	p[0] === "fields" &&
 	typeof p[1] === "number" &&
-	p[2] === "type";
+	p[2] === "kind";
 
 const pathToPos = (content: string, pathArr: (string | number)[]) => {
 	const pointer = "/" + pathArr.map(String).join("/");
@@ -185,8 +185,8 @@ export function EditorBody() {
 					line: m.startLineNumber,
 					column: m.startColumn,
 					path: pathStr,
-					message: isInputTypePath(pathArr)
-						? 'Valor "type" no válido. Tipos permitidos: "date" | "string" | "number" | …'
+					message: isFieldKindPath(pathArr)
+						? 'Valor "kind" no válido. Tipos permitidos: "text" | "number" | "boolean" | "category" | "date" | "time-series".'
 						: m.message,
 				};
 			});
