@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { BadgePlus } from "lucide-react";
+import { AppButton } from "../../app/components";
 
 type ColumnActionButtonProps = {
 	onClick: () => void | Promise<void>;
@@ -11,12 +12,14 @@ type ColumnActionButtonProps = {
 
 export function ColumnActionButton({ onClick }: ColumnActionButtonProps) {
 	return (
-		<button
+		<AppButton
 			type="button"
 			onClick={onClick}
-			className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-yellow-400 to-amber-800 hover:from-yellow-500 hover:to-amber-900 text-white font-medium rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl active:scale-[0.98]"
+			variant="primary"
+			className="w-full"
 		>
 			<BadgePlus size={28} fontWeight={30} />
-		</button>
+			New
+		</AppButton>
 	);
 }

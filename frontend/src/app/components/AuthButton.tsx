@@ -3,6 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { SidebarTile } from "./SidebarTile";
+
 export function AuthButton({
 	provider,
 	isLoggedIn,
@@ -42,6 +44,14 @@ export function AuthButton({
 	};
 
 	const config: any = getProviderConfig();
+	const ProviderIcon = ({ className = "" }: { className?: string }) => (
+		<img
+			src={providerLogo}
+			alt=""
+			aria-hidden="true"
+			className={`size-[18px] shrink-0 ${className}`}
+		/>
+	);
 	const handleClick = () => {
 		if (isCurrentProvider) {
 			onLogout();
@@ -51,20 +61,12 @@ export function AuthButton({
 	};
 
 	return (
-		<button
-			type="button"
+		<SidebarTile
+			icon={ProviderIcon}
+			label={isCurrentProvider ? "Logout" : `${config.name} Login`}
+			variant="auth"
 			onClick={handleClick}
-			className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-all active:scale-[0.98] ${config.colors.bg} ${config.colors.hover} ${config.colors.text}`}
-		>
-			<img
-				src={providerLogo}
-				alt=""
-				aria-hidden="true"
-				className="size-[18px] shrink-0"
-			/>
-			<span className="text-sm">
-				{isCurrentProvider ? "Logout" : `${config.name} Login`}
-			</span>
-		</button>
+			className={`${config.colors.bg} ${config.colors.hover} ${config.colors.text}`}
+		/>
 	);
 }

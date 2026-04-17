@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { motion } from "motion/react";
+import { cx } from "../../app/components";
 import { ColumnBody } from "./ColumnBody";
 import { ColumnHeader } from "./ColumnHeader";
 
@@ -34,7 +35,10 @@ export function Column({
 			initial={{ x: -300, opacity: 0 }}
 			animate={{ x: 0, opacity: 1 }}
 			transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-			className=" flex flex-col flex-1 overflow-hidden rounded bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700"
+			className={cx(
+				"flex flex-1 flex-col overflow-hidden rounded-[28px] border",
+				"border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)]",
+			)}
 		>
 			<ColumnHeader title={title} onClick={onClick} />
 			<ColumnBody

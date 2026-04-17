@@ -7,6 +7,7 @@ import { useQueries } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo } from "react";
+import { cx } from "../../app/components";
 import type { PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService"; // <-- use the fetcher directly
 import { GET_TARGETS_QUERY_KEY } from "../hooks";
@@ -190,18 +191,13 @@ export function ExportButton({ predictions, delimiter = "," }: ExportButtonProps
 			whileHover={{ scale: hasData ? 1.015 : 1, y: hasData ? -1 : 0 }}
 			whileTap={{ scale: hasData ? 0.985 : 1, y: 0 }}
 			transition={{ type: "spring", stiffness: 420, damping: 32 }}
-			className={[
-				"group inline-flex w-full items-center justify-center gap-2 rounded-md px-4 py-3",
+			className={cx(
+				"group inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3",
 				"text-sm font-medium outline-none transition-shadow",
-				"bg-white text-gray-900 ring-1 ring-violet-400/40 shadow-sm shadow-violet-500/10",
-				"hover:shadow-md hover:shadow-violet-500/20",
-				"dark:bg-gray-900 dark:text-white dark:ring-violet-400/35",
-				"focus-visible:ring-2 focus-visible:ring-violet-500/60",
-				"relative isolate overflow-hidden",
-				"after:absolute after:inset-0 after:-z-10 after:rounded-[inherit]",
-				"after:bg-violet-500/15 dark:after:bg-violet-500/20 after:blur-xl after:opacity-0 group-hover:after:opacity-100",
-				!hasData ? "opacity-60 cursor-not-allowed hover:shadow-none" : "",
-			].join(" ")}
+				"border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-card)]",
+				"hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)] hover:shadow-[var(--shadow-hover)]",
+				!hasData && "cursor-not-allowed opacity-60 hover:shadow-none",
+			)}
 		>
 			<FileDown size={18} className="opacity-90 group-hover:opacity-100" />
 			<span>Export to CSV</span>

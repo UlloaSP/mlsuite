@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ArrowLeft, Home } from "lucide-react"
 import { motion } from "motion/react"
 import { useNavigate, useRouteError } from "react-router"
+import { AppButton, AppCopy, AppPage, AppPanel, AppSectionTitle } from "../components"
 
 export function NotFoundError() {
   const error = useRouteError() as any
@@ -22,138 +23,71 @@ export function NotFoundError() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-2xl mx-auto text-center">
-        {/* Animated 404 Number */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="mb-8"
-        >
-          <h1 className="text-9xl md:text-[12rem] font-bold text-muted-foreground/20 leading-none">404</h1>
-        </motion.div>
-
-        {/* Main Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-          className="space-y-6"
-        >
-          {/* Animated Icon */}
+    <AppPage className="min-h-dvh items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+        className="flex w-full max-w-2xl"
+      >
+        <AppPanel className="w-full space-y-6 p-10 text-center md:p-12">
           <motion.div
-            animate={{
-              y: [0, -10, 0],
-              rotate: [0, 5, -5, 0],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }}
-            className="flex justify-center mb-8"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-2"
           >
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              >
-                <svg className="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.291-1.002-5.824-2.582M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </motion.div>
-            </div>
+            <h1 className="text-8xl font-semibold leading-none text-[var(--text-muted)] md:text-[10rem]">404</h1>
           </motion.div>
 
-          {/* Heading */}
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Oops! Page not found</h2>
+          <div className="mx-auto grid size-24 place-items-center rounded-full border border-[var(--accent-quiet)] bg-[var(--surface-secondary)] text-[var(--accent-primary)]">
+            <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.291-1.002-5.824-2.582M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </div>
 
-          {/* Description */}
-          <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-            The page you're looking for doesn't exist or has been moved. Don't worry, we'll help you find what you need.
-          </p>
+          <AppSectionTitle className="text-4xl md:text-5xl">Oops! Page not found</AppSectionTitle>
+          <AppCopy className="mx-auto max-w-md text-base">
+            The page you&apos;re looking for doesn&apos;t exist or has been moved. We&apos;ll get you back to something useful.
+          </AppCopy>
 
-          {/* Error Details */}
           {error && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 max-w-md mx-auto"
+              className="mx-auto max-w-md rounded-[20px] border border-[color:var(--danger-quiet)] bg-[var(--danger-quiet)] p-4"
             >
-              <p className="text-sm text-destructive font-mono">
+              <p className="font-mono text-sm text-[var(--danger-text)]">
                 {error.statusText || error.message || "Page Not Found"}
               </p>
             </motion.div>
           )}
 
-          {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
+            className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row"
           >
-            <button
-              onClick={handleGoHome}
-              className="bg-primary hover:bg-primary/90 active:scale-[0.98] text-primary-foreground px-8 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center"
-            >
-              <Home className="w-5 h-5 mr-2" />
+            <AppButton onClick={handleGoHome}>
+              <Home className="h-5 w-5" />
               Go Home
-            </button>
+            </AppButton>
 
-            <button
-              onClick={handleGoBack}
-              className="px-8 py-3 rounded-lg font-medium transition-all duration-200 active:scale-[0.98] bg-transparent border border-input hover:bg-muted flex items-center justify-center"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
+            <AppButton onClick={handleGoBack} variant="secondary">
+              <ArrowLeft className="h-5 w-5" />
               Go Back
-            </button>
+            </AppButton>
           </motion.div>
-        </motion.div>
-
-        {/* Decorative Elements */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="absolute inset-0 overflow-hidden pointer-events-none"
-        >
-          <motion.div
-            animate={{
-              x: [0, 100, 0],
-              y: [0, -50, 0],
-              rotate: [0, 180, 360],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "linear",
-            }}
-            className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary/20 rounded-full"
-          />
-          <motion.div
-            animate={{
-              x: [0, -80, 0],
-              y: [0, 60, 0],
-              rotate: [0, -180, -360],
-            }}
-            transition={{
-              duration: 15,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "linear",
-            }}
-            className="absolute top-3/4 right-1/4 w-3 h-3 bg-accent/20 rounded-full"
-          />
-        </motion.div>
-      </div>
-    </div>
+        </AppPanel>
+      </motion.div>
+    </AppPage>
   )
 }
 

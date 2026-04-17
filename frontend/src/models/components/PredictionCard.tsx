@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { AppBadge, cx } from "../../app/components";
 import type { PredictionDto } from "../api/modelService";
 import { useGetTargets } from "../hooks";
 
@@ -34,13 +35,13 @@ const getStatusIcon = (status: string) => {
 const getStatusColor = (status: string) => {
 	switch (status.toString()) {
 		case "COMPLETED":
-			return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+			return "success";
 		case "FAILED":
-			return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
+			return "danger";
 		case "PENDING":
-			return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
+			return "warning";
 		default:
-			return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
+			return "neutral";
 	}
 };
 
@@ -59,8 +60,9 @@ export function PredictionCard({
 }: PredictionCardProps) {
 	const [, setValue] = useState<string>("");
 	const isSelected = selectedItemId === item.id;
-	// @ts-ignore
-	const StatusIcon = getStatusIcon(item.status.toString());
+	const itemStatus =
+		typeof item.status === "string" ? item.status : String(item.status ?? "PENDING");
+	const StatusIcon = getStatusIcon(itemStatus);
 
 	const { data: targets = [] } = useGetTargets({ predictionId: item.id || "" });
 
@@ -107,49 +109,42 @@ export function PredictionCard({
 		<motion.button
 			key={item.id}
 			onClick={() => onItemSelect(item.id)}
-			className={`grid grid-cols-[3fr_16fr_5fr] min-h-fit items-start text-left p-4 rounded-xl border transition-all duration-300 ${isSelected
-				? "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 shadow-md"
-				: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-				}`}
+			className={cx(
+				"grid min-h-fit grid-cols-[auto_1fr_auto] items-start gap-4 rounded-[22px] border p-4 text-left transition",
+				"border-[var(--border-soft)] bg-[var(--surface-secondary)]",
+				isSelected
+					? "bg-[var(--accent-quiet)] shadow-[var(--shadow-hover)]"
+					: "hover:bg-[var(--surface-primary)] hover:shadow-[var(--shadow-hover)]",
+			)}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: index * 0.1, duration: 0.3 }}
-			whileHover={{ scale: 1.02, y: -2 }}
+			whileHover={{ scale: 1.01, y: -2 }}
 			whileTap={{ scale: 0.98 }}
 		>
-			{/* Icon Section */}
 			<div
-				className={`flex items-left p-2 max-w-fit rounded-lg ${isSelected ? "bg-purple-100 dark:bg-purple-800" : "bg-gray-200 dark:bg-gray-700"}`}
+				className={cx(
+					"flex max-w-fit items-center rounded-2xl p-3",
+					isSelected ? "bg-[var(--surface-primary)]" : "bg-[var(--surface-muted)]",
+				)}
 			>
 				<Target
 					size={16}
-					className={
-						isSelected
-							? "text-purple-600 dark:text-purple-400"
-							: "text-gray-600 dark:text-gray-400"
-					}
+					className={isSelected ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]"}
 				/>
 			</div>
-			{/* Info Section */}
 
 			<div className="space-y-2">
-				<div className={`text-sm font-medium text-gray-900`}>
-					<span
-						// @ts-ignore
-						className={`${getStatusColor(item.status.toString())
-							.replace(/bg-\S+/g, "")
-							.replace(/dark:bg-\S+/g, "")}`}
-					>
-						{item.name}
-					</span>
+				<div className="text-sm font-medium text-[var(--text-primary)]">
+					<span>{item.name}</span>
 				</div>
 
-				<div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+				<div className="flex items-center space-x-2 text-xs text-[var(--text-muted)]">
 					<Clock size={12} />
 					<span>{new Date(item.createdAt).toLocaleString()}</span>
 				</div>
 
-				<div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+				<div className="flex items-center space-x-2 text-xs text-[var(--text-muted)]">
 					<Zap size={12} />
 					<span>
 						{/* @ts-ignore */}
@@ -157,12 +152,12 @@ export function PredictionCard({
 					</span>
 				</div>
 
-				<div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+				<div className="flex items-center space-x-2 text-xs text-[var(--text-muted)]">
 					<LibraryBig size={12} />
 					<span>{`${(Object.keys(item.inputs).length).toLocaleString()} ${Object.keys(item.inputs).length > 1 ? "features" : "feature"}`}</span>
 				</div>
 
-				<div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-500">
+				<div className="flex items-center space-x-2 text-xs text-[var(--text-muted)]">
 					<Goal size={12} />
 					<span>{`${targets.length.toLocaleString()} ${targets.length > 1 ? "targets" : "target"}`}</span>
 				</div>
@@ -173,16 +168,13 @@ export function PredictionCard({
 					<div className="flex items-center space-x-2">
 						<StatusIcon
 							size={14}
-							// @ts-ignore
-							className={`${getStatusColor(item.status.toString())}`}
+							className="text-[var(--text-secondary)]"
 						/>
-						<span
-							// @ts-ignore
-							className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status.toString())}`}
+						<AppBadge
+							tone={getStatusColor(itemStatus) as "success" | "danger" | "warning" | "neutral"}
 						>
-							{/* @ts-ignore */}
-							{(item.status.toString() === "COMPLETED") ? "success" : item.status.toString().toLocaleLowerCase()}
-						</span>
+							{itemStatus === "COMPLETED" ? "success" : itemStatus.toLocaleLowerCase()}
+						</AppBadge>
 					</div>
 				</div>
 			</div>

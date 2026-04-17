@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ColumnActionButton } from "./ColumnActionButton";
+import { AppBadge, AppEyebrow } from "../../app/components";
 
 type ColumnHeaderProps = {
 	title: string;
@@ -12,10 +13,16 @@ type ColumnHeaderProps = {
 
 export function ColumnHeader({ title, onClick }: ColumnHeaderProps) {
 	return (
-		<div className="p-6 border-b border-gray-200 dark:border-gray-700">
-			<h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-				{title}
-			</h2>
+		<div className="border-b border-[var(--border-soft)] p-6">
+			<div className="mb-4 flex items-center justify-between gap-3">
+				<div>
+					<AppEyebrow className="mb-2">Collection</AppEyebrow>
+					<h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+						{title}
+					</h2>
+				</div>
+				<AppBadge tone="neutral">List</AppBadge>
+			</div>
 			<ColumnActionButton onClick={onClick}></ColumnActionButton>
 		</div>
 	);

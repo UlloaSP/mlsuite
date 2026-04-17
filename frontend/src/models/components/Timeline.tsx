@@ -31,21 +31,19 @@ export function Timeline({ steps }: TimelineProps) {
 			variants={container}
 			initial="hidden"
 			animate="show"
-			className="justify-self-start relative space-y-7"
+			className="relative justify-self-start space-y-7"
 		>
-			{/* Vertical line */}
-			<span className="absolute left-5 top-0 bottom-0 w-px bg-gray-800 dark:bg-slate-700/40" />
-			{/* Steps */}
+			<span className="absolute bottom-0 left-5 top-0 w-px bg-[var(--border-soft)]" />
 			{steps.map(({ icon: Icon, label }, idx) => (
 				<motion.li
 					key={idx}
 					variants={item}
 					className="flex items-center gap-3"
 				>
-					<span className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black dark:bg-slate-800/60 backdrop-blur ring-1 ring-inset dark:ring-slate-700 shadow-inner">
+					<span className="relative z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--accent-primary)] shadow-[var(--shadow-card)]">
 						<Icon size={18} />
 					</span>
-					<span className="text-sm text-black dark:text-slate-300 md:text-base">
+					<span className="text-sm font-medium text-[var(--text-primary)] md:text-base">
 						{label}
 					</span>
 				</motion.li>

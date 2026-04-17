@@ -8,14 +8,11 @@ import { Sidebar } from "./app/components";
 
 function Layout() {
 	return (
-		<div className="w-screen h-screen flex overflow-hidden bg-gray-100 dark:bg-gray-900">
-			{/* Main Content Area - 90% */}
-			<div className="flex-1 relative">
+		<div className="flex h-screen w-screen overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)]">
+			<div className="relative flex-1 overflow-hidden">
 				<Outlet />
 			</div>
-
-			{/* Sidebar - 10% */}
-			<div className="w-[10%] min-w-[200px]">
+			<div className="hidden w-[320px] shrink-0 border-l border-[var(--border-soft)] xl:block">
 				<Sidebar />
 			</div>
 		</div>

@@ -3,36 +3,41 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
-import { useNavigate } from "react-router";
+import { useParams } from "react-router";
+import {
+	AppBreadcrumbs,
+	AppCopy,
+	AppEyebrow,
+	AppTitle,
+} from "../../app/components";
+import { useGetModels } from "../hooks";
 
 const CREATE_SIGNATURE_HEADER = "Create New Signature";
-const CREATE_SIGNATURE_SUBHEADER = "Define the schema for your model's inputs";
+const CREATE_SIGNATURE_SUBHEADER = "Choose a base signature, define the next semantic bump, and edit the JSON schema in one view.";
 
 export function CreateSignatureHeader() {
-	const navigate = useNavigate();
+	const { modelId } = useParams<{ modelId: string }>();
+	const { data: models = [] } = useGetModels();
+	const modelName =
+		models.find((model) => String(model.id) === String(modelId))?.name ?? "Model";
+
 	return (
-		<motion.div className="flex-1 flex flex-col">
-			<motion.div className="flex-start justify-self-start flex flex-col gap-4">
-				<motion.button
-					onClick={() => navigate("/models")}
-					className="self-start inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
-				>
-					<ArrowLeft size={18} />
-					Back
-				</motion.button>
-
-				{/* Title */}
-				<motion.h1 className="text-5xl leading-20 font-bold bg-gradient-to-r from-gray-900 to-emerald-600 dark:from-white dark:to-emerald-400 bg-clip-text text-transparent">
-					{CREATE_SIGNATURE_HEADER}
-				</motion.h1>
-
-				{/* Subtitle */}
-				<motion.p className="text-slate-400">
-					{CREATE_SIGNATURE_SUBHEADER}
-				</motion.p>
-			</motion.div>
+		<motion.div className="space-y-4">
+			<AppBreadcrumbs
+				items={[
+					{ label: "Models", to: "/models" },
+					...(modelId
+						? [{ label: modelName, to: `/models/${modelId}?tab=signatures` }]
+						: []),
+					{ label: "Create Signature" },
+				]}
+			/>
+			<div className="space-y-3">
+				<AppEyebrow>Signature Studio</AppEyebrow>
+				<AppTitle>{CREATE_SIGNATURE_HEADER}</AppTitle>
+				<AppCopy className="max-w-3xl">{CREATE_SIGNATURE_SUBHEADER}</AppCopy>
+			</div>
 		</motion.div>
 	);
 }

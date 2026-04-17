@@ -10,6 +10,16 @@ import { atomWithStorage } from "jotai/utils";
 const prefersDark =
 	window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false;
 
+const syncThemeChrome = (theme: "light" | "dark") => {
+	const root = document.documentElement;
+	root.classList.toggle("dark", theme === "dark");
+	root.dataset.theme = theme;
+	const meta = document.querySelector('meta[name="theme-color"][media*="color-scheme"]');
+	if (meta) {
+		meta.setAttribute("content", theme === "dark" ? "#101418" : "#f7f7f7");
+	}
+};
+
 /* 2. Átomo persistente                                          */
 export const themeAtom = atomWithStorage<"light" | "dark">(
 	"ui/theme",
@@ -19,8 +29,7 @@ export const themeAtom = atomWithStorage<"light" | "dark">(
 /* 3. Efecto inmediato al primer montaje                         */
 themeAtom.onMount = (set) => {
 	set(() => {
-		const root = document.documentElement.classList;
-		prefersDark ? root.add("dark") : root.remove("dark");
+		syncThemeChrome(prefersDark ? "dark" : "light");
 		return prefersDark ? "dark" : "light";
 	});
 };
@@ -29,8 +38,7 @@ themeAtom.onMount = (set) => {
 export const themeWithHtmlAtom = atom(
 	(get) => get(themeAtom),
 	(_, set, newTheme: "light" | "dark") => {
-		const root = document.documentElement.classList;
-		newTheme === "dark" ? root.add("dark") : root.remove("dark");
+		syncThemeChrome(newTheme);
 		set(themeAtom, newTheme); // persiste en localStorage
 	},
 );

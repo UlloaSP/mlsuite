@@ -43,9 +43,8 @@ export function SidebarNavigation() {
 
 
 	return (
-		<div className="flex-1 flex flex-col overflow-hidden">
-			{/* Links navegables */}
-			<div className="flex-1 overflow-y-auto p-4">
+		<div className="flex flex-1 flex-col overflow-hidden">
+			<div className="app-scroll flex-1 overflow-y-auto px-6 py-5">
 				<SidebarSection>
 					{navigation.map((item) => (
 						<Link key={item.to} to={item.to}>
@@ -60,8 +59,7 @@ export function SidebarNavigation() {
 				</SidebarSection>
 			</div>
 
-			{/* Acciones UI */}
-			<div className="p-4 border-t border-gray-200 dark:border-gray-700">
+			<div className="border-t border-[var(--border-soft)] px-6 py-5">
 				<SidebarSection>
 					<SidebarTile
 						icon={theme === "light" ? Moon : Sun}

@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import type { PredictionDto } from "../api/modelService";
 import { ColumnActionButton } from "./ColumnActionButton";
 import { ExportButton } from "./ExportButton";
+import { AppBadge, AppEyebrow } from "../../app/components";
 type PredColumnHeaderProps = {
     title: string;
     onClick: () => void | Promise<void>;
@@ -15,10 +16,16 @@ type PredColumnHeaderProps = {
 
 export function PredColumnHeader({ title, onClick, items }: PredColumnHeaderProps) {
     return (
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                {title}
-            </h2>
+        <div className="border-b border-[var(--border-soft)] p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                    <AppEyebrow className="mb-2">History</AppEyebrow>
+                    <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                        {title}
+                    </h2>
+                </div>
+                <AppBadge tone="neutral">{items.length}</AppBadge>
+            </div>
             <motion.div className="flex flex-row gap-2">
                 <ColumnActionButton onClick={onClick}></ColumnActionButton>
                 <ExportButton predictions={items} />

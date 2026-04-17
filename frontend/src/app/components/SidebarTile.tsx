@@ -3,6 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import type { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
+import { cx } from "./ui";
+
 export function SidebarTile({
 	icon: Icon,
 	label,
@@ -10,19 +14,26 @@ export function SidebarTile({
 	variant = "navigation",
 	onClick,
 	className = "",
-}: any) {
+}: {
+	icon: LucideIcon | ComponentType<{ size?: number; className?: string }>;
+	label: string;
+	isActive?: boolean;
+	variant?: "navigation" | "action" | "auth";
+	onClick?: () => void;
+	className?: string;
+}) {
 	const getVariantStyles = () => {
 		switch (variant) {
 			case "navigation":
 				return isActive
-					? "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400"
-					: "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800";
+					? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
+					: "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 			case "action":
-				return "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800";
+				return "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 			case "auth":
-				return "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700";
+				return "border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 			default:
-				return "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800";
+				return "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 		}
 	};
 
@@ -30,7 +41,11 @@ export function SidebarTile({
 		<button
 			type="button"
 			onClick={onClick}
-			className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-all active:scale-[0.98] ${getVariantStyles()} ${className}`}
+			className={cx(
+				"flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition active:scale-[0.985]",
+				getVariantStyles(),
+				className,
+			)}
 		>
 			<Icon size={18} />
 			<span className="text-sm">{label}</span>

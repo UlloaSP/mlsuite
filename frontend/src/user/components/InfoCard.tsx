@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
+import { AppCopy, AppPanel } from "../../app/components";
 
 export type InfoCardProps = {
 	icon: LucideIcon;
@@ -14,21 +15,22 @@ export type InfoCardProps = {
 
 export function InfoCard({ icon: Icon, title, value }: InfoCardProps) {
 	return (
-		<motion.div
-			className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg"
-			whileHover={{ scale: 1.02 }}
-		>
-			<motion.div className="flex items-center space-x-3">
-				<Icon className="text-purple-500" size={20} />
-				<motion.div>
-					<motion.p className="text-sm text-gray-500 dark:text-gray-400">
+		<motion.div whileHover={{ scale: 1.01, y: -2 }}>
+			<AppPanel className="h-full">
+				<motion.div className="flex items-center space-x-3">
+					<div className="flex size-11 items-center justify-center rounded-2xl bg-[var(--accent-quiet)]">
+						<Icon className="text-[var(--accent-primary)]" size={20} />
+					</div>
+					<motion.div>
+						<AppCopy className="text-xs uppercase tracking-[0.16em]">
 						{title}
-					</motion.p>
-					<motion.p className="font-medium text-gray-900 dark:text-white">
+						</AppCopy>
+						<motion.p className="font-medium text-[var(--text-primary)]">
 						{value}
-					</motion.p>
+						</motion.p>
+					</motion.div>
 				</motion.div>
-			</motion.div>
+			</AppPanel>
 		</motion.div>
 	);
 }

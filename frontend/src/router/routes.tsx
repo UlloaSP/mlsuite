@@ -10,7 +10,10 @@ import { NotFoundError } from "../app/pages/error-page";
 import { HomePage } from "../app/pages/homePage";
 import Layout from "../Layout";
 import { CreateModelPage } from "../models/pages/create-model-page";
+import { ModelDetailPage } from "../models/pages/model-detail-page";
 import { ModelsPage } from "../models/pages/models-page";
+import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
+import { SignatureDetailPage } from "../models/pages/signature-detail-page";
 import { ProfilePage } from "../user/pages/profilePage";
 
 const CreatePredictionPage = lazy(async () => {
@@ -57,8 +60,16 @@ export const routes: RouteObject[] = [
 				element: <CreateModelPage />,
 			},
 			{
+				path: "models/:modelId",
+				element: <ModelDetailPage />,
+			},
+			{
 				path: "custom-explanation",
 				element: <CustomExplanationPage />,
+			},
+			{
+				path: "models/:modelId/signatures/:signatureId",
+				element: <SignatureDetailPage />,
 			},
 			{
 				path: "models/:modelId/signatures/create",
@@ -67,6 +78,10 @@ export const routes: RouteObject[] = [
 						<CreateSignaturePage />
 					</Suspense>
 				),
+			},
+			{
+				path: "models/:modelId/signatures/:signatureId/predictions/:predictionId",
+				element: <PredictionDetailPage />,
 			},
 			{
 				path: "models/:modelId/signatures/:signatureId/predictions/create",

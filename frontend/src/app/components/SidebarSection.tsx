@@ -3,6 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { cx } from "./ui";
+
 export function SidebarSection({
 	children,
 	className = "",
@@ -10,7 +12,5 @@ export function SidebarSection({
 	children: React.ReactNode;
 	className?: string;
 }) {
-	return (
-		<div className={`flex flex-col gap-[8px] ${className}`}>{children}</div>
-	);
+	return <div className={cx("flex flex-col gap-2.5", className)}>{children}</div>;
 }

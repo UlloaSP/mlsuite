@@ -28,7 +28,7 @@ export function ColumnBody({
 	cardComponent: CardComponent,
 }: ColumnBodyProps) {
 	return (
-		<div className="flex flex-col flex-1 overflow-y-auto min-h-fit gap-3 p-4 ">
+		<div className="app-scroll flex min-h-fit flex-1 flex-col gap-3 overflow-y-auto p-4">
 			{items.map((item, index) => (
 				<CardComponent
 					key={item.id + "-" + index}

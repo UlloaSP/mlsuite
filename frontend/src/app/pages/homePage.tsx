@@ -4,6 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { motion } from "motion/react";
+import {
+	AppBadge,
+	AppCopy,
+	AppEyebrow,
+	AppPage,
+	AppPanel,
+	AppSurface,
+	AppTitle,
+} from "../components";
 
 type Feature = {
 	title: string;
@@ -51,57 +60,55 @@ const FEATURES: Feature[] = [
 
 export function HomePage() {
 	return (
-		<div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-			<motion.div
-				initial={{ y: 20, opacity: 0 }}
-				animate={{ y: 0, opacity: 1 }}
-				transition={{ delay: 0.15 }}
-				className="text-center space-y-6 px-6 py-12"
-			>
-				<motion.h1
-					className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white tracking-tight"
-					initial={{ scale: 0.98 }}
-					animate={{ scale: 1 }}
-					transition={{ delay: 0.2 }}
-				>
-					ML Suite
-				</motion.h1>
-
-				<motion.p
-					className="text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto"
-					initial={{ y: 16, opacity: 0 }}
-					animate={{ y: 0, opacity: 1 }}
-					transition={{ delay: 0.28 }}
-				>
-					A comprehensive ML platform that organizes your workflow, versions models, and ensures reproducible predictions with human review.
-				</motion.p>
-
+		<AppPage >
+			<AppSurface className="flex flex-1 flex-col overflow-hidden">
 				<motion.div
-					className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 mt-10"
-					initial={{ y: 24, opacity: 0 }}
+					initial={{ y: 20, opacity: 0 }}
 					animate={{ y: 0, opacity: 1 }}
-					transition={{ delay: 0.35 }}
+					transition={{ delay: 0.15 }}
+					className="space-y-6 px-2 py-4 md:px-4 md:py-6"
 				>
-					{FEATURES.map((f, _) => (
-						<motion.div
-							key={f.title}
-							className="bg-white/80 dark:bg-gray-800/80 backdrop-blur p-6 rounded-2xl shadow-lg text-left border border-gray-100 dark:border-gray-700"
-							whileHover={{ scale: 1.03, y: -4 }}
-							transition={{ duration: 0.18 }}
-						>
-							<div className="w-10 h-10 rounded-lg bg-indigo-500/10 dark:bg-indigo-400/10 mb-4 flex items-center justify-center">
-								<div className="w-4 h-4 rounded bg-indigo-500 dark:bg-indigo-400" />
-							</div>
-							<h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-								{f.title}
-							</h3>
-							<p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-								{f.desc}
-							</p>
-						</motion.div>
-					))}
+					<div className="space-y-4">
+						<AppEyebrow>ML Operations Suite</AppEyebrow>
+						<div className="flex flex-wrap items-center gap-3">
+							<AppTitle>ML Suite</AppTitle>
+							<AppBadge tone="accent">Platform</AppBadge>
+						</div>
+						<AppCopy className="max-w-3xl text-base md:text-lg">
+							A cohesive ML workspace for model registration, signature authoring,
+							reproducible prediction flows, human review, and explanation plugins.
+						</AppCopy>
+					</div>
+
+					<motion.div
+						className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"
+						initial={{ y: 24, opacity: 0 }}
+						animate={{ y: 0, opacity: 1 }}
+						transition={{ delay: 0.35 }}
+					>
+						{FEATURES.map((f, index) => (
+							<motion.div
+								key={f.title}
+								whileHover={{ y: -4 }}
+								transition={{ duration: 0.18 }}
+							>
+								<AppPanel className="h-full space-y-4">
+									<div className="flex items-center justify-between">
+										<div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-quiet)]">
+											<div className="h-4 w-4 rounded-full bg-[var(--accent-primary)]" />
+										</div>
+										<AppBadge tone="neutral">{String(index + 1).padStart(2, "0")}</AppBadge>
+									</div>
+									<h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+										{f.title}
+									</h3>
+									<AppCopy>{f.desc}</AppCopy>
+								</AppPanel>
+							</motion.div>
+						))}
+					</motion.div>
 				</motion.div>
-			</motion.div>
-		</div>
+			</AppSurface>
+		</AppPage>
 	);
 }

@@ -13,17 +13,22 @@ export function SidebarHeader() {
 	}
 
 	return (
-		<div className="p-4 border-b border-gray-200 dark:border-gray-700">
-			<div className="flex flex-col items-center space-y-2">
+		<div className="border-b border-[var(--border-soft)] px-6 py-6">
+			<div className="flex items-center gap-4">
 				<img
 					src={user?.avatarUrl}
 					alt="User"
-					className="w-10 h-10 rounded-full"
+					className="size-14 rounded-full border border-[var(--border-soft)]"
 					referrerPolicy="no-referrer"
 				/>
-				<span className="text-sm font-medium text-gray-900 dark:text-white">
-					{user?.userName || user?.fullName || "Guest"}
-				</span>
+				<div className="min-w-0">
+					<p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+						{user?.userName || user?.fullName || "Guest"}
+					</p>
+					<p className="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+						Workspace
+					</p>
+				</div>
 			</div>
 		</div>
 	);

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Database, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
+import { AppBadge, cx } from "../../app/components";
 import type { ModelDto } from "../api/modelService";
 
 const getModelIcon = (type: string) => {
@@ -19,13 +20,13 @@ const getModelIcon = (type: string) => {
 const getStatusColor = (status: string) => {
 	switch (status) {
 		case "active":
-			return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+			return "success";
 		case "training":
-			return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
+			return "warning";
 		case "inactive":
-			return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
+			return "neutral";
 		default:
-			return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
+			return "neutral";
 	}
 };
 
@@ -48,41 +49,41 @@ export function ModelCard({
 		<motion.button
 			key={item.id}
 			onClick={() => onItemSelect(item.id)}
-			className={`items-start text-left p-4 rounded-xl border transition-all grid grid-cols-[2fr_12fr_2fr] duration-300 ${isSelected
-					? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 shadow-md"
-					: "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-				}`}
+			className={cx(
+				"grid grid-cols-[auto_1fr_auto] items-start gap-4 rounded-[22px] border p-4 text-left transition",
+				"border-[var(--border-soft)] bg-[var(--surface-secondary)]",
+				isSelected
+					? "bg-[var(--accent-quiet)] shadow-[var(--shadow-hover)]"
+					: "hover:bg-[var(--surface-primary)] hover:shadow-[var(--shadow-hover)]",
+			)}
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: index * 0.1, duration: 0.3 }}
-			whileHover={{ scale: 1.02, y: -2 }}
+			whileHover={{ scale: 1.01, y: -2 }}
 			whileTap={{ scale: 0.98 }}
 		>
-			{/* Icon Section */}
 			<div
-				className={`flex items-left p-2 max-w-fit rounded-lg ${isSelected ? "bg-blue-100 dark:bg-blue-800" : "bg-gray-200 dark:bg-gray-700"}`}
+				className={cx(
+					"flex max-w-fit items-center rounded-2xl p-3",
+					isSelected ? "bg-[var(--surface-primary)]" : "bg-[var(--surface-muted)]",
+				)}
 			>
 				{Icon && (
 					<Icon
 						size={16}
-						className={
-							isSelected
-								? "text-blue-600 dark:text-blue-400"
-								: "text-gray-600 dark:text-gray-400"
-						}
+						className={isSelected ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]"}
 					/>
 				)}
 			</div>
-			{/* Info Section */}
-			<div className="">
-				<h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+			<div>
+				<h3 className="truncate text-sm font-semibold text-[var(--text-primary)]">
 					{item.name}
 				</h3>
 
-				<div className="flex flex-col text-xs gap-y-2 text-gray-600 dark:text-gray-400">
+				<div className="mt-2 flex flex-col gap-y-2 text-xs text-[var(--text-secondary)]">
 					<span className="capitalize">{item.type}</span>
 
-					<div className="flex flex-col text-xs text-gray-500 dark:text-gray-500 font-mono truncate">
+					<div className="flex flex-col truncate font-mono text-xs text-[var(--text-muted)]">
 						<span>Estimator: {item.specificType}</span>
 						<span>
 							Created At: {new Date(item.createdAt).toLocaleDateString()}
@@ -91,13 +92,10 @@ export function ModelCard({
 					</div>
 				</div>
 			</div>
-			{/* Status Section */}
 			<div className="flex flex-col justify-between items-center">
-				<span
-					className={`p-2 text-xs justify-center w-fit rounded-md ${getStatusColor("active")}`}
-				>
-					{"active"}
-				</span>
+				<AppBadge tone={getStatusColor("active") as "success" | "warning" | "neutral"}>
+					active
+				</AppBadge>
 			</div>
 		</motion.button>
 	);

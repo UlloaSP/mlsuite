@@ -7,6 +7,7 @@ import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useLogout, useUser } from "../../user/hooks";
 import { AuthButton } from "./AuthButton";
+import { SidebarTile } from "./SidebarTile";
 
 export function SidebarFooter() {
 	const { data: user } = useUser();
@@ -43,30 +44,26 @@ export function SidebarFooter() {
 	};
 
 	return (
-		<div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+		<div className="space-y-3 border-t border-[var(--border-soft)] px-6 py-5">
 			{user ? (
-				// Logged in state: Show provider label and logout button
 				<div className="space-y-2">
-					<div className="text-center py-1">
-						<span className="text-xs text-gray-500 dark:text-gray-400">
+					<div className="px-1 py-1 text-center">
+						<span className="text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)]">
 							Logged in with {getProviderDisplayName()}
 						</span>
 					</div>
-					<button
-						type="button"
+					<SidebarTile
+						icon={LogOut}
+						label="Log Out"
+						variant="auth"
 						onClick={() => {
 							logout();
 							navigate("/");
 						}}
-						className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${getProviderColors().bg
-							} ${getProviderColors().hover} ${getProviderColors().text} active:scale-[0.98]`}
-					>
-						<LogOut size={18} />
-						<span className="text-sm">Log Out</span>
-					</button>
+						className={`${getProviderColors().bg} ${getProviderColors().hover} ${getProviderColors().text}`}
+					/>
 				</div>
 			) : (
-				// Logged out state: Show all auth buttons
 				<>
 					<AuthButton
 						provider="google"

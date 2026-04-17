@@ -67,9 +67,8 @@ export function ToggleButton({
 			initial={{ scale: 0.95, opacity: 0 }}
 			animate={{ scale: 1, opacity: 1 }}
 			transition={{ duration: 0.2 }}
-			className="flex flex-col self-center justify-center items-center gap-3 h-full"
+			className="flex h-full flex-col items-center justify-center gap-3 self-center"
 		>
-			{/* Toggle Switch */}
 			<div className="relative">
 				<motion.button
 					disabled={disabled}
@@ -77,11 +76,12 @@ export function ToggleButton({
 					whileHover={!disabled ? { scale: 1.02 } : {}}
 					whileTap={!disabled ? { scale: 0.98 } : {}}
 					className={`
-              relative flex h-12 w-44 items-center rounded-full p-1 transition-all duration-200 overflow-hidden
-              ${disabled ? "bg-gray-200 cursor-not-allowed" : "bg-gray-100 hover:bg-gray-200 shadow-sm"}
+              relative flex h-12 w-44 items-center overflow-hidden rounded-full border p-1 transition-all duration-200
+              ${disabled
+				? "cursor-not-allowed border-[var(--border-soft)] bg-[var(--surface-muted)]"
+				: "border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)] hover:bg-[var(--surface-muted)]"}
             `}
 				>
-					{/* Progress Bar / Active Element */}
 					<motion.div
 						animate={{
 							x: progressProps.x,
@@ -91,12 +91,13 @@ export function ToggleButton({
 							duration: 1,
 							ease: isTransitioning ? "easeInOut" : "easeOut",
 						}}
-						className={`absolute h-10 rounded-full ${disabled ? "bg-gray-500" : "bg-emerald-500"} shadow-sm z-20`}
+						className={`absolute z-20 h-10 rounded-full ${disabled
+							? "bg-[var(--text-muted)]"
+							: "bg-[var(--accent-primary)]"} shadow-[var(--shadow-card)]`}
 						style={{
 							top: 4,
 						}}
 					>
-						{/* Icon inside the progress bar */}
 						<div className="flex h-full w-full items-center justify-center text-white">
 							<motion.div
 								key={isTransitioning ? "spinning" : isJson ? "json" : "html"}
@@ -115,26 +116,23 @@ export function ToggleButton({
 						</div>
 					</motion.div>
 
-					{/* Static Labels - Only visible when not covered by active element */}
 					<div className="absolute inset-1 flex items-center z-10">
-						{/* JSON Label */}
 						<motion.div
 							animate={{
 								opacity: isTransitioning || isJson ? 0 : 1,
 							}}
 							transition={{ duration: 0.2 }}
-							className="flex h-10 w-20 items-center justify-center text-gray-500"
+							className="flex h-10 w-20 items-center justify-center text-[var(--text-secondary)]"
 						>
 							<Braces className="h-5 w-5" />
 						</motion.div>
 
-						{/* HTML Label */}
 						<motion.div
 							animate={{
 								opacity: isTransitioning || !isJson ? 0 : 1,
 							}}
 							transition={{ duration: 0.2 }}
-							className="flex h-10 w-20 items-center justify-center text-gray-500"
+							className="flex h-10 w-20 items-center justify-center text-[var(--text-secondary)]"
 						>
 							<Code className="h-5 w-5" />
 						</motion.div>
@@ -142,13 +140,12 @@ export function ToggleButton({
 				</motion.button>
 			</div>
 
-			{/* Status Text */}
 			<motion.div
 				key={isTransitioning ? "processing" : isJson ? "json" : "html"}
 				initial={{ opacity: 0, y: 5 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.2 }}
-				className="text-sm text-gray-500 font-medium"
+				className="text-sm font-medium text-[var(--text-secondary)]"
 			>
 				{isTransitioning ? (
 					<span className="flex items-center gap-2">

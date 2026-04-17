@@ -7,6 +7,7 @@ import { useAtom } from "jotai";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { AppPage, AppSurface } from "../../app/components";
 import { Unauthorized } from "../../app/pages/Unauthorized";
 import { applyPredictionInputsToSchema } from "../../app/utils/mlform";
 import {
@@ -63,33 +64,32 @@ export function CreatePredictionPage() {
 	if (!user || error) return <Unauthorized />;
 
 	return (
-		<div className="relative flex flex-1 size-full">
+		<AppPage className="relative">
 			<motion.div
-				className="absolute inset-0 flex flex-1 size-full overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50 to-violet-50 dark:from-gray-900 dark:via-slate-800 dark:to-violet-500"
+				className="absolute inset-0 flex flex-1 size-full overflow-hidden"
 				initial={false}
-				animate={{ padding: isEditorActive ? "3rem" : "0rem" }}
+				animate={{ padding: isEditorActive ? "0rem" : "0rem" }}
 				transition={{ duration: 0.5, ease: "easeInOut" }}
 			>
-				<motion.div
-					className="flex flex-col flex-1 gap-4 overflow-hidden
-        bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl
-        rounded-md shadow-2xl border border-white/20
-        dark:border-gray-700/20"
-					initial={false}
-					animate={{
-						opacity: 1,
-						y: 0,
-						padding: isEditorActive ? "3rem" : "0rem",
-					}}
-					transition={{ duration: 1, ease: "easeInOut" }}
-				>
-					<CreatePredictionHeader
-						isEditorActive={isEditorActive}
-						onToggleMode={() => setIsEditorActive(!isEditorActive)}
-					/>
-					{isEditorActive ? <EditorWrapper /> : <CreatePredictionBodyForm />}
-				</motion.div>
+				<AppSurface className="flex flex-1 flex-col gap-4 overflow-hidden">
+					<motion.div
+						className="flex flex-1 flex-col gap-4 overflow-hidden"
+						initial={false}
+						animate={{
+							opacity: 1,
+							y: 0,
+							padding: isEditorActive ? "1.5rem" : "0rem",
+						}}
+						transition={{ duration: 1, ease: "easeInOut" }}
+					>
+						<CreatePredictionHeader
+							isEditorActive={isEditorActive}
+							onToggleMode={() => setIsEditorActive(!isEditorActive)}
+						/>
+						{isEditorActive ? <EditorWrapper /> : <CreatePredictionBodyForm />}
+					</motion.div>
+				</AppSurface>
 			</motion.div>
-		</div>
+		</AppPage>
 	);
 }

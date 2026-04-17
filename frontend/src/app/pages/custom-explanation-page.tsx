@@ -3,10 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { ArrowUpDown, Check, ChevronDown, Power, Search, Trash2, Upload, XCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { CheckCircle2, Power, Trash2, Upload, XCircle } from "lucide-react";
-import { Unauthorized } from "./Unauthorized";
 import { useUser } from "../../user/hooks";
 import {
 	activateCustomExplanation,
@@ -17,11 +16,36 @@ import {
 	type CustomExplanationDto,
 } from "../api/customExplanationService";
 import {
+	AppBadge,
+	AppButton,
+	AppIconButton,
+	AppPage,
+	AppPageHeader,
+	AppPanel,
+	AppSurface,
+	AppTextField,
+	cx,
+} from "../components";
+import {
 	invalidateActiveCustomExplanationDefinition,
 	validateCustomExplanationSource,
 } from "../utils/mlform/custom-explanation";
+import { Unauthorized } from "./Unauthorized";
 
 const BUILTIN_DEFAULT_ID = "builtin-default-plugin";
+
+type FilterMode = "all" | "active" | "inactive";
+type SortMode = "updated" | "name" | "size";
+type ToastState = {
+	tone: "success" | "error";
+	message: string;
+} | null;
+
+const SORT_LABELS: Record<SortMode, string> = {
+	updated: "Latest updated",
+	name: "Name",
+	size: "Size",
+};
 
 const readFileText = (file: File): Promise<string> =>
 	new Promise((resolve, reject) => {
@@ -30,12 +54,6 @@ const readFileText = (file: File): Promise<string> =>
 		reader.onerror = () => reject(reader.error ?? new Error("Could not read selected file."));
 		reader.readAsText(file);
 	});
-
-type ValidationState =
-	| { status: "idle"; message: string }
-	| { status: "loading"; message: string }
-	| { status: "success"; message: string }
-	| { status: "error"; message: string };
 
 const formatTimestamp = (value: string): string => {
 	const date = new Date(value);
@@ -59,39 +77,69 @@ const isBuiltinPlugin = (item: CustomExplanationDto): boolean => item.id === BUI
 export function CustomExplanationPage() {
 	const { data: user, error } = useUser();
 	const inputRef = useRef<HTMLInputElement | null>(null);
+	const sortMenuRef = useRef<HTMLDivElement | null>(null);
 	const [items, setItems] = useState<CustomExplanationDto[]>([]);
-	const [validation, setValidation] = useState<ValidationState>({
-		status: "idle",
-		message: "Plugin catalog ready. Activate any combination or leave all disabled.",
-	});
 	const [isBusy, setIsBusy] = useState(false);
+	const [query, setQuery] = useState("");
+	const [filter, setFilter] = useState<FilterMode>("all");
+	const [sort, setSort] = useState<SortMode>("updated");
+	const [isSortOpen, setIsSortOpen] = useState(false);
+	const [toast, setToast] = useState<ToastState>(null);
 
-	const refreshItems = async (message?: string) => {
-		setIsBusy(true);
-		try {
-			const nextItems = await getCustomExplanations();
-			setItems(nextItems);
-			const activeCount = nextItems.filter((item) => item.active).length;
-			setValidation({
-				status: "success",
-				message:
-					message ??
-					(activeCount > 0
-						? `Catalog loaded. ${activeCount} plugin${activeCount === 1 ? "" : "s"} active.`
-						: "Catalog loaded. No active plugins, so explanations stay hidden."),
-			});
-		} catch (loadError: unknown) {
-			setValidation({
-				status: "error",
-				message: loadError instanceof Error ? loadError.message : String(loadError),
-			});
-		} finally {
-			setIsBusy(false);
-		}
+	const pushToast = (tone: "success" | "error", message: string) => {
+		setToast({ tone, message });
 	};
 
 	useEffect(() => {
-		void refreshItems();
+		if (!toast) {
+			return;
+		}
+
+		const timer = window.setTimeout(() => {
+			setToast(null);
+		}, 3200);
+
+		return () => {
+			window.clearTimeout(timer);
+		};
+	}, [toast]);
+
+	useEffect(() => {
+		const handlePointerDown = (event: PointerEvent) => {
+			if (!sortMenuRef.current?.contains(event.target as Node)) {
+				setIsSortOpen(false);
+			}
+		};
+
+		const handleEscape = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				setIsSortOpen(false);
+			}
+		};
+
+		window.addEventListener("pointerdown", handlePointerDown);
+		window.addEventListener("keydown", handleEscape);
+
+		return () => {
+			window.removeEventListener("pointerdown", handlePointerDown);
+			window.removeEventListener("keydown", handleEscape);
+		};
+	}, []);
+
+	const refreshItems = async (): Promise<CustomExplanationDto[]> => {
+		const nextItems = await getCustomExplanations();
+		setItems(nextItems);
+		return nextItems;
+	};
+
+	useEffect(() => {
+		void (async () => {
+			try {
+				await refreshItems();
+			} catch (loadError: unknown) {
+				pushToast("error", loadError instanceof Error ? loadError.message : String(loadError));
+			}
+		})();
 	}, []);
 
 	if (!user || error) {
@@ -105,21 +153,14 @@ export function CustomExplanationPage() {
 		}
 
 		setIsBusy(true);
-		setValidation({
-			status: "loading",
-			message: `Validating ${file.name} before upload...`,
-		});
-
 		try {
 			const source = await readFileText(file);
 			await validateCustomExplanationSource(source);
 			await uploadCustomExplanation(file);
-			await refreshItems(`${file.name} uploaded to catalog.`);
+			await refreshItems();
+			pushToast("success", `${file.name} uploaded to catalog.`);
 		} catch (uploadError: unknown) {
-			setValidation({
-				status: "error",
-				message: uploadError instanceof Error ? uploadError.message : String(uploadError),
-			});
+			pushToast("error", uploadError instanceof Error ? uploadError.message : String(uploadError));
 		} finally {
 			setIsBusy(false);
 			event.target.value = "";
@@ -128,11 +169,6 @@ export function CustomExplanationPage() {
 
 	const handleToggle = async (item: CustomExplanationDto) => {
 		setIsBusy(true);
-		setValidation({
-			status: "loading",
-			message: item.active ? `Deactivating ${item.fileName}...` : `Activating ${item.fileName}...`,
-		});
-
 		try {
 			if (item.active) {
 				await deactivateCustomExplanation(item.id);
@@ -140,16 +176,10 @@ export function CustomExplanationPage() {
 				await activateCustomExplanation(item.id);
 			}
 			invalidateActiveCustomExplanationDefinition();
-			await refreshItems(
-				item.active
-					? `${item.fileName} deactivated.`
-					: `${item.fileName} activated.`,
-			);
+			await refreshItems();
+			pushToast("success", `${item.fileName} ${item.active ? "deactivated" : "activated"}.`);
 		} catch (toggleError: unknown) {
-			setValidation({
-				status: "error",
-				message: toggleError instanceof Error ? toggleError.message : String(toggleError),
-			});
+			pushToast("error", toggleError instanceof Error ? toggleError.message : String(toggleError));
 		} finally {
 			setIsBusy(false);
 		}
@@ -157,63 +187,110 @@ export function CustomExplanationPage() {
 
 	const handleDelete = async (item: CustomExplanationDto) => {
 		setIsBusy(true);
-		setValidation({
-			status: "loading",
-			message: `Deleting ${item.fileName}...`,
-		});
-
 		try {
 			await deleteCustomExplanation(item.id);
 			invalidateActiveCustomExplanationDefinition();
-			await refreshItems(`${item.fileName} deleted from catalog.`);
+			await refreshItems();
+			pushToast("success", `${item.fileName} deleted from catalog.`);
 		} catch (deleteError: unknown) {
-			setValidation({
-				status: "error",
-				message: deleteError instanceof Error ? deleteError.message : String(deleteError),
-			});
+			pushToast("error", deleteError instanceof Error ? deleteError.message : String(deleteError));
 		} finally {
 			setIsBusy(false);
 		}
 	};
 
+	const handleDeactivateAll = async () => {
+		const activeItems = items.filter((item) => item.active);
+		if (activeItems.length === 0) {
+			return;
+		}
+
+		setIsBusy(true);
+		try {
+			await Promise.all(activeItems.map((item) => deactivateCustomExplanation(item.id)));
+			invalidateActiveCustomExplanationDefinition();
+			await refreshItems();
+			pushToast("success", "All plugins deactivated. Explanation panels stay hidden.");
+		} catch (deactivateError: unknown) {
+			pushToast("error", deactivateError instanceof Error ? deactivateError.message : String(deactivateError));
+		} finally {
+			setIsBusy(false);
+		}
+	};
+
+	const normalizedQuery = query.trim().toLowerCase();
+	const filteredItems = items
+		.filter((item) => {
+			if (filter === "active" && !item.active) {
+				return false;
+			}
+
+			if (filter === "inactive" && item.active) {
+				return false;
+			}
+
+			if (normalizedQuery.length === 0) {
+				return true;
+			}
+
+			return item.fileName.toLowerCase().includes(normalizedQuery);
+		})
+		.sort((left, right) => {
+			switch (sort) {
+				case "name":
+					return left.fileName.localeCompare(right.fileName, undefined, { sensitivity: "base" });
+				case "size":
+					return right.sizeBytes - left.sizeBytes;
+				case "updated":
+				default:
+					return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+			}
+		});
+
+	const activeCount = items.filter((item) => item.active).length;
 	const catalogCount = items.length;
 
 	return (
-		<div className="flex size-full overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.2),_transparent_26%),radial-gradient(circle_at_top_right,_rgba(249,115,22,0.14),_transparent_24%),linear-gradient(135deg,_#f8fbff_0%,_#eef6ff_46%,_#fff8f1_100%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.16),_transparent_22%),radial-gradient(circle_at_top_right,_rgba(249,115,22,0.1),_transparent_18%),linear-gradient(135deg,_#07111d_0%,_#0f172a_52%,_#111827_100%)]">
-			<div className="flex flex-1 overflow-hidden p-8">
-				<motion.div
-					initial={{ opacity: 0, y: 18 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-					className="flex flex-1 flex-col gap-6 overflow-hidden rounded-[28px] border border-white/40 bg-white/75 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/55"
-				>
-					<section className="flex flex-wrap items-start justify-between gap-6 rounded-[24px] border border-slate-200/70 bg-white/85 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-slate-800 dark:bg-slate-900/75">
-						<div className="space-y-3">
-							<p className="text-[0.68rem] font-semibold uppercase tracking-[0.36em] text-cyan-700 dark:text-cyan-300">
-								Plugin Catalog
-							</p>
-							<h1 className="font-serif text-4xl leading-none text-slate-900 dark:text-white">
-								Explanation Plugins
-							</h1>
-							<p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-								Each plugin decides how to fetch explanation data and how to render it.
-								You can activate several at once, deactivate all, or delete any catalog item.
-								If none are active, explanation panels stay hidden even if the schema asks for
-								them.
-							</p>
-						</div>
+		<AppPage>
+			<motion.div
+				initial={{ opacity: 0, y: 18 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+				className="flex flex-1"
+			>
+				<AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
+					<AppPageHeader
+						eyebrow="Plugin Catalog"
+						title={
+							<span className="flex flex-wrap items-center gap-3">
+								<span>Explanation Plugins</span>
+							</span>
+						}
+						description="Each plugin decides where explanation data comes from and how it is represented. You can activate several at once, deactivate all, delete any catalog item, or leave everything off so explanations never render even if the schema requests them."
+						aside={
+							<>
+								<AppButton
+									type="button"
+									onClick={handleDeactivateAll}
+									disabled={isBusy || activeCount === 0}
+									variant="secondary"
+								>
+									<Power size={15} />
+									Deactivate All
+								</AppButton>
+								<AppButton
+									type="button"
+									onClick={() => inputRef.current?.click()}
+									disabled={isBusy}
+								>
+									<Upload size={16} />
+									Upload Plugin
+								</AppButton>
+							</>
+						}
+					/>
 
-						<div className="rounded-[22px] border border-cyan-200 bg-cyan-50 px-5 py-4 dark:border-cyan-900/60 dark:bg-cyan-950/30">
-							<p className="text-[0.65rem] uppercase tracking-[0.24em] text-cyan-700 dark:text-cyan-300">
-								Catalog Plugins
-							</p>
-							<p className="mt-2 text-3xl font-semibold text-cyan-900 dark:text-cyan-100">
-								{catalogCount}
-							</p>
-						</div>
-					</section>
-
-					<section className="flex min-h-0 flex-1 flex-col gap-5 rounded-[24px] border border-slate-200/70 bg-white/85 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-slate-800 dark:bg-slate-900/75">
+					<AppPanel className="grid gap-3">
 						<input
 							ref={inputRef}
 							type="file"
@@ -224,113 +301,196 @@ export function CustomExplanationPage() {
 							}}
 						/>
 
-						<div className="flex flex-wrap items-center justify-between gap-4">
-							<div
-								className={`flex-1 rounded-[22px] border px-4 py-4 text-sm shadow-sm ${
-									validation.status === "error"
-										? "border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
-										: validation.status === "success"
-											? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300"
-											: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200"
-								}`}
-							>
-								<div className="flex items-start gap-3">
-									{validation.status === "error" ? (
-										<XCircle size={18} className="mt-0.5 shrink-0" />
-									) : (
-										<CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-									)}
-									<p className="whitespace-pre-wrap leading-6">{validation.message}</p>
-								</div>
+						<div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_auto_auto]">
+							<AppTextField
+								value={query}
+								onChange={(event) => setQuery(event.target.value)}
+								placeholder="Search plugins"
+								prefix={<Search size={16} className="text-[var(--text-muted)]" />}
+							/>
+
+							<div className="flex flex-wrap items-center gap-2">
+								{([
+									["all", "All"],
+									["active", "Active"],
+									["inactive", "Inactive"],
+								] as const).map(([value, label]) => (
+									<button
+										key={value}
+										type="button"
+										onClick={() => setFilter(value)}
+										className={cx(
+											"rounded-full px-4 py-3 text-sm font-medium transition",
+											filter === value
+												? "bg-[var(--text-primary)] text-[var(--text-inverse)]"
+												: "border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+										)}
+									>
+										{label}
+									</button>
+								))}
 							</div>
 
-							<button
-								type="button"
-								onClick={() => inputRef.current?.click()}
-								disabled={isBusy}
-								className="group inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400"
-							>
-								<Upload size={16} className="transition group-hover:-translate-y-0.5" />
-								Upload `.ts`
-							</button>
+							<div ref={sortMenuRef} className="relative">
+								<button
+									type="button"
+									onClick={() => setIsSortOpen((current) => !current)}
+									className="inline-flex min-w-[220px] items-center justify-between gap-3 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-primary)] shadow-[var(--shadow-card)] transition hover:border-[var(--text-primary)]"
+									aria-haspopup="listbox"
+									aria-expanded={isSortOpen}
+								>
+									<span className="inline-flex items-center gap-3">
+										<ArrowUpDown size={15} className="text-[var(--text-muted)]" />
+										{SORT_LABELS[sort]}
+									</span>
+									<ChevronDown
+										size={16}
+										className={cx(
+											"text-[var(--text-secondary)] transition",
+											isSortOpen && "rotate-180",
+										)}
+									/>
+								</button>
+
+								{isSortOpen ? (
+									<div
+										role="listbox"
+										className="absolute right-0 top-[calc(100%+0.75rem)] z-20 min-w-[220px] overflow-hidden rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]"
+									>
+										{(Object.entries(SORT_LABELS) as Array<[SortMode, string]>).map(([value, label]) => (
+											<button
+												key={value}
+												type="button"
+												role="option"
+												aria-selected={sort === value}
+												onClick={() => {
+													setSort(value);
+													setIsSortOpen(false);
+												}}
+												className={cx(
+													"flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left text-sm font-medium transition",
+													sort === value
+														? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
+														: "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
+												)}
+											>
+												<span>{label}</span>
+												{sort === value ? <Check size={15} /> : null}
+											</button>
+										))}
+									</div>
+								) : null}
+							</div>
 						</div>
 
-						<div className="min-h-0 flex-1 overflow-auto rounded-[22px] border border-slate-200/80 bg-slate-50/85 p-3 dark:border-slate-800 dark:bg-slate-950/45">
-							<div className="space-y-3">
-								{items.length === 0 ? (
-									<div className="rounded-[18px] border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-										No plugins in catalog.
-									</div>
-								) : (
-									items.map((item) => (
-										<div
-											key={item.id}
-											className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70"
-										>
-											<div className="flex flex-wrap items-start justify-between gap-4">
-												<div className="space-y-2">
-													<div className="flex flex-wrap items-center gap-2">
-														<p className="font-medium text-slate-900 dark:text-white">
-															{item.fileName}
-														</p>
-														<span
-															className={`rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${
-																item.active
-																	? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/45 dark:text-emerald-300"
-																	: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-															}`}
-														>
-															{item.active ? "active" : "inactive"}
-														</span>
-														<span className="rounded-full border border-slate-200 px-2.5 py-1 text-[0.64rem] uppercase tracking-[0.18em] text-slate-500 dark:border-slate-700 dark:text-slate-300">
-															{isBuiltinPlugin(item) ? "built-in" : "uploaded"}
-														</span>
-													</div>
-													<p className="text-xs text-slate-500 dark:text-slate-400">
-														{isBuiltinPlugin(item)
-															? "Built into catalog."
-															: `${formatSize(item.sizeBytes)} · Updated ${formatTimestamp(item.updatedAt)}`}
-													</p>
-												</div>
+						<div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm text-[var(--text-secondary)]">
+							<p className="font-medium text-[var(--text-primary)]">
+								{filter === "active"
+									? `Showing ${activeCount} active plugin${activeCount !== 1 ? "s" : ""}.`
+									: filter === "inactive"
+										? `Showing ${catalogCount - activeCount} inactive plugin${catalogCount - activeCount !== 1 ? "s" : ""}.`
+										: `Showing all ${catalogCount} plugin${catalogCount !== 1 ? "s" : ""}.`}
+							</p>
+							<p>
+								{activeCount === 0
+									? "No active plugins. Explanations hidden."
+									: "Active plugins render in parallel."}
+							</p>
+						</div>
+					</AppPanel>
 
-												<div className="flex flex-wrap items-center gap-2">
-													<button
-														type="button"
-														onClick={() => {
-															void handleToggle(item);
-														}}
-														disabled={isBusy}
-														className={`inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition disabled:cursor-not-allowed disabled:opacity-45 ${
-															item.active
-																? "border border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-900/60 dark:text-amber-300 dark:hover:bg-amber-950/30"
-																: "bg-slate-950 text-white hover:bg-emerald-600 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400"
-														}`}
-													>
-														<Power size={12} />
-														{item.active ? "deactivate" : "activate"}
-													</button>
-
-													<button
-														type="button"
-														onClick={() => {
-															void handleDelete(item);
-														}}
-														disabled={isBusy}
-														className="inline-flex items-center gap-1 rounded-full border border-red-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/30"
-													>
-														<Trash2 size={12} />
-														delete
-													</button>
-												</div>
+					<section className="min-h-0 flex-1 overflow-auto">
+						<div className="space-y-3">
+							{filteredItems.length === 0 ? (
+								<AppPanel className="border-dashed px-6 py-16 text-center text-sm text-[var(--text-secondary)]">
+									No plugins match current search/filter.
+								</AppPanel>
+							) : (
+								filteredItems.map((item, index) => (
+									<motion.div
+										key={item.id}
+										initial={{ opacity: 0, y: 12 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ delay: index * 0.03, duration: 0.28 }}
+										className="grid gap-4 rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)] px-5 py-5 shadow-[var(--shadow-card)] lg:grid-cols-[minmax(260px,1.2fr)_minmax(160px,0.65fr)_auto]"
+									>
+										<div className="min-w-0 space-y-3">
+											<div className="flex flex-wrap items-center gap-2">
+												<span
+													className={cx(
+														"inline-flex size-2.5 rounded-full",
+														item.active ? "bg-[var(--accent-primary)]" : "bg-[var(--text-muted)]",
+													)}
+												/>
+												<p className="truncate text-base font-semibold text-[var(--text-primary)]">
+													{item.fileName}
+												</p>
+												<AppBadge className="px-2.5 py-1 text-[0.7rem]">
+													{isBuiltinPlugin(item) ? "system" : "user"}
+												</AppBadge>
 											</div>
+
+											<p className="text-sm leading-6 text-[var(--text-secondary)]">
+												{isBuiltinPlugin(item)
+													? "Built-in catalog plugin. Can be activated, deactivated, or removed like any other item."
+													: `Updated ${formatTimestamp(item.updatedAt)} · ${formatSize(item.sizeBytes)}`}
+											</p>
 										</div>
-									))
-								)}
-							</div>
+
+										<div className="flex items-center justify-start gap-2 lg:justify-end">
+											<AppButton
+												type="button"
+												onClick={() => {
+													void handleToggle(item);
+												}}
+												disabled={isBusy}
+												variant={item.active ? "secondary" : "primary"}
+												className={item.active ? undefined : "hover:bg-[var(--accent-primary-strong)]"}
+											>
+												<Power size={14} />
+												{item.active ? "Deactivate" : "Activate"}
+											</AppButton>
+
+											<AppIconButton
+												type="button"
+												onClick={() => {
+													void handleDelete(item);
+												}}
+												disabled={isBusy}
+												aria-label={`Delete ${item.fileName}`}
+												className="hover:border-[color:var(--danger-quiet)] hover:bg-[var(--danger-quiet)] hover:text-[var(--danger-text)]"
+											>
+												<Trash2 size={16} />
+											</AppIconButton>
+										</div>
+									</motion.div>
+								))
+							)}
 						</div>
 					</section>
-				</motion.div>
-			</div>
-		</div>
+				</AppSurface>
+			</motion.div>
+
+			{
+				toast ? (
+					<motion.div
+						initial={{ opacity: 0, y: 18 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: 18 }}
+						className={cx(
+							"pointer-events-none fixed bottom-6 right-6 z-50 max-w-sm rounded-[22px] px-5 py-4 text-sm shadow-[var(--shadow-hover)]",
+							toast.tone === "error"
+								? "bg-[var(--danger-text)] text-[var(--text-inverse)]"
+								: "bg-[var(--text-primary)] text-[var(--text-inverse)]",
+						)}
+					>
+						<div className="flex items-start gap-3">
+							{toast.tone === "error" ? <XCircle size={18} className="mt-0.5 shrink-0" /> : null}
+							<p className="leading-6">{toast.message}</p>
+						</div>
+					</motion.div>
+				) : null
+			}
+		</AppPage >
 	);
 }
