@@ -20,5 +20,7 @@ public interface CustomExplanationService {
 
     void deactivate(OAuthProvider provider, String oauthId, String id);
 
+    void deactivateAll(OAuthProvider provider, String oauthId);
+
     void delete(OAuthProvider provider, String oauthId, String id);
 }

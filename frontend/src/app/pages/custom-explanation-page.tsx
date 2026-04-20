@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useUser } from "../../user/hooks";
 import {
 	activateCustomExplanation,
+	deactivateAllCustomExplanations,
 	deactivateCustomExplanation,
 	deleteCustomExplanation,
 	getCustomExplanations,
@@ -200,14 +201,13 @@ export function CustomExplanationPage() {
 	};
 
 	const handleDeactivateAll = async () => {
-		const activeItems = items.filter((item) => item.active);
-		if (activeItems.length === 0) {
+		if (!items.some((item) => item.active)) {
 			return;
 		}
 
 		setIsBusy(true);
 		try {
-			await Promise.all(activeItems.map((item) => deactivateCustomExplanation(item.id)));
+			await deactivateAllCustomExplanations();
 			invalidateActiveCustomExplanationDefinition();
 			await refreshItems();
 			pushToast("success", "All plugins deactivated. Explanation panels stay hidden.");

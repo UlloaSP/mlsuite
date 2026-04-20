@@ -49,6 +49,12 @@ export const deactivateCustomExplanation = async (id: string): Promise<void> => 
 	});
 };
 
+export const deactivateAllCustomExplanations = async (): Promise<void> => {
+	await appFetch("/api/custom-explanation/deactivate-all", {
+		method: "POST",
+	});
+};
+
 export const deleteCustomExplanation = async (id: string): Promise<void> => {
 	await appFetch(`/api/custom-explanation/delete?id=${encodeURIComponent(id)}`, {
 		method: "POST",

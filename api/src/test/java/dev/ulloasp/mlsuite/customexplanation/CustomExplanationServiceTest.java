@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
@@ -148,6 +149,27 @@ class CustomExplanationServiceTest {
         customExplanationService.delete(OAuthProvider.GITHUB, "user-1", "item-7");
 
         verify(objectStorageService).delete(BUCKET, USER_PREFIX + "/items/item-7.json");
+    }
+
+    @Test
+    void deactivateAll_ClearsOnlyActiveIds() throws Exception {
+        OffsetDateTime now = OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC);
+        byte[] stateBytes = objectMapper.writeValueAsBytes(new StatePayload(
+                List.of("builtin-default-plugin", "item-2"),
+                List.of("builtin-default-plugin"),
+                now));
+
+        when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/state.json"))
+                .thenReturn(Optional.of(stateBytes));
+
+        customExplanationService.deactivateAll(OAuthProvider.GITHUB, "user-1");
+
+        ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(objectStorageService).store(anyString(), anyString(), anyString(), payloadCaptor.capture());
+
+        StatePayload persisted = objectMapper.readValue(payloadCaptor.getValue(), StatePayload.class);
+        assertTrue(persisted.activeIds().isEmpty());
+        assertEquals(List.of("builtin-default-plugin"), persisted.deletedBuiltinIds());
     }
 
     private record StoredCustomExplanationTestPayload(

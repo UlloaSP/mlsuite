@@ -155,6 +155,12 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
     }
 
     @Override
+    public void deactivateAll(OAuthProvider provider, String oauthId) {
+        CustomExplanationState state = readState(provider, oauthId);
+        writeState(provider, oauthId, new LinkedHashSet<>(), new LinkedHashSet<>(state.deletedBuiltinIds()));
+    }
+
+    @Override
     public void delete(OAuthProvider provider, String oauthId, String id) {
         CustomExplanationState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());

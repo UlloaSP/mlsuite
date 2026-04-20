@@ -36,6 +36,9 @@ public interface CustomExplanationController {
             OAuth2AuthenticationToken authentication,
             @RequestParam("id") String id);
 
+    @PostMapping("/deactivate-all")
+    ResponseEntity<Void> deactivateAll(OAuth2AuthenticationToken authentication);
+
     @PostMapping("/delete")
     ResponseEntity<Void> delete(
             OAuth2AuthenticationToken authentication,

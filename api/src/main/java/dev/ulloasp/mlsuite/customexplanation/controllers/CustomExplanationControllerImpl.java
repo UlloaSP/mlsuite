@@ -54,6 +54,12 @@ public class CustomExplanationControllerImpl implements CustomExplanationControl
     }
 
     @Override
+    public ResponseEntity<Void> deactivateAll(OAuth2AuthenticationToken authentication) {
+        customExplanationService.deactivateAll(provider(authentication), oauthId(authentication));
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
     public ResponseEntity<Void> delete(OAuth2AuthenticationToken authentication, String id) {
         customExplanationService.delete(provider(authentication), oauthId(authentication), id);
         return ResponseEntity.noContent().build();

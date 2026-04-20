@@ -94,13 +94,16 @@ class CustomExplanationControllerTest {
 
         ResponseEntity<CustomExplanationDto> activateResponse = controller.activate(authentication, "item-1");
         ResponseEntity<Void> deactivateResponse = controller.deactivate(authentication, "item-1");
+        ResponseEntity<Void> deactivateAllResponse = controller.deactivateAll(authentication);
         ResponseEntity<Void> deleteResponse = controller.delete(authentication, "item-1");
 
         assertEquals(HttpStatus.OK, activateResponse.getStatusCode());
         assertEquals(HttpStatus.NO_CONTENT, deactivateResponse.getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, deactivateAllResponse.getStatusCode());
         assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatusCode());
         verify(customExplanationService).activate(eq(OAuthProvider.GITHUB), eq("user-1"), eq("item-1"));
         verify(customExplanationService).deactivate(eq(OAuthProvider.GITHUB), eq("user-1"), eq("item-1"));
+        verify(customExplanationService).deactivateAll(eq(OAuthProvider.GITHUB), eq("user-1"));
         verify(customExplanationService).delete(eq(OAuthProvider.GITHUB), eq("user-1"), eq("item-1"));
     }
 }
