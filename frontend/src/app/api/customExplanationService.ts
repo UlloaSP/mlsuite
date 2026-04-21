@@ -19,9 +19,6 @@ export interface CustomExplanationDto {
 export const getCustomExplanations = async (): Promise<CustomExplanationDto[]> =>
 	appFetch<CustomExplanationDto[]>("/api/custom-explanation/all");
 
-export const getActiveCustomExplanations = async (): Promise<CustomExplanationDto[]> =>
-	appFetch<CustomExplanationDto[]>("/api/custom-explanation/active");
-
 export const uploadCustomExplanation = async (
 	file: File,
 ): Promise<CustomExplanationDto> => {

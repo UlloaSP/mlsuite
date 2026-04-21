@@ -5,9 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, type RouteObject } from "react-router";
-import { CustomExplanationPage } from "../app/pages/custom-explanation-page";
 import { NotFoundError } from "../app/pages/error-page";
 import { HomePage } from "../app/pages/homePage";
+import { PluginCatalogPage } from "../app/pages/plugin-catalog-page";
 import Layout from "../Layout";
 import { CreateModelPage } from "../models/pages/create-model-page";
 import { ModelDetailPage } from "../models/pages/model-detail-page";
@@ -64,8 +64,8 @@ export const routes: RouteObject[] = [
 				element: <ModelDetailPage />,
 			},
 			{
-				path: "custom-explanation",
-				element: <CustomExplanationPage />,
+				path: "plugins",
+				element: <PluginCatalogPage />,
 			},
 			{
 				path: "models/:modelId/signatures/:signatureId",

@@ -9,7 +9,7 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   fmt: {},
-  lint: {"options":{"typeAware":true,"typeCheck":true}},
+  lint: { "options": { "typeAware": true, "typeCheck": true } },
   plugins: [
     react({
       plugins: [],
@@ -28,6 +28,14 @@ export default defineConfig({
               name: "monaco",
               test: /node_modules[\\/](?:@monaco-editor[\\/]react|monaco-editor)(?:[\\/]|$)/,
             },
+            {
+              name: "typescript",
+              test: /node_modules[\\/]typescript(?:[\\/]|$)/,
+            },
+            {
+              name: "react",
+              test: /node_modules[\\/](?:react|react-dom)(?:[\\/]|$)/,
+            }
           ],
         },
       },

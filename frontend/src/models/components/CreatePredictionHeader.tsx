@@ -25,7 +25,9 @@ export function CreatePredictionHeader({
 }: CreatePredictionHeaderProps) {
 	const { modelId, signatureId } = useParams<{ modelId: string; signatureId: string }>();
 	const [schemaErrors] = useAtom(schemaErrorsAtom);
-	const hasErrors = schemaErrors.length > 0;
+	const hasErrors = schemaErrors.some(
+		(error: { severity?: "error" | "warning" }) => error.severity !== "warning",
+	);
 	return (
 		<motion.div
 			className={`max-h-fit ${!isEditorActive ? "px-4 pt-4" : ""}`}

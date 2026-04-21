@@ -4,9 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import {
-	ensureExplanationReportInSchema,
 	toMlformSchema,
-} from "../app/utils/mlform";
+} from "../app/utils/mlform/index";
 import type { ModelDto, PredictionDto, SignatureDto } from "./api/modelService";
 
 type JsonRecord = Record<string, unknown>;
@@ -174,6 +173,9 @@ export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSumm
 	const reports = Array.isArray(inputSignature.reports)
 		? inputSignature.reports.filter(isRecord)
 		: [];
+	const explanations = Array.isArray(inputSignature.explanations)
+		? inputSignature.explanations.filter(isRecord)
+		: [];
 
 	const fieldKinds = fields.reduce<Record<string, number>>((acc, field) => {
 		const kind = typeof field.kind === "string" ? field.kind : "unknown";
@@ -198,7 +200,7 @@ export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSumm
 	return {
 		fieldCount: fields.length,
 		reportCount: reports.length,
-		explanationsEnabled: reports.some((report) => report.explanations === true),
+		explanationsEnabled: explanations.length > 0,
 		fieldKinds,
 		reportKinds,
 		classifierLabelsCount,
@@ -216,18 +218,16 @@ export const getExplanationSnapshot = (
 	let report: ExplanationReportDescriptor | null = null;
 
 	try {
-		const schema = toMlformSchema(ensureExplanationReportInSchema(signatureSchema));
-		const explanationReport = schema.reports?.find(
-			(item) => "explanations" in item && item.explanations === true,
-		);
-		if (!explanationReport) {
+		const schema = toMlformSchema(signatureSchema);
+		const explanation = schema.explanations?.[0];
+		if (!explanation) {
 			return null;
 		}
 		report = {
-			label: explanationReport.label
-				? `${explanationReport.label} explanation`
+			label: explanation.label
+				? `${explanation.label} explanation`
 				: "Model explanation",
-			keys: [explanationReport.source, explanationReport.id, "model-explanation"].filter(
+			keys: [explanation.id, "model-explanation"].filter(
 				(value): value is string =>
 					typeof value === "string" && value.trim().length > 0,
 			),

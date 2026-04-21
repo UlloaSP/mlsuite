@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 export { mountPredictionForm } from "./mount";
 export {
 	applyPredictionInputsToSchema,
-	ensureExplanationReportInSchema,
+	filterInactiveCustomDefinitionsFromSchema,
 	mlformJsonSchema,
 	toMlformSchema,
 	validateMlformSchema,

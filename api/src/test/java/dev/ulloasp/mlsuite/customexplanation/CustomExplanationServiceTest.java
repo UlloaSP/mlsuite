@@ -60,7 +60,8 @@ class CustomExplanationServiceTest {
                 "file",
                 "explain.ts",
                 "application/typescript",
-                "export default async function renderExplanation() {}".getBytes(StandardCharsets.UTF_8));
+                "export default defineExplanationKind({ kind: 'x', schema: z.object({ kind: z.literal('x') }), fetch: () => ({ submit: async () => null }), render: { content: () => ({ type: 'json', value: null }) } })"
+                        .getBytes(StandardCharsets.UTF_8));
 
         when(objectStorageService.store(anyString(), anyString(), anyString(), any(byte[].class)))
                 .thenReturn(new StoredObject(BUCKET, "custom", file.getSize(), "etag-1"));
@@ -71,7 +72,7 @@ class CustomExplanationServiceTest {
         assertEquals("explain.ts", result.fileName());
         assertEquals(file.getSize(), result.sizeBytes());
         assertFalse(result.active());
-        assertTrue(result.source().contains("renderExplanation"));
+        assertTrue(result.source().contains("defineExplanationKind"));
         verify(objectStorageService).store(anyString(), anyString(), anyString(), any(byte[].class));
     }
 
@@ -92,7 +93,7 @@ class CustomExplanationServiceTest {
                 10,
                 now.minusDays(1),
                 now.minusDays(1),
-                "export default async function renderExplanation() { return ['one']; }"));
+                "export default defineExplanationKind({ kind: 'one', schema: z.object({ kind: z.literal('one') }), fetch: () => ({ submit: async () => ['one'] }), render: { content: () => ({ type: 'list', items: ['one'] }) } })"));
         byte[] itemTwoBytes = objectMapper.writeValueAsBytes(new StoredCustomExplanationTestPayload(
                 itemTwoId,
                 "two.ts",
@@ -100,7 +101,7 @@ class CustomExplanationServiceTest {
                 20,
                 now,
                 now,
-                "export default async function renderExplanation() { return ['two']; }"));
+                "export default defineExplanationKind({ kind: 'two', schema: z.object({ kind: z.literal('two') }), fetch: () => ({ submit: async () => ['two'] }), render: { content: () => ({ type: 'list', items: ['two'] }) } })"));
 
         when(objectStorageService.list(USER_PREFIX + "/items/")).thenReturn(List.of(
                 new StoredObjectItem(BUCKET, USER_PREFIX + "/items/item-1.json", 10L, "etag-1", now.minusDays(1)),
@@ -130,7 +131,7 @@ class CustomExplanationServiceTest {
                 20,
                 now,
                 now,
-                "export default async function renderExplanation() { return ['ok']; }"));
+                "export default defineExplanationKind({ kind: 'ok', schema: z.object({ kind: z.literal('ok') }), fetch: () => ({ submit: async () => ['ok'] }), render: { content: () => ({ type: 'list', items: ['ok'] }) } })"));
 
         when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/items/item-7.json"))
                 .thenReturn(Optional.of(itemBytes));

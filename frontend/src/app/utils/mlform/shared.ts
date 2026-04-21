@@ -4,18 +4,24 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FieldConfig, FormController, FormSchema, NormalizedFieldConfig } from "mlform/engine";
+import type { CatalogFieldDefinition } from "./custom-field";
+import type { CatalogExplanationDefinition } from "./custom-explanation";
+import type { CatalogReportDefinition } from "./custom-report";
 
 export type JsonRecord = Record<string, unknown>;
+export type CompatIssueSeverity = "error" | "warning";
 
 export type CompatIssue = {
 	path: Array<string | number>;
 	message: string;
+	severity: CompatIssueSeverity;
 };
 
 export type CompatValidationResult =
 	| {
 		success: true;
 		data: FormSchema;
+		issues: CompatIssue[];
 	}
 	| {
 		success: false;
@@ -29,6 +35,9 @@ export type MountPredictionFormOptions = {
 	schema: unknown;
 	modelId: string;
 	theme: PredictionTheme;
+	customFieldDefinitions?: readonly CatalogFieldDefinition[];
+	customReportDefinitions?: readonly CatalogReportDefinition[];
+	customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
 	onSubmit?: (inputs: Record<string, unknown>, response: Record<string, unknown>) => void;
 	onSubmitError?: (error: unknown) => void;
 };
@@ -91,9 +100,5 @@ export const normalizeIssuePath = (
 ): Array<string | number> =>
 	path.map((part) => (typeof part === "number" ? part : String(part)));
 
-export const hasExplanationsEnabled = (items: unknown[]): boolean =>
-	items.some(
-		(item) =>
-			isRecord(item) &&
-			item.explanations === true,
-	);
+export const hasBlockingIssues = (issues: readonly CompatIssue[]): boolean =>
+	issues.some((issue) => issue.severity === "error");

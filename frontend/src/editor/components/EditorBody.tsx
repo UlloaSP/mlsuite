@@ -9,32 +9,33 @@ import { parse as parseWithSourceMap } from "json-source-map";
 import { getLocation } from "jsonc-parser";
 import type * as Monaco from "monaco-editor";
 import { useEffect, useRef } from "react";
-
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
-	mlformJsonSchema,
-	validateMlformSchema,
-} from "../../app/utils/mlform";
-import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
+	getCatalogFieldDefinitions,
+	type CatalogFieldDefinition,
+} from "../../app/utils/mlform/custom-field";
 import {
-	editorDarkTheme,
-	editorLightTheme,
-	editorOptions,
-} from "../utils/editorConfig";
+	getCatalogExplanationDefinitions,
+	type CatalogExplanationDefinition,
+} from "../../app/utils/mlform/custom-explanation";
+import {
+	getCatalogReportDefinitions,
+	type CatalogReportDefinition,
+} from "../../app/utils/mlform/custom-report";
+import { mlformJsonSchema, validateMlformSchema } from "../../app/utils/mlform/index";
+import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
+import { editorDarkTheme, editorLightTheme, editorOptions } from "../utils/editorConfig";
 
-/**
- * Estructura consumida por <EditorErrorCard>.
- */
 interface EditorErrorCard {
 	line: number;
 	column: number;
 	path: string;
 	message: string;
+	severity: "error" | "warning";
 }
 
 type MonacoNamespace = typeof import("monaco-editor");
 
-// ────────────────────────────────────────── Helpers ──
 const isFieldKindPath = (p: (string | number)[]) =>
 	p.length === 3 &&
 	p[0] === "fields" &&
@@ -42,29 +43,122 @@ const isFieldKindPath = (p: (string | number)[]) =>
 	p[2] === "kind";
 
 const pathToPos = (content: string, pathArr: (string | number)[]) => {
-	const pointer = "/" + pathArr.map(String).join("/");
-	const loc = parseWithSourceMap(content).pointers[pointer]?.key ||
-		parseWithSourceMap(content).pointers[pointer]?.value || {
+	const pointer = `/${pathArr.map(String).join("/")}`;
+	const parsed = parseWithSourceMap(content);
+	const loc = parsed.pointers[pointer]?.key || parsed.pointers[pointer]?.value || {
 		line: 0,
 		column: 0,
 	};
 	return { line: loc.line + 1, column: loc.column + 1 };
 };
 
-// ────────────────────────────────────────── Componente ──
 export function EditorBody() {
-	/** Atoms */
 	const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
 	const [, setSchema] = useAtom(schemaAtom);
 	const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
 	const [theme] = useAtom(themeWithHtmlAtom);
 
-	/** Refs */
 	const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<MonacoNamespace | null>(null);
 	const compatCardsRef = useRef<EditorErrorCard[]>([]);
+	const validationSequenceRef = useRef(0);
+	const catalogFieldDefinitionsRef = useRef<readonly CatalogFieldDefinition[]>([]);
+	const catalogReportDefinitionsRef = useRef<readonly CatalogReportDefinition[]>([]);
+	const catalogDefinitionsRef = useRef<readonly CatalogExplanationDefinition[]>([]);
+	const catalogWarningRef = useRef<EditorErrorCard | null>(null);
 
-	// ────────────────────────────── Mount ──
+	const applyCompatValidation = (
+		text: string,
+		customFieldDefinitions: readonly CatalogFieldDefinition[],
+		customReportDefinitions: readonly CatalogReportDefinition[],
+		customExplanationDefinitions: readonly CatalogExplanationDefinition[],
+	) => {
+		if (!editorRef.current || !monacoRef.current) {
+			return;
+		}
+
+		const monacoNs = monacoRef.current;
+		const model = editorRef.current.getModel();
+		if (!model) {
+			return;
+		}
+
+		const runId = ++validationSequenceRef.current;
+		const compatMarkers: Monaco.editor.IMarkerData[] = [];
+		const compatCards: EditorErrorCard[] = [];
+
+		try {
+			const parsed = JSON.parse(text);
+			const result = validateMlformSchema(parsed, {
+				customFieldDefinitions,
+				customReportDefinitions,
+				customExplanationDefinitions,
+			});
+
+			if (runId !== validationSequenceRef.current) {
+				return;
+			}
+
+			if (result.success) {
+				setSchema(parsed);
+			}
+
+			for (const issue of result.issues) {
+				const { line, column } = pathToPos(text, issue.path);
+				const pathStr = issue.path.length ? issue.path.join(".") : "root";
+
+				compatCards.push({
+					line,
+					column,
+					path: pathStr,
+					message: issue.message,
+					severity: issue.severity,
+				});
+				compatMarkers.push({
+					startLineNumber: line,
+					startColumn: (() => {
+						const lineContent = text.split("\n")[line - 1] || "";
+						const colonIdx = lineContent.indexOf(":");
+						if (colonIdx !== -1) {
+							const quoteIdx = lineContent.indexOf('"', colonIdx);
+							return quoteIdx !== -1 ? quoteIdx + 1 : column;
+						}
+						return column;
+					})(),
+					endLineNumber: line,
+					endColumn: model.getLineMaxColumn(line),
+					message: issue.message,
+					severity:
+						issue.severity === "warning"
+							? monacoNs.MarkerSeverity.Warning
+							: monacoNs.MarkerSeverity.Error,
+					source: "mlform-compat",
+					code: pathStr,
+				});
+			}
+
+			if (catalogWarningRef.current) {
+				compatCards.push(catalogWarningRef.current);
+				compatMarkers.push({
+					startLineNumber: 1,
+					startColumn: 1,
+					endLineNumber: 1,
+					endColumn: model.getLineMaxColumn(1),
+					message: catalogWarningRef.current.message,
+					severity: monacoNs.MarkerSeverity.Warning,
+					source: "mlform-compat",
+					code: "catalog",
+				});
+			}
+
+			monacoNs.editor.setModelMarkers(model, "mlform-compat", compatMarkers);
+			compatCardsRef.current = compatCards;
+		} catch {
+			monacoNs.editor.setModelMarkers(model, "mlform-compat", []);
+			compatCardsRef.current = catalogWarningRef.current ? [catalogWarningRef.current] : [];
+		}
+	};
+
 	const handleOnMount = (
 		editor: Monaco.editor.IStandaloneCodeEditor,
 		monacoNs: MonacoNamespace,
@@ -72,7 +166,6 @@ export function EditorBody() {
 		editorRef.current = editor;
 		monacoRef.current = monacoNs;
 
-		/* Temas corporativos */
 		monacoNs.editor.defineTheme(
 			"corporate-light",
 			editorLightTheme as Monaco.editor.IStandaloneThemeData,
@@ -81,12 +174,15 @@ export function EditorBody() {
 			"corporate-dark",
 			editorDarkTheme as Monaco.editor.IStandaloneThemeData,
 		);
-		monacoNs.editor.setTheme(
-			theme === "dark" ? "corporate-dark" : "corporate-light",
-		);
+		monacoNs.editor.setTheme(theme === "dark" ? "corporate-dark" : "corporate-light");
 
-		/* JSON Schema generado por MLForm */
-		(monacoNs.languages as any).json.jsonDefaults.setDiagnosticsOptions({
+		(monacoNs.languages as typeof Monaco.languages & {
+			json: {
+				jsonDefaults: {
+					setDiagnosticsOptions(options: unknown): void;
+				};
+			};
+		}).json.jsonDefaults.setDiagnosticsOptions({
 			validate: true,
 			enableSchemaRequest: false,
 			schemas: [
@@ -97,103 +193,120 @@ export function EditorBody() {
 				},
 			],
 		});
+
+		applyCompatValidation(
+			editor.getValue(),
+			catalogFieldDefinitionsRef.current,
+			catalogReportDefinitionsRef.current,
+			catalogDefinitionsRef.current,
+		);
 	};
 
-	// ────────────────────────────── Change ──
 	const handleOnChange = (value?: string) => {
 		const text = value ?? "";
 		setSchemaText(text);
-
-		/* Validación semántica + markers owner "mlform-compat" */
-		if (editorRef.current && monacoRef.current) {
-			const monacoNs = monacoRef.current;
-			const model = editorRef.current.getModel();
-			if (!model) return;
-
-			const compatMarkers: Monaco.editor.IMarkerData[] = [];
-			const compatCards: EditorErrorCard[] = [];
-			try {
-				const parsed = JSON.parse(text);
-
-				const res = validateMlformSchema(parsed);
-				if (res.success) {
-					setSchema(parsed);
-				}
-
-				if (!res.success) {
-					res.issues.forEach((issue) => {
-						const { line, column } = pathToPos(text, issue.path);
-						const pathStr = issue.path.length ? issue.path.join(".") : "root";
-
-						compatCards.push({
-							line,
-							column,
-							path: pathStr,
-							message: issue.message,
-						});
-						compatMarkers.push({
-							startLineNumber: line,
-							startColumn: (() => {
-								const lineContent = text.split("\n")[line - 1] || "";
-								const colonIdx = lineContent.indexOf(":");
-								if (colonIdx !== -1) {
-									const quoteIdx = lineContent.indexOf('"', colonIdx);
-									return quoteIdx !== -1 ? quoteIdx + 1 : column;
-								}
-								return column;
-							})(),
-							endLineNumber: line,
-							endColumn: model.getLineMaxColumn(line),
-							message: issue.message,
-							severity: monacoNs.MarkerSeverity.Error,
-							source: "mlform-compat",
-							code: pathStr,
-						});
-					});
-				}
-
-				monacoNs.editor.setModelMarkers(model, "mlform-compat", compatMarkers);
-				compatCardsRef.current = compatCards;
-			} catch {
-				monacoNs.editor.setModelMarkers(model, "mlform-compat", []);
-				compatCardsRef.current = [];
-			}
-		}
+		applyCompatValidation(
+			text,
+			catalogFieldDefinitionsRef.current,
+			catalogReportDefinitionsRef.current,
+			catalogDefinitionsRef.current,
+		);
 	};
 
-	// ─────────────────────────── Validate ──
 	const handleOnValidate = (markers: Monaco.editor.IMarker[]) => {
-		if (!editorRef.current) return;
+		if (!editorRef.current) {
+			return;
+		}
+
 		const model = editorRef.current.getModel();
-		if (!model) return;
+		if (!model) {
+			return;
+		}
+
 		const content = model.getValue();
 
-		/* Solo markers del worker (fuente !== "mlform-compat") */
 		const workerCards: EditorErrorCard[] = markers
-			.filter((m) => m.source !== "mlform-compat")
-			.map((m) => {
+			.filter((marker) => marker.source !== "mlform-compat")
+			.map((marker) => {
 				const pathArr = getLocation(
 					content,
 					model.getOffsetAt({
-						lineNumber: m.startLineNumber,
-						column: m.startColumn,
+						lineNumber: marker.startLineNumber,
+						column: marker.startColumn,
 					}),
 				).path;
 				const pathStr = pathArr.length ? pathArr.join(".") : "root";
 
 				return {
-					line: m.startLineNumber,
-					column: m.startColumn,
+					line: marker.startLineNumber,
+					column: marker.startColumn,
 					path: pathStr,
 					message: isFieldKindPath(pathArr)
 						? 'Valor "kind" no válido. Tipos permitidos: "text" | "number" | "boolean" | "category" | "date" | "time-series".'
-						: m.message,
+						: marker.message,
+					severity:
+						marker.severity === monacoRef.current?.MarkerSeverity.Warning
+							? "warning"
+							: "error",
 				};
 			});
+
 		setSchemaErrors([...workerCards, ...compatCardsRef.current]);
 	};
 
-	// Cambio de tema en caliente
+	useEffect(() => {
+		let cancelled = false;
+
+		void (async () => {
+			try {
+				const [customFieldDefinitions, customReportDefinitions, customDefinitions] = await Promise.all([
+					getCatalogFieldDefinitions(),
+					getCatalogReportDefinitions(),
+					getCatalogExplanationDefinitions(),
+				]);
+				if (cancelled) {
+					return;
+				}
+
+				catalogFieldDefinitionsRef.current = customFieldDefinitions;
+				catalogReportDefinitionsRef.current = customReportDefinitions;
+				catalogDefinitionsRef.current = customDefinitions;
+				catalogWarningRef.current = null;
+				const nextText = editorRef.current?.getValue() ?? schemaText;
+				applyCompatValidation(
+					nextText,
+					customFieldDefinitions,
+					customReportDefinitions,
+					customDefinitions,
+				);
+			} catch (error: unknown) {
+				if (cancelled) {
+					return;
+				}
+
+				catalogFieldDefinitionsRef.current = [];
+				catalogReportDefinitionsRef.current = [];
+				catalogDefinitionsRef.current = [];
+				catalogWarningRef.current = {
+					line: 1,
+					column: 1,
+					path: "catalog",
+					message:
+						error instanceof Error
+							? `Custom plugin catalog could not be loaded: ${error.message}`
+							: `Custom plugin catalog could not be loaded: ${String(error)}`,
+					severity: "warning",
+				};
+				const nextText = editorRef.current?.getValue() ?? schemaText;
+				applyCompatValidation(nextText, [], [], []);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
 	useEffect(() => {
 		if (monacoRef.current) {
 			monacoRef.current.editor.setTheme(
@@ -202,7 +315,6 @@ export function EditorBody() {
 		}
 	}, [theme]);
 
-	// ───────────────────────────── Render ──
 	return (
 		<Editor
 			className="w-full"

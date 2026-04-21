@@ -7,13 +7,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import {
 	BrainCircuit,
-	FileCode2,
+	Blocks,
 	Home,
 	Maximize,
 	Minimize,
 	Moon,
 	Sun,
-	User,
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { useUser } from "../../user/hooks";
@@ -35,9 +34,8 @@ export function SidebarNavigation() {
 	} else {
 		navigation = [
 			{ to: "/", icon: Home, label: "Home" },
-			{ to: "/profile", icon: User, label: "Profile" },
 			{ to: "/models", icon: BrainCircuit, label: "Catalog" },
-			{ to: "/custom-explanation", icon: FileCode2, label: "Explanation" },
+			{ to: "/plugins", icon: Blocks, label: "Plugins" },
 		];
 	}
 

@@ -171,6 +171,12 @@ def explain_with_feature_name_aliases(ct, instance_df, feature_names):
     control.ground([("base", [])], explainer_context=CrystalTreeContext(factor))
     return list(next(control.explain()))
 
+
+def ensure_schema_explanations(schema):
+    explanations = schema.get("explanations")
+    schema["explanations"] = explanations if isinstance(explanations, list) else []
+    return schema
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -267,6 +273,7 @@ async def build_schema(
     builder.register(DateStrategy())
 
     schema = builder.build(data_df)
+    schema = ensure_schema_explanations(schema)
 
     if isinstance(model, ClassifierMixin):
         schema["reports"] = [{

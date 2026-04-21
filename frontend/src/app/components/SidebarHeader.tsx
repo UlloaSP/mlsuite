@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { Link } from "react-router";
 import { useUser } from "../../user/hooks"; // Adjust the import path as necessary
 
 export function SidebarHeader() {
@@ -13,7 +14,11 @@ export function SidebarHeader() {
 	}
 
 	return (
-		<div className="border-b border-[var(--border-soft)] px-6 py-6">
+		<Link
+			to="/profile"
+			className="block border-b border-[var(--border-soft)] px-6 py-6 transition hover:bg-[var(--surface-soft)]/50"
+			aria-label="Open profile"
+		>
 			<div className="flex items-center gap-4">
 				<img
 					src={user?.avatarUrl}
@@ -30,6 +35,6 @@ export function SidebarHeader() {
 					</p>
 				</div>
 			</div>
-		</div>
+		</Link>
 	);
 }

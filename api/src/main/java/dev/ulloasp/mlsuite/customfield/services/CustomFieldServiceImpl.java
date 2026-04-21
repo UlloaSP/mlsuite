@@ -1,4 +1,4 @@
-package dev.ulloasp.mlsuite.customexplanation.services;
+package dev.ulloasp.mlsuite.customfield.services;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -19,98 +19,60 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.customexplanation.dtos.CustomExplanationDto;
-import dev.ulloasp.mlsuite.customexplanation.exceptions.CustomExplanationNotFoundException;
+import dev.ulloasp.mlsuite.customfield.dtos.CustomFieldDto;
+import dev.ulloasp.mlsuite.customfield.exceptions.CustomFieldNotFoundException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 
 @Service
-public class CustomExplanationServiceImpl implements CustomExplanationService {
+public class CustomFieldServiceImpl implements CustomFieldService {
 
-    private static final String ROOT_PREFIX = "custom-explanations";
+    private static final String ROOT_PREFIX = "custom-fields";
     private static final String STATE_FILE = "state.json";
     private static final String LEGACY_ACTIVE_FILE = "active.json";
     private static final String BUILTIN_DEFAULT_ID = "builtin-default-plugin";
     private static final OffsetDateTime BUILTIN_DEFAULT_TIMESTAMP = OffsetDateTime.of(2026, 4, 21, 0, 0, 0, 0,
             ZoneOffset.UTC);
-    private static final StoredCustomExplanation BUILTIN_DEFAULT_PLUGIN = new StoredCustomExplanation(
+    private static final StoredCustomField BUILTIN_DEFAULT_PLUGIN = new StoredCustomField(
             BUILTIN_DEFAULT_ID,
-            "default-explanation.ts",
+            "default-field.ts",
             "application/typescript",
             0L,
             BUILTIN_DEFAULT_TIMESTAMP,
             BUILTIN_DEFAULT_TIMESTAMP,
             """
-                    export default defineExplanationKind({
-                      kind: "custom-explanation",
+                    export default defineFieldDefinition({
+                      kind: "custom-slider",
                       schema: z
                         .object({
-                          kind: z.literal("custom-explanation"),
+                          kind: z.literal("custom-slider"),
                           id: z.string().optional(),
-                          label: z.string().optional(),
+                          label: z.string(),
                           description: z.string().optional(),
-                          endpoint: z.string().min(1).default("/api/analyzer/explain/by-id"),
+                          min: z.number().default(0),
+                          max: z.number().default(100),
+                          step: z.number().positive().default(1),
+                          defaultValue: z.number().optional(),
                         })
                         .passthrough(),
-                      fetch: ({ config }) => ({
-                        submit: async (request) => {
-                          const response = await fetch(config.endpoint, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            signal: request.signal,
-                            credentials: "include",
-                            body: JSON.stringify({
-                              values: request.serializedValues,
-                              fieldValues: request.serializedFieldValues,
-                              reports: request.reports,
-                              meta: request.meta,
-                            }),
-                          });
-
-                          if (!response.ok) {
-                            throw new Error(await response.text());
-                          }
-
-                          return response.json();
+                      getDefaultValue: (config) => config.defaultValue ?? config.min ?? 0,
+                      normalizeValue: (value, config) => {
+                        const fallback = config.defaultValue ?? config.min ?? 0;
+                        const numeric = typeof value === "number" ? value : Number(value);
+                        return Number.isFinite(numeric) ? numeric : fallback;
+                      },
+                      describe: (config, context) => ({
+                        component: "mlsuite-custom-field",
+                        props: {
+                          mode: "range",
+                          min: config.min ?? 0,
+                          max: config.max ?? 100,
+                          step: config.step ?? 1,
+                          value: context.state.value,
+                          state: context.state.status,
                         },
                       }),
-                      render: {
-                        summary: ({ config, state }) => ({
-                          title: config.label ?? "Custom explanation",
-                          description: config.description,
-                          tone: state.status === "error" ? "danger" : "neutral",
-                        }),
-                        content: ({ result, state }) => {
-                          if (state.error) {
-                            return {
-                              type: "notice",
-                              title: "Explanation failed",
-                              body: state.error,
-                              tone: "danger",
-                            };
-                          }
-
-                          if (typeof result === "string") {
-                            return {
-                              type: "text",
-                              value: result,
-                            };
-                          }
-
-                          if (Array.isArray(result)) {
-                            return {
-                              type: "list",
-                              items: result,
-                            };
-                          }
-
-                          return {
-                            type: "json",
-                            value: result ?? { empty: true },
-                          };
-                        },
-                      },
                     });
                     """);
 
@@ -118,7 +80,7 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
     private final StorageProperties storageProperties;
     private final ObjectMapper objectMapper;
 
-    public CustomExplanationServiceImpl(
+    public CustomFieldServiceImpl(
             ObjectStorageService objectStorageService,
             StorageProperties storageProperties,
             ObjectMapper objectMapper) {
@@ -128,11 +90,11 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
     }
 
     @Override
-    public CustomExplanationDto upload(OAuthProvider provider, String oauthId, MultipartFile file) {
+    public CustomFieldDto upload(OAuthProvider provider, String oauthId, MultipartFile file) {
         try {
             String id = UUID.randomUUID().toString();
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-            StoredCustomExplanation stored = new StoredCustomExplanation(
+            StoredCustomField stored = new StoredCustomField(
                     id,
                     sanitizeFileName(file.getOriginalFilename()),
                     normalizeContentType(file.getContentType()),
@@ -149,15 +111,15 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
 
             return toDto(stored, readState(provider, oauthId).activeIds().contains(id));
         } catch (IOException ex) {
-            throw new IllegalStateException("Could not serialize custom explanation.", ex);
+            throw new IllegalStateException("Could not serialize custom field.", ex);
         }
     }
 
     @Override
-    public List<CustomExplanationDto> list(OAuthProvider provider, String oauthId) {
-        CustomExplanationState state = readState(provider, oauthId);
+    public List<CustomFieldDto> list(OAuthProvider provider, String oauthId) {
+        CustomFieldState state = readState(provider, oauthId);
         Set<String> activeIds = Set.copyOf(state.activeIds());
-        List<CustomExplanationDto> catalog = new ArrayList<>();
+        List<CustomFieldDto> catalog = new ArrayList<>();
 
         if (!state.deletedBuiltinIds().contains(BUILTIN_DEFAULT_ID)) {
             catalog.add(toDto(BUILTIN_DEFAULT_PLUGIN, activeIds.contains(BUILTIN_DEFAULT_ID)));
@@ -170,24 +132,24 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
                 .forEach(catalog::add);
 
         catalog.sort(Comparator
-                .comparing(CustomExplanationDto::active).reversed()
-                .thenComparing(CustomExplanationDto::updatedAt, Comparator.reverseOrder())
-                .thenComparing(CustomExplanationDto::fileName, String.CASE_INSENSITIVE_ORDER));
+                .comparing(CustomFieldDto::active).reversed()
+                .thenComparing(CustomFieldDto::updatedAt, Comparator.reverseOrder())
+                .thenComparing(CustomFieldDto::fileName, String.CASE_INSENSITIVE_ORDER));
 
         return catalog;
     }
 
     @Override
-    public List<CustomExplanationDto> getActive(OAuthProvider provider, String oauthId) {
+    public List<CustomFieldDto> getActive(OAuthProvider provider, String oauthId) {
         return list(provider, oauthId).stream()
-                .filter(CustomExplanationDto::active)
+                .filter(CustomFieldDto::active)
                 .toList();
     }
 
     @Override
-    public CustomExplanationDto activate(OAuthProvider provider, String oauthId, String id) {
-        StoredCustomExplanation stored = resolveStored(provider, oauthId, id);
-        CustomExplanationState state = readState(provider, oauthId);
+    public CustomFieldDto activate(OAuthProvider provider, String oauthId, String id) {
+        StoredCustomField stored = resolveStored(provider, oauthId, id);
+        CustomFieldState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.add(id);
         writeState(provider, oauthId, activeIds, new LinkedHashSet<>(state.deletedBuiltinIds()));
@@ -196,7 +158,7 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
 
     @Override
     public void deactivate(OAuthProvider provider, String oauthId, String id) {
-        CustomExplanationState state = readState(provider, oauthId);
+        CustomFieldState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.remove(id);
         writeState(provider, oauthId, activeIds, new LinkedHashSet<>(state.deletedBuiltinIds()));
@@ -204,13 +166,13 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
 
     @Override
     public void deactivateAll(OAuthProvider provider, String oauthId) {
-        CustomExplanationState state = readState(provider, oauthId);
+        CustomFieldState state = readState(provider, oauthId);
         writeState(provider, oauthId, new LinkedHashSet<>(), new LinkedHashSet<>(state.deletedBuiltinIds()));
     }
 
     @Override
     public void delete(OAuthProvider provider, String oauthId, String id) {
-        CustomExplanationState state = readState(provider, oauthId);
+        CustomFieldState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         LinkedHashSet<String> deletedBuiltinIds = new LinkedHashSet<>(state.deletedBuiltinIds());
         activeIds.remove(id);
@@ -226,11 +188,11 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
         writeState(provider, oauthId, activeIds, deletedBuiltinIds);
     }
 
-    private StoredCustomExplanation resolveStored(OAuthProvider provider, String oauthId, String id) {
+    private StoredCustomField resolveStored(OAuthProvider provider, String oauthId, String id) {
         if (BUILTIN_DEFAULT_ID.equals(id)) {
-            CustomExplanationState state = readState(provider, oauthId);
+            CustomFieldState state = readState(provider, oauthId);
             if (state.deletedBuiltinIds().contains(id)) {
-                throw new CustomExplanationNotFoundException(id);
+                throw new CustomFieldNotFoundException(id);
             }
             return BUILTIN_DEFAULT_PLUGIN;
         }
@@ -238,44 +200,46 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
         return readStored(provider, oauthId, id);
     }
 
-    private CustomExplanationState readState(OAuthProvider provider, String oauthId) {
+    private CustomFieldState readState(OAuthProvider provider, String oauthId) {
         String bucket = storageProperties.getBucket();
 
         Optional<byte[]> stateBytes = objectStorageService.loadOptional(bucket, stateObjectKey(provider, oauthId));
         if (stateBytes.isPresent()) {
             try {
-                CustomExplanationState state = objectMapper.readValue(stateBytes.get(), CustomExplanationState.class);
+                CustomFieldState state = objectMapper.readValue(stateBytes.get(), CustomFieldState.class);
                 return normalizeState(state);
             } catch (IOException ex) {
-                throw new IllegalStateException("Could not deserialize custom explanation state.", ex);
+                throw new IllegalStateException("Could not deserialize custom field state.", ex);
             }
         }
 
-        Optional<byte[]> legacyActiveBytes = objectStorageService.loadOptional(bucket, legacyActiveObjectKey(provider, oauthId));
+        Optional<byte[]> legacyActiveBytes = objectStorageService.loadOptional(bucket,
+                legacyActiveObjectKey(provider, oauthId));
         if (legacyActiveBytes.isPresent()) {
             try {
-                ActiveExplanationPointer pointer = objectMapper.readValue(legacyActiveBytes.get(), ActiveExplanationPointer.class);
+                ActiveFieldPointer pointer = objectMapper.readValue(legacyActiveBytes.get(), ActiveFieldPointer.class);
                 if (pointer.id() == null || pointer.id().isBlank()) {
                     return emptyState();
                 }
-                return new CustomExplanationState(List.of(pointer.id()), List.of(), pointer.updatedAt());
+                return new CustomFieldState(List.of(pointer.id()), List.of(), pointer.updatedAt());
             } catch (IOException ex) {
-                throw new IllegalStateException("Could not deserialize legacy custom explanation pointer.", ex);
+                throw new IllegalStateException("Could not deserialize legacy custom field pointer.", ex);
             }
         }
 
         return emptyState();
     }
 
-    private CustomExplanationState normalizeState(CustomExplanationState state) {
-        return new CustomExplanationState(
+    private CustomFieldState normalizeState(CustomFieldState state) {
+        return new CustomFieldState(
                 List.copyOf(new LinkedHashSet<>(state.activeIds() == null ? List.of() : state.activeIds())),
-                List.copyOf(new LinkedHashSet<>(state.deletedBuiltinIds() == null ? List.of() : state.deletedBuiltinIds())),
+                List.copyOf(new LinkedHashSet<>(
+                        state.deletedBuiltinIds() == null ? List.of() : state.deletedBuiltinIds())),
                 state.updatedAt());
     }
 
-    private CustomExplanationState emptyState() {
-        return new CustomExplanationState(List.of(), List.of(), null);
+    private CustomFieldState emptyState() {
+        return new CustomFieldState(List.of(), List.of(), null);
     }
 
     private void writeState(
@@ -290,7 +254,7 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
         }
 
         try {
-            CustomExplanationState state = new CustomExplanationState(
+            CustomFieldState state = new CustomFieldState(
                     List.copyOf(activeIds),
                     List.copyOf(deletedBuiltinIds),
                     OffsetDateTime.now(ZoneOffset.UTC));
@@ -301,22 +265,23 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
                     objectMapper.writeValueAsBytes(state));
             objectStorageService.delete(storageProperties.getBucket(), legacyActiveObjectKey(provider, oauthId));
         } catch (IOException ex) {
-            throw new IllegalStateException("Could not serialize custom explanation state.", ex);
+            throw new IllegalStateException("Could not serialize custom field state.", ex);
         }
     }
 
-    private StoredCustomExplanation readStored(OAuthProvider provider, String oauthId, String id) {
+    private StoredCustomField readStored(OAuthProvider provider, String oauthId, String id) {
         try {
-            byte[] bytes = objectStorageService.loadOptional(storageProperties.getBucket(), itemObjectKey(provider, oauthId, id))
-                    .orElseThrow(() -> new CustomExplanationNotFoundException(id));
-            return objectMapper.readValue(bytes, StoredCustomExplanation.class);
+            byte[] bytes = objectStorageService
+                    .loadOptional(storageProperties.getBucket(), itemObjectKey(provider, oauthId, id))
+                    .orElseThrow(() -> new CustomFieldNotFoundException(id));
+            return objectMapper.readValue(bytes, StoredCustomField.class);
         } catch (IOException ex) {
-            throw new IllegalStateException("Could not deserialize custom explanation.", ex);
+            throw new IllegalStateException("Could not deserialize custom field.", ex);
         }
     }
 
-    private CustomExplanationDto toDto(StoredCustomExplanation stored, boolean active) {
-        return new CustomExplanationDto(
+    private CustomFieldDto toDto(StoredCustomField stored, boolean active) {
+        return new CustomFieldDto(
                 stored.id(),
                 stored.fileName(),
                 stored.contentType(),
@@ -358,7 +323,7 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
 
     private String sanitizeFileName(String value) {
         if (value == null || value.isBlank()) {
-            return "custom-explanation.ts";
+            return "custom-field.ts";
         }
 
         return value.strip();
@@ -373,7 +338,7 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record StoredCustomExplanation(
+    private record StoredCustomField(
             String id,
             String fileName,
             String contentType,
@@ -384,11 +349,11 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ActiveExplanationPointer(String id, OffsetDateTime updatedAt) {
+    private record ActiveFieldPointer(String id, OffsetDateTime updatedAt) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record CustomExplanationState(
+    private record CustomFieldState(
             List<String> activeIds,
             List<String> deletedBuiltinIds,
             OffsetDateTime updatedAt) {

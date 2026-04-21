@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { AppPage, AppSurface } from "../../app/components";
 import { Unauthorized } from "../../app/pages/Unauthorized";
-import { applyPredictionInputsToSchema } from "../../app/utils/mlform";
+import { applyPredictionInputsToSchema } from "../../app/utils/mlform/index";
 import {
 	schemaAtom,
 	schemaErrorsAtom,

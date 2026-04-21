@@ -3,35 +3,23 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PrimitiveReportRequest } from "mlform/primitives";
-import {
-	getActiveCustomExplanations,
-	type CustomExplanationDto,
-} from "../../api/customExplanationService";
+import type {
+	ExplanationConfig,
+	ExplanationDefinition,
+	ExplanationFetchTransport,
+	ExplanationStateSnapshot,
+	NormalizedExplanationConfig,
+} from "mlform/engine";
+import { getCustomExplanations, type CustomExplanationDto } from "../../api/customExplanationService";
 
 type TypeScriptModule = typeof import("typescript");
+type ZodModule = typeof import("zod");
 
-export type ActiveCustomExplanationDefinition = {
-	id: string;
-	fileName: string;
-	source: string;
-	updatedAt: string;
-};
-
-export type CustomExplanationFetchJson = <T = unknown>(
-	path: string,
-	init?: RequestInit,
-) => Promise<T>;
-
-export type CustomExplanationContext = {
-	request: PrimitiveReportRequest;
-	props: Record<string, unknown>;
-	modelId: string;
-	instance: Record<string, unknown>;
-	signal: AbortSignal;
-	fetchExplanation: () => Promise<string[]>;
-	fetchJson: CustomExplanationFetchJson;
-};
+declare global {
+	interface Window {
+		__MLSUITE_CUSTOM_EXPLANATION_ZOD__?: ZodModule;
+	}
+}
 
 export type CustomExplanationResult =
 	| string
@@ -43,19 +31,64 @@ export type CustomExplanationResult =
 		emptyText?: string;
 	};
 
-export type CustomExplanationRunner = (
-	context: CustomExplanationContext,
-) => Promise<CustomExplanationResult> | CustomExplanationResult;
-
 export type NormalizedCustomExplanationResult = {
 	title: string | null;
 	html: string | null;
 	blocks: string[];
 	emptyText: string | null;
+	jsonFallback: string | null;
 };
 
-const moduleCache = new Map<string, Promise<CustomExplanationRunner>>();
+export type CatalogExplanationDefinition = Pick<
+	CustomExplanationDto,
+	"id" | "fileName" | "source" | "updatedAt" | "createdAt" | "contentType" | "sizeBytes" | "active"
+> & {
+	kind: string;
+	definition: ExplanationDefinition<ExplanationConfig>;
+};
+
+type PresentationSummaryLike = Record<string, unknown> | null | undefined;
+type PresentationContentLike = unknown | readonly unknown[];
+
+type DeclarativeExplanationFetchContext<TConfig extends ExplanationConfig = ExplanationConfig> = {
+	config: NormalizedExplanationConfig<TConfig>;
+	explanationId: string;
+};
+
+type DeclarativeExplanationRenderContext<
+	TConfig extends ExplanationConfig = ExplanationConfig,
+	TResult = unknown,
+> = {
+	config: NormalizedExplanationConfig<TConfig>;
+	explanationId: string;
+	state: ExplanationStateSnapshot;
+	result: TResult;
+};
+
+type DeclarativeCatalogExplanationKind<
+	TConfig extends ExplanationConfig = ExplanationConfig,
+	TResult = unknown,
+> = {
+	kind: string;
+	schema: ExplanationDefinition<TConfig>["schema"];
+	fetch: (
+		context: DeclarativeExplanationFetchContext<TConfig>,
+	) => ExplanationFetchTransport;
+	render: {
+		summary?: (
+			context: DeclarativeExplanationRenderContext<TConfig, TResult>,
+		) => PresentationSummaryLike;
+		content: (
+			context: DeclarativeExplanationRenderContext<TConfig, TResult>,
+		) => PresentationContentLike;
+	};
+};
+
+const definitionCache = new Map<string, Promise<ExplanationDefinition<ExplanationConfig>>>();
 let typescriptPromise: Promise<TypeScriptModule> | null = null;
+let zodPromise: Promise<ZodModule> | null = null;
+let catalogDefinitionsPromise: Promise<CatalogExplanationDefinition[]> | null = null;
+const declarativeExplanationComponent = "declarative-explanation";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -75,33 +108,60 @@ const loadTypeScript = async (): Promise<TypeScriptModule> => {
 	return typescriptPromise;
 };
 
-const resolveRunnerExport = (moduleValue: unknown): CustomExplanationRunner => {
-	if (isRecord(moduleValue) && typeof moduleValue.default === "function") {
-		return moduleValue.default as CustomExplanationRunner;
-	}
-
-	if (isRecord(moduleValue) && typeof moduleValue.renderExplanation === "function") {
-		return moduleValue.renderExplanation as CustomExplanationRunner;
-	}
-
-	throw new Error(
-		'Custom explanation module must export `default` or `renderExplanation` as a function.',
-	);
+const loadZod = async (): Promise<ZodModule> => {
+	zodPromise ??= import("zod");
+	return zodPromise;
 };
 
-const normalizeTextBlocks = (value: unknown): string[] => {
-	if (Array.isArray(value)) {
-		return value.filter(
-			(item): item is string => typeof item === "string" && item.trim().length > 0,
-		);
+const toPresentationNodes = (value: PresentationContentLike): unknown[] => {
+	if (value === undefined) {
+		return [];
 	}
 
-	if (typeof value === "string" && value.trim().length > 0) {
-		return [value];
-	}
-
-	return [];
+	return Array.isArray(value) ? [...value] : [value];
 };
+
+const adaptDeclarativeExplanationKind = (
+	kind: DeclarativeCatalogExplanationKind,
+): ExplanationDefinition<ExplanationConfig> => ({
+	kind: kind.kind,
+	schema: kind.schema,
+	transport: (config) =>
+		kind.fetch({
+			config: config as NormalizedExplanationConfig<ExplanationConfig>,
+			explanationId: (config as NormalizedExplanationConfig<ExplanationConfig>).id,
+		}),
+	describe: (config, context) => {
+		const normalizedConfig = config as NormalizedExplanationConfig<ExplanationConfig>;
+		const renderContext: DeclarativeExplanationRenderContext<ExplanationConfig, unknown> = {
+			config: normalizedConfig,
+			explanationId: normalizedConfig.id,
+			state: context.state,
+			result: context.state.result,
+		};
+
+		return {
+			component: declarativeExplanationComponent,
+			props: {
+				id: normalizedConfig.id,
+				kind: normalizedConfig.kind,
+				label: normalizedConfig.label ?? normalizedConfig.id,
+				description: normalizedConfig.description ?? "",
+				result: context.state.result,
+				error: context.state.error,
+				state: context.state.status,
+				summary: kind.render.summary?.(renderContext) ?? null,
+				content:
+					context.state.result === undefined && context.state.error === null
+						? []
+						: toPresentationNodes(kind.render.content(renderContext)),
+			},
+			meta: {
+				declarative: true,
+			},
+		};
+	},
+});
 
 const formatDiagnostics = (
 	ts: TypeScriptModule,
@@ -124,9 +184,13 @@ const formatDiagnostics = (
 		.join("\n");
 };
 
+const prependRuntimeShims = (source: string): string => `const defineExplanationKind = (value) => value;
+const z = window.__MLSUITE_CUSTOM_EXPLANATION_ZOD__;
+${source}`;
+
 const transpileSource = async (source: string): Promise<string> => {
 	const ts = await loadTypeScript();
-	const result = ts.transpileModule(source, {
+	const result = ts.transpileModule(prependRuntimeShims(source), {
 		compilerOptions: {
 			target: ts.ScriptTarget.ES2022,
 			module: ts.ModuleKind.ESNext,
@@ -145,93 +209,243 @@ const transpileSource = async (source: string): Promise<string> => {
 	return result.outputText;
 };
 
-const importRunnerFromSource = async (source: string): Promise<CustomExplanationRunner> => {
-	const outputText = await transpileSource(source);
+function assertDeclarativeExplanationKind(
+	value: unknown,
+): asserts value is DeclarativeCatalogExplanationKind {
+	if (!isRecord(value)) {
+		throw new Error("Custom explanation module must export a default explanation kind.");
+	}
+
+	if (typeof value.kind !== "string" || value.kind.trim().length === 0) {
+		throw new Error('Custom explanation kind must define non-empty string "kind".');
+	}
+
+	if (!isRecord(value.schema) || typeof value.schema.safeParse !== "function") {
+		throw new Error('Custom explanation kind must expose Zod schema as "schema".');
+	}
+
+	if (typeof value.fetch !== "function") {
+		throw new Error('Custom explanation kind must expose "fetch({ config, explanationId })".');
+	}
+
+	if (!isRecord(value.render)) {
+		throw new Error('Custom explanation kind must expose "render".');
+	}
+
+	if (typeof value.render.content !== "function") {
+		throw new Error('Custom explanation kind must expose "render.content(ctx)".');
+	}
+
+	if ("summary" in value.render && value.render.summary !== undefined) {
+		if (typeof value.render.summary !== "function") {
+			throw new Error('Custom explanation kind "render.summary" must be a function when provided.');
+		}
+	}
+}
+
+const resolveDefinitionExport = (
+	moduleValue: unknown,
+): ExplanationDefinition<ExplanationConfig> => {
+	if (!isRecord(moduleValue) || !("default" in moduleValue)) {
+		throw new Error("Custom explanation module must export exactly one default explanation kind.");
+	}
+
+	const declarativeKind: unknown = moduleValue.default;
+	assertDeclarativeExplanationKind(declarativeKind);
+	return adaptDeclarativeExplanationKind(declarativeKind);
+};
+
+const importDefinitionFromSource = async (
+	source: string,
+): Promise<ExplanationDefinition<ExplanationConfig>> => {
+	const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
 	const blob = new Blob([outputText], { type: "text/javascript" });
 	const url = URL.createObjectURL(blob);
+	const previousZod = window.__MLSUITE_CUSTOM_EXPLANATION_ZOD__;
 
 	try {
+		window.__MLSUITE_CUSTOM_EXPLANATION_ZOD__ = zod;
 		const moduleValue = await import(/* @vite-ignore */ url);
-		return resolveRunnerExport(moduleValue);
+		return resolveDefinitionExport(moduleValue);
 	} finally {
+		window.__MLSUITE_CUSTOM_EXPLANATION_ZOD__ = previousZod;
 		URL.revokeObjectURL(url);
 	}
 };
 
-export const customExplanationTemplate = `export default async function renderExplanation(ctx) {
-  const response = await ctx.fetchJson(
-    \`/api/analyzer/explain/by-id?modelId=\${encodeURIComponent(ctx.modelId)}\`,
-    {
-      method: "POST",
-      signal: ctx.signal,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        instance: ctx.instance,
-        traces: [],
-      }),
-    },
-  );
-
-  const explanations = Array.isArray(response?.explanations)
-    ? response.explanations.filter(
-        (line) => typeof line === "string" && line.trim().length > 0,
-      )
-    : [];
-
-  return {
-    title: "Custom explanation",
-    blocks: explanations.map((line, index) => \`[\${index + 1}] \${line}\`),
-    emptyText: "No explanation returned by backend.",
-  };
-}
-`;
-let activeDefinitionsPromise: Promise<ActiveCustomExplanationDefinition[]> | null = null;
-
-export const validateCustomExplanationSource = async (
+const resolveCustomExplanationDefinition = async (
 	source: string,
-): Promise<CustomExplanationRunner> => {
-	const runner = await importRunnerFromSource(source);
-	return runner;
-};
-
-const normalizeActiveDefinition = (
-	definition: CustomExplanationDto,
-): ActiveCustomExplanationDefinition => ({
-	id: definition.id,
-	fileName: definition.fileName,
-	source: definition.source,
-	updatedAt: definition.updatedAt,
-});
-
-export const invalidateActiveCustomExplanationDefinition = (): void => {
-	activeDefinitionsPromise = null;
-};
-
-export const getActiveCustomExplanationDefinitions = async (): Promise<
-	ActiveCustomExplanationDefinition[]
-> => {
-	activeDefinitionsPromise ??= getActiveCustomExplanations().then((definitions) =>
-		definitions.map(normalizeActiveDefinition),
-	);
-	return activeDefinitionsPromise;
-};
-
-export const resolveCustomExplanationRunner = async (
-	definition: ActiveCustomExplanationDefinition,
-): Promise<CustomExplanationRunner> => {
-	const cacheKey = hashString(definition.source);
-	let cachedModule = moduleCache.get(cacheKey);
+): Promise<ExplanationDefinition<ExplanationConfig>> => {
+	const cacheKey = hashString(source);
+	let cachedModule = definitionCache.get(cacheKey);
 
 	if (!cachedModule) {
-		cachedModule = importRunnerFromSource(definition.source);
-		moduleCache.set(cacheKey, cachedModule);
+		cachedModule = importDefinitionFromSource(source);
+		definitionCache.set(cacheKey, cachedModule);
 	}
 
 	return cachedModule;
 };
 
+const assertUniqueKinds = (definitions: readonly CatalogExplanationDefinition[]): void => {
+	const seenKinds = new Map<string, string>();
+
+	for (const definition of definitions) {
+		const previous = seenKinds.get(definition.kind);
+		if (previous) {
+			throw new Error(
+				`Duplicate custom explanation kind "${definition.kind}" in catalog (${previous}, ${definition.fileName}).`,
+			);
+		}
+
+		seenKinds.set(definition.kind, definition.fileName);
+	}
+};
+
+const toCatalogDefinition = async (
+	item: CustomExplanationDto,
+): Promise<CatalogExplanationDefinition> => {
+	const definition = await resolveCustomExplanationDefinition(item.source);
+	return {
+		id: item.id,
+		fileName: item.fileName,
+		source: item.source,
+		updatedAt: item.updatedAt,
+		createdAt: item.createdAt,
+		contentType: item.contentType,
+		sizeBytes: item.sizeBytes,
+		active: item.active,
+		kind: definition.kind,
+		definition,
+	};
+};
+
+const normalizeTextBlocks = (value: unknown): string[] => {
+	if (Array.isArray(value)) {
+		return value.filter(
+			(item): item is string => typeof item === "string" && item.trim().length > 0,
+		);
+	}
+
+	if (typeof value === "string" && value.trim().length > 0) {
+		return [value];
+	}
+
+	return [];
+};
+
+export const customExplanationTemplate = `export default defineExplanationKind({
+  kind: "custom-explanation",
+  schema: z
+    .object({
+      kind: z.literal("custom-explanation"),
+      id: z.string().optional(),
+      label: z.string().optional(),
+      description: z.string().optional(),
+      endpoint: z.string().min(1).default("/api/analyzer/explain/by-id"),
+    })
+    .passthrough(),
+  fetch: ({ config }) => ({
+    submit: async (request) => {
+      const response = await fetch(config.endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: request.signal,
+        credentials: "include",
+        body: JSON.stringify({
+          values: request.serializedValues,
+          fieldValues: request.serializedFieldValues,
+          reports: request.reports,
+          meta: request.meta,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      return response.json();
+    },
+  }),
+  render: {
+    summary: ({ config, state }) => ({
+      title: config.label ?? "Custom explanation",
+      description: config.description,
+      tone: state.status === "error" ? "danger" : "neutral",
+    }),
+    content: ({ result, state }) => {
+      if (state.error) {
+        return {
+          type: "notice",
+          title: "Explanation failed",
+          body: state.error,
+          tone: "danger",
+        };
+      }
+
+      if (typeof result === "string") {
+        return {
+          type: "text",
+          value: result,
+        };
+      }
+
+      if (Array.isArray(result)) {
+        return {
+          type: "list",
+          items: result,
+        };
+      }
+
+      return {
+        type: "json",
+        value: result ?? { empty: true },
+      };
+    },
+  },
+});
+`;
+
+export const validateCustomExplanationSource = async (
+	source: string,
+): Promise<ExplanationDefinition<ExplanationConfig>> => {
+	return resolveCustomExplanationDefinition(source);
+};
+
+export const invalidateActiveCustomExplanationDefinition = (): void => {
+	catalogDefinitionsPromise = null;
+};
+
+export const getCatalogExplanationDefinitions = async (): Promise<
+	readonly CatalogExplanationDefinition[]
+> => {
+	catalogDefinitionsPromise ??= getCustomExplanations().then(async (items) => {
+		const settled = await Promise.all(
+			items.map(async (item) => {
+				try {
+					return await toCatalogDefinition(item);
+				} catch (error: unknown) {
+					console.warn(
+						`Skipping custom explanation plugin "${item.fileName}" (${item.id}): ${
+							error instanceof Error ? error.message : String(error)
+						}`,
+					);
+					return null;
+				}
+			}),
+		);
+		const definitions = settled.filter(
+			(definition): definition is CatalogExplanationDefinition => definition !== null,
+		);
+		assertUniqueKinds(definitions);
+		return definitions;
+	});
+
+	return catalogDefinitionsPromise;
+};
+
 export const normalizeCustomExplanationResult = (
-	value: CustomExplanationResult,
+	value: unknown,
 ): NormalizedCustomExplanationResult => {
 	if (typeof value === "string" || Array.isArray(value)) {
 		return {
@@ -239,6 +453,7 @@ export const normalizeCustomExplanationResult = (
 			html: null,
 			blocks: normalizeTextBlocks(value),
 			emptyText: null,
+			jsonFallback: null,
 		};
 	}
 
@@ -248,6 +463,26 @@ export const normalizeCustomExplanationResult = (
 			html: null,
 			blocks: [],
 			emptyText: null,
+			jsonFallback:
+				value === undefined
+					? null
+					: JSON.stringify(value, null, 2),
+		};
+	}
+
+	const hasStructuredResult =
+		typeof value.title === "string" ||
+		typeof value.html === "string" ||
+		Array.isArray(value.blocks) ||
+		typeof value.emptyText === "string";
+
+	if (!hasStructuredResult) {
+		return {
+			title: null,
+			html: null,
+			blocks: [],
+			emptyText: null,
+			jsonFallback: JSON.stringify(value, null, 2),
 		};
 	}
 
@@ -259,5 +494,6 @@ export const normalizeCustomExplanationResult = (
 			typeof value.emptyText === "string" && value.emptyText.trim().length > 0
 				? value.emptyText
 				: null,
+		jsonFallback: null,
 	};
 };

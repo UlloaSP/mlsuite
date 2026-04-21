@@ -3,304 +3,62 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ReportController, ReportDescriptor } from "mlform/engine";
+import type {
+	FieldController,
+	FieldDescriptor,
+	ReportController,
+	ReportDescriptor,
+} from "mlform/engine";
 import {
 	createBuiltinPrimitiveRegistry,
-	primitiveStaticText,
-	type PrimitiveRegistry,
+	type PrimitiveFieldRenderContext,
+	type PrimitiveFieldRendererElement,
 	type PrimitiveReportRenderContext,
-	type PrimitiveReportRequest,
 	type PrimitiveReportRendererElement,
-	type PrimitiveReportTransport,
+	type PrimitiveRegistry,
 	type PrimitiveText,
 } from "mlform/primitives";
-import { appFetch } from "../../api/appFetch";
-import {
-	getActiveCustomExplanationDefinitions,
-	normalizeCustomExplanationResult,
-	resolveCustomExplanationRunner,
-} from "./custom-explanation";
-import { type PredictionPayloadField, getBackendKey, isRecord, slugify } from "./shared";
+import { CUSTOM_FIELD_COMPONENT } from "./custom-field";
+import { normalizeCustomExplanationResult } from "./custom-explanation";
+import { CUSTOM_REPORT_COMPONENT } from "./custom-report";
 
-type FetchStatus = "idle" | "loading" | "done" | "error";
-type ExplanationSection = {
-	title: string | null;
-	html: string | null;
-	blocks: string[];
-	emptyText: string | null;
-};
+const CUSTOM_FIELD_RENDERER_TAG = "mlsuite-custom-field-renderer";
+const CUSTOM_REPORT_RENDERER_TAG = "mlsuite-custom-report-renderer";
 
-const extractErrorMessage = (error: unknown): string => {
-	if (error instanceof Error) {
-		return error.message;
-	}
-
-	if (typeof error === "string" && error.trim().length > 0) {
-		return error;
-	}
-
-	return String(error);
-};
-
-const hashFields = (fields: readonly PredictionPayloadField[]): string => {
-	let hash = 0;
-	const seed = fields.map((field) => `${field.id}:${getBackendKey(field)}`).join("|");
-
-	for (let index = 0; index < seed.length; index += 1) {
-		hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
-	}
-
-	return hash.toString(36);
-};
-
-const createCustomReportTags = (
-	modelId: string,
-	fields: readonly PredictionPayloadField[],
-) => {
-	const suffix = `${slugify(modelId)}-${hashFields(fields)}`;
-	return {
-		classifier: `mlsuite-classifier-explanation-report-${suffix}`,
-		regressor: `mlsuite-regressor-explanation-report-${suffix}`,
-	} as const;
-};
-
-abstract class PredictionExplanationRendererElement
+class PredictionCustomFieldRendererElement
 	extends HTMLElement
-	implements PrimitiveReportRendererElement
+	implements PrimitiveFieldRendererElement
 {
-	readonly #modelId: string;
-	readonly #fields: readonly PredictionPayloadField[];
-	#controller: ReportController | undefined;
-	#descriptor: ReportDescriptor | null = null;
-	#context: PrimitiveReportRenderContext | undefined;
-	#text: PrimitiveText = primitiveStaticText;
-	#transport: PrimitiveReportTransport | undefined;
-	#request: PrimitiveReportRequest | null = null;
+	#controller: FieldController | undefined;
+	#descriptor: FieldDescriptor | null = null;
+	#context: PrimitiveFieldRenderContext | undefined;
 
-	#status: FetchStatus = "idle";
-	#sections: ExplanationSection[] = [];
-	#transportError: string | null = null;
-	#abortController: AbortController | null = null;
-	#lastRequest: PrimitiveReportRequest | null = null;
-
-	protected abstract readonly builtInTagName: "mlf-classifier-report" | "mlf-regressor-report";
-
-	constructor(modelId: string, fields: readonly PredictionPayloadField[]) {
+	constructor() {
 		super();
-		this.#modelId = modelId;
-		this.#fields = fields;
 		this.attachShadow({ mode: "open" });
 	}
 
-	get controller() {
-		return this.#controller;
-	}
-
-	set controller(value: ReportController | undefined) {
+	set controller(value: FieldController | undefined) {
 		this.#controller = value;
 		this.#render();
 	}
 
-	get descriptor() {
-		return this.#descriptor;
-	}
-
-	set descriptor(value: ReportDescriptor | null | undefined) {
+	set descriptor(value: FieldDescriptor | null | undefined) {
 		this.#descriptor = value ?? null;
 		this.#render();
-		if (this.isConnected) {
-			void this.#syncTransport();
-		}
 	}
 
-	get context() {
-		return this.#context;
-	}
-
-	set context(value: PrimitiveReportRenderContext | undefined) {
+	set context(value: PrimitiveFieldRenderContext | undefined) {
 		this.#context = value;
 		this.#render();
 	}
 
-	get text() {
-		return this.#text;
-	}
-
-	set text(value: PrimitiveText | undefined) {
-		this.#text = value ?? primitiveStaticText;
+	set text(_value: PrimitiveText | undefined) {
 		this.#render();
-	}
-
-	get transport() {
-		return this.#transport;
-	}
-
-	set transport(value: PrimitiveReportTransport | undefined) {
-		this.#transport = value;
-		this.#lastRequest = null;
-		if (this.isConnected) {
-			void this.#syncTransport();
-		}
-	}
-
-	get request() {
-		return this.#request;
-	}
-
-	set request(value: PrimitiveReportRequest | null | undefined) {
-		this.#request = value ?? null;
-		if (this.isConnected) {
-			void this.#syncTransport();
-		}
 	}
 
 	connectedCallback(): void {
 		this.#render();
-		void this.#syncTransport();
-	}
-
-	disconnectedCallback(): void {
-		this.#abortController?.abort();
-		this.#abortController = null;
-	}
-
-	#hasExplanationsEnabled(): boolean {
-		return isRecord(this.#descriptor?.props) && this.#descriptor.props.explanations === true;
-	}
-
-	#shouldFetch(): boolean {
-		return this.#hasExplanationsEnabled() && this.#request !== null;
-	}
-
-	async #syncTransport(): Promise<void> {
-		if (!this.#shouldFetch()) {
-			this.#abortController?.abort();
-			this.#abortController = null;
-			this.#lastRequest = null;
-			this.#status = "idle";
-			this.#sections = [];
-			this.#transportError = null;
-			this.#render();
-			return;
-		}
-
-		const request = this.#request;
-
-		if (!request || request === this.#lastRequest) {
-			return;
-		}
-
-		this.#abortController?.abort();
-		const abortController = new AbortController();
-		this.#abortController = abortController;
-		this.#lastRequest = request;
-		this.#status = "loading";
-		this.#sections = [];
-		this.#transportError = null;
-		this.#render();
-
-		try {
-			const result = await this.#resolveExplanationResult({
-				...request,
-				signal: abortController.signal,
-			});
-
-			if (abortController.signal.aborted) {
-				return;
-			}
-
-			if (result === null) {
-				this.#status = "idle";
-				this.#sections = [];
-				this.#transportError = null;
-				this.#render();
-				return;
-			}
-
-			this.#status = "done";
-			this.#sections = result;
-			this.#transportError = null;
-			this.#render();
-		} catch (error: unknown) {
-			if (abortController.signal.aborted) {
-				return;
-			}
-
-			this.#status = "error";
-			this.#sections = [];
-			this.#transportError = extractErrorMessage(error);
-			this.#render();
-		}
-	}
-
-	async #resolveExplanationResult(
-		request: PrimitiveReportRequest,
-	): Promise<ExplanationSection[] | null> {
-		const instance = this.#buildInstance(request);
-		const definitions = await getActiveCustomExplanationDefinitions();
-		if (definitions.length === 0) {
-			return null;
-		}
-
-		const sections: ExplanationSection[] = [];
-		for (const definition of definitions) {
-			const runner = await resolveCustomExplanationRunner(definition);
-			const customResult = await runner({
-				request,
-				props: isRecord(this.#descriptor?.props) ? this.#descriptor.props : {},
-				modelId: this.#modelId,
-				instance,
-				signal: request.signal ?? new AbortController().signal,
-				fetchExplanation: async () => this.#fetchExplanation(request, instance),
-				fetchJson: async <T = unknown>(path: string, init?: RequestInit) =>
-					appFetch<T>(path, {
-						...init,
-						signal: init?.signal ?? request.signal,
-					}),
-			});
-			const normalized = normalizeCustomExplanationResult(customResult);
-			sections.push({
-				title: normalized.title ?? definition.fileName,
-				html: normalized.html,
-				blocks: normalized.blocks,
-				emptyText: normalized.emptyText,
-			});
-		}
-
-		return sections;
-	}
-
-	#buildInstance(request: PrimitiveReportRequest): Record<string, unknown> {
-		return Object.fromEntries(
-			this.#fields
-				.filter((field) => field.id in request.serializedValues)
-				.map((field) => [getBackendKey(field), request.serializedValues[field.id]]),
-		);
-	}
-
-	async #fetchExplanation(
-		request: PrimitiveReportRequest,
-		instance = this.#buildInstance(request),
-	): Promise<string[]> {
-
-		const response = await appFetch<{ explanations: string[] }>(
-			`/api/analyzer/explain/by-id?modelId=${encodeURIComponent(this.#modelId)}`,
-			{
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				signal: request.signal,
-				body: JSON.stringify({
-					instance,
-					traces: [],
-				}),
-			},
-		);
-
-		return Array.isArray(response.explanations)
-			? response.explanations.filter(
-				(item): item is string => typeof item === "string" && item.trim().length > 0,
-			)
-			: [];
 	}
 
 	#render(): void {
@@ -308,267 +66,293 @@ abstract class PredictionExplanationRendererElement
 			return;
 		}
 
+		const props = this.#descriptor?.props ?? {};
+		const mode = typeof props.mode === "string" ? props.mode : "text";
+		const value = props.value;
+		const disabled = this.#context?.disabled ?? false;
+		const readOnly = this.#context?.readOnly ?? false;
+		const invalid = this.#context?.invalid ?? false;
+		const describedBy = this.#context?.describedBy;
+
 		const style = document.createElement("style");
 		style.textContent = `
-			:host {
-				display: block;
-			}
-
-			.shell {
-				display: grid;
-				gap: 0.75rem;
-			}
-
-			.explanation-panel {
-				display: grid;
-				gap: 1rem;
-				padding-top: 0.25rem;
-			}
-
-			.explanation-header {
-				margin: 0;
-				font-size: 0.72rem;
-				font-weight: 700;
-				letter-spacing: 0.08em;
-				text-transform: uppercase;
-				color: var(--mlf-report-label-color, var(--mlf-color-text-muted, #475569));
-			}
-
-			.explanation-section {
-				display: grid;
-				gap: 0.75rem;
-			}
-
-			.explanation-section-title {
-				margin: 0;
-				font-size: 0.74rem;
-				font-weight: 700;
-				letter-spacing: 0.08em;
-				text-transform: uppercase;
+			:host { display: block; }
+			.wrap { display: grid; gap: 0.7rem; }
+			.input, .select, .textarea {
+				width: 100%;
+				border-radius: 16px;
+				border: 1px solid var(--mlf-color-border, #cbd5e1);
+				background: var(--mlf-color-surface, #fff);
 				color: var(--mlf-color-text, #0f172a);
+				padding: 0.9rem 1rem;
+				font: 500 0.92rem/1.4 var(--mlf-font-family-sans, system-ui, sans-serif);
+			}
+			.textarea { min-height: 7rem; resize: vertical; }
+			.range { width: 100%; }
+			.meta { color: var(--mlf-color-text-muted, #475569); font-size: 0.78rem; }
+		`;
+
+		const wrap = document.createElement("div");
+		wrap.className = "wrap";
+
+		const assignCommon = (element: HTMLElement) => {
+			if (describedBy) {
+				element.setAttribute("aria-describedby", describedBy);
+			}
+			element.setAttribute("aria-invalid", invalid ? "true" : "false");
+			if (disabled) {
+				element.setAttribute("disabled", "");
+			}
+			if (readOnly && ("readOnly" in element || element instanceof HTMLInputElement)) {
+				element.setAttribute("readonly", "");
+			}
+			element.addEventListener("blur", () => this.#controller?.blur());
+		};
+
+		if (mode === "textarea") {
+			const textarea = document.createElement("textarea");
+			textarea.className = "textarea";
+			textarea.value = typeof value === "string" ? value : "";
+			textarea.placeholder = typeof props.placeholder === "string" ? props.placeholder : "";
+			assignCommon(textarea);
+			textarea.addEventListener("input", () => this.#controller?.setValue(textarea.value));
+			wrap.append(textarea);
+		} else if (mode === "number" || mode === "range") {
+			const input = document.createElement("input");
+			input.className = mode === "range" ? "range" : "input";
+			input.type = mode;
+			input.value =
+				typeof value === "number" || typeof value === "string" ? String(value) : "";
+			if (typeof props.min === "number") {
+				input.min = String(props.min);
+			}
+			if (typeof props.max === "number") {
+				input.max = String(props.max);
+			}
+			if (typeof props.step === "number") {
+				input.step = String(props.step);
+			}
+			assignCommon(input);
+			input.addEventListener("input", () => {
+				this.#controller?.setValue(mode === "range" ? Number(input.value) : input.value);
+			});
+			wrap.append(input);
+		} else if (mode === "select" && Array.isArray(props.options)) {
+			const select = document.createElement("select");
+			select.className = "select";
+			assignCommon(select);
+
+			for (const optionValue of props.options) {
+				const option = document.createElement("option");
+				if (typeof optionValue === "string") {
+					option.value = optionValue;
+					option.textContent = optionValue;
+				} else if (
+					typeof optionValue === "object" &&
+					optionValue !== null &&
+					"label" in optionValue &&
+					"value" in optionValue
+				) {
+					option.value = String(optionValue.value);
+					option.textContent = String(optionValue.label);
+				} else {
+					continue;
+				}
+				select.append(option);
 			}
 
-			.explanation-loading {
-				height: 5rem;
-				border-radius: var(--mlf-radius-md, 16px);
-				border: var(--mlf-border-width, 1px) solid
-					var(--mlf-report-border, var(--mlf-color-border, #e2e8f0));
-				background: linear-gradient(
-					90deg,
-					color-mix(in srgb, var(--mlf-color-surface-muted, #f8fafc) 92%, transparent) 0%,
-					color-mix(in srgb, var(--mlf-color-accent, #1e40af) 12%, var(--mlf-color-surface, #fff))
-						50%,
-					color-mix(in srgb, var(--mlf-color-surface-muted, #f8fafc) 92%, transparent) 100%
-				);
-				background-size: 220% 100%;
-				animation: explanation-shimmer 1.6s linear infinite;
+			select.value = typeof value === "string" ? value : "";
+			select.addEventListener("change", () => this.#controller?.setValue(select.value));
+			wrap.append(select);
+		} else if (mode === "boolean") {
+			const select = document.createElement("select");
+			select.className = "select";
+			assignCommon(select);
+			for (const [optionValue, optionLabel] of [
+				["", "Select"],
+				["true", typeof props.trueLabel === "string" ? props.trueLabel : "True"],
+				["false", typeof props.falseLabel === "string" ? props.falseLabel : "False"],
+			]) {
+				const option = document.createElement("option");
+				option.value = optionValue;
+				option.textContent = optionLabel;
+				select.append(option);
 			}
+			select.value = typeof value === "boolean" ? String(value) : "";
+			select.addEventListener("change", () => {
+				if (select.value === "") {
+					this.#controller?.setValue(null);
+					return;
+				}
+				this.#controller?.setValue(select.value === "true");
+			});
+			wrap.append(select);
+		} else {
+			const input = document.createElement("input");
+			input.className = "input";
+			input.type = "text";
+			input.value = typeof value === "string" ? value : value == null ? "" : String(value);
+			input.placeholder = typeof props.placeholder === "string" ? props.placeholder : "";
+			assignCommon(input);
+			input.addEventListener("input", () => this.#controller?.setValue(input.value));
+			wrap.append(input);
+		}
 
-			.explanation-error {
-				padding: 0.85rem 1rem;
-				border-radius: var(--mlf-radius-md, 16px);
-				border: var(--mlf-border-width, 1px) solid
-					color-mix(in srgb, var(--mlf-color-danger, #dc2626) 28%, transparent);
-				background: color-mix(in srgb, var(--mlf-color-danger, #dc2626) 8%, transparent);
-				color: var(--mlf-color-danger, #dc2626);
-				font: 500 0.82rem/1.5
-					var(
-						--mlf-font-family-mono,
-						"IBM Plex Mono",
-						"SFMono-Regular",
-						Consolas,
-						"Liberation Mono",
-						monospace
-					);
-				word-break: break-word;
-			}
+		if (mode === "range") {
+			const meta = document.createElement("div");
+			meta.className = "meta";
+			meta.textContent = `Value: ${typeof value === "number" || typeof value === "string" ? value : ""}`;
+			wrap.append(meta);
+		}
 
-			.explanation-empty,
-			.explanation-block {
+		this.shadowRoot.replaceChildren(style, wrap);
+	}
+}
+
+class PredictionCustomReportRendererElement
+	extends HTMLElement
+	implements PrimitiveReportRendererElement
+{
+	#controller: ReportController | undefined;
+	#descriptor: ReportDescriptor | null = null;
+	#context: PrimitiveReportRenderContext | undefined;
+
+	constructor() {
+		super();
+		this.attachShadow({ mode: "open" });
+	}
+
+	set controller(value: ReportController | undefined) {
+		this.#controller = value;
+		this.#render();
+	}
+
+	set descriptor(value: ReportDescriptor | null | undefined) {
+		this.#descriptor = value ?? null;
+		this.#render();
+	}
+
+	set context(value: PrimitiveReportRenderContext | undefined) {
+		this.#context = value;
+		this.#render();
+	}
+
+	set text(_value: PrimitiveText | undefined) {
+		this.#render();
+	}
+
+	connectedCallback(): void {
+		this.#render();
+	}
+
+	#render(): void {
+		if (!this.shadowRoot) {
+			return;
+		}
+
+		const state = this.#controller?.state;
+		const props = this.#descriptor?.props ?? {};
+		const normalized = normalizeCustomExplanationResult(
+			isRenderableResult(props.result) ? props.result : props.payload,
+		);
+		const title =
+			normalized.title ??
+			(typeof props.label === "string" ? props.label : null) ??
+			this.#context?.label ??
+			null;
+
+		const style = document.createElement("style");
+		style.textContent = `
+			:host { display: block; }
+			.shell { display: grid; gap: 0.85rem; }
+			.title { margin: 0; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mlf-color-text, #0f172a); }
+			.block, .empty, .error {
 				margin: 0;
 				padding: 0.9rem 1rem;
-				border-radius: var(--mlf-radius-md, 16px);
-				border: var(--mlf-border-width, 1px) solid
-					var(--mlf-report-border, var(--mlf-color-border, #e2e8f0));
-				background: var(--mlf-report-bg, var(--mlf-color-surface, #ffffff));
-				color: var(--mlf-color-text, #0f172a);
+				border-radius: 16px;
+				border: 1px solid var(--mlf-color-border, #e2e8f0);
+				background: var(--mlf-color-surface, #fff);
 			}
-
-			.explanation-empty {
-				color: var(--mlf-color-text-muted, #475569);
-				font-size: 0.84rem;
-			}
-
-			.explanation-block {
-				overflow-x: auto;
-				white-space: pre-wrap;
-				word-break: break-word;
-				font: 500 0.82rem/1.55
-					var(
-						--mlf-font-family-mono,
-						"IBM Plex Mono",
-						"SFMono-Regular",
-						Consolas,
-						"Liberation Mono",
-						monospace
-					);
-			}
-
-			@keyframes explanation-shimmer {
-				0% {
-					background-position: 200% 0;
-				}
-
-				100% {
-					background-position: -20% 0;
-				}
-			}
+			.block { white-space: pre-wrap; word-break: break-word; font: 500 0.82rem/1.55 var(--mlf-font-family-mono, monospace); }
+			.html { font: inherit; white-space: normal; overflow-x: auto; }
+			.empty { color: var(--mlf-color-text-muted, #475569); font-size: 0.84rem; }
+			.error { color: var(--mlf-color-danger, #dc2626); border-color: color-mix(in srgb, var(--mlf-color-danger, #dc2626) 28%, transparent); background: color-mix(in srgb, var(--mlf-color-danger, #dc2626) 8%, transparent); }
 		`;
 
 		const shell = document.createElement("div");
 		shell.className = "shell";
 
-		const reportRenderer = document.createElement(
-			this.builtInTagName,
-		) as PrimitiveReportRendererElement;
-		reportRenderer.controller = this.#controller;
-		reportRenderer.descriptor = this.#descriptor;
-		reportRenderer.context = this.#context;
-		reportRenderer.text = this.#text;
-		reportRenderer.transport = undefined;
-		reportRenderer.request = null;
-		shell.append(reportRenderer);
+		if (state?.status === "error") {
+			const error = document.createElement("div");
+			error.className = "error";
+			error.textContent = state.error ?? "Unknown report error";
+			shell.append(error);
+			this.shadowRoot.replaceChildren(style, shell);
+			return;
+		}
 
-		const explanationPanel = this.#renderExplanationPanel();
-		if (explanationPanel) {
-			shell.append(explanationPanel);
+		if (title) {
+			const heading = document.createElement("p");
+			heading.className = "title";
+			heading.textContent = title;
+			shell.append(heading);
+		}
+
+		if (normalized.html) {
+			const html = document.createElement("div");
+			html.className = "block html";
+			html.innerHTML = normalized.html;
+			shell.append(html);
+		}
+
+		for (const blockText of normalized.blocks) {
+			const block = document.createElement("pre");
+			block.className = "block";
+			block.textContent = blockText;
+			shell.append(block);
+		}
+
+		if (normalized.jsonFallback) {
+			const block = document.createElement("pre");
+			block.className = "block";
+			block.textContent = normalized.jsonFallback;
+			shell.append(block);
+		}
+
+		if (!normalized.html && normalized.blocks.length === 0 && !normalized.jsonFallback) {
+			const empty = document.createElement("div");
+			empty.className = "empty";
+			empty.textContent =
+				normalized.emptyText ??
+				(state?.status === "loading" ? "Loading report..." : "No report content returned.");
+			shell.append(empty);
 		}
 
 		this.shadowRoot.replaceChildren(style, shell);
 	}
-
-	#renderExplanationPanel(): HTMLElement | null {
-		if (!this.#hasExplanationsEnabled() || this.#status === "idle") {
-			return null;
-		}
-
-		const panel = document.createElement("section");
-		panel.className = "explanation-panel";
-
-		const title = document.createElement("p");
-		title.className = "explanation-header";
-		title.textContent = this.#text.explanationLabel;
-		panel.append(title);
-
-		if (this.#status === "loading") {
-			const loading = document.createElement("div");
-			loading.className = "explanation-loading";
-			loading.setAttribute("aria-label", this.#text.explanationLoadingLabel);
-			panel.append(loading);
-			return panel;
-		}
-
-		if (this.#status === "error") {
-			const error = document.createElement("div");
-			error.className = "explanation-error";
-			error.textContent = `Error: ${this.#transportError ?? "Unknown error"}`;
-			panel.append(error);
-			return panel;
-		}
-
-		for (const sectionResult of this.#sections) {
-			const section = document.createElement("section");
-			section.className = "explanation-section";
-
-			const sectionTitle = document.createElement("p");
-			sectionTitle.className = "explanation-section-title";
-			sectionTitle.textContent = sectionResult.title ?? this.#text.explanationLabel;
-			section.append(sectionTitle);
-
-			if (sectionResult.html) {
-				const htmlContent = document.createElement("div");
-				htmlContent.className = "explanation-block";
-				htmlContent.innerHTML = sectionResult.html;
-				section.append(htmlContent);
-			}
-
-			if (!sectionResult.html && sectionResult.blocks.length === 0) {
-				const empty = document.createElement("div");
-				empty.className = "explanation-empty";
-				empty.textContent = sectionResult.emptyText ?? "No explanation returned.";
-				section.append(empty);
-				panel.append(section);
-				continue;
-			}
-
-			for (const block of sectionResult.blocks) {
-				const content = document.createElement("pre");
-				content.className = "explanation-block";
-				content.setAttribute("role", "region");
-				content.setAttribute("aria-label", this.#text.explanationAriaLabel);
-				content.textContent = block;
-				section.append(content);
-			}
-
-			panel.append(section);
-		}
-
-		return panel;
-	}
 }
 
-class PredictionClassifierExplanationRendererElement extends PredictionExplanationRendererElement {
-	protected readonly builtInTagName = "mlf-classifier-report" as const;
+const isRenderableResult = (value: unknown): boolean =>
+	typeof value === "string" ||
+	Array.isArray(value) ||
+	(typeof value === "object" && value !== null);
 
-	constructor(modelId: string, fields: readonly PredictionPayloadField[]) {
-		super(modelId, fields);
-	}
-}
-
-class PredictionRegressorExplanationRendererElement extends PredictionExplanationRendererElement {
-	protected readonly builtInTagName = "mlf-regressor-report" as const;
-
-	constructor(modelId: string, fields: readonly PredictionPayloadField[]) {
-		super(modelId, fields);
-	}
-}
-
-const ensurePredictionExplanationRenderers = (
-	modelId: string,
-	fields: readonly PredictionPayloadField[],
-): void => {
-	const customReportTags = createCustomReportTags(modelId, fields);
-
-	if (!customElements.get(customReportTags.classifier)) {
-		customElements.define(
-			customReportTags.classifier,
-			class extends PredictionClassifierExplanationRendererElement {
-				constructor() {
-					super(modelId, fields);
-				}
-			},
-		);
-	}
-
-	if (!customElements.get(customReportTags.regressor)) {
-		customElements.define(
-			customReportTags.regressor,
-			class extends PredictionRegressorExplanationRendererElement {
-				constructor() {
-					super(modelId, fields);
-				}
-			},
-		);
+const ensurePredictionFieldRenderer = (): void => {
+	if (!customElements.get(CUSTOM_FIELD_RENDERER_TAG)) {
+		customElements.define(CUSTOM_FIELD_RENDERER_TAG, PredictionCustomFieldRendererElement);
 	}
 };
 
-export const createPredictionPrimitiveRegistry = (
-	modelId: string,
-	fields: readonly PredictionPayloadField[],
-): PrimitiveRegistry => {
-	ensurePredictionExplanationRenderers(modelId, fields);
-	const customReportTags = createCustomReportTags(modelId, fields);
+const ensurePredictionReportRenderer = (): void => {
+	if (!customElements.get(CUSTOM_REPORT_RENDERER_TAG)) {
+		customElements.define(CUSTOM_REPORT_RENDERER_TAG, PredictionCustomReportRendererElement);
+	}
+};
+
+export const createPredictionPrimitiveRegistry = (): PrimitiveRegistry => {
+	ensurePredictionFieldRenderer();
+	ensurePredictionReportRenderer();
 	return createBuiltinPrimitiveRegistry()
-		.registerReport("classifier-report", customReportTags.classifier)
-		.registerReport("regressor-report", customReportTags.regressor);
+		.registerField(CUSTOM_FIELD_COMPONENT, CUSTOM_FIELD_RENDERER_TAG)
+		.registerReport(CUSTOM_REPORT_COMPONENT, CUSTOM_REPORT_RENDERER_TAG);
 };

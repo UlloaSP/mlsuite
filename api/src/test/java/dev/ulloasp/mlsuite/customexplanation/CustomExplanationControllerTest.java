@@ -58,7 +58,7 @@ class CustomExplanationControllerTest {
                 OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC),
                 OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC),
                 true,
-                "export default async function renderExplanation() {}");
+                "export default defineExplanationKind({ kind: 'x', schema: z.object({ kind: z.literal('x') }), fetch: () => ({ submit: async () => null }), render: { content: () => ({ type: 'json', value: null }) } })");
     }
 
     @Test

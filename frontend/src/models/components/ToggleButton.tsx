@@ -19,7 +19,10 @@ export function ToggleButton({
 	onToggleMode,
 }: ToggleButtonProps) {
 	const [schemaErrors] = useAtom(schemaErrorsAtom);
-	const disabled = schemaErrors.length !== 0 || isProcessing;
+	const hasBlockingErrors = schemaErrors.some(
+		(error: { severity?: "error" | "warning" }) => error.severity !== "warning",
+	);
+	const disabled = hasBlockingErrors || isProcessing;
 
 	// Local state to track which mode is active
 	const [isJson, setIsJson] = useState(true);

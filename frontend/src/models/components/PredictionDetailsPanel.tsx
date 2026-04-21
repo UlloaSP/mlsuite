@@ -15,32 +15,17 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { ensureExplanationReportInSchema, toMlformSchema } from "../../app/utils/mlform";
 import type { PredictionDto, TargetDto } from "../api/modelService";
-import { PredictionExplanationReport } from "./PredictionExplanationReport";
 import {
 	useGetSignature,
 	useGetTargets,
 	useUpdatePredictionMutation,
 	useUpdateTargetMutation,
 } from "../hooks";
+import { getExplanationSnapshot } from "../utils";
+import { PredictionExplanationReport } from "./PredictionExplanationReport";
 
 type JsonRecord = Record<string, unknown>;
-
-type ExplanationReportSnapshot = {
-	label: string;
-	explanations: string[];
-	error: string | null;
-};
-
-type ExplanationPayload = {
-	explanations?: unknown;
-};
-
-type ExplanationReportDescriptor = {
-	label: string;
-	keys: string[];
-};
 
 const isRecord = (value: unknown): value is JsonRecord =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -57,93 +42,6 @@ const getExecutionTimeFromPrediction = (value: unknown): number | null => {
 	const outputs = getPredictionOutputs(value);
 	const executionTime = outputs[0]?.execution_time;
 	return typeof executionTime === "number" ? executionTime : null;
-};
-
-const getExplanationSnapshot = (
-	predictionValue: unknown,
-	signatureSchema: unknown,
-): ExplanationReportSnapshot | null => {
-	if (!isRecord(predictionValue)) {
-		return null;
-	}
-
-	let report: ExplanationReportDescriptor | null = null;
-
-	try {
-		const schema = toMlformSchema(ensureExplanationReportInSchema(signatureSchema));
-		const explanationReport = schema.reports?.find(
-			(item) => "explanations" in item && item.explanations === true,
-		);
-		if (!explanationReport) {
-			return null;
-		}
-		report = {
-			label: explanationReport.label
-				? `${explanationReport.label} explanation`
-				: "Model explanation",
-			keys: [explanationReport.source, explanationReport.id, "model-explanation"].filter(
-				(value): value is string =>
-					typeof value === "string" && value.trim().length > 0,
-			),
-		};
-	} catch {
-		report = null;
-	}
-
-	const reports = isRecord(predictionValue.reports) ? predictionValue.reports : null;
-	const fallbackReportEntries =
-		reports
-			? Object.entries(reports).filter(([, value]) => {
-				if (!isRecord(value) || !Array.isArray(value.explanations)) {
-					return false;
-				}
-
-				return value.explanations.some(
-					(item) => typeof item === "string" && item.trim().length > 0,
-				);
-			})
-			: [];
-	const explanationPayload =
-		report && report.keys.length > 0
-			? report.keys.reduce<ExplanationPayload | null>(
-				(current, key) =>
-					current ??
-					(reports && isRecord(reports[key]) ? (reports[key] as ExplanationPayload) : null),
-				null,
-			)
-			: fallbackReportEntries.length > 0 && isRecord(fallbackReportEntries[0][1])
-				? (fallbackReportEntries[0][1] as ExplanationPayload)
-				: null;
-	const explanations =
-		explanationPayload && Array.isArray(explanationPayload.explanations)
-			? explanationPayload.explanations.filter(
-				(item): item is string => typeof item === "string" && item.trim().length > 0,
-			)
-			: [];
-
-	const meta = isRecord(predictionValue.meta) ? predictionValue.meta : null;
-	const explainErrors =
-		meta && isRecord(meta.explainErrors) ? meta.explainErrors : null;
-	const nextError =
-		report && report.keys.length > 0
-			? report.keys.reduce<unknown>(
-				(current, key) => current ?? explainErrors?.[key],
-				null,
-			)
-			: explainErrors
-				? Object.values(explainErrors).find((value) => typeof value === "string") ?? null
-				: null;
-	const error = typeof nextError === "string" ? nextError : null;
-
-	if (explanations.length === 0 && !error) {
-		return null;
-	}
-
-	return {
-		label: report?.label ?? "Model explanation",
-		explanations,
-		error,
-	};
 };
 
 interface PredictionDetailPanelProps {
