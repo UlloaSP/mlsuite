@@ -31,44 +31,6 @@ public class CustomReportServiceImpl implements CustomReportService {
     private static final String ROOT_PREFIX = "custom-reports";
     private static final String STATE_FILE = "state.json";
     private static final String LEGACY_ACTIVE_FILE = "active.json";
-    private static final String BUILTIN_DEFAULT_ID = "builtin-default-plugin";
-    private static final OffsetDateTime BUILTIN_DEFAULT_TIMESTAMP = OffsetDateTime.of(2026, 4, 21, 0, 0, 0, 0,
-            ZoneOffset.UTC);
-    private static final StoredCustomReport BUILTIN_DEFAULT_PLUGIN = new StoredCustomReport(
-            BUILTIN_DEFAULT_ID,
-            "default-report.ts",
-            "application/typescript",
-            0L,
-            BUILTIN_DEFAULT_TIMESTAMP,
-            BUILTIN_DEFAULT_TIMESTAMP,
-            """
-                    export default defineReportDefinition({
-                      kind: "custom-summary-report",
-                      schema: z
-                        .object({
-                          kind: z.literal("custom-summary-report"),
-                          id: z.string().optional(),
-                          label: z.string().optional(),
-                          description: z.string().optional(),
-                        })
-                        .passthrough(),
-                      resolvePayload: (_config, context) => context.result.raw,
-                      describe: (config, context) => ({
-                        component: "mlsuite-custom-report",
-                        props: {
-                          label: config.label ?? "Custom Summary",
-                          description: config.description,
-                          result: {
-                            title: config.label ?? "Custom Summary",
-                            blocks: [
-                              `status=${context.state.status}`,
-                              JSON.stringify(context.payload ?? {}, null, 2),
-                            ],
-                          },
-                        },
-                      }),
-                    });
-                    """);
 
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
@@ -115,10 +77,6 @@ public class CustomReportServiceImpl implements CustomReportService {
         Set<String> activeIds = Set.copyOf(state.activeIds());
         List<CustomReportDto> catalog = new ArrayList<>();
 
-        if (!state.deletedBuiltinIds().contains(BUILTIN_DEFAULT_ID)) {
-            catalog.add(toDto(BUILTIN_DEFAULT_PLUGIN, activeIds.contains(BUILTIN_DEFAULT_ID)));
-        }
-
         objectStorageService.list(itemsPrefix(provider, oauthId)).stream()
                 .filter(item -> item.objectKey().endsWith(".json"))
                 .map(item -> readStored(provider, oauthId, extractId(item.objectKey())))
@@ -142,11 +100,11 @@ public class CustomReportServiceImpl implements CustomReportService {
 
     @Override
     public CustomReportDto activate(OAuthProvider provider, String oauthId, String id) {
-        StoredCustomReport stored = resolveStored(provider, oauthId, id);
+        StoredCustomReport stored = readStored(provider, oauthId, id);
         CustomReportState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.add(id);
-        writeState(provider, oauthId, activeIds, new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, activeIds);
         return toDto(stored, true);
     }
 
@@ -155,43 +113,23 @@ public class CustomReportServiceImpl implements CustomReportService {
         CustomReportState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.remove(id);
-        writeState(provider, oauthId, activeIds, new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, activeIds);
     }
 
     @Override
     public void deactivateAll(OAuthProvider provider, String oauthId) {
-        CustomReportState state = readState(provider, oauthId);
-        writeState(provider, oauthId, new LinkedHashSet<>(), new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, new LinkedHashSet<>());
     }
 
     @Override
     public void delete(OAuthProvider provider, String oauthId, String id) {
         CustomReportState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
-        LinkedHashSet<String> deletedBuiltinIds = new LinkedHashSet<>(state.deletedBuiltinIds());
         activeIds.remove(id);
 
-        if (BUILTIN_DEFAULT_ID.equals(id)) {
-            deletedBuiltinIds.add(id);
-            writeState(provider, oauthId, activeIds, deletedBuiltinIds);
-            return;
-        }
-
-        resolveStored(provider, oauthId, id);
+        readStored(provider, oauthId, id);
         objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(provider, oauthId, id));
-        writeState(provider, oauthId, activeIds, deletedBuiltinIds);
-    }
-
-    private StoredCustomReport resolveStored(OAuthProvider provider, String oauthId, String id) {
-        if (BUILTIN_DEFAULT_ID.equals(id)) {
-            CustomReportState state = readState(provider, oauthId);
-            if (state.deletedBuiltinIds().contains(id)) {
-                throw new CustomReportNotFoundException(id);
-            }
-            return BUILTIN_DEFAULT_PLUGIN;
-        }
-
-        return readStored(provider, oauthId, id);
+        writeState(provider, oauthId, activeIds);
     }
 
     private CustomReportState readState(OAuthProvider provider, String oauthId) {
@@ -215,7 +153,7 @@ public class CustomReportServiceImpl implements CustomReportService {
                 if (pointer.id() == null || pointer.id().isBlank()) {
                     return emptyState();
                 }
-                return new CustomReportState(List.of(pointer.id()), List.of(), pointer.updatedAt());
+                return new CustomReportState(List.of(pointer.id()), pointer.updatedAt());
             } catch (IOException ex) {
                 throw new IllegalStateException("Could not deserialize legacy custom report pointer.", ex);
             }
@@ -227,21 +165,18 @@ public class CustomReportServiceImpl implements CustomReportService {
     private CustomReportState normalizeState(CustomReportState state) {
         return new CustomReportState(
                 List.copyOf(new LinkedHashSet<>(state.activeIds() == null ? List.of() : state.activeIds())),
-                List.copyOf(new LinkedHashSet<>(
-                        state.deletedBuiltinIds() == null ? List.of() : state.deletedBuiltinIds())),
                 state.updatedAt());
     }
 
     private CustomReportState emptyState() {
-        return new CustomReportState(List.of(), List.of(), null);
+        return new CustomReportState(List.of(), null);
     }
 
     private void writeState(
             OAuthProvider provider,
             String oauthId,
-            Set<String> activeIds,
-            Set<String> deletedBuiltinIds) {
-        if (activeIds.isEmpty() && deletedBuiltinIds.isEmpty()) {
+            Set<String> activeIds) {
+        if (activeIds.isEmpty()) {
             objectStorageService.delete(storageProperties.getBucket(), stateObjectKey(provider, oauthId));
             objectStorageService.delete(storageProperties.getBucket(), legacyActiveObjectKey(provider, oauthId));
             return;
@@ -250,7 +185,6 @@ public class CustomReportServiceImpl implements CustomReportService {
         try {
             CustomReportState state = new CustomReportState(
                     List.copyOf(activeIds),
-                    List.copyOf(deletedBuiltinIds),
                     OffsetDateTime.now(ZoneOffset.UTC));
             objectStorageService.store(
                     stateObjectKey(provider, oauthId),
@@ -349,7 +283,6 @@ public class CustomReportServiceImpl implements CustomReportService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record CustomReportState(
             List<String> activeIds,
-            List<String> deletedBuiltinIds,
             OffsetDateTime updatedAt) {
     }
 }

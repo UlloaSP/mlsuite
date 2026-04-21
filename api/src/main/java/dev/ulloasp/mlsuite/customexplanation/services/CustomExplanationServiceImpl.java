@@ -31,88 +31,6 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
     private static final String ROOT_PREFIX = "custom-explanations";
     private static final String STATE_FILE = "state.json";
     private static final String LEGACY_ACTIVE_FILE = "active.json";
-    private static final String BUILTIN_DEFAULT_ID = "builtin-default-plugin";
-    private static final OffsetDateTime BUILTIN_DEFAULT_TIMESTAMP = OffsetDateTime.of(2026, 4, 21, 0, 0, 0, 0,
-            ZoneOffset.UTC);
-    private static final StoredCustomExplanation BUILTIN_DEFAULT_PLUGIN = new StoredCustomExplanation(
-            BUILTIN_DEFAULT_ID,
-            "default-explanation.ts",
-            "application/typescript",
-            0L,
-            BUILTIN_DEFAULT_TIMESTAMP,
-            BUILTIN_DEFAULT_TIMESTAMP,
-            """
-                    export default defineExplanationKind({
-                      kind: "custom-explanation",
-                      schema: z
-                        .object({
-                          kind: z.literal("custom-explanation"),
-                          id: z.string().optional(),
-                          label: z.string().optional(),
-                          description: z.string().optional(),
-                          endpoint: z.string().min(1).default("/api/analyzer/explain/by-id"),
-                        })
-                        .passthrough(),
-                      fetch: ({ config }) => ({
-                        submit: async (request) => {
-                          const response = await fetch(config.endpoint, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            signal: request.signal,
-                            credentials: "include",
-                            body: JSON.stringify({
-                              values: request.serializedValues,
-                              fieldValues: request.serializedFieldValues,
-                              reports: request.reports,
-                              meta: request.meta,
-                            }),
-                          });
-
-                          if (!response.ok) {
-                            throw new Error(await response.text());
-                          }
-
-                          return response.json();
-                        },
-                      }),
-                      render: {
-                        summary: ({ config, state }) => ({
-                          title: config.label ?? "Custom explanation",
-                          description: config.description,
-                          tone: state.status === "error" ? "danger" : "neutral",
-                        }),
-                        content: ({ result, state }) => {
-                          if (state.error) {
-                            return {
-                              type: "notice",
-                              title: "Explanation failed",
-                              body: state.error,
-                              tone: "danger",
-                            };
-                          }
-
-                          if (typeof result === "string") {
-                            return {
-                              type: "text",
-                              value: result,
-                            };
-                          }
-
-                          if (Array.isArray(result)) {
-                            return {
-                              type: "list",
-                              items: result,
-                            };
-                          }
-
-                          return {
-                            type: "json",
-                            value: result ?? { empty: true },
-                          };
-                        },
-                      },
-                    });
-                    """);
 
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
@@ -159,10 +77,6 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
         Set<String> activeIds = Set.copyOf(state.activeIds());
         List<CustomExplanationDto> catalog = new ArrayList<>();
 
-        if (!state.deletedBuiltinIds().contains(BUILTIN_DEFAULT_ID)) {
-            catalog.add(toDto(BUILTIN_DEFAULT_PLUGIN, activeIds.contains(BUILTIN_DEFAULT_ID)));
-        }
-
         objectStorageService.list(itemsPrefix(provider, oauthId)).stream()
                 .filter(item -> item.objectKey().endsWith(".json"))
                 .map(item -> readStored(provider, oauthId, extractId(item.objectKey())))
@@ -186,11 +100,11 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
 
     @Override
     public CustomExplanationDto activate(OAuthProvider provider, String oauthId, String id) {
-        StoredCustomExplanation stored = resolveStored(provider, oauthId, id);
+        StoredCustomExplanation stored = readStored(provider, oauthId, id);
         CustomExplanationState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.add(id);
-        writeState(provider, oauthId, activeIds, new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, activeIds);
         return toDto(stored, true);
     }
 
@@ -199,43 +113,23 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
         CustomExplanationState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.remove(id);
-        writeState(provider, oauthId, activeIds, new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, activeIds);
     }
 
     @Override
     public void deactivateAll(OAuthProvider provider, String oauthId) {
-        CustomExplanationState state = readState(provider, oauthId);
-        writeState(provider, oauthId, new LinkedHashSet<>(), new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, new LinkedHashSet<>());
     }
 
     @Override
     public void delete(OAuthProvider provider, String oauthId, String id) {
         CustomExplanationState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
-        LinkedHashSet<String> deletedBuiltinIds = new LinkedHashSet<>(state.deletedBuiltinIds());
         activeIds.remove(id);
 
-        if (BUILTIN_DEFAULT_ID.equals(id)) {
-            deletedBuiltinIds.add(id);
-            writeState(provider, oauthId, activeIds, deletedBuiltinIds);
-            return;
-        }
-
-        resolveStored(provider, oauthId, id);
+        readStored(provider, oauthId, id);
         objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(provider, oauthId, id));
-        writeState(provider, oauthId, activeIds, deletedBuiltinIds);
-    }
-
-    private StoredCustomExplanation resolveStored(OAuthProvider provider, String oauthId, String id) {
-        if (BUILTIN_DEFAULT_ID.equals(id)) {
-            CustomExplanationState state = readState(provider, oauthId);
-            if (state.deletedBuiltinIds().contains(id)) {
-                throw new CustomExplanationNotFoundException(id);
-            }
-            return BUILTIN_DEFAULT_PLUGIN;
-        }
-
-        return readStored(provider, oauthId, id);
+        writeState(provider, oauthId, activeIds);
     }
 
     private CustomExplanationState readState(OAuthProvider provider, String oauthId) {
@@ -258,7 +152,7 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
                 if (pointer.id() == null || pointer.id().isBlank()) {
                     return emptyState();
                 }
-                return new CustomExplanationState(List.of(pointer.id()), List.of(), pointer.updatedAt());
+                return new CustomExplanationState(List.of(pointer.id()), pointer.updatedAt());
             } catch (IOException ex) {
                 throw new IllegalStateException("Could not deserialize legacy custom explanation pointer.", ex);
             }
@@ -270,20 +164,18 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
     private CustomExplanationState normalizeState(CustomExplanationState state) {
         return new CustomExplanationState(
                 List.copyOf(new LinkedHashSet<>(state.activeIds() == null ? List.of() : state.activeIds())),
-                List.copyOf(new LinkedHashSet<>(state.deletedBuiltinIds() == null ? List.of() : state.deletedBuiltinIds())),
                 state.updatedAt());
     }
 
     private CustomExplanationState emptyState() {
-        return new CustomExplanationState(List.of(), List.of(), null);
+        return new CustomExplanationState(List.of(), null);
     }
 
     private void writeState(
             OAuthProvider provider,
             String oauthId,
-            Set<String> activeIds,
-            Set<String> deletedBuiltinIds) {
-        if (activeIds.isEmpty() && deletedBuiltinIds.isEmpty()) {
+            Set<String> activeIds) {
+        if (activeIds.isEmpty()) {
             objectStorageService.delete(storageProperties.getBucket(), stateObjectKey(provider, oauthId));
             objectStorageService.delete(storageProperties.getBucket(), legacyActiveObjectKey(provider, oauthId));
             return;
@@ -292,7 +184,6 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
         try {
             CustomExplanationState state = new CustomExplanationState(
                     List.copyOf(activeIds),
-                    List.copyOf(deletedBuiltinIds),
                     OffsetDateTime.now(ZoneOffset.UTC));
             objectStorageService.store(
                     stateObjectKey(provider, oauthId),
@@ -390,7 +281,6 @@ public class CustomExplanationServiceImpl implements CustomExplanationService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record CustomExplanationState(
             List<String> activeIds,
-            List<String> deletedBuiltinIds,
             OffsetDateTime updatedAt) {
     }
 }

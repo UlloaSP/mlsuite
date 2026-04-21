@@ -9,7 +9,7 @@ volumes:
 
 services:
   postgres:
-    image: postgres:18
+    image: postgres:latest
     container_name: db-postgres
     environment:
       POSTGRES_DB: ${DB_PROD}
@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-02-28T09-55-16Z
+    image: quay.io/minio/minio:latest
     container_name: minio
     command: server /data --console-address ":9001"
     environment:

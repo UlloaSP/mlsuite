@@ -31,50 +31,6 @@ public class CustomFieldServiceImpl implements CustomFieldService {
     private static final String ROOT_PREFIX = "custom-fields";
     private static final String STATE_FILE = "state.json";
     private static final String LEGACY_ACTIVE_FILE = "active.json";
-    private static final String BUILTIN_DEFAULT_ID = "builtin-default-plugin";
-    private static final OffsetDateTime BUILTIN_DEFAULT_TIMESTAMP = OffsetDateTime.of(2026, 4, 21, 0, 0, 0, 0,
-            ZoneOffset.UTC);
-    private static final StoredCustomField BUILTIN_DEFAULT_PLUGIN = new StoredCustomField(
-            BUILTIN_DEFAULT_ID,
-            "default-field.ts",
-            "application/typescript",
-            0L,
-            BUILTIN_DEFAULT_TIMESTAMP,
-            BUILTIN_DEFAULT_TIMESTAMP,
-            """
-                    export default defineFieldDefinition({
-                      kind: "custom-slider",
-                      schema: z
-                        .object({
-                          kind: z.literal("custom-slider"),
-                          id: z.string().optional(),
-                          label: z.string(),
-                          description: z.string().optional(),
-                          min: z.number().default(0),
-                          max: z.number().default(100),
-                          step: z.number().positive().default(1),
-                          defaultValue: z.number().optional(),
-                        })
-                        .passthrough(),
-                      getDefaultValue: (config) => config.defaultValue ?? config.min ?? 0,
-                      normalizeValue: (value, config) => {
-                        const fallback = config.defaultValue ?? config.min ?? 0;
-                        const numeric = typeof value === "number" ? value : Number(value);
-                        return Number.isFinite(numeric) ? numeric : fallback;
-                      },
-                      describe: (config, context) => ({
-                        component: "mlsuite-custom-field",
-                        props: {
-                          mode: "range",
-                          min: config.min ?? 0,
-                          max: config.max ?? 100,
-                          step: config.step ?? 1,
-                          value: context.state.value,
-                          state: context.state.status,
-                        },
-                      }),
-                    });
-                    """);
 
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
@@ -121,10 +77,6 @@ public class CustomFieldServiceImpl implements CustomFieldService {
         Set<String> activeIds = Set.copyOf(state.activeIds());
         List<CustomFieldDto> catalog = new ArrayList<>();
 
-        if (!state.deletedBuiltinIds().contains(BUILTIN_DEFAULT_ID)) {
-            catalog.add(toDto(BUILTIN_DEFAULT_PLUGIN, activeIds.contains(BUILTIN_DEFAULT_ID)));
-        }
-
         objectStorageService.list(itemsPrefix(provider, oauthId)).stream()
                 .filter(item -> item.objectKey().endsWith(".json"))
                 .map(item -> readStored(provider, oauthId, extractId(item.objectKey())))
@@ -148,11 +100,11 @@ public class CustomFieldServiceImpl implements CustomFieldService {
 
     @Override
     public CustomFieldDto activate(OAuthProvider provider, String oauthId, String id) {
-        StoredCustomField stored = resolveStored(provider, oauthId, id);
+        StoredCustomField stored = readStored(provider, oauthId, id);
         CustomFieldState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.add(id);
-        writeState(provider, oauthId, activeIds, new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, activeIds);
         return toDto(stored, true);
     }
 
@@ -161,43 +113,23 @@ public class CustomFieldServiceImpl implements CustomFieldService {
         CustomFieldState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.remove(id);
-        writeState(provider, oauthId, activeIds, new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, activeIds);
     }
 
     @Override
     public void deactivateAll(OAuthProvider provider, String oauthId) {
-        CustomFieldState state = readState(provider, oauthId);
-        writeState(provider, oauthId, new LinkedHashSet<>(), new LinkedHashSet<>(state.deletedBuiltinIds()));
+        writeState(provider, oauthId, new LinkedHashSet<>());
     }
 
     @Override
     public void delete(OAuthProvider provider, String oauthId, String id) {
         CustomFieldState state = readState(provider, oauthId);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
-        LinkedHashSet<String> deletedBuiltinIds = new LinkedHashSet<>(state.deletedBuiltinIds());
         activeIds.remove(id);
 
-        if (BUILTIN_DEFAULT_ID.equals(id)) {
-            deletedBuiltinIds.add(id);
-            writeState(provider, oauthId, activeIds, deletedBuiltinIds);
-            return;
-        }
-
-        resolveStored(provider, oauthId, id);
+        readStored(provider, oauthId, id);
         objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(provider, oauthId, id));
-        writeState(provider, oauthId, activeIds, deletedBuiltinIds);
-    }
-
-    private StoredCustomField resolveStored(OAuthProvider provider, String oauthId, String id) {
-        if (BUILTIN_DEFAULT_ID.equals(id)) {
-            CustomFieldState state = readState(provider, oauthId);
-            if (state.deletedBuiltinIds().contains(id)) {
-                throw new CustomFieldNotFoundException(id);
-            }
-            return BUILTIN_DEFAULT_PLUGIN;
-        }
-
-        return readStored(provider, oauthId, id);
+        writeState(provider, oauthId, activeIds);
     }
 
     private CustomFieldState readState(OAuthProvider provider, String oauthId) {
@@ -221,7 +153,7 @@ public class CustomFieldServiceImpl implements CustomFieldService {
                 if (pointer.id() == null || pointer.id().isBlank()) {
                     return emptyState();
                 }
-                return new CustomFieldState(List.of(pointer.id()), List.of(), pointer.updatedAt());
+                return new CustomFieldState(List.of(pointer.id()), pointer.updatedAt());
             } catch (IOException ex) {
                 throw new IllegalStateException("Could not deserialize legacy custom field pointer.", ex);
             }
@@ -233,21 +165,18 @@ public class CustomFieldServiceImpl implements CustomFieldService {
     private CustomFieldState normalizeState(CustomFieldState state) {
         return new CustomFieldState(
                 List.copyOf(new LinkedHashSet<>(state.activeIds() == null ? List.of() : state.activeIds())),
-                List.copyOf(new LinkedHashSet<>(
-                        state.deletedBuiltinIds() == null ? List.of() : state.deletedBuiltinIds())),
                 state.updatedAt());
     }
 
     private CustomFieldState emptyState() {
-        return new CustomFieldState(List.of(), List.of(), null);
+        return new CustomFieldState(List.of(), null);
     }
 
     private void writeState(
             OAuthProvider provider,
             String oauthId,
-            Set<String> activeIds,
-            Set<String> deletedBuiltinIds) {
-        if (activeIds.isEmpty() && deletedBuiltinIds.isEmpty()) {
+            Set<String> activeIds) {
+        if (activeIds.isEmpty()) {
             objectStorageService.delete(storageProperties.getBucket(), stateObjectKey(provider, oauthId));
             objectStorageService.delete(storageProperties.getBucket(), legacyActiveObjectKey(provider, oauthId));
             return;
@@ -256,7 +185,6 @@ public class CustomFieldServiceImpl implements CustomFieldService {
         try {
             CustomFieldState state = new CustomFieldState(
                     List.copyOf(activeIds),
-                    List.copyOf(deletedBuiltinIds),
                     OffsetDateTime.now(ZoneOffset.UTC));
             objectStorageService.store(
                     stateObjectKey(provider, oauthId),
@@ -355,7 +283,6 @@ public class CustomFieldServiceImpl implements CustomFieldService {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record CustomFieldState(
             List<String> activeIds,
-            List<String> deletedBuiltinIds,
             OffsetDateTime updatedAt) {
     }
 }

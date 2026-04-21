@@ -162,8 +162,6 @@ const toPluginItem = <TItem extends BasePluginItem>(
 	uniqueKey: `${pluginType}:${item.id}`,
 });
 
-const BUILTIN_DEFAULT_ID = "builtin-default-plugin";
-
 type SourceValidationResult =
 	| { pluginType: "field"; kind: string }
 	| { pluginType: "report"; kind: string }
@@ -686,7 +684,6 @@ export function PluginCatalogPage() {
 								filteredItems.map((item, index) => {
 									const meta = TYPE_META[item.pluginType];
 									const definitionKind = definitionKinds[item.uniqueKey] ?? null;
-									const isBuiltin = item.id === BUILTIN_DEFAULT_ID;
 									const displayName = definitionKind ?? item.fileName;
 
 									return (
@@ -713,15 +710,10 @@ export function PluginCatalogPage() {
 													<AppBadge tone={meta.tone} className="px-2.5 py-1 text-[0.7rem]">
 														{meta.label}
 													</AppBadge>
-													<AppBadge className="px-2.5 py-1 text-[0.7rem]">
-														{isBuiltin ? "system" : "user"}
-													</AppBadge>
 												</div>
 
 												<p className="text-sm leading-6 text-[var(--text-secondary)]">
-													{isBuiltin
-														? "Built-in catalog definition. Can be activated, deactivated, or removed like any other item."
-														: `Updated ${formatTimestamp(item.updatedAt)} · ${formatSize(item.sizeBytes)}`}
+													{`Updated ${formatTimestamp(item.updatedAt)} · ${formatSize(item.sizeBytes)}`}
 												</p>
 											</div>
 
