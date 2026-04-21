@@ -13,55 +13,59 @@ import org.springframework.web.multipart.MultipartFile;
 import dev.ulloasp.mlsuite.customexplanation.dtos.CustomExplanationDto;
 import dev.ulloasp.mlsuite.customexplanation.exceptions.CustomExplanationNotFoundException;
 import dev.ulloasp.mlsuite.customexplanation.services.CustomExplanationService;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class CustomExplanationControllerImpl implements CustomExplanationController {
 
+    private final CurrentUserResolver currentUserResolver;
     private final CustomExplanationService customExplanationService;
 
-    public CustomExplanationControllerImpl(CustomExplanationService customExplanationService) {
+    public CustomExplanationControllerImpl(
+            CurrentUserResolver currentUserResolver,
+            CustomExplanationService customExplanationService) {
+        this.currentUserResolver = currentUserResolver;
         this.customExplanationService = customExplanationService;
     }
 
     @Override
     public ResponseEntity<CustomExplanationDto> upload(OAuth2AuthenticationToken authentication, MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(customExplanationService.upload(provider(authentication), oauthId(authentication), file));
+                .body(customExplanationService.upload(currentUserResolver.resolve(authentication).userId(), file));
     }
 
     @Override
     public ResponseEntity<List<CustomExplanationDto>> getAll(OAuth2AuthenticationToken authentication) {
-        return ResponseEntity.ok(customExplanationService.list(provider(authentication), oauthId(authentication)));
+        return ResponseEntity.ok(customExplanationService.list(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
     public ResponseEntity<List<CustomExplanationDto>> getActive(OAuth2AuthenticationToken authentication) {
-        return ResponseEntity.ok(customExplanationService.getActive(provider(authentication), oauthId(authentication)));
+        return ResponseEntity.ok(customExplanationService.getActive(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
     public ResponseEntity<CustomExplanationDto> activate(OAuth2AuthenticationToken authentication, String id) {
-        return ResponseEntity.ok(customExplanationService.activate(provider(authentication), oauthId(authentication), id));
+        return ResponseEntity.ok(customExplanationService.activate(currentUserResolver.resolve(authentication).userId(), id));
     }
 
     @Override
     public ResponseEntity<Void> deactivate(OAuth2AuthenticationToken authentication, String id) {
-        customExplanationService.deactivate(provider(authentication), oauthId(authentication), id);
+        customExplanationService.deactivate(currentUserResolver.resolve(authentication).userId(), id);
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<Void> deactivateAll(OAuth2AuthenticationToken authentication) {
-        customExplanationService.deactivateAll(provider(authentication), oauthId(authentication));
+        customExplanationService.deactivateAll(currentUserResolver.resolve(authentication).userId());
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<Void> delete(OAuth2AuthenticationToken authentication, String id) {
-        customExplanationService.delete(provider(authentication), oauthId(authentication), id);
+        customExplanationService.delete(currentUserResolver.resolve(authentication).userId(), id);
         return ResponseEntity.noContent().build();
     }
 
@@ -85,11 +89,4 @@ public class CustomExplanationControllerImpl implements CustomExplanationControl
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(dto);
     }
 
-    private OAuthProvider provider(OAuth2AuthenticationToken authentication) {
-        return OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId());
-    }
-
-    private String oauthId(OAuth2AuthenticationToken authentication) {
-        return authentication.getPrincipal().getName();
-    }
 }

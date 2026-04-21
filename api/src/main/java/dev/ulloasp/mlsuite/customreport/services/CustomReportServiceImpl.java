@@ -1,12 +1,12 @@
 package dev.ulloasp.mlsuite.customreport.services;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -16,14 +16,18 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.custom.shared.ActiveArtifactPointer;
+import dev.ulloasp.mlsuite.custom.shared.CustomArtifactState;
+import dev.ulloasp.mlsuite.custom.shared.CustomArtifactStoragePaths;
+import dev.ulloasp.mlsuite.custom.shared.StoredCustomArtifact;
 import dev.ulloasp.mlsuite.customreport.dtos.CustomReportDto;
 import dev.ulloasp.mlsuite.customreport.exceptions.CustomReportNotFoundException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.user.entity.User;
+import dev.ulloasp.mlsuite.user.service.UserLookupService;
 
 @Service
 public class CustomReportServiceImpl implements CustomReportService {
@@ -35,22 +39,25 @@ public class CustomReportServiceImpl implements CustomReportService {
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
     private final ObjectMapper objectMapper;
+    private final UserLookupService userLookupService;
 
     public CustomReportServiceImpl(
             ObjectStorageService objectStorageService,
             StorageProperties storageProperties,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            UserLookupService userLookupService) {
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
         this.objectMapper = objectMapper;
+        this.userLookupService = userLookupService;
     }
 
     @Override
-    public CustomReportDto upload(OAuthProvider provider, String oauthId, MultipartFile file) {
+    public CustomReportDto upload(Long userId, MultipartFile file) {
         try {
             String id = UUID.randomUUID().toString();
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-            StoredCustomReport stored = new StoredCustomReport(
+            StoredCustomArtifact stored = new StoredCustomArtifact(
                     id,
                     sanitizeFileName(file.getOriginalFilename()),
                     normalizeContentType(file.getContentType()),
@@ -60,26 +67,28 @@ public class CustomReportServiceImpl implements CustomReportService {
                     new String(file.getBytes(), StandardCharsets.UTF_8));
 
             objectStorageService.store(
-                    itemObjectKey(provider, oauthId, id),
+                    itemObjectKey(userId, id),
                     stored.fileName(),
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
 
-            return toDto(stored, readState(provider, oauthId).activeIds().contains(id));
+            return toDto(stored, readState(userLookupService.requireById(userId)).activeIds().contains(id));
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize custom report.", ex);
         }
     }
 
     @Override
-    public List<CustomReportDto> list(OAuthProvider provider, String oauthId) {
-        CustomReportState state = readState(provider, oauthId);
+    public List<CustomReportDto> list(Long userId) {
+        User user = userLookupService.requireById(userId);
+        CustomArtifactState state = readState(user);
         Set<String> activeIds = Set.copyOf(state.activeIds());
         List<CustomReportDto> catalog = new ArrayList<>();
+        LinkedHashMap<String, StoredCustomArtifact> storedItems = new LinkedHashMap<>();
 
-        objectStorageService.list(itemsPrefix(provider, oauthId)).stream()
-                .filter(item -> item.objectKey().endsWith(".json"))
-                .map(item -> readStored(provider, oauthId, extractId(item.objectKey())))
+        readItems(itemsPrefix(userId)).forEach(item -> storedItems.put(item.id(), item));
+        readItems(legacyItemsPrefix(user)).forEach(item -> storedItems.putIfAbsent(item.id(), item));
+        storedItems.values().stream()
                 .map(item -> toDto(item, activeIds.contains(item.id())))
                 .forEach(catalog::add);
 
@@ -92,53 +101,58 @@ public class CustomReportServiceImpl implements CustomReportService {
     }
 
     @Override
-    public List<CustomReportDto> getActive(OAuthProvider provider, String oauthId) {
-        return list(provider, oauthId).stream()
+    public List<CustomReportDto> getActive(Long userId) {
+        return list(userId).stream()
                 .filter(CustomReportDto::active)
                 .toList();
     }
 
     @Override
-    public CustomReportDto activate(OAuthProvider provider, String oauthId, String id) {
-        StoredCustomReport stored = readStored(provider, oauthId, id);
-        CustomReportState state = readState(provider, oauthId);
+    public CustomReportDto activate(Long userId, String id) {
+        User user = userLookupService.requireById(userId);
+        StoredCustomArtifact stored = readStored(user, id);
+        CustomArtifactState state = readState(user);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.add(id);
-        writeState(provider, oauthId, activeIds);
+        writeState(userId, activeIds);
         return toDto(stored, true);
     }
 
     @Override
-    public void deactivate(OAuthProvider provider, String oauthId, String id) {
-        CustomReportState state = readState(provider, oauthId);
+    public void deactivate(Long userId, String id) {
+        User user = userLookupService.requireById(userId);
+        CustomArtifactState state = readState(user);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.remove(id);
-        writeState(provider, oauthId, activeIds);
+        writeState(userId, activeIds);
     }
 
     @Override
-    public void deactivateAll(OAuthProvider provider, String oauthId) {
-        writeState(provider, oauthId, new LinkedHashSet<>());
+    public void deactivateAll(Long userId) {
+        userLookupService.requireById(userId);
+        writeState(userId, new LinkedHashSet<>());
     }
 
     @Override
-    public void delete(OAuthProvider provider, String oauthId, String id) {
-        CustomReportState state = readState(provider, oauthId);
+    public void delete(Long userId, String id) {
+        User user = userLookupService.requireById(userId);
+        CustomArtifactState state = readState(user);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(state.activeIds());
         activeIds.remove(id);
 
-        readStored(provider, oauthId, id);
-        objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(provider, oauthId, id));
-        writeState(provider, oauthId, activeIds);
+        readStored(user, id);
+        objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(userId, id));
+        objectStorageService.delete(storageProperties.getBucket(), legacyItemObjectKey(user, id));
+        writeState(userId, activeIds);
     }
 
-    private CustomReportState readState(OAuthProvider provider, String oauthId) {
+    private CustomArtifactState readState(User user) {
         String bucket = storageProperties.getBucket();
 
-        Optional<byte[]> stateBytes = objectStorageService.loadOptional(bucket, stateObjectKey(provider, oauthId));
+        Optional<byte[]> stateBytes = objectStorageService.loadOptional(bucket, stateObjectKey(user.getId()));
         if (stateBytes.isPresent()) {
             try {
-                CustomReportState state = objectMapper.readValue(stateBytes.get(), CustomReportState.class);
+                CustomArtifactState state = objectMapper.readValue(stateBytes.get(), CustomArtifactState.class);
                 return normalizeState(state);
             } catch (IOException ex) {
                 throw new IllegalStateException("Could not deserialize custom report state.", ex);
@@ -146,14 +160,14 @@ public class CustomReportServiceImpl implements CustomReportService {
         }
 
         Optional<byte[]> legacyActiveBytes = objectStorageService.loadOptional(bucket,
-                legacyActiveObjectKey(provider, oauthId));
+                legacyActiveObjectKey(user));
         if (legacyActiveBytes.isPresent()) {
             try {
-                ActiveReportPointer pointer = objectMapper.readValue(legacyActiveBytes.get(), ActiveReportPointer.class);
+                ActiveArtifactPointer pointer = objectMapper.readValue(legacyActiveBytes.get(), ActiveArtifactPointer.class);
                 if (pointer.id() == null || pointer.id().isBlank()) {
                     return emptyState();
                 }
-                return new CustomReportState(List.of(pointer.id()), pointer.updatedAt());
+                return new CustomArtifactState(List.of(pointer.id()), pointer.updatedAt());
             } catch (IOException ex) {
                 throw new IllegalStateException("Could not deserialize legacy custom report pointer.", ex);
             }
@@ -162,53 +176,67 @@ public class CustomReportServiceImpl implements CustomReportService {
         return emptyState();
     }
 
-    private CustomReportState normalizeState(CustomReportState state) {
-        return new CustomReportState(
+    private CustomArtifactState normalizeState(CustomArtifactState state) {
+        return new CustomArtifactState(
                 List.copyOf(new LinkedHashSet<>(state.activeIds() == null ? List.of() : state.activeIds())),
                 state.updatedAt());
     }
 
-    private CustomReportState emptyState() {
-        return new CustomReportState(List.of(), null);
+    private CustomArtifactState emptyState() {
+        return new CustomArtifactState(List.of(), null);
     }
 
-    private void writeState(
-            OAuthProvider provider,
-            String oauthId,
-            Set<String> activeIds) {
+    private void writeState(Long userId, Set<String> activeIds) {
         if (activeIds.isEmpty()) {
-            objectStorageService.delete(storageProperties.getBucket(), stateObjectKey(provider, oauthId));
-            objectStorageService.delete(storageProperties.getBucket(), legacyActiveObjectKey(provider, oauthId));
+            objectStorageService.delete(storageProperties.getBucket(), stateObjectKey(userId));
             return;
         }
 
         try {
-            CustomReportState state = new CustomReportState(
+            CustomArtifactState state = new CustomArtifactState(
                     List.copyOf(activeIds),
                     OffsetDateTime.now(ZoneOffset.UTC));
             objectStorageService.store(
-                    stateObjectKey(provider, oauthId),
+                    stateObjectKey(userId),
                     STATE_FILE,
                     "application/json",
                     objectMapper.writeValueAsBytes(state));
-            objectStorageService.delete(storageProperties.getBucket(), legacyActiveObjectKey(provider, oauthId));
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize custom report state.", ex);
         }
     }
 
-    private StoredCustomReport readStored(OAuthProvider provider, String oauthId, String id) {
+    private StoredCustomArtifact readStored(User user, String id) {
         try {
             byte[] bytes = objectStorageService
-                    .loadOptional(storageProperties.getBucket(), itemObjectKey(provider, oauthId, id))
+                    .loadOptional(storageProperties.getBucket(), itemObjectKey(user.getId(), id))
+                    .or(() -> objectStorageService.loadOptional(storageProperties.getBucket(), legacyItemObjectKey(user, id)))
                     .orElseThrow(() -> new CustomReportNotFoundException(id));
-            return objectMapper.readValue(bytes, StoredCustomReport.class);
+            return objectMapper.readValue(bytes, StoredCustomArtifact.class);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not deserialize custom report.", ex);
         }
     }
 
-    private CustomReportDto toDto(StoredCustomReport stored, boolean active) {
+    private List<StoredCustomArtifact> readItems(String prefix) {
+        return objectStorageService.list(prefix).stream()
+                .filter(item -> item.objectKey().endsWith(".json"))
+                .map(item -> readStoredObject(item.objectKey()))
+                .toList();
+    }
+
+    private StoredCustomArtifact readStoredObject(String objectKey) {
+        try {
+            byte[] bytes = objectStorageService
+                    .loadOptional(storageProperties.getBucket(), objectKey)
+                    .orElseThrow(() -> new IllegalStateException("Could not load custom report object."));
+            return objectMapper.readValue(bytes, StoredCustomArtifact.class);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Could not deserialize custom report.", ex);
+        }
+    }
+
+    private CustomReportDto toDto(StoredCustomArtifact stored, boolean active) {
         return new CustomReportDto(
                 stored.id(),
                 stored.fileName(),
@@ -220,33 +248,28 @@ public class CustomReportServiceImpl implements CustomReportService {
                 stored.source());
     }
 
-    private String itemsPrefix(OAuthProvider provider, String oauthId) {
-        return userPrefix(provider, oauthId) + "/items/";
+    private String itemsPrefix(Long userId) {
+        return CustomArtifactStoragePaths.itemsPrefix(ROOT_PREFIX, userId);
     }
 
-    private String itemObjectKey(OAuthProvider provider, String oauthId, String id) {
-        return itemsPrefix(provider, oauthId) + id + ".json";
+    private String itemObjectKey(Long userId, String id) {
+        return CustomArtifactStoragePaths.itemObjectKey(ROOT_PREFIX, userId, id);
     }
 
-    private String stateObjectKey(OAuthProvider provider, String oauthId) {
-        return userPrefix(provider, oauthId) + "/" + STATE_FILE;
+    private String stateObjectKey(Long userId) {
+        return CustomArtifactStoragePaths.stateObjectKey(ROOT_PREFIX, userId, STATE_FILE);
     }
 
-    private String legacyActiveObjectKey(OAuthProvider provider, String oauthId) {
-        return userPrefix(provider, oauthId) + "/" + LEGACY_ACTIVE_FILE;
+    private String legacyActiveObjectKey(User user) {
+        return CustomArtifactStoragePaths.legacyActiveObjectKey(ROOT_PREFIX, user, LEGACY_ACTIVE_FILE);
     }
 
-    private String userPrefix(OAuthProvider provider, String oauthId) {
-        return ROOT_PREFIX + "/"
-                + provider.name().toLowerCase()
-                + "/"
-                + URLEncoder.encode(oauthId, StandardCharsets.UTF_8);
+    private String legacyItemsPrefix(User user) {
+        return CustomArtifactStoragePaths.legacyItemsPrefix(ROOT_PREFIX, user);
     }
 
-    private String extractId(String objectKey) {
-        int slashIndex = objectKey.lastIndexOf('/');
-        String fileName = slashIndex >= 0 ? objectKey.substring(slashIndex + 1) : objectKey;
-        return fileName.endsWith(".json") ? fileName.substring(0, fileName.length() - 5) : fileName;
+    private String legacyItemObjectKey(User user, String id) {
+        return CustomArtifactStoragePaths.legacyItemObjectKey(ROOT_PREFIX, user, id);
     }
 
     private String sanitizeFileName(String value) {
@@ -265,24 +288,4 @@ public class CustomReportServiceImpl implements CustomReportService {
         return value;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record StoredCustomReport(
-            String id,
-            String fileName,
-            String contentType,
-            long sizeBytes,
-            OffsetDateTime createdAt,
-            OffsetDateTime updatedAt,
-            String source) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ActiveReportPointer(String id, OffsetDateTime updatedAt) {
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record CustomReportState(
-            List<String> activeIds,
-            OffsetDateTime updatedAt) {
-    }
 }

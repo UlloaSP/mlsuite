@@ -5,21 +5,20 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.customfield.dtos.CustomFieldDto;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 
 public interface CustomFieldService {
 
-    CustomFieldDto upload(OAuthProvider provider, String oauthId, MultipartFile file);
+    CustomFieldDto upload(Long userId, MultipartFile file);
 
-    List<CustomFieldDto> list(OAuthProvider provider, String oauthId);
+    List<CustomFieldDto> list(Long userId);
 
-    List<CustomFieldDto> getActive(OAuthProvider provider, String oauthId);
+    List<CustomFieldDto> getActive(Long userId);
 
-    CustomFieldDto activate(OAuthProvider provider, String oauthId, String id);
+    CustomFieldDto activate(Long userId, String id);
 
-    void deactivate(OAuthProvider provider, String oauthId, String id);
+    void deactivate(Long userId, String id);
 
-    void deactivateAll(OAuthProvider provider, String oauthId);
+    void deactivateAll(Long userId);
 
-    void delete(OAuthProvider provider, String oauthId, String id);
+    void delete(Long userId, String id);
 }

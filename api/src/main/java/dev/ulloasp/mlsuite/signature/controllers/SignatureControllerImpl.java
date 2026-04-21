@@ -25,16 +25,18 @@ import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureNotFromUserException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureNotSemVerException;
 import dev.ulloasp.mlsuite.signature.services.SignatureService;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class SignatureControllerImpl implements SignatureController {
 
+    private final CurrentUserResolver currentUserResolver;
     private final SignatureService signatureService;
 
-    public SignatureControllerImpl(SignatureService signatureService) {
+    public SignatureControllerImpl(CurrentUserResolver currentUserResolver, SignatureService signatureService) {
+        this.currentUserResolver = currentUserResolver;
         this.signatureService = signatureService;
     }
 
@@ -42,8 +44,7 @@ public class SignatureControllerImpl implements SignatureController {
     public ResponseEntity<SignatureDto> createSignature(OAuth2AuthenticationToken authentication,
             @RequestBody CreateSignatureParams params) {
         Signature signature = signatureService.createSignature(
-                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                authentication.getPrincipal().getName(),
+                currentUserResolver.resolve(authentication).userId(),
                 params.getModelId(),
                 params.getInputSignature(),
                 params.getName(),
@@ -59,8 +60,7 @@ public class SignatureControllerImpl implements SignatureController {
     public ResponseEntity<List<SignatureDto>> getAllSignatures(OAuth2AuthenticationToken authentication,
             @RequestParam Long modelId) {
         List<Signature> signatures = signatureService.getSignatureByModelId(
-                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                authentication.getPrincipal().getName(), modelId);
+                currentUserResolver.resolve(authentication).userId(), modelId);
         return ResponseEntity.ok(SignatureDto.toDtoList(signatures));
     }
 
@@ -68,8 +68,7 @@ public class SignatureControllerImpl implements SignatureController {
     public ResponseEntity<SignatureDto> getSignatureById(OAuth2AuthenticationToken authentication,
             @PathVariable Long signatureId) {
         Signature signature = signatureService.getSignature(
-                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                authentication.getPrincipal().getName(), signatureId);
+                currentUserResolver.resolve(authentication).userId(), signatureId);
         return ResponseEntity.ok(SignatureDto.toDto(signature));
     }
 

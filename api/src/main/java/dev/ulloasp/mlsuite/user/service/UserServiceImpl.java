@@ -45,10 +45,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User getProfile(String oauthId, OAuthProvider oauthProvider) throws UserDoesNotExistException {
-        Optional<User> optionalUser = this.userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
+    public User getProfile(Long userId) throws UserDoesNotExistException {
+        Optional<User> optionalUser = this.userRepository.findById(userId);
         if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
+            throw new UserDoesNotExistException(userId);
         }
 
         return optionalUser.get();

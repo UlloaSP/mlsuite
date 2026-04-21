@@ -22,27 +22,26 @@ import dev.ulloasp.mlsuite.prediction.dtos.UpdateTargetParams;
 import dev.ulloasp.mlsuite.prediction.entities.Target;
 import dev.ulloasp.mlsuite.prediction.exceptions.TargetDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.services.TargetService;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class TargetControllerImpl implements TargetController {
 
+    private final CurrentUserResolver currentUserResolver;
     private final TargetService targetService;
 
-    public TargetControllerImpl(TargetService targetService) {
+    public TargetControllerImpl(CurrentUserResolver currentUserResolver, TargetService targetService) {
+        this.currentUserResolver = currentUserResolver;
         this.targetService = targetService;
     }
 
     @Override
     public ResponseEntity<TargetDto> createTarget(OAuth2AuthenticationToken authentication,
             @RequestBody CreateTargetParams params) {
-
-        OAuthProvider oauthProvider = OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId());
-        String oauthId = authentication.getPrincipal().getName();
-
-        Target target = targetService.createTarget(oauthProvider, oauthId, params.getPredictionId(),
+        Target target = targetService.createTarget(currentUserResolver.resolve(authentication).userId(),
+                params.getPredictionId(),
                 params.getOrder(), params.getValue());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(TargetDto.toDto(target));
@@ -51,11 +50,7 @@ public class TargetControllerImpl implements TargetController {
     @Override
     public ResponseEntity<TargetDto> updateTarget(OAuth2AuthenticationToken authentication,
             @RequestBody UpdateTargetParams params) {
-
-        OAuthProvider oauthProvider = OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId());
-        String oauthId = authentication.getPrincipal().getName();
-
-        Target updatedTarget = targetService.updateTarget(oauthProvider, oauthId, params.getTargetId(),
+        Target updatedTarget = targetService.updateTarget(currentUserResolver.resolve(authentication).userId(), params.getTargetId(),
                 params.getRealValue());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(TargetDto.toDto(updatedTarget));
@@ -64,11 +59,9 @@ public class TargetControllerImpl implements TargetController {
     @Override
     public ResponseEntity<List<TargetDto>> getAllTargets(OAuth2AuthenticationToken authentication,
             @RequestParam Long predictionId) {
-
-        OAuthProvider oauthProvider = OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId());
-        String oauthId = authentication.getPrincipal().getName();
-
-        List<Target> targets = targetService.getTargetsByPredictionId(oauthProvider, oauthId, predictionId);
+        List<Target> targets = targetService.getTargetsByPredictionId(
+                currentUserResolver.resolve(authentication).userId(),
+                predictionId);
 
         return ResponseEntity.ok(TargetDto.toDtoList(targets));
     }

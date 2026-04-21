@@ -29,10 +29,8 @@ import dev.ulloasp.mlsuite.model.exceptions.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StoredObject;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.service.UserLookupService;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -41,29 +39,23 @@ public class ModelServiceImpl implements ModelService {
 
     @Autowired
     private RestTemplate restTemplate;
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final ModelRepository modelRepository;
     private final ObjectStorageService objectStorageService;
 
     @Value("${analyzer.url}")
     private String analyzerUrl;
 
-    public ModelServiceImpl(UserRepository userRepository, ModelRepository modelRepository,
+    public ModelServiceImpl(UserLookupService userLookupService, ModelRepository modelRepository,
             ObjectStorageService objectStorageService) {
-        this.userRepository = userRepository;
+        this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
         this.objectStorageService = objectStorageService;
     }
 
     @Override
-    public Model createModel(OAuthProvider oauthProvider, String oauthId, String name, MultipartFile modelFile) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
+    public Model createModel(Long userId, String name, MultipartFile modelFile) {
+        User user = userLookupService.requireById(userId);
 
         if (modelRepository.existsByNameAndUserId(name, user.getId())) {
             throw new ModelAlreadyExistsException(name, user.getUsername());
@@ -131,16 +123,9 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public List<Model> getModels(OAuthProvider oauthProvider, String oauthId) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        return modelRepository.findByUserId(user.getId());
+    public List<Model> getModels(Long userId) {
+        userLookupService.requireById(userId);
+        return modelRepository.findByUserId(userId);
     }
 
     private String buildObjectKey(Long userId, String modelName, String fileName) {

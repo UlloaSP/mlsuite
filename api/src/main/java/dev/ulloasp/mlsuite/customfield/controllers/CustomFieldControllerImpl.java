@@ -13,55 +13,57 @@ import org.springframework.web.multipart.MultipartFile;
 import dev.ulloasp.mlsuite.customfield.dtos.CustomFieldDto;
 import dev.ulloasp.mlsuite.customfield.exceptions.CustomFieldNotFoundException;
 import dev.ulloasp.mlsuite.customfield.services.CustomFieldService;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class CustomFieldControllerImpl implements CustomFieldController {
 
+    private final CurrentUserResolver currentUserResolver;
     private final CustomFieldService customFieldService;
 
-    public CustomFieldControllerImpl(CustomFieldService customFieldService) {
+    public CustomFieldControllerImpl(CurrentUserResolver currentUserResolver, CustomFieldService customFieldService) {
+        this.currentUserResolver = currentUserResolver;
         this.customFieldService = customFieldService;
     }
 
     @Override
     public ResponseEntity<CustomFieldDto> upload(OAuth2AuthenticationToken authentication, MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(customFieldService.upload(provider(authentication), oauthId(authentication), file));
+                .body(customFieldService.upload(currentUserResolver.resolve(authentication).userId(), file));
     }
 
     @Override
     public ResponseEntity<List<CustomFieldDto>> getAll(OAuth2AuthenticationToken authentication) {
-        return ResponseEntity.ok(customFieldService.list(provider(authentication), oauthId(authentication)));
+        return ResponseEntity.ok(customFieldService.list(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
     public ResponseEntity<List<CustomFieldDto>> getActive(OAuth2AuthenticationToken authentication) {
-        return ResponseEntity.ok(customFieldService.getActive(provider(authentication), oauthId(authentication)));
+        return ResponseEntity.ok(customFieldService.getActive(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
     public ResponseEntity<CustomFieldDto> activate(OAuth2AuthenticationToken authentication, String id) {
-        return ResponseEntity.ok(customFieldService.activate(provider(authentication), oauthId(authentication), id));
+        return ResponseEntity.ok(customFieldService.activate(currentUserResolver.resolve(authentication).userId(), id));
     }
 
     @Override
     public ResponseEntity<Void> deactivate(OAuth2AuthenticationToken authentication, String id) {
-        customFieldService.deactivate(provider(authentication), oauthId(authentication), id);
+        customFieldService.deactivate(currentUserResolver.resolve(authentication).userId(), id);
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<Void> deactivateAll(OAuth2AuthenticationToken authentication) {
-        customFieldService.deactivateAll(provider(authentication), oauthId(authentication));
+        customFieldService.deactivateAll(currentUserResolver.resolve(authentication).userId());
         return ResponseEntity.noContent().build();
     }
 
     @Override
     public ResponseEntity<Void> delete(OAuth2AuthenticationToken authentication, String id) {
-        customFieldService.delete(provider(authentication), oauthId(authentication), id);
+        customFieldService.delete(currentUserResolver.resolve(authentication).userId(), id);
         return ResponseEntity.noContent().build();
     }
 
@@ -85,11 +87,4 @@ public class CustomFieldControllerImpl implements CustomFieldController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(dto);
     }
 
-    private OAuthProvider provider(OAuth2AuthenticationToken authentication) {
-        return OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId());
-    }
-
-    private String oauthId(OAuth2AuthenticationToken authentication) {
-        return authentication.getPrincipal().getName();
-    }
 }

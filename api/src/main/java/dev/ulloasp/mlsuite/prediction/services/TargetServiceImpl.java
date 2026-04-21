@@ -18,38 +18,29 @@ import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsExceptio
 import dev.ulloasp.mlsuite.prediction.exceptions.TargetDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.service.UserLookupService;
 
 @Service
 public class TargetServiceImpl implements TargetService {
 
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final TargetRepository targetRepository;
     private final PredictionRepository predictionRepository;
 
-    public TargetServiceImpl(UserRepository userRepository, TargetRepository targetRepository,
+    public TargetServiceImpl(UserLookupService userLookupService, TargetRepository targetRepository,
             PredictionRepository predictionRepository) {
-        this.userRepository = userRepository;
+        this.userLookupService = userLookupService;
         this.targetRepository = targetRepository;
         this.predictionRepository = predictionRepository;
     }
 
     @Override
-    public Target createTarget(OAuthProvider oauthProvider, String oauthId, Long predictionId, int order,
+    public Target createTarget(Long userId, Long predictionId, int order,
             JsonNode value) {
+        User user = userLookupService.requireById(userId);
 
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Prediction> optionalPrediction = predictionRepository.findByIdAndUserId(predictionId, user.getId());
+        Optional<Prediction> optionalPrediction = predictionRepository.findByIdAndUserId(predictionId, userId);
 
         if (optionalPrediction.isEmpty()) {
             throw new PredictionDoesNotExistsException(predictionId, user.getUsername());
@@ -63,45 +54,32 @@ public class TargetServiceImpl implements TargetService {
     }
 
     @Override
-    public Target updateTarget(OAuthProvider oauthProvider, String oauthId, Long targetId, JsonNode real_value) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
+    public Target updateTarget(Long userId, Long targetId, JsonNode realValue) {
+        User user = userLookupService.requireById(userId);
 
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Target> optionalTarget = targetRepository.findByIdAndUserId(targetId, user.getId());
+        Optional<Target> optionalTarget = targetRepository.findByIdAndUserId(targetId, userId);
 
         if (optionalTarget.isEmpty()) {
             throw new TargetDoesNotExistsException(targetId, user.getUsername());
         }
 
         Target target = optionalTarget.get();
-        target.setRealValue(real_value);
+        target.setRealValue(realValue);
 
         return targetRepository.save(target);
     }
 
     @Override
-    public List<Target> getTargetsByPredictionId(OAuthProvider oauthProvider, String oauthId, Long predictionId) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
+    public List<Target> getTargetsByPredictionId(Long userId, Long predictionId) {
+        User user = userLookupService.requireById(userId);
 
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-        User user = optionalUser.get();
-
-        Optional<Prediction> optionalPrediction = predictionRepository.findByIdAndUserId(predictionId, user.getId());
+        Optional<Prediction> optionalPrediction = predictionRepository.findByIdAndUserId(predictionId, userId);
 
         if (optionalPrediction.isEmpty()) {
             throw new PredictionDoesNotExistsException(predictionId, user.getUsername());
         }
 
-        Prediction prediction = optionalPrediction.get();
-
-        return targetRepository.findByPredictionId(prediction.getId());
+        return targetRepository.findByPredictionIdAndUserId(predictionId, userId);
     }
 
 }

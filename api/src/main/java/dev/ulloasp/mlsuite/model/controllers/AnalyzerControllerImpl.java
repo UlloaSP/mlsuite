@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import dev.ulloasp.mlsuite.model.dtos.ExplainRequest;
 import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.services.AnalyzerService;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,9 +29,11 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 public class AnalyzerControllerImpl implements AnalyzerController {
 
+    private final CurrentUserResolver currentUserResolver;
     private final AnalyzerService analyzerService;
 
-    public AnalyzerControllerImpl(AnalyzerService analyzerService) {
+    public AnalyzerControllerImpl(CurrentUserResolver currentUserResolver, AnalyzerService analyzerService) {
+        this.currentUserResolver = currentUserResolver;
         this.analyzerService = analyzerService;
     }
 
@@ -41,8 +43,7 @@ public class AnalyzerControllerImpl implements AnalyzerController {
             @RequestPart("model") MultipartFile model,
             @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe) {
         Map<String, Object> schema = analyzerService.generateInputSignature(
-                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                authentication.getPrincipal().getName(),
+                currentUserResolver.resolve(authentication).userId(),
                 model,
                 dataframe);
 
@@ -55,8 +56,7 @@ public class AnalyzerControllerImpl implements AnalyzerController {
             @RequestParam Long modelId,
             @RequestPart("data") Map<String, Object> data) {
         Map<String, Object> prediction = analyzerService.predict(
-                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                authentication.getPrincipal().getName(),
+                currentUserResolver.resolve(authentication).userId(),
                 modelId,
                 data);
         return ResponseEntity.ok(prediction);
@@ -68,8 +68,7 @@ public class AnalyzerControllerImpl implements AnalyzerController {
             @RequestParam Long modelId,
             @RequestBody ExplainRequest request) {
         Map<String, Object> result = analyzerService.explain(
-                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                authentication.getPrincipal().getName(),
+                currentUserResolver.resolve(authentication).userId(),
                 modelId,
                 request);
         return ResponseEntity.ok(result);

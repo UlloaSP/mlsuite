@@ -1,26 +1,24 @@
 package dev.ulloasp.mlsuite.customexplanation.services;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.customexplanation.dtos.CustomExplanationDto;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 
 public interface CustomExplanationService {
 
-    CustomExplanationDto upload(OAuthProvider provider, String oauthId, MultipartFile file);
+    CustomExplanationDto upload(Long userId, MultipartFile file);
 
-    List<CustomExplanationDto> list(OAuthProvider provider, String oauthId);
+    List<CustomExplanationDto> list(Long userId);
 
-    List<CustomExplanationDto> getActive(OAuthProvider provider, String oauthId);
+    List<CustomExplanationDto> getActive(Long userId);
 
-    CustomExplanationDto activate(OAuthProvider provider, String oauthId, String id);
+    CustomExplanationDto activate(Long userId, String id);
 
-    void deactivate(OAuthProvider provider, String oauthId, String id);
+    void deactivate(Long userId, String id);
 
-    void deactivateAll(OAuthProvider provider, String oauthId);
+    void deactivateAll(Long userId);
 
-    void delete(OAuthProvider provider, String oauthId, String id);
+    void delete(Long userId, String id);
 }

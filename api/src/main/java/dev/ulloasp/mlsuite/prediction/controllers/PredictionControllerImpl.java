@@ -24,27 +24,26 @@ import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionAlreadyExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.services.PredictionService;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 public class PredictionControllerImpl implements PredictionController {
 
+    private final CurrentUserResolver currentUserResolver;
     private final PredictionService predictionService;
 
-    public PredictionControllerImpl(PredictionService predictionService) {
+    public PredictionControllerImpl(CurrentUserResolver currentUserResolver, PredictionService predictionService) {
+        this.currentUserResolver = currentUserResolver;
         this.predictionService = predictionService;
     }
 
     @Override
     public ResponseEntity<PredictionDto> createPrediction(OAuth2AuthenticationToken authentication,
             @RequestBody CreatePredictionParams params) {
-
-        OAuthProvider oauthProvider = OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId());
-        String oauthId = authentication.getPrincipal().getName();
-
-        Prediction pred = predictionService.createPrediction(oauthProvider, oauthId, params.getSignatureId(),
+        Prediction pred = predictionService.createPrediction(currentUserResolver.resolve(authentication).userId(),
+                params.getSignatureId(),
                 params.getName(), params.getPrediction(), params.getInputs());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(PredictionDto.toDto(pred));
@@ -53,11 +52,7 @@ public class PredictionControllerImpl implements PredictionController {
     @Override
     public ResponseEntity<PredictionDto> updatePrediction(OAuth2AuthenticationToken authentication,
             @RequestBody UpdatePredictionParams params) {
-
-        OAuthProvider oauthProvider = OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId());
-        String oauthId = authentication.getPrincipal().getName();
-
-        Prediction updatedPrediction = predictionService.updatePrediction(oauthProvider, oauthId,
+        Prediction updatedPrediction = predictionService.updatePrediction(currentUserResolver.resolve(authentication).userId(),
                 params.getPredictionId(), PredictionStatus.valueOf(params.getStatus()));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(PredictionDto.toDto(updatedPrediction));
@@ -66,11 +61,8 @@ public class PredictionControllerImpl implements PredictionController {
     @Override
     public ResponseEntity<List<PredictionDto>> getAllPredictions(OAuth2AuthenticationToken authentication,
             @RequestParam Long signatureId) {
-
-        OAuthProvider oauthProvider = OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId());
-        String oauthId = authentication.getPrincipal().getName();
-
-        List<Prediction> predictions = predictionService.getPredictionsBySignatureId(oauthProvider, oauthId,
+        List<Prediction> predictions = predictionService.getPredictionsBySignatureId(
+                currentUserResolver.resolve(authentication).userId(),
                 signatureId);
 
         return ResponseEntity.ok(PredictionDto.toDtoList(predictions));

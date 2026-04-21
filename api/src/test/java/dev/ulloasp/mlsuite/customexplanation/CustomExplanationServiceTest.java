@@ -30,12 +30,15 @@ import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.storage.StoredObjectItem;
 import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.user.entity.User;
+import dev.ulloasp.mlsuite.user.service.UserLookupService;
 
 @ExtendWith(MockitoExtension.class)
 class CustomExplanationServiceTest {
 
     private static final String BUCKET = "mlsuite-models";
-    private static final String USER_PREFIX = "custom-explanations/github/user-1";
+    private static final String NEW_PREFIX = "users/7/custom-explanations";
+    private static final String LEGACY_PREFIX = "custom-explanations/github/user-1";
 
     @Mock
     private ObjectStorageService objectStorageService;
@@ -43,129 +46,87 @@ class CustomExplanationServiceTest {
     @Mock
     private StorageProperties storageProperties;
 
-    private CustomExplanationServiceImpl customExplanationService;
+    @Mock
+    private UserLookupService userLookupService;
+
+    private CustomExplanationServiceImpl service;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper().findAndRegisterModules();
-        customExplanationService = new CustomExplanationServiceImpl(objectStorageService, storageProperties, objectMapper);
+        service = new CustomExplanationServiceImpl(objectStorageService, storageProperties, objectMapper,
+                userLookupService);
         when(storageProperties.getBucket()).thenReturn(BUCKET);
+        when(userLookupService.requireById(7L)).thenReturn(user());
     }
 
     @Test
-    void upload_StoresExplanationInMinio() {
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "explain.ts",
-                "application/typescript",
-                "export default defineExplanationKind({ kind: 'x', schema: z.object({ kind: z.literal('x') }), fetch: () => ({ submit: async () => null }), render: { content: () => ({ type: 'json', value: null }) } })"
-                        .getBytes(StandardCharsets.UTF_8));
-
+    void upload_WritesUsingInternalUserPrefix() {
+        MockMultipartFile file = new MockMultipartFile("file", "explain.ts", "application/typescript",
+                "export default {}".getBytes(StandardCharsets.UTF_8));
         when(objectStorageService.store(anyString(), anyString(), anyString(), any(byte[].class)))
                 .thenReturn(new StoredObject(BUCKET, "custom", file.getSize(), "etag-1"));
         when(objectStorageService.loadOptional(anyString(), anyString())).thenReturn(Optional.empty());
 
-        CustomExplanationDto result = customExplanationService.upload(OAuthProvider.GITHUB, "user-1", file);
+        CustomExplanationDto result = service.upload(7L, file);
 
         assertEquals("explain.ts", result.fileName());
-        assertEquals(file.getSize(), result.sizeBytes());
         assertFalse(result.active());
-        assertTrue(result.source().contains("defineExplanationKind"));
         verify(objectStorageService).store(anyString(), anyString(), anyString(), any(byte[].class));
     }
 
     @Test
-    void list_ReturnsStoredItemsAndMarksMultipleActive() throws Exception {
+    void list_FallsBackToLegacyPrefixWhenNewStateMissing() throws Exception {
         OffsetDateTime now = OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC);
-        String itemOneId = "item-1";
-        String itemTwoId = "item-2";
+        byte[] legacyActiveBytes = objectMapper.writeValueAsBytes(new ActivePointer("item-1", now));
+        byte[] itemBytes = objectMapper.writeValueAsBytes(new StoredExplanation(
+                "item-1", "one.ts", "application/typescript", 10, now, now, "src"));
 
-        byte[] stateBytes = objectMapper.writeValueAsBytes(new StatePayload(
-                List.of(itemTwoId),
-                now));
-        byte[] itemOneBytes = objectMapper.writeValueAsBytes(new StoredCustomExplanationTestPayload(
-                itemOneId,
-                "one.ts",
-                "application/typescript",
-                10,
-                now.minusDays(1),
-                now.minusDays(1),
-                "export default defineExplanationKind({ kind: 'one', schema: z.object({ kind: z.literal('one') }), fetch: () => ({ submit: async () => ['one'] }), render: { content: () => ({ type: 'list', items: ['one'] }) } })"));
-        byte[] itemTwoBytes = objectMapper.writeValueAsBytes(new StoredCustomExplanationTestPayload(
-                itemTwoId,
-                "two.ts",
-                "application/typescript",
-                20,
-                now,
-                now,
-                "export default defineExplanationKind({ kind: 'two', schema: z.object({ kind: z.literal('two') }), fetch: () => ({ submit: async () => ['two'] }), render: { content: () => ({ type: 'list', items: ['two'] }) } })"));
+        when(objectStorageService.loadOptional(BUCKET, NEW_PREFIX + "/state.json")).thenReturn(Optional.empty());
+        when(objectStorageService.loadOptional(BUCKET, LEGACY_PREFIX + "/active.json"))
+                .thenReturn(Optional.of(legacyActiveBytes));
+        when(objectStorageService.list(NEW_PREFIX + "/items/")).thenReturn(List.of());
+        when(objectStorageService.list(LEGACY_PREFIX + "/items/"))
+                .thenReturn(List.of(new StoredObjectItem(BUCKET, LEGACY_PREFIX + "/items/item-1.json", 10L, "etag",
+                        now)));
+        when(objectStorageService.loadOptional(BUCKET, LEGACY_PREFIX + "/items/item-1.json"))
+                .thenReturn(Optional.of(itemBytes));
 
-        when(objectStorageService.list(USER_PREFIX + "/items/")).thenReturn(List.of(
-                new StoredObjectItem(BUCKET, USER_PREFIX + "/items/item-1.json", 10L, "etag-1", now.minusDays(1)),
-                new StoredObjectItem(BUCKET, USER_PREFIX + "/items/item-2.json", 20L, "etag-2", now)));
-        when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/state.json"))
-                .thenReturn(Optional.of(stateBytes));
-        when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/items/item-1.json"))
-                .thenReturn(Optional.of(itemOneBytes));
-        when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/items/item-2.json"))
-                .thenReturn(Optional.of(itemTwoBytes));
+        List<CustomExplanationDto> result = service.list(7L);
 
-        List<CustomExplanationDto> result = customExplanationService.list(OAuthProvider.GITHUB, "user-1");
-
-        assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(item -> item.id().equals(itemTwoId) && item.active()));
-        assertTrue(result.stream().anyMatch(item -> item.id().equals(itemOneId) && !item.active()));
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).active());
     }
 
     @Test
-    void activateDeactivateAndDelete_UpdateStateAndStorage() throws Exception {
+    void activateAndDelete_MigrateToNewPrefix() throws Exception {
         OffsetDateTime now = OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC);
-        byte[] itemBytes = objectMapper.writeValueAsBytes(new StoredCustomExplanationTestPayload(
-                "item-7",
-                "active.ts",
-                "application/typescript",
-                20,
-                now,
-                now,
-                "export default defineExplanationKind({ kind: 'ok', schema: z.object({ kind: z.literal('ok') }), fetch: () => ({ submit: async () => ['ok'] }), render: { content: () => ({ type: 'list', items: ['ok'] }) } })"));
-
-        when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/items/item-7.json"))
+        byte[] itemBytes = objectMapper.writeValueAsBytes(new StoredExplanation(
+                "item-7", "active.ts", "application/typescript", 20, now, now, "src"));
+        when(objectStorageService.loadOptional(BUCKET, NEW_PREFIX + "/items/item-7.json")).thenReturn(Optional.empty());
+        when(objectStorageService.loadOptional(BUCKET, LEGACY_PREFIX + "/items/item-7.json"))
                 .thenReturn(Optional.of(itemBytes));
-        when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/state.json"))
-                .thenReturn(Optional.empty());
-        when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/active.json"))
-                .thenReturn(Optional.empty());
+        when(objectStorageService.loadOptional(BUCKET, NEW_PREFIX + "/state.json")).thenReturn(Optional.empty());
+        when(objectStorageService.loadOptional(BUCKET, LEGACY_PREFIX + "/active.json")).thenReturn(Optional.empty());
 
-        CustomExplanationDto active = customExplanationService.activate(OAuthProvider.GITHUB, "user-1", "item-7");
+        CustomExplanationDto active = service.activate(7L, "item-7");
+        service.delete(7L, "item-7");
 
         assertTrue(active.active());
-        assertEquals("item-7", active.id());
-        verify(objectStorageService).store(anyString(), anyString(), anyString(), any(byte[].class));
-
-        customExplanationService.deactivate(OAuthProvider.GITHUB, "user-1", "item-7");
-        customExplanationService.delete(OAuthProvider.GITHUB, "user-1", "item-7");
-
-        verify(objectStorageService).delete(BUCKET, USER_PREFIX + "/items/item-7.json");
+        verify(objectStorageService).delete(BUCKET, NEW_PREFIX + "/items/item-7.json");
+        verify(objectStorageService).delete(BUCKET, LEGACY_PREFIX + "/items/item-7.json");
     }
 
-    @Test
-    void deactivateAll_DeletesPersistedStateWhenNoIdsRemain() throws Exception {
-        OffsetDateTime now = OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC);
-        byte[] stateBytes = objectMapper.writeValueAsBytes(new StatePayload(
-                List.of("item-2"),
-                now));
-
-        when(objectStorageService.loadOptional(BUCKET, USER_PREFIX + "/state.json"))
-                .thenReturn(Optional.of(stateBytes));
-
-        customExplanationService.deactivateAll(OAuthProvider.GITHUB, "user-1");
-
-        verify(objectStorageService).delete(BUCKET, USER_PREFIX + "/state.json");
-        verify(objectStorageService).delete(BUCKET, USER_PREFIX + "/active.json");
+    private User user() {
+        User user = new User();
+        user.setId(7L);
+        user.setOauthProvider(OAuthProvider.GITHUB);
+        user.setOauthId("user-1");
+        return user;
     }
 
-    private record StoredCustomExplanationTestPayload(
+    private record StoredExplanation(
             String id,
             String fileName,
             String contentType,
@@ -175,8 +136,6 @@ class CustomExplanationServiceTest {
             String source) {
     }
 
-    private record StatePayload(
-            List<String> activeIds,
-            OffsetDateTime updatedAt) {
+    private record ActivePointer(String id, OffsetDateTime updatedAt) {
     }
 }

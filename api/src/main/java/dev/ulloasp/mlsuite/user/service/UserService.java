@@ -42,13 +42,5 @@ public interface UserService {
          */
         void signIn(OAuthProvider oauthProvider, String oauthId) throws UserDoesNotExistException;
 
-        /**
-         * Retrieves the profile of a user by their OAuth ID and OAuth provider.
-         *
-         * @param oauthId       the OAuth ID of the user
-         * @param oauthProvider the OAuth provider of the user
-         * @return the User entity
-         * @throws UserDoesNotExistException if the user does not exist
-         */
-        User getProfile(String oauthId, OAuthProvider oauthProvider) throws UserDoesNotExistException;
+        User getProfile(Long userId) throws UserDoesNotExistException;
 }

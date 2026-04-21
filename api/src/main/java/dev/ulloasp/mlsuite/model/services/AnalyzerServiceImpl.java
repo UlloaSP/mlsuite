@@ -26,10 +26,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ulloasp.mlsuite.model.dtos.ExplainRequest;
 import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
+import dev.ulloasp.mlsuite.model.exceptions.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.user.entity.User;
+import dev.ulloasp.mlsuite.user.service.UserLookupService;
 import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 
@@ -45,17 +47,22 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
         private final ModelRepository modelRepository;
         private final ObjectStorageService objectStorageService;
+        private final UserLookupService userLookupService;
 
-        public AnalyzerServiceImpl(ModelRepository modelRepository, ObjectStorageService objectStorageService) {
+        public AnalyzerServiceImpl(
+                        ModelRepository modelRepository,
+                        ObjectStorageService objectStorageService,
+                        UserLookupService userLookupService) {
                 this.modelRepository = modelRepository;
                 this.objectStorageService = objectStorageService;
+                this.userLookupService = userLookupService;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public Map<String, Object> generateInputSignature(OAuthProvider oauthProvider, String oauthId,
-                        MultipartFile model,
+        public Map<String, Object> generateInputSignature(Long userId, MultipartFile model,
                         @Nullable MultipartFile dataframe) {
+                userLookupService.requireById(userId);
                 LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
                 body.add("model_file", model.getResource());
                 if (dataframe != null) {
@@ -85,11 +92,8 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Map<String, Object> predict(OAuthProvider oauthProvider, String oauthId, Long modelId,
-                        Map<String, Object> data) {
-
-                Model model = modelRepository.findById(modelId)
-                                .orElseThrow(() -> new IllegalArgumentException("Modelo no encontrado"));
+        public Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data) {
+                Model model = requireModel(userId, modelId);
 
                 byte[] bytes = loadModelBytes(model);
 
@@ -131,11 +135,8 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Map<String, Object> explain(OAuthProvider oauthProvider, String oauthId, Long modelId,
-                        ExplainRequest request) {
-
-                Model model = modelRepository.findById(modelId)
-                                .orElseThrow(() -> new IllegalArgumentException("Modelo no encontrado"));
+        public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
+                Model model = requireModel(userId, modelId);
 
                 byte[] bytes = loadModelBytes(model);
 
@@ -190,6 +191,12 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 }
 
                 throw new IllegalStateException("El modelo no tiene binario en object storage ni en base de datos");
+        }
+
+        private Model requireModel(Long userId, Long modelId) {
+                User user = userLookupService.requireById(userId);
+                return modelRepository.findByIdAndUserId(modelId, userId)
+                                .orElseThrow(() -> new ModelDoesNotExistsException(modelId, user.getUsername()));
         }
 
 }
