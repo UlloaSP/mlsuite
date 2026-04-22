@@ -100,8 +100,11 @@ services:
     container_name: web-frontend
     environment:
       VITE_BACKEND_URL: https://localhost:${SPRING_PORT}
+    volumes:
+      - ./frontend/.cert/localhost.pem:/etc/nginx/certs/localhost.pem:ro
+      - ./frontend/.cert/localhost-key.pem:/etc/nginx/certs/localhost-key.pem:ro
     ports:
-      - ${WEB_PORT}:${WEB_PORT}
+      - ${WEB_PORT}:5173
     depends_on:
       spring-app:
         condition: service_started
