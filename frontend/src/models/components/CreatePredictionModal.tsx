@@ -17,7 +17,8 @@ import {
 	AppTextField,
 } from "../../app/components";
 import { showModalAtom } from "../atoms";
-import { useCreatePredictionMutation, useCreateTargetMutation } from "../hooks";
+import { useCreatePredictionMutation, useCreateTargetMutation, useGetPredictions } from "../hooks";
+import { PredictionOverwriteDialog } from "./PredictionOverwriteDialog";
 
 export type CreatePredictionModalProps = {
 	prediction: Record<string, unknown>;
@@ -53,9 +54,11 @@ export function CreatePredictionModal({
 
 	const mutation = useCreatePredictionMutation();
 	const mutationTarget = useCreateTargetMutation();
+	const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
 
 	const [predictionName, setPredictionName] = useState<string>("");
 	const [targets, setTargets] = useState<Record<number, object>>({});
+	const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
 
 	const formatInputValue = (value: unknown) => {
 		if (typeof value === "number") {
@@ -87,10 +90,12 @@ export function CreatePredictionModal({
 		setTargets(nextTargets as unknown as Record<number, object>);
 	}, [prediction]);
 
-	const handleSave = async () => {
+	const savePrediction = async (overwrite: boolean) => {
+		const normalizedName = predictionName.trim();
 		const created = await mutation.mutateAsync({
 			signatureId: signatureId!,
-			name: predictionName,
+			name: normalizedName,
+			overwrite,
 			inputs: inputs,
 			prediction: prediction,
 		});
@@ -109,6 +114,18 @@ export function CreatePredictionModal({
 		navigate(
 			`/models/${modelId ?? created.modelId}/signatures/${created.signatureId}/predictions/${created.id}`,
 		);
+	};
+
+	const handleSave = async () => {
+		const normalizedName = predictionName.trim();
+		const hasDuplicate = predictions.some((item) => item.name === normalizedName);
+
+		if (hasDuplicate) {
+			setShowOverwriteDialog(true);
+			return;
+		}
+
+		await savePrediction(false);
 	};
 
 	const output = asOutput(prediction);
@@ -241,7 +258,7 @@ export function CreatePredictionModal({
 
 									<AppButton
 										onClick={handleSave}
-										disabled={!predictionName}
+										disabled={!predictionName.trim()}
 										className="flex-1"
 									>
 										<Save size={18} />
@@ -251,6 +268,15 @@ export function CreatePredictionModal({
 							</AppPanel>
 						</div>
 					</div>
+					<PredictionOverwriteDialog
+						open={showOverwriteDialog}
+						predictionName={predictionName.trim()}
+						onCancel={() => setShowOverwriteDialog(false)}
+						onConfirm={async () => {
+							setShowOverwriteDialog(false);
+							await savePrediction(true);
+						}}
+					/>
 				</motion.div>
 			</motion.div>
 		</AnimatePresence>

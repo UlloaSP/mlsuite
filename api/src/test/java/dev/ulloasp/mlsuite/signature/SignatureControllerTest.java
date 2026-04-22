@@ -23,8 +23,11 @@ import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.signature.controllers.SignatureControllerImpl;
 import dev.ulloasp.mlsuite.signature.dtos.CreateSignatureParams;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
+import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
 import dev.ulloasp.mlsuite.signature.services.SignatureService;
+import dev.ulloasp.mlsuite.util.ErrorDto;
+import jakarta.servlet.http.HttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
 class SignatureControllerTest {
@@ -37,6 +40,9 @@ class SignatureControllerTest {
 
     @Mock
     private OAuth2AuthenticationToken authentication;
+
+    @Mock
+    private HttpServletRequest request;
 
     private SignatureControllerImpl controller;
 
@@ -76,6 +82,18 @@ class SignatureControllerTest {
         when(signatureService.getSignature(6L, 99L)).thenThrow(new SignatureDoesNotExistsException(99L));
 
         assertThrows(SignatureDoesNotExistsException.class, () -> controller.getSignatureById(authentication, 99L));
+    }
+
+    @Test
+    void handleInvalidSignatureSchemaException_ReturnsBadRequest() {
+        when(request.getRequestURI()).thenReturn("/api/signatures");
+
+        ResponseEntity<ErrorDto> response = controller.handleInvalidSignatureSchemaException(
+                new InvalidSignatureSchemaException(
+                        "Custom explanation kind \"old-kind\" does not exist in active plugin catalog."),
+                request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     private Signature signature() {

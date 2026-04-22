@@ -5,10 +5,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowUpDown, Check, ChevronDown, Power, Search, Upload, XCircle } from "lucide-react";
 import { motion } from "motion/react";
+import { useSetAtom } from "jotai";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { deactivateAllPlugins, deletePlugin, getPlugins, uploadPlugin, activatePlugin, deactivatePlugin } from "../api/pluginService";
 import { AppButton, AppPage, AppPageHeader, AppPanel, AppSelect, AppSurface, AppTextField, cx } from "../components";
 import { detectPluginType, invalidatePluginCatalog } from "../utils/mlform/plugin-catalog";
+import { bumpPluginCatalogVersionAtom } from "../utils/mlform/plugin-catalog-state";
 import { useUser } from "../../user/hooks";
 import { Unauthorized } from "./Unauthorized";
 import { PluginCatalogListItem } from "./PluginCatalogListItem";
@@ -36,6 +38,7 @@ export function PluginCatalogPage() {
 	const [sort, setSort] = useState<SortMode>("updated");
 	const [isSortOpen, setIsSortOpen] = useState(false);
 	const [toast, setToast] = useState<ToastState>(null);
+	const bumpPluginCatalogVersion = useSetAtom(bumpPluginCatalogVersionAtom);
 
 	const pushToast = (tone: "success" | "error", message: string) => setToast({ tone, message });
 
@@ -85,6 +88,7 @@ export function PluginCatalogPage() {
 
 	const reloadCatalog = async () => {
 		invalidatePluginCatalog();
+		bumpPluginCatalogVersion();
 		await refreshItems();
 	};
 

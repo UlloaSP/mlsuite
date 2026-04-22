@@ -16,9 +16,11 @@ import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionAlreadyExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
+import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
 import dev.ulloasp.mlsuite.signature.repositories.SignatureRepository;
+import dev.ulloasp.mlsuite.signature.services.SignatureSchemaCompatibilityService;
 import dev.ulloasp.mlsuite.user.entity.User;
 import dev.ulloasp.mlsuite.user.service.UserLookupService;
 import jakarta.transaction.Transactional;
@@ -30,17 +32,23 @@ public class PredictionServiceImpl implements PredictionService {
     private final UserLookupService userLookupService;
     private final SignatureRepository signatureRepository;
     private final PredictionRepository predictionRepository;
+    private final TargetRepository targetRepository;
+    private final SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
 
     public PredictionServiceImpl(UserLookupService userLookupService, SignatureRepository signatureRepository,
-            PredictionRepository predictionRepository) {
+            PredictionRepository predictionRepository,
+            TargetRepository targetRepository,
+            SignatureSchemaCompatibilityService signatureSchemaCompatibilityService) {
         this.userLookupService = userLookupService;
         this.signatureRepository = signatureRepository;
         this.predictionRepository = predictionRepository;
+        this.targetRepository = targetRepository;
+        this.signatureSchemaCompatibilityService = signatureSchemaCompatibilityService;
     }
 
     @Override
     public Prediction createPrediction(Long userId, Long signatureId, String name,
-            Map<String, Object> prediction, Map<String, Object> data) {
+            boolean overwrite, Map<String, Object> prediction, Map<String, Object> data) {
         User user = userLookupService.requireById(userId);
 
         Optional<Signature> optionalSignature = signatureRepository.findByIdAndUserId(signatureId, user.getId());
@@ -50,9 +58,21 @@ public class PredictionServiceImpl implements PredictionService {
         }
 
         Signature signature = optionalSignature.get();
+        signatureSchemaCompatibilityService.validate(user.getId(), signature.getInputSignature());
 
-        if (predictionRepository.existsBySignatureIdAndName(signature.getId(), name)) {
+        Optional<Prediction> existingPrediction = predictionRepository.findBySignatureIdAndName(signature.getId(), name);
+
+        if (existingPrediction.isPresent() && !overwrite) {
             throw new PredictionAlreadyExistsException(name, signature.getName());
+        }
+
+        if (existingPrediction.isPresent()) {
+            Prediction storedPrediction = existingPrediction.get();
+            storedPrediction.setData(data);
+            storedPrediction.setPrediction(prediction);
+            storedPrediction.setStatus(PredictionStatus.PENDING);
+            targetRepository.deleteByPredictionId(storedPrediction.getId());
+            return predictionRepository.save(storedPrediction);
         }
 
         Prediction pred = new Prediction(signature, name, data, prediction);

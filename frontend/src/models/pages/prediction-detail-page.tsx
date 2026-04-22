@@ -25,6 +25,7 @@ import {
 	getPredictionDetailTitle,
 	getPredictionExecutionTime,
 	getPredictionStatusLabel,
+	getPredictionTimestamp,
 	getSignatureVersionLabel,
 } from "../utils";
 
@@ -93,7 +94,7 @@ export function PredictionDetailPage() {
 							<AppPageHeader
 								eyebrow="Prediction Detail"
 								title={getPredictionDetailTitle(prediction)}
-								description={`${getPredictionStatusLabel(prediction.status)} · ${new Date(prediction.createdAt).toLocaleString()} · ${formatExecutionTime(getPredictionExecutionTime(prediction.prediction))}`}
+								description={`${getPredictionStatusLabel(prediction.status)} · ${new Date(getPredictionTimestamp(prediction)).toLocaleString()} · ${formatExecutionTime(getPredictionExecutionTime(prediction.prediction))}`}
 								aside={
 									<>
 										<AppButton

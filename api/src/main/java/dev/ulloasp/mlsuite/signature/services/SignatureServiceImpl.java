@@ -31,12 +31,14 @@ public class SignatureServiceImpl implements SignatureService {
     private final UserLookupService userLookupService;
     private final SignatureRepository signatureRepository;
     private final ModelRepository modelRepository;
+    private final SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
 
     public SignatureServiceImpl(UserLookupService userLookupService, SignatureRepository signatureRepository,
-            ModelRepository modelRepository) {
+            ModelRepository modelRepository, SignatureSchemaCompatibilityService signatureSchemaCompatibilityService) {
         this.userLookupService = userLookupService;
         this.signatureRepository = signatureRepository;
         this.modelRepository = modelRepository;
+        this.signatureSchemaCompatibilityService = signatureSchemaCompatibilityService;
     }
 
     @Override
@@ -64,6 +66,8 @@ public class SignatureServiceImpl implements SignatureService {
         if (major < 0 || minor < 0 || patch < 0) {
             throw new SignatureNotSemVerException(name);
         }
+
+        signatureSchemaCompatibilityService.validate(user.getId(), inputSignature);
 
         Signature signature = new Signature(model, name, inputSignature);
 

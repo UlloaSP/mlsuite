@@ -11,18 +11,26 @@ import type * as Monaco from "monaco-editor";
 import { useEffect, useRef } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
-	getCatalogFieldDefinitions,
+	getActiveCustomFieldDefinitions,
 	type CatalogFieldDefinition,
 } from "../../app/utils/mlform/custom-field";
 import {
-	getCatalogExplanationDefinitions,
+	getActiveCustomExplanationDefinitions,
 	type CatalogExplanationDefinition,
 } from "../../app/utils/mlform/custom-explanation";
 import {
-	getCatalogReportDefinitions,
+	getActiveCustomReportDefinitions,
 	type CatalogReportDefinition,
 } from "../../app/utils/mlform/custom-report";
-import { mlformJsonSchema, validateMlformSchema } from "../../app/utils/mlform/index";
+import {
+	invalidatePluginCatalog,
+} from "../../app/utils/mlform/plugin-catalog";
+import { pluginCatalogVersionAtom } from "../../app/utils/mlform/plugin-catalog-state";
+import {
+	mlformJsonSchema,
+	schemaNeedsActivePluginCatalog,
+	validateMlformSchema,
+} from "../../app/utils/mlform/index";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
 import { editorDarkTheme, editorLightTheme, editorOptions } from "../utils/editorConfig";
 
@@ -57,6 +65,7 @@ export function EditorBody() {
 	const [, setSchema] = useAtom(schemaAtom);
 	const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
 	const [theme] = useAtom(themeWithHtmlAtom);
+	const [pluginCatalogVersion] = useAtom(pluginCatalogVersionAtom);
 
 	const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<MonacoNamespace | null>(null);
@@ -260,9 +269,9 @@ export function EditorBody() {
 		void (async () => {
 			try {
 				const [customFieldDefinitions, customReportDefinitions, customDefinitions] = await Promise.all([
-					getCatalogFieldDefinitions(),
-					getCatalogReportDefinitions(),
-					getCatalogExplanationDefinitions(),
+					getActiveCustomFieldDefinitions(),
+					getActiveCustomReportDefinitions(),
+					getActiveCustomExplanationDefinitions(),
 				]);
 				if (cancelled) {
 					return;
@@ -295,7 +304,9 @@ export function EditorBody() {
 						error instanceof Error
 							? `Custom plugin catalog could not be loaded: ${error.message}`
 							: `Custom plugin catalog could not be loaded: ${String(error)}`,
-					severity: "warning",
+					severity: schemaNeedsActivePluginCatalog(editorRef.current?.getValue() ?? schemaText)
+						? "error"
+						: "warning",
 				};
 				const nextText = editorRef.current?.getValue() ?? schemaText;
 				applyCompatValidation(nextText, [], [], []);
@@ -305,7 +316,11 @@ export function EditorBody() {
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [pluginCatalogVersion]);
+
+	useEffect(() => {
+		invalidatePluginCatalog();
+	}, [pluginCatalogVersion]);
 
 	useEffect(() => {
 		if (monacoRef.current) {

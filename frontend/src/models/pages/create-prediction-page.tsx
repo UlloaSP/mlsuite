@@ -10,15 +10,16 @@ import { useParams } from "react-router";
 import { AppPage, AppSurface } from "../../app/components";
 import { Unauthorized } from "../../app/pages/Unauthorized";
 import { applyPredictionInputsToSchema } from "../../app/utils/mlform/index";
+import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
 import {
 	schemaAtom,
 	schemaErrorsAtom,
 	schemaTextAtom,
 } from "../../editor/atoms";
-import { EditorWrapper } from "../../editor/components/EditorWrapper";
 import { useUser } from "../../user/hooks";
 import { CreatePredictionBodyForm } from "../components/CreatePredictionBodyForm";
 import { CreatePredictionHeader } from "../components/CreatePredictionHeader";
+import { PredictionSchemaPreview } from "../components/PredictionSchemaPreview";
 import { useGetSignature } from "../hooks";
 
 export function CreatePredictionPage() {
@@ -32,8 +33,14 @@ export function CreatePredictionPage() {
 	const { data: signature } = useGetSignature({ signatureId: signatureId! });
 
 	const [isEditorActive, setIsEditorActive] = useState(true);
+	const [isCatalogReady, setIsCatalogReady] = useState(false);
 
 	const { data: user, error } = useUser();
+
+	useEffect(() => {
+		invalidatePluginCatalog();
+		setIsCatalogReady(true);
+	}, []);
 
 	useEffect(() => {
 		if (!signature) return;
@@ -86,7 +93,11 @@ export function CreatePredictionPage() {
 							isEditorActive={isEditorActive}
 							onToggleMode={() => setIsEditorActive(!isEditorActive)}
 						/>
-						{isEditorActive ? <EditorWrapper /> : <CreatePredictionBodyForm />}
+						{isCatalogReady
+							? isEditorActive
+								? <PredictionSchemaPreview />
+								: <CreatePredictionBodyForm />
+							: null}
 					</motion.div>
 				</AppSurface>
 			</motion.div>

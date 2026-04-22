@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { AppBadge, cx } from "../../app/components";
 import type { PredictionDto } from "../api/modelService";
 import { useGetTargets } from "../hooks";
+import { getPredictionTimestamp } from "../utils";
 
 const getStatusIcon = (status: string) => {
 	switch (status.toString()) {
@@ -141,7 +142,7 @@ export function PredictionCard({
 
 				<div className="flex items-center space-x-2 text-xs text-[var(--text-muted)]">
 					<Clock size={12} />
-					<span>{new Date(item.createdAt).toLocaleString()}</span>
+					<span>{new Date(getPredictionTimestamp(item)).toLocaleString()}</span>
 				</div>
 
 				<div className="flex items-center space-x-2 text-xs text-[var(--text-muted)]">

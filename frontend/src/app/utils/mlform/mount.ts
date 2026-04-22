@@ -27,7 +27,7 @@ import {
 	type CatalogReportDefinition,
 } from "./custom-report";
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
-import { filterInactiveCustomDefinitionsFromSchema, toMlformSchema } from "./schema";
+import { toMlformSchema } from "./schema-validation";
 import { createPredictionTransport } from "./transport";
 import {
 	type MountedPredictionForm,
@@ -118,17 +118,11 @@ export const mountPredictionForm = ({
 	onSubmit,
 	onSubmitError,
 }: MountPredictionFormOptions): MountedPredictionForm => {
-	const normalizedSchema = toMlformSchema(schema, {
+	const formSchema = toMlformSchema(schema, {
 		customFieldDefinitions,
 		customReportDefinitions,
 		customExplanationDefinitions,
 	});
-	const formSchema = filterInactiveCustomDefinitionsFromSchema(
-		normalizedSchema,
-		customFieldDefinitions,
-		customReportDefinitions,
-		customExplanationDefinitions,
-	);
 	const normalizedFields = formSchema.fields as PredictionPayloadField[];
 	const mounted = mountForm(container, {
 		schema: formSchema,

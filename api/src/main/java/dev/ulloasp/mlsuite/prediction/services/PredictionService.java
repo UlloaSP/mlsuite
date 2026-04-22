@@ -14,7 +14,7 @@ import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 public interface PredictionService {
 
         public Prediction createPrediction(Long userId, Long signatureId, String name,
-                        Map<String, Object> prediction, Map<String, Object> data);
+                        boolean overwrite, Map<String, Object> prediction, Map<String, Object> data);
 
         public Prediction updatePrediction(Long userId, Long predictionId,
                         PredictionStatus status);

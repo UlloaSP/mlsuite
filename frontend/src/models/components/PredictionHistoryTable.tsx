@@ -13,6 +13,7 @@ import {
 	formatExecutionTime,
 	getPredictionExecutionTime,
 	getPredictionShortId,
+	getPredictionTimestamp,
 } from "../utils";
 import { PredictionStatusPill } from "./PredictionStatusPill";
 
@@ -68,7 +69,7 @@ export function PredictionHistoryTable({
 										</div>
 									</td>
 									<td className="px-5 py-4 text-[var(--text-secondary)]">
-										{new Date(prediction.createdAt).toLocaleString()}
+										{new Date(getPredictionTimestamp(prediction)).toLocaleString()}
 									</td>
 									<td className="px-5 py-4">
 										{formatExecutionTime(getPredictionExecutionTime(prediction.prediction))}

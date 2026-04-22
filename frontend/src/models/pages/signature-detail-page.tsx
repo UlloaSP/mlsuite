@@ -28,6 +28,7 @@ import {
 	findModelById,
 	getPredictionExecutionTime,
 	getPredictionStatus,
+	getPredictionTimestamp,
 	getSignatureVersionLabel,
 } from "../utils";
 
@@ -81,7 +82,8 @@ export function SignatureDetailPage() {
 					return (getPredictionExecutionTime(right.prediction) ?? -1) - (getPredictionExecutionTime(left.prediction) ?? -1);
 				case "updated":
 				default:
-					return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+					return new Date(getPredictionTimestamp(right)).getTime()
+						- new Date(getPredictionTimestamp(left)).getTime();
 			}
 		});
 

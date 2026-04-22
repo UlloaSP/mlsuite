@@ -24,6 +24,38 @@ let allPluginsPromise: Promise<PluginDto[]> | null = null;
 let activePluginsPromise: Promise<PluginDto[]> | null = null;
 const detectionCache = new Map<string, Promise<DetectionResult>>();
 
+const detectDeclaredPluginType = (source: string): DetectedPluginType | null => {
+	if (source.includes("defineExplanationKind(")) {
+		return "explanation";
+	}
+	if (source.includes("defineFieldDefinition(")) {
+		return "field";
+	}
+	if (source.includes("defineReportDefinition(")) {
+		return "report";
+	}
+	return null;
+};
+
+const getErrorMessage = (error: unknown): string =>
+	error instanceof Error ? error.message : String(error);
+
+const validateByType = async (
+	source: string,
+	pluginType: DetectedPluginType,
+): Promise<DetectionResult> => {
+	if (pluginType === "field") {
+		const definition = await validateCustomFieldSource(source);
+		return { pluginType, kind: definition.kind };
+	}
+	if (pluginType === "report") {
+		const definition = await validateCustomReportSource(source);
+		return { pluginType, kind: definition.kind };
+	}
+	const definition = await validateCustomExplanationSource(source);
+	return { pluginType, kind: definition.kind };
+};
+
 export const invalidatePluginCatalog = (): void => {
 	allPluginsPromise = null;
 	activePluginsPromise = null;
@@ -45,6 +77,17 @@ export const detectPluginType = async (source: string): Promise<DetectionResult>
 	let detection = detectionCache.get(cacheKey);
 	if (!detection) {
 		detection = (async () => {
+			const declaredType = detectDeclaredPluginType(source);
+			if (declaredType) {
+				try {
+					return await validateByType(source, declaredType);
+				} catch (error: unknown) {
+					throw new Error(
+						`Plugin validation failed for ${declaredType}: ${getErrorMessage(error)}`,
+					);
+				}
+			}
+
 			const attempts = await Promise.allSettled([
 				validateCustomFieldSource(source),
 				validateCustomReportSource(source),
@@ -62,9 +105,7 @@ export const detectPluginType = async (source: string): Promise<DetectionResult>
 			const reasons = attempts
 				.map((attempt) =>
 					attempt.status === "rejected"
-						? attempt.reason instanceof Error
-							? attempt.reason.message
-							: String(attempt.reason)
+						? getErrorMessage(attempt.reason)
 						: null,
 				)
 				.filter((reason): reason is string => Boolean(reason));

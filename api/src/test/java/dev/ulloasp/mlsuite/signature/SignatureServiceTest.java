@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.signature;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -19,8 +20,10 @@ import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.model.exceptions.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
+import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
 import dev.ulloasp.mlsuite.signature.repositories.SignatureRepository;
+import dev.ulloasp.mlsuite.signature.services.SignatureSchemaCompatibilityService;
 import dev.ulloasp.mlsuite.signature.services.SignatureServiceImpl;
 import dev.ulloasp.mlsuite.user.entity.User;
 import dev.ulloasp.mlsuite.user.service.UserLookupService;
@@ -37,11 +40,15 @@ class SignatureServiceTest {
     @Mock
     private ModelRepository modelRepository;
 
+    @Mock
+    private SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
+
     private SignatureServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new SignatureServiceImpl(userLookupService, signatureRepository, modelRepository);
+        service = new SignatureServiceImpl(userLookupService, signatureRepository, modelRepository,
+                signatureSchemaCompatibilityService);
     }
 
     @Test
@@ -53,6 +60,18 @@ class SignatureServiceTest {
         Signature result = service.createSignature(5L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null);
 
         assertEquals("sig", result.getName());
+    }
+
+    @Test
+    void createSignature_ThrowsWhenSchemaCompatibilityFails() {
+        when(userLookupService.requireById(5L)).thenReturn(user());
+        when(modelRepository.findByIdAndUserId(11L, 5L)).thenReturn(Optional.of(model()));
+        doThrow(new InvalidSignatureSchemaException(
+                "Custom explanation kind \"old-kind\" does not exist in active plugin catalog."))
+                .when(signatureSchemaCompatibilityService).validate(5L, Map.of("fields", List.of()));
+
+        assertThrows(InvalidSignatureSchemaException.class,
+                () -> service.createSignature(5L, 11L, Map.of("fields", List.of()), "sig", 1, 0, 0, null));
     }
 
     @Test

@@ -19,6 +19,7 @@ export const CUSTOM_FIELD_COMPONENT = "mlsuite-custom-field";
 const definitionCache = new Map<string, Promise<FieldDefinition<FieldConfig, unknown>>>();
 let typescriptPromise: Promise<TypeScriptModule> | null = null;
 let zodPromise: Promise<ZodModule> | null = null;
+const zodGlobalPrefix = "__MLSUITE_CUSTOM_FIELD_ZOD__";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -30,6 +31,9 @@ const hashString = (value: string): string => {
 	}
 	return hash.toString(36);
 };
+
+const getZodGlobalKey = (source: string): string =>
+	`${zodGlobalPrefix}_${hashString(source)}`;
 
 const loadTypeScript = async (): Promise<TypeScriptModule> => {
 	typescriptPromise ??= import("typescript");
@@ -58,13 +62,13 @@ const formatDiagnostics = (
 				})
 				.join("\n");
 
-const prependRuntimeShims = (source: string): string => `const defineFieldDefinition = (value) => value;
-const z = window.__MLSUITE_CUSTOM_FIELD_ZOD__;
+const prependRuntimeShims = (source: string, zodGlobalKey: string): string => `const defineFieldDefinition = (value) => value;
+const z = globalThis[${JSON.stringify(zodGlobalKey)}];
 ${source}`;
 
 const transpileSource = async (source: string): Promise<string> => {
 	const ts = await loadTypeScript();
-	const result = ts.transpileModule(prependRuntimeShims(source), {
+	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source)), {
 		compilerOptions: {
 			target: ts.ScriptTarget.ES2022,
 			module: ts.ModuleKind.ESNext,
@@ -100,9 +104,9 @@ const importDefinitionFromSource = async (source: string): Promise<FieldDefiniti
 	const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
 	const blob = new Blob([outputText], { type: "text/javascript" });
 	const url = URL.createObjectURL(blob);
-	const previousZod = window.__MLSUITE_CUSTOM_FIELD_ZOD__;
+	const zodGlobalKey = getZodGlobalKey(source);
 	try {
-		window.__MLSUITE_CUSTOM_FIELD_ZOD__ = zod;
+		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
 		const moduleValue = await import(/* @vite-ignore */ url);
 		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
 			throw new Error("Custom field module must export exactly one default field definition.");
@@ -111,7 +115,7 @@ const importDefinitionFromSource = async (source: string): Promise<FieldDefiniti
 		assertFieldDefinition(definition);
 		return definition;
 	} finally {
-		window.__MLSUITE_CUSTOM_FIELD_ZOD__ = previousZod;
+		delete (globalThis as Record<string, unknown>)[zodGlobalKey];
 		URL.revokeObjectURL(url);
 	}
 };

@@ -28,6 +28,9 @@ import dev.ulloasp.mlsuite.prediction.services.PredictionService;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
+import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
+import dev.ulloasp.mlsuite.util.ErrorDto;
+import jakarta.servlet.http.HttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
 class PredictionControllerTest {
@@ -40,6 +43,9 @@ class PredictionControllerTest {
 
     @Mock
     private OAuth2AuthenticationToken authentication;
+
+    @Mock
+    private HttpServletRequest request;
 
     private PredictionControllerImpl controller;
 
@@ -54,15 +60,16 @@ class PredictionControllerTest {
         CreatePredictionParams params = new CreatePredictionParams();
         params.setSignatureId(11L);
         params.setName("pred");
+        params.setOverwrite(true);
         params.setPrediction(Map.of("value", 1));
         params.setInputs(Map.of("x", 2));
-        when(predictionService.createPrediction(3L, 11L, "pred", Map.of("value", 1), Map.of("x", 2)))
+        when(predictionService.createPrediction(3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2)))
                 .thenReturn(prediction("pred", PredictionStatus.PENDING));
 
         ResponseEntity<?> response = controller.createPrediction(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(predictionService).createPrediction(3L, 11L, "pred", Map.of("value", 1), Map.of("x", 2));
+        verify(predictionService).createPrediction(3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2));
     }
 
     @Test
@@ -92,6 +99,18 @@ class PredictionControllerTest {
         when(predictionService.getPredictionsBySignatureId(3L, 11L)).thenReturn(List.of(prediction("pred", PredictionStatus.PENDING)));
 
         assertEquals(1, controller.getAllPredictions(authentication, 11L).getBody().size());
+    }
+
+    @Test
+    void handleInvalidSignatureSchemaException_ReturnsBadRequest() {
+        when(request.getRequestURI()).thenReturn("/api/predictions");
+
+        ResponseEntity<ErrorDto> response = controller.handleInvalidSignatureSchemaException(
+                new InvalidSignatureSchemaException(
+                        "Custom explanation kind \"old-kind\" does not exist in active plugin catalog."),
+                request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     private Prediction prediction(String name, PredictionStatus status) {

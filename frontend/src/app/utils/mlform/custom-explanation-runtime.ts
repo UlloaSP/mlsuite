@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type {
 	ExplanationConfig,
 	ExplanationDefinition,
+	ExplanationFetchRequest,
 	ExplanationFetchTransport,
 	ExplanationStateSnapshot,
 	NormalizedExplanationConfig,
@@ -52,6 +53,7 @@ const definitionCache = new Map<string, Promise<ExplanationDefinition<Explanatio
 let typescriptPromise: Promise<TypeScriptModule> | null = null;
 let zodPromise: Promise<ZodModule> | null = null;
 const declarativeExplanationComponent = "declarative-explanation";
+const zodGlobalPrefix = "__MLSUITE_CUSTOM_EXPLANATION_ZOD__";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
@@ -63,6 +65,9 @@ const hashString = (value: string): string => {
 	}
 	return hash.toString(36);
 };
+
+const getZodGlobalKey = (source: string): string =>
+	`${zodGlobalPrefix}_${hashString(source)}`;
 
 const loadTypeScript = async (): Promise<TypeScriptModule> => {
 	typescriptPromise ??= import("typescript");
@@ -77,18 +82,73 @@ const loadZod = async (): Promise<ZodModule> => {
 const toPresentationNodes = (value: PresentationContentLike): unknown[] =>
 	value === undefined ? [] : Array.isArray(value) ? [...value] : [value];
 
+const toBackendPatchedRequest = (
+	request: ExplanationFetchRequest,
+): ExplanationFetchRequest => {
+	const backendFieldValues = isRecord(request.meta.backendFieldValues)
+		? request.meta.backendFieldValues
+		: null;
+
+	if (!backendFieldValues) {
+		return request;
+	}
+
+	return {
+		...request,
+		// Inestable y temporal: patch explanation payloads with backend-shaped field keys
+		// until plugins receive a first-class contract for analyzer input values.
+		values: backendFieldValues,
+		fieldValues: backendFieldValues,
+		serializedValues: backendFieldValues,
+		serializedFieldValues: backendFieldValues,
+	};
+};
+
+const normalizeExplanationConfig = <TConfig extends ExplanationConfig>(
+	config: NormalizedExplanationConfig<TConfig>,
+): NormalizedExplanationConfig<TConfig> => {
+	const endpoint = (config as Record<string, unknown>).endpoint;
+	const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+	if (
+		typeof endpoint !== "string" ||
+		endpoint.trim().length === 0 ||
+		typeof backendUrl !== "string" ||
+		backendUrl.trim().length === 0 ||
+		!/^(?:\/|\.\/|\.\.\/)/.test(endpoint)
+	) {
+		return config;
+	}
+
+	return {
+		...config,
+		// Inestable y temporal: explanation plugins historically use relative endpoints,
+		// which resolve against frontend origin instead of API origin.
+		endpoint: new URL(endpoint, backendUrl).toString(),
+	};
+};
+
 const adaptDeclarativeExplanationKind = (
 	kind: DeclarativeCatalogExplanationKind,
 ): ExplanationDefinition<ExplanationConfig> => ({
 	kind: kind.kind,
 	schema: kind.schema,
-	transport: (config) =>
-		kind.fetch({
-			config: config as NormalizedExplanationConfig<ExplanationConfig>,
+	transport: (config) => {
+		const normalizedConfig = normalizeExplanationConfig(
+			config as NormalizedExplanationConfig<ExplanationConfig>,
+		);
+		const transport = kind.fetch({
+			config: normalizedConfig,
 			explanationId: (config as NormalizedExplanationConfig<ExplanationConfig>).id,
-		}),
+		});
+		return {
+			submit: (request) => transport.submit(toBackendPatchedRequest(request)),
+		};
+	},
 	describe: (config, context) => {
-		const normalizedConfig = config as NormalizedExplanationConfig<ExplanationConfig>;
+		const normalizedConfig = normalizeExplanationConfig(
+			config as NormalizedExplanationConfig<ExplanationConfig>,
+		);
 		const renderContext: DeclarativeExplanationRenderContext<ExplanationConfig, unknown> = {
 			config: normalizedConfig,
 			explanationId: normalizedConfig.id,
@@ -102,6 +162,9 @@ const adaptDeclarativeExplanationKind = (
 				kind: normalizedConfig.kind,
 				label: normalizedConfig.label ?? normalizedConfig.id,
 				description: normalizedConfig.description ?? "",
+				chromeless:
+					(isRecord(normalizedConfig) && normalizedConfig.chromeless === true) ||
+					normalizedConfig.kind === "mimosa",
 				result: context.state.result,
 				error: context.state.error,
 				state: context.state.status,
@@ -133,13 +196,13 @@ const formatDiagnostics = (
 				})
 				.join("\n");
 
-const prependRuntimeShims = (source: string): string => `const defineExplanationKind = (value) => value;
-const z = window.__MLSUITE_CUSTOM_EXPLANATION_ZOD__;
+const prependRuntimeShims = (source: string, zodGlobalKey: string): string => `const defineExplanationKind = (value) => value;
+const z = globalThis[${JSON.stringify(zodGlobalKey)}];
 ${source}`;
 
 const transpileSource = async (source: string): Promise<string> => {
 	const ts = await loadTypeScript();
-	const result = ts.transpileModule(prependRuntimeShims(source), {
+	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source)), {
 		compilerOptions: {
 			target: ts.ScriptTarget.ES2022,
 			module: ts.ModuleKind.ESNext,
@@ -185,9 +248,9 @@ const importDefinitionFromSource = async (
 	const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
 	const blob = new Blob([outputText], { type: "text/javascript" });
 	const url = URL.createObjectURL(blob);
-	const previousZod = window.__MLSUITE_CUSTOM_EXPLANATION_ZOD__;
+	const zodGlobalKey = getZodGlobalKey(source);
 	try {
-		window.__MLSUITE_CUSTOM_EXPLANATION_ZOD__ = zod;
+		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
 		const moduleValue = await import(/* @vite-ignore */ url);
 		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
 			throw new Error("Custom explanation module must export exactly one default explanation kind.");
@@ -196,7 +259,7 @@ const importDefinitionFromSource = async (
 		assertDeclarativeExplanationKind(declarativeKind);
 		return adaptDeclarativeExplanationKind(declarativeKind);
 	} finally {
-		window.__MLSUITE_CUSTOM_EXPLANATION_ZOD__ = previousZod;
+		delete (globalThis as Record<string, unknown>)[zodGlobalKey];
 		URL.revokeObjectURL(url);
 	}
 };

@@ -22,7 +22,7 @@ import {
 	useUpdatePredictionMutation,
 	useUpdateTargetMutation,
 } from "../hooks";
-import { getExplanationSnapshot } from "../utils";
+import { getExplanationSnapshot, getPredictionTimestamp } from "../utils";
 import { PredictionExplanationReport } from "./PredictionExplanationReport";
 
 type JsonRecord = Record<string, unknown>;
@@ -250,7 +250,7 @@ export function PredictionDetailPanel({
 												Timestamp:
 											</span>
 											<span className="font-mono text-sm text-gray-900 dark:text-white">
-												{new Date(prediction.createdAt).toLocaleString()}
+												{new Date(getPredictionTimestamp(prediction)).toLocaleString()}
 											</span>
 										</div>
 									</div>

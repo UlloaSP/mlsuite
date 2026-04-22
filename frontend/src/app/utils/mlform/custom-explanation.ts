@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ExplanationConfig, ExplanationDefinition } from "mlform/engine";
 import type { PluginDto } from "../../api/pluginService";
-import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "./plugin-catalog";
+import { detectPluginType, invalidatePluginCatalog, loadActivePlugins, loadPlugins } from "./plugin-catalog";
 import { customExplanationTemplate, resolveCustomExplanationDefinition, validateCustomExplanationSource } from "./custom-explanation-runtime";
 import { type CustomExplanationResult, type NormalizedCustomExplanationResult, normalizeCustomExplanationResult } from "./custom-explanation-result";
 
@@ -88,4 +88,29 @@ export const getCatalogExplanationDefinitions = async (): Promise<
 		return definitions;
 	});
 	return catalogDefinitionsPromise;
+};
+
+export const getActiveCustomExplanationDefinitions = async (): Promise<
+	readonly CatalogExplanationDefinition[]
+> => {
+	const items = await loadActivePlugins();
+	const settled = await Promise.all(
+		items.map(async (item) => {
+			try {
+				return await toCatalogDefinition(item);
+			} catch (error: unknown) {
+				console.warn(
+					`Skipping explanation plugin "${item.fileName}" (${item.id}): ${
+						error instanceof Error ? error.message : String(error)
+					}`,
+				);
+				return null;
+			}
+		}),
+	);
+	const definitions = settled.filter(
+		(definition): definition is CatalogExplanationDefinition => definition !== null,
+	);
+	assertUniqueKinds(definitions);
+	return definitions;
 };

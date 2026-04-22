@@ -293,3 +293,7 @@ export const getExplanationSnapshot = (
 
 export const getPredictionDetailTitle = (prediction: PredictionDto): string =>
 	prediction.name || `Prediction ${getPredictionShortId(prediction.id)}`;
+
+export const getPredictionTimestamp = (
+	prediction: Pick<PredictionDto, "createdAt" | "updatedAt">,
+): string => prediction.updatedAt ?? prediction.createdAt;

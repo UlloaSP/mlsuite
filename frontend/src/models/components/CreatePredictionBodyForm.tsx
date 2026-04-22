@@ -10,18 +10,18 @@ import { useParams } from "react-router";
 import { AppButton, AppCopy, AppPanel } from "../../app/components";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
-	getCatalogFieldDefinitions,
+	getActiveCustomFieldDefinitions,
 	type CatalogFieldDefinition,
 } from "../../app/utils/mlform/custom-field";
 import {
-	getCatalogExplanationDefinitions,
+	getActiveCustomExplanationDefinitions,
 	type CatalogExplanationDefinition,
 } from "../../app/utils/mlform/custom-explanation";
 import {
-	getCatalogReportDefinitions,
+	getActiveCustomReportDefinitions,
 	type CatalogReportDefinition,
 } from "../../app/utils/mlform/custom-report";
-import { mountPredictionForm } from "../../app/utils/mlform/index";
+import { mountPredictionForm, schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/index";
 import { schemaAtom } from "../../editor/atoms";
 import { showModalAtom } from "../atoms";
 import { CreatePredictionModal } from "./CreatePredictionModal";
@@ -57,51 +57,6 @@ const initialCatalogLoadState: CatalogLoadState = {
 	error: null,
 };
 
-const BUILTIN_FIELD_KINDS = new Set(["text", "number", "boolean", "category", "date", "time-series"]);
-const BUILTIN_REPORT_KINDS = new Set(["classifier", "regressor"]);
-
-const schemaNeedsPluginCatalog = (schema: unknown): boolean => {
-	if (!schema || typeof schema !== "object") {
-		return false;
-	}
-
-	const raw = schema as {
-		fields?: unknown;
-		reports?: unknown;
-		explanations?: unknown;
-	};
-
-	if (Array.isArray(raw.explanations) && raw.explanations.length > 0) {
-		return true;
-	}
-
-	if (
-		Array.isArray(raw.fields) &&
-		raw.fields.some(
-			(field) =>
-				typeof field === "object" &&
-				field !== null &&
-				"kind" in field &&
-				typeof (field as { kind?: unknown }).kind === "string" &&
-				!BUILTIN_FIELD_KINDS.has((field as { kind: string }).kind),
-		)
-	) {
-		return true;
-	}
-
-	return (
-		Array.isArray(raw.reports) &&
-		raw.reports.some(
-			(report) =>
-				typeof report === "object" &&
-				report !== null &&
-				"kind" in report &&
-				typeof (report as { kind?: unknown }).kind === "string" &&
-				!BUILTIN_REPORT_KINDS.has((report as { kind: string }).kind),
-		)
-	);
-};
-
 export function CreatePredictionBodyForm() {
 	const { modelId } = useParams<{ modelId: string }>();
 
@@ -115,7 +70,8 @@ export function CreatePredictionBodyForm() {
 	const [response, setResponse] = useState<Record<string, unknown>>({});
 	const [inputs, setInputs] = useState<Record<string, unknown>>({});
 	const [catalogState, setCatalogState] = useState<CatalogLoadState>(initialCatalogLoadState);
-	const schemaNeedsPlugins = schemaNeedsPluginCatalog(schema);
+	const [mountError, setMountError] = useState<string | null>(null);
+	const schemaNeedsPlugins = schemaNeedsActivePluginCatalog(schema);
 
 	const handleSubmit = useCallback(
 		(nextInputs: Record<string, unknown>, nextResponse: Record<string, unknown>) => {
@@ -137,9 +93,9 @@ export function CreatePredictionBodyForm() {
 
 		try {
 			const [fieldDefinitions, reportDefinitions, definitions] = await Promise.all([
-				getCatalogFieldDefinitions(),
-				getCatalogReportDefinitions(),
-				getCatalogExplanationDefinitions(),
+				getActiveCustomFieldDefinitions(),
+				getActiveCustomReportDefinitions(),
+				getActiveCustomExplanationDefinitions(),
 			]);
 			setCatalogState({
 				status: "ready",
@@ -183,26 +139,31 @@ export function CreatePredictionBodyForm() {
 		) {
 			return;
 		}
+		setMountError(null);
+		try {
+			const mounted = mountPredictionForm({
+				container: containerRef.current,
+				schema,
+				modelId,
+				theme,
+				customFieldDefinitions: catalogState.fieldDefinitions,
+				customReportDefinitions: catalogState.reportDefinitions,
+				customExplanationDefinitions: catalogState.definitions,
+				onSubmit: handleSubmit,
+				onSubmitError(error) {
+					console.error(error);
+				},
+			});
+			mountedRef.current = mounted;
 
-		const mounted = mountPredictionForm({
-			container: containerRef.current,
-			schema,
-			modelId,
-			theme,
-			customFieldDefinitions: catalogState.fieldDefinitions,
-			customReportDefinitions: catalogState.reportDefinitions,
-			customExplanationDefinitions: catalogState.definitions,
-			onSubmit: handleSubmit,
-			onSubmitError(error) {
-				console.error(error);
-			},
-		});
-		mountedRef.current = mounted;
-
-		return () => {
-			mountedRef.current = null;
-			mounted.unmount();
-		};
+			return () => {
+				mountedRef.current = null;
+				mounted.unmount();
+			};
+		} catch (error: unknown) {
+			setMountError(error instanceof Error ? error.message : String(error));
+			return;
+		}
 	}, [catalogState, handleSubmit, modelId, schema, schemaNeedsPlugins, theme]);
 
 	useEffect(() => {
@@ -211,7 +172,16 @@ export function CreatePredictionBodyForm() {
 
 	return (
 		<>
-			{!schemaNeedsPlugins || catalogState.status === "ready" ? (
+			{mountError ? (
+				<div className="px-4 pb-4">
+					<AppPanel className="space-y-4">
+						<h2 className="text-lg font-semibold text-[var(--text-primary)]">
+							Signature schema incompatible
+						</h2>
+						<AppCopy>{mountError}</AppCopy>
+					</AppPanel>
+				</div>
+			) : !schemaNeedsPlugins || catalogState.status === "ready" ? (
 				<motion.div
 					initial={{ y: 30, opacity: 0 }}
 					animate={{ y: 0, opacity: 1 }}

@@ -25,6 +25,7 @@ export interface CreateSignatureRequest {
 export interface CreatePredictionRequest {
 	signatureId: string;
 	name: string;
+	overwrite?: boolean;
 	inputs: Record<string, unknown>;
 	prediction: Record<string, unknown>;
 }

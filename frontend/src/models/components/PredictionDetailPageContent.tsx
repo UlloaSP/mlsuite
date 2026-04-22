@@ -22,6 +22,7 @@ import {
 	getPredictionExecutionTime,
 	getPredictionStatus,
 	getPredictionStatusTone,
+	getPredictionTimestamp,
 } from "../utils";
 import { PredictionExplanationReport } from "./PredictionExplanationReport";
 import { PredictionMetricCell } from "./PredictionMetricCell";
@@ -121,7 +122,7 @@ export function PredictionDetailPageContent({
 				<AppPanel>
 					<PredictionMetricCell
 						label="Timestamp"
-						value={new Date(prediction.createdAt).toLocaleString()}
+						value={new Date(getPredictionTimestamp(prediction)).toLocaleString()}
 					/>
 				</AppPanel>
 				<AppPanel className="space-y-3">

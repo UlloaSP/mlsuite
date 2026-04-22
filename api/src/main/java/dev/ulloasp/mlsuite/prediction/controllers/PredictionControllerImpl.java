@@ -25,6 +25,7 @@ import dev.ulloasp.mlsuite.prediction.exceptions.PredictionAlreadyExistsExceptio
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.services.PredictionService;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
+import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -44,7 +45,7 @@ public class PredictionControllerImpl implements PredictionController {
             @RequestBody CreatePredictionParams params) {
         Prediction pred = predictionService.createPrediction(currentUserResolver.resolve(authentication).userId(),
                 params.getSignatureId(),
-                params.getName(), params.getPrediction(), params.getInputs());
+                params.getName(), params.isOverwrite(), params.getPrediction(), params.getInputs());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(PredictionDto.toDto(pred));
     }
@@ -82,6 +83,14 @@ public class PredictionControllerImpl implements PredictionController {
             HttpServletRequest req) {
         ErrorDto dto = ErrorDto.of(HttpStatus.NOT_FOUND.value(), e.getMessage(), req.getRequestURI());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
+    }
+
+    @ExceptionHandler(InvalidSignatureSchemaException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorDto> handleInvalidSignatureSchemaException(InvalidSignatureSchemaException e,
+            HttpServletRequest req) {
+        ErrorDto dto = ErrorDto.of(HttpStatus.BAD_REQUEST.value(), e.getMessage(), req.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(dto);
     }
 
 }

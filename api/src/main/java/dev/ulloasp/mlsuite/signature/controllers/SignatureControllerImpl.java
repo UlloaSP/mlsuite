@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.ulloasp.mlsuite.signature.dtos.CreateSignatureParams;
 import dev.ulloasp.mlsuite.signature.dtos.SignatureDto;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
+import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureAlreadyExistsException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureNotFromUserException;
@@ -102,5 +103,13 @@ public class SignatureControllerImpl implements SignatureController {
             HttpServletRequest req) {
         ErrorDto dto = ErrorDto.of(HttpStatus.PRECONDITION_FAILED.value(), e.getMessage(), req.getRequestURI());
         return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(dto);
+    }
+
+    @ExceptionHandler(InvalidSignatureSchemaException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ErrorDto> handleInvalidSignatureSchemaException(InvalidSignatureSchemaException e,
+            HttpServletRequest req) {
+        ErrorDto dto = ErrorDto.of(HttpStatus.BAD_REQUEST.value(), e.getMessage(), req.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(dto);
     }
 }
