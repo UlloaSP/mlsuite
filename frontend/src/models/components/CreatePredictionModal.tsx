@@ -17,12 +17,15 @@ import {
 	AppTextField,
 } from "../../app/components";
 import { showModalAtom } from "../atoms";
-import { useCreatePredictionMutation, useCreateTargetMutation, useGetPredictions } from "../hooks";
+import { useCreateExplanationFeedbackMutation, useCreatePredictionMutation, useCreateTargetMutation, useGetPredictions } from "../hooks";
+import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import { PredictionExplanationReport } from "./PredictionExplanationReport";
 import { PredictionOverwriteDialog } from "./PredictionOverwriteDialog";
 
 export type CreatePredictionModalProps = {
 	prediction: Record<string, unknown>;
 	inputs: Record<string, unknown>;
+	explanationsPending: boolean;
 };
 
 type PredictionOutput = {
@@ -46,6 +49,7 @@ const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
 export function CreatePredictionModal({
 	prediction,
 	inputs,
+	explanationsPending,
 }: CreatePredictionModalProps) {
 	const { signatureId, modelId } = useParams<{ signatureId: string; modelId: string }>();
 	const navigate = useNavigate();
@@ -54,11 +58,13 @@ export function CreatePredictionModal({
 
 	const mutation = useCreatePredictionMutation();
 	const mutationTarget = useCreateTargetMutation();
+	const explanationFeedbackMutation = useCreateExplanationFeedbackMutation();
 	const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
 
 	const [predictionName, setPredictionName] = useState<string>("");
 	const [targets, setTargets] = useState<Record<number, object>>({});
 	const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
+	const explanationEntries = extractPredictionExplanationEntries(prediction);
 
 	const formatInputValue = (value: unknown) => {
 		if (typeof value === "number") {
@@ -106,6 +112,15 @@ export function CreatePredictionModal({
 					predictionId: created.id,
 					order: Number(key),
 					value: String(value),
+				}),
+			),
+		);
+		await Promise.all(
+			explanationEntries.map((entry) =>
+				explanationFeedbackMutation.mutateAsync({
+					predictionId: created.id,
+					order: entry.order,
+					value: entry.value,
 				}),
 			),
 		);
@@ -234,6 +249,19 @@ export function CreatePredictionModal({
 								</div>
 							</AppPanel>
 
+							{explanationEntries.length > 0 ? (
+								<AppPanel className="space-y-4">
+									<AppSectionTitle>Explanation</AppSectionTitle>
+									{explanationsPending ? (
+										<AppCopy>Waiting for explanation plugin result...</AppCopy>
+									) : null}
+									<PredictionExplanationReport
+										label="Model explanation"
+										explanations={explanationEntries.map((entry) => entry.value)}
+									/>
+								</AppPanel>
+							) : null}
+
 							<AppPanel className="space-y-4 p-6">
 								<div className="space-y-3">
 									<AppSectionTitle>Prediction Name</AppSectionTitle>
@@ -258,7 +286,7 @@ export function CreatePredictionModal({
 
 									<AppButton
 										onClick={handleSave}
-										disabled={!predictionName.trim()}
+										disabled={!predictionName.trim() || explanationsPending}
 										className="flex-1"
 									>
 										<Save size={18} />

@@ -33,7 +33,7 @@ export interface CreatePredictionRequest {
 export interface CreateTargetRequest {
 	predictionId: string;
 	order: number;
-	value: string;          // If your backend expects JSON here, change to `unknown` and pass an object.
+	value: unknown;
 }
 
 export interface UpdatePredictionRequest {
@@ -43,12 +43,24 @@ export interface UpdatePredictionRequest {
 
 export interface UpdateTargetRequest {
 	targetId: string;
-	realValue: object;      // If JSONB, this is fine. Ensure it’s serializable.
+	realValue: unknown;
+}
+
+export interface CreateExplanationFeedbackRequest {
+	predictionId: string;
+	order: number;
+	value: unknown;
+}
+
+export interface UpdateExplanationFeedbackRequest {
+	explanationFeedbackId: string;
+	realValue: unknown;
 }
 
 export interface GetAllSignaturesRequest { modelId: string; }
 export interface GetPredictionsRequest { signatureId: string; }
 export interface GetTargetsRequest { predictionId: string; }
+export interface GetExplanationFeedbackRequest { predictionId: string; }
 export interface GetSignatureRequest { signatureId: string; }
 
 export interface ModelDto {
@@ -85,6 +97,16 @@ export interface PredictionDto {
 }
 
 export interface TargetDto {
+	id: string;
+	predictionId: string;
+	order: number;
+	value: unknown;
+	realValue?: unknown;
+	createdAt: string;
+	updatedAt?: string;
+}
+
+export interface ExplanationFeedbackDto {
 	id: string;
 	predictionId: string;
 	order: number;
@@ -140,8 +162,6 @@ export const createPrediction = async (req: CreatePredictionRequest): Promise<Pr
 };
 
 export const createTarget = async (req: CreateTargetRequest): Promise<TargetDto> => {
-	// If `value` must be JSONB server-side, consider changing its type to `unknown`
-	// and sending an object instead of a bare string.
 	return appFetch<TargetDto>("/api/target/create", json("POST", req as Record<string, any>));
 };
 
@@ -152,6 +172,22 @@ export const updatePrediction = async (req: UpdatePredictionRequest): Promise<Pr
 export const updateTarget = async (req: UpdateTargetRequest): Promise<TargetDto> => {
 	return appFetch<TargetDto>("/api/target/update", json("POST", req as Record<string, any>));
 };
+
+export const createExplanationFeedback = async (
+	req: CreateExplanationFeedbackRequest,
+): Promise<ExplanationFeedbackDto> =>
+	appFetch<ExplanationFeedbackDto>(
+		"/api/explanation-feedback/create",
+		json("POST", req as Record<string, any>),
+	);
+
+export const updateExplanationFeedback = async (
+	req: UpdateExplanationFeedbackRequest,
+): Promise<ExplanationFeedbackDto> =>
+	appFetch<ExplanationFeedbackDto>(
+		"/api/explanation-feedback/update",
+		json("POST", req as Record<string, any>),
+	);
 
 export const getModels = async (): Promise<ModelDto[]> => {
 	return appFetch<ModelDto[]>("/api/model/all");
@@ -170,6 +206,13 @@ export const getPredictions = async ({ signatureId }: GetPredictionsRequest): Pr
 export const getTargets = async ({ predictionId }: GetTargetsRequest): Promise<TargetDto[]> => {
 	const url = `/api/target/all?predictionId=${encodeURIComponent(predictionId)}`;
 	return appFetch<TargetDto[]>(url);
+};
+
+export const getExplanationFeedback = async ({
+	predictionId,
+}: GetExplanationFeedbackRequest): Promise<ExplanationFeedbackDto[]> => {
+	const url = `/api/explanation-feedback/all?predictionId=${encodeURIComponent(predictionId)}`;
+	return appFetch<ExplanationFeedbackDto[]>(url);
 };
 
 export const getSignature = async ({ signatureId }: GetSignatureRequest): Promise<SignatureDto> => {

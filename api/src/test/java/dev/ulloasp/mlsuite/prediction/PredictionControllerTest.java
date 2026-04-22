@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.prediction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,7 +53,7 @@ class PredictionControllerTest {
     @BeforeEach
     void setUp() {
         controller = new PredictionControllerImpl(currentUserResolver, predictionService);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice"));
+        lenient().when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice"));
     }
 
     @Test

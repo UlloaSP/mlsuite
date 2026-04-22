@@ -15,6 +15,7 @@ import dev.ulloasp.mlsuite.prediction.entities.Prediction;
 import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionAlreadyExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.repositories.ExplanationFeedbackRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
@@ -33,16 +34,19 @@ public class PredictionServiceImpl implements PredictionService {
     private final SignatureRepository signatureRepository;
     private final PredictionRepository predictionRepository;
     private final TargetRepository targetRepository;
+    private final ExplanationFeedbackRepository explanationFeedbackRepository;
     private final SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
 
     public PredictionServiceImpl(UserLookupService userLookupService, SignatureRepository signatureRepository,
             PredictionRepository predictionRepository,
             TargetRepository targetRepository,
+            ExplanationFeedbackRepository explanationFeedbackRepository,
             SignatureSchemaCompatibilityService signatureSchemaCompatibilityService) {
         this.userLookupService = userLookupService;
         this.signatureRepository = signatureRepository;
         this.predictionRepository = predictionRepository;
         this.targetRepository = targetRepository;
+        this.explanationFeedbackRepository = explanationFeedbackRepository;
         this.signatureSchemaCompatibilityService = signatureSchemaCompatibilityService;
     }
 
@@ -72,6 +76,7 @@ public class PredictionServiceImpl implements PredictionService {
             storedPrediction.setPrediction(prediction);
             storedPrediction.setStatus(PredictionStatus.PENDING);
             targetRepository.deleteByPredictionId(storedPrediction.getId());
+            explanationFeedbackRepository.deleteByPredictionId(storedPrediction.getId());
             return predictionRepository.save(storedPrediction);
         }
 

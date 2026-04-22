@@ -22,6 +22,7 @@ import {
 	type CatalogReportDefinition,
 } from "../../app/utils/mlform/custom-report";
 import { mountPredictionForm, schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/index";
+import { isRecord } from "../../app/utils/mlform/shared";
 import { schemaAtom } from "../../editor/atoms";
 import { showModalAtom } from "../atoms";
 import { CreatePredictionModal } from "./CreatePredictionModal";
@@ -57,6 +58,36 @@ const initialCatalogLoadState: CatalogLoadState = {
 	error: null,
 };
 
+const buildPredictionResponse = (
+	raw: unknown,
+	form: NonNullable<ReturnType<typeof mountPredictionForm>>["form"],
+): Record<string, unknown> => {
+	const base = isRecord(raw) ? raw : { raw };
+	const reports = isRecord(base.reports) ? { ...base.reports } : {};
+	const meta = isRecord(base.meta) ? { ...base.meta } : {};
+	const explainErrors = isRecord(meta.explainErrors) ? { ...meta.explainErrors } : {};
+
+	for (const explanation of form.explanations) {
+		const explanationState = form.state.explanationStates[explanation.id] ?? explanation.state;
+		if (explanationState.status === "done" && explanationState.result !== undefined) {
+			reports[explanation.id] = explanationState.result;
+			delete explainErrors[explanation.id];
+		}
+		if (explanationState.status === "error" && explanationState.error) {
+			explainErrors[explanation.id] = explanationState.error;
+		}
+	}
+
+	return {
+		...base,
+		reports,
+		meta: {
+			...meta,
+			...(Object.keys(explainErrors).length > 0 ? { explainErrors } : {}),
+		},
+	};
+};
+
 export function CreatePredictionBodyForm() {
 	const { modelId } = useParams<{ modelId: string }>();
 
@@ -69,6 +100,7 @@ export function CreatePredictionBodyForm() {
 
 	const [response, setResponse] = useState<Record<string, unknown>>({});
 	const [inputs, setInputs] = useState<Record<string, unknown>>({});
+	const [explanationsPending, setExplanationsPending] = useState(false);
 	const [catalogState, setCatalogState] = useState<CatalogLoadState>(initialCatalogLoadState);
 	const [mountError, setMountError] = useState<string | null>(null);
 	const schemaNeedsPlugins = schemaNeedsActivePluginCatalog(schema);
@@ -77,6 +109,7 @@ export function CreatePredictionBodyForm() {
 		(nextInputs: Record<string, unknown>, nextResponse: Record<string, unknown>) => {
 			setInputs(nextInputs);
 			setResponse(nextResponse);
+			setExplanationsPending(Boolean(mountedRef.current?.form.explanations.length));
 			setShowModal(true);
 		},
 		[setShowModal]
@@ -155,8 +188,23 @@ export function CreatePredictionBodyForm() {
 				},
 			});
 			mountedRef.current = mounted;
+			const unsubscribe = mounted.form.subscribe((state) => {
+				if (!state.lastResult) {
+					return;
+				}
+
+				setResponse(buildPredictionResponse(state.lastResult.raw, mounted.form));
+				setExplanationsPending(
+					mounted.form.explanations.some((explanation) => {
+						const explanationState =
+							state.explanationStates[explanation.id] ?? explanation.state;
+						return explanationState.status === "idle" || explanationState.status === "loading";
+					}),
+				);
+			});
 
 			return () => {
+				unsubscribe();
 				mountedRef.current = null;
 				mounted.unmount();
 			};
@@ -213,7 +261,11 @@ export function CreatePredictionBodyForm() {
 				</div>
 			)}
 			{showModal ? (
-				<CreatePredictionModal prediction={response} inputs={inputs} />
+				<CreatePredictionModal
+					prediction={response}
+					inputs={inputs}
+					explanationsPending={explanationsPending}
+				/>
 			) : null}
 		</>
 	);

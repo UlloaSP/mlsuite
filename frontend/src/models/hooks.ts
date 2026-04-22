@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+	ExplanationFeedbackDto,
 	ModelDto,
 	PredictionDto,
 	SignatureDto,
@@ -22,6 +23,9 @@ export const GET_PREDICTIONS_QUERY_KEY = (p: modelApi.GetPredictionsRequest) =>
 
 export const GET_TARGETS_QUERY_KEY = (p: modelApi.GetTargetsRequest) =>
 	["getTargets", { predictionId: p.predictionId }] as const;
+
+export const GET_EXPLANATION_FEEDBACK_QUERY_KEY = (p: modelApi.GetExplanationFeedbackRequest) =>
+	["getExplanationFeedback", { predictionId: p.predictionId }] as const;
 
 export const GET_SIGNATURE_QUERY_KEY = ({ signatureId }: modelApi.GetSignatureRequest) =>
 	["getSignature", { signatureId }] as const;
@@ -71,6 +75,20 @@ export const useGetTargets = ({ predictionId }: modelApi.GetTargetsRequest) =>
 	useQuery({
 		queryKey: GET_TARGETS_QUERY_KEY({ predictionId }),
 		queryFn: () => modelApi.getTargets({ predictionId }),
+		enabled: Boolean(predictionId),
+		placeholderData: [],
+		gcTime: 10 * 60_000,
+		retry: (count, err: any) => {
+			const s = err?.status ?? err?.response?.status;
+			if (s === 401 || s === 403) return false;
+			return count < 2;
+		},
+	});
+
+export const useGetExplanationFeedback = ({ predictionId }: modelApi.GetExplanationFeedbackRequest) =>
+	useQuery({
+		queryKey: GET_EXPLANATION_FEEDBACK_QUERY_KEY({ predictionId }),
+		queryFn: () => modelApi.getExplanationFeedback({ predictionId }),
 		enabled: Boolean(predictionId),
 		placeholderData: [],
 		gcTime: 10 * 60_000,
@@ -180,6 +198,26 @@ export function useCreateTargetMutation() {
 	});
 }
 
+export const CREATE_EXPLANATION_FEEDBACK_QUERY_KEY = ["createExplanationFeedback"] as const;
+
+export function useCreateExplanationFeedbackMutation() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationKey: CREATE_EXPLANATION_FEEDBACK_QUERY_KEY,
+		mutationFn: (data: modelApi.CreateExplanationFeedbackRequest) =>
+			modelApi.createExplanationFeedback(data),
+		onSuccess: (explanationFeedback: ExplanationFeedbackDto) => {
+			qc.setQueryData<ExplanationFeedbackDto[]>(
+				GET_EXPLANATION_FEEDBACK_QUERY_KEY({
+					predictionId: explanationFeedback.predictionId,
+				}),
+				(prev) => (prev ? [...prev, explanationFeedback] : [explanationFeedback]),
+			);
+			qc.invalidateQueries({ queryKey: ["getExplanationFeedback"] });
+		},
+	});
+}
+
 export const UPDATE_PREDICTION_QUERY_KEY = ["updatePrediction"] as const;
 
 export function useUpdatePredictionMutation() {
@@ -216,6 +254,32 @@ export function useUpdateTargetMutation() {
 			);
 			qc.invalidateQueries({ queryKey: ["getPredictions"] });
 			qc.invalidateQueries({ queryKey: ["getTargets"] });
+		},
+	});
+}
+
+export const UPDATE_EXPLANATION_FEEDBACK_QUERY_KEY = ["updateExplanationFeedback"] as const;
+
+export function useUpdateExplanationFeedbackMutation() {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationKey: UPDATE_EXPLANATION_FEEDBACK_QUERY_KEY,
+		mutationFn: (data: modelApi.UpdateExplanationFeedbackRequest) =>
+			modelApi.updateExplanationFeedback(data),
+		onSuccess: (explanationFeedback: ExplanationFeedbackDto) => {
+			qc.setQueryData<ExplanationFeedbackDto[]>(
+				GET_EXPLANATION_FEEDBACK_QUERY_KEY({
+					predictionId: explanationFeedback.predictionId,
+				}),
+				(prev) =>
+					prev
+						? prev.map((item) =>
+								item.id === explanationFeedback.id ? explanationFeedback : item,
+							)
+						: [explanationFeedback],
+			);
+			qc.invalidateQueries({ queryKey: ["getExplanationFeedback"] });
+			qc.invalidateQueries({ queryKey: ["getPredictions"] });
 		},
 	});
 }

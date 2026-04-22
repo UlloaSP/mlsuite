@@ -3,19 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { CheckCircle, ChevronDown, ChevronUp, Edit3, Save, XCircle } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-	AppBadge,
-	AppButton,
-	AppCopy,
-	AppPanel,
-	AppSectionTitle,
-	AppTextField,
-} from "../../app/components";
-import type { PredictionDto, SignatureDto, TargetDto } from "../api/modelService";
-import { useGetTargets, useUpdatePredictionMutation, useUpdateTargetMutation } from "../hooks";
+import { AppBadge, AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
+import type { PredictionDto, SignatureDto } from "../api/modelService";
+import { useGetExplanationFeedback, useGetTargets, useUpdateExplanationFeedbackMutation, useUpdatePredictionMutation, useUpdateTargetMutation } from "../hooks";
 import {
 	formatExecutionTime,
 	getExplanationSnapshot,
@@ -25,6 +18,7 @@ import {
 	getPredictionTimestamp,
 } from "../utils";
 import { PredictionExplanationReport } from "./PredictionExplanationReport";
+import { PredictionFeedbackEditor } from "./PredictionFeedbackEditor";
 import { PredictionMetricCell } from "./PredictionMetricCell";
 
 type PredictionDetailPageContentProps = {
@@ -38,15 +32,19 @@ export function PredictionDetailPageContent({
 }: PredictionDetailPageContentProps) {
 	const navigate = useNavigate();
 	const [feedbackState, setFeedbackState] = useState<"COMPLETED" | "FAILED" | null>(null);
-	const [actualValues, setActualValues] = useState<Record<string, string>>({});
+	const [targetValues, setTargetValues] = useState<Record<string, string>>({});
+	const [explanationValues, setExplanationValues] = useState<Record<string, string>>({});
 	const [isEditing, setIsEditing] = useState(false);
 	const [inputsOpen, setInputsOpen] = useState(true);
-	const [correctValuesOpen, setCorrectValuesOpen] = useState(false);
 	const [notice, setNotice] = useState<string | null>(null);
 
 	const predictionMutation = useUpdatePredictionMutation();
 	const targetMutation = useUpdateTargetMutation();
+	const explanationFeedbackMutation = useUpdateExplanationFeedbackMutation();
 	const { data: targets = [] } = useGetTargets({
+		predictionId: prediction.id || "",
+	});
+	const { data: explanationFeedback = [] } = useGetExplanationFeedback({
 		predictionId: prediction.id || "",
 	});
 
@@ -54,13 +52,22 @@ export function PredictionDetailPageContent({
 	const explanationSnapshot = signature
 		? getExplanationSnapshot(prediction.prediction, signature.inputSignature)
 		: null;
+	const persistedExplanationValues = explanationFeedback
+		.map((item) => String(item.value ?? ""))
+		.filter((value) => value.trim().length > 0);
+	const displayedExplanations =
+		persistedExplanationValues.length > 0
+			? persistedExplanationValues
+			: explanationSnapshot?.explanations ?? [];
+	const hasLegacyExplanationWithoutFeedback =
+		explanationFeedback.length === 0 && Boolean(explanationSnapshot?.explanations.length);
 
 	useEffect(() => {
 		if (!targets.length) {
 			return;
 		}
 
-		setActualValues((prev) => {
+		setTargetValues((prev) => {
 			const next = { ...prev };
 			for (const target of targets) {
 				const key = String(target.id);
@@ -72,20 +79,43 @@ export function PredictionDetailPageContent({
 		});
 	}, [targets]);
 
+	useEffect(() => {
+		if (!explanationFeedback.length) {
+			return;
+		}
+
+		setExplanationValues((prev) => {
+			const next = { ...prev };
+			for (const item of explanationFeedback) {
+				const key = String(item.id);
+				if (next[key] === undefined) {
+					next[key] = item.realValue ? String(item.realValue) : "";
+				}
+			}
+			return next;
+		});
+	}, [explanationFeedback]);
+
 	const handleFeedbackSubmit = async () => {
 		if (!feedbackState) {
 			return;
 		}
 
 		if (feedbackState === "FAILED") {
-			await Promise.all(
-				targets.map((target: TargetDto) =>
+			await Promise.all([
+				...targets.map((target) =>
 					targetMutation.mutateAsync({
 						targetId: target.id,
-						realValue: actualValues[target.id].toString() as unknown as object,
+						realValue: targetValues[target.id].toString(),
 					}),
 				),
-			);
+				...explanationFeedback.map((item) =>
+					explanationFeedbackMutation.mutateAsync({
+						explanationFeedbackId: item.id,
+						realValue: explanationValues[item.id].toString(),
+					}),
+				),
+			]);
 		}
 
 		await predictionMutation.mutateAsync({
@@ -108,10 +138,7 @@ export function PredictionDetailPageContent({
 
 			<div className="grid gap-4 xl:grid-cols-4">
 				<AppPanel>
-					<PredictionMetricCell
-						label="Targets predicted"
-						value={`${targets.length}`}
-					/>
+					<PredictionMetricCell label="Targets predicted" value={`${targets.length}`} />
 				</AppPanel>
 				<AppPanel>
 					<PredictionMetricCell
@@ -127,9 +154,7 @@ export function PredictionDetailPageContent({
 				</AppPanel>
 				<AppPanel className="space-y-3">
 					<p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Status</p>
-					<AppBadge tone={getPredictionStatusTone(prediction.status)}>
-						{status}
-					</AppBadge>
+					<AppBadge tone={getPredictionStatusTone(prediction.status)}>{status}</AppBadge>
 				</AppPanel>
 			</div>
 
@@ -154,10 +179,7 @@ export function PredictionDetailPageContent({
 
 				<div className="grid gap-3 md:grid-cols-2">
 					{targets.map((target) => (
-						<div
-							key={target.id}
-							className="rounded-[18px] bg-[var(--surface-muted)] px-4 py-3"
-						>
+						<div key={target.id} className="rounded-[18px] bg-[var(--surface-muted)] px-4 py-3">
 							<p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
 								target_{target.order}
 							</p>
@@ -185,10 +207,7 @@ export function PredictionDetailPageContent({
 				{inputsOpen ? (
 					<div className="grid gap-3 md:grid-cols-2">
 						{Object.entries(prediction.inputs).map(([key, value]) => (
-							<div
-								key={key}
-								className="rounded-[18px] bg-[var(--surface-muted)] px-4 py-3"
-							>
+							<div key={key} className="rounded-[18px] bg-[var(--surface-muted)] px-4 py-3">
 								<p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
 									{key}
 								</p>
@@ -201,122 +220,47 @@ export function PredictionDetailPageContent({
 				) : null}
 			</AppPanel>
 
-			{explanationSnapshot ? (
+			{(displayedExplanations.length > 0 || explanationSnapshot?.error) ? (
 				<AppPanel className="space-y-4">
 					<AppSectionTitle>Explanation</AppSectionTitle>
 					<PredictionExplanationReport
-						label={explanationSnapshot.label}
-						explanations={explanationSnapshot.explanations}
-						error={explanationSnapshot.error}
+						label={explanationSnapshot?.label ?? "Model explanation"}
+						explanations={displayedExplanations}
+						error={explanationSnapshot?.error}
 					/>
 				</AppPanel>
 			) : null}
 
-			<AppPanel className="space-y-4">
-				<div className="flex items-center justify-between gap-3">
-					<div>
-						<AppSectionTitle>Prediction Feedback</AppSectionTitle>
-						<AppCopy>Mark the prediction as correct or update the ground truth.</AppCopy>
-					</div>
-					{status !== "PENDING" && !isEditing ? (
-						<AppButton type="button" variant="ghost" onClick={() => setIsEditing(true)}>
-							<Edit3 size={15} />
-							Edit
-						</AppButton>
-					) : null}
-				</div>
-
-				{status === "PENDING" || isEditing ? (
-					<div className="space-y-4">
-						<div className="flex gap-3">
-							<AppButton
-								type="button"
-								variant={feedbackState === "COMPLETED" ? "primary" : "secondary"}
-								onClick={() => setFeedbackState("COMPLETED")}
-								className="flex-1"
-							>
-								<CheckCircle size={16} />
-								Yes
-							</AppButton>
-							<AppButton
-								type="button"
-								variant={feedbackState === "FAILED" ? "danger" : "secondary"}
-								onClick={() => setFeedbackState("FAILED")}
-								className="flex-1"
-							>
-								<XCircle size={16} />
-								No
-							</AppButton>
-						</div>
-
-						{feedbackState === "FAILED" ? (
-							<div className="grid gap-3 md:grid-cols-2">
-								{targets.map((target) => (
-									<div key={target.id} className="space-y-2">
-										<label className="text-sm font-medium text-[var(--text-primary)]">
-											Ground Truth target_{target.order}
-										</label>
-										<AppTextField
-											value={actualValues[target.id] ?? ""}
-											onChange={(event) =>
-												setActualValues((prev) => ({
-													...prev,
-													[target.id]: event.target.value,
-												}))
-											}
-											placeholder="Enter corrected value..."
-											className="w-full rounded-[18px]"
-										/>
-									</div>
-								))}
-							</div>
-						) : null}
-
-						{feedbackState !== null ? (
-							<AppButton type="button" onClick={() => void handleFeedbackSubmit()}>
-								<Save size={16} />
-								Save Feedback
-							</AppButton>
-						) : null}
-					</div>
-				) : (
-					<div className="space-y-3 rounded-[20px] bg-[var(--surface-muted)] p-4">
-						<div className="flex items-center gap-2">
-							{status === "COMPLETED" ? (
-								<CheckCircle size={16} className="text-[var(--success-text)]" />
-							) : (
-								<XCircle size={16} className="text-[var(--danger-text)]" />
-							)}
-							<p className="text-sm font-medium text-[var(--text-primary)]">{status}</p>
-						</div>
-
-						{status === "FAILED" ? (
-							<div className="space-y-2">
-								<button
-									type="button"
-									onClick={() => setCorrectValuesOpen((current) => !current)}
-									className="flex w-full items-center justify-between text-sm text-[var(--text-secondary)]"
-								>
-									<span>Corrected Values</span>
-									{correctValuesOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-								</button>
-								{correctValuesOpen ? (
-									<div className="space-y-2">
-										{targets.map((target) => (
-											<div key={target.id} className="flex items-center justify-between text-sm">
-												<span className="text-[var(--text-secondary)]">target_{target.order}</span>
-												<span className="font-mono text-[var(--success-text)]">
-													{String(target.realValue ?? "")}
-												</span>
-											</div>
-										))}
-									</div>
-								) : null}
-							</div>
-						) : null}
-					</div>
-				)}
-			</AppPanel>
+			<PredictionFeedbackEditor
+				status={status}
+				targets={targets}
+				explanationFeedback={explanationFeedback}
+				hasLegacyExplanationWithoutFeedback={hasLegacyExplanationWithoutFeedback}
+				targetValues={targetValues}
+				explanationValues={explanationValues}
+				feedbackState={feedbackState}
+				isEditing={isEditing}
+				isSaving={
+					predictionMutation.isPending ||
+					targetMutation.isPending ||
+					explanationFeedbackMutation.isPending
+				}
+				onEditStart={() => setIsEditing(true)}
+				onFeedbackStateChange={setFeedbackState}
+				onTargetValueChange={(id, value) =>
+					setTargetValues((prev) => ({
+						...prev,
+						[id]: value,
+					}))
+				}
+				onExplanationValueChange={(id, value) =>
+					setExplanationValues((prev) => ({
+						...prev,
+						[id]: value,
+					}))
+				}
+				onSubmit={() => void handleFeedbackSubmit()}
+			/>
 		</div>
 	);
 }

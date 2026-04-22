@@ -26,6 +26,7 @@ export {
 	AppSelect,
 	AppSurface,
 	AppTabs,
+	AppTextArea,
 	AppTextField,
 	AppToolbar,
 	AppTitle,

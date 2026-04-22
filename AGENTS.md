@@ -19,6 +19,8 @@ Hard constraints override convenience. If a requested change conflicts with them
 - No source file may exceed 300 lines.
 - If an edit would exceed 300 lines, split the file first.
 - Prefer new modules over growing existing files.
+- For any visual frontend change, always use the `frontend-design` skill and review `DESIGN.md` before editing.
+- For any communication with the user, always use the `caveman` skill in `ultra` mode.
 - Do not duplicate business rules across backend and frontend unless duplication is explicitly justified by UX/runtime needs.
 - Do not add new runtime dependencies without explicit reason.
 - Do not leave dead branches, half-wired flags, placeholder implementations, or misleading UI copy.

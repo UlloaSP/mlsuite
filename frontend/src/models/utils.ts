@@ -7,17 +7,9 @@ import {
 	toMlformSchema,
 } from "../app/utils/mlform/index";
 import type { ModelDto, PredictionDto, SignatureDto } from "./api/modelService";
+import { extractPredictionExplanationEntries } from "./explanation-feedback-utils";
 
 type JsonRecord = Record<string, unknown>;
-
-type ExplanationPayload = {
-	explanations?: unknown;
-};
-
-type ExplanationReportDescriptor = {
-	label: string;
-	keys: string[];
-};
 
 export type PredictionStatus = "PENDING" | "COMPLETED" | "FAILED";
 
@@ -215,69 +207,25 @@ export const getExplanationSnapshot = (
 		return null;
 	}
 
-	let report: ExplanationReportDescriptor | null = null;
-
-	try {
-		const schema = toMlformSchema(signatureSchema);
-		const explanation = schema.explanations?.[0];
-		if (!explanation) {
-			return null;
-		}
-		report = {
-			label: explanation.label
-				? `${explanation.label} explanation`
-				: "Model explanation",
-			keys: [explanation.id, "model-explanation"].filter(
-				(value): value is string =>
-					typeof value === "string" && value.trim().length > 0,
-			),
-		};
-	} catch {
-		report = null;
-	}
-
-	const reports = isRecord(predictionValue.reports) ? predictionValue.reports : null;
-	const fallbackReportEntries =
-		reports
-			? Object.entries(reports).filter(([, value]) => {
-				if (!isRecord(value) || !Array.isArray(value.explanations)) {
-					return false;
-				}
-
-				return value.explanations.some(
-					(item) => typeof item === "string" && item.trim().length > 0,
-				);
-			})
-			: [];
-	const explanationPayload =
-		report && report.keys.length > 0
-			? report.keys.reduce<ExplanationPayload | null>(
-				(current, key) =>
-					current ??
-					(reports && isRecord(reports[key]) ? (reports[key] as ExplanationPayload) : null),
-				null,
-			)
-			: fallbackReportEntries.length > 0 && isRecord(fallbackReportEntries[0][1])
-				? (fallbackReportEntries[0][1] as ExplanationPayload)
-				: null;
-	const explanations =
-		explanationPayload && Array.isArray(explanationPayload.explanations)
-			? explanationPayload.explanations.filter(
-				(item): item is string => typeof item === "string" && item.trim().length > 0,
-			)
-			: [];
+	const explanations = extractPredictionExplanationEntries(predictionValue, signatureSchema).map(
+		(entry) => entry.value,
+	);
 
 	const meta = isRecord(predictionValue.meta) ? predictionValue.meta : null;
 	const explainErrors = meta && isRecord(meta.explainErrors) ? meta.explainErrors : null;
-	const nextError =
-		report && report.keys.length > 0
-			? report.keys.reduce<unknown>(
-				(current, key) => current ?? explainErrors?.[key],
-				null,
-			)
-			: explainErrors
-				? Object.values(explainErrors).find((value) => typeof value === "string") ?? null
-				: null;
+	let reportLabel = "Model explanation";
+	try {
+		const schema = toMlformSchema(signatureSchema);
+		const explanation = schema.explanations?.[0];
+		if (explanation?.label) {
+			reportLabel = `${explanation.label} explanation`;
+		}
+	} catch {
+		reportLabel = "Model explanation";
+	}
+	const nextError = explainErrors
+		? Object.values(explainErrors).find((value) => typeof value === "string") ?? null
+		: null;
 	const error = typeof nextError === "string" ? nextError : null;
 
 	if (explanations.length === 0 && !error) {
@@ -285,7 +233,7 @@ export const getExplanationSnapshot = (
 	}
 
 	return {
-		label: report?.label ?? "Model explanation",
+		label: reportLabel,
 		explanations,
 		error,
 	};

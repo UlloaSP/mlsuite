@@ -4,7 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowLeft, ChevronRight } from "lucide-react";
-import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
+import type {
+	ButtonHTMLAttributes,
+	HTMLAttributes,
+	InputHTMLAttributes,
+	ReactNode,
+	TextareaHTMLAttributes,
+} from "react";
 import { Link } from "react-router";
 
 export const cx = (...values: Array<string | false | null | undefined>): string =>
@@ -362,6 +368,25 @@ export function AppTextField({
 			<input
 				{...props}
 				className="w-full bg-transparent text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+			/>
+		</label>
+	);
+}
+
+export function AppTextArea({
+	className,
+	...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+	return (
+		<label
+			className={cx(
+				"inline-flex rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]",
+				className,
+			)}
+		>
+			<textarea
+				{...props}
+				className="min-h-40 w-full resize-y bg-transparent font-mono text-sm leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
 			/>
 		</label>
 	);

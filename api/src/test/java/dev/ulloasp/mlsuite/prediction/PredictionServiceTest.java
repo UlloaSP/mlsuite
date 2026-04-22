@@ -21,6 +21,7 @@ import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.prediction.entities.Prediction;
 import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.repositories.ExplanationFeedbackRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
 import dev.ulloasp.mlsuite.prediction.services.PredictionServiceImpl;
@@ -48,6 +49,9 @@ class PredictionServiceTest {
     private TargetRepository targetRepository;
 
     @Mock
+    private ExplanationFeedbackRepository explanationFeedbackRepository;
+
+    @Mock
     private SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
 
     private PredictionServiceImpl service;
@@ -56,6 +60,7 @@ class PredictionServiceTest {
     void setUp() {
         service = new PredictionServiceImpl(userLookupService, signatureRepository, predictionRepository,
                 targetRepository,
+                explanationFeedbackRepository,
                 signatureSchemaCompatibilityService);
     }
 
@@ -118,6 +123,7 @@ class PredictionServiceTest {
         assertEquals(Map.of("value", 1), result.getPrediction());
         assertEquals(PredictionStatus.PENDING, result.getStatus());
         verify(targetRepository).deleteByPredictionId(12L);
+        verify(explanationFeedbackRepository).deleteByPredictionId(12L);
     }
 
     @Test

@@ -121,3 +121,22 @@ DROP TRIGGER IF EXISTS set_updated_at ON target;
 
 CREATE TRIGGER set_updated_at BEFORE
 UPDATE ON target FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at ();
+
+CREATE TABLE
+    IF NOT EXISTS explanation_feedback (
+        id BIGINT GENERATED ALWAYS AS IDENTITY,
+        prediction_id BIGINT NOT NULL,
+        orden INT NOT NULL,
+        data_value JSONB NOT NULL,
+        real_value JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT pk_explanation_feedback PRIMARY KEY (id),
+        CONSTRAINT uq_explanation_feedback_prediction_order UNIQUE (prediction_id, orden),
+        CONSTRAINT fk_explanation_feedback_prediction FOREIGN KEY (prediction_id) REFERENCES prediction (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE
+    );
+
+DROP TRIGGER IF EXISTS set_updated_at ON explanation_feedback;
+
+CREATE TRIGGER set_updated_at BEFORE
+UPDATE ON explanation_feedback FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at ();
