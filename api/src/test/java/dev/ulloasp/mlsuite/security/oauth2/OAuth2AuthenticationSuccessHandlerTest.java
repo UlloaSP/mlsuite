@@ -62,7 +62,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
         handler.onAuthenticationSuccess(request, response, authentication);
 
         verify(userService).signIn(OAuthProvider.GITHUB, "123");
-        verify(response).sendRedirect("https://localhost:5173/");
+        verify(response).sendRedirect("https://localhost:5173/models");
     }
 
     @Test

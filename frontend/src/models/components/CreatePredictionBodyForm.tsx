@@ -7,6 +7,7 @@ import { useAtom } from "jotai";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
+import { toast } from "sonner";
 import { AppButton, AppCopy, AppPanel } from "../../app/components";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
@@ -138,6 +139,9 @@ export function CreatePredictionBodyForm() {
 				error: null,
 			});
 		} catch (error: unknown) {
+			toast.error("Plugin catalog unavailable", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 			setCatalogState({
 				status: "error",
 				fieldDefinitions: [],
@@ -184,7 +188,9 @@ export function CreatePredictionBodyForm() {
 				customExplanationDefinitions: catalogState.definitions,
 				onSubmit: handleSubmit,
 				onSubmitError(error) {
-					console.error(error);
+					toast.error("Prediction request failed", {
+						description: error instanceof Error ? error.message : String(error),
+					});
 				},
 			});
 			mountedRef.current = mounted;
@@ -209,7 +215,11 @@ export function CreatePredictionBodyForm() {
 				mounted.unmount();
 			};
 		} catch (error: unknown) {
-			setMountError(error instanceof Error ? error.message : String(error));
+			const message = error instanceof Error ? error.message : String(error);
+			toast.error("Signature schema incompatible", {
+				description: message,
+			});
+			setMountError(message);
 			return;
 		}
 	}, [catalogState, handleSubmit, modelId, schema, schemaNeedsPlugins, theme]);

@@ -5,8 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQueries } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import {
 	AppBadge,
 	AppButton,
@@ -26,7 +27,6 @@ import type { ModelAction } from "../components/ModelActionsMenu";
 import { GET_SIGNATURES_QUERY_KEY, useGetModels } from "../hooks";
 
 type ModelSortMode = "updated" | "name" | "algorithm";
-type ToastState = { message: string } | null;
 
 export function ModelsPage() {
 	const navigate = useNavigate();
@@ -34,7 +34,6 @@ export function ModelsPage() {
 	const { data: models = [], isLoading } = useGetModels();
 	const [query, setQuery] = useState("");
 	const [sort, setSort] = useState<ModelSortMode>("updated");
-	const [toast, setToast] = useState<ToastState>(null);
 
 	const signatureQueries = useQueries({
 		queries: models.map((model) => ({
@@ -45,15 +44,6 @@ export function ModelsPage() {
 			staleTime: 5 * 60_000,
 		})),
 	});
-
-	useEffect(() => {
-		if (!toast) {
-			return;
-		}
-
-		const timeout = window.setTimeout(() => setToast(null), 2600);
-		return () => window.clearTimeout(timeout);
-	}, [toast]);
 
 	const enrichedModels = useMemo(
 		() =>
@@ -104,7 +94,7 @@ export function ModelsPage() {
 			delete: "Delete",
 			duplicate: "Duplicate",
 		};
-		setToast({ message: `${labels[action]} is not available yet for ${model.name}.` });
+		toast(`${labels[action]} is not available yet for ${model.name}.`);
 	};
 
 	return (
@@ -179,12 +169,6 @@ export function ModelsPage() {
 					)}
 				</AppSurface>
 			</motion.div>
-
-			{toast ? (
-				<div className="fixed bottom-6 right-6 z-50 rounded-[20px] bg-[var(--text-primary)] px-5 py-4 text-sm font-medium text-[var(--text-inverse)] shadow-[var(--shadow-hover)]">
-					{toast.message}
-				</div>
-			) : null}
 		</AppPage>
 	);
 }

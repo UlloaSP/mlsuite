@@ -4,9 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, type RouteObject } from "react-router";
+import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
+import { useUser } from "../user/hooks";
+import { Unauthorized } from "../app/pages/Unauthorized";
 import { NotFoundError } from "../app/pages/error-page";
-import { HomePage } from "../app/pages/homePage";
 import { PluginCatalogPage } from "../app/pages/plugin-catalog-page";
 import Layout from "../Layout";
 import { CreateModelPage } from "../models/pages/create-model-page";
@@ -36,6 +37,16 @@ function EditorRouteFallback() {
 	);
 }
 
+function IndexRoute() {
+	const { data: user, error } = useUser();
+
+	if (user && !error) {
+		return <Navigate to="/models" replace />;
+	}
+
+	return <Unauthorized />;
+}
+
 export const routes: RouteObject[] = [
 	{
 		path: "/",
@@ -45,7 +56,7 @@ export const routes: RouteObject[] = [
 		children: [
 			{
 				index: true,
-				element: <HomePage />,
+				element: <IndexRoute />,
 			},
 			{
 				path: "profile",

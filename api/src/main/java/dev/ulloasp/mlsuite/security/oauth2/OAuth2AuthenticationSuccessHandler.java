@@ -50,6 +50,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 userService.signIn(profile.identity().provider(), profile.identity().subject());
             }
         }
-        response.sendRedirect("https://localhost:5173/");
+        response.sendRedirect("https://localhost:5173/models");
     }
 }

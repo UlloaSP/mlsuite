@@ -11,11 +11,6 @@ export type SortMode = "updated" | "name" | "size";
 export type PluginViewType = DetectedPluginType | "invalid";
 export type TypeFilter = "all" | DetectedPluginType;
 
-export type ToastState = {
-	tone: "success" | "error";
-	message: string;
-} | null;
-
 export type PluginPageItem = PluginDto & {
 	pluginType: PluginViewType;
 	uniqueKey: string;

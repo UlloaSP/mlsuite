@@ -4,8 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
+import { toast } from "sonner";
 import {
 	AppBreadcrumbs,
 	AppButton,
@@ -24,7 +25,6 @@ import { useGetModels, useGetSignatures } from "../hooks";
 import { findModelById, getModelAlgorithmLabel } from "../utils";
 
 type ModelDetailTab = "summary" | "signatures" | "settings";
-type ToastState = string | null;
 
 const MODEL_DETAIL_TABS: ModelDetailTab[] = ["summary", "signatures", "settings"];
 
@@ -36,21 +36,11 @@ export function ModelDetailPage() {
 	const { data: models = [], isLoading } = useGetModels();
 	const model = useMemo(() => findModelById(models, modelId), [models, modelId]);
 	const { data: signatures = [] } = useGetSignatures({ modelId: modelId ?? "" });
-	const [toast, setToast] = useState<ToastState>(null);
 
 	const tabParam = searchParams.get("tab");
 	const activeTab: ModelDetailTab = MODEL_DETAIL_TABS.includes(tabParam as ModelDetailTab)
 		? (tabParam as ModelDetailTab)
 		: "signatures";
-
-	useEffect(() => {
-		if (!toast) {
-			return;
-		}
-
-		const timeout = window.setTimeout(() => setToast(null), 2600);
-		return () => window.clearTimeout(timeout);
-	}, [toast]);
 
 	const setTab = (tab: ModelDetailTab) => {
 		const next = new URLSearchParams(searchParams);
@@ -99,7 +89,7 @@ export function ModelDetailPage() {
 										<AppButton
 											type="button"
 											variant="secondary"
-											onClick={() => setToast(`Deploy is not available yet for ${model.name}.`)}
+											onClick={() => toast(`Deploy is not available yet for ${model.name}.`)}
 										>
 											Deploy
 										</AppButton>
@@ -108,7 +98,7 @@ export function ModelDetailPage() {
 											variant="secondary"
 											onClick={() => {
 												setTab("settings");
-												setToast(`Settings backend controls are not available yet for ${model.name}.`);
+												toast(`Settings backend controls are not available yet for ${model.name}.`);
 											}}
 										>
 											Settings
@@ -152,12 +142,6 @@ export function ModelDetailPage() {
 					) : null}
 				</AppSurface>
 			</motion.div>
-
-			{toast ? (
-				<div className="fixed bottom-6 right-6 z-50 rounded-[20px] bg-[var(--text-primary)] px-5 py-4 text-sm font-medium text-[var(--text-inverse)] shadow-[var(--shadow-hover)]">
-					{toast}
-				</div>
-			) : null}
 		</AppPage>
 	);
 }

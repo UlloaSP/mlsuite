@@ -8,37 +8,24 @@ import { useAtom } from "jotai";
 import {
 	BrainCircuit,
 	Blocks,
-	Home,
 	Maximize,
 	Minimize,
 	Moon,
 	Sun,
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import { useUser } from "../../user/hooks";
 import { fullscreenAtom, themeWithHtmlAtom } from "../atoms";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarTile } from "./SidebarTile";
 
 export function SidebarNavigation() {
 	const location = useLocation();
-	const { data: user } = useUser();
 	const [theme, setTheme] = useAtom(themeWithHtmlAtom);
 	const [isFullscreen, setIsFullscreen] = useAtom(fullscreenAtom);
-
-	let navigation = [];
-	if (!user) {
-		navigation = [
-			{ to: "/", icon: Home, label: "Home" },
-		];
-	} else {
-		navigation = [
-			{ to: "/", icon: Home, label: "Home" },
-			{ to: "/models", icon: BrainCircuit, label: "Catalog" },
-			{ to: "/plugins", icon: Blocks, label: "Plugins" },
-		];
-	}
-
+	const navigation = [
+		{ to: "/models", icon: BrainCircuit, label: "Catalog" },
+		{ to: "/plugins", icon: Blocks, label: "Plugins" },
+	];
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">

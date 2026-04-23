@@ -3,10 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowUpDown, Check, ChevronDown, Power, Search, Upload, XCircle } from "lucide-react";
+import { ArrowUpDown, Check, ChevronDown, Power, Search, Upload } from "lucide-react";
 import { motion } from "motion/react";
 import { useSetAtom } from "jotai";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { toast } from "sonner";
 import { deactivateAllPlugins, deletePlugin, getPlugins, uploadPlugin, activatePlugin, deactivatePlugin } from "../api/pluginService";
 import { AppButton, AppPage, AppPageHeader, AppPanel, AppSelect, AppSurface, AppTextField, cx } from "../components";
 import { detectPluginType, invalidatePluginCatalog } from "../utils/mlform/plugin-catalog";
@@ -15,7 +16,7 @@ import { useUser } from "../../user/hooks";
 import { Unauthorized } from "./Unauthorized";
 import { PluginCatalogListItem } from "./PluginCatalogListItem";
 import { SORT_LABELS, TYPE_META, readFileText } from "./plugin-catalog-shared";
-import type { FilterMode, PluginPageItem, SortMode, ToastState, TypeFilter } from "./plugin-catalog-shared";
+import type { FilterMode, PluginPageItem, SortMode, TypeFilter } from "./plugin-catalog-shared";
 
 const enrichPlugin = async (item: PluginPageItem | Awaited<ReturnType<typeof getPlugins>>[number]): Promise<PluginPageItem> => {
 	try {
@@ -37,10 +38,8 @@ export function PluginCatalogPage() {
 	const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 	const [sort, setSort] = useState<SortMode>("updated");
 	const [isSortOpen, setIsSortOpen] = useState(false);
-	const [toast, setToast] = useState<ToastState>(null);
 	const bumpPluginCatalogVersion = useSetAtom(bumpPluginCatalogVersionAtom);
-
-	const pushToast = (tone: "success" | "error", message: string) => setToast({ tone, message });
+	const pushToast = (tone: "success" | "error", message: string) => toast[tone](message);
 
 	const refreshItems = async (): Promise<PluginPageItem[]> => {
 		const raw = await getPlugins();
@@ -54,14 +53,6 @@ export function PluginCatalogPage() {
 			pushToast("error", loadError instanceof Error ? loadError.message : String(loadError));
 		});
 	}, []);
-
-	useEffect(() => {
-		if (!toast) {
-			return;
-		}
-		const timer = window.setTimeout(() => setToast(null), 3200);
-		return () => window.clearTimeout(timer);
-	}, [toast]);
 
 	useEffect(() => {
 		const handlePointerDown = (event: PointerEvent) => {
@@ -222,7 +213,6 @@ export function PluginCatalogPage() {
 					</section>
 				</AppSurface>
 			</motion.div>
-			{toast ? <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 18 }} className={cx("pointer-events-none fixed bottom-6 right-6 z-50 max-w-sm rounded-[22px] px-5 py-4 text-sm shadow-[var(--shadow-hover)]", toast.tone === "error" ? "bg-[var(--danger-text)] text-[var(--text-inverse)]" : "bg-[var(--text-primary)] text-[var(--text-inverse)]")}><div className="flex items-start gap-3">{toast.tone === "error" ? <XCircle size={18} className="mt-0.5 shrink-0" /> : null}<p className="leading-6">{toast.message}</p></div></motion.div> : null}
 		</AppPage>
 	);
 }

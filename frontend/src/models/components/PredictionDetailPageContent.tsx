@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import { AppBadge, AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import type { PredictionDto, SignatureDto } from "../api/modelService";
 import { useGetExplanationFeedback, useGetTargets, useUpdateExplanationFeedbackMutation, useUpdatePredictionMutation, useUpdateTargetMutation } from "../hooks";
@@ -36,7 +37,6 @@ export function PredictionDetailPageContent({
 	const [explanationValues, setExplanationValues] = useState<Record<string, string>>({});
 	const [isEditing, setIsEditing] = useState(false);
 	const [inputsOpen, setInputsOpen] = useState(true);
-	const [notice, setNotice] = useState<string | null>(null);
 
 	const predictionMutation = useUpdatePredictionMutation();
 	const targetMutation = useUpdateTargetMutation();
@@ -125,17 +125,11 @@ export function PredictionDetailPageContent({
 
 		setFeedbackState(null);
 		setIsEditing(false);
-		setNotice("Prediction updated");
+		toast.success("Prediction updated");
 	};
 
 	return (
 		<div className="space-y-6">
-			{notice ? (
-				<div className="rounded-[20px] bg-[var(--success-text)] px-4 py-3 text-sm font-medium text-[var(--text-inverse)]">
-					{notice}
-				</div>
-			) : null}
-
 			<div className="grid gap-4 xl:grid-cols-4">
 				<AppPanel>
 					<PredictionMetricCell label="Targets predicted" value={`${targets.length}`} />
