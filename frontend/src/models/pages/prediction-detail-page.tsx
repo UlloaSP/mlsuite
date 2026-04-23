@@ -110,7 +110,7 @@ export function PredictionDetailPage() {
 											type="button"
 											onClick={() =>
 												navigate(
-													`/models/${prediction.modelId}/signatures/${prediction.signatureId}/predictions/create/${encodeURIComponent(JSON.stringify(prediction.inputs))}`,
+													`/models/${prediction.modelId}/signatures/${prediction.signatureId}/predictions/create/${encodeURIComponent(JSON.stringify(prediction.inputs))}?view=form`,
 												)
 											}
 										>

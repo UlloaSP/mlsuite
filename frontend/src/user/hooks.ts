@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import * as userApi from "./api/userService";
 
 export const USER_QUERY_KEY = ["user"];
@@ -24,14 +25,12 @@ export const useUser = () =>
 
 export const useLogout = () => {
 	const qc = useQueryClient();
+	const navigate = useNavigate();
 	return useMutation({
 		mutationFn: userApi.logout,
 		onSuccess: () => {
-			// Clear any user state in cache
-			qc.cancelQueries({ queryKey: USER_QUERY_KEY });
-			qc.resetQueries({ queryKey: USER_QUERY_KEY, exact: true });
-			// If your app holds additional auth-scoped caches, consider:
-			// qc.clear(); // (nuclear option)
+			qc.clear();
+			navigate("/", { replace: true });
 		},
 	});
 };

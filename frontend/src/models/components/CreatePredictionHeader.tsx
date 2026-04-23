@@ -41,7 +41,13 @@ export function CreatePredictionHeader({
 				eyebrow="Prediction Studio"
 				title={CREATE_PREDICTION_HEADER}
 				description={CREATE_PREDICTION_SUBHEADER}
-				aside={<ToggleButton isProcessing={hasErrors} onToggleMode={onToggleMode} />}
+				aside={
+					<ToggleButton
+						isJsonActive={isEditorActive}
+						isProcessing={hasErrors}
+						onToggleMode={onToggleMode}
+					/>
+				}
 			/>
 		</motion.div>
 	);

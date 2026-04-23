@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { LogOut } from "lucide-react";
-import { useNavigate } from "react-router";
 import { useLogout, useUser } from "../../user/hooks";
 import { AuthButton } from "./AuthButton";
 import { SidebarTile } from "./SidebarTile";
@@ -12,12 +11,6 @@ import { SidebarTile } from "./SidebarTile";
 export function SidebarFooter() {
 	const { data: user } = useUser();
 	const { mutate: logout } = useLogout();
-
-	const navigate = useNavigate();
-
-
-
-
 
 	const handleLogin = (provider: any) => {
 		window.location.href = `https://localhost:8443/oauth2/authorization/${provider}`;
@@ -56,10 +49,7 @@ export function SidebarFooter() {
 						icon={LogOut}
 						label="Log Out"
 						variant="auth"
-						onClick={() => {
-							logout();
-							navigate("/");
-						}}
+						onClick={() => logout()}
 						className={`${getProviderColors().bg} ${getProviderColors().hover} ${getProviderColors().text}`}
 					/>
 				</div>

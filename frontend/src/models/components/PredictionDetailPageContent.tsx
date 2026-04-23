@@ -40,6 +40,7 @@ export function PredictionDetailPageContent({
 	const [explanationValues, setExplanationValues] = useState<Record<string, string>>({});
 	const [isEditing, setIsEditing] = useState(false);
 	const [inputsOpen, setInputsOpen] = useState(true);
+	const [targetsOpen, setTargetsOpen] = useState(true);
 
 	const predictionMutation = useUpdatePredictionMutation();
 	const targetMutation = useUpdateTargetMutation();
@@ -160,34 +161,42 @@ export function PredictionDetailPageContent({
 			</div>
 
 			<AppPanel className="space-y-4">
-				<div className="flex flex-wrap items-center justify-between gap-3">
+				<button
+					type="button"
+					onClick={() => setTargetsOpen((current) => !current)}
+					className="flex w-full items-center justify-between text-left"
+				>
 					<div>
 						<AppSectionTitle>Output Targets</AppSectionTitle>
+						<AppCopy>Predicted target values returned by the model.</AppCopy>
 					</div>
-				</div>
+					{targetsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+				</button>
 
-				<div className="grid gap-3 md:grid-cols-2">
-					{targets.map((target) => (
-						<div key={target.id} className="rounded-[18px] bg-[var(--surface-muted)] px-4 py-3">
-							<p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
-								{getTargetLabel(signature?.inputSignature, target.order)}
-							</p>
-							<p className="mt-1 font-mono text-sm text-[var(--text-primary)]">
-								{String(getSchemaAwareTargetValue(
-									target.value,
-									signature?.inputSignature,
-									target.order,
-									prediction.prediction,
-								) ?? "")}
-							</p>
-							{getTargetProbability(target.value) !== null ? (
-								<p className="mt-1 font-mono text-xs text-[var(--text-muted)]">
-									Probability {formatProbability(getTargetProbability(target.value)!)}
+				{targetsOpen ? (
+					<div className="grid gap-3 md:grid-cols-2">
+						{targets.map((target) => (
+							<div key={target.id} className="rounded-[18px] bg-[var(--surface-muted)] px-4 py-3">
+								<p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
+									{getTargetLabel(signature?.inputSignature, target.order)}
 								</p>
-							) : null}
-						</div>
-					))}
-				</div>
+								<p className="mt-1 font-mono text-sm text-[var(--text-primary)]">
+									{String(getSchemaAwareTargetValue(
+										target.value,
+										signature?.inputSignature,
+										target.order,
+										prediction.prediction,
+									) ?? "")}
+								</p>
+								{getTargetProbability(target.value) !== null ? (
+									<p className="mt-1 font-mono text-xs text-[var(--text-muted)]">
+										Probability {formatProbability(getTargetProbability(target.value)!)}
+									</p>
+								) : null}
+							</div>
+						))}
+					</div>
+				) : null}
 			</AppPanel>
 
 			<AppPanel className="space-y-4">

@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { AppPage, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { applyPredictionInputsToSchema } from "../../app/utils/mlform/index";
@@ -25,6 +25,7 @@ import { useGetSignature } from "../hooks";
 export function CreatePredictionPage() {
 	const { signatureId } = useParams<{ signatureId: string }>();
 	const { inputs } = useParams<{ inputs: string }>();
+	const [searchParams] = useSearchParams();
 
 	const [, setSchema] = useAtom(schemaAtom);
 	const [, setSchemaText] = useAtom(schemaTextAtom);
@@ -32,7 +33,7 @@ export function CreatePredictionPage() {
 
 	const { data: signature } = useGetSignature({ signatureId: signatureId! });
 
-	const [isEditorActive, setIsEditorActive] = useState(true);
+	const [isEditorActive, setIsEditorActive] = useState(searchParams.get("view") !== "form");
 	const [isCatalogReady, setIsCatalogReady] = useState(false);
 
 	const { data: user, error } = useUser();

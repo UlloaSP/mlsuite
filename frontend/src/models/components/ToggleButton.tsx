@@ -11,11 +11,13 @@ import { schemaErrorsAtom } from "../../editor/atoms";
 
 interface ToggleButtonProps {
 	isProcessing: boolean;
+	isJsonActive: boolean;
 	onToggleMode: () => void;
 }
 
 export function ToggleButton({
 	isProcessing,
+	isJsonActive,
 	onToggleMode,
 }: ToggleButtonProps) {
 	const [schemaErrors] = useAtom(schemaErrorsAtom);
@@ -24,8 +26,6 @@ export function ToggleButton({
 	);
 	const disabled = hasBlockingErrors || isProcessing;
 
-	// Local state to track which mode is active
-	const [isJson, setIsJson] = useState(true);
 	// State to track if we're in the middle of a transition
 	const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -39,8 +39,6 @@ export function ToggleButton({
 	// Effect to handle the completion of processing
 	useEffect(() => {
 		if (!isProcessing && isTransitioning) {
-			// Complete the transition
-			setIsJson((prev) => !prev);
 			setIsTransitioning(false);
 		}
 	}, [isProcessing, isTransitioning]);
@@ -57,7 +55,7 @@ export function ToggleButton({
 		}
 		// Normal state - positioned on the active side
 		return {
-			x: isJson ? 4 : 84, // Left side or right side (with padding)
+			x: isJsonActive ? 4 : 84, // Left side or right side (with padding)
 			width: 76, // Half width minus padding
 			justifyContent: "center" as const,
 		};
@@ -103,14 +101,14 @@ export function ToggleButton({
 					>
 						<div className="flex h-full w-full items-center justify-center text-white">
 							<motion.div
-								key={isTransitioning ? "spinning" : isJson ? "json" : "html"}
+								key={isTransitioning ? "spinning" : isJsonActive ? "json" : "html"}
 								initial={{ scale: 0.8, opacity: 0 }}
 								animate={{ scale: 1, opacity: 1 }}
 								transition={{ duration: 0.2 }}
 							>
 								{isTransitioning ? (
 									<RefreshCw className="h-5 w-5 animate-spin" />
-								) : isJson ? (
+								) : isJsonActive ? (
 									<Braces className="h-5 w-5" />
 								) : (
 									<Code className="h-5 w-5" />
@@ -122,7 +120,7 @@ export function ToggleButton({
 					<div className="absolute inset-1 flex items-center z-10">
 						<motion.div
 							animate={{
-								opacity: isTransitioning || isJson ? 0 : 1,
+								opacity: isTransitioning || isJsonActive ? 0 : 1,
 							}}
 							transition={{ duration: 0.2 }}
 							className="flex h-10 w-20 items-center justify-center text-[var(--text-secondary)]"
@@ -132,7 +130,7 @@ export function ToggleButton({
 
 						<motion.div
 							animate={{
-								opacity: isTransitioning || !isJson ? 0 : 1,
+								opacity: isTransitioning || !isJsonActive ? 0 : 1,
 							}}
 							transition={{ duration: 0.2 }}
 							className="flex h-10 w-20 items-center justify-center text-[var(--text-secondary)]"
@@ -144,7 +142,7 @@ export function ToggleButton({
 			</div>
 
 			<motion.div
-				key={isTransitioning ? "processing" : isJson ? "json" : "html"}
+				key={isTransitioning ? "processing" : isJsonActive ? "json" : "html"}
 				initial={{ opacity: 0, y: 5 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.2 }}
@@ -156,7 +154,7 @@ export function ToggleButton({
 						Processing...
 					</span>
 				) : (
-					`${isJson ? "JSON" : "HTML"} Mode`
+					`${isJsonActive ? "JSON" : "HTML"} Mode`
 				)}
 			</motion.div>
 		</motion.div>
