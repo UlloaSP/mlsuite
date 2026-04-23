@@ -14,7 +14,7 @@ import {
 	AppPageHeader,
 	AppSurface,
 } from "../../app/components";
-import { Unauthorized } from "../../app/pages/Unauthorized";
+import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { PredictionDetailPageContent } from "../components/PredictionDetailPageContent";
 import { useGetModels, useGetPredictions, useGetSignature } from "../hooks";
@@ -47,7 +47,7 @@ export function PredictionDetailPage() {
 	);
 
 	if (!user || error) {
-		return <Unauthorized />;
+		return <NotFoundError />;
 	}
 
 	return (
@@ -94,7 +94,7 @@ export function PredictionDetailPage() {
 							<AppPageHeader
 								eyebrow="Prediction Detail"
 								title={getPredictionDetailTitle(prediction)}
-								description={`${getPredictionStatusLabel(prediction.status)} · ${new Date(getPredictionTimestamp(prediction)).toLocaleString()} · ${formatExecutionTime(getPredictionExecutionTime(prediction.prediction))}`}
+								description={`Feedback Status: ${getPredictionStatusLabel(prediction.status)} · ${new Date(getPredictionTimestamp(prediction)).toLocaleString()} · ${formatExecutionTime(getPredictionExecutionTime(prediction.prediction))}`}
 								aside={
 									<>
 										<AppButton

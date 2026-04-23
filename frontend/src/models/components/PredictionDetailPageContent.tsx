@@ -5,18 +5,22 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { AppBadge, AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
+import { AppBadge, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import type { PredictionDto, SignatureDto } from "../api/modelService";
 import { useGetExplanationFeedback, useGetTargets, useUpdateExplanationFeedbackMutation, useUpdatePredictionMutation, useUpdateTargetMutation } from "../hooks";
 import {
 	formatExecutionTime,
+	formatProbability,
 	getExplanationSnapshot,
 	getPredictionExecutionTime,
 	getPredictionStatus,
+	getPredictionStatusLabel,
 	getPredictionStatusTone,
 	getPredictionTimestamp,
+	getSchemaAwareTargetValue,
+	getTargetLabel,
+	getTargetProbability,
 } from "../utils";
 import { PredictionExplanationReport } from "./PredictionExplanationReport";
 import { PredictionFeedbackEditor } from "./PredictionFeedbackEditor";
@@ -31,8 +35,7 @@ export function PredictionDetailPageContent({
 	prediction,
 	signature,
 }: PredictionDetailPageContentProps) {
-	const navigate = useNavigate();
-	const [feedbackState, setFeedbackState] = useState<"COMPLETED" | "FAILED" | null>(null);
+	const [feedbackState, setFeedbackState] = useState<"SUCCESS" | "FAILED" | null>(null);
 	const [targetValues, setTargetValues] = useState<Record<string, string>>({});
 	const [explanationValues, setExplanationValues] = useState<Record<string, string>>({});
 	const [isEditing, setIsEditing] = useState(false);
@@ -147,39 +150,41 @@ export function PredictionDetailPageContent({
 					/>
 				</AppPanel>
 				<AppPanel className="space-y-3">
-					<p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Status</p>
-					<AppBadge tone={getPredictionStatusTone(prediction.status)}>{status}</AppBadge>
+					<p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
+						Feedback Status
+					</p>
+					<AppBadge tone={getPredictionStatusTone(prediction.status)}>
+						{getPredictionStatusLabel(prediction.status)}
+					</AppBadge>
 				</AppPanel>
 			</div>
 
 			<AppPanel className="space-y-4">
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div>
-						<AppSectionTitle>Prediction Output</AppSectionTitle>
-						<AppCopy>{prediction.name}</AppCopy>
+						<AppSectionTitle>Output Targets</AppSectionTitle>
 					</div>
-					<AppButton
-						type="button"
-						variant="secondary"
-						onClick={() => {
-							navigate(
-								`/models/${prediction.modelId}/signatures/${prediction.signatureId}/predictions/create/${encodeURIComponent(JSON.stringify(prediction.inputs))}`,
-							);
-						}}
-					>
-						Predict Again
-					</AppButton>
 				</div>
 
 				<div className="grid gap-3 md:grid-cols-2">
 					{targets.map((target) => (
 						<div key={target.id} className="rounded-[18px] bg-[var(--surface-muted)] px-4 py-3">
 							<p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
-								target_{target.order}
+								{getTargetLabel(signature?.inputSignature, target.order)}
 							</p>
 							<p className="mt-1 font-mono text-sm text-[var(--text-primary)]">
-								{String(target.value ?? "")}
+								{String(getSchemaAwareTargetValue(
+									target.value,
+									signature?.inputSignature,
+									target.order,
+									prediction.prediction,
+								) ?? "")}
 							</p>
+							{getTargetProbability(target.value) !== null ? (
+								<p className="mt-1 font-mono text-xs text-[var(--text-muted)]">
+									Probability {formatProbability(getTargetProbability(target.value)!)}
+								</p>
+							) : null}
 						</div>
 					))}
 				</div>
@@ -254,6 +259,8 @@ export function PredictionDetailPageContent({
 					}))
 				}
 				onSubmit={() => void handleFeedbackSubmit()}
+				signatureSchema={signature?.inputSignature}
+				predictionValue={prediction.prediction}
 			/>
 		</div>
 	);

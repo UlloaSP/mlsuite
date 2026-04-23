@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { AppPage, AppSurface } from "../../app/components";
-import { Unauthorized } from "../../app/pages/Unauthorized.tsx";
+import { NotFoundError } from "../../app/pages/error-page.tsx";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog.ts";
 import { EditorWrapper } from "../../editor/components/EditorWrapper.tsx";
 import { useUser } from "../../user/hooks.ts";
@@ -22,7 +22,7 @@ export function CreateSignaturePage() {
 		invalidatePluginCatalog();
 		setIsCatalogReady(true);
 	}, []);
-	if (!user || error) return <Unauthorized />;
+	if (!user || error) return <NotFoundError />;
 	return (
 		<AppPage>
 			<motion.div

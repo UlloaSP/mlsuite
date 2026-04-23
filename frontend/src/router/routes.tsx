@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
+import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router";
 import { useUser } from "../user/hooks";
 import { Unauthorized } from "../app/pages/Unauthorized";
 import { NotFoundError } from "../app/pages/error-page";
@@ -47,6 +47,20 @@ function IndexRoute() {
 	return <Unauthorized />;
 }
 
+function ProtectedRoute() {
+	const { data: user, error, isLoading } = useUser();
+
+	if (isLoading) {
+		return <EditorRouteFallback />;
+	}
+
+	if (!user || error) {
+		return <NotFoundError />;
+	}
+
+	return <Outlet />;
+}
+
 export const routes: RouteObject[] = [
 	{
 		path: "/",
@@ -59,56 +73,61 @@ export const routes: RouteObject[] = [
 				element: <IndexRoute />,
 			},
 			{
-				path: "profile",
-				element: <ProfilePage />,
-			},
-			{
-				path: "models",
-				element: <ModelsPage />,
-			},
-			{
-				path: "models/create",
-				element: <CreateModelPage />,
-			},
-			{
-				path: "models/:modelId",
-				element: <ModelDetailPage />,
-			},
-			{
-				path: "plugins",
-				element: <PluginCatalogPage />,
-			},
-			{
-				path: "models/:modelId/signatures/:signatureId",
-				element: <SignatureDetailPage />,
-			},
-			{
-				path: "models/:modelId/signatures/create",
-				element: (
-					<Suspense fallback={<EditorRouteFallback />}>
-						<CreateSignaturePage />
-					</Suspense>
-				),
-			},
-			{
-				path: "models/:modelId/signatures/:signatureId/predictions/:predictionId",
-				element: <PredictionDetailPage />,
-			},
-			{
-				path: "models/:modelId/signatures/:signatureId/predictions/create",
-				element: (
-					<Suspense fallback={<EditorRouteFallback />}>
-						<CreatePredictionPage />
-					</Suspense>
-				),
-			},
-			{
-				path: "models/:modelId/signatures/:signatureId/predictions/create/:inputs",
-				element: (
-					<Suspense fallback={<EditorRouteFallback />}>
-						<CreatePredictionPage />
-					</Suspense>
-				),
+				element: <ProtectedRoute />,
+				children: [
+					{
+						path: "profile",
+						element: <ProfilePage />,
+					},
+					{
+						path: "models",
+						element: <ModelsPage />,
+					},
+					{
+						path: "models/create",
+						element: <CreateModelPage />,
+					},
+					{
+						path: "models/:modelId",
+						element: <ModelDetailPage />,
+					},
+					{
+						path: "plugins",
+						element: <PluginCatalogPage />,
+					},
+					{
+						path: "models/:modelId/signatures/:signatureId",
+						element: <SignatureDetailPage />,
+					},
+					{
+						path: "models/:modelId/signatures/create",
+						element: (
+							<Suspense fallback={<EditorRouteFallback />}>
+								<CreateSignaturePage />
+							</Suspense>
+						),
+					},
+					{
+						path: "models/:modelId/signatures/:signatureId/predictions/:predictionId",
+						element: <PredictionDetailPage />,
+					},
+					{
+						path: "models/:modelId/signatures/:signatureId/predictions/create",
+						element: (
+							<Suspense fallback={<EditorRouteFallback />}>
+								<CreatePredictionPage />
+							</Suspense>
+						),
+					},
+					{
+						path: "models/:modelId/signatures/:signatureId/predictions/create/:inputs",
+						element: (
+							<Suspense fallback={<EditorRouteFallback />}>
+								<CreatePredictionPage />
+							</Suspense>
+						),
+					},
+				],
 			},
 		],
 	},

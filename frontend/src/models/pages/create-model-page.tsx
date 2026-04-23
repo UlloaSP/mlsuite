@@ -21,7 +21,7 @@ import {
 	AppSurface,
 	AppTextField,
 } from "../../app/components";
-import { Unauthorized } from "../../app/pages/Unauthorized";
+import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { CreateModelHeader } from "../components/CreateModelHeader";
 import { UploadFile } from "../components/UploadFile";
@@ -81,7 +81,7 @@ export function CreateModelPage() {
 		}
 	}, [selectedDataframeFile]);
 
-	if (!user || error) return <Unauthorized />;
+	if (!user || error) return <NotFoundError />;
 
 	return (
 		<AppPage>

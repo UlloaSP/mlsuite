@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { AppPage, AppSurface } from "../../app/components";
-import { Unauthorized } from "../../app/pages/Unauthorized";
+import { NotFoundError } from "../../app/pages/error-page";
 import { applyPredictionInputsToSchema } from "../../app/utils/mlform/index";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
 import {
@@ -68,7 +68,7 @@ export function CreatePredictionPage() {
 		signature,
 	]);
 
-	if (!user || error) return <Unauthorized />;
+	if (!user || error) return <NotFoundError />;
 
 	return (
 		<AppPage className="relative">

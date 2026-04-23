@@ -22,7 +22,7 @@ class PredictionStatusTest {
         // Then
         assertEquals(3, statuses.length);
         assertArrayEquals(
-                new PredictionStatus[] { PredictionStatus.PENDING, PredictionStatus.COMPLETED,
+                new PredictionStatus[] { PredictionStatus.PENDING, PredictionStatus.SUCCESS,
                         PredictionStatus.FAILED },
                 statuses);
     }
@@ -31,7 +31,7 @@ class PredictionStatusTest {
     void valueOf_ValidName_ShouldReturnCorrectEnum() {
         // When & Then
         assertEquals(PredictionStatus.PENDING, PredictionStatus.valueOf("PENDING"));
-        assertEquals(PredictionStatus.COMPLETED, PredictionStatus.valueOf("COMPLETED"));
+        assertEquals(PredictionStatus.SUCCESS, PredictionStatus.valueOf("SUCCESS"));
         assertEquals(PredictionStatus.FAILED, PredictionStatus.valueOf("FAILED"));
     }
 
@@ -46,7 +46,7 @@ class PredictionStatusTest {
     void name_ShouldReturnCorrectName() {
         // When & Then
         assertEquals("PENDING", PredictionStatus.PENDING.name());
-        assertEquals("COMPLETED", PredictionStatus.COMPLETED.name());
+        assertEquals("SUCCESS", PredictionStatus.SUCCESS.name());
         assertEquals("FAILED", PredictionStatus.FAILED.name());
     }
 
@@ -54,7 +54,7 @@ class PredictionStatusTest {
     void toString_ShouldReturnName() {
         // When & Then
         assertEquals("PENDING", PredictionStatus.PENDING.toString());
-        assertEquals("COMPLETED", PredictionStatus.COMPLETED.toString());
+        assertEquals("SUCCESS", PredictionStatus.SUCCESS.toString());
         assertEquals("FAILED", PredictionStatus.FAILED.toString());
     }
 
@@ -62,15 +62,15 @@ class PredictionStatusTest {
     void ordinal_ShouldReturnCorrectOrder() {
         // When & Then
         assertEquals(0, PredictionStatus.PENDING.ordinal());
-        assertEquals(1, PredictionStatus.COMPLETED.ordinal());
+        assertEquals(1, PredictionStatus.SUCCESS.ordinal());
         assertEquals(2, PredictionStatus.FAILED.ordinal());
     }
 
     @Test
     void compareTo_ShouldFollowOrdinalOrder() {
         // When & Then
-        assertTrue(PredictionStatus.PENDING.compareTo(PredictionStatus.COMPLETED) < 0);
-        assertTrue(PredictionStatus.COMPLETED.compareTo(PredictionStatus.FAILED) < 0);
+        assertTrue(PredictionStatus.PENDING.compareTo(PredictionStatus.SUCCESS) < 0);
+        assertTrue(PredictionStatus.SUCCESS.compareTo(PredictionStatus.FAILED) < 0);
         assertTrue(PredictionStatus.FAILED.compareTo(PredictionStatus.PENDING) > 0);
         assertEquals(0, PredictionStatus.PENDING.compareTo(PredictionStatus.PENDING));
     }

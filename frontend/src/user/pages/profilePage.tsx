@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { motion } from "motion/react";
 import { AppPage, AppSurface } from "../../app/components";
-import { Unauthorized } from "../../app/pages/Unauthorized";
+import { NotFoundError } from "../../app/pages/error-page";
 import { ProfileBody } from "../components/ProfileBody";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { useUser } from "../hooks"; // Adjust the import path as necessary
@@ -13,7 +13,7 @@ import { useUser } from "../hooks"; // Adjust the import path as necessary
 export function ProfilePage() {
 	const { data: user, isError } = useUser();
 
-	if (!user || isError) return <Unauthorized />;
+	if (!user || isError) return <NotFoundError />;
 
 	return (
 		<AppPage>

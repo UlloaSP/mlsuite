@@ -77,14 +77,14 @@ class PredictionControllerTest {
     void updatePrediction_UsesInternalUserId() {
         UpdatePredictionParams params = new UpdatePredictionParams();
         params.setPredictionId(12L);
-        params.setStatus("COMPLETED");
-        when(predictionService.updatePrediction(3L, 12L, PredictionStatus.COMPLETED))
-                .thenReturn(prediction("pred", PredictionStatus.COMPLETED));
+        params.setStatus("SUCCESS");
+        when(predictionService.updatePrediction(3L, 12L, PredictionStatus.SUCCESS))
+                .thenReturn(prediction("pred", PredictionStatus.SUCCESS));
 
         ResponseEntity<?> response = controller.updatePrediction(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(predictionService).updatePrediction(3L, 12L, PredictionStatus.COMPLETED);
+        verify(predictionService).updatePrediction(3L, 12L, PredictionStatus.SUCCESS);
     }
 
     @Test

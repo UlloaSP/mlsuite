@@ -11,16 +11,18 @@ import { cx } from "../../app/components";
 import type { PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService"; // <-- use the fetcher directly
 import { GET_TARGETS_QUERY_KEY } from "../hooks";
+import { getSchemaAwareTargetValue, getTargetLabel } from "../utils";
 
 export type ExportButtonProps = {
 	predictions: PredictionDto[];
 	delimiter?: string;
+	signatureSchema?: unknown;
 };
 
-type NormalizedStatus = "pending" | "completed" | "failed";
+type NormalizedStatus = "pending" | "success" | "failed";
 const norm = (s: string | undefined | null): NormalizedStatus => {
 	const v = String(s ?? "").toLowerCase();
-	if (v === "completed") return "completed";
+	if (v === "completed" || v === "success") return "success";
 	if (v === "failed") return "failed";
 	return "pending";
 };
@@ -67,7 +69,7 @@ const csvEscape = (s: string, sep: string) => {
 	return v;
 };
 
-export function ExportButton({ predictions, delimiter = "," }: ExportButtonProps) {
+export function ExportButton({ predictions, delimiter = ",", signatureSchema }: ExportButtonProps) {
 	// -------- meta / file name
 	const meta = useMemo(() => {
 		const uuid =
@@ -128,11 +130,11 @@ export function ExportButton({ predictions, delimiter = "," }: ExportButtonProps
 		const sortedSample = [...(sampleTargets ?? [])].sort(
 			(a, b) => Number(a.order) - Number(b.order)
 		);
-		const targetHeaders = sortedSample.map((t) => `target_${t.order}`);
+		const targetHeaders = sortedSample.map((t) => getTargetLabel(signatureSchema, t.order));
 
 		const headers = [...inputKeys, ...targetHeaders];
 
-		// Rows: skip pending. completed => data_value; failed => real_value.
+		// Rows: skip pending. success => data_value; failed => real_value.
 		const rows: string[][] = [];
 		predictions.forEach((p, idx) => {
 			const status = norm((p as any).status);
@@ -147,7 +149,14 @@ export function ExportButton({ predictions, delimiter = "," }: ExportButtonProps
 
 			const sortedTargs = [...targs].sort((a, b) => Number(a.order) - Number(b.order));
 			const targetRow = sortedTargs.map((t) => {
-				if (status === "completed") return toCell((t as any).value);
+				if (status === "success") {
+					return toCell(getSchemaAwareTargetValue(
+						(t as any).value,
+						signatureSchema,
+						Number(t.order),
+						p.prediction,
+					));
+				}
 				if (status === "failed") return toCell((t as any).realValue);
 				return "";
 			});
@@ -156,7 +165,7 @@ export function ExportButton({ predictions, delimiter = "," }: ExportButtonProps
 		});
 
 		return { headers, rows };
-	}, [predictions, targetsQueries]);
+	}, [predictions, targetsQueries, signatureSchema]);
 
 	const hasData = rows.length > 0 && headers.length > 0;
 

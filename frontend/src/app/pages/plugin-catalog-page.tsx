@@ -13,7 +13,7 @@ import { AppButton, AppPage, AppPageHeader, AppPanel, AppSelect, AppSurface, App
 import { detectPluginType, invalidatePluginCatalog } from "../utils/mlform/plugin-catalog";
 import { bumpPluginCatalogVersionAtom } from "../utils/mlform/plugin-catalog-state";
 import { useUser } from "../../user/hooks";
-import { Unauthorized } from "./Unauthorized";
+import { NotFoundError } from "./error-page";
 import { PluginCatalogListItem } from "./PluginCatalogListItem";
 import { SORT_LABELS, TYPE_META, readFileText } from "./plugin-catalog-shared";
 import type { FilterMode, PluginPageItem, SortMode, TypeFilter } from "./plugin-catalog-shared";
@@ -74,7 +74,7 @@ export function PluginCatalogPage() {
 	}, []);
 
 	if (!user || error) {
-		return <Unauthorized />;
+		return <NotFoundError />;
 	}
 
 	const reloadCatalog = async () => {

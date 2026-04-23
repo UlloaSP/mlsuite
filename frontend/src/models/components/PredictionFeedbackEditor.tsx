@@ -7,7 +7,7 @@ import { CheckCircle, ChevronDown, ChevronUp, Edit3, Save, XCircle } from "lucid
 import { useState } from "react";
 import { AppButton, AppCopy, AppPanel, AppSectionTitle, AppTextField } from "../../app/components";
 import type { ExplanationFeedbackDto, TargetDto } from "../api/modelService";
-import type { PredictionStatus } from "../utils";
+import { getSchemaAwareTargetValue, getTargetLabel, type PredictionStatus } from "../utils";
 import { PredictionExplanationFeedbackFields } from "./PredictionExplanationFeedbackFields";
 
 type PredictionFeedbackEditorProps = {
@@ -25,6 +25,8 @@ type PredictionFeedbackEditorProps = {
 	onTargetValueChange: (id: string, value: string) => void;
 	onExplanationValueChange: (id: string, value: string) => void;
 	onSubmit: () => void;
+	signatureSchema?: unknown;
+	predictionValue?: unknown;
 };
 
 export function PredictionFeedbackEditor({
@@ -42,6 +44,8 @@ export function PredictionFeedbackEditor({
 	onTargetValueChange,
 	onExplanationValueChange,
 	onSubmit,
+	signatureSchema,
+	predictionValue,
 }: PredictionFeedbackEditorProps) {
 	const [correctValuesOpen, setCorrectValuesOpen] = useState(false);
 	const [correctedExplanationsOpen, setCorrectedExplanationsOpen] = useState(false);
@@ -67,8 +71,8 @@ export function PredictionFeedbackEditor({
 					<div className="flex gap-3">
 						<AppButton
 							type="button"
-							variant={feedbackState === "COMPLETED" ? "primary" : "secondary"}
-							onClick={() => onFeedbackStateChange("COMPLETED")}
+							variant={feedbackState === "SUCCESS" ? "primary" : "secondary"}
+							onClick={() => onFeedbackStateChange("SUCCESS")}
 							className="flex-1"
 						>
 							<CheckCircle size={16} />
@@ -98,7 +102,7 @@ export function PredictionFeedbackEditor({
 								{targets.map((target) => (
 									<div key={target.id} className="space-y-2">
 										<label className="text-sm font-medium text-[var(--text-primary)]">
-											Ground Truth target_{target.order}
+											Ground Truth {getTargetLabel(signatureSchema, target.order)}
 										</label>
 										<AppTextField
 											value={targetValues[target.id] ?? ""}
@@ -128,7 +132,7 @@ export function PredictionFeedbackEditor({
 			) : (
 				<div className="space-y-3 rounded-[20px] bg-[var(--surface-muted)] p-4">
 					<div className="flex items-center gap-2">
-						{status === "COMPLETED" ? (
+						{status === "SUCCESS" ? (
 							<CheckCircle size={16} className="text-[var(--success-text)]" />
 						) : (
 							<XCircle size={16} className="text-[var(--danger-text)]" />
@@ -151,9 +155,16 @@ export function PredictionFeedbackEditor({
 									<div className="space-y-2">
 										{targets.map((target) => (
 											<div key={target.id} className="flex items-center justify-between text-sm">
-												<span className="text-[var(--text-secondary)]">target_{target.order}</span>
+												<span className="text-[var(--text-secondary)]">
+													{getTargetLabel(signatureSchema, target.order)}
+												</span>
 												<span className="font-mono text-[var(--success-text)]">
-													{String(target.realValue ?? "")}
+													{String(getSchemaAwareTargetValue(
+														target.realValue,
+														signatureSchema,
+														target.order,
+														predictionValue,
+													) ?? "")}
 												</span>
 											</div>
 										))}

@@ -11,7 +11,7 @@ import { extractPredictionExplanationEntries } from "./explanation-feedback-util
 
 type JsonRecord = Record<string, unknown>;
 
-export type PredictionStatus = "PENDING" | "COMPLETED" | "FAILED";
+export type PredictionStatus = "PENDING" | "SUCCESS" | "FAILED";
 
 export type SignatureSummaryStats = {
 	fieldCount: number;
@@ -84,7 +84,11 @@ export const getModelDerivedMetric = (signatures: SignatureDto[]): string =>
 
 export const getPredictionStatus = (status: unknown): PredictionStatus => {
 	const normalized = String(status ?? "PENDING").toUpperCase();
-	if (normalized === "COMPLETED" || normalized === "FAILED") {
+	if (normalized === "SUCCESS") {
+		return "SUCCESS";
+	}
+
+	if (normalized === "FAILED") {
 		return normalized;
 	}
 
@@ -93,7 +97,7 @@ export const getPredictionStatus = (status: unknown): PredictionStatus => {
 
 export const getPredictionStatusTone = (status: unknown): "success" | "warning" | "danger" => {
 	switch (getPredictionStatus(status)) {
-		case "COMPLETED":
+		case "SUCCESS":
 			return "success";
 		case "FAILED":
 			return "danger";
@@ -104,8 +108,7 @@ export const getPredictionStatusTone = (status: unknown): "success" | "warning" 
 };
 
 export const getPredictionStatusLabel = (status: unknown): string => {
-	const normalized = getPredictionStatus(status);
-	return normalized === "COMPLETED" ? "SUCCESS" : normalized;
+	return getPredictionStatus(status);
 };
 
 export const getPredictionShortId = (id: unknown): string => {
@@ -245,3 +248,67 @@ export const getPredictionDetailTitle = (prediction: PredictionDto): string =>
 export const getPredictionTimestamp = (
 	prediction: Pick<PredictionDto, "createdAt" | "updatedAt">,
 ): string => prediction.updatedAt ?? prediction.createdAt;
+
+export const getTargetDisplayValue = (value: unknown): unknown => {
+	if (isRecord(value) && "value" in value) {
+		return value.value;
+	}
+
+	return value;
+};
+
+export const getTargetProbability = (value: unknown): number | null => {
+	if (!isRecord(value)) {
+		return null;
+	}
+
+	const probability = value.probability;
+	return typeof probability === "number" ? probability : null;
+};
+
+export const formatProbability = (probability: number): string =>
+	`${(probability * 100).toFixed(2)}%`;
+
+export const getTargetLabel = (signatureSchema: unknown, order: number): string => {
+	const reports = isRecord(signatureSchema) && Array.isArray(signatureSchema.reports)
+		? signatureSchema.reports.filter(isRecord)
+		: [];
+	const report = reports[order];
+	return typeof report?.label === "string" && report.label.trim()
+		? report.label
+		: `Target ${order + 1}`;
+};
+
+export const getTargetClassLabel = (
+	signatureSchema: unknown,
+	order: number,
+	classIndex: number,
+): string | null => {
+	const reports = isRecord(signatureSchema) && Array.isArray(signatureSchema.reports)
+		? signatureSchema.reports.filter(isRecord)
+		: [];
+	const labels = reports[order]?.labels;
+	const label = Array.isArray(labels) ? labels[classIndex] : undefined;
+	return typeof label === "string" ? label : null;
+};
+
+export const getSchemaAwareTargetValue = (
+	value: unknown,
+	signatureSchema: unknown,
+	order: number,
+	predictionValue?: unknown,
+): unknown => {
+	if (isRecord(value) && typeof value.classIndex === "number") {
+		return getTargetClassLabel(signatureSchema, order, value.classIndex)
+			?? getTargetDisplayValue(value);
+	}
+	const displayValue = getTargetDisplayValue(value);
+	const outputs = getPredictionOutputs(predictionValue);
+	const output = outputs.find((item) => item.type === "classifier") ?? outputs[0];
+	const mapping = Array.isArray(output?.mapping) ? output.mapping : [];
+	const mappedIndex = mapping.findIndex((item) => String(item) === String(displayValue));
+	if (mappedIndex >= 0) {
+		return getTargetClassLabel(signatureSchema, order, mappedIndex) ?? displayValue;
+	}
+	return getTargetDisplayValue(value);
+};

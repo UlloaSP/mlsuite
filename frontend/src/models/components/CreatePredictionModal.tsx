@@ -19,12 +19,14 @@ import {
 import { showModalAtom } from "../atoms";
 import { useCreateExplanationFeedbackMutation, useCreatePredictionMutation, useCreateTargetMutation, useGetPredictions } from "../hooks";
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import { formatProbability, getSchemaAwareTargetValue, getTargetClassLabel, getTargetLabel, getTargetProbability } from "../utils";
 import { PredictionExplanationReport } from "./PredictionExplanationReport";
 import { PredictionOverwriteDialog } from "./PredictionOverwriteDialog";
 
 export type CreatePredictionModalProps = {
 	prediction: Record<string, unknown>;
 	inputs: Record<string, unknown>;
+	signatureSchema: unknown;
 	explanationsPending: boolean;
 };
 
@@ -49,6 +51,7 @@ const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
 export function CreatePredictionModal({
 	prediction,
 	inputs,
+	signatureSchema,
 	explanationsPending,
 }: CreatePredictionModalProps) {
 	const { signatureId, modelId } = useParams<{ signatureId: string; modelId: string }>();
@@ -62,7 +65,7 @@ export function CreatePredictionModal({
 	const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
 
 	const [predictionName, setPredictionName] = useState<string>("");
-	const [targets, setTargets] = useState<Record<number, object>>({});
+	const [targets, setTargets] = useState<Record<number, unknown>>({});
 	const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
 	const explanationEntries = extractPredictionExplanationEntries(prediction);
 
@@ -79,12 +82,18 @@ export function CreatePredictionModal({
 			return;
 		}
 
-		const nextTargets: Record<number, number | string> = {};
+		const nextTargets: Record<number, unknown> = {};
 
 		if (output.type === "classifier" && Array.isArray(output.probabilities)) {
 			output.probabilities.forEach((target, index) => {
 				const maxIndex = target.indexOf(Math.max(...target));
-				nextTargets[index] = output.mapping?.[maxIndex] ?? maxIndex;
+				nextTargets[index] = {
+					value: getTargetClassLabel(signatureSchema, index, maxIndex)
+						?? output.mapping?.[maxIndex]
+						?? maxIndex,
+					classIndex: maxIndex,
+					probability: target[maxIndex],
+				};
 			});
 		}
 
@@ -93,8 +102,8 @@ export function CreatePredictionModal({
 				nextTargets[index] = target;
 			});
 		}
-		setTargets(nextTargets as unknown as Record<number, object>);
-	}, [prediction]);
+		setTargets(nextTargets);
+	}, [prediction, signatureSchema]);
 
 	const savePrediction = async (overwrite: boolean) => {
 		const normalizedName = predictionName.trim();
@@ -111,7 +120,7 @@ export function CreatePredictionModal({
 				mutationTarget.mutateAsync({
 					predictionId: created.id,
 					order: Number(key),
-					value: String(value),
+					value,
 				}),
 			),
 		);
@@ -239,11 +248,16 @@ export function CreatePredictionModal({
 											className="flex items-center justify-between rounded-[20px] bg-[var(--surface-muted)] p-3"
 										>
 											<span className="text-sm font-medium text-[var(--text-secondary)]">
-												target_{key}:
+												{getTargetLabel(signatureSchema, Number(key))}:
 											</span>
 											<span className="font-mono text-sm text-[var(--text-primary)]">
-												{value.toString()}
+												{String(getSchemaAwareTargetValue(value, signatureSchema, Number(key)))}
 											</span>
+											{getTargetProbability(value) !== null ? (
+												<span className="font-mono text-xs text-[var(--text-muted)]">
+													{formatProbability(getTargetProbability(value)!)}
+												</span>
+											) : null}
 										</div>
 									))}
 								</div>

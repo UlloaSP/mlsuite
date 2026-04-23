@@ -3,33 +3,48 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowUpDown, Search } from "lucide-react";
+import { CalendarDays, Search, SlidersHorizontal } from "lucide-react";
 import { AppTextField, AppToolbar } from "../../app/components";
 import type { PredictionDto } from "../api/modelService";
 import { ExportButton } from "./ExportButton";
 
-export type PredictionHistorySort = "updated" | "status" | "latency";
+export type PredictionFeedbackStatusFilter = "all" | "SUCCESS" | "PENDING" | "FAILED";
+export type PredictionDateRangeFilter = "all" | "today" | "last7" | "last30";
 
-const SORT_LABELS: Record<PredictionHistorySort, string> = {
-	updated: "Latest updated",
-	status: "Status",
-	latency: "Latency",
+const STATUS_LABELS: Record<PredictionFeedbackStatusFilter, string> = {
+	all: "All feedback",
+	SUCCESS: "SUCCESS",
+	PENDING: "PENDING",
+	FAILED: "FAILED",
+};
+
+const DATE_RANGE_LABELS: Record<PredictionDateRangeFilter, string> = {
+	all: "All dates",
+	today: "Today",
+	last7: "Last 7 days",
+	last30: "Last 30 days",
 };
 
 type PredictionHistoryToolbarProps = {
 	query: string;
-	sort: PredictionHistorySort;
+	status: PredictionFeedbackStatusFilter;
+	dateRange: PredictionDateRangeFilter;
 	onQueryChange: (value: string) => void;
-	onSortChange: (value: PredictionHistorySort) => void;
+	onStatusChange: (value: PredictionFeedbackStatusFilter) => void;
+	onDateRangeChange: (value: PredictionDateRangeFilter) => void;
 	predictions: PredictionDto[];
+	signatureSchema?: unknown;
 };
 
 export function PredictionHistoryToolbar({
 	query,
-	sort,
+	status,
+	dateRange,
 	onQueryChange,
-	onSortChange,
+	onStatusChange,
+	onDateRangeChange,
 	predictions,
+	signatureSchema,
 }: PredictionHistoryToolbarProps) {
 	return (
 		<AppToolbar>
@@ -37,19 +52,36 @@ export function PredictionHistoryToolbar({
 				<AppTextField
 					value={query}
 					onChange={(event) => onQueryChange(event.target.value)}
-					placeholder="Search prediction history..."
+					placeholder="Search by prediction name..."
 					prefix={<Search size={16} className="text-[var(--text-muted)]" />}
 					className="min-w-[280px] flex-1"
 				/>
 
 				<label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]">
-					<ArrowUpDown size={15} className="text-[var(--text-muted)]" />
+					<SlidersHorizontal size={15} className="text-[var(--text-muted)]" />
 					<select
-						value={sort}
-						onChange={(event) => onSortChange(event.target.value as PredictionHistorySort)}
+						aria-label="Feedback status"
+						value={status}
+						onChange={(event) => onStatusChange(event.target.value as PredictionFeedbackStatusFilter)}
 						className="bg-transparent text-[var(--text-primary)] outline-none"
 					>
-						{(Object.entries(SORT_LABELS) as Array<[PredictionHistorySort, string]>).map(([value, label]) => (
+						{(Object.entries(STATUS_LABELS) as Array<[PredictionFeedbackStatusFilter, string]>).map(([value, label]) => (
+							<option key={value} value={value}>
+								{label}
+							</option>
+						))}
+					</select>
+				</label>
+
+				<label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]">
+					<CalendarDays size={15} className="text-[var(--text-muted)]" />
+					<select
+						aria-label="Date range"
+						value={dateRange}
+						onChange={(event) => onDateRangeChange(event.target.value as PredictionDateRangeFilter)}
+						className="bg-transparent text-[var(--text-primary)] outline-none"
+					>
+						{(Object.entries(DATE_RANGE_LABELS) as Array<[PredictionDateRangeFilter, string]>).map(([value, label]) => (
 							<option key={value} value={value}>
 								{label}
 							</option>
@@ -58,7 +90,7 @@ export function PredictionHistoryToolbar({
 				</label>
 			</div>
 
-			<ExportButton predictions={predictions} />
+			<ExportButton predictions={predictions} signatureSchema={signatureSchema} />
 		</AppToolbar>
 	);
 }

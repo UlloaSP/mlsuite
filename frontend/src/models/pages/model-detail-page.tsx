@@ -16,7 +16,7 @@ import {
 	AppSurface,
 	AppTabs,
 } from "../../app/components";
-import { Unauthorized } from "../../app/pages/Unauthorized";
+import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { ModelSettingsTab } from "../components/ModelSettingsTab";
 import { ModelSignaturesTab } from "../components/ModelSignaturesTab";
@@ -49,7 +49,7 @@ export function ModelDetailPage() {
 	};
 
 	if (!user || error) {
-		return <Unauthorized />;
+		return <NotFoundError />;
 	}
 
 	return (

@@ -15,18 +15,20 @@ import {
 	AppSurface,
 	AppTabs,
 } from "../../app/components";
-import { Unauthorized } from "../../app/pages/Unauthorized";
+import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { PredictionHistoryTable } from "../components/PredictionHistoryTable";
 import {
 	PredictionHistoryToolbar,
 } from "../components/PredictionHistoryToolbar";
-import type { PredictionHistorySort } from "../components/PredictionHistoryToolbar";
+import type {
+	PredictionDateRangeFilter,
+	PredictionFeedbackStatusFilter,
+} from "../components/PredictionHistoryToolbar";
 import { SignatureTechnicalTab } from "../components/SignatureTechnicalTab";
 import { useGetModels, useGetPredictions, useGetSignature } from "../hooks";
 import {
 	findModelById,
-	getPredictionExecutionTime,
 	getPredictionStatus,
 	getPredictionTimestamp,
 	getSignatureVersionLabel,
@@ -35,6 +37,31 @@ import {
 type SignatureDetailTab = "technical" | "history";
 
 const SIGNATURE_DETAIL_TABS: SignatureDetailTab[] = ["technical", "history"];
+
+const isWithinDateRange = (timestamp: string, range: PredictionDateRangeFilter): boolean => {
+	if (range === "all") {
+		return true;
+	}
+
+	const time = new Date(timestamp).getTime();
+	if (Number.isNaN(time)) {
+		return false;
+	}
+
+	const now = new Date();
+	const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+	switch (range) {
+		case "today":
+			return time >= startOfToday;
+		case "last7":
+			return time >= now.getTime() - 7 * 24 * 60 * 60 * 1000;
+		case "last30":
+			return time >= now.getTime() - 30 * 24 * 60 * 60 * 1000;
+		default:
+			return true;
+	}
+};
 
 export function SignatureDetailPage() {
 	const navigate = useNavigate();
@@ -51,7 +78,8 @@ export function SignatureDetailPage() {
 	});
 
 	const [query, setQuery] = useState("");
-	const [sort, setSort] = useState<PredictionHistorySort>("updated");
+	const [feedbackStatus, setFeedbackStatus] = useState<PredictionFeedbackStatusFilter>("all");
+	const [dateRange, setDateRange] = useState<PredictionDateRangeFilter>("all");
 
 	const tabParam = searchParams.get("tab");
 	const activeTab: SignatureDetailTab = SIGNATURE_DETAIL_TABS.includes(tabParam as SignatureDetailTab)
@@ -67,28 +95,19 @@ export function SignatureDetailPage() {
 	const normalizedQuery = query.trim().toLowerCase();
 	const visiblePredictions = [...predictions]
 		.filter((prediction) => {
-			if (!normalizedQuery) {
-				return true;
-			}
-
-			return [prediction.id, prediction.name, String(prediction.status ?? "")]
-				.some((value) => value.toLowerCase().includes(normalizedQuery));
+			const matchesName = !normalizedQuery
+				|| prediction.name.toLowerCase().includes(normalizedQuery);
+			const matchesStatus = feedbackStatus === "all"
+				|| getPredictionStatus(prediction.status) === feedbackStatus;
+			const matchesDate = isWithinDateRange(getPredictionTimestamp(prediction), dateRange);
+			return matchesName && matchesStatus && matchesDate;
 		})
-		.sort((left, right) => {
-			switch (sort) {
-				case "status":
-					return getPredictionStatus(left.status).localeCompare(getPredictionStatus(right.status));
-				case "latency":
-					return (getPredictionExecutionTime(right.prediction) ?? -1) - (getPredictionExecutionTime(left.prediction) ?? -1);
-				case "updated":
-				default:
-					return new Date(getPredictionTimestamp(right)).getTime()
-						- new Date(getPredictionTimestamp(left)).getTime();
-			}
-		});
+		.sort((left, right) =>
+			new Date(getPredictionTimestamp(right)).getTime()
+			- new Date(getPredictionTimestamp(left)).getTime());
 
 	if (!user || error) {
-		return <Unauthorized />;
+		return <NotFoundError />;
 	}
 
 	return (
@@ -157,17 +176,20 @@ export function SignatureDetailPage() {
 								<div className="space-y-4">
 									<PredictionHistoryToolbar
 										query={query}
-										sort={sort}
+										status={feedbackStatus}
+										dateRange={dateRange}
 										onQueryChange={setQuery}
-										onSortChange={setSort}
+										onStatusChange={setFeedbackStatus}
+										onDateRangeChange={setDateRange}
 										predictions={visiblePredictions}
+										signatureSchema={signature.inputSignature}
 									/>
 
 									{visiblePredictions.length === 0 ? (
 										<AppEmptyState
 											title="No predictions found"
 											description={
-												query
+												query || feedbackStatus !== "all" || dateRange !== "all"
 													? "No prediction matches the current search terms."
 													: "Create the first prediction for this signature to populate history."
 											}

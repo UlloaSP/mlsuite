@@ -19,7 +19,7 @@ import {
 	AppTextField,
 	AppToolbar,
 } from "../../app/components";
-import { Unauthorized } from "../../app/pages/Unauthorized";
+import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import * as modelApi from "../api/modelService";
 import { ModelListItem } from "../components/ModelListItem";
@@ -85,7 +85,7 @@ export function ModelsPage() {
 		});
 
 	if (!user || error) {
-		return <Unauthorized />;
+		return <NotFoundError />;
 	}
 
 	const handleMockAction = (action: ModelAction, model: modelApi.ModelDto) => {

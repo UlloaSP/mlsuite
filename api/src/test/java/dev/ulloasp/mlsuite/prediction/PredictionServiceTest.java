@@ -132,9 +132,9 @@ class PredictionServiceTest {
         when(predictionRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.of(prediction(signature(user(3L)))));
         when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Prediction result = service.updatePrediction(3L, 12L, PredictionStatus.COMPLETED);
+        Prediction result = service.updatePrediction(3L, 12L, PredictionStatus.SUCCESS);
 
-        assertEquals(PredictionStatus.COMPLETED, result.getStatus());
+        assertEquals(PredictionStatus.SUCCESS, result.getStatus());
     }
 
     @Test

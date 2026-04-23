@@ -274,6 +274,7 @@ export function CreatePredictionBodyForm() {
 				<CreatePredictionModal
 					prediction={response}
 					inputs={inputs}
+					signatureSchema={schema}
 					explanationsPending={explanationsPending}
 				/>
 			) : null}
