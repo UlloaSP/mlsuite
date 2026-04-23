@@ -11,17 +11,22 @@ import type { PredictionDto, SignatureDto } from "../api/modelService";
 import { useGetExplanationFeedback, useGetTargets, useUpdateExplanationFeedbackMutation, useUpdatePredictionMutation, useUpdateTargetMutation } from "../hooks";
 import {
 	formatExecutionTime,
-	formatProbability,
 	getExplanationSnapshot,
 	getPredictionExecutionTime,
 	getPredictionStatus,
 	getPredictionStatusLabel,
 	getPredictionStatusTone,
 	getPredictionTimestamp,
+} from "../utils";
+import {
+	buildTargetFeedbackValue,
+	formatProbability,
 	getSchemaAwareTargetValue,
+	getTargetClassIndex,
+	getTargetKind,
 	getTargetLabel,
 	getTargetProbability,
-} from "../utils";
+} from "../target-utils";
 import { PredictionExplanationReport } from "./PredictionExplanationReport";
 import { PredictionFeedbackEditor } from "./PredictionFeedbackEditor";
 import { PredictionMetricCell } from "./PredictionMetricCell";
@@ -76,12 +81,14 @@ export function PredictionDetailPageContent({
 			for (const target of targets) {
 				const key = String(target.id);
 				if (next[key] === undefined) {
-					next[key] = target.realValue ? String(target.realValue) : "";
+					next[key] = getTargetKind(signature?.inputSignature, target.order) === "classifier"
+						? getTargetClassIndex(target.realValue, prediction.prediction)
+						: target.realValue ? String(target.realValue) : "";
 				}
 			}
 			return next;
 		});
-	}, [targets]);
+	}, [prediction.prediction, signature?.inputSignature, targets]);
 
 	useEffect(() => {
 		if (!explanationFeedback.length) {
@@ -110,7 +117,11 @@ export function PredictionDetailPageContent({
 				...targets.map((target) =>
 					targetMutation.mutateAsync({
 						targetId: target.id,
-						realValue: targetValues[target.id].toString(),
+						realValue: buildTargetFeedbackValue(
+							targetValues[target.id],
+							signature?.inputSignature,
+							target.order,
+						),
 					}),
 				),
 				...explanationFeedback.map((item) =>

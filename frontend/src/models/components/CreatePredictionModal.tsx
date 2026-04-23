@@ -19,7 +19,7 @@ import {
 import { showModalAtom } from "../atoms";
 import { useCreateExplanationFeedbackMutation, useCreatePredictionMutation, useCreateTargetMutation, useGetPredictions } from "../hooks";
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
-import { formatProbability, getSchemaAwareTargetValue, getTargetClassLabel, getTargetLabel, getTargetProbability } from "../utils";
+import { formatProbability, getSchemaAwareTargetValue, getTargetClassLabel, getTargetLabel, getTargetProbability } from "../target-utils";
 import { PredictionExplanationReport } from "./PredictionExplanationReport";
 import { PredictionOverwriteDialog } from "./PredictionOverwriteDialog";
 

@@ -7,7 +7,13 @@ import { CheckCircle, ChevronDown, ChevronUp, Edit3, Save, XCircle } from "lucid
 import { useState } from "react";
 import { AppButton, AppCopy, AppPanel, AppSectionTitle, AppTextField } from "../../app/components";
 import type { ExplanationFeedbackDto, TargetDto } from "../api/modelService";
-import { getSchemaAwareTargetValue, getTargetLabel, type PredictionStatus } from "../utils";
+import {
+	getSchemaAwareTargetValue,
+	getTargetClassOptions,
+	getTargetKind,
+	getTargetLabel,
+} from "../target-utils";
+import type { PredictionStatus } from "../utils";
 import { PredictionExplanationFeedbackFields } from "./PredictionExplanationFeedbackFields";
 
 type PredictionFeedbackEditorProps = {
@@ -50,6 +56,14 @@ export function PredictionFeedbackEditor({
 	const [correctValuesOpen, setCorrectValuesOpen] = useState(false);
 	const [correctedExplanationsOpen, setCorrectedExplanationsOpen] = useState(false);
 	const isEditable = status === "PENDING" || isEditing;
+	const isFeedbackValid = feedbackState !== "FAILED" || targets.every((target) => {
+		const value = targetValues[target.id] ?? "";
+		if (getTargetKind(signatureSchema, target.order) === "classifier") {
+			return getTargetClassOptions(signatureSchema, target.order, predictionValue)
+				.some((option) => option.value === value);
+		}
+		return value.trim().length > 0 && Number.isFinite(Number(value));
+	});
 
 	return (
 		<AppPanel className="space-y-4">
@@ -104,12 +118,31 @@ export function PredictionFeedbackEditor({
 										<label className="text-sm font-medium text-[var(--text-primary)]">
 											Ground Truth {getTargetLabel(signatureSchema, target.order)}
 										</label>
-										<AppTextField
-											value={targetValues[target.id] ?? ""}
-											onChange={(event) => onTargetValueChange(target.id, event.target.value)}
-											placeholder="Enter corrected value..."
-											className="w-full rounded-[18px]"
-										/>
+										{getTargetKind(signatureSchema, target.order) === "classifier" ? (
+											<label className="inline-flex w-full rounded-[18px] border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]">
+												<select
+													value={targetValues[target.id] ?? ""}
+													onChange={(event) => onTargetValueChange(target.id, event.target.value)}
+													className="w-full bg-transparent text-[var(--text-primary)] outline-none"
+												>
+													<option value="" disabled>Select class...</option>
+													{getTargetClassOptions(signatureSchema, target.order, predictionValue).map((option) => (
+														<option key={option.value} value={option.value}>
+															{option.label}
+														</option>
+													))}
+												</select>
+											</label>
+										) : (
+											<AppTextField
+												type="number"
+												step="any"
+												value={targetValues[target.id] ?? ""}
+												onChange={(event) => onTargetValueChange(target.id, event.target.value)}
+												placeholder="Enter numeric value..."
+												className="w-full rounded-[18px]"
+											/>
+										)}
 									</div>
 								))}
 							</div>
@@ -123,7 +156,7 @@ export function PredictionFeedbackEditor({
 					) : null}
 
 					{feedbackState !== null ? (
-						<AppButton type="button" onClick={onSubmit} disabled={isSaving}>
+						<AppButton type="button" onClick={onSubmit} disabled={isSaving || !isFeedbackValid}>
 							<Save size={16} />
 							Save Feedback
 						</AppButton>

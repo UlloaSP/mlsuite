@@ -53,7 +53,7 @@ export function ModelSummaryTab({
 				<AppSectionTitle>Operational Status</AppSectionTitle>
 				<AppBadge tone="success">active</AppBadge>
 				<AppCopy>
-					Deployment and runtime controls are scaffolded in the UI, but backend support is not implemented yet.
+					Model is available for signature creation and prediction workflows.
 				</AppCopy>
 			</AppPanel>
 

@@ -11,7 +11,7 @@ import { cx } from "../../app/components";
 import type { PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService"; // <-- use the fetcher directly
 import { GET_TARGETS_QUERY_KEY } from "../hooks";
-import { getSchemaAwareTargetValue, getTargetLabel } from "../utils";
+import { getSchemaAwareTargetValue, getTargetLabel } from "../target-utils";
 
 export type ExportButtonProps = {
 	predictions: PredictionDto[];

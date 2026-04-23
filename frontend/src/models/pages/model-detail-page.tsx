@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { motion } from "motion/react";
 import { useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { toast } from "sonner";
 import {
 	AppBreadcrumbs,
 	AppButton,
@@ -18,15 +17,14 @@ import {
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
-import { ModelSettingsTab } from "../components/ModelSettingsTab";
 import { ModelSignaturesTab } from "../components/ModelSignaturesTab";
 import { ModelSummaryTab } from "../components/ModelSummaryTab";
 import { useGetModels, useGetSignatures } from "../hooks";
 import { findModelById, getModelAlgorithmLabel } from "../utils";
 
-type ModelDetailTab = "summary" | "signatures" | "settings";
+type ModelDetailTab = "summary" | "signatures";
 
-const MODEL_DETAIL_TABS: ModelDetailTab[] = ["summary", "signatures", "settings"];
+const MODEL_DETAIL_TABS: ModelDetailTab[] = ["summary", "signatures"];
 
 export function ModelDetailPage() {
 	const navigate = useNavigate();
@@ -85,25 +83,12 @@ export function ModelDetailPage() {
 								title={model.name}
 								description={`${getModelAlgorithmLabel(model)} · Created ${new Date(model.createdAt).toLocaleString()}`}
 								aside={
-									<>
-										<AppButton
-											type="button"
-											variant="secondary"
-											onClick={() => toast(`Deploy is not available yet for ${model.name}.`)}
-										>
-											Deploy
-										</AppButton>
-										<AppButton
-											type="button"
-											variant="secondary"
-											onClick={() => {
-												setTab("settings");
-												toast(`Settings backend controls are not available yet for ${model.name}.`);
-											}}
-										>
-											Settings
-										</AppButton>
-									</>
+									<AppButton
+										type="button"
+										onClick={() => navigate(`/models/${model.id}/signatures/create`)}
+									>
+										+ New Signature
+									</AppButton>
 								}
 							/>
 
@@ -111,7 +96,6 @@ export function ModelDetailPage() {
 								items={[
 									{ value: "summary", label: "Resumen" },
 									{ value: "signatures", label: "Signatures" },
-									{ value: "settings", label: "Configuración" },
 								]}
 								value={activeTab}
 								onChange={setTab}
@@ -130,14 +114,11 @@ export function ModelDetailPage() {
 							{activeTab === "signatures" ? (
 								<ModelSignaturesTab
 									signatures={signatures}
-									onCreate={() => navigate(`/models/${model.id}/signatures/create`)}
 									onOpenSignature={(signatureId) =>
 										navigate(`/models/${model.id}/signatures/${signatureId}?tab=history`)
 									}
 								/>
 							) : null}
-
-							{activeTab === "settings" ? <ModelSettingsTab model={model} /> : null}
 						</>
 					) : null}
 				</AppSurface>
