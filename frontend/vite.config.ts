@@ -7,20 +7,10 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite-plus";
 
-export default defineConfig(({ command }) => {
-  const isServe = command === "serve";
-
+export default defineConfig(() => {
   return {
     fmt: {},
     lint: { "options": { "typeAware": true, "typeCheck": true } },
-    server: isServe
-      ? {
-        https: {
-          key: ".cert/localhost-key.pem",
-          cert: ".cert/localhost.pem",
-        },
-      }
-      : undefined,
     plugins: [
       react({
         plugins: [],
