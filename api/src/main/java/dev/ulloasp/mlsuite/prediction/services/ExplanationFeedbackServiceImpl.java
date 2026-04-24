@@ -20,19 +20,25 @@ import dev.ulloasp.mlsuite.prediction.repositories.ExplanationFeedbackRepository
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
 import dev.ulloasp.mlsuite.user.entity.User;
 import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class ExplanationFeedbackServiceImpl implements ExplanationFeedbackService {
 
     private final UserLookupService userLookupService;
     private final ExplanationFeedbackRepository explanationFeedbackRepository;
     private final PredictionRepository predictionRepository;
+    private final PredictionFeedbackStatusResolver predictionFeedbackStatusResolver;
 
     public ExplanationFeedbackServiceImpl(UserLookupService userLookupService,
-            ExplanationFeedbackRepository explanationFeedbackRepository, PredictionRepository predictionRepository) {
+            ExplanationFeedbackRepository explanationFeedbackRepository,
+            PredictionRepository predictionRepository,
+            PredictionFeedbackStatusResolver predictionFeedbackStatusResolver) {
         this.userLookupService = userLookupService;
         this.explanationFeedbackRepository = explanationFeedbackRepository;
         this.predictionRepository = predictionRepository;
+        this.predictionFeedbackStatusResolver = predictionFeedbackStatusResolver;
     }
 
     @Override
@@ -45,7 +51,11 @@ public class ExplanationFeedbackServiceImpl implements ExplanationFeedbackServic
         }
 
         ExplanationFeedback explanationFeedback = new ExplanationFeedback(optionalPrediction.get(), order, value);
-        return explanationFeedbackRepository.save(explanationFeedback);
+        ExplanationFeedback saved = explanationFeedbackRepository.save(explanationFeedback);
+        Prediction prediction = saved.getPrediction();
+        prediction.setStatus(predictionFeedbackStatusResolver.resolve(userId, prediction));
+        predictionRepository.save(prediction);
+        return saved;
     }
 
     @Override
@@ -60,7 +70,11 @@ public class ExplanationFeedbackServiceImpl implements ExplanationFeedbackServic
 
         ExplanationFeedback explanationFeedback = optionalExplanationFeedback.get();
         explanationFeedback.setRealValue(realValue);
-        return explanationFeedbackRepository.save(explanationFeedback);
+        ExplanationFeedback saved = explanationFeedbackRepository.save(explanationFeedback);
+        Prediction prediction = saved.getPrediction();
+        prediction.setStatus(predictionFeedbackStatusResolver.resolve(userId, prediction));
+        predictionRepository.save(prediction);
+        return saved;
     }
 
     @Override

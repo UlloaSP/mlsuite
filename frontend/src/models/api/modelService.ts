@@ -38,12 +38,23 @@ export interface CreateTargetRequest {
 
 export interface UpdatePredictionRequest {
 	predictionId: string;
-	status: string;
+	status: "PENDING" | "COMPLETED";
 }
 
 export interface UpdateTargetRequest {
 	targetId: string;
-	realValue: unknown;
+	realValue?: unknown | null;
+}
+
+export interface CreateOutputFeedbackRequest {
+	predictionId: string;
+	order: number;
+	value: unknown;
+}
+
+export interface UpdateOutputFeedbackRequest {
+	outputFeedbackId: string;
+	value: unknown;
 }
 
 export interface CreateExplanationFeedbackRequest {
@@ -60,6 +71,7 @@ export interface UpdateExplanationFeedbackRequest {
 export interface GetAllSignaturesRequest { modelId: string; }
 export interface GetPredictionsRequest { signatureId: string; }
 export interface GetTargetsRequest { predictionId: string; }
+export interface GetOutputFeedbackRequest { predictionId: string; }
 export interface GetExplanationFeedbackRequest { predictionId: string; }
 export interface GetSignatureRequest { signatureId: string; }
 
@@ -91,7 +103,7 @@ export interface PredictionDto {
 	name: string;
 	inputs: Record<string, unknown>;
 	prediction: Record<string, unknown>;
-	status: unknown;
+	status: "PENDING" | "COMPLETED" | "SUCCESS" | "FAILED" | unknown;
 	createdAt: string;
 	updatedAt?: string;
 }
@@ -102,6 +114,15 @@ export interface TargetDto {
 	order: number;
 	value: unknown;
 	realValue?: unknown;
+	createdAt: string;
+	updatedAt?: string;
+}
+
+export interface OutputFeedbackDto {
+	id: string;
+	predictionId: string;
+	order: number;
+	value: unknown;
 	createdAt: string;
 	updatedAt?: string;
 }
@@ -173,6 +194,16 @@ export const updateTarget = async (req: UpdateTargetRequest): Promise<TargetDto>
 	return appFetch<TargetDto>("/api/target/update", json("POST", req as Record<string, any>));
 };
 
+export const createOutputFeedback = async (
+	req: CreateOutputFeedbackRequest,
+): Promise<OutputFeedbackDto> =>
+	appFetch<OutputFeedbackDto>("/api/output-feedback/create", json("POST", req as Record<string, any>));
+
+export const updateOutputFeedback = async (
+	req: UpdateOutputFeedbackRequest,
+): Promise<OutputFeedbackDto> =>
+	appFetch<OutputFeedbackDto>("/api/output-feedback/update", json("POST", req as Record<string, any>));
+
 export const createExplanationFeedback = async (
 	req: CreateExplanationFeedbackRequest,
 ): Promise<ExplanationFeedbackDto> =>
@@ -206,6 +237,13 @@ export const getPredictions = async ({ signatureId }: GetPredictionsRequest): Pr
 export const getTargets = async ({ predictionId }: GetTargetsRequest): Promise<TargetDto[]> => {
 	const url = `/api/target/all?predictionId=${encodeURIComponent(predictionId)}`;
 	return appFetch<TargetDto[]>(url);
+};
+
+export const getOutputFeedback = async ({
+	predictionId,
+}: GetOutputFeedbackRequest): Promise<OutputFeedbackDto[]> => {
+	const url = `/api/output-feedback/all?predictionId=${encodeURIComponent(predictionId)}`;
+	return appFetch<OutputFeedbackDto[]>(url);
 };
 
 export const getExplanationFeedback = async ({

@@ -1,8 +1,3 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 package dev.ulloasp.mlsuite.prediction.entities;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -16,62 +11,48 @@ class PredictionStatusTest {
 
     @Test
     void values_ShouldReturnAllStatuses() {
-        // When
         PredictionStatus[] statuses = PredictionStatus.values();
 
-        // Then
-        assertEquals(3, statuses.length);
+        assertEquals(2, statuses.length);
         assertArrayEquals(
-                new PredictionStatus[] { PredictionStatus.PENDING, PredictionStatus.SUCCESS,
-                        PredictionStatus.FAILED },
+                new PredictionStatus[] { PredictionStatus.PENDING, PredictionStatus.COMPLETED },
                 statuses);
     }
 
     @Test
     void valueOf_ValidName_ShouldReturnCorrectEnum() {
-        // When & Then
         assertEquals(PredictionStatus.PENDING, PredictionStatus.valueOf("PENDING"));
-        assertEquals(PredictionStatus.SUCCESS, PredictionStatus.valueOf("SUCCESS"));
-        assertEquals(PredictionStatus.FAILED, PredictionStatus.valueOf("FAILED"));
+        assertEquals(PredictionStatus.COMPLETED, PredictionStatus.valueOf("COMPLETED"));
     }
 
     @Test
     void valueOf_InvalidName_ShouldThrowException() {
-        // When & Then
         assertThrows(IllegalArgumentException.class, () -> PredictionStatus.valueOf("INVALID"));
-        assertThrows(IllegalArgumentException.class, () -> PredictionStatus.valueOf("pending")); // lowercase
+        assertThrows(IllegalArgumentException.class, () -> PredictionStatus.valueOf("pending"));
     }
 
     @Test
     void name_ShouldReturnCorrectName() {
-        // When & Then
         assertEquals("PENDING", PredictionStatus.PENDING.name());
-        assertEquals("SUCCESS", PredictionStatus.SUCCESS.name());
-        assertEquals("FAILED", PredictionStatus.FAILED.name());
+        assertEquals("COMPLETED", PredictionStatus.COMPLETED.name());
     }
 
     @Test
     void toString_ShouldReturnName() {
-        // When & Then
         assertEquals("PENDING", PredictionStatus.PENDING.toString());
-        assertEquals("SUCCESS", PredictionStatus.SUCCESS.toString());
-        assertEquals("FAILED", PredictionStatus.FAILED.toString());
+        assertEquals("COMPLETED", PredictionStatus.COMPLETED.toString());
     }
 
     @Test
     void ordinal_ShouldReturnCorrectOrder() {
-        // When & Then
         assertEquals(0, PredictionStatus.PENDING.ordinal());
-        assertEquals(1, PredictionStatus.SUCCESS.ordinal());
-        assertEquals(2, PredictionStatus.FAILED.ordinal());
+        assertEquals(1, PredictionStatus.COMPLETED.ordinal());
     }
 
     @Test
     void compareTo_ShouldFollowOrdinalOrder() {
-        // When & Then
-        assertTrue(PredictionStatus.PENDING.compareTo(PredictionStatus.SUCCESS) < 0);
-        assertTrue(PredictionStatus.SUCCESS.compareTo(PredictionStatus.FAILED) < 0);
-        assertTrue(PredictionStatus.FAILED.compareTo(PredictionStatus.PENDING) > 0);
+        assertTrue(PredictionStatus.PENDING.compareTo(PredictionStatus.COMPLETED) < 0);
+        assertTrue(PredictionStatus.COMPLETED.compareTo(PredictionStatus.PENDING) > 0);
         assertEquals(0, PredictionStatus.PENDING.compareTo(PredictionStatus.PENDING));
     }
 }

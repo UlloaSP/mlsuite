@@ -52,6 +52,31 @@ export default defineExplanationKind({
 			modelId: z.string().optional(),
 		})
 		.passthrough(),
+	feedbackQuestionnaire: createQuestionnaireSchema({
+		steps: [
+			{
+				title: "Explanation Feedback",
+				description: "Rate clarity, usefulness, and trust.",
+				fields: [
+					{
+						kind: "rating",
+						label: "Clarity",
+						max: 5,
+					},
+					{
+						kind: "rating",
+						label: "Usefulness",
+						max: 5,
+					},
+					{
+						kind: "rating",
+						label: "Trust",
+						max: 5,
+					},
+				],
+			},
+		],
+	}),
 	fetch: ({ config }) => ({
 		submit: async (request) => {
 			const modelId =

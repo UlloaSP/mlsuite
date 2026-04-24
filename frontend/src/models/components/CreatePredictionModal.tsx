@@ -4,23 +4,26 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { Save, X } from "lucide-react";
+import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router";
+import { toast } from "sonner";
 import {
-	AppButton,
 	AppCopy,
 	AppIconButton,
-	AppPanel,
 	AppSectionTitle,
-	AppTextField,
 } from "../../app/components";
+import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { showModalAtom } from "../atoms";
 import { useCreateExplanationFeedbackMutation, useCreatePredictionMutation, useCreateTargetMutation, useGetPredictions } from "../hooks";
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
-import { formatProbability, getSchemaAwareTargetValue, getTargetClassLabel, getTargetLabel, getTargetProbability } from "../target-utils";
-import { PredictionExplanationReport } from "./PredictionExplanationReport";
+import type { PredictionExplanationDescriptor } from "../questionnaire-feedback";
+import { hasFeedbackValues } from "../questionnaire-feedback";
+import { getTargetClassLabel } from "../target-utils";
+import { CreatePredictionModalSummary } from "./CreatePredictionModalSummary";
+import type { ExplanationQuestionnaireMountHandle } from "./ExplanationQuestionnaireMount";
+import { PredictionExplanationReviewCard } from "./PredictionExplanationReviewCard";
 import { PredictionOverwriteDialog } from "./PredictionOverwriteDialog";
 
 export type CreatePredictionModalProps = {
@@ -28,6 +31,8 @@ export type CreatePredictionModalProps = {
 	inputs: Record<string, unknown>;
 	signatureSchema: unknown;
 	explanationsPending: boolean;
+	customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
+	theme: "light" | "dark";
 };
 
 type PredictionOutput = {
@@ -53,31 +58,33 @@ export function CreatePredictionModal({
 	inputs,
 	signatureSchema,
 	explanationsPending,
+	customExplanationDefinitions = [],
+	theme,
 }: CreatePredictionModalProps) {
-	const { signatureId, modelId } = useParams<{ signatureId: string; modelId: string }>();
-	const navigate = useNavigate();
-
+	const { signatureId } = useParams<{ signatureId: string }>();
 	const [, setShowModal] = useAtom(showModalAtom);
-
 	const mutation = useCreatePredictionMutation();
 	const mutationTarget = useCreateTargetMutation();
 	const explanationFeedbackMutation = useCreateExplanationFeedbackMutation();
 	const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
 
-	const [predictionName, setPredictionName] = useState<string>("");
+	const [predictionName, setPredictionName] = useState("");
 	const [targets, setTargets] = useState<Record<number, unknown>>({});
+	const [draftExplanationValues, setDraftExplanationValues] = useState<Record<string, Record<string, unknown>>>({});
 	const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
-	const explanationEntries = extractPredictionExplanationEntries(prediction);
-
-	const formatInputValue = (value: unknown) => {
-		if (typeof value === "number") {
-			return value.toLocaleString();
-		}
-		return String(value);
-	};
+	const questionnaireRefs = useRef<Record<string, ExplanationQuestionnaireMountHandle | null>>({});
+	const explanationEntries = useMemo<PredictionExplanationDescriptor[]>(
+		() =>
+			extractPredictionExplanationEntries(
+				prediction,
+				signatureSchema,
+				customExplanationDefinitions,
+			),
+		[prediction, signatureSchema, customExplanationDefinitions],
+	);
+	const output = asOutput(prediction);
 
 	useEffect(() => {
-		const output = asOutput(prediction);
 		if (!output) {
 			return;
 		}
@@ -102,17 +109,35 @@ export function CreatePredictionModal({
 				nextTargets[index] = target;
 			});
 		}
+
 		setTargets(nextTargets);
-	}, [prediction, signatureSchema]);
+	}, [output, signatureSchema]);
+
+	const collectQuestionnaireValues = async () => {
+		const results: Array<{ order: number; value: Record<string, unknown> }> = [];
+
+		for (const explanation of explanationEntries) {
+			if (!explanation.feedbackQuestionnaire) {
+				continue;
+			}
+
+			const handle = questionnaireRefs.current[explanation.explanationId];
+			const value = await handle?.submit();
+			if (value && hasFeedbackValues(value)) {
+				results.push({ order: explanation.order, value });
+			}
+		}
+
+		return results;
+	};
 
 	const savePrediction = async (overwrite: boolean) => {
-		const normalizedName = predictionName.trim();
 		const created = await mutation.mutateAsync({
 			signatureId: signatureId!,
-			name: normalizedName,
+			name: predictionName.trim(),
 			overwrite,
-			inputs: inputs,
-			prediction: prediction,
+			inputs,
+			prediction,
 		});
 
 		await Promise.all(
@@ -124,35 +149,37 @@ export function CreatePredictionModal({
 				}),
 			),
 		);
+
+		const feedbackValues = await collectQuestionnaireValues();
 		await Promise.all(
-			explanationEntries.map((entry) =>
+			feedbackValues.map((item) =>
 				explanationFeedbackMutation.mutateAsync({
 					predictionId: created.id,
-					order: entry.order,
-					value: entry.value,
+					order: item.order,
+					value: item.value,
 				}),
 			),
 		);
 
 		setShowModal(false);
-		navigate(
-			`/models/${modelId ?? created.modelId}/signatures/${created.signatureId}/predictions/${created.id}`,
-		);
+		toast.success("Prediction saved");
 	};
 
 	const handleSave = async () => {
-		const normalizedName = predictionName.trim();
-		const hasDuplicate = predictions.some((item) => item.name === normalizedName);
+		try {
+			const normalizedName = predictionName.trim();
+			if (predictions.some((item) => item.name === normalizedName)) {
+				setShowOverwriteDialog(true);
+				return;
+			}
 
-		if (hasDuplicate) {
-			setShowOverwriteDialog(true);
-			return;
+			await savePrediction(false);
+		} catch (error: unknown) {
+			toast.error("Prediction could not be saved", {
+				description: error instanceof Error ? error.message : String(error),
+			});
 		}
-
-		await savePrediction(false);
 	};
-
-	const output = asOutput(prediction);
 
 	return (
 		<AnimatePresence>
@@ -169,147 +196,60 @@ export function CreatePredictionModal({
 					exit={{ x: "100%", opacity: 0 }}
 					transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
 					className="relative z-50 m-8 flex flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
-					onClick={(e) => e.stopPropagation()}
+					onClick={(event) => event.stopPropagation()}
 				>
 					<div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">
 						<div className="space-y-2">
-							<AppCopy className="text-xs uppercase tracking-[0.22em]">
-								Prediction Review
-							</AppCopy>
-							<AppSectionTitle className="text-4xl">
-								Create New Prediction
-							</AppSectionTitle>
+							<AppCopy className="text-xs uppercase tracking-[0.22em]">Prediction Review</AppCopy>
+							<AppSectionTitle className="text-4xl">Create New Prediction</AppSectionTitle>
 						</div>
-						<AppIconButton
-							type="button"
-							aria-label="Close modal"
-							onClick={() => setShowModal(false)}
-						>
+						<AppIconButton type="button" aria-label="Close modal" onClick={() => setShowModal(false)}>
 							<X size={24} />
 						</AppIconButton>
 					</div>
 
-					<div className="flex flex-1 flex-col overflow-hidden xl:flex-row">
-						<div className="flex flex-1 flex-col gap-8 overflow-hidden p-8">
-							<AppPanel className="space-y-3">
-								<div className="flex items-center justify-between">
-									<span className="text-sm font-semibold text-[var(--text-secondary)]">
-										Type:
-									</span>
-									<span className="font-mono font-medium text-[var(--text-primary)]">
-										{output?.type || "N/A"}
-									</span>
-								</div>
-								<div className="flex items-center justify-between">
-									<span className="text-sm font-semibold text-[var(--text-secondary)]">
-										Execution Time:
-									</span>
-									<span className="font-mono font-medium text-[var(--text-primary)]">
-										{output?.execution_time || "N/A"}
-									</span>
-								</div>
-								<div className="flex items-center justify-between">
-									<span className="text-sm font-semibold text-[var(--text-secondary)]">
-										Status:
-									</span>
-									<span className="font-mono font-medium text-[var(--text-primary)]">
-										pending
-									</span>
-								</div>
-							</AppPanel>
+					<div className="grid flex-1 gap-8 overflow-auto p-8 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(28rem,1.2fr)]">
+						<CreatePredictionModalSummary
+							outputType={output?.type}
+							executionTime={output?.execution_time}
+							inputs={inputs}
+							targets={targets}
+							signatureSchema={signatureSchema}
+							predictionName={predictionName}
+							onPredictionNameChange={setPredictionName}
+							onCancel={() => setShowModal(false)}
+							onSave={() => void handleSave()}
+							isSaveDisabled={
+								!predictionName.trim() ||
+								explanationsPending ||
+								mutation.isPending ||
+								mutationTarget.isPending ||
+								explanationFeedbackMutation.isPending
+							}
+						/>
 
-							<AppPanel className="flex flex-1 flex-col space-y-4 overflow-hidden">
-								<AppSectionTitle>Input Features</AppSectionTitle>
-								<div className="space-y-3 overflow-y-auto">
-									{Object.entries(inputs).map(([key, value]) => (
-										<div
-											key={key}
-											className="flex items-center justify-between rounded-[20px] bg-[var(--surface-muted)] p-3"
-										>
-											<span className="text-sm font-medium text-[var(--text-secondary)]">
-												{key}:
-											</span>
-											<span className="font-mono text-sm text-[var(--text-primary)]">
-												{formatInputValue(value)}
-											</span>
-										</div>
-									))}
-								</div>
-							</AppPanel>
-						</div>
-
-						<div className="flex flex-1 flex-col gap-8 overflow-hidden p-8 pt-0 xl:pt-8">
-							<AppPanel className="flex flex-1 flex-col space-y-4 overflow-hidden">
-								<AppSectionTitle>Targets</AppSectionTitle>
-								<div className="space-y-3 overflow-y-auto">
-									{Object.entries(targets).map(([key, value]) => (
-										<div
-											key={key}
-											className="flex items-center justify-between rounded-[20px] bg-[var(--surface-muted)] p-3"
-										>
-											<span className="text-sm font-medium text-[var(--text-secondary)]">
-												{getTargetLabel(signatureSchema, Number(key))}:
-											</span>
-											<span className="font-mono text-sm text-[var(--text-primary)]">
-												{String(getSchemaAwareTargetValue(value, signatureSchema, Number(key)))}
-											</span>
-											{getTargetProbability(value) !== null ? (
-												<span className="font-mono text-xs text-[var(--text-muted)]">
-													{formatProbability(getTargetProbability(value)!)}
-												</span>
-											) : null}
-										</div>
-									))}
-								</div>
-							</AppPanel>
-
-							{explanationEntries.length > 0 ? (
-								<AppPanel className="space-y-4">
-									<AppSectionTitle>Explanation</AppSectionTitle>
-									{explanationsPending ? (
-										<AppCopy>Waiting for explanation plugin result...</AppCopy>
-									) : null}
-									<PredictionExplanationReport
-										label="Model explanation"
-										explanations={explanationEntries.map((entry) => entry.value)}
-									/>
-								</AppPanel>
-							) : null}
-
-							<AppPanel className="space-y-4 p-6">
-								<div className="space-y-3">
-									<AppSectionTitle>Prediction Name</AppSectionTitle>
-									<AppTextField
-										id="prediction-name"
-										type="text"
-										value={predictionName}
-										onChange={(e) => setPredictionName(e.target.value)}
-										placeholder="Ex: Customer Churn v2.0"
-										className="w-full"
-									/>
-								</div>
-
-								<div className="flex gap-4 pt-2">
-									<AppButton
-										onClick={() => setShowModal(false)}
-										variant="secondary"
-										className="flex-1"
-									>
-										Cancel
-									</AppButton>
-
-									<AppButton
-										onClick={handleSave}
-										disabled={!predictionName.trim() || explanationsPending}
-										className="flex-1"
-									>
-										<Save size={18} />
-										<span>Save Prediction</span>
-									</AppButton>
-								</div>
-							</AppPanel>
+						<div className="space-y-6">
+							{explanationsPending ? <AppCopy>Waiting for explanation plugin result...</AppCopy> : null}
+							{explanationEntries.map((explanation) => (
+								<PredictionExplanationReviewCard
+									key={explanation.explanationId}
+									explanation={explanation}
+									theme={theme}
+									draftValues={draftExplanationValues[explanation.explanationId] ?? {}}
+									questionnaireRef={(handle) => {
+										questionnaireRefs.current[explanation.explanationId] = handle;
+									}}
+									onValuesChange={(values) =>
+										setDraftExplanationValues((prev) => ({
+											...prev,
+											[explanation.explanationId]: { ...values },
+										}))
+									}
+								/>
+							))}
 						</div>
 					</div>
+
 					<PredictionOverwriteDialog
 						open={showOverwriteDialog}
 						predictionName={predictionName.trim()}

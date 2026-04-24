@@ -276,6 +276,8 @@ export function CreatePredictionBodyForm() {
 					inputs={inputs}
 					signatureSchema={schema}
 					explanationsPending={explanationsPending}
+					customExplanationDefinitions={catalogState.definitions}
+					theme={theme}
 				/>
 			) : null}
 		</>

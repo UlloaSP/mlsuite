@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { getActivePlugins, getPlugins, type PluginDto } from "../../api/pluginService";
-import { validateCustomExplanationSource } from "./custom-explanation-runtime";
+import { validateCustomExplanationSourceWithFeedback as validateCustomExplanationSource } from "./custom-explanation-questionnaire";
 import { validateCustomFieldSource } from "./custom-field-runtime";
 import { validateCustomReportSource } from "./custom-report-runtime";
 

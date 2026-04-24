@@ -13,6 +13,24 @@ const getReports = (signatureSchema: unknown): Record<string, unknown>[] =>
 		? signatureSchema.reports.filter(isRecord)
 		: [];
 
+export const getTargetReportConfig = (
+	signatureSchema: unknown,
+	order: number,
+): Record<string, unknown> | undefined => getReports(signatureSchema)[order];
+
+export const getTargetReportKey = (
+	signatureSchema: unknown,
+	order: number,
+): string => {
+	const report = getTargetReportConfig(signatureSchema, order);
+	const explicitId = typeof report?.id === "string" ? report.id.trim() : "";
+	if (explicitId) {
+		return explicitId;
+	}
+
+	return `target-${order + 1}`;
+};
+
 export const getTargetDisplayValue = (value: unknown): unknown =>
 	isRecord(value) && "value" in value ? value.value : value;
 

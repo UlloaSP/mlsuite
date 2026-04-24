@@ -15,6 +15,9 @@ COPY pyproject.toml .
 COPY uv.lock .
 COPY README.md .
 
+RUN uv sync --frozen --no-dev --no-install-project   # deps only
+COPY src ./src
+
 # Sincronizar dependencias con uv
 # --frozen: no actualiza lock, --no-dev: excluye dependencias de desarrollo
 RUN uv sync --frozen --no-dev
@@ -30,11 +33,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl && \
     -subj "/CN=localhost" && \
     apt-get remove -y openssl && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copiar código de la aplicación
-COPY main.py ./main.py
-
 # Exponer puerto
 EXPOSE 8000
 
 # Ejecutar la aplicación con uvicorn desde el entorno virtual de uv
-CMD [".venv/bin/python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--ssl-keyfile=/app/private.key", "--ssl-certfile=/app/certificate.crt"]
+CMD [".venv/bin/python", "-m", "uvicorn", "mlsuite_backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--ssl-keyfile=/app/private.key", "--ssl-certfile=/app/certificate.crt"]

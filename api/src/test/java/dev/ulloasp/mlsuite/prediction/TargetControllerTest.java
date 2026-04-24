@@ -58,7 +58,8 @@ class TargetControllerTest {
         params.setPredictionId(11L);
         params.setOrder(1);
         params.setValue(objectMapper.readTree("{\"x\":1}"));
-        when(targetService.createTarget(3L, 11L, 1, params.getValue())).thenReturn(target(params.getValue()));
+        when(targetService.createTarget(3L, 11L, 1, params.getValue()))
+                .thenReturn(target(params.getValue()));
 
         ResponseEntity<?> response = controller.createTarget(authentication, params);
 
@@ -71,7 +72,8 @@ class TargetControllerTest {
         UpdateTargetParams params = new UpdateTargetParams();
         params.setTargetId(12L);
         params.setRealValue(objectMapper.readTree("{\"actual\":1}"));
-        when(targetService.updateTarget(3L, 12L, params.getRealValue())).thenReturn(target(params.getRealValue()));
+        when(targetService.updateTarget(3L, 12L, params.getRealValue()))
+                .thenReturn(target(params.getRealValue()));
 
         ResponseEntity<?> response = controller.updateTarget(authentication, params);
 

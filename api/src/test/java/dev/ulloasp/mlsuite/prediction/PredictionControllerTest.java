@@ -77,14 +77,14 @@ class PredictionControllerTest {
     void updatePrediction_UsesInternalUserId() {
         UpdatePredictionParams params = new UpdatePredictionParams();
         params.setPredictionId(12L);
-        params.setStatus("SUCCESS");
-        when(predictionService.updatePrediction(3L, 12L, PredictionStatus.SUCCESS))
-                .thenReturn(prediction("pred", PredictionStatus.SUCCESS));
+        params.setStatus("COMPLETED");
+        when(predictionService.updatePrediction(3L, 12L, PredictionStatus.COMPLETED))
+                .thenReturn(prediction("pred", PredictionStatus.COMPLETED));
 
         ResponseEntity<?> response = controller.updatePrediction(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(predictionService).updatePrediction(3L, 12L, PredictionStatus.SUCCESS);
+        verify(predictionService).updatePrediction(3L, 12L, PredictionStatus.COMPLETED);
     }
 
     @Test
@@ -97,7 +97,8 @@ class PredictionControllerTest {
 
     @Test
     void getAllPredictions_ReturnsDtos() {
-        when(predictionService.getPredictionsBySignatureId(3L, 11L)).thenReturn(List.of(prediction("pred", PredictionStatus.PENDING)));
+        when(predictionService.getPredictionsBySignatureId(3L, 11L))
+                .thenReturn(List.of(prediction("pred", PredictionStatus.PENDING)));
 
         assertEquals(1, controller.getAllPredictions(authentication, 11L).getBody().size());
     }

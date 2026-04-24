@@ -11,7 +11,7 @@ import { extractPredictionExplanationEntries } from "./explanation-feedback-util
 
 type JsonRecord = Record<string, unknown>;
 
-export type PredictionStatus = "PENDING" | "SUCCESS" | "FAILED";
+export type PredictionFeedbackStatus = "PENDING" | "COMPLETED";
 
 export type SignatureSummaryStats = {
 	fieldCount: number;
@@ -82,25 +82,18 @@ export const getLatestSignature = (signatures: SignatureDto[]): SignatureDto | u
 export const getModelDerivedMetric = (signatures: SignatureDto[]): string =>
 	`${signatures.length} signature${signatures.length === 1 ? "" : "s"}`;
 
-export const getPredictionStatus = (status: unknown): PredictionStatus => {
+export const getPredictionStatus = (status: unknown): PredictionFeedbackStatus => {
 	const normalized = String(status ?? "PENDING").toUpperCase();
-	if (normalized === "SUCCESS") {
-		return "SUCCESS";
+	if (normalized === "COMPLETED" || normalized === "SUCCESS" || normalized === "FAILED") {
+		return "COMPLETED";
 	}
-
-	if (normalized === "FAILED") {
-		return normalized;
-	}
-
 	return "PENDING";
 };
 
-export const getPredictionStatusTone = (status: unknown): "success" | "warning" | "danger" => {
+export const getPredictionStatusTone = (status: unknown): "success" | "warning" => {
 	switch (getPredictionStatus(status)) {
-		case "SUCCESS":
+		case "COMPLETED":
 			return "success";
-		case "FAILED":
-			return "danger";
 		case "PENDING":
 		default:
 			return "warning";
@@ -108,7 +101,9 @@ export const getPredictionStatusTone = (status: unknown): "success" | "warning" 
 };
 
 export const getPredictionStatusLabel = (status: unknown): string => {
-	return getPredictionStatus(status);
+	return getPredictionStatus(status) === "COMPLETED"
+		? "Feedback completed"
+		: "Feedback pending";
 };
 
 export const getPredictionShortId = (id: unknown): string => {
@@ -211,7 +206,7 @@ export const getExplanationSnapshot = (
 	}
 
 	const explanations = extractPredictionExplanationEntries(predictionValue, signatureSchema).map(
-		(entry) => entry.value,
+		(entry) => entry.content.join("\n\n"),
 	);
 
 	const meta = isRecord(predictionValue.meta) ? predictionValue.meta : null;

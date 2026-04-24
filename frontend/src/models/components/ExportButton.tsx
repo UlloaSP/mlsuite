@@ -6,12 +6,18 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueries } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../app/components";
-import type { PredictionDto, TargetDto } from "../api/modelService";
-import * as modelApi from "../api/modelService"; // <-- use the fetcher directly
-import { GET_TARGETS_QUERY_KEY } from "../hooks";
-import { getSchemaAwareTargetValue, getTargetLabel } from "../target-utils";
+import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
+import { toMlformSchema, validateMlformSchema } from "../../app/utils/mlform";
+import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
+import * as modelApi from "../api/modelService";
+import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, GET_TARGETS_QUERY_KEY } from "../hooks";
+import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
+import { getOutputFeedbackFieldIds } from "../output-feedback-questionnaire";
+import { getEffectiveFeedbackValues, getQuestionnaireFieldIds } from "../questionnaire-feedback";
+import { getSchemaAwareTargetValue, getTargetReportKey } from "../target-utils";
 
 export type ExportButtonProps = {
 	predictions: PredictionDto[];
@@ -19,58 +25,91 @@ export type ExportButtonProps = {
 	signatureSchema?: unknown;
 };
 
-type NormalizedStatus = "pending" | "success" | "failed";
-const norm = (s: string | undefined | null): NormalizedStatus => {
-	const v = String(s ?? "").toLowerCase();
-	if (v === "completed" || v === "success") return "success";
-	if (v === "failed") return "failed";
-	return "pending";
-};
+const isPlainObject = (value: unknown) =>
+	value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
 
-const isPlainObject = (v: unknown) =>
-	v !== null && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date);
-
-const toRecord = (
-	m: Record<string, unknown>
-): Record<string, unknown> => {
-	if (m instanceof Map) {
-		const out: Record<string, unknown> = {};
-		m.forEach((v, k) => (out[k] = v));
-		return out;
-	}
-	return (m ?? {}) as Record<string, unknown>;
-};
+const toRecord = (value: Record<string, unknown>): Record<string, unknown> =>
+	value instanceof Map ? Object.fromEntries(value.entries()) : (value ?? {});
 
 const flatten = (obj: unknown, prefix = ""): Record<string, unknown> => {
 	const out: Record<string, unknown> = {};
 	if (Array.isArray(obj)) {
-		obj.forEach((v, i) => Object.assign(out, flatten(v, prefix ? `${prefix}.${i}` : String(i))));
+		obj.forEach((value, index) =>
+			Object.assign(out, flatten(value, prefix ? `${prefix}.${index}` : String(index))));
 	} else if (isPlainObject(obj)) {
-		Object.entries(obj as Record<string, unknown>).forEach(([k, v]) =>
-			Object.assign(out, flatten(v, prefix ? `${prefix}.${k}` : k))
-		);
+		Object.entries(obj as Record<string, unknown>).forEach(([key, value]) =>
+			Object.assign(out, flatten(value, prefix ? `${prefix}.${key}` : key)));
 	} else {
-		out[prefix || "value"] = obj as unknown;
+		out[prefix || "value"] = obj;
 	}
 	return out;
 };
 
-const toCell = (v: unknown): string => {
-	if (v === null || v === undefined) return "";
-	if (v instanceof Date) return v.toISOString();
-	if (typeof v === "object") return JSON.stringify(v);
-	return String(v);
+const toCell = (value: unknown): string => {
+	if (value === null || value === undefined) return "";
+	if (value instanceof Date) return value.toISOString();
+	if (typeof value === "object") return JSON.stringify(value);
+	return String(value);
 };
 
-const csvEscape = (s: string, sep: string) => {
-	let v = s;
-	if (v.includes('"')) v = v.replace(/"/g, '""');
-	if (v.includes(sep) || v.includes("\n") || v.includes("\r")) v = `"${v}"`;
-	return v;
+const csvEscape = (value: string, separator: string) => {
+	let next = value;
+	if (next.includes('"')) next = next.replace(/"/g, '""');
+	if (next.includes(separator) || next.includes("\n") || next.includes("\r")) next = `"${next}"`;
+	return next;
 };
 
-export function ExportButton({ predictions, delimiter = ",", signatureSchema }: ExportButtonProps) {
-	// -------- meta / file name
+const getExplanationHeaders = (
+	signatureSchema: unknown,
+	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
+): string[] => {
+	try {
+		const schema = toMlformSchema(signatureSchema, {
+			customExplanationDefinitions,
+		});
+		const definitionMap = new Map(
+			customExplanationDefinitions.map((definition) => [definition.kind, definition]),
+		);
+
+		return (schema.explanations ?? []).flatMap((explanation) => {
+			const questionnaire = definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire;
+			return [
+				`explanation.${explanation.id}.content`,
+				...(questionnaire
+					? getQuestionnaireFieldIds(questionnaire).map(
+						(fieldId) => `explanation.${explanation.id}.${fieldId}`,
+					)
+					: []),
+			];
+		});
+	} catch {
+		return [];
+	}
+};
+
+export function ExportButton({
+	predictions,
+	delimiter = ",",
+	signatureSchema,
+}: ExportButtonProps) {
+	const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
+		readonly CatalogExplanationDefinition[]
+	>([]);
+
+	useEffect(() => {
+		let active = true;
+		void getActiveCustomExplanationDefinitions()
+			.then((definitions) => {
+				if (active) setCustomExplanationDefinitions(definitions);
+			})
+			.catch(() => {
+				if (active) setCustomExplanationDefinitions([]);
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+
 	const meta = useMemo(() => {
 		const uuid =
 			typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -78,115 +117,167 @@ export function ExportButton({ predictions, delimiter = ",", signatureSchema }: 
 				: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 		const ts = new Date().toISOString();
 		const firstName = predictions?.[0]?.name ?? "predictions";
-		return { request_id: uuid, timestamp: ts, model_name: firstName };
+		return { requestId: uuid, timestamp: ts, modelName: firstName };
 	}, [predictions]);
 
-	const sanitizeFile = (s: string) =>
-		(s || "predictions")
-			.replace(/[^a-z0-9\-_.]+/gi, "_")
-			.replace(/_{2,}/g, "_")
-			.slice(0, 80);
+	const file = `${(meta.modelName || "predictions")
+		.replace(/[^a-z0-9\-_.]+/gi, "_")
+		.replace(/_{2,}/g, "_")
+		.slice(0, 80)}_${meta.timestamp.slice(0, 10)}.csv`;
 
-	const file = `${sanitizeFile(meta.model_name)}_${meta.timestamp.slice(0, 10)}.csv`;
-
-	// -------- fetch targets in parallel (NO hooks inside queryFn)
 	const targetsQueries = useQueries({
-		queries: (predictions ?? []).map((p) => ({
-			queryKey: GET_TARGETS_QUERY_KEY({ predictionId: p.id }), // align with your GET_TARGETS_QUERY_KEY if you want cache hits
+		queries: (predictions ?? []).map((prediction) => ({
+			queryKey: GET_TARGETS_QUERY_KEY({ predictionId: prediction.id }),
 			queryFn: async () => {
-				// modelApi.getTargets returns TargetDto[] (match your hook’s shape)
-				const data = await modelApi.getTargets({ predictionId: p.id || "" });
+				const data = await modelApi.getTargets({ predictionId: prediction.id || "" });
 				return Array.isArray(data) ? data : [];
 			},
-			enabled: Boolean(p?.id),
+			enabled: Boolean(prediction?.id),
+			placeholderData: [] as TargetDto[],
 			staleTime: 5 * 60_000,
 			gcTime: 10 * 60_000,
-			retry: (count: number, err: any) => {
-				const s = err?.status ?? err?.response?.status;
-				if (s === 401 || s === 403) return false;
-				return count < 2;
+		})),
+	});
+	const explanationFeedbackQueries = useQueries({
+		queries: (predictions ?? []).map((prediction) => ({
+			queryKey: GET_EXPLANATION_FEEDBACK_QUERY_KEY({ predictionId: prediction.id }),
+			queryFn: async () => {
+				const data = await modelApi.getExplanationFeedback({ predictionId: prediction.id || "" });
+				return Array.isArray(data) ? data : [];
 			},
-			placeholderData: [] as TargetDto[],
+			enabled: Boolean(prediction?.id),
+			placeholderData: [] as modelApi.ExplanationFeedbackDto[],
+			staleTime: 5 * 60_000,
+			gcTime: 10 * 60_000,
+		})),
+	});
+	const outputFeedbackQueries = useQueries({
+		queries: (predictions ?? []).map((prediction) => ({
+			queryKey: GET_OUTPUT_FEEDBACK_QUERY_KEY({ predictionId: prediction.id }),
+			queryFn: async () => {
+				const data = await modelApi.getOutputFeedback({ predictionId: prediction.id || "" });
+				return Array.isArray(data) ? data : [];
+			},
+			enabled: Boolean(prediction?.id),
+			placeholderData: [] as OutputFeedbackDto[],
+			staleTime: 5 * 60_000,
+			gcTime: 10 * 60_000,
 		})),
 	});
 
-	// -------- build CSV schema (headers) + rows
 	const { headers, rows } = useMemo(() => {
-		if (!predictions?.length) return { headers: [] as string[], rows: [] as string[][] };
-
-		// Canonical input headers from FIRST prediction
-		const firstInputs = toRecord(predictions[0].inputs);
-		const flatFirstInputs = flatten(firstInputs);
-		const inputKeys = Object.keys(flatFirstInputs).sort();
-
-		// Target headers from first resolved targets (sorted by order)
-		let sampleTargets: TargetDto[] | undefined;
-		for (const q of targetsQueries) {
-			if (Array.isArray(q.data) && q.data.length) {
-				sampleTargets = q.data as TargetDto[];
-				break;
-			}
+		if (!predictions.length) {
+			return { headers: [] as string[], rows: [] as string[][] };
 		}
-		const sortedSample = [...(sampleTargets ?? [])].sort(
-			(a, b) => Number(a.order) - Number(b.order)
-		);
-		const targetHeaders = sortedSample.map((t) => getTargetLabel(signatureSchema, t.order));
 
-		const headers = [...inputKeys, ...targetHeaders];
+		const inputKeys = Object.keys(flatten(toRecord(predictions[0].inputs))).sort();
+		const schemaResult = signatureSchema
+			? validateMlformSchema(signatureSchema, { customExplanationDefinitions })
+			: null;
+		const schema = schemaResult?.success ? schemaResult.data : null;
+		const targetHeaders = (schema?.reports ?? []).flatMap((_, index) => {
+			const targetKey = getTargetReportKey(signatureSchema, index);
+			return [
+				`output.${targetKey}.predicted`,
+				`output.${targetKey}.assessment`,
+				`output.${targetKey}.realValue`,
+			];
+		});
+		const explanationHeaders = signatureSchema
+			? getExplanationHeaders(signatureSchema, customExplanationDefinitions)
+			: [];
+		const nextHeaders = [...inputKeys, ...targetHeaders, ...explanationHeaders];
 
-		// Rows: skip pending. success => data_value; failed => real_value.
-		const rows: string[][] = [];
-		predictions.forEach((p, idx) => {
-			const status = norm((p as any).status);
-			if (status === "pending") return;
-
-			const q = targetsQueries[idx];
-			const targs: TargetDto[] = (q?.data as TargetDto[]) ?? [];
-			if (!targs.length) return; // keep consistent schema (inputs+targets)
-
-			const flatInputs = flatten(toRecord(p.inputs));
-			const inputRow = inputKeys.map((k) => toCell(flatInputs[k]));
-
-			const sortedTargs = [...targs].sort((a, b) => Number(a.order) - Number(b.order));
-			const targetRow = sortedTargs.map((t) => {
-				if (status === "success") {
-					return toCell(getSchemaAwareTargetValue(
-						(t as any).value,
-						signatureSchema,
-						Number(t.order),
-						p.prediction,
-					));
+		const nextRows = predictions.flatMap((prediction, index) => {
+			const targets = ((targetsQueries[index]?.data ?? []) as TargetDto[]).sort(
+				(left, right) => Number(left.order) - Number(right.order),
+			);
+			const inputs = flatten(toRecord(prediction.inputs));
+			const targetMap = new Map(targets.map((target) => [target.order, target]));
+			const outputFeedbackByOrder = new Map(
+				((outputFeedbackQueries[index]?.data ?? []) as OutputFeedbackDto[])
+					.map((item) => [item.order, item]),
+			);
+			const targetValues = (schema?.reports ?? []).flatMap((_, order) => {
+				const target = targetMap.get(order);
+				const reportConfig = schema?.reports?.[order];
+				const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;
+				const fieldIds = getOutputFeedbackFieldIds(kind);
+				const outputFeedback = outputFeedbackByOrder.get(order);
+				const feedbackRecord =
+					outputFeedback?.value &&
+					typeof outputFeedback.value === "object" &&
+					!Array.isArray(outputFeedback.value)
+						? outputFeedback.value as Record<string, unknown>
+						: null;
+				const feedbackValue = feedbackRecord?.[fieldIds.assessment] ?? "";
+				return [
+					toCell(target ? getSchemaAwareTargetValue(target.value, signatureSchema, order, prediction.prediction) : ""),
+					toCell(feedbackValue),
+					toCell(target ? getSchemaAwareTargetValue(target.realValue, signatureSchema, order, prediction.prediction) : ""),
+				];
+			});
+			const explanationEntries = extractPredictionExplanationEntries(
+				prediction.prediction,
+				signatureSchema,
+				customExplanationDefinitions,
+			);
+			const feedbackByOrder = new Map(
+				((explanationFeedbackQueries[index]?.data ?? []) as modelApi.ExplanationFeedbackDto[])
+					.map((item) => [item.order, item]),
+			);
+			const explanationValues = explanationEntries.flatMap((explanation) => {
+				const cells = [toCell(explanation.content.join("\n\n"))];
+				if (!explanation.feedbackQuestionnaire) {
+					return cells;
 				}
-				if (status === "failed") return toCell((t as any).realValue);
-				return "";
+
+				const feedbackValues = getEffectiveFeedbackValues(
+					feedbackByOrder.get(explanation.order),
+					explanation.feedbackQuestionnaire,
+				);
+				return [
+					...cells,
+					...getQuestionnaireFieldIds(explanation.feedbackQuestionnaire).map((fieldId) =>
+						toCell(feedbackValues[fieldId])),
+				];
 			});
 
-			rows.push([...inputRow, ...targetRow]);
+			return [[
+				...inputKeys.map((key) => toCell(inputs[key])),
+				...targetValues,
+				...explanationValues,
+			]];
 		});
 
-		return { headers, rows };
-	}, [predictions, targetsQueries, signatureSchema]);
+		return { headers: nextHeaders, rows: nextRows };
+	}, [
+		customExplanationDefinitions,
+		explanationFeedbackQueries,
+		outputFeedbackQueries,
+		predictions,
+		signatureSchema,
+		targetsQueries,
+	]);
 
 	const hasData = rows.length > 0 && headers.length > 0;
 
 	const handleExport = () => {
-		if (!hasData) return;
+		if (!hasData) {
+			return;
+		}
 
-		const BOM = "\uFEFF";
-		const headerLine = headers.map((h) => csvEscape(h, delimiter)).join(delimiter);
-		const contentLines = rows
-			.map((r) => r.map((c) => csvEscape(c, delimiter)).join(delimiter))
-			.join("\n");
-		const content = `${BOM}${headerLine}\n${contentLines}`;
-
+		const content = `\uFEFF${headers.map((header) => csvEscape(header, delimiter)).join(delimiter)}\n${rows
+			.map((row) => row.map((cell) => csvEscape(cell, delimiter)).join(delimiter))
+			.join("\n")}`;
 		const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
 		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = file;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = file;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
 		setTimeout(() => URL.revokeObjectURL(url), 0);
 	};
 

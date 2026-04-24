@@ -5,14 +5,19 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ExplanationConfig, ExplanationDefinition } from "mlform/engine";
 import type { PluginDto } from "../../api/pluginService";
+import {
+	type ExplanationDefinitionWithFeedback,
+	resolveCustomExplanationDefinitionWithFeedback,
+	validateCustomExplanationSourceWithFeedback,
+} from "./custom-explanation-questionnaire";
 import { detectPluginType, invalidatePluginCatalog, loadActivePlugins, loadPlugins } from "./plugin-catalog";
-import { customExplanationTemplate, resolveCustomExplanationDefinition, validateCustomExplanationSource } from "./custom-explanation-runtime";
+import { customExplanationTemplate } from "./custom-explanation-runtime";
 import { type CustomExplanationResult, type NormalizedCustomExplanationResult, normalizeCustomExplanationResult } from "./custom-explanation-result";
 
 export {
 	customExplanationTemplate,
 	normalizeCustomExplanationResult,
-	validateCustomExplanationSource,
+	validateCustomExplanationSourceWithFeedback as validateCustomExplanationSource,
 };
 export type { CustomExplanationResult, NormalizedCustomExplanationResult };
 
@@ -21,7 +26,7 @@ export type CatalogExplanationDefinition = Pick<
 	"id" | "fileName" | "source" | "updatedAt" | "createdAt" | "contentType" | "sizeBytes" | "active"
 > & {
 	kind: string;
-	definition: ExplanationDefinition<ExplanationConfig>;
+	definition: ExplanationDefinitionWithFeedback;
 };
 
 let catalogDefinitionsPromise: Promise<CatalogExplanationDefinition[]> | null = null;
@@ -54,7 +59,7 @@ const toCatalogDefinition = async (item: PluginDto): Promise<CatalogExplanationD
 		sizeBytes: item.sizeBytes,
 		active: item.active,
 		kind: detected.kind,
-		definition: await resolveCustomExplanationDefinition(item.source),
+		definition: await resolveCustomExplanationDefinitionWithFeedback(item.source) as ExplanationDefinition<ExplanationConfig> & ExplanationDefinitionWithFeedback,
 	};
 };
 

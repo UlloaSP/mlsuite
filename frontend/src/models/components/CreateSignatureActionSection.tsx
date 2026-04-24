@@ -13,12 +13,14 @@ import {
 	AppSelect,
 	AppTextField
 } from "../../app/components";
+import { getActiveCustomExplanationDefinitions } from "../../app/utils/mlform/custom-explanation";
 import {
 	schemaAtom,
 	schemaErrorsAtom,
 	schemaTextAtom,
 } from "../../editor/atoms";
 import { useCreateSignatureMutation, useGetSignatures } from "../hooks";
+import { applyExplanationFeedbackMetadata } from "../signature-feedback-metadata";
 
 function compareSemverDesc(
 	major: number,
@@ -85,10 +87,11 @@ export function CreateSignatureActionSection() {
 		const [major, minor, patch] = version.split(".").map(Number);
 		setIsLoading(true);
 		try {
+			const customExplanationDefinitions = await getActiveCustomExplanationDefinitions();
 			await mutation.mutateAsync({
 				modelId: modelId!,
 				name: signatureName,
-				inputSignature: schema,
+				inputSignature: applyExplanationFeedbackMetadata(schema, customExplanationDefinitions),
 				major: major,
 				minor: minor,
 				patch: patch,

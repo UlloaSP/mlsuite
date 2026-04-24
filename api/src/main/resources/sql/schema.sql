@@ -104,6 +104,10 @@ DROP TRIGGER IF EXISTS set_updated_at ON prediction;
 CREATE TRIGGER set_updated_at BEFORE
 UPDATE ON prediction FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at ();
 
+UPDATE prediction
+SET status = 1
+WHERE status IN (1, 2);
+
 CREATE TABLE
     IF NOT EXISTS target (
         id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -121,6 +125,26 @@ DROP TRIGGER IF EXISTS set_updated_at ON target;
 
 CREATE TRIGGER set_updated_at BEFORE
 UPDATE ON target FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at ();
+
+ALTER TABLE target DROP COLUMN IF EXISTS status;
+
+CREATE TABLE
+    IF NOT EXISTS output_feedback (
+        id BIGINT GENERATED ALWAYS AS IDENTITY,
+        prediction_id BIGINT NOT NULL,
+        orden INT NOT NULL,
+        data_value JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT pk_output_feedback PRIMARY KEY (id),
+        CONSTRAINT uq_output_feedback_prediction_order UNIQUE (prediction_id, orden),
+        CONSTRAINT fk_output_feedback_prediction FOREIGN KEY (prediction_id) REFERENCES prediction (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE
+    );
+
+DROP TRIGGER IF EXISTS set_updated_at ON output_feedback;
+
+CREATE TRIGGER set_updated_at BEFORE
+UPDATE ON output_feedback FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at ();
 
 CREATE TABLE
     IF NOT EXISTS explanation_feedback (

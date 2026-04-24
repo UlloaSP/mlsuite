@@ -8,14 +8,13 @@ import { AppTextField, AppToolbar } from "../../app/components";
 import type { PredictionDto } from "../api/modelService";
 import { ExportButton } from "./ExportButton";
 
-export type PredictionFeedbackStatusFilter = "all" | "SUCCESS" | "PENDING" | "FAILED";
+export type PredictionFeedbackStatusFilter = "all" | "COMPLETED" | "PENDING";
 export type PredictionDateRangeFilter = "all" | "today" | "last7" | "last30";
 
 const STATUS_LABELS: Record<PredictionFeedbackStatusFilter, string> = {
 	all: "All feedback",
-	SUCCESS: "SUCCESS",
+	COMPLETED: "COMPLETED",
 	PENDING: "PENDING",
-	FAILED: "FAILED",
 };
 
 const DATE_RANGE_LABELS: Record<PredictionDateRangeFilter, string> = {

@@ -35,6 +35,9 @@ frontend/package-lock.json
 
 # Custom
 backend/__pycache__/
+backend/.venv/
+backend/.pytest_cache/
+backend/.ruff_cache/
 
 # Environment files
 .env.local

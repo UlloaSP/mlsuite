@@ -20,8 +20,10 @@ import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
 import dev.ulloasp.mlsuite.user.entity.User;
 import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import jakarta.transaction.Transactional;
 
 @Service
+@Transactional
 public class TargetServiceImpl implements TargetService {
 
     private final UserLookupService userLookupService;
@@ -81,5 +83,4 @@ public class TargetServiceImpl implements TargetService {
 
         return targetRepository.findByPredictionIdAndUserId(predictionId, userId);
     }
-
 }

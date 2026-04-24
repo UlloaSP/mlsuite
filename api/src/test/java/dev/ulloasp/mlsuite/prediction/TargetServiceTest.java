@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.prediction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.prediction.entities.Prediction;
+import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.entities.Target;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.TargetDoesNotExistsException;
@@ -58,6 +60,7 @@ class TargetServiceTest {
         Target result = service.createTarget(3L, 11L, 1, objectMapper.readTree("{\"x\":1}"));
 
         assertEquals(1, result.getOrder());
+        assertNull(result.getRealValue());
     }
 
     @Test
@@ -76,6 +79,19 @@ class TargetServiceTest {
 
         assertThrows(TargetDoesNotExistsException.class,
                 () -> service.updateTarget(3L, 12L, objectMapper.readTree("{\"actual\":1}")));
+    }
+
+    @Test
+    void updateTarget_StoresRealValueOnly() throws Exception {
+        Target target = target();
+        when(userLookupService.requireById(3L)).thenReturn(user());
+        when(targetRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.of(target));
+        when(targetRepository.save(any(Target.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Target result = service.updateTarget(3L, 12L, objectMapper.readTree("{\"actual\":1}"));
+
+        assertEquals("{\"actual\":1}", result.getRealValue().toString());
+        assertEquals(PredictionStatus.PENDING, result.getPrediction().getStatus());
     }
 
     @Test
@@ -104,6 +120,14 @@ class TargetServiceTest {
         prediction.setSignature(signature);
         prediction.setPrediction(Map.of());
         prediction.setData(Map.of());
+        prediction.setStatus(PredictionStatus.PENDING);
         return prediction;
+    }
+
+    private Target target() {
+        Target target = new Target();
+        target.setId(12L);
+        target.setPrediction(prediction());
+        return target;
     }
 }

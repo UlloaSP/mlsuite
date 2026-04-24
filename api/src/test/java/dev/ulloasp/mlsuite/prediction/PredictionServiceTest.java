@@ -22,6 +22,7 @@ import dev.ulloasp.mlsuite.prediction.entities.Prediction;
 import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.repositories.ExplanationFeedbackRepository;
+import dev.ulloasp.mlsuite.prediction.repositories.OutputFeedbackRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
 import dev.ulloasp.mlsuite.prediction.services.PredictionServiceImpl;
@@ -49,6 +50,9 @@ class PredictionServiceTest {
     private TargetRepository targetRepository;
 
     @Mock
+    private OutputFeedbackRepository outputFeedbackRepository;
+
+    @Mock
     private ExplanationFeedbackRepository explanationFeedbackRepository;
 
     @Mock
@@ -59,8 +63,7 @@ class PredictionServiceTest {
     @BeforeEach
     void setUp() {
         service = new PredictionServiceImpl(userLookupService, signatureRepository, predictionRepository,
-                targetRepository,
-                explanationFeedbackRepository,
+                targetRepository, outputFeedbackRepository, explanationFeedbackRepository,
                 signatureSchemaCompatibilityService);
     }
 
@@ -123,6 +126,7 @@ class PredictionServiceTest {
         assertEquals(Map.of("value", 1), result.getPrediction());
         assertEquals(PredictionStatus.PENDING, result.getStatus());
         verify(targetRepository).deleteByPredictionId(12L);
+        verify(outputFeedbackRepository).deleteByPredictionId(12L);
         verify(explanationFeedbackRepository).deleteByPredictionId(12L);
     }
 
@@ -132,9 +136,9 @@ class PredictionServiceTest {
         when(predictionRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.of(prediction(signature(user(3L)))));
         when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Prediction result = service.updatePrediction(3L, 12L, PredictionStatus.SUCCESS);
+        Prediction result = service.updatePrediction(3L, 12L, PredictionStatus.COMPLETED);
 
-        assertEquals(PredictionStatus.SUCCESS, result.getStatus());
+        assertEquals(PredictionStatus.COMPLETED, result.getStatus());
     }
 
     @Test

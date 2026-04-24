@@ -57,7 +57,7 @@ class ExplanationFeedbackControllerTest {
         CreateExplanationFeedbackParams params = new CreateExplanationFeedbackParams();
         params.setPredictionId(11L);
         params.setOrder(1);
-        params.setValue(objectMapper.readTree("\"tree\""));
+        params.setValue(objectMapper.valueToTree(Map.of("feedback-step-notes", "tree")));
         when(explanationFeedbackService.createExplanationFeedback(3L, 11L, 1, params.getValue()))
                 .thenReturn(explanationFeedback(params.getValue()));
 
@@ -71,7 +71,7 @@ class ExplanationFeedbackControllerTest {
     void updateExplanationFeedback_UsesInternalUserId() throws Exception {
         UpdateExplanationFeedbackParams params = new UpdateExplanationFeedbackParams();
         params.setExplanationFeedbackId(12L);
-        params.setRealValue(objectMapper.readTree("\"fixed\""));
+        params.setRealValue(objectMapper.valueToTree(Map.of("feedback-step-notes", "fixed")));
         when(explanationFeedbackService.updateExplanationFeedback(3L, 12L, params.getRealValue()))
                 .thenReturn(explanationFeedback(params.getRealValue()));
 

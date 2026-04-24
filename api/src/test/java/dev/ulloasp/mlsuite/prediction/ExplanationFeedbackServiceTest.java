@@ -20,11 +20,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.prediction.entities.ExplanationFeedback;
 import dev.ulloasp.mlsuite.prediction.entities.Prediction;
+import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.exceptions.ExplanationFeedbackDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.repositories.ExplanationFeedbackRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
 import dev.ulloasp.mlsuite.prediction.services.ExplanationFeedbackServiceImpl;
+import dev.ulloasp.mlsuite.prediction.services.PredictionFeedbackStatusResolver;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
 import dev.ulloasp.mlsuite.user.entity.User;
 import dev.ulloasp.mlsuite.user.service.UserLookupService;
@@ -41,26 +43,36 @@ class ExplanationFeedbackServiceTest {
     @Mock
     private PredictionRepository predictionRepository;
 
+    @Mock
+    private PredictionFeedbackStatusResolver predictionFeedbackStatusResolver;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private ExplanationFeedbackServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ExplanationFeedbackServiceImpl(userLookupService, explanationFeedbackRepository,
-                predictionRepository);
+        service = new ExplanationFeedbackServiceImpl(
+                userLookupService,
+                explanationFeedbackRepository,
+                predictionRepository,
+                predictionFeedbackStatusResolver);
     }
 
     @Test
     void createExplanationFeedback_UsesOwnerScopedPrediction() throws Exception {
+        Prediction prediction = prediction();
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(prediction()));
+        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(prediction));
         when(explanationFeedbackRepository.save(any(ExplanationFeedback.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
+        when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ExplanationFeedback result = service.createExplanationFeedback(3L, 11L, 1, objectMapper.readTree("\"tree\""));
 
         assertEquals(1, result.getOrder());
         assertEquals("tree", result.getValue().asText());
+        assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
     }
 
     @Test
@@ -74,15 +86,19 @@ class ExplanationFeedbackServiceTest {
 
     @Test
     void updateExplanationFeedback_StoresRealValue() throws Exception {
-        ExplanationFeedback feedback = explanationFeedback(prediction());
+        Prediction prediction = prediction();
+        ExplanationFeedback feedback = explanationFeedback(prediction);
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(explanationFeedbackRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.of(feedback));
         when(explanationFeedbackRepository.save(any(ExplanationFeedback.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+        when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
+        when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ExplanationFeedback result = service.updateExplanationFeedback(3L, 12L, objectMapper.readTree("\"fixed\""));
 
         assertEquals("fixed", result.getRealValue().asText());
+        assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
     }
 
     @Test
@@ -116,11 +132,13 @@ class ExplanationFeedbackServiceTest {
         model.setUser(user());
         Signature signature = new Signature();
         signature.setModel(model);
+        signature.setInputSignature(Map.of());
         Prediction prediction = new Prediction();
         prediction.setId(11L);
         prediction.setSignature(signature);
         prediction.setPrediction(Map.of());
         prediction.setData(Map.of());
+        prediction.setStatus(PredictionStatus.PENDING);
         return prediction;
     }
 

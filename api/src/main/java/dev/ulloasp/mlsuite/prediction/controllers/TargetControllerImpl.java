@@ -50,7 +50,9 @@ public class TargetControllerImpl implements TargetController {
     @Override
     public ResponseEntity<TargetDto> updateTarget(OAuth2AuthenticationToken authentication,
             @RequestBody UpdateTargetParams params) {
-        Target updatedTarget = targetService.updateTarget(currentUserResolver.resolve(authentication).userId(), params.getTargetId(),
+        Target updatedTarget = targetService.updateTarget(
+                currentUserResolver.resolve(authentication).userId(),
+                params.getTargetId(),
                 params.getRealValue());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(TargetDto.toDto(updatedTarget));
