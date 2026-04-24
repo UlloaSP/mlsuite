@@ -1,3 +1,34 @@
+# AGENTS.md
+
+This file extends `../AGENTS.md`.
+Read root first, then this file for work inside `frontend/`.
+If this file conflicts with root, this file wins for `frontend/`.
+
+## Scope
+- Applies to all files under `frontend/`.
+- Covers React UI, MLForm integration, plugin catalog, and prediction flows.
+
+## Frontend Rules
+- For any visual frontend change, always use the `frontend-design` skill and review `../DESIGN.md` before editing.
+- UI must reflect backend contract, not historical assumptions.
+- Do not label items as `system`, `builtin`, or special unless backend model explicitly supports it.
+- MLForm engine built-ins are not the same thing as MLSuite app plugin catalog items. Do not conflate them.
+- Search, filter, sort, badges, empty states, and copy must operate on real fetched data only.
+- Prefer removing legacy UI branches over preserving compatibility with deleted backend behavior.
+- Keep pages and components composable; split before crossing line limit.
+
+## Frontend Architecture Rules
+- Max 1 component per file.
+- Do not hardcode design decisions into feature components.
+- Reusable visual primitives, tokens, variants, and interaction states must live in a design-system layer.
+- Feature components must consume design-system APIs and tokens instead of ad hoc one-off styling rules.
+- Keep architecture screaming: file and folder names must make feature ownership obvious.
+- Organize by feature or domain first so change impact is easy to trace.
+- Separate feature logic, design-system primitives, page wiring, and shared infrastructure clearly.
+
+## Frontend Testing Rules
+- Prefer frontend tests for visible behavior over implementation details.
+
 <!--VITE PLUS START-->
 
 # Using Vite+, the Unified Toolchain for the Web
