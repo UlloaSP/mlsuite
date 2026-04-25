@@ -8,9 +8,11 @@ import { cx } from "./ui";
 export function SidebarSection({
 	children,
 	className = "",
+	collapsed = false,
 }: {
 	children: React.ReactNode;
 	className?: string;
+	collapsed?: boolean;
 }) {
-	return <div className={cx("flex flex-col gap-2.5", className)}>{children}</div>;
+	return <div className={cx(`flex flex-col ${collapsed ? "items-center" : ""} gap-2.5 border-[var(--border-soft)]`, className)}>{children}</div>;
 }

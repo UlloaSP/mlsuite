@@ -46,4 +46,7 @@ export const themeWithHtmlAtom = atom(
 /** Estado de pantalla completa: no se persiste */
 export const fullscreenAtom = atom(false);
 
+/** Estado de la barra lateral: persiste en localStorage */
+export const sidebarCollapsedAtom = atomWithStorage<boolean>("ui/sidebar-collapsed", false);
+
 export const isDarkMode = atom((get) => get(themeAtom) === "dark");

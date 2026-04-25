@@ -27,9 +27,7 @@ export {
 	AppSurface,
 	AppTabs,
 	AppTextArea,
-	AppTextField,
-	AppToolbar,
-	AppTitle,
-	cx,
+	AppTextField, AppTitle, AppToolbar, cx,
+	FOCUS_RING
 } from "./ui";
 
