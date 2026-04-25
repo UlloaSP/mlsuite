@@ -4,14 +4,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { LucideIcon } from "lucide-react";
+import { motion } from "motion/react";
 import type { ComponentType } from "react";
-import { cx } from "./ui";
+import { cx, FOCUS_RING } from "./ui";
 
 export function SidebarTile({
 	icon: Icon,
 	label,
 	isActive = false,
 	variant = "navigation",
+	collapsed = false,
+	ariaExpanded,
 	onClick,
 	className = "",
 }: {
@@ -19,6 +22,8 @@ export function SidebarTile({
 	label: string;
 	isActive?: boolean;
 	variant?: "navigation" | "action" | "auth";
+	collapsed?: boolean;
+	ariaExpanded?: boolean;
 	onClick?: () => void;
 	className?: string;
 }) {
@@ -30,25 +35,40 @@ export function SidebarTile({
 					: "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 			case "action":
 				return "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
-			case "auth":
-				return "border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 			default:
 				return "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 		}
 	};
 
-	return (
+	const button = (
 		<button
 			type="button"
 			onClick={onClick}
+			aria-label={label}
+			aria-expanded={ariaExpanded}
 			className={cx(
-				"flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition active:scale-[0.985]",
+				"flex w-full min-w-0 box-border items-center rounded-xl text-left text-sm font-medium transition active:scale-[0.985]",
+				FOCUS_RING,
+				collapsed ? "justify-center p-3" : "gap-3 px-4 py-3",
 				getVariantStyles(),
 				className,
 			)}
 		>
-			<Icon size={18} />
-			<span className="text-sm">{label}</span>
+			<Icon size={18} className="shrink-0" />
+			{!collapsed && (
+				<motion.span
+					key="label"
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+					transition={{ duration: 0.15 }}
+					className="whitespace-nowrap text-sm"
+				>
+					{label}
+				</motion.span>
+			)}
 		</button>
 	);
+
+	return button;
 }

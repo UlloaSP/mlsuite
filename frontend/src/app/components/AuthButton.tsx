@@ -11,7 +11,15 @@ export function AuthButton({
 	currentProvider,
 	onLogin,
 	onLogout,
-}: any) {
+	collapsed = false,
+}: {
+	provider: "google" | "github";
+	isLoggedIn: boolean;
+	currentProvider: string | null;
+	onLogin: () => void;
+	onLogout: () => void;
+	collapsed?: boolean;
+}) {
 	const isCurrentProvider = isLoggedIn && currentProvider === provider;
 	const providerLogo =
 		provider === "google"
@@ -43,7 +51,7 @@ export function AuthButton({
 		}
 	};
 
-	const config: any = getProviderConfig();
+	const config = getProviderConfig();
 	const ProviderIcon = ({ className = "" }: { className?: string }) => (
 		<img
 			src={providerLogo}
@@ -65,6 +73,7 @@ export function AuthButton({
 			icon={ProviderIcon}
 			label={isCurrentProvider ? "Logout" : `${config.name} Login`}
 			variant="auth"
+			collapsed={collapsed}
 			onClick={handleClick}
 			className={`${config.colors.bg} ${config.colors.hover} ${config.colors.text}`}
 		/>
