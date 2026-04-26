@@ -3,217 +3,198 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import {
-	ChevronDown,
-	ChevronUp,
-	FileText,
-	RefreshCcw,
-	Save
-} from "lucide-react";
-import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-	AppButton,
-	AppCopy,
-	AppPage,
-	AppPanel,
-	AppSurface,
-	AppTextField,
-} from "../../app/components";
+import { AppPage } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
-import { CreateModelHeader } from "../components/CreateModelHeader";
-import { UploadFile } from "../components/UploadFile";
+import type { Bundle } from "../bundle-types";
+import { DF_EXTS, getStem, isDfFile, isModelFile, slugToTitle } from "../bundle-utils";
+import { BundleCard } from "../components/BundleCard";
+import { BundleDropZone } from "../components/BundleDropZone";
+import { BundleEmptyState } from "../components/BundleEmptyState";
+import { BundleSummaryPanel } from "../components/BundleSummaryPanel";
 import { useCreateModelMutation } from "../hooks";
 
-export function CreateModelPage() {
-	const [selectedModelFile, setSelectedModelFile] = useState<File | null>(null);
-	const [selectedDataframeFile, setSelectedDataframeFile] =
-		useState<File | null>(null);
-	const [name, setName] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
-	const [showDataframeUploader, setShowDataframeUploader] = useState(false);
+let _nextId = 1;
 
+export function CreateModelPage() {
+	const [bundles, setBundles] = useState<Bundle[]>([]);
 	const mutation = useCreateModelMutation();
 	const navigate = useNavigate();
-
 	const { data: user, error } = useUser();
 
-	const handleSave = async () => {
-		if (!selectedModelFile || !name) return;
+	// ── Ingest dropped/selected files ───────────────────────────────────────
 
-		setIsLoading(true);
-		try {
-			const created = await mutation.mutateAsync({
-				name,
-				modelFile: selectedModelFile,
-				dataframeFile: selectedDataframeFile ?? undefined,
+	const handleFiles = useCallback((files: File[]) => {
+		const models = files.filter((f) => isModelFile(f.name));
+		const dfs = files.filter((f) => isDfFile(f.name));
+		const pool = [...dfs];
+
+		setBundles((prev) => {
+			const next = [...prev];
+
+			models.forEach((modelFile) => {
+				if (next.some((b) => b.modelFile.name === modelFile.name)) return;
+				const stem = getStem(modelFile.name);
+				const idx = pool.findIndex(
+					(df) => getStem(df.name).toLowerCase() === stem.toLowerCase(),
+				);
+				const dfFile = idx !== -1 ? pool.splice(idx, 1)[0] : null;
+				next.push({
+					id: _nextId++,
+					modelFile,
+					dfFile,
+					name: slugToTitle(stem),
+					saved: false,
+					saving: false,
+				});
 			});
-			navigate(`/models/${created.model.id}?tab=signatures`);
-		} catch (err) {
-		} finally {
-			setIsLoading(false);
+
+			// Attach remaining dfs to the first bundle that lacks one
+			pool.forEach((df) => {
+				const stem = getStem(df.name).toLowerCase();
+				const target =
+					next.find(
+						(b) =>
+							getStem(b.modelFile.name).toLowerCase() === stem && !b.dfFile,
+					) ?? next.find((b) => !b.dfFile);
+				if (target) {
+					target.dfFile = df;
+					target.saved = false;
+				}
+			});
+
+			return next;
+		});
+	}, []);
+
+	// ── Bundle actions ───────────────────────────────────────────────────────
+
+	const removeBundle = (id: number) =>
+		setBundles((prev) => prev.filter((b) => b.id !== id));
+
+	const setBundleName = (id: number, value: string) =>
+		setBundles((prev) =>
+			prev.map((b) => (b.id === id ? { ...b, name: value } : b)),
+		);
+
+	const attachDf = (bundleId: number) => {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = DF_EXTS.join(",");
+		input.onchange = (e) => {
+			const files = Array.from((e.target as HTMLInputElement).files ?? []);
+			if (!files.length) return;
+			setBundles((prev) =>
+				prev.map((b) =>
+					b.id === bundleId ? { ...b, dfFile: files[0], saved: false } : b,
+				),
+			);
+		};
+		input.click();
+	};
+
+	const saveBundle = async (id: number) => {
+		const bundle = bundles.find((b) => b.id === id);
+		if (!bundle || !bundle.name.trim() || bundle.saved || bundle.saving) return;
+
+		setBundles((prev) =>
+			prev.map((b) => (b.id === id ? { ...b, saving: true } : b)),
+		);
+		try {
+			await mutation.mutateAsync({
+				name: bundle.name.trim(),
+				modelFile: bundle.modelFile,
+				dataframeFile: bundle.dfFile ?? undefined,
+			});
+			setBundles((prev) =>
+				prev.map((b) => (b.id === id ? { ...b, saved: true, saving: false } : b)),
+			);
+		} catch {
+			setBundles((prev) =>
+				prev.map((b) => (b.id === id ? { ...b, saving: false } : b)),
+			);
 		}
 	};
 
-	const isFormValid = selectedModelFile && name.trim();
-
-	useEffect(() => {
-		if (!selectedModelFile) {
-			setName("");
-			return;
-		}
-		const nameWithoutExtension = selectedModelFile.name.replace(
-			/\.[^/.]+$/,
-			"",
+	const saveAll = async () => {
+		const unsaved = bundles.filter(
+			(b) => b.name.trim() && !b.saved && !b.saving,
 		);
-		setName(
-			nameWithoutExtension
-				.replace(/[_-]/g, " ")
-				.replace(/\b\w/g, (l) => l.toUpperCase()),
-		);
-	}, [selectedModelFile]);
+		for (const b of unsaved) await saveBundle(b.id);
+		navigate("/models");
+	};
 
-	useEffect(() => {
-		if (selectedDataframeFile) {
-			setShowDataframeUploader(true);
-		}
-	}, [selectedDataframeFile]);
+	// ── Derived stats ────────────────────────────────────────────────────────
+
+	const total = bundles.length;
+	const withDf = bundles.filter((b) => b.dfFile).length;
+	const saved = bundles.filter((b) => b.saved).length;
+	const unsavedReady = bundles.filter(
+		(b) => b.name.trim() && !b.saved && !b.saving,
+	).length;
+	const anySaving = bundles.some((b) => b.saving);
 
 	if (!user || error) return <NotFoundError />;
 
 	return (
 		<AppPage>
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5 }}
-				className="flex flex-1"
-			>
-				<AppSurface className="flex flex-1 flex-col gap-8 overflow-auto">
-					<CreateModelHeader />
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
+				{/* ── Page header ─────────────────────────────────────────── */}
+				<header className="mb-5 flex-shrink-0">
+					<p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-primary)]">
+						Model Studio
+					</p>
+					<h1 className="text-[27px] font-bold leading-[1.05] tracking-[-0.8px] text-[var(--text-primary)]">
+						Create New Model
+					</h1>
+					<p className="mt-1.5 text-[13px] text-[var(--text-muted)]">
+						Drop model artifacts and dataframes. Files are grouped by name when
+						possible.
+					</p>
+				</header>
 
-					<div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.9fr)]">
-						<div className="space-y-6">
-							<div className="space-y-3">
-								<label className="block text-sm font-semibold text-[var(--text-primary)]">
-									Model File
-								</label>
-								<UploadFile
-									acceptedFormats={[".joblib"]}
-									selectedFile={selectedModelFile}
-									setSelectedFile={setSelectedModelFile}
-								/>
-							</div>
+				{/* ── Two-column layout ────────────────────────────────────── */}
+				<div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
+					{/* Left: drop zone + bundle list */}
+					<section
+						aria-label="Model bundles"
+						className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[rgba(235,235,235,0.92)] bg-[rgba(255,255,255,0.86)] shadow-[var(--shadow-card)] backdrop-blur-xl"
+					>
+						<BundleDropZone onFiles={handleFiles} />
 
-							<div className="space-y-3">
-								<div className="flex flex-wrap items-center justify-between gap-3">
-									<div>
-										<p className="text-sm font-semibold text-[var(--text-primary)]">
-											Model Dataframe
-										</p>
-										<AppCopy className="text-xs">
-											Optional. Add it only if you want to preserve feature context alongside the model artifact.
-										</AppCopy>
-									</div>
-									<AppButton
-										type="button"
-										variant="secondary"
-										onClick={() => setShowDataframeUploader((value) => !value)}
-									>
-										{showDataframeUploader || selectedDataframeFile ? (
-											<>
-												<ChevronUp size={16} />
-												<span>Hide optional Dataframe</span>
-											</>
-										) : (
-											<>
-												<ChevronDown size={16} />
-												<span>+ Add optional Dataframe</span>
-											</>
-										)}
-									</AppButton>
-								</div>
-
-								{showDataframeUploader || selectedDataframeFile ? (
-									<UploadFile
-										acceptedFormats={[".joblib"]}
-										selectedFile={selectedDataframeFile}
-										setSelectedFile={setSelectedDataframeFile}
+						<div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-[#f0f0f0] px-4 pb-4 pt-3">
+							{bundles.length === 0 ? (
+								<BundleEmptyState />
+							) : (
+								bundles.map((bundle, i) => (
+									<BundleCard
+										key={bundle.id}
+										bundle={bundle}
+										index={i}
+										onSave={() => saveBundle(bundle.id)}
+										onRemove={() => removeBundle(bundle.id)}
+										onRename={(v) => setBundleName(bundle.id, v)}
+										onAttachDf={() => attachDf(bundle.id)}
 									/>
-								) : null}
-							</div>
+								))
+							)}
 						</div>
+					</section>
 
-						<AppPanel className="flex h-fit flex-col gap-5">
-							<div className="space-y-2">
-								<label
-									htmlFor="model-name"
-									className="block text-sm font-semibold text-[var(--text-primary)]"
-								>
-									Model Name
-								</label>
-								<AppTextField
-									id="model-name"
-									type="text"
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									placeholder={selectedModelFile ? "Enter the model name..." : "Upload a model file first..."}
-									prefix={<FileText className="h-5 w-5 text-[var(--text-muted)]" />}
-									className={`w-full ${selectedModelFile ? "" : "opacity-60"}`}
-									disabled={!selectedModelFile}
-								/>
-								<AppCopy className="text-xs">
-									{selectedModelFile
-										? "Name auto-filled from the uploaded file. You can refine it before saving."
-										: "Upload a model file to auto-fill the name, then edit it if needed."}
-								</AppCopy>
-							</div>
-
-							<AppPanel className="space-y-2 border-dashed bg-[var(--surface-secondary)] shadow-none">
-								<p className="text-sm font-semibold text-[var(--text-primary)]">
-									Upload Notes
-								</p>
-								<AppCopy className="text-xs">
-									Keep the model artifact versioned before upload. Add the dataframe only when you need feature lineage in the workspace.
-								</AppCopy>
-							</AppPanel>
-
-							<div className="flex flex-wrap gap-3 pt-2">
-								<AppButton
-									onClick={() => navigate(-1)}
-									disabled={isLoading}
-									variant="secondary"
-									className="flex-1"
-								>
-									Cancel
-								</AppButton>
-
-								<AppButton
-									onClick={handleSave}
-									disabled={!isFormValid || isLoading}
-									className="flex-1"
-								>
-									{isLoading ? (
-										<>
-											<span className="animate-spin">
-												<RefreshCcw size={18} />
-											</span>
-											<span>Saving...</span>
-										</>
-									) : (
-										<>
-											<Save size={18} />
-											<span>Save</span>
-										</>
-									)}
-								</AppButton>
-							</div>
-						</AppPanel>
-					</div>
-				</AppSurface>
-			</motion.div>
+					{/* Right: summary panel */}
+					<BundleSummaryPanel
+						total={total}
+						withDf={withDf}
+						saved={saved}
+						unsavedReady={unsavedReady}
+						anySaving={anySaving}
+						onSaveAll={saveAll}
+						onClear={() => setBundles([])}
+					/>
+				</div>
+			</div>
 		</AppPage>
 	);
 }
