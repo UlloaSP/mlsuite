@@ -118,7 +118,7 @@ export function BundleSummaryPanel({
 					) : (
 						<Save size={13} />
 					)}
-					{anySaving ? "Saving…" : "Save all to Catalog"}
+					{anySaving ? "Saving…" : "Save All"}
 				</button>
 
 				<button
@@ -126,7 +126,7 @@ export function BundleSummaryPanel({
 					onClick={onClear}
 					className="flex w-full items-center justify-center rounded-[9px] border border-[var(--border-soft)] bg-transparent px-3 py-[11px] text-[13px] font-bold text-[var(--text-secondary)] transition-all duration-150 hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
 				>
-					Clear session
+					Clear
 				</button>
 			</div>
 		</aside>

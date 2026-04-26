@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
-import { AppPage } from "../../app/components";
+import { AppBreadcrumbs, AppPage } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import type { Bundle } from "../bundle-types";
@@ -142,7 +142,13 @@ export function CreateModelPage() {
 		<AppPage>
 			<div className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
 				{/* ── Page header ─────────────────────────────────────────── */}
-				<header className="mb-5 flex-shrink-0">
+				<AppBreadcrumbs
+					items={[
+						{ label: "Models", to: "/models" },
+						{ label: "Create Model" },
+					]}
+				/>
+				<header className="my-5 flex-shrink-0">
 					<p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-primary)]">
 						Model Studio
 					</p>
