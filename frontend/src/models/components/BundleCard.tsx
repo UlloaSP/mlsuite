@@ -42,7 +42,7 @@ export function BundleCard({
 		>
 			<div className="flex items-stretch">
 				{/* ── Files section ──────────────────────────────────────── */}
-				<div className="flex min-w-0 flex-1 flex-col gap-2 border-r border-[#f1f1f1] px-4 py-3.5">
+				<div className="flex min-w-0 flex-1 flex-col gap-2 border-r border-[var(--border-soft)] px-4 py-3.5">
 					<BundleFilePill
 						name={bundle.modelFile.name}
 						size={bundle.modelFile.size}
@@ -61,7 +61,7 @@ export function BundleCard({
 						<button
 							type="button"
 							onClick={onAttachDf}
-							className="flex items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--border-soft)] bg-[rgba(255,255,255,0.42)] px-3 py-[7px] text-[12px] text-[#bfbfbf] transition-all duration-150 hover:border-blue-400 hover:bg-blue-50/50 hover:text-blue-500"
+							className="flex items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--border-soft)] bg-[var(--surface-secondary)] px-3 py-[7px] text-[12px] text-[var(--text-muted)] transition-all duration-150 hover:border-blue-400 hover:bg-blue-500/10 hover:text-blue-500"
 						>
 							<Plus size={12} />
 							Attach dataframe{" "}
@@ -81,7 +81,7 @@ export function BundleCard({
 						className={cx(
 							"w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-secondary)]",
 							"px-3 py-2 text-[12px] font-bold text-[var(--text-primary)] outline-none",
-							"transition-all duration-150 focus:border-[var(--accent-primary)] focus:bg-white",
+							"transition-all duration-150 focus:border-[var(--accent-primary)] focus:bg-[var(--surface-primary)]",
 							bundle.saved && "cursor-not-allowed opacity-70",
 						)}
 					/>
@@ -117,7 +117,7 @@ export function BundleCard({
 							type="button"
 							onClick={onRemove}
 							aria-label="Remove bundle"
-							className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[7px] border border-[var(--border-soft)] bg-white text-[#c6c6c6] transition-all duration-150 hover:border-[var(--accent-primary)] hover:bg-[var(--accent-quiet)] hover:text-[var(--accent-primary)]"
+							className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[7px] border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-muted)] transition-all duration-150 hover:border-[var(--accent-primary)] hover:bg-[var(--accent-quiet)] hover:text-[var(--accent-primary)]"
 						>
 							<X size={12} />
 						</button>

@@ -166,11 +166,11 @@ export function CreateModelPage() {
 					{/* Left: drop zone + bundle list */}
 					<section
 						aria-label="Model bundles"
-						className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[rgba(235,235,235,0.92)] bg-[rgba(255,255,255,0.86)] shadow-[var(--shadow-card)] backdrop-blur-xl"
+						className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)]"
 					>
 						<BundleDropZone onFiles={handleFiles} />
 
-						<div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-[#f0f0f0] px-4 pb-4 pt-3">
+						<div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-[var(--border-soft)] px-4 pb-4 pt-3">
 							{bundles.length === 0 ? (
 								<BundleEmptyState />
 							) : (

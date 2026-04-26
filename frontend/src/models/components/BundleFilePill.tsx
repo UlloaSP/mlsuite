@@ -49,7 +49,7 @@ export function BundleFilePill({ name, size, kind, badge }: Props) {
 	const isModel = kind === "model";
 
 	return (
-		<div className="flex items-center gap-2.5 rounded-lg border border-[rgba(235,235,235,0.55)] bg-[rgba(255,255,255,0.64)] px-3 py-2">
+		<div className="flex items-center gap-2.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-secondary)] px-3 py-2">
 			<div
 				className={cx(
 					"flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[7px]",
@@ -62,8 +62,8 @@ export function BundleFilePill({ name, size, kind, badge }: Props) {
 			</div>
 
 			<div className="min-w-0 flex-1">
-				<p className="truncate text-[12px] font-bold text-[#333]">{name}</p>
-				<p className="mt-px font-mono text-[10px] text-[#b6b6b6]">
+				<p className="truncate text-[12px] font-bold text-[var(--text-primary)]">{name}</p>
+				<p className="mt-px font-mono text-[10px] text-[var(--text-muted)]">
 					{formatBytes(size)}
 				</p>
 			</div>

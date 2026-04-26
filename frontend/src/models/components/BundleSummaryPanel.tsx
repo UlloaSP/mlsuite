@@ -28,7 +28,7 @@ function SummaryRow({ label, value, valueClass, first }: RowProps) {
 		<div
 			className={cx(
 				"flex items-center justify-between gap-4 py-[7px]",
-				!first && "border-t border-[#f5f5f5]",
+				!first && "border-t border-[var(--border-soft)]",
 			)}
 		>
 			<span className="text-[12px] text-[var(--text-muted)]">{label}</span>
@@ -51,35 +51,35 @@ export function BundleSummaryPanel({
 	const bundleVal = total ? String(total) : "—";
 	const bundleCls = total
 		? "font-bold text-[var(--text-primary)]"
-		: "font-normal text-[#d0d0d0]";
+		: "font-normal text-[var(--text-muted)]";
 
 	const dfVal = total ? `${withDf} / ${total}` : "—";
 	const dfCls = !total
-		? "font-normal text-[#d0d0d0]"
+		? "font-normal text-[var(--text-muted)]"
 		: withDf === total
 			? "font-bold text-green-500"
-			: "font-bold text-amber-600";
+			: "font-bold text-amber-500";
 
 	const savedVal = total ? `${saved} / ${total}` : "—";
 	const savedCls = !total
-		? "font-normal text-[#d0d0d0]"
+		? "font-normal text-[var(--text-muted)]"
 		: saved === total
 			? "font-bold text-green-500"
 			: saved > 0
-				? "font-bold text-amber-600"
-				: "font-normal text-[#d0d0d0]";
+				? "font-bold text-amber-500"
+				: "font-normal text-[var(--text-muted)]";
 
 	return (
 		<aside
 			aria-label="Summary"
-			className="flex w-[288px] flex-shrink-0 flex-col overflow-hidden rounded-xl border border-[rgba(235,235,235,0.92)] bg-[rgba(255,255,255,0.88)] shadow-[var(--shadow-card)] backdrop-blur-xl"
+			className="flex w-[288px] flex-shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)]"
 		>
 			{/* Header */}
-			<div className="flex flex-shrink-0 items-center justify-between border-b border-[#f2f2f2] px-[18px] py-[15px]">
+			<div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--border-soft)] px-[18px] py-[15px]">
 				<span className="text-[13px] font-bold text-[var(--text-primary)]">
 					Summary
 				</span>
-				<span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[#bbbbbb]">
+				<span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-muted)]">
 					Session
 				</span>
 			</div>
@@ -101,7 +101,7 @@ export function BundleSummaryPanel({
 			</div>
 
 			{/* Actions */}
-			<div className="mt-auto flex flex-shrink-0 flex-col gap-2 border-t border-[#f5f5f5] px-[18px] py-[14px]">
+			<div className="mt-auto flex flex-shrink-0 flex-col gap-2 border-t border-[var(--border-soft)] px-[18px] py-[14px]">
 				<button
 					type="button"
 					disabled={!canSave}
