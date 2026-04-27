@@ -64,13 +64,13 @@ class PredictionControllerTest {
         params.setOverwrite(true);
         params.setPrediction(Map.of("value", 1));
         params.setInputs(Map.of("x", 2));
-        when(predictionService.createPrediction(3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2)))
+        when(predictionService.createPrediction(3L, 3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2)))
                 .thenReturn(prediction("pred", PredictionStatus.PENDING));
 
         ResponseEntity<?> response = controller.createPrediction(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(predictionService).createPrediction(3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2));
+        verify(predictionService).createPrediction(3L, 3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2));
     }
 
     @Test
@@ -78,18 +78,18 @@ class PredictionControllerTest {
         UpdatePredictionParams params = new UpdatePredictionParams();
         params.setPredictionId(12L);
         params.setStatus("COMPLETED");
-        when(predictionService.updatePrediction(3L, 12L, PredictionStatus.COMPLETED))
+        when(predictionService.updatePrediction(3L, 3L, 12L, PredictionStatus.COMPLETED))
                 .thenReturn(prediction("pred", PredictionStatus.COMPLETED));
 
         ResponseEntity<?> response = controller.updatePrediction(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(predictionService).updatePrediction(3L, 12L, PredictionStatus.COMPLETED);
+        verify(predictionService).updatePrediction(3L, 3L, 12L, PredictionStatus.COMPLETED);
     }
 
     @Test
     void getAllPredictions_PropagatesMissingPredictionErrors() {
-        when(predictionService.getPredictionsBySignatureId(3L, 99L))
+        when(predictionService.getPredictionsBySignatureId(3L, 3L, 99L))
                 .thenThrow(new PredictionDoesNotExistsException(99L, "alice"));
 
         assertThrows(PredictionDoesNotExistsException.class, () -> controller.getAllPredictions(authentication, 99L));
@@ -97,7 +97,7 @@ class PredictionControllerTest {
 
     @Test
     void getAllPredictions_ReturnsDtos() {
-        when(predictionService.getPredictionsBySignatureId(3L, 11L))
+        when(predictionService.getPredictionsBySignatureId(3L, 3L, 11L))
                 .thenReturn(List.of(prediction("pred", PredictionStatus.PENDING)));
 
         assertEquals(1, controller.getAllPredictions(authentication, 11L).getBody().size());

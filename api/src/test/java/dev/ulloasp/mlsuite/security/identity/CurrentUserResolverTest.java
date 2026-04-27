@@ -9,8 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
+import dev.ulloasp.mlsuite.security.local.LocalUserDetails;
 import dev.ulloasp.mlsuite.user.entity.User;
 import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.service.UserLookupService;
@@ -19,19 +20,16 @@ import dev.ulloasp.mlsuite.user.service.UserLookupService;
 class CurrentUserResolverTest {
 
     @Mock
-    private OAuth2ExternalIdentityExtractor extractor;
-
-    @Mock
     private UserLookupService userLookupService;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private CurrentUserResolver resolver;
 
     @BeforeEach
     void setUp() {
-        resolver = new CurrentUserResolver(extractor, userLookupService);
+        resolver = new CurrentUserResolver(userLookupService);
     }
 
     @Test
@@ -39,9 +37,9 @@ class CurrentUserResolverTest {
         User user = new User();
         user.setId(4L);
         user.setUsername("alice");
-        ExternalIdentity identity = new ExternalIdentity(null, "ext-1");
-        when(extractor.extract(authentication)).thenReturn(identity);
-        when(userLookupService.requireByExternalIdentity(identity)).thenReturn(user);
+        when(authentication.getPrincipal()).thenReturn(
+                new LocalUserDetails(4L, "alice", "alice@example.com", "hash", null));
+        when(userLookupService.requireById(4L)).thenReturn(user);
 
         CurrentUser currentUser = resolver.resolve(authentication);
 
@@ -51,9 +49,9 @@ class CurrentUserResolverTest {
 
     @Test
     void resolve_PropagatesMissingUser() {
-        ExternalIdentity identity = new ExternalIdentity(null, "ext-1");
-        when(extractor.extract(authentication)).thenReturn(identity);
-        when(userLookupService.requireByExternalIdentity(identity)).thenThrow(new UserDoesNotExistException("github", "ext-1"));
+        when(authentication.getPrincipal()).thenReturn(
+                new LocalUserDetails(4L, "alice", "alice@example.com", "hash", null));
+        when(userLookupService.requireById(4L)).thenThrow(new UserDoesNotExistException(4L));
 
         assertThrows(UserDoesNotExistException.class, () -> resolver.resolve(authentication));
     }

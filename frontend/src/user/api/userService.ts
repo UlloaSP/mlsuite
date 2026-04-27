@@ -5,19 +5,28 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { appFetch } from "../../app/api/appFetch";
 
-export interface UserDTO {
-	id: string;
-	fullName: string;
-	userName: string;
-	email: string;
-	avatarUrl: string;
-	location: string;
-	oauthProvider: string;
-	createdAt: string;
+export interface OrganizationSummaryDto {
+  id: string;
+  name: string;
+  slug: string;
+  status: string;
+  roleNames: string[];
 }
 
-export const getProfile = (): Promise<UserDTO> =>
-	appFetch<UserDTO>("/api/user/profile");
+export interface UserDTO {
+  id: string;
+  fullName: string;
+  userName: string;
+  email: string;
+  avatarUrl: string;
+  createdAt: string;
+  isSuperadmin: boolean;
+  activeOrganizationSlug: string;
+  activeOrganizationName: string;
+  organizations: OrganizationSummaryDto[];
+  permissions: string[];
+}
 
-export const logout = (): Promise<void> =>
-	appFetch<void>("/api/logout", { method: "POST" });
+export const getProfile = (): Promise<UserDTO> => appFetch<UserDTO>("/api/user/profile");
+
+export const logout = (): Promise<void> => appFetch<void>("/api/auth/logout", { method: "POST" });

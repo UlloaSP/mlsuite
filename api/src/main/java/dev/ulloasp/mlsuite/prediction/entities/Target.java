@@ -14,6 +14,7 @@ import org.hibernate.type.SqlTypes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.ulloasp.mlsuite.organization.entities.Organization;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -49,6 +50,10 @@ public class Target {
     @ManyToOne(optional = false)
     @JoinColumn(name = "prediction_id", nullable = false, foreignKey = @ForeignKey(name = "fk_target_prediction", foreignKeyDefinition = "FOREIGN KEY (prediction_id) REFERENCES prediction(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE"))
     private Prediction prediction;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
     @Column(name = "orden", nullable = false)
     private int order;

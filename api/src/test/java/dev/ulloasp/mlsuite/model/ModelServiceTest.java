@@ -59,7 +59,6 @@ class ModelServiceTest {
 
     @Test
     void getModels_UsesInternalUserId() {
-        when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.findByUserId(3L)).thenReturn(List.of(new Model()));
 
         assertEquals(1, service.getModels(3L).size());

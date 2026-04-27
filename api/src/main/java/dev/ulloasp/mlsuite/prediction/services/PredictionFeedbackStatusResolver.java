@@ -39,9 +39,10 @@ public class PredictionFeedbackStatusResolver {
         this.pluginService = pluginService;
     }
 
-    public PredictionStatus resolve(Long userId, Prediction prediction) {
+    public PredictionStatus resolve(Long userId, Long organizationId, Prediction prediction) {
         int requiredOutputs = countReports(prediction.getSignature().getInputSignature());
-        int requiredExplanations = countFeedbackEnabledExplanations(userId, prediction.getSignature().getInputSignature());
+        int requiredExplanations = countFeedbackEnabledExplanations(userId, organizationId,
+                prediction.getSignature().getInputSignature());
         int savedOutputs = outputFeedbackRepository.findByPredictionId(prediction.getId()).size();
         int savedExplanations = explanationFeedbackRepository.findByPredictionId(prediction.getId()).size();
 
@@ -55,13 +56,13 @@ public class PredictionFeedbackStatusResolver {
         return reports instanceof List<?> items ? items.size() : 0;
     }
 
-    private int countFeedbackEnabledExplanations(Long userId, Map<String, Object> inputSignature) {
+    private int countFeedbackEnabledExplanations(Long userId, Long organizationId, Map<String, Object> inputSignature) {
         Object rawExplanations = inputSignature.get("explanations");
         if (!(rawExplanations instanceof List<?> items)) {
             return 0;
         }
 
-        Set<String> pluginKindsWithFeedback = pluginService.list(userId).stream()
+        Set<String> pluginKindsWithFeedback = pluginService.list(userId, organizationId).stream()
                 .map(this::detectFeedbackExplanationKind)
                 .flatMap(Optional::stream)
                 .collect(java.util.stream.Collectors.toSet());
@@ -71,6 +72,10 @@ public class PredictionFeedbackStatusResolver {
                 .map((item) -> (Map<?, ?>) item)
                 .filter((item) -> isFeedbackEnabled(item, pluginKindsWithFeedback))
                 .count();
+    }
+
+    public PredictionStatus resolve(Long userId, Prediction prediction) {
+        return resolve(userId, userId, prediction);
     }
 
     private boolean isFeedbackEnabled(Map<?, ?> explanation, Set<String> feedbackKinds) {

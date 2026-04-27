@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.user.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -17,6 +17,6 @@ import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
 public interface UserController {
 
     @GetMapping("/profile")
-    public ResponseEntity<UserDto> getProfile(OAuth2AuthenticationToken authentication)
+    public ResponseEntity<UserDto> getProfile(Authentication authentication)
             throws UserDoesNotExistException;
 }

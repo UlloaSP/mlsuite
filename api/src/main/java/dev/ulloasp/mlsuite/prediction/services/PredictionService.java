@@ -13,13 +13,31 @@ import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 
 public interface PredictionService {
 
-        public Prediction createPrediction(Long userId, Long signatureId, String name,
+        public Prediction createPrediction(Long userId, Long organizationId, Long signatureId, String name,
                         boolean overwrite, Map<String, Object> prediction, Map<String, Object> data);
 
-        public Prediction updatePrediction(Long userId, Long predictionId,
+        default Prediction createPrediction(Long userId, Long signatureId, String name,
+                        boolean overwrite, Map<String, Object> prediction, Map<String, Object> data) {
+                return createPrediction(userId, userId, signatureId, name, overwrite, prediction, data);
+        }
+
+        public Prediction updatePrediction(Long userId, Long organizationId, Long predictionId,
                         PredictionStatus status);
 
-        public Prediction getPrediction(Long userId, Long predictionId);
+        default Prediction updatePrediction(Long userId, Long predictionId,
+                        PredictionStatus status) {
+                return updatePrediction(userId, userId, predictionId, status);
+        }
 
-        public List<Prediction> getPredictionsBySignatureId(Long userId, Long signatureId);
+        public Prediction getPrediction(Long userId, Long organizationId, Long predictionId);
+
+        default Prediction getPrediction(Long userId, Long predictionId) {
+                return getPrediction(userId, userId, predictionId);
+        }
+
+        public List<Prediction> getPredictionsBySignatureId(Long userId, Long organizationId, Long signatureId);
+
+        default List<Prediction> getPredictionsBySignatureId(Long userId, Long signatureId) {
+                return getPredictionsBySignatureId(userId, userId, signatureId);
+        }
 }

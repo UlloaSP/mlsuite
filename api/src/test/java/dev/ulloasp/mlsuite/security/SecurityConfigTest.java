@@ -21,17 +21,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-import dev.ulloasp.mlsuite.security.oauth2.OAuth2AuthenticationSuccessHandler;
-
 @ExtendWith(MockitoExtension.class)
 class SecurityConfigTest {
-
-    @Mock
-    private OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
 
     @Mock
     private AuthenticationConfiguration authenticationConfiguration;
@@ -58,13 +54,11 @@ class SecurityConfigTest {
         when(httpSecurity.sessionManagement(any())).thenReturn(httpSecurity);
         when(httpSecurity.authorizeHttpRequests(any())).thenReturn(httpSecurity);
         when(httpSecurity.exceptionHandling(any())).thenReturn(httpSecurity);
-        when(httpSecurity.oauth2Login(any())).thenReturn(httpSecurity);
         when(httpSecurity.logout(any())).thenReturn(httpSecurity);
         when(httpSecurity.build()).thenReturn(filterChain);
 
         // When
-        SecurityFilterChain result = securityConfig.securityFilterChain(httpSecurity,
-                oauth2AuthenticationSuccessHandler);
+        SecurityFilterChain result = securityConfig.securityFilterChain(httpSecurity);
 
         // Then
         assertNotNull(result);
@@ -73,7 +67,6 @@ class SecurityConfigTest {
         verify(httpSecurity).sessionManagement(any());
         verify(httpSecurity).authorizeHttpRequests(any());
         verify(httpSecurity).exceptionHandling(any());
-        verify(httpSecurity).oauth2Login(any());
         verify(httpSecurity).logout(any());
         verify(httpSecurity).build();
     }
@@ -108,5 +101,11 @@ class SecurityConfigTest {
 
         // Then
         assertNotNull(config);
+    }
+
+    @Test
+    void passwordEncoder_ShouldCreateEncoder() {
+        PasswordEncoder encoder = securityConfig.passwordEncoder();
+        assertNotNull(encoder);
     }
 }

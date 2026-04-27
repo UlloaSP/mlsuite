@@ -8,7 +8,7 @@ package dev.ulloasp.mlsuite.prediction.controllers;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,15 +23,15 @@ import dev.ulloasp.mlsuite.prediction.dtos.UpdatePredictionParams;
 public interface PredictionController {
 
         @PostMapping("/create")
-        public ResponseEntity<PredictionDto> createPrediction(OAuth2AuthenticationToken authentication,
+        public ResponseEntity<PredictionDto> createPrediction(Authentication authentication,
                         @RequestBody CreatePredictionParams params);
 
         @PostMapping("/update")
-        public ResponseEntity<PredictionDto> updatePrediction(OAuth2AuthenticationToken authentication,
+        public ResponseEntity<PredictionDto> updatePrediction(Authentication authentication,
                         @RequestBody UpdatePredictionParams params);
 
         @GetMapping("/all")
-        public ResponseEntity<List<PredictionDto>> getAllPredictions(OAuth2AuthenticationToken authentication,
+        public ResponseEntity<List<PredictionDto>> getAllPredictions(Authentication authentication,
                         @RequestParam Long signatureId);
 
 }

@@ -30,16 +30,18 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "app_user", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_app_user_oauth", columnNames = { "oauth_provider", "oauth_id" })
+        @UniqueConstraint(name = "uq_app_user_email", columnNames = { "email" }),
+        @UniqueConstraint(name = "uq_app_user_username", columnNames = { "username" })
 })
 public class User {
 
-    public User(String username, String email, OAuthProvider oauthProvider, String oauthId, String avatarUrl,
-            String fullName) {
+    public User(String username, String email, String passwordHash, String avatarUrl, String fullName) {
         this.username = username;
         this.email = email;
-        this.oauthProvider = oauthProvider;
-        this.oauthId = oauthId;
+        this.passwordHash = passwordHash;
+        this.authProvider = AuthProvider.LOCAL;
+        this.accountStatus = AccountStatus.ACTIVE;
+        this.emailVerified = true;
         this.avatarUrl = avatarUrl;
         this.fullName = fullName;
     }
@@ -54,18 +56,40 @@ public class User {
     @Column(name = "email", nullable = false, length = 100)
     private String email;
 
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    @Deprecated
     @Enumerated(EnumType.ORDINAL)
-    @Column(name = "oauth_provider", nullable = false)
+    @Column(name = "oauth_provider", insertable = false, updatable = false)
     private OAuthProvider oauthProvider;
 
-    @Column(name = "oauth_id", nullable = false)
+    @Deprecated
+    @Column(name = "oauth_id", insertable = false, updatable = false)
     private String oauthId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", nullable = false, length = 32)
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", nullable = false, length = 32)
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = true;
+
+    @Column(name = "last_login_at", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime lastLoginAt;
 
     @Column(name = "avatar_url", columnDefinition = "TEXT")
     private String avatarUrl;
 
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
+
+    @Column(name = "is_superadmin", nullable = false)
+    private boolean superadmin;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

@@ -10,6 +10,18 @@ public final class PluginStoragePaths {
     private PluginStoragePaths() {
     }
 
+    public static String organizationItemsPrefix(String rootPrefix, Long organizationId) {
+        return organizationPrefix(rootPrefix, organizationId) + "/items/";
+    }
+
+    public static String organizationItemObjectKey(String rootPrefix, Long organizationId, String id) {
+        return organizationItemsPrefix(rootPrefix, organizationId) + id + ".json";
+    }
+
+    public static String organizationStateObjectKey(String rootPrefix, Long organizationId, String stateFile) {
+        return organizationPrefix(rootPrefix, organizationId) + "/" + stateFile;
+    }
+
     public static String itemsPrefix(String rootPrefix, Long userId) {
         return userPrefix(rootPrefix, userId) + "/items/";
     }
@@ -36,6 +48,10 @@ public final class PluginStoragePaths {
 
     private static String userPrefix(String rootPrefix, Long userId) {
         return "users/" + userId + "/" + rootPrefix;
+    }
+
+    private static String organizationPrefix(String rootPrefix, Long organizationId) {
+        return "orgs/" + organizationId + "/" + rootPrefix;
     }
 
     private static String legacyUserPrefix(String rootPrefix, User user) {

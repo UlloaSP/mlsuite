@@ -26,7 +26,12 @@ public interface SignatureRepository extends JpaRepository<Signature, Long> {
 
     boolean existsByModelIdAndInputSignature(Long modelId, Map<String, Object> inputSignature);
 
-    @Query("SELECT s FROM Signature s WHERE s.id = :signatureId AND s.model.user.id = :userId")
+    @Query("SELECT s FROM Signature s WHERE s.id = :signatureId AND s.organization.id = :organizationId")
+    Optional<Signature> findByIdAndOrganizationId(Long signatureId, Long organizationId);
+
+    List<Signature> findByModelIdAndOrganizationId(Long modelId, Long organizationId);
+
+    @Query("SELECT s FROM Signature s WHERE s.id = :signatureId AND s.model.createdBy.id = :userId")
     Optional<Signature> findByIdAndUserId(Long signatureId, Long userId);
 
 }

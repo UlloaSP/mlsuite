@@ -16,10 +16,16 @@ import dev.ulloasp.mlsuite.prediction.entities.ExplanationFeedback;
 
 @Repository
 public interface ExplanationFeedbackRepository extends JpaRepository<ExplanationFeedback, Long> {
-    @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.id = :explanationFeedbackId AND ef.prediction.signature.model.user.id = :userId")
+    @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.id = :explanationFeedbackId AND ef.organization.id = :organizationId")
+    Optional<ExplanationFeedback> findByIdAndOrganizationId(Long explanationFeedbackId, Long organizationId);
+
+    @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.id = :explanationFeedbackId AND ef.prediction.signature.model.createdBy.id = :userId")
     Optional<ExplanationFeedback> findByIdAndUserId(Long explanationFeedbackId, Long userId);
 
-    @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.prediction.id = :predictionId AND ef.prediction.signature.model.user.id = :userId ORDER BY ef.order ASC")
+    @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.prediction.id = :predictionId AND ef.organization.id = :organizationId ORDER BY ef.order ASC")
+    List<ExplanationFeedback> findByPredictionIdAndOrganizationId(Long predictionId, Long organizationId);
+
+    @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.prediction.id = :predictionId AND ef.prediction.signature.model.createdBy.id = :userId ORDER BY ef.order ASC")
     List<ExplanationFeedback> findByPredictionIdAndUserId(Long predictionId, Long userId);
 
     List<ExplanationFeedback> findByPredictionId(Long predictionId);

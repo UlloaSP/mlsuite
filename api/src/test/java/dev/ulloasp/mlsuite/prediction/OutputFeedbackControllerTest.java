@@ -58,13 +58,13 @@ class OutputFeedbackControllerTest {
         params.setPredictionId(11L);
         params.setOrder(1);
         params.setValue(objectMapper.valueToTree(Map.of("assessment", "correct")));
-        when(outputFeedbackService.createOutputFeedback(3L, 11L, 1, params.getValue()))
+        when(outputFeedbackService.createOutputFeedback(3L, 3L, 11L, 1, params.getValue()))
                 .thenReturn(outputFeedback(params.getValue()));
 
         ResponseEntity<?> response = controller.createOutputFeedback(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(outputFeedbackService).createOutputFeedback(3L, 11L, 1, params.getValue());
+        verify(outputFeedbackService).createOutputFeedback(3L, 3L, 11L, 1, params.getValue());
     }
 
     @Test
@@ -72,18 +72,18 @@ class OutputFeedbackControllerTest {
         UpdateOutputFeedbackParams params = new UpdateOutputFeedbackParams();
         params.setOutputFeedbackId(12L);
         params.setValue(objectMapper.valueToTree(Map.of("assessment", "incorrect")));
-        when(outputFeedbackService.updateOutputFeedback(3L, 12L, params.getValue()))
+        when(outputFeedbackService.updateOutputFeedback(3L, 3L, 12L, params.getValue()))
                 .thenReturn(outputFeedback(params.getValue()));
 
         ResponseEntity<?> response = controller.updateOutputFeedback(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(outputFeedbackService).updateOutputFeedback(3L, 12L, params.getValue());
+        verify(outputFeedbackService).updateOutputFeedback(3L, 3L, 12L, params.getValue());
     }
 
     @Test
     void getAllOutputFeedback_PropagatesMissingErrors() {
-        when(outputFeedbackService.getOutputFeedbackByPredictionId(3L, 99L))
+        when(outputFeedbackService.getOutputFeedbackByPredictionId(3L, 3L, 99L))
                 .thenThrow(new OutputFeedbackDoesNotExistsException(99L, "alice"));
 
         assertThrows(OutputFeedbackDoesNotExistsException.class,
@@ -92,7 +92,7 @@ class OutputFeedbackControllerTest {
 
     @Test
     void getAllOutputFeedback_ReturnsDtos() throws Exception {
-        when(outputFeedbackService.getOutputFeedbackByPredictionId(3L, 11L))
+        when(outputFeedbackService.getOutputFeedbackByPredictionId(3L, 3L, 11L))
                 .thenReturn(List.of(outputFeedback(objectMapper.valueToTree(Map.of("assessment", "correct")))));
 
         assertEquals(1, controller.getAllOutputFeedback(authentication, 11L).getBody().size());

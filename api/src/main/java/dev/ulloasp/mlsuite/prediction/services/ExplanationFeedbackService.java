@@ -13,9 +13,21 @@ import dev.ulloasp.mlsuite.prediction.entities.ExplanationFeedback;
 
 public interface ExplanationFeedbackService {
 
-    ExplanationFeedback createExplanationFeedback(Long userId, Long predictionId, int order, JsonNode value);
+    ExplanationFeedback createExplanationFeedback(Long userId, Long organizationId, Long predictionId, int order, JsonNode value);
 
-    ExplanationFeedback updateExplanationFeedback(Long userId, Long explanationFeedbackId, JsonNode realValue);
+    default ExplanationFeedback createExplanationFeedback(Long userId, Long predictionId, int order, JsonNode value) {
+        return createExplanationFeedback(userId, userId, predictionId, order, value);
+    }
 
-    List<ExplanationFeedback> getExplanationFeedbackByPredictionId(Long userId, Long predictionId);
+    ExplanationFeedback updateExplanationFeedback(Long userId, Long organizationId, Long explanationFeedbackId, JsonNode realValue);
+
+    default ExplanationFeedback updateExplanationFeedback(Long userId, Long explanationFeedbackId, JsonNode realValue) {
+        return updateExplanationFeedback(userId, userId, explanationFeedbackId, realValue);
+    }
+
+    List<ExplanationFeedback> getExplanationFeedbackByPredictionId(Long userId, Long organizationId, Long predictionId);
+
+    default List<ExplanationFeedback> getExplanationFeedbackByPredictionId(Long userId, Long predictionId) {
+        return getExplanationFeedbackByPredictionId(userId, userId, predictionId);
+    }
 }

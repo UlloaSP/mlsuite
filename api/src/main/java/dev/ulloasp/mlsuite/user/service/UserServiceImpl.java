@@ -5,14 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.user.service;
 
-import java.util.Optional;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.exceptions.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.repository.UserRepository;
 
@@ -27,31 +23,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void signUp(String username, String email, OAuthProvider oauthProvider, String oauthId, String avatarUrl,
-            String fullName) throws UserAlreadyExistsException {
-        if (this.userRepository.existsByOauthProviderAndOauthId(oauthProvider, oauthId)) {
-            throw new UserAlreadyExistsException(oauthProvider.toString(), oauthId);
-        }
-
-        User newUser = new User(username, email, oauthProvider, oauthId, avatarUrl, fullName);
-        this.userRepository.save(newUser);
-    }
-
-    @Override
-    public void signIn(OAuthProvider oauthProvider, String oauthId) throws UserDoesNotExistException {
-        if (!this.userRepository.existsByOauthProviderAndOauthId(oauthProvider, oauthId)) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-    }
-
-    @Override
     public User getProfile(Long userId) throws UserDoesNotExistException {
-        Optional<User> optionalUser = this.userRepository.findById(userId);
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(userId);
-        }
-
-        return optionalUser.get();
-
+        return userRepository.findById(userId).orElseThrow(() -> new UserDoesNotExistException(userId));
     }
 }

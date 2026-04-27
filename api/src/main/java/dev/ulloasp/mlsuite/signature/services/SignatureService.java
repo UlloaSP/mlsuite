@@ -12,11 +12,25 @@ import dev.ulloasp.mlsuite.signature.entities.Signature;
 
 public interface SignatureService {
 
-        public Signature createSignature(Long userId, Long modelId,
+        public Signature createSignature(Long userId, Long organizationId, Long modelId,
                         Map<String, Object> inputSignature, String name,
                         int major, int minor, int patch, Long origin);
 
-        public Signature getSignature(Long userId, Long signatureId);
+        default Signature createSignature(Long userId, Long modelId,
+                        Map<String, Object> inputSignature, String name,
+                        int major, int minor, int patch, Long origin) {
+                return createSignature(userId, userId, modelId, inputSignature, name, major, minor, patch, origin);
+        }
 
-        public List<Signature> getSignatureByModelId(Long userId, Long modelId);
+        public Signature getSignature(Long userId, Long organizationId, Long signatureId);
+
+        default Signature getSignature(Long userId, Long signatureId) {
+                return getSignature(userId, userId, signatureId);
+        }
+
+        public List<Signature> getSignatureByModelId(Long userId, Long organizationId, Long modelId);
+
+        default List<Signature> getSignatureByModelId(Long userId, Long modelId) {
+                return getSignatureByModelId(userId, userId, modelId);
+        }
 }

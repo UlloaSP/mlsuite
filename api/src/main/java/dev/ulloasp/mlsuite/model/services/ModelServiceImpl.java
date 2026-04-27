@@ -27,6 +27,8 @@ import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.exceptions.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
+import dev.ulloasp.mlsuite.organization.entities.Organization;
+import dev.ulloasp.mlsuite.organization.repositories.OrganizationRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.user.entity.User;
@@ -41,23 +43,36 @@ public class ModelServiceImpl implements ModelService {
     private RestTemplate restTemplate;
     private final UserLookupService userLookupService;
     private final ModelRepository modelRepository;
+    private final OrganizationRepository organizationRepository;
     private final ObjectStorageService objectStorageService;
 
     @Value("${analyzer.url}")
     private String analyzerUrl;
 
     public ModelServiceImpl(UserLookupService userLookupService, ModelRepository modelRepository,
+            OrganizationRepository organizationRepository,
             ObjectStorageService objectStorageService) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
+        this.organizationRepository = organizationRepository;
         this.objectStorageService = objectStorageService;
     }
 
-    @Override
-    public Model createModel(Long userId, String name, MultipartFile modelFile) {
-        User user = userLookupService.requireById(userId);
+    public ModelServiceImpl(
+            UserLookupService userLookupService,
+            ModelRepository modelRepository,
+            ObjectStorageService objectStorageService) {
+        this(userLookupService, modelRepository, null, objectStorageService);
+    }
 
-        if (modelRepository.existsByNameAndUserId(name, user.getId())) {
+    @Override
+    public Model createModel(Long userId, Long organizationId, String name, MultipartFile modelFile) {
+        User user = userLookupService.requireById(userId);
+        Organization organization = organizationRepository != null
+                ? organizationRepository.findById(organizationId).orElseThrow()
+                : null;
+
+        if (modelRepository.existsByNameAndOrganizationId(name, organizationId)) {
             throw new ModelAlreadyExistsException(name, user.getUsername());
         }
 
@@ -89,7 +104,7 @@ public class ModelServiceImpl implements ModelService {
         String fileName = response.get("fileName") != null
                 ? response.get("fileName").toString()
                 : modelFile.getOriginalFilename();
-        String objectKey = buildObjectKey(user.getId(), name, fileName);
+        String objectKey = buildObjectKey(organizationId, name, fileName);
         StoredObject storedObject;
         try {
             storedObject = objectStorageService.store(
@@ -103,7 +118,8 @@ public class ModelServiceImpl implements ModelService {
         }
 
         Model model = new Model();
-        model.setUser(user);
+        model.setOrganization(organization);
+        model.setCreatedBy(user);
         model.setName(name);
         model.setType(type);
         model.setSpecificType(specificType);
@@ -123,15 +139,62 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public List<Model> getModels(Long userId) {
+    public List<Model> getModels(Long organizationId) {
+        if (organizationRepository != null) {
+            organizationRepository.findById(organizationId).orElseThrow();
+            return modelRepository.findByOrganizationId(organizationId);
+        }
+        return modelRepository.findByUserId(organizationId);
+    }
+
+    public Model createModel(Long userId, String name, MultipartFile modelFile) {
+        User user = userLookupService.requireById(userId);
+        if (modelRepository.existsByNameAndUserId(name, userId)) {
+            throw new ModelAlreadyExistsException(name, user.getUsername());
+        }
+        LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("model_file", modelFile.getResource());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        Map<String, Object> response = (Map<String, Object>) restTemplate.postForObject(
+                analyzerUrl + "/metadata",
+                new HttpEntity<>(body, headers),
+                Map.class);
+        String fileName = response.get("fileName") != null ? response.get("fileName").toString() : modelFile.getOriginalFilename();
+        StoredObject stored;
+        try {
+            stored = objectStorageService.store(
+                    buildObjectKey(userId, name, fileName),
+                    fileName,
+                    modelFile.getContentType(),
+                    modelFile.getInputStream(),
+                    modelFile.getSize());
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Model file is empty or invalid", ex);
+        }
+        Model model = new Model();
+        model.setCreatedBy(user);
+        model.setName(name);
+        model.setType(response.get("type") != null ? response.get("type").toString() : null);
+        model.setSpecificType(response.get("specificType") != null ? response.get("specificType").toString() : null);
+        model.setFileName(fileName);
+        model.setModelFile(new byte[0]);
+        model.setStorageBucket(stored.bucket());
+        model.setStorageObjectKey(stored.objectKey());
+        model.setStorageEtag(stored.etag());
+        model.setModelSizeBytes(stored.sizeBytes());
+        return modelRepository.save(model);
+    }
+
+    public List<Model> getModelsByUser(Long userId) {
         userLookupService.requireById(userId);
         return modelRepository.findByUserId(userId);
     }
 
-    private String buildObjectKey(Long userId, String modelName, String fileName) {
+    private String buildObjectKey(Long organizationId, String modelName, String fileName) {
         String safeModelName = sanitizePathSegment(modelName);
         String safeFileName = sanitizePathSegment(fileName != null ? fileName : "model.bin");
-        return "users/" + userId + "/models/" + safeModelName + "/" + UUID.randomUUID() + "/" + safeFileName;
+        return "orgs/" + organizationId + "/models/" + safeModelName + "/" + UUID.randomUUID() + "/" + safeFileName;
     }
 
     private String sanitizePathSegment(String value) {

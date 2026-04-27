@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.plugin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,7 @@ import dev.ulloasp.mlsuite.plugin.exceptions.PluginNotFoundException;
 import dev.ulloasp.mlsuite.plugin.services.PluginService;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
+import dev.ulloasp.mlsuite.security.tenant.PermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,23 +58,23 @@ class PluginControllerTest {
     void upload_UsesInternalUserId() {
         MockMultipartFile file = new MockMultipartFile("file", "plugin.ts", "application/typescript", "x".getBytes());
         when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice"));
-        when(pluginService.upload(7L, file)).thenReturn(dto);
+        when(pluginService.upload(7L, 7L, file)).thenReturn(dto);
 
         ResponseEntity<PluginDto> response = controller.upload(authentication, file);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(pluginService).upload(7L, file);
+        verify(pluginService).upload(7L, 7L, file);
     }
 
     @Test
     void getAllAndActivate_UseInternalUserId() {
         when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice"));
-        when(pluginService.list(7L)).thenReturn(List.of(dto));
-        when(pluginService.activate(7L, "item-1")).thenReturn(dto);
+        when(pluginService.list(7L, 7L)).thenReturn(List.of(dto));
+        when(pluginService.activate(7L, 7L, "item-1")).thenReturn(dto);
 
         assertEquals(1, controller.getAll(authentication).getBody().size());
         assertEquals(HttpStatus.OK, controller.activate(authentication, "item-1").getStatusCode());
-        verify(pluginService).activate(7L, "item-1");
+        verify(pluginService).activate(7L, 7L, "item-1");
     }
 
     @Test
@@ -82,5 +84,14 @@ class PluginControllerTest {
         ResponseEntity<?> response = controller.handlePluginNotFound(new PluginNotFoundException("item-1"), request);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void upload_ThrowsWhenPermissionMissing() {
+        MockMultipartFile file = new MockMultipartFile("file", "plugin.ts", "application/typescript", "x".getBytes());
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(
+                7L, "alice", 7L, "org-7", "Org 7", false, java.util.Set.of()));
+
+        assertThrows(PermissionDeniedException.class, () -> controller.upload(authentication, file));
     }
 }

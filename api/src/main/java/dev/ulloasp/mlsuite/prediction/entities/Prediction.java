@@ -13,7 +13,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
+import dev.ulloasp.mlsuite.organization.entities.Organization;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
+import dev.ulloasp.mlsuite.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,8 +43,16 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Prediction {
 
-        public Prediction(Signature signature, String name, Map<String, Object> data, Map<String, Object> prediction) {
+        public Prediction(
+                        Signature signature,
+                        Organization organization,
+                        User executedBy,
+                        String name,
+                        Map<String, Object> data,
+                        Map<String, Object> prediction) {
                 this.signature = signature;
+                this.organization = organization;
+                this.executedBy = executedBy;
                 this.name = name;
                 this.data = data;
                 this.prediction = prediction;
@@ -55,6 +65,14 @@ public class Prediction {
         @ManyToOne(optional = false)
         @JoinColumn(name = "signature_id", nullable = false, foreignKey = @ForeignKey(name = "fk_prediction_signature", foreignKeyDefinition = "FOREIGN KEY (signature_id) REFERENCES signature(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE"))
         private Signature signature;
+
+        @ManyToOne(optional = false)
+        @JoinColumn(name = "organization_id", nullable = false)
+        private Organization organization;
+
+        @ManyToOne
+        @JoinColumn(name = "executed_by")
+        private User executedBy;
 
         @Column(name = "name", nullable = false, length = 255)
         private String name;

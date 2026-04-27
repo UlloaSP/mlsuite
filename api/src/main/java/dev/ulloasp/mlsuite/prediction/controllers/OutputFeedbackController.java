@@ -8,7 +8,7 @@ package dev.ulloasp.mlsuite.prediction.controllers;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,16 +24,16 @@ public interface OutputFeedbackController {
 
     @PostMapping("/create")
     ResponseEntity<OutputFeedbackDto> createOutputFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestBody CreateOutputFeedbackParams params);
 
     @PostMapping("/update")
     ResponseEntity<OutputFeedbackDto> updateOutputFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestBody UpdateOutputFeedbackParams params);
 
     @GetMapping("/all")
     ResponseEntity<List<OutputFeedbackDto>> getAllOutputFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestParam Long predictionId);
 }

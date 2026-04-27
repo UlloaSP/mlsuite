@@ -63,18 +63,18 @@ class AnalyzerControllerTest {
 
     @Test
     void predict_UsesInternalUserId() {
-        when(analyzerService.predict(5L, 11L, Map.of("x", 1))).thenReturn(Map.of("prediction", 1));
+        when(analyzerService.predict(5L, 5L, 11L, Map.of("x", 1))).thenReturn(Map.of("prediction", 1));
 
         ResponseEntity<Map<String, Object>> response = controller.predict(authentication, 11L, Map.of("x", 1));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(analyzerService).predict(5L, 11L, Map.of("x", 1));
+        verify(analyzerService).predict(5L, 5L, 11L, Map.of("x", 1));
     }
 
     @Test
     void explain_PropagatesAnalyzerErrors() {
         ExplainRequest requestBody = new ExplainRequest();
-        when(analyzerService.explain(5L, 11L, requestBody))
+        when(analyzerService.explain(5L, 5L, 11L, requestBody))
                 .thenThrow(new AnalyzerServiceException(422, "/explain", "bad", "bad", null));
 
         assertThrows(AnalyzerServiceException.class, () -> controller.explain(authentication, 11L, requestBody));

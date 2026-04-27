@@ -16,10 +16,16 @@ import dev.ulloasp.mlsuite.prediction.entities.OutputFeedback;
 
 @Repository
 public interface OutputFeedbackRepository extends JpaRepository<OutputFeedback, Long> {
-    @Query("SELECT of FROM OutputFeedback of WHERE of.id = :outputFeedbackId AND of.prediction.signature.model.user.id = :userId")
+    @Query("SELECT of FROM OutputFeedback of WHERE of.id = :outputFeedbackId AND of.organization.id = :organizationId")
+    Optional<OutputFeedback> findByIdAndOrganizationId(Long outputFeedbackId, Long organizationId);
+
+    @Query("SELECT of FROM OutputFeedback of WHERE of.id = :outputFeedbackId AND of.prediction.signature.model.createdBy.id = :userId")
     Optional<OutputFeedback> findByIdAndUserId(Long outputFeedbackId, Long userId);
 
-    @Query("SELECT of FROM OutputFeedback of WHERE of.prediction.id = :predictionId AND of.prediction.signature.model.user.id = :userId ORDER BY of.order ASC")
+    @Query("SELECT of FROM OutputFeedback of WHERE of.prediction.id = :predictionId AND of.organization.id = :organizationId ORDER BY of.order ASC")
+    List<OutputFeedback> findByPredictionIdAndOrganizationId(Long predictionId, Long organizationId);
+
+    @Query("SELECT of FROM OutputFeedback of WHERE of.prediction.id = :predictionId AND of.prediction.signature.model.createdBy.id = :userId ORDER BY of.order ASC")
     List<OutputFeedback> findByPredictionIdAndUserId(Long predictionId, Long userId);
 
     List<OutputFeedback> findByPredictionId(Long predictionId);

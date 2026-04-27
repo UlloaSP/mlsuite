@@ -17,9 +17,19 @@ public interface AnalyzerService {
         Map<String, Object> generateInputSignature(Long userId, MultipartFile model,
                         @Nullable MultipartFile dataframe);
 
-        Map<String, Object> predict(Long userId, Long modelId,
+        Map<String, Object> predict(Long userId, Long organizationId, Long modelId,
                         Map<String, Object> data);
 
-        Map<String, Object> explain(Long userId, Long modelId,
+        default Map<String, Object> predict(Long userId, Long modelId,
+                        Map<String, Object> data) {
+                return predict(userId, userId, modelId, data);
+        }
+
+        Map<String, Object> explain(Long userId, Long organizationId, Long modelId,
                         ExplainRequest request);
+
+        default Map<String, Object> explain(Long userId, Long modelId,
+                        ExplainRequest request) {
+                return explain(userId, userId, modelId, request);
+        }
 }

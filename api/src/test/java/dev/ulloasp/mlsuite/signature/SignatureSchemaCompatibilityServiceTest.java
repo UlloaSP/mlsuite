@@ -34,7 +34,7 @@ class SignatureSchemaCompatibilityServiceTest {
 
     @Test
     void validate_AllowsBuiltinKindsAndActiveCustomKinds() {
-        when(pluginService.list(7L)).thenReturn(List.of(
+        when(pluginService.list(7L, 7L)).thenReturn(List.of(
                 plugin("field-kind", true, "export default defineFieldDefinition({ kind: \"field-kind\" });"),
                 plugin("report-kind", true, "export default defineReportDefinition({ kind: \"report-kind\" });"),
                 plugin("explanation-kind", true, "export default defineExplanationKind({ kind: \"explanation-kind\" });")));
@@ -47,7 +47,7 @@ class SignatureSchemaCompatibilityServiceTest {
 
     @Test
     void validate_ThrowsWhenExplanationKindMissing() {
-        when(pluginService.list(7L)).thenReturn(List.of());
+        when(pluginService.list(7L, 7L)).thenReturn(List.of());
 
         assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
                 Map.of("explanations", List.of(Map.of("kind", "old-kind")))));
@@ -55,7 +55,7 @@ class SignatureSchemaCompatibilityServiceTest {
 
     @Test
     void validate_ThrowsWhenExplanationKindInactive() {
-        when(pluginService.list(7L)).thenReturn(List.of(
+        when(pluginService.list(7L, 7L)).thenReturn(List.of(
                 plugin("old-kind", false, "export default defineExplanationKind({ kind: \"old-kind\" });")));
 
         assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
@@ -64,7 +64,7 @@ class SignatureSchemaCompatibilityServiceTest {
 
     @Test
     void validate_ThrowsWhenFieldKindMissing() {
-        when(pluginService.list(7L)).thenReturn(List.of());
+        when(pluginService.list(7L, 7L)).thenReturn(List.of());
 
         assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
                 Map.of("fields", List.of(Map.of("kind", "custom-field")))));
@@ -72,7 +72,7 @@ class SignatureSchemaCompatibilityServiceTest {
 
     @Test
     void validate_ThrowsWhenReportKindInactive() {
-        when(pluginService.list(7L)).thenReturn(List.of(
+        when(pluginService.list(7L, 7L)).thenReturn(List.of(
                 plugin("custom-report", false, "export default defineReportDefinition({ kind: \"custom-report\" });")));
 
         assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,

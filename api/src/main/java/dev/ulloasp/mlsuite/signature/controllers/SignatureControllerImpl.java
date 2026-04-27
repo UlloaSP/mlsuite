@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +26,8 @@ import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureNotFromUserException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureNotSemVerException;
 import dev.ulloasp.mlsuite.signature.services.SignatureService;
+import dev.ulloasp.mlsuite.rbac.RbacPermissions;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,10 +44,13 @@ public class SignatureControllerImpl implements SignatureController {
     }
 
     @Override
-    public ResponseEntity<SignatureDto> createSignature(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<SignatureDto> createSignature(Authentication authentication,
             @RequestBody CreateSignatureParams params) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.SIGNATURES_CREATE);
         Signature signature = signatureService.createSignature(
-                currentUserResolver.resolve(authentication).userId(),
+                currentUser.userId(),
+                currentUser.activeOrganizationId(),
                 params.getModelId(),
                 params.getInputSignature(),
                 params.getName(),
@@ -58,18 +63,22 @@ public class SignatureControllerImpl implements SignatureController {
     }
 
     @Override
-    public ResponseEntity<List<SignatureDto>> getAllSignatures(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<List<SignatureDto>> getAllSignatures(Authentication authentication,
             @RequestParam Long modelId) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.SIGNATURES_READ);
         List<Signature> signatures = signatureService.getSignatureByModelId(
-                currentUserResolver.resolve(authentication).userId(), modelId);
+                currentUser.userId(), currentUser.activeOrganizationId(), modelId);
         return ResponseEntity.ok(SignatureDto.toDtoList(signatures));
     }
 
     @Override
-    public ResponseEntity<SignatureDto> getSignatureById(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<SignatureDto> getSignatureById(Authentication authentication,
             @PathVariable Long signatureId) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.SIGNATURES_READ);
         Signature signature = signatureService.getSignature(
-                currentUserResolver.resolve(authentication).userId(), signatureId);
+                currentUser.userId(), currentUser.activeOrganizationId(), signatureId);
         return ResponseEntity.ok(SignatureDto.toDto(signature));
     }
 
@@ -111,5 +120,11 @@ public class SignatureControllerImpl implements SignatureController {
             HttpServletRequest req) {
         ErrorDto dto = ErrorDto.of(HttpStatus.BAD_REQUEST.value(), e.getMessage(), req.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(dto);
+    }
+
+    private void require(CurrentUser currentUser, String permission) {
+        if (!currentUser.permissions().contains(permission)) {
+            throw new dev.ulloasp.mlsuite.security.tenant.PermissionDeniedException(permission);
+        }
     }
 }

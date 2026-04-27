@@ -8,17 +8,45 @@ import dev.ulloasp.mlsuite.plugin.dtos.PluginDto;
 
 public interface PluginService {
 
-    PluginDto upload(Long userId, MultipartFile file);
+    PluginDto upload(Long userId, Long organizationId, MultipartFile file);
 
-    List<PluginDto> list(Long userId);
+    default PluginDto upload(Long userId, MultipartFile file) {
+        return upload(userId, userId, file);
+    }
 
-    List<PluginDto> getActive(Long userId);
+    List<PluginDto> list(Long userId, Long organizationId);
 
-    PluginDto activate(Long userId, String id);
+    default List<PluginDto> list(Long userId) {
+        return list(userId, userId);
+    }
 
-    void deactivate(Long userId, String id);
+    List<PluginDto> getActive(Long userId, Long organizationId);
 
-    void deactivateAll(Long userId);
+    default List<PluginDto> getActive(Long userId) {
+        return getActive(userId, userId);
+    }
 
-    void delete(Long userId, String id);
+    PluginDto activate(Long userId, Long organizationId, String id);
+
+    default PluginDto activate(Long userId, String id) {
+        return activate(userId, userId, id);
+    }
+
+    void deactivate(Long userId, Long organizationId, String id);
+
+    default void deactivate(Long userId, String id) {
+        deactivate(userId, userId, id);
+    }
+
+    void deactivateAll(Long userId, Long organizationId);
+
+    default void deactivateAll(Long userId) {
+        deactivateAll(userId, userId);
+    }
+
+    void delete(Long userId, Long organizationId, String id);
+
+    default void delete(Long userId, String id) {
+        delete(userId, userId, id);
+    }
 }

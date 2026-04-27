@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 import dev.ulloasp.mlsuite.plugin.dtos.PluginDto;
 import dev.ulloasp.mlsuite.plugin.exceptions.PluginNotFoundException;
 import dev.ulloasp.mlsuite.plugin.services.PluginService;
+import dev.ulloasp.mlsuite.rbac.RbacPermissions;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,41 +31,55 @@ public class PluginControllerImpl implements PluginController {
     }
 
     @Override
-    public ResponseEntity<PluginDto> upload(OAuth2AuthenticationToken authentication, MultipartFile file) {
+    public ResponseEntity<PluginDto> upload(Authentication authentication, MultipartFile file) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PLUGINS_MANAGE);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(pluginService.upload(currentUserResolver.resolve(authentication).userId(), file));
+                .body(pluginService.upload(currentUser.userId(), currentUser.activeOrganizationId(), file));
     }
 
     @Override
-    public ResponseEntity<List<PluginDto>> getAll(OAuth2AuthenticationToken authentication) {
-        return ResponseEntity.ok(pluginService.list(currentUserResolver.resolve(authentication).userId()));
+    public ResponseEntity<List<PluginDto>> getAll(Authentication authentication) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PLUGINS_READ);
+        return ResponseEntity.ok(pluginService.list(currentUser.userId(), currentUser.activeOrganizationId()));
     }
 
     @Override
-    public ResponseEntity<List<PluginDto>> getActive(OAuth2AuthenticationToken authentication) {
-        return ResponseEntity.ok(pluginService.getActive(currentUserResolver.resolve(authentication).userId()));
+    public ResponseEntity<List<PluginDto>> getActive(Authentication authentication) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PLUGINS_READ);
+        return ResponseEntity.ok(pluginService.getActive(currentUser.userId(), currentUser.activeOrganizationId()));
     }
 
     @Override
-    public ResponseEntity<PluginDto> activate(OAuth2AuthenticationToken authentication, String id) {
-        return ResponseEntity.ok(pluginService.activate(currentUserResolver.resolve(authentication).userId(), id));
+    public ResponseEntity<PluginDto> activate(Authentication authentication, String id) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PLUGINS_MANAGE);
+        return ResponseEntity.ok(pluginService.activate(currentUser.userId(), currentUser.activeOrganizationId(), id));
     }
 
     @Override
-    public ResponseEntity<Void> deactivate(OAuth2AuthenticationToken authentication, String id) {
-        pluginService.deactivate(currentUserResolver.resolve(authentication).userId(), id);
+    public ResponseEntity<Void> deactivate(Authentication authentication, String id) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PLUGINS_MANAGE);
+        pluginService.deactivate(currentUser.userId(), currentUser.activeOrganizationId(), id);
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<Void> deactivateAll(OAuth2AuthenticationToken authentication) {
-        pluginService.deactivateAll(currentUserResolver.resolve(authentication).userId());
+    public ResponseEntity<Void> deactivateAll(Authentication authentication) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PLUGINS_MANAGE);
+        pluginService.deactivateAll(currentUser.userId(), currentUser.activeOrganizationId());
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<Void> delete(OAuth2AuthenticationToken authentication, String id) {
-        pluginService.delete(currentUserResolver.resolve(authentication).userId(), id);
+    public ResponseEntity<Void> delete(Authentication authentication, String id) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PLUGINS_MANAGE);
+        pluginService.delete(currentUser.userId(), currentUser.activeOrganizationId(), id);
         return ResponseEntity.noContent().build();
     }
 
@@ -81,5 +97,11 @@ public class PluginControllerImpl implements PluginController {
                 exception.getMessage(),
                 request.getRequestURI());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(dto);
+    }
+
+    private void require(CurrentUser currentUser, String permission) {
+        if (!currentUser.permissions().contains(permission)) {
+            throw new dev.ulloasp.mlsuite.security.tenant.PermissionDeniedException(permission);
+        }
     }
 }

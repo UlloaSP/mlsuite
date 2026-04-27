@@ -13,9 +13,21 @@ import dev.ulloasp.mlsuite.prediction.entities.OutputFeedback;
 
 public interface OutputFeedbackService {
 
-    OutputFeedback createOutputFeedback(Long userId, Long predictionId, int order, JsonNode value);
+    OutputFeedback createOutputFeedback(Long userId, Long organizationId, Long predictionId, int order, JsonNode value);
 
-    OutputFeedback updateOutputFeedback(Long userId, Long outputFeedbackId, JsonNode value);
+    default OutputFeedback createOutputFeedback(Long userId, Long predictionId, int order, JsonNode value) {
+        return createOutputFeedback(userId, userId, predictionId, order, value);
+    }
 
-    List<OutputFeedback> getOutputFeedbackByPredictionId(Long userId, Long predictionId);
+    OutputFeedback updateOutputFeedback(Long userId, Long organizationId, Long outputFeedbackId, JsonNode value);
+
+    default OutputFeedback updateOutputFeedback(Long userId, Long outputFeedbackId, JsonNode value) {
+        return updateOutputFeedback(userId, userId, outputFeedbackId, value);
+    }
+
+    List<OutputFeedback> getOutputFeedbackByPredictionId(Long userId, Long organizationId, Long predictionId);
+
+    default List<OutputFeedback> getOutputFeedbackByPredictionId(Long userId, Long predictionId) {
+        return getOutputFeedbackByPredictionId(userId, userId, predictionId);
+    }
 }

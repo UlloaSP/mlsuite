@@ -11,31 +11,27 @@ import { ProfileHeader } from "../components/ProfileHeader";
 import { useUser } from "../hooks"; // Adjust the import path as necessary
 
 export function ProfilePage() {
-	const { data: user, isError } = useUser();
+  const { data: user, isError } = useUser();
 
-	if (!user || isError) return <NotFoundError />;
+  if (!user || isError) return <NotFoundError />;
 
-	return (
-		<AppPage>
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5 }}
-				className="flex flex-1"
-			>
-				<AppSurface className="flex flex-1 flex-col overflow-auto app-scroll">
-					<ProfileHeader
-						imageUrl={user?.avatarUrl}
-						name={user?.userName || user?.fullName || "Guest"}
-						provider={
-							user
-								? `Logged in with ${user.oauthProvider.charAt(0).toUpperCase() + user.oauthProvider.slice(1)}`
-								: "Not logged in"
-						}
-					/>
-					<ProfileBody user={user} />
-				</AppSurface>
-			</motion.div>
-		</AppPage>
-	);
+  return (
+    <AppPage>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-1"
+      >
+        <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll">
+          <ProfileHeader
+            imageUrl={user?.avatarUrl || ""}
+            name={user?.userName || user?.fullName || "Guest"}
+            provider={user ? "Local MLSuite account" : "Not logged in"}
+          />
+          <ProfileBody user={user} />
+        </AppSurface>
+      </motion.div>
+    </AppPage>
+  );
 }

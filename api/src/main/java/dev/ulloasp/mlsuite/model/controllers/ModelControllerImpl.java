@@ -11,7 +11,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -27,6 +27,7 @@ import dev.ulloasp.mlsuite.model.exceptions.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.exceptions.ModelNotFromUserException;
 import dev.ulloasp.mlsuite.model.services.AnalyzerService;
 import dev.ulloasp.mlsuite.model.services.ModelService;
+import dev.ulloasp.mlsuite.rbac.RbacPermissions;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
@@ -55,18 +56,23 @@ public class ModelControllerImpl implements ModelController {
         }
 
         @Override
-        public ResponseEntity<CreateModelDto> createModel(OAuth2AuthenticationToken authentication,
+        public ResponseEntity<CreateModelDto> createModel(Authentication authentication,
                         @RequestParam String name,
                         @RequestParam MultipartFile modelFile,
                         @RequestParam @Nullable MultipartFile dataframeFile) {
                 CurrentUser currentUser = currentUserResolver.resolve(authentication);
+                require(currentUser, RbacPermissions.MODELS_CREATE);
 
-                Model model = this.modelService.createModel(currentUser.userId(), name, modelFile);
+                Model model = this.modelService.createModel(
+                                currentUser.userId(),
+                                currentUser.activeOrganizationId(),
+                                name,
+                                modelFile);
 
                 Map<String, Object> schemaFromModel = this.analyzerService.generateInputSignature(
                                 currentUser.userId(), modelFile, null);
                 Signature signatureFromModel = this.signatureService.createSignature(
-                                currentUser.userId(), model.getId(),
+                                currentUser.userId(), currentUser.activeOrganizationId(), model.getId(),
                                 schemaFromModel, "Model", 0, 0, 0, null);
 
                 Signature signatureFromDataframe = null;
@@ -76,7 +82,7 @@ public class ModelControllerImpl implements ModelController {
                                         currentUser.userId(), modelFile, dataframeFile);
 
                         signatureFromDataframe = this.signatureService.createSignature(
-                                        currentUser.userId(), model.getId(),
+                                        currentUser.userId(), currentUser.activeOrganizationId(), model.getId(),
                                         schemaFromDataframe, "Dataframe", 0, 0, 1, signatureFromModel.getId());
                 }
 
@@ -85,8 +91,10 @@ public class ModelControllerImpl implements ModelController {
         }
 
         @Override
-        public ResponseEntity<List<ModelDto>> getAllModels(OAuth2AuthenticationToken authentication) {
-                List<Model> models = this.modelService.getModels(currentUserResolver.resolve(authentication).userId());
+        public ResponseEntity<List<ModelDto>> getAllModels(Authentication authentication) {
+                CurrentUser currentUser = currentUserResolver.resolve(authentication);
+                require(currentUser, RbacPermissions.MODELS_READ);
+                List<Model> models = this.modelService.getModels(currentUser.activeOrganizationId());
 
                 return ResponseEntity.ok(ModelDto.toDtoList(models));
         }
@@ -127,6 +135,12 @@ public class ModelControllerImpl implements ModelController {
                                                 : ex.getDetail(),
                                 req.getRequestURI());
                 return ResponseEntity.status(status).body(dto);
+        }
+
+        private void require(CurrentUser currentUser, String permission) {
+                if (!currentUser.permissions().contains(permission)) {
+                        throw new dev.ulloasp.mlsuite.security.tenant.PermissionDeniedException(permission);
+                }
         }
 
 }

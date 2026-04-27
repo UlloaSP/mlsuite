@@ -58,13 +58,13 @@ class TargetControllerTest {
         params.setPredictionId(11L);
         params.setOrder(1);
         params.setValue(objectMapper.readTree("{\"x\":1}"));
-        when(targetService.createTarget(3L, 11L, 1, params.getValue()))
+        when(targetService.createTarget(3L, 3L, 11L, 1, params.getValue()))
                 .thenReturn(target(params.getValue()));
 
         ResponseEntity<?> response = controller.createTarget(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(targetService).createTarget(3L, 11L, 1, params.getValue());
+        verify(targetService).createTarget(3L, 3L, 11L, 1, params.getValue());
     }
 
     @Test
@@ -72,25 +72,26 @@ class TargetControllerTest {
         UpdateTargetParams params = new UpdateTargetParams();
         params.setTargetId(12L);
         params.setRealValue(objectMapper.readTree("{\"actual\":1}"));
-        when(targetService.updateTarget(3L, 12L, params.getRealValue()))
+        when(targetService.updateTarget(3L, 3L, 12L, params.getRealValue()))
                 .thenReturn(target(params.getRealValue()));
 
         ResponseEntity<?> response = controller.updateTarget(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(targetService).updateTarget(3L, 12L, params.getRealValue());
+        verify(targetService).updateTarget(3L, 3L, 12L, params.getRealValue());
     }
 
     @Test
     void getAllTargets_PropagatesMissingTargetErrors() {
-        when(targetService.getTargetsByPredictionId(3L, 99L)).thenThrow(new TargetDoesNotExistsException(99L, "alice"));
+        when(targetService.getTargetsByPredictionId(3L, 3L, 99L))
+                .thenThrow(new TargetDoesNotExistsException(99L, "alice"));
 
         assertThrows(TargetDoesNotExistsException.class, () -> controller.getAllTargets(authentication, 99L));
     }
 
     @Test
     void getAllTargets_ReturnsDtos() {
-        when(targetService.getTargetsByPredictionId(3L, 11L)).thenReturn(List.of(target(null)));
+        when(targetService.getTargetsByPredictionId(3L, 3L, 11L)).thenReturn(List.of(target(null)));
 
         assertEquals(1, controller.getAllTargets(authentication, 11L).getBody().size());
     }

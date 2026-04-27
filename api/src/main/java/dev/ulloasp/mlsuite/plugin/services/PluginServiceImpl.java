@@ -58,7 +58,7 @@ public class PluginServiceImpl implements PluginService {
     }
 
     @Override
-    public PluginDto upload(Long userId, MultipartFile file) {
+    public PluginDto upload(Long userId, Long organizationId, MultipartFile file) {
         try {
             String id = UUID.randomUUID().toString();
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -71,23 +71,24 @@ public class PluginServiceImpl implements PluginService {
                     now,
                     new String(file.getBytes(), StandardCharsets.UTF_8));
             objectStorageService.store(
-                    itemObjectKey(userId, id),
+                    PluginStoragePaths.organizationItemObjectKey(ROOT_PREFIX, organizationId, id),
                     stored.fileName(),
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
-            return toDto(stored, readState(userLookupService.requireById(userId)).activeIds().contains(id));
+            return toDto(stored, readState(userLookupService.requireById(userId), organizationId).activeIds().contains(id));
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
         }
     }
 
     @Override
-    public List<PluginDto> list(Long userId) {
+    public List<PluginDto> list(Long userId, Long organizationId) {
         User user = userLookupService.requireById(userId);
-        Set<String> activeIds = Set.copyOf(readState(user).activeIds());
+        Set<String> activeIds = Set.copyOf(readState(user, organizationId).activeIds());
         Map<String, StoredPlugin> storedItems = new LinkedHashMap<>();
         Map<String, String> origins = new LinkedHashMap<>();
-        readItems(itemsPrefix(userId)).forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
+        readItems(PluginStoragePaths.organizationItemsPrefix(ROOT_PREFIX, organizationId))
+                .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         for (String legacyRoot : LEGACY_ROOTS) {
             readItems(legacyItemsPrefix(legacyRoot, user))
                     .forEach(item -> putStored(storedItems, origins, item, legacyRoot, false));
@@ -102,49 +103,52 @@ public class PluginServiceImpl implements PluginService {
     }
 
     @Override
-    public List<PluginDto> getActive(Long userId) {
-        return list(userId).stream().filter(PluginDto::active).toList();
+    public List<PluginDto> getActive(Long userId, Long organizationId) {
+        return list(userId, organizationId).stream().filter(PluginDto::active).toList();
     }
 
     @Override
-    public PluginDto activate(Long userId, String id) {
+    public PluginDto activate(Long userId, Long organizationId, String id) {
         User user = userLookupService.requireById(userId);
-        StoredPlugin stored = readStored(user, id);
-        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
+        StoredPlugin stored = readStored(user, organizationId, id);
+        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user, organizationId).activeIds());
         activeIds.add(id);
-        writeState(userId, activeIds);
+        writeState(organizationId, activeIds);
         return toDto(stored, true);
     }
 
     @Override
-    public void deactivate(Long userId, String id) {
+    public void deactivate(Long userId, Long organizationId, String id) {
         User user = userLookupService.requireById(userId);
-        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
+        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user, organizationId).activeIds());
         activeIds.remove(id);
-        writeState(userId, activeIds);
+        writeState(organizationId, activeIds);
     }
 
     @Override
-    public void deactivateAll(Long userId) {
+    public void deactivateAll(Long userId, Long organizationId) {
         userLookupService.requireById(userId);
-        writeState(userId, Set.of());
+        writeState(organizationId, Set.of());
     }
 
     @Override
-    public void delete(Long userId, String id) {
+    public void delete(Long userId, Long organizationId, String id) {
         User user = userLookupService.requireById(userId);
-        readStored(user, id);
-        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
+        readStored(user, organizationId, id);
+        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user, organizationId).activeIds());
         activeIds.remove(id);
-        objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(userId, id));
+        objectStorageService.delete(storageProperties.getBucket(),
+                PluginStoragePaths.organizationItemObjectKey(ROOT_PREFIX, organizationId, id));
         for (String legacyRoot : LEGACY_ROOTS) {
             objectStorageService.delete(storageProperties.getBucket(), legacyItemObjectKey(legacyRoot, user, id));
         }
-        writeState(userId, activeIds);
+        writeState(organizationId, activeIds);
     }
 
-    private PluginState readState(User user) {
-        Optional<byte[]> stateBytes = objectStorageService.loadOptional(storageProperties.getBucket(), stateObjectKey(user.getId()));
+    private PluginState readState(User user, Long organizationId) {
+        Optional<byte[]> stateBytes = objectStorageService.loadOptional(
+                storageProperties.getBucket(),
+                PluginStoragePaths.organizationStateObjectKey(ROOT_PREFIX, organizationId, STATE_FILE));
         if (stateBytes.isPresent()) {
             try {
                 return normalizeState(objectMapper.readValue(stateBytes.get(), PluginState.class));
@@ -174,15 +178,17 @@ public class PluginServiceImpl implements PluginService {
         return new PluginState(List.copyOf(new LinkedHashSet<>(activeIds)), state.updatedAt());
     }
 
-    private void writeState(Long userId, Set<String> activeIds) {
+    private void writeState(Long organizationId, Set<String> activeIds) {
         if (activeIds.isEmpty()) {
-            objectStorageService.delete(storageProperties.getBucket(), stateObjectKey(userId));
+            objectStorageService.delete(
+                    storageProperties.getBucket(),
+                    PluginStoragePaths.organizationStateObjectKey(ROOT_PREFIX, organizationId, STATE_FILE));
             return;
         }
         try {
             PluginState state = new PluginState(List.copyOf(activeIds), OffsetDateTime.now(ZoneOffset.UTC));
             objectStorageService.store(
-                    stateObjectKey(userId),
+                    PluginStoragePaths.organizationStateObjectKey(ROOT_PREFIX, organizationId, STATE_FILE),
                     STATE_FILE,
                     "application/json",
                     objectMapper.writeValueAsBytes(state));
@@ -191,8 +197,10 @@ public class PluginServiceImpl implements PluginService {
         }
     }
 
-    private StoredPlugin readStored(User user, String id) {
-        Optional<byte[]> bytes = objectStorageService.loadOptional(storageProperties.getBucket(), itemObjectKey(user.getId(), id));
+    private StoredPlugin readStored(User user, Long organizationId, String id) {
+        Optional<byte[]> bytes = objectStorageService.loadOptional(
+                storageProperties.getBucket(),
+                PluginStoragePaths.organizationItemObjectKey(ROOT_PREFIX, organizationId, id));
         if (bytes.isPresent()) {
             return readStored(bytes.get());
         }
@@ -254,18 +262,6 @@ public class PluginServiceImpl implements PluginService {
                 stored.updatedAt(),
                 active,
                 stored.source());
-    }
-
-    private String itemsPrefix(Long userId) {
-        return PluginStoragePaths.itemsPrefix(ROOT_PREFIX, userId);
-    }
-
-    private String itemObjectKey(Long userId, String id) {
-        return PluginStoragePaths.itemObjectKey(ROOT_PREFIX, userId, id);
-    }
-
-    private String stateObjectKey(Long userId) {
-        return PluginStoragePaths.stateObjectKey(ROOT_PREFIX, userId, STATE_FILE);
     }
 
     private String legacyActiveObjectKey(String rootPrefix, User user) {

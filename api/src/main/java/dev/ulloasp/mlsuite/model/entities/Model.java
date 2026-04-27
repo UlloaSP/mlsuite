@@ -12,6 +12,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
+import dev.ulloasp.mlsuite.organization.entities.Organization;
 import dev.ulloasp.mlsuite.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,7 +30,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Table(name = "model", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_model_name_user", columnNames = { "name", "user_id" })
+        @UniqueConstraint(name = "uq_model_name_organization", columnNames = { "name", "organization_id" })
 })
 @Entity
 @Getter
@@ -38,8 +39,16 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Model {
 
-    public Model(User user, String name, String type, String specific_type, String fileName, byte[] modelFile) {
-        this.user = user;
+    public Model(
+            Organization organization,
+            User createdBy,
+            String name,
+            String type,
+            String specific_type,
+            String fileName,
+            byte[] modelFile) {
+        this.organization = organization;
+        this.createdBy = createdBy;
         this.name = name;
         this.type = type;
         this.specificType = specific_type;
@@ -52,8 +61,12 @@ public class Model {
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_model_user", foreignKeyDefinition = "FOREIGN KEY (user_id) REFERENCES app_user(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE"))
-    private User user;
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
+
+    @ManyToOne
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
@@ -100,5 +113,13 @@ public class Model {
 
     public boolean hasInlineModelFile() {
         return this.modelFile != null && this.modelFile.length > 0;
+    }
+
+    public User getUser() {
+        return createdBy;
+    }
+
+    public void setUser(User user) {
+        this.createdBy = user;
     }
 }

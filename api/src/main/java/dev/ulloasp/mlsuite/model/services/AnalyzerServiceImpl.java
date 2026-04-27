@@ -92,8 +92,8 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data) {
-                Model model = requireModel(userId, modelId);
+        public Map<String, Object> predict(Long userId, Long organizationId, Long modelId, Map<String, Object> data) {
+                Model model = requireModel(userId, organizationId, modelId);
 
                 byte[] bytes = loadModelBytes(model);
 
@@ -135,8 +135,8 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
-                Model model = requireModel(userId, modelId);
+        public Map<String, Object> explain(Long userId, Long organizationId, Long modelId, ExplainRequest request) {
+                Model model = requireModel(userId, organizationId, modelId);
 
                 byte[] bytes = loadModelBytes(model);
 
@@ -193,7 +193,48 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 throw new IllegalStateException("El modelo no tiene binario en object storage ni en base de datos");
         }
 
-        private Model requireModel(Long userId, Long modelId) {
+        private Model requireModel(Long userId, Long organizationId, Long modelId) {
+                User user = userLookupService.requireById(userId);
+                return modelRepository.findByIdAndOrganizationId(modelId, organizationId)
+                                .orElseThrow(() -> new ModelDoesNotExistsException(modelId, user.getUsername()));
+        }
+
+        public Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data) {
+                Model model = requireLegacyModel(userId, modelId);
+                byte[] bytes = loadModelBytes(model);
+                MultipartBodyBuilder builder = new MultipartBodyBuilder();
+                builder.part("model_file", bytes).filename("model.joblib").contentType(MediaType.APPLICATION_OCTET_STREAM);
+                String json = "";
+                try {
+                        json = new ObjectMapper().writeValueAsString(data);
+                } catch (Exception e) {
+                        throw new RuntimeException("Error al serializar los datos a JSON", e);
+                }
+                builder.part("data", json).contentType(MediaType.APPLICATION_JSON);
+                HttpEntity<MultiValueMap<String, HttpEntity<?>>> req = new HttpEntity<>(builder.build());
+                return (Map<String, Object>) restTemplate.postForObject(analyzerUrl + "/predict", req, Map.class);
+        }
+
+        public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
+                Model model = requireLegacyModel(userId, modelId);
+                byte[] bytes = loadModelBytes(model);
+                MultipartBodyBuilder builder = new MultipartBodyBuilder();
+                builder.part("model_file", bytes).filename("model.joblib").contentType(MediaType.APPLICATION_OCTET_STREAM);
+                try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        builder.part("data", mapper.writeValueAsString(request.getInstance()))
+                                        .contentType(MediaType.APPLICATION_JSON);
+                        builder.part("traces", mapper.writeValueAsString(
+                                        request.getTraces() != null ? request.getTraces() : java.util.List.of()))
+                                        .contentType(MediaType.APPLICATION_JSON);
+                } catch (Exception e) {
+                        throw new RuntimeException("Error serializing explain request", e);
+                }
+                HttpEntity<MultiValueMap<String, HttpEntity<?>>> req = new HttpEntity<>(builder.build());
+                return (Map<String, Object>) restTemplate.postForObject(analyzerUrl + "/explain", req, Map.class);
+        }
+
+        private Model requireLegacyModel(Long userId, Long modelId) {
                 User user = userLookupService.requireById(userId);
                 return modelRepository.findByIdAndUserId(modelId, userId)
                                 .orElseThrow(() -> new ModelDoesNotExistsException(modelId, user.getUsername()));

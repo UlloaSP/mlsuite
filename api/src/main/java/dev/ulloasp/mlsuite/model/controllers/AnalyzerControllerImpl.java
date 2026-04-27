@@ -10,7 +10,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 import dev.ulloasp.mlsuite.model.dtos.ExplainRequest;
 import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.services.AnalyzerService;
+import dev.ulloasp.mlsuite.rbac.RbacPermissions;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.annotation.Nullable;
@@ -39,11 +41,13 @@ public class AnalyzerControllerImpl implements AnalyzerController {
 
     @Override
     public ResponseEntity<Map<String, Object>> generateSchema(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestPart("model") MultipartFile model,
             @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.SIGNATURES_CREATE);
         Map<String, Object> schema = analyzerService.generateInputSignature(
-                currentUserResolver.resolve(authentication).userId(),
+                currentUser.userId(),
                 model,
                 dataframe);
 
@@ -52,11 +56,14 @@ public class AnalyzerControllerImpl implements AnalyzerController {
 
     @Override
     public ResponseEntity<Map<String, Object>> predict(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestParam Long modelId,
             @RequestPart("data") Map<String, Object> data) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PREDICTIONS_CREATE);
         Map<String, Object> prediction = analyzerService.predict(
-                currentUserResolver.resolve(authentication).userId(),
+                currentUser.userId(),
+                currentUser.activeOrganizationId(),
                 modelId,
                 data);
         return ResponseEntity.ok(prediction);
@@ -64,11 +71,14 @@ public class AnalyzerControllerImpl implements AnalyzerController {
 
     @Override
     public ResponseEntity<Map<String, Object>> explain(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestParam Long modelId,
             @RequestBody ExplainRequest request) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PREDICTIONS_CREATE);
         Map<String, Object> result = analyzerService.explain(
-                currentUserResolver.resolve(authentication).userId(),
+                currentUser.userId(),
+                currentUser.activeOrganizationId(),
                 modelId,
                 request);
         return ResponseEntity.ok(result);
@@ -85,6 +95,12 @@ public class AnalyzerControllerImpl implements AnalyzerController {
                 (ex.getDetail() == null || ex.getDetail().isBlank()) ? "Analyzer Error" : ex.getDetail(),
                 req.getRequestURI());
         return ResponseEntity.status(status).body(dto);
+    }
+
+    private void require(CurrentUser currentUser, String permission) {
+        if (!currentUser.permissions().contains(permission)) {
+            throw new dev.ulloasp.mlsuite.security.tenant.PermissionDeniedException(permission);
+        }
     }
 
 }

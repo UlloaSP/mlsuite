@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +21,8 @@ import dev.ulloasp.mlsuite.prediction.entities.ExplanationFeedback;
 import dev.ulloasp.mlsuite.prediction.exceptions.ExplanationFeedbackDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.services.ExplanationFeedbackService;
+import dev.ulloasp.mlsuite.rbac.RbacPermissions;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,28 +40,38 @@ public class ExplanationFeedbackControllerImpl implements ExplanationFeedbackCon
     }
 
     @Override
-    public ResponseEntity<ExplanationFeedbackDto> createExplanationFeedback(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<ExplanationFeedbackDto> createExplanationFeedback(Authentication authentication,
             CreateExplanationFeedbackParams params) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.FEEDBACK_CREATE);
         ExplanationFeedback explanationFeedback = explanationFeedbackService.createExplanationFeedback(
-                currentUserResolver.resolve(authentication).userId(), params.getPredictionId(), params.getOrder(),
+                currentUser.userId(),
+                currentUser.activeOrganizationId(),
+                params.getPredictionId(), params.getOrder(),
                 params.getValue());
         return ResponseEntity.status(HttpStatus.CREATED).body(ExplanationFeedbackDto.toDto(explanationFeedback));
     }
 
     @Override
-    public ResponseEntity<ExplanationFeedbackDto> updateExplanationFeedback(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<ExplanationFeedbackDto> updateExplanationFeedback(Authentication authentication,
             UpdateExplanationFeedbackParams params) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.FEEDBACK_UPDATE);
         ExplanationFeedback explanationFeedback = explanationFeedbackService.updateExplanationFeedback(
-                currentUserResolver.resolve(authentication).userId(), params.getExplanationFeedbackId(),
+                currentUser.userId(),
+                currentUser.activeOrganizationId(),
+                params.getExplanationFeedbackId(),
                 params.getRealValue());
         return ResponseEntity.status(HttpStatus.CREATED).body(ExplanationFeedbackDto.toDto(explanationFeedback));
     }
 
     @Override
     public ResponseEntity<List<ExplanationFeedbackDto>> getAllExplanationFeedback(
-            OAuth2AuthenticationToken authentication, Long predictionId) {
+            Authentication authentication, Long predictionId) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.FEEDBACK_READ);
         List<ExplanationFeedback> explanationFeedback = explanationFeedbackService.getExplanationFeedbackByPredictionId(
-                currentUserResolver.resolve(authentication).userId(), predictionId);
+                currentUser.userId(), currentUser.activeOrganizationId(), predictionId);
         return ResponseEntity.ok(ExplanationFeedbackDto.toDtoList(explanationFeedback));
     }
 
@@ -77,5 +89,11 @@ public class ExplanationFeedbackControllerImpl implements ExplanationFeedbackCon
             HttpServletRequest req) {
         ErrorDto dto = ErrorDto.of(HttpStatus.NOT_FOUND.value(), e.getMessage(), req.getRequestURI());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(dto);
+    }
+
+    private void require(CurrentUser currentUser, String permission) {
+        if (!currentUser.permissions().contains(permission)) {
+            throw new dev.ulloasp.mlsuite.security.tenant.PermissionDeniedException(permission);
+        }
     }
 }

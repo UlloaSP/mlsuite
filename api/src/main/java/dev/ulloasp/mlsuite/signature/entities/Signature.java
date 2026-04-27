@@ -15,6 +15,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import dev.ulloasp.mlsuite.model.entities.Model;
+import dev.ulloasp.mlsuite.organization.entities.Organization;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -56,6 +57,10 @@ public class Signature {
         @ManyToOne(optional = false)
         @JoinColumn(name = "model_id", nullable = false, foreignKey = @ForeignKey(name = "fk_signature_model", foreignKeyDefinition = "FOREIGN KEY (model_id) REFERENCES model(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE"))
         private Model model;
+
+        @ManyToOne(optional = false)
+        @JoinColumn(name = "organization_id", nullable = false)
+        private Organization organization;
 
         @Column(name = "name", nullable = false, length = 255)
         private String name;

@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.signature;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +50,7 @@ class SignatureControllerTest {
     @BeforeEach
     void setUp() {
         controller = new SignatureControllerImpl(currentUserResolver, signatureService);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(6L, "alice"));
+        lenient().when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(6L, "alice"));
     }
 
     @Test
@@ -61,25 +62,25 @@ class SignatureControllerTest {
         params.setMinor(0);
         params.setPatch(0);
         params.setInputSignature(Map.of("x", "int"));
-        when(signatureService.createSignature(6L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null))
+        when(signatureService.createSignature(6L, 6L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null))
                 .thenReturn(signature());
 
         ResponseEntity<?> response = controller.createSignature(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(signatureService).createSignature(6L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null);
+        verify(signatureService).createSignature(6L, 6L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null);
     }
 
     @Test
     void getAllSignatures_ReturnsDtos() {
-        when(signatureService.getSignatureByModelId(6L, 11L)).thenReturn(List.of(signature()));
+        when(signatureService.getSignatureByModelId(6L, 6L, 11L)).thenReturn(List.of(signature()));
 
         assertEquals(1, controller.getAllSignatures(authentication, 11L).getBody().size());
     }
 
     @Test
     void getSignatureById_PropagatesMissingSignature() {
-        when(signatureService.getSignature(6L, 99L)).thenThrow(new SignatureDoesNotExistsException(99L));
+        when(signatureService.getSignature(6L, 6L, 99L)).thenThrow(new SignatureDoesNotExistsException(99L));
 
         assertThrows(SignatureDoesNotExistsException.class, () -> controller.getSignatureById(authentication, 99L));
     }

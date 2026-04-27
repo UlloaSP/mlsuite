@@ -58,13 +58,13 @@ class ExplanationFeedbackControllerTest {
         params.setPredictionId(11L);
         params.setOrder(1);
         params.setValue(objectMapper.valueToTree(Map.of("feedback-step-notes", "tree")));
-        when(explanationFeedbackService.createExplanationFeedback(3L, 11L, 1, params.getValue()))
+        when(explanationFeedbackService.createExplanationFeedback(3L, 3L, 11L, 1, params.getValue()))
                 .thenReturn(explanationFeedback(params.getValue()));
 
         ResponseEntity<?> response = controller.createExplanationFeedback(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(explanationFeedbackService).createExplanationFeedback(3L, 11L, 1, params.getValue());
+        verify(explanationFeedbackService).createExplanationFeedback(3L, 3L, 11L, 1, params.getValue());
     }
 
     @Test
@@ -72,18 +72,18 @@ class ExplanationFeedbackControllerTest {
         UpdateExplanationFeedbackParams params = new UpdateExplanationFeedbackParams();
         params.setExplanationFeedbackId(12L);
         params.setRealValue(objectMapper.valueToTree(Map.of("feedback-step-notes", "fixed")));
-        when(explanationFeedbackService.updateExplanationFeedback(3L, 12L, params.getRealValue()))
+        when(explanationFeedbackService.updateExplanationFeedback(3L, 3L, 12L, params.getRealValue()))
                 .thenReturn(explanationFeedback(params.getRealValue()));
 
         ResponseEntity<?> response = controller.updateExplanationFeedback(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(explanationFeedbackService).updateExplanationFeedback(3L, 12L, params.getRealValue());
+        verify(explanationFeedbackService).updateExplanationFeedback(3L, 3L, 12L, params.getRealValue());
     }
 
     @Test
     void getAllExplanationFeedback_PropagatesMissingErrors() {
-        when(explanationFeedbackService.getExplanationFeedbackByPredictionId(3L, 99L))
+        when(explanationFeedbackService.getExplanationFeedbackByPredictionId(3L, 3L, 99L))
                 .thenThrow(new ExplanationFeedbackDoesNotExistsException(99L, "alice"));
 
         assertThrows(ExplanationFeedbackDoesNotExistsException.class,
@@ -92,7 +92,7 @@ class ExplanationFeedbackControllerTest {
 
     @Test
     void getAllExplanationFeedback_ReturnsDtos() {
-        when(explanationFeedbackService.getExplanationFeedbackByPredictionId(3L, 11L))
+        when(explanationFeedbackService.getExplanationFeedbackByPredictionId(3L, 3L, 11L))
                 .thenReturn(List.of(explanationFeedback(objectMapper.valueToTree("tree"))));
 
         assertEquals(1, controller.getAllExplanationFeedback(authentication, 11L).getBody().size());

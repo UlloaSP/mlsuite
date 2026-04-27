@@ -34,8 +34,8 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
     }
 
     @Override
-    public void validate(Long userId, Map<String, Object> inputSignature) {
-        PluginCatalog catalog = loadCatalog(userId);
+    public void validate(Long userId, Long organizationId, Map<String, Object> inputSignature) {
+        PluginCatalog catalog = loadCatalog(userId, organizationId);
         validateKinds(inputSignature.get("fields"), "field", BUILTIN_FIELD_KINDS, catalog.allFieldKinds(),
                 catalog.activeFieldKinds());
         validateKinds(inputSignature.get("reports"), "report", BUILTIN_REPORT_KINDS, catalog.allReportKinds(),
@@ -44,14 +44,14 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
                 catalog.activeExplanationKinds());
     }
 
-    private PluginCatalog loadCatalog(Long userId) {
+    private PluginCatalog loadCatalog(Long userId, Long organizationId) {
         Set<String> allFieldKinds = new LinkedHashSet<>();
         Set<String> activeFieldKinds = new LinkedHashSet<>();
         Set<String> allReportKinds = new LinkedHashSet<>();
         Set<String> activeReportKinds = new LinkedHashSet<>();
         Set<String> allExplanationKinds = new LinkedHashSet<>();
         Set<String> activeExplanationKinds = new LinkedHashSet<>();
-        for (PluginDto plugin : pluginService.list(userId)) {
+        for (PluginDto plugin : pluginService.list(userId, organizationId)) {
             Optional<PluginDescriptor> descriptor = detect(plugin.source());
             if (descriptor.isEmpty()) {
                 continue;

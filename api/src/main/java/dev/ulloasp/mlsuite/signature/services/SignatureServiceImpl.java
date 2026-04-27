@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.model.exceptions.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
+import dev.ulloasp.mlsuite.organization.repositories.OrganizationRepository;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureAlreadyExistsException;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
@@ -31,23 +32,31 @@ public class SignatureServiceImpl implements SignatureService {
     private final UserLookupService userLookupService;
     private final SignatureRepository signatureRepository;
     private final ModelRepository modelRepository;
+    private final OrganizationRepository organizationRepository;
     private final SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
 
     public SignatureServiceImpl(UserLookupService userLookupService, SignatureRepository signatureRepository,
-            ModelRepository modelRepository, SignatureSchemaCompatibilityService signatureSchemaCompatibilityService) {
+            ModelRepository modelRepository,
+            OrganizationRepository organizationRepository,
+            SignatureSchemaCompatibilityService signatureSchemaCompatibilityService) {
         this.userLookupService = userLookupService;
         this.signatureRepository = signatureRepository;
         this.modelRepository = modelRepository;
+        this.organizationRepository = organizationRepository;
         this.signatureSchemaCompatibilityService = signatureSchemaCompatibilityService;
     }
 
+    public SignatureServiceImpl(UserLookupService userLookupService, SignatureRepository signatureRepository,
+            ModelRepository modelRepository, SignatureSchemaCompatibilityService signatureSchemaCompatibilityService) {
+        this(userLookupService, signatureRepository, modelRepository, null, signatureSchemaCompatibilityService);
+    }
+
     @Override
-    public Signature createSignature(Long userId, Long modelId,
+    public Signature createSignature(Long userId, Long organizationId, Long modelId,
             Map<String, Object> inputSignature, String name,
             int major, int minor, int patch, @Nullable Long origin) {
         User user = userLookupService.requireById(userId);
-
-        Optional<Model> optionalModel = modelRepository.findByIdAndUserId(modelId, user.getId());
+        Optional<Model> optionalModel = modelRepository.findByIdAndOrganizationId(modelId, organizationId);
 
         if (optionalModel.isEmpty()) {
             throw new ModelDoesNotExistsException(modelId, user.getUsername());
@@ -67,9 +76,12 @@ public class SignatureServiceImpl implements SignatureService {
             throw new SignatureNotSemVerException(name);
         }
 
-        signatureSchemaCompatibilityService.validate(user.getId(), inputSignature);
+        signatureSchemaCompatibilityService.validate(user.getId(), organizationId, inputSignature);
 
         Signature signature = new Signature(model, name, inputSignature);
+        signature.setOrganization(organizationRepository != null
+                ? organizationRepository.findById(organizationId).orElseThrow()
+                : model.getOrganization());
 
         signature.setMajor(major);
         signature.setMinor(minor);
@@ -87,10 +99,9 @@ public class SignatureServiceImpl implements SignatureService {
     }
 
     @Override
-    public Signature getSignature(Long userId, Long signatureId) {
+    public Signature getSignature(Long userId, Long organizationId, Long signatureId) {
         User user = userLookupService.requireById(userId);
-
-        Optional<Signature> optionalSignature = signatureRepository.findByIdAndUserId(signatureId, user.getId());
+        Optional<Signature> optionalSignature = signatureRepository.findByIdAndOrganizationId(signatureId, organizationId);
 
         if (optionalSignature.isEmpty()) {
             throw new SignatureDoesNotExistsException(signatureId, user.getUsername());
@@ -100,15 +111,56 @@ public class SignatureServiceImpl implements SignatureService {
     }
 
     @Override
-    public List<Signature> getSignatureByModelId(Long userId, Long modelId) {
+    public List<Signature> getSignatureByModelId(Long userId, Long organizationId, Long modelId) {
         User user = userLookupService.requireById(userId);
-
-        Optional<Model> optionalModel = modelRepository.findByIdAndUserId(modelId, user.getId());
+        Optional<Model> optionalModel = modelRepository.findByIdAndOrganizationId(modelId, organizationId);
 
         if (optionalModel.isEmpty()) {
             throw new ModelDoesNotExistsException(modelId, user.getUsername());
         }
 
+        return signatureRepository.findByModelIdAndOrganizationId(optionalModel.get().getId(), organizationId);
+    }
+
+    public Signature createSignature(Long userId, Long modelId,
+            Map<String, Object> inputSignature, String name,
+            int major, int minor, int patch, @Nullable Long origin) {
+        User user = userLookupService.requireById(userId);
+        Optional<Model> optionalModel = modelRepository.findByIdAndUserId(modelId, userId);
+        if (optionalModel.isEmpty()) {
+            throw new ModelDoesNotExistsException(modelId, user.getUsername());
+        }
+        Model model = optionalModel.get();
+        if (signatureRepository.existsByModelIdAndInputSignature(model.getId(), inputSignature)) {
+            throw new SignatureAlreadyExistsException(model.getId(), inputSignature);
+        }
+        if (signatureRepository.existsByModelIdAndMajorAndMinorAndPatch(model.getId(), major, minor, patch)) {
+            throw new SignatureAlreadyExistsException(model.getId(), major, minor, patch);
+        }
+        signatureSchemaCompatibilityService.validate(userId, inputSignature);
+        Signature signature = new Signature(model, name, inputSignature);
+        signature.setOrganization(model.getOrganization());
+        signature.setMajor(major);
+        signature.setMinor(minor);
+        signature.setPatch(patch);
+        if (origin != null) {
+            signature.setOrigin(signatureRepository.findById(origin).orElseThrow(() -> new SignatureDoesNotExistsException(origin)));
+        }
+        return signatureRepository.save(signature);
+    }
+
+    public Signature getSignature(Long userId, Long signatureId) {
+        User user = userLookupService.requireById(userId);
+        return signatureRepository.findByIdAndUserId(signatureId, userId)
+                .orElseThrow(() -> new SignatureDoesNotExistsException(signatureId, user.getUsername()));
+    }
+
+    public List<Signature> getSignatureByModelId(Long userId, Long modelId) {
+        User user = userLookupService.requireById(userId);
+        Optional<Model> optionalModel = modelRepository.findByIdAndUserId(modelId, userId);
+        if (optionalModel.isEmpty()) {
+            throw new ModelDoesNotExistsException(modelId, user.getUsername());
+        }
         return signatureRepository.findByModelId(optionalModel.get().getId());
     }
 

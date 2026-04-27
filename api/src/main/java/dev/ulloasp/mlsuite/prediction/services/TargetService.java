@@ -13,10 +13,22 @@ import dev.ulloasp.mlsuite.prediction.entities.Target;
 
 public interface TargetService {
 
-    Target createTarget(Long userId, Long predictionId, int order, JsonNode value);
+    Target createTarget(Long userId, Long organizationId, Long predictionId, int order, JsonNode value);
 
-    Target updateTarget(Long userId, Long targetId, JsonNode realValue);
+    default Target createTarget(Long userId, Long predictionId, int order, JsonNode value) {
+        return createTarget(userId, userId, predictionId, order, value);
+    }
 
-    List<Target> getTargetsByPredictionId(Long userId, Long predictionId);
+    Target updateTarget(Long userId, Long organizationId, Long targetId, JsonNode realValue);
+
+    default Target updateTarget(Long userId, Long targetId, JsonNode realValue) {
+        return updateTarget(userId, userId, targetId, realValue);
+    }
+
+    List<Target> getTargetsByPredictionId(Long userId, Long organizationId, Long predictionId);
+
+    default List<Target> getTargetsByPredictionId(Long userId, Long predictionId) {
+        return getTargetsByPredictionId(userId, userId, predictionId);
+    }
 
 }

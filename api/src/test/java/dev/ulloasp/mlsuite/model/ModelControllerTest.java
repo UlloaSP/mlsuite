@@ -59,13 +59,13 @@ class ModelControllerTest {
         Signature signature = new Signature();
         signature.setId(12L);
         signature.setModel(model);
-        when(modelService.createModel(4L, "demo", modelFile)).thenReturn(model);
+        when(modelService.createModel(4L, 4L, "demo", modelFile)).thenReturn(model);
         when(analyzerService.generateInputSignature(4L, modelFile, null)).thenReturn(Map.of("x", "int"));
-        when(signatureService.createSignature(4L, 11L, Map.of("x", "int"), "Model", 0, 0, 0, null))
+        when(signatureService.createSignature(4L, 4L, 11L, Map.of("x", "int"), "Model", 0, 0, 0, null))
                 .thenReturn(signature);
 
         assertEquals(HttpStatus.CREATED, controller.createModel(authentication, "demo", modelFile, null).getStatusCode());
-        verify(modelService).createModel(4L, "demo", modelFile);
+        verify(modelService).createModel(4L, 4L, "demo", modelFile);
         verify(analyzerService).generateInputSignature(4L, modelFile, null);
     }
 

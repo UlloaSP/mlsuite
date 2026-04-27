@@ -1,143 +1,146 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 1. El navegador sabe que hay dos esquemas de color -->
+    <meta name="color-scheme" content="dark light" />
 
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- 1. El navegador sabe que hay dos esquemas de color -->
-  <meta name="color-scheme" content="dark light">
+    <!-- 2. Dirección cromática de la UI del browser -->
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101828" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <title>ML Suite</title>
+    <style>
+      @import "tailwindcss";
+      @custom-variant dark (&:where(.dark, .dark *));
 
-  <!-- 2. Dirección cromática de la UI del browser -->
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101828">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
-  <title>ML Suite</title>
-  <style>
-    @import "tailwindcss";
-    @custom-variant dark (&:where(.dark, .dark *));
+      :root {
+        color-scheme: light;
+        --font-sans:
+          "Airbnb Cereal VF", "Circular", "Avenir Next", "Segoe UI", -apple-system,
+          BlinkMacSystemFont, sans-serif;
+        --font-display:
+          "Airbnb Cereal VF", "Circular", "Avenir Next", "Segoe UI", -apple-system,
+          BlinkMacSystemFont, sans-serif;
+        --page-bg: #f7f7f7;
+        --page-bg-accent: rgba(255, 56, 92, 0.08);
+        --surface-primary: #ffffff;
+        --surface-secondary: #fcfcfc;
+        --surface-muted: #f2f2f2;
+        --surface-inverse: #222222;
+        --text-primary: #222222;
+        --text-secondary: #6a6a6a;
+        --text-muted: #929292;
+        --text-inverse: #ffffff;
+        --border-soft: #ebebeb;
+        --border-strong: #dddddd;
+        --accent-primary: #ff385c;
+        --accent-primary-strong: #e00b41;
+        --accent-quiet: #fff1f3;
+        --success-quiet: #edfdf5;
+        --success-text: #047857;
+        --warning-quiet: #fff7ed;
+        --warning-text: #c2410c;
+        --danger-quiet: #fff1f3;
+        --danger-text: #c13515;
+        --shadow-card:
+          rgba(0, 0, 0, 0.02) 0px 0px 0px 1px, rgba(0, 0, 0, 0.04) 0px 2px 6px,
+          rgba(0, 0, 0, 0.1) 0px 4px 8px;
+        --shadow-hover: rgba(0, 0, 0, 0.08) 0px 4px 12px;
+        --radius-card: 24px;
+        --radius-pill: 999px;
+        --sidebar-bg: rgba(255, 255, 255, 0.92);
+        background: var(--page-bg);
+        font-family: var(--font-sans);
+      }
 
-    :root {
-      color-scheme: light;
-      --font-sans: "Airbnb Cereal VF", "Circular", "Avenir Next", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-display: "Airbnb Cereal VF", "Circular", "Avenir Next", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-      --page-bg: #f7f7f7;
-      --page-bg-accent: rgba(255, 56, 92, 0.08);
-      --surface-primary: #ffffff;
-      --surface-secondary: #fcfcfc;
-      --surface-muted: #f2f2f2;
-      --surface-inverse: #222222;
-      --text-primary: #222222;
-      --text-secondary: #6a6a6a;
-      --text-muted: #929292;
-      --text-inverse: #ffffff;
-      --border-soft: #ebebeb;
-      --border-strong: #dddddd;
-      --accent-primary: #ff385c;
-      --accent-primary-strong: #e00b41;
-      --accent-quiet: #fff1f3;
-      --success-quiet: #edfdf5;
-      --success-text: #047857;
-      --warning-quiet: #fff7ed;
-      --warning-text: #c2410c;
-      --danger-quiet: #fff1f3;
-      --danger-text: #c13515;
-      --shadow-card: rgba(0, 0, 0, 0.02) 0px 0px 0px 1px, rgba(0, 0, 0, 0.04) 0px 2px 6px, rgba(0, 0, 0, 0.1) 0px 4px 8px;
-      --shadow-hover: rgba(0, 0, 0, 0.08) 0px 4px 12px;
-      --radius-card: 24px;
-      --radius-pill: 999px;
-      --sidebar-bg: rgba(255, 255, 255, 0.92);
-      background: var(--page-bg);
-      font-family: var(--font-sans);
-    }
+      html.dark {
+        color-scheme: dark;
+        --page-bg: #101418;
+        --page-bg-accent: rgba(255, 56, 92, 0.12);
+        --surface-primary: #171a1d;
+        --surface-secondary: #1d2125;
+        --surface-muted: #262b31;
+        --surface-inverse: #ffffff;
+        --text-primary: #f5f5f5;
+        --text-secondary: #c1c1c1;
+        --text-muted: #929292;
+        --text-inverse: #222222;
+        --border-soft: #2d3238;
+        --border-strong: #3b4148;
+        --accent-quiet: rgba(255, 56, 92, 0.18);
+        --success-quiet: rgba(4, 120, 87, 0.16);
+        --success-text: #6ee7b7;
+        --warning-quiet: rgba(194, 65, 12, 0.16);
+        --warning-text: #fdba74;
+        --danger-quiet: rgba(193, 53, 21, 0.2);
+        --danger-text: #fda4af;
+        --shadow-card: rgba(0, 0, 0, 0.16) 0px 0px 0px 1px, rgba(0, 0, 0, 0.22) 0px 12px 28px;
+        --shadow-hover: rgba(0, 0, 0, 0.24) 0px 18px 36px;
+        --sidebar-bg: rgba(23, 26, 29, 0.94);
+      }
 
-    html.dark {
-      color-scheme: dark;
-      --page-bg: #101418;
-      --page-bg-accent: rgba(255, 56, 92, 0.12);
-      --surface-primary: #171a1d;
-      --surface-secondary: #1d2125;
-      --surface-muted: #262b31;
-      --surface-inverse: #ffffff;
-      --text-primary: #f5f5f5;
-      --text-secondary: #c1c1c1;
-      --text-muted: #929292;
-      --text-inverse: #222222;
-      --border-soft: #2d3238;
-      --border-strong: #3b4148;
-      --accent-quiet: rgba(255, 56, 92, 0.18);
-      --success-quiet: rgba(4, 120, 87, 0.16);
-      --success-text: #6ee7b7;
-      --warning-quiet: rgba(194, 65, 12, 0.16);
-      --warning-text: #fdba74;
-      --danger-quiet: rgba(193, 53, 21, 0.2);
-      --danger-text: #fda4af;
-      --shadow-card: rgba(0, 0, 0, 0.16) 0px 0px 0px 1px, rgba(0, 0, 0, 0.22) 0px 12px 28px;
-      --shadow-hover: rgba(0, 0, 0, 0.24) 0px 18px 36px;
-      --sidebar-bg: rgba(23, 26, 29, 0.94);
-    }
+      html,
+      body,
+      #root {
+        min-height: 100%;
+      }
 
-    html,
-    body,
-    #root {
-      min-height: 100%;
-    }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at top, var(--page-bg-accent), transparent 34%), var(--page-bg);
+        color: var(--text-primary);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
 
-    body {
-      margin: 0;
-      background:
-        radial-gradient(circle at top, var(--page-bg-accent), transparent 34%),
-        var(--page-bg);
-      color: var(--text-primary);
-      font-family: var(--font-sans);
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
+      * {
+        box-sizing: border-box;
+      }
 
-    * {
-      box-sizing: border-box;
-    }
+      ::selection {
+        background: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+      }
 
-    ::selection {
-      background: color-mix(in srgb, var(--accent-primary) 24%, transparent);
-    }
+      .app-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-strong) transparent;
+      }
 
-    .app-scroll {
-      scrollbar-width: thin;
-      scrollbar-color: var(--border-strong) transparent;
-    }
+      .app-scroll::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
 
-    .app-scroll::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
-    }
+      .app-scroll::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--border-strong) 82%, transparent);
+        border: 2px solid transparent;
+        background-clip: padding-box;
+      }
+    </style>
+    <script>
+      (function () {
+        const KEY = "ui/theme";
+        const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
+        const saved = localStorage.getItem(KEY);
+        const theme = saved ?? (sysDark ? "dark" : "light");
 
-    .app-scroll::-webkit-scrollbar-thumb {
-      border-radius: 999px;
-      background: color-mix(in srgb, var(--border-strong) 82%, transparent);
-      border: 2px solid transparent;
-      background-clip: padding-box;
-    }
-  </style>
-  <script>
-    (function () {
-      const KEY = 'ui/theme';
-      const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
-      const saved = localStorage.getItem(KEY);
-      const theme = saved ?? (sysDark ? 'dark' : 'light');
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        document.documentElement.dataset.theme = theme;
 
-      document.documentElement.classList.toggle('dark', theme === 'dark');
-      document.documentElement.dataset.theme = theme;
+        /* opcional: sincronizar <meta name="theme-color"> en caliente */
+        const meta = document.querySelector('meta[name="theme-color"][media*="color-scheme"]');
+        if (meta) meta.setAttribute("content", theme === "dark" ? "#101418" : "#f7f7f7");
+      })();
+    </script>
+  </head>
 
-      /* opcional: sincronizar <meta name="theme-color"> en caliente */
-      const meta = document.querySelector('meta[name="theme-color"][media*="color-scheme"]');
-      if (meta) meta.setAttribute('content', theme === 'dark' ? '#101418' : '#f7f7f7');
-    })();
-  </script>
-</head>
-
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

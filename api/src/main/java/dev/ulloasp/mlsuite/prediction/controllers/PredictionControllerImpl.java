@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +24,8 @@ import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionAlreadyExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.services.PredictionService;
+import dev.ulloasp.mlsuite.rbac.RbacPermissions;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
 import dev.ulloasp.mlsuite.util.ErrorDto;
@@ -41,9 +43,12 @@ public class PredictionControllerImpl implements PredictionController {
     }
 
     @Override
-    public ResponseEntity<PredictionDto> createPrediction(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<PredictionDto> createPrediction(Authentication authentication,
             @RequestBody CreatePredictionParams params) {
-        Prediction pred = predictionService.createPrediction(currentUserResolver.resolve(authentication).userId(),
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PREDICTIONS_CREATE);
+        Prediction pred = predictionService.createPrediction(currentUser.userId(),
+                currentUser.activeOrganizationId(),
                 params.getSignatureId(),
                 params.getName(), params.isOverwrite(), params.getPrediction(), params.getInputs());
 
@@ -51,19 +56,25 @@ public class PredictionControllerImpl implements PredictionController {
     }
 
     @Override
-    public ResponseEntity<PredictionDto> updatePrediction(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<PredictionDto> updatePrediction(Authentication authentication,
             @RequestBody UpdatePredictionParams params) {
-        Prediction updatedPrediction = predictionService.updatePrediction(currentUserResolver.resolve(authentication).userId(),
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PREDICTIONS_UPDATE);
+        Prediction updatedPrediction = predictionService.updatePrediction(currentUser.userId(),
+                currentUser.activeOrganizationId(),
                 params.getPredictionId(), PredictionStatus.valueOf(params.getStatus()));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(PredictionDto.toDto(updatedPrediction));
     }
 
     @Override
-    public ResponseEntity<List<PredictionDto>> getAllPredictions(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<List<PredictionDto>> getAllPredictions(Authentication authentication,
             @RequestParam Long signatureId) {
+        CurrentUser currentUser = currentUserResolver.resolve(authentication);
+        require(currentUser, RbacPermissions.PREDICTIONS_READ);
         List<Prediction> predictions = predictionService.getPredictionsBySignatureId(
-                currentUserResolver.resolve(authentication).userId(),
+                currentUser.userId(),
+                currentUser.activeOrganizationId(),
                 signatureId);
 
         return ResponseEntity.ok(PredictionDto.toDtoList(predictions));
@@ -91,6 +102,12 @@ public class PredictionControllerImpl implements PredictionController {
             HttpServletRequest req) {
         ErrorDto dto = ErrorDto.of(HttpStatus.BAD_REQUEST.value(), e.getMessage(), req.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(dto);
+    }
+
+    private void require(CurrentUser currentUser, String permission) {
+        if (!currentUser.permissions().contains(permission)) {
+            throw new dev.ulloasp.mlsuite.security.tenant.PermissionDeniedException(permission);
+        }
     }
 
 }

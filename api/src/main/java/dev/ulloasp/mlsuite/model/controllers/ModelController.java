@@ -8,7 +8,7 @@ package dev.ulloasp.mlsuite.model.controllers;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,11 +23,11 @@ import jakarta.annotation.Nullable;
 public interface ModelController {
 
     @PostMapping("/create")
-    public ResponseEntity<CreateModelDto> createModel(OAuth2AuthenticationToken authentication,
+    public ResponseEntity<CreateModelDto> createModel(Authentication authentication,
             @RequestParam String name, @RequestParam MultipartFile modelFile,
             @RequestParam @Nullable MultipartFile dataframeFile);
 
     @GetMapping("/all")
-    public ResponseEntity<List<ModelDto>> getAllModels(OAuth2AuthenticationToken authentication);
+    public ResponseEntity<List<ModelDto>> getAllModels(Authentication authentication);
 
 }

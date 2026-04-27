@@ -80,7 +80,10 @@ public class ModelStorageBackfillRunner implements ApplicationRunner {
     }
 
     private String buildLegacyObjectKey(Model model) {
-        return "legacy/users/" + model.getUser().getId() + "/models/" + model.getId() + "/"
+        String scope = model.getOrganization() != null
+                ? "orgs/" + model.getOrganization().getId()
+                : "users/" + (model.getCreatedBy() != null ? model.getCreatedBy().getId() : "unknown");
+        return "legacy/" + scope + "/models/" + model.getId() + "/"
                 + sanitizePathSegment(model.getFileName() != null ? model.getFileName() : "model.bin");
     }
 

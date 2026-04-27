@@ -40,7 +40,7 @@ import dev.ulloasp.mlsuite.user.service.UserLookupService;
 class PluginServiceTest {
 
     private static final String BUCKET = "mlsuite-models";
-    private static final String NEW_PREFIX = "users/7/plugins";
+    private static final String NEW_PREFIX = "orgs/7/plugins";
     private static final String FIELD_PREFIX = "custom-fields/github/user-1";
     private static final String REPORT_PREFIX = "custom-reports/github/user-1";
     private static final String EXPLANATION_PREFIX = "custom-explanations/github/user-1";
