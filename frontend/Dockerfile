@@ -4,9 +4,6 @@ FROM node:25-alpine3.21 AS build
 WORKDIR /app
 RUN npm install -g vite-plus@latest
 COPY package.json pnpm-lock.yaml ./
-COPY --from=mlform package.json /tmp/mlform/package.json
-COPY --from=mlform dist /tmp/mlform/dist
-RUN npm pkg set dependencies.mlform=file:/tmp/mlform
 RUN vp install --ignore-scripts --no-frozen-lockfile
 COPY . .
 RUN vp run build

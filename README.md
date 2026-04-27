@@ -82,22 +82,6 @@ For development, Docker can use:
 docker compose -f docker-compose.dev.yml up --build -d
 ```
 
-For Podman, use the Podman-specific dev compose because the frontend build needs the sibling `../mlform` workspace without Docker `additional_contexts`:
-
-```bash
-podman compose -f docker-compose.podman.dev.yml up --build -d
-```
-
-Or use the wrappers, which select the right files automatically:
-
-```bash
-./scripts/compose.sh dev up --build -d
-```
-
-```powershell
-.\scripts\compose.ps1 -Env dev up --build -d
-```
-
 ## Functionality
 
 MLSuite provides a rich set of features to manage the entire lifecycle of ML model experimentation. Here are the core features and what you can do with them:

@@ -95,8 +95,6 @@ services:
     build:
       context: ./frontend
       dockerfile: ./Dockerfile
-      additional_contexts:
-        mlform: ../mlform
     container_name: web-frontend
     environment:
       VITE_BACKEND_URL: https://localhost:${SPRING_PORT}
