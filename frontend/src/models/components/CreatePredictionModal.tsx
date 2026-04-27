@@ -20,7 +20,7 @@ import { useCreateExplanationFeedbackMutation, useCreatePredictionMutation, useC
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
 import type { PredictionExplanationDescriptor } from "../questionnaire-feedback";
 import { hasFeedbackValues } from "../questionnaire-feedback";
-import { getTargetClassLabel } from "../target-utils";
+import { derivePredictionTargets } from "../derivePredictionTargets";
 import { CreatePredictionModalSummary } from "./CreatePredictionModalSummary";
 import type { ExplanationQuestionnaireMountHandle } from "./ExplanationQuestionnaireMount";
 import { PredictionExplanationReviewCard } from "./PredictionExplanationReviewCard";
@@ -35,13 +35,7 @@ export type CreatePredictionModalProps = {
 	theme: "light" | "dark";
 };
 
-type PredictionOutput = {
-	type?: string;
-	execution_time?: number | string;
-	probabilities?: number[][];
-	mapping?: Array<string | number>;
-	values?: Array<string | number>;
-};
+type PredictionOutput = { type?: string; execution_time?: number | string };
 
 const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
 	const outputs = value.outputs;
@@ -85,33 +79,12 @@ export function CreatePredictionModal({
 	const output = asOutput(prediction);
 
 	useEffect(() => {
-		if (!output) {
-			return;
-		}
-
-		const nextTargets: Record<number, unknown> = {};
-
-		if (output.type === "classifier" && Array.isArray(output.probabilities)) {
-			output.probabilities.forEach((target, index) => {
-				const maxIndex = target.indexOf(Math.max(...target));
-				nextTargets[index] = {
-					value: getTargetClassLabel(signatureSchema, index, maxIndex)
-						?? output.mapping?.[maxIndex]
-						?? maxIndex,
-					classIndex: maxIndex,
-					probability: target[maxIndex],
-				};
-			});
-		}
-
-		if (output.type === "regressor" && Array.isArray(output.values)) {
-			output.values.forEach((target, index) => {
-				nextTargets[index] = target;
-			});
-		}
-
-		setTargets(nextTargets);
-	}, [output, signatureSchema]);
+		setTargets(
+			Object.fromEntries(
+				derivePredictionTargets(prediction, signatureSchema).map((target) => [target.order, target.value]),
+			),
+		);
+	}, [prediction, signatureSchema]);
 
 	const collectQuestionnaireValues = async () => {
 		const results: Array<{ order: number; value: Record<string, unknown> }> = [];

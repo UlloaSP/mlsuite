@@ -18,13 +18,14 @@ import {
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { PredictionHistoryTable } from "../components/PredictionHistoryTable";
-import {
-	PredictionHistoryToolbar,
-} from "../components/PredictionHistoryToolbar";
 import type {
 	PredictionDateRangeFilter,
 	PredictionFeedbackStatusFilter,
 } from "../components/PredictionHistoryToolbar";
+import {
+	PredictionHistoryToolbar,
+} from "../components/PredictionHistoryToolbar";
+import { BulkUploadButton } from "../components/BulkUploadButton";
 import { SignatureTechnicalTab } from "../components/SignatureTechnicalTab";
 import { useGetModels, useGetPredictions, useGetSignature } from "../hooks";
 import {
@@ -150,14 +151,21 @@ export function SignatureDetailPage() {
 								title={`Signature ${getSignatureVersionLabel(signature)}`}
 								description={`${signature.name} · Created ${new Date(signature.createdAt).toLocaleString()}${signature.origin ? " · Based on previous version" : ""}`}
 								aside={
-									<AppButton
-										type="button"
-										onClick={() =>
-											navigate(`/models/${modelId}/signatures/${signature.id}/predictions/create`)
-										}
-									>
-										+ New Prediction
-									</AppButton>
+									<>
+										<BulkUploadButton
+											signatureId={signatureId ?? ""}
+											modelId={modelId ?? ""}
+											signatureSchema={signature.inputSignature}
+										/>
+										<AppButton
+											type="button"
+											onClick={() =>
+												navigate(`/models/${modelId}/signatures/${signature.id}/predictions/create`)
+											}
+										>
+											+ New Prediction
+										</AppButton>
+									</>
 								}
 							/>
 

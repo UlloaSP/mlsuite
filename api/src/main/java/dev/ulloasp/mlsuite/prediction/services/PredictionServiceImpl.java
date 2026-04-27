@@ -68,7 +68,8 @@ public class PredictionServiceImpl implements PredictionService {
         Signature signature = optionalSignature.get();
         signatureSchemaCompatibilityService.validate(user.getId(), signature.getInputSignature());
 
-        Optional<Prediction> existingPrediction = predictionRepository.findBySignatureIdAndName(signature.getId(), name);
+        Optional<Prediction> existingPrediction = predictionRepository.findBySignatureIdAndName(signature.getId(),
+                name);
 
         if (existingPrediction.isPresent() && !overwrite) {
             throw new PredictionAlreadyExistsException(name, signature.getName());

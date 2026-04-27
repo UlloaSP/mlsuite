@@ -88,7 +88,6 @@ export function PredictionHistoryToolbar({
 					</select>
 				</label>
 			</div>
-
 			<ExportButton predictions={predictions} signatureSchema={signatureSchema} />
 		</AppToolbar>
 	);

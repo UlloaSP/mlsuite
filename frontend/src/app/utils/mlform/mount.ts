@@ -5,107 +5,20 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { mountForm } from "mlform";
 import {
-	createBuiltinRegistry,
-	defineFieldDefinition,
-	defineReportDefinition,
 	type AfterSubmitContext,
-	type FieldConfig,
-	type FieldDefinition,
-	type ReportConfig,
-	type ReportDefinition,
 	type SubmitErrorContext,
 } from "mlform/engine";
 import {
-	CUSTOM_FIELD_COMPONENT,
-	type CatalogFieldDefinition,
-} from "./custom-field";
-import {
-	type CatalogExplanationDefinition,
-} from "./custom-explanation";
-import {
-	CUSTOM_REPORT_COMPONENT,
-	type CatalogReportDefinition,
-} from "./custom-report";
+	createPredictionRuntime,
+	getPredictionDesignSystem,
+} from "./headless-prediction";
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
-import { toMlformSchema } from "./schema-validation";
-import { createPredictionTransport } from "./transport";
 import {
 	type MountedPredictionForm,
 	type MountPredictionFormOptions,
-	type PredictionPayloadField,
 	getBackendKey,
 	isRecord,
 } from "./shared";
-
-const wrapCustomFieldDefinition = (
-	definition: CatalogFieldDefinition,
-): FieldDefinition<FieldConfig, unknown> =>
-	defineFieldDefinition({
-		...definition.definition,
-		describe(config, context) {
-			const descriptor = definition.definition.describe(config, context);
-
-			if (descriptor.component !== CUSTOM_FIELD_COMPONENT) {
-				throw new Error(
-					`Custom field kind "${definition.kind}" must use shared renderer "${CUSTOM_FIELD_COMPONENT}".`,
-				);
-			}
-
-			return descriptor;
-		},
-	});
-
-const wrapCustomReportDefinition = (
-	definition: CatalogReportDefinition,
-): ReportDefinition<ReportConfig> =>
-	defineReportDefinition({
-		...definition.definition,
-		describe(config, context) {
-			const descriptor = definition.definition.describe(config, context);
-
-			if (descriptor && descriptor.component !== CUSTOM_REPORT_COMPONENT) {
-				throw new Error(
-					`Custom report kind "${definition.kind}" must use shared renderer "${CUSTOM_REPORT_COMPONENT}".`,
-				);
-			}
-
-			return descriptor;
-		},
-	});
-
-const createPredictionEngineRegistry = (
-	customFieldDefinitions: readonly CatalogFieldDefinition[],
-	customReportDefinitions: readonly CatalogReportDefinition[],
-	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
-) => {
-	const engineRegistry = createBuiltinRegistry();
-
-	for (const definition of customFieldDefinitions) {
-		if (!definition.active) {
-			continue;
-		}
-
-		engineRegistry.registerField(wrapCustomFieldDefinition(definition));
-	}
-
-	for (const definition of customReportDefinitions) {
-		if (!definition.active) {
-			continue;
-		}
-
-		engineRegistry.registerReport(wrapCustomReportDefinition(definition));
-	}
-
-	for (const definition of customExplanationDefinitions) {
-		if (!definition.active) {
-			continue;
-		}
-
-		engineRegistry.registerExplanation(definition.definition);
-	}
-
-	return engineRegistry;
-};
 
 export const mountPredictionForm = ({
 	container,
@@ -118,26 +31,23 @@ export const mountPredictionForm = ({
 	onSubmit,
 	onSubmitError,
 }: MountPredictionFormOptions): MountedPredictionForm => {
-	const formSchema = toMlformSchema(schema, {
+	const runtime = createPredictionRuntime({
+		schema,
+		modelId,
 		customFieldDefinitions,
 		customReportDefinitions,
 		customExplanationDefinitions,
 	});
-	const normalizedFields = formSchema.fields as PredictionPayloadField[];
 	const mounted = mountForm(container, {
-		schema: formSchema,
-		registry: createPredictionEngineRegistry(
-			customFieldDefinitions,
-			customReportDefinitions,
-			customExplanationDefinitions,
-		),
+		schema: runtime.formSchema,
+		registry: runtime.registry,
 		primitiveRegistry: createPredictionPrimitiveRegistry(),
-		transport: createPredictionTransport(modelId, normalizedFields),
+		transport: runtime.transport,
 		hooks: {
 			afterSubmit({ result }: AfterSubmitContext) {
 				onSubmit?.(
 					Object.fromEntries(
-						normalizedFields
+						runtime.normalizedFields
 							.filter((field) => field.id in result.serializedValues)
 							.map((field) => [getBackendKey(field), result.serializedValues[field.id]]),
 					),
@@ -157,22 +67,14 @@ export const mountPredictionForm = ({
 			validating: "Checking signature...",
 			submitting: "Running model...",
 		},
-		designSystem: {
-			mode: theme,
-			theme: "cobalt",
-			recipe: "default",
-		},
+		designSystem: getPredictionDesignSystem(theme),
 	});
 
 	return {
 		form: mounted.form,
 		host: mounted.host,
 		updateTheme(nextTheme) {
-			mounted.replaceDesignSystem({
-				mode: nextTheme,
-				theme: "cobalt",
-				recipe: "default",
-			});
+			mounted.replaceDesignSystem(getPredictionDesignSystem(nextTheme));
 		},
 		unmount() {
 			mounted.unmount();

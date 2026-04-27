@@ -10,84 +10,56 @@ import { useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton, AppCopy, AppPanel } from "../../app/components";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import {
-	getActiveCustomFieldDefinitions,
-	type CatalogFieldDefinition,
-} from "../../app/utils/mlform/custom-field";
-import {
-	getActiveCustomExplanationDefinitions,
-	type CatalogExplanationDefinition,
-} from "../../app/utils/mlform/custom-explanation";
-import {
-	getActiveCustomReportDefinitions,
-	type CatalogReportDefinition,
-} from "../../app/utils/mlform/custom-report";
 import { mountPredictionForm, schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/index";
-import { isRecord } from "../../app/utils/mlform/shared";
 import { schemaAtom } from "../../editor/atoms";
 import { showModalAtom } from "../atoms";
+import {
+	buildPersistedPredictionPayload,
+	type PersistedExplanationState,
+} from "../buildPersistedPredictionPayload";
+import { loadPredictionCatalogDefinitions } from "../loadPredictionCatalogDefinitions";
 import { CreatePredictionModal } from "./CreatePredictionModal";
+import type { PredictionCatalogDefinitions } from "../loadPredictionCatalogDefinitions";
 
 type CatalogLoadState =
 	| {
 		status: "loading";
-		fieldDefinitions: readonly CatalogFieldDefinition[];
-		reportDefinitions: readonly CatalogReportDefinition[];
-		definitions: readonly CatalogExplanationDefinition[];
+		data: PredictionCatalogDefinitions;
 		error: string | null;
 	}
 	| {
 		status: "ready";
-		fieldDefinitions: readonly CatalogFieldDefinition[];
-		reportDefinitions: readonly CatalogReportDefinition[];
-		definitions: readonly CatalogExplanationDefinition[];
+		data: PredictionCatalogDefinitions;
 		error: string | null;
 	}
 	| {
 		status: "error";
-		fieldDefinitions: readonly CatalogFieldDefinition[];
-		reportDefinitions: readonly CatalogReportDefinition[];
-		definitions: readonly CatalogExplanationDefinition[];
+		data: PredictionCatalogDefinitions;
 		error: string;
 	};
 
 const initialCatalogLoadState: CatalogLoadState = {
 	status: "loading",
-	fieldDefinitions: [],
-	reportDefinitions: [],
-	definitions: [],
+	data: {
+		fieldDefinitions: [],
+		reportDefinitions: [],
+		explanationDefinitions: [],
+	},
 	error: null,
 };
 
-const buildPredictionResponse = (
-	raw: unknown,
+const getPersistedExplanations = (
 	form: NonNullable<ReturnType<typeof mountPredictionForm>>["form"],
-): Record<string, unknown> => {
-	const base = isRecord(raw) ? raw : { raw };
-	const reports = isRecord(base.reports) ? { ...base.reports } : {};
-	const meta = isRecord(base.meta) ? { ...base.meta } : {};
-	const explainErrors = isRecord(meta.explainErrors) ? { ...meta.explainErrors } : {};
-
-	for (const explanation of form.explanations) {
+): PersistedExplanationState[] =>
+	form.explanations.map((explanation) => {
 		const explanationState = form.state.explanationStates[explanation.id] ?? explanation.state;
-		if (explanationState.status === "done" && explanationState.result !== undefined) {
-			reports[explanation.id] = explanationState.result;
-			delete explainErrors[explanation.id];
-		}
-		if (explanationState.status === "error" && explanationState.error) {
-			explainErrors[explanation.id] = explanationState.error;
-		}
-	}
-
-	return {
-		...base,
-		reports,
-		meta: {
-			...meta,
-			...(Object.keys(explainErrors).length > 0 ? { explainErrors } : {}),
-		},
-	};
-};
+		return {
+			id: explanation.id,
+			status: explanationState.status,
+			result: explanationState.result,
+			error: explanationState.error,
+		};
+	});
 
 export function CreatePredictionBodyForm() {
 	const { modelId } = useParams<{ modelId: string }>();
@@ -119,23 +91,14 @@ export function CreatePredictionBodyForm() {
 	const loadCatalogDefinitions = useCallback(async () => {
 		setCatalogState({
 			status: "loading",
-			fieldDefinitions: [],
-			reportDefinitions: [],
-			definitions: [],
+			data: initialCatalogLoadState.data,
 			error: null,
 		});
 
 		try {
-			const [fieldDefinitions, reportDefinitions, definitions] = await Promise.all([
-				getActiveCustomFieldDefinitions(),
-				getActiveCustomReportDefinitions(),
-				getActiveCustomExplanationDefinitions(),
-			]);
 			setCatalogState({
 				status: "ready",
-				fieldDefinitions,
-				reportDefinitions,
-				definitions,
+				data: await loadPredictionCatalogDefinitions(),
 				error: null,
 			});
 		} catch (error: unknown) {
@@ -144,9 +107,7 @@ export function CreatePredictionBodyForm() {
 			});
 			setCatalogState({
 				status: "error",
-				fieldDefinitions: [],
-				reportDefinitions: [],
-				definitions: [],
+				data: initialCatalogLoadState.data,
 				error: error instanceof Error ? error.message : String(error),
 			});
 		}
@@ -156,9 +117,7 @@ export function CreatePredictionBodyForm() {
 		if (!schemaNeedsPlugins) {
 			setCatalogState({
 				status: "ready",
-				fieldDefinitions: [],
-				reportDefinitions: [],
-				definitions: [],
+				data: initialCatalogLoadState.data,
 				error: null,
 			});
 			return;
@@ -183,9 +142,9 @@ export function CreatePredictionBodyForm() {
 				schema,
 				modelId,
 				theme,
-				customFieldDefinitions: catalogState.fieldDefinitions,
-				customReportDefinitions: catalogState.reportDefinitions,
-				customExplanationDefinitions: catalogState.definitions,
+				customFieldDefinitions: catalogState.data.fieldDefinitions,
+				customReportDefinitions: catalogState.data.reportDefinitions,
+				customExplanationDefinitions: catalogState.data.explanationDefinitions,
 				onSubmit: handleSubmit,
 				onSubmitError(error) {
 					toast.error("Prediction request failed", {
@@ -199,7 +158,12 @@ export function CreatePredictionBodyForm() {
 					return;
 				}
 
-				setResponse(buildPredictionResponse(state.lastResult.raw, mounted.form));
+				setResponse(
+					buildPersistedPredictionPayload(
+						state.lastResult.raw,
+						getPersistedExplanations(mounted.form),
+					),
+				);
 				setExplanationsPending(
 					mounted.form.explanations.some((explanation) => {
 						const explanationState =
@@ -276,7 +240,7 @@ export function CreatePredictionBodyForm() {
 					inputs={inputs}
 					signatureSchema={schema}
 					explanationsPending={explanationsPending}
-					customExplanationDefinitions={catalogState.definitions}
+					customExplanationDefinitions={catalogState.data.explanationDefinitions}
 					theme={theme}
 				/>
 			) : null}
