@@ -20,4 +20,9 @@ public interface TargetRepository extends JpaRepository<Target, Long> {
 
     @Query("SELECT t FROM Target t WHERE t.id = :targetId AND t.prediction.signature.model.user.id = :userId")
     Optional<Target> findByIdAndUserId(Long targetId, Long userId);
+
+    @Query("SELECT t FROM Target t WHERE t.prediction.id = :predictionId AND t.prediction.signature.model.user.id = :userId")
+    List<Target> findByPredictionIdAndUserId(Long predictionId, Long userId);
+
+    void deleteByPredictionId(Long predictionId);
 }

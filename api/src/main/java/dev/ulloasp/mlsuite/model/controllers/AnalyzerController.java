@@ -10,11 +10,13 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
+import dev.ulloasp.mlsuite.model.dtos.ExplainRequest;
 import jakarta.annotation.Nullable;
 
 @RequestMapping("/api/analyzer")
@@ -31,4 +33,10 @@ public interface AnalyzerController {
                         OAuth2AuthenticationToken authentication,
                         @RequestParam Long modelId,
                         @RequestPart("data") Map<String, Object> data);
+
+        @PostMapping("/explain/by-id")
+        public ResponseEntity<Map<String, Object>> explain(
+                        OAuth2AuthenticationToken authentication,
+                        @RequestParam Long modelId,
+                        @RequestBody ExplainRequest request);
 }

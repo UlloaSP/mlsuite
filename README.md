@@ -6,16 +6,17 @@
 ![Python](https://img.shields.io/badge/Python-3.14+-blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
+![Podman](https://img.shields.io/badge/Podman-Compose-892CA0)
 
 **MLSuite** is an open-source web platform for managing machine learning models and running live predictions with them. Its purpose is to simplify the **deployment, testing, and evaluation** of ML models by providing an end-to-end workflow: from model upload and input **signature** definition to executing predictions and collecting feedback on results. With MLSuite, data scientists and engineers can turn any trained ML model into an interactive web application for experimentation, without writing custom interfaces or deployment code. The system ensures **reproducibility and traceability** for all experiments, making it easy to track which model (and input schema) produced each result.
 
 In practical terms, MLSuite lets you upload a machine learning model (e.g. a scikit-learn model), automatically generates a typed input form for that model, and allows you to input data and get predictions through a friendly UI. All predictions, along with their inputs and outcomes, are stored in a database, enabling you to review model performance, mark predictions as correct or incorrect, and even export the collected data for retraining. The platform streamlines the typical model deployment and model validation process into a single cohesive application.
 
-## Getting Started (Production Deployment with Docker Compose)
+## Getting Started (Production Deployment with Docker Compose or Podman)
 
-**Follow these steps to deploy MLSuite using Docker Compose.** This guide assumes minimal experience with Docker and OAuth setup, and will walk you through the process in detail.
+**Follow these steps to deploy MLSuite using Docker Compose or Podman.** This guide assumes minimal experience with containers and OAuth setup, and will walk you through the process in detail.
 
-1. **Prerequisites**: Install **Docker** and **Docker Compose** on your server or local machine. Verify that running docker --version and docker compose version works without errors.
+1. **Prerequisites**: Install either **Docker** with **Docker Compose** or **Podman** with `podman compose`/`podman-compose`. Verify your chosen engine works before continuing.
 
 2. **Clone the Repository**: Download the MLSuite source code from GitHub:
 
@@ -24,7 +25,7 @@ git clone https://github.com/UlloaSP/mlsuite.git
 cd mlsuite
 ```
 
-This repository contains a pre-configured docker-compose.yml that defines all required services (frontend, backend, ML analyzer, database).
+This repository contains pre-configured compose files that define all required services (frontend, backend, ML analyzer, database).
 
 3. OAuth Credentials Setup: MLSuite uses OAuth2 for user authentication (Google and GitHub login). You will need to register OAuth applications to obtain Client IDs and Secrets:
 
@@ -45,10 +46,24 @@ GITHUB_CLIENT_SECRET=<your GitHub OAuth client secret>
 
 You can also adjust other settings (like database password, etc.) here. The Docker Compose file will load these values and pass them to the containers. If you prefer, you can edit the docker-compose.yml to directly insert these env vars under the backend service.
 
-5. Launch the Application: Run the following command to build and start all services:
+5. Launch the Application: Run one of the following commands to build and start all services:
 
 ```bash
 docker compose -f docker-compose.prod.yml up --build -d
+```
+
+```bash
+podman compose -f docker-compose.prod.yml up --build -d
+```
+
+You can also use the helper wrappers:
+
+```bash
+./scripts/compose.sh prod up --build -d
+```
+
+```powershell
+.\scripts\compose.ps1 -Env prod up --build -d
 ```
 
 This will spin up all components of MLSuite in separate containers. The first run may take a few minutes to download base images and build the code. Subsequent starts will be faster.
@@ -57,7 +72,31 @@ This will spin up all components of MLSuite in separate containers. The first ru
 
 7. Use MLSuite: After logging in, you can start uploading models and running predictions (see the Functionality section below for an overview of features). By default, the React frontend will be served on port 5173. If you need to change ports or other settings, adjust the environment variables or compose file accordingly.
 
-Troubleshooting: If some containers fail to start, run docker compose logs -f to inspect the logs of each service. Common issues often involve misconfigured environment variables (e.g. incorrect OAuth secrets or database connection issues). Make sure the OAuth redirect URLs exactly match your deployment address. If running on a remote server, update the OAuth app settings to use your server’s URL instead of localhost.
+Troubleshooting: If some containers fail to start, run `docker compose logs -f` or `podman compose logs -f` to inspect the logs of each service. Common issues often involve misconfigured environment variables (e.g. incorrect OAuth secrets or database connection issues). Make sure the OAuth redirect URLs exactly match your deployment address. If running on a remote server, update the OAuth app settings to use your server’s URL instead of localhost.
+
+## Development Containers
+
+For development, Docker can use:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build -d
+```
+
+For Podman, use the Podman-specific dev compose because the frontend build needs the sibling `../mlform` workspace without Docker `additional_contexts`:
+
+```bash
+podman compose -f docker-compose.podman.dev.yml up --build -d
+```
+
+Or use the wrappers, which select the right files automatically:
+
+```bash
+./scripts/compose.sh dev up --build -d
+```
+
+```powershell
+.\scripts\compose.ps1 -Env dev up --build -d
+```
 
 ## Functionality
 

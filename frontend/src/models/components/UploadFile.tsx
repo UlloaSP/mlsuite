@@ -3,9 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { CheckCircle, Upload } from "lucide-react";
+import { CheckCircle, Trash2, Upload } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
+import { AppIconButton, cx } from "../../app/components";
 
 type UploadFileProps = {
 	acceptedFormats?: string[];
@@ -65,12 +66,14 @@ export function UploadFile({
 	};
 	return (
 		<div
-			className={`relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300 ${isDragOver
-					? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
+			className={cx(
+				"relative rounded-[28px] border-2 border-dashed p-8 transition-all duration-300",
+				isDragOver
+					? "border-[var(--accent-primary)] bg-[var(--accent-quiet)]"
 					: selectedFile
-						? "border-green-400 bg-green-50 dark:bg-green-900/20"
-						: "border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
-				}`}
+						? "border-[color:var(--success-text)] bg-[var(--success-quiet)]"
+						: "border-[var(--border-soft)] bg-[var(--surface-secondary)] hover:border-[var(--accent-primary)] hover:bg-[var(--surface-muted)]",
+			)}
 			onDrop={handleDrop}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
@@ -79,41 +82,58 @@ export function UploadFile({
 				type="file"
 				accept={acceptedFormats?.join(", ") || "*"}
 				onChange={handleFileChange}
-				className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+				className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
 			/>
 
-			<div className="text-center">
+			<div className="relative z-10 text-center">
 				{selectedFile ? (
 					<motion.div
 						initial={{ scale: 0.8, opacity: 0 }}
 						animate={{ scale: 1, opacity: 1 }}
 						className="space-y-3"
 					>
-						<div className="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-							<CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+						<div className="flex justify-end">
+							<AppIconButton
+								type="button"
+								aria-label="Remove uploaded file"
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									setSelectedFile(null);
+								}}
+								className="border border-transparent bg-[var(--surface-primary)] text-[var(--text-muted)] hover:text-[var(--danger-text)]"
+							>
+								<Trash2 className="h-4 w-4" />
+							</AppIconButton>
+						</div>
+						<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-primary)] text-[var(--success-text)] shadow-[var(--shadow-card)]">
+							<CheckCircle className="h-8 w-8" />
 						</div>
 						<div>
-							<p className="font-medium text-green-700 dark:text-green-400">
+							<p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--success-text)]">
+								Upload complete
+							</p>
+							<p className="font-medium text-[var(--text-primary)]">
 								{selectedFile.name}
 							</p>
-							<p className="text-sm text-green-600 dark:text-green-500">
+							<p className="text-sm text-[var(--success-text)]">
 								{getFileSize(selectedFile.size)}
 							</p>
 						</div>
-						<p className="text-xs text-gray-500 dark:text-gray-400">
+						<p className="text-xs text-[var(--text-secondary)]">
 							{CHANGE_FILE_HINT}
 						</p>
 					</motion.div>
 				) : (
 					<div className="space-y-3">
-						<div className="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-							<Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+						<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-primary)] text-[var(--accent-primary)] shadow-[var(--shadow-card)]">
+							<Upload className="h-8 w-8" />
 						</div>
 						<div>
-							<p className="font-medium text-gray-700 dark:text-gray-300">
+							<p className="font-medium text-[var(--text-primary)]">
 								{UPLOAD_FILE_HINT}
 							</p>
-							<p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+							<p className="mt-1 text-sm text-[var(--text-secondary)]">
 								{SUPPORTED_FORMATS_HINT.replace(
 									"<<formats>>",
 									acceptedFormats?.join(", ") || "any",

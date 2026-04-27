@@ -8,6 +8,7 @@ package dev.ulloasp.mlsuite.model.services;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,10 +27,10 @@ import dev.ulloasp.mlsuite.model.entities.Model;
 import dev.ulloasp.mlsuite.model.exceptions.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.exceptions.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.storage.ObjectStorageService;
+import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.service.UserLookupService;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -38,36 +39,26 @@ public class ModelServiceImpl implements ModelService {
 
     @Autowired
     private RestTemplate restTemplate;
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final ModelRepository modelRepository;
+    private final ObjectStorageService objectStorageService;
 
     @Value("${analyzer.url}")
     private String analyzerUrl;
 
-    public ModelServiceImpl(UserRepository userRepository, ModelRepository modelRepository) {
-        this.userRepository = userRepository;
+    public ModelServiceImpl(UserLookupService userLookupService, ModelRepository modelRepository,
+            ObjectStorageService objectStorageService) {
+        this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
+        this.objectStorageService = objectStorageService;
     }
 
     @Override
-    public Model createModel(OAuthProvider oauthProvider, String oauthId, String name, MultipartFile modelFile) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
+    public Model createModel(Long userId, String name, MultipartFile modelFile) {
+        User user = userLookupService.requireById(userId);
 
         if (modelRepository.existsByNameAndUserId(name, user.getId())) {
             throw new ModelAlreadyExistsException(name, user.getUsername());
-        }
-        final byte[] modelBytes;
-
-        try {
-            modelBytes = modelFile.getBytes();
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Model file is empty or invalid", e);
         }
 
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -95,23 +86,58 @@ public class ModelServiceImpl implements ModelService {
         }
         String type = response.get("type") != null ? response.get("type").toString() : null;
         String specificType = response.get("specificType") != null ? response.get("specificType").toString() : null;
-        String fileName = response.get("fileName") != null ? response.get("fileName").toString() : null;
+        String fileName = response.get("fileName") != null
+                ? response.get("fileName").toString()
+                : modelFile.getOriginalFilename();
+        String objectKey = buildObjectKey(user.getId(), name, fileName);
+        StoredObject storedObject;
+        try {
+            storedObject = objectStorageService.store(
+                    objectKey,
+                    fileName,
+                    modelFile.getContentType(),
+                    modelFile.getInputStream(),
+                    modelFile.getSize());
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Model file is empty or invalid", ex);
+        }
 
-        Model model = new Model(user, name, type, specificType, fileName, modelBytes);
-        return modelRepository.save(model);
+        Model model = new Model();
+        model.setUser(user);
+        model.setName(name);
+        model.setType(type);
+        model.setSpecificType(specificType);
+        model.setFileName(fileName);
+        model.setModelFile(new byte[0]);
+        model.setStorageBucket(storedObject.bucket());
+        model.setStorageObjectKey(storedObject.objectKey());
+        model.setStorageEtag(storedObject.etag());
+        model.setModelSizeBytes(storedObject.sizeBytes());
+
+        try {
+            return modelRepository.save(model);
+        } catch (RuntimeException ex) {
+            objectStorageService.delete(storedObject.bucket(), storedObject.objectKey());
+            throw ex;
+        }
     }
 
     @Override
-    public List<Model> getModels(OAuthProvider oauthProvider, String oauthId) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
+    public List<Model> getModels(Long userId) {
+        userLookupService.requireById(userId);
+        return modelRepository.findByUserId(userId);
+    }
 
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
+    private String buildObjectKey(Long userId, String modelName, String fileName) {
+        String safeModelName = sanitizePathSegment(modelName);
+        String safeFileName = sanitizePathSegment(fileName != null ? fileName : "model.bin");
+        return "users/" + userId + "/models/" + safeModelName + "/" + UUID.randomUUID() + "/" + safeFileName;
+    }
 
-        User user = optionalUser.get();
-
-        return modelRepository.findByUserId(user.getId());
+    private String sanitizePathSegment(String value) {
+        return value
+                .replaceAll("[^a-zA-Z0-9._-]", "_")
+                .replaceAll("_+", "_");
     }
 
 }

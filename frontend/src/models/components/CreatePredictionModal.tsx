@@ -4,81 +4,154 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { Save, X } from "lucide-react";
+import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
+import { toast } from "sonner";
+import {
+	AppCopy,
+	AppIconButton,
+	AppSectionTitle,
+} from "../../app/components";
+import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { showModalAtom } from "../atoms";
-import { useCreatePredictionMutation, useCreateTargetMutation } from "../hooks";
+import { useCreateExplanationFeedbackMutation, useCreatePredictionMutation, useCreateTargetMutation, useGetPredictions } from "../hooks";
+import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import type { PredictionExplanationDescriptor } from "../questionnaire-feedback";
+import { hasFeedbackValues } from "../questionnaire-feedback";
+import { derivePredictionTargets } from "../derivePredictionTargets";
+import { CreatePredictionModalSummary } from "./CreatePredictionModalSummary";
+import type { ExplanationQuestionnaireMountHandle } from "./ExplanationQuestionnaireMount";
+import { PredictionExplanationReviewCard } from "./PredictionExplanationReviewCard";
+import { PredictionOverwriteDialog } from "./PredictionOverwriteDialog";
 
 export type CreatePredictionModalProps = {
-	prediction: Record<string, object>;
-	inputs: Record<string, object>;
+	prediction: Record<string, unknown>;
+	inputs: Record<string, unknown>;
+	signatureSchema: unknown;
+	explanationsPending: boolean;
+	customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
+	theme: "light" | "dark";
+};
+
+type PredictionOutput = { type?: string; execution_time?: number | string };
+
+const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
+	const outputs = value.outputs;
+	if (!Array.isArray(outputs) || outputs.length === 0) {
+		return null;
+	}
+
+	const first = outputs[0];
+	return typeof first === "object" && first !== null ? (first as PredictionOutput) : null;
 };
 
 export function CreatePredictionModal({
 	prediction,
 	inputs,
+	signatureSchema,
+	explanationsPending,
+	customExplanationDefinitions = [],
+	theme,
 }: CreatePredictionModalProps) {
 	const { signatureId } = useParams<{ signatureId: string }>();
-
 	const [, setShowModal] = useAtom(showModalAtom);
-
 	const mutation = useCreatePredictionMutation();
 	const mutationTarget = useCreateTargetMutation();
+	const explanationFeedbackMutation = useCreateExplanationFeedbackMutation();
+	const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
 
-	const [predictionName, setPredictionName] = useState<string>("");
-	const [targets, setTargets] = useState<Record<number, object>>({});
-
-	const formatInputValue = (value: any) => {
-		if (typeof value === "number") {
-			return value.toLocaleString();
-		}
-		return String(value);
-	};
+	const [predictionName, setPredictionName] = useState("");
+	const [targets, setTargets] = useState<Record<number, unknown>>({});
+	const [draftExplanationValues, setDraftExplanationValues] = useState<Record<string, Record<string, unknown>>>({});
+	const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
+	const questionnaireRefs = useRef<Record<string, ExplanationQuestionnaireMountHandle | null>>({});
+	const explanationEntries = useMemo<PredictionExplanationDescriptor[]>(
+		() =>
+			extractPredictionExplanationEntries(
+				prediction,
+				signatureSchema,
+				customExplanationDefinitions,
+			),
+		[prediction, signatureSchema, customExplanationDefinitions],
+	);
+	const output = asOutput(prediction);
 
 	useEffect(() => {
-		// @ts-ignore
-		if (!prediction || !prediction.outputs || prediction.outputs.length === 0) {
-			return;
+		setTargets(
+			Object.fromEntries(
+				derivePredictionTargets(prediction, signatureSchema).map((target) => [target.order, target.value]),
+			),
+		);
+	}, [prediction, signatureSchema]);
+
+	const collectQuestionnaireValues = async () => {
+		const results: Array<{ order: number; value: Record<string, unknown> }> = [];
+
+		for (const explanation of explanationEntries) {
+			if (!explanation.feedbackQuestionnaire) {
+				continue;
+			}
+
+			const handle = questionnaireRefs.current[explanation.explanationId];
+			const value = await handle?.submit();
+			if (value && hasFeedbackValues(value)) {
+				results.push({ order: explanation.order, value });
+			}
 		}
-		// @ts-ignore
-		const output = prediction.outputs[0];
 
-		const targets: Record<number, number | string> = {};
+		return results;
+	};
 
-		if (output.type === "classifier") {
-			output.probabilities.forEach((target: number[], index: number) => {
-				const maxIndex = target.indexOf(Math.max(...target));
-				targets[index] = output.mapping[maxIndex];
-			});
-		}
-
-		if (output.type === "regressor") {
-			output.values.forEach((target: number, index: number) => {
-				targets[index] = target;
-			});
-		}
-		setTargets(targets as unknown as Record<number, object>);
-	}, [prediction]);
-
-	const handleSave = async () => {
+	const savePrediction = async (overwrite: boolean) => {
 		const created = await mutation.mutateAsync({
 			signatureId: signatureId!,
-			name: predictionName,
-			inputs: inputs,
-			prediction: prediction,
+			name: predictionName.trim(),
+			overwrite,
+			inputs,
+			prediction,
 		});
 
-		Object.entries(targets).forEach(async ([key, value]) => {
-			await mutationTarget.mutateAsync({
-				predictionId: created.id,
-				order: Number(key),
-				value: String(value),
-			});
-		});
+		await Promise.all(
+			Object.entries(targets).map(([key, value]) =>
+				mutationTarget.mutateAsync({
+					predictionId: created.id,
+					order: Number(key),
+					value,
+				}),
+			),
+		);
+
+		const feedbackValues = await collectQuestionnaireValues();
+		await Promise.all(
+			feedbackValues.map((item) =>
+				explanationFeedbackMutation.mutateAsync({
+					predictionId: created.id,
+					order: item.order,
+					value: item.value,
+				}),
+			),
+		);
 
 		setShowModal(false);
+		toast.success("Prediction saved");
+	};
+
+	const handleSave = async () => {
+		try {
+			const normalizedName = predictionName.trim();
+			if (predictions.some((item) => item.name === normalizedName)) {
+				setShowOverwriteDialog(true);
+				return;
+			}
+
+			await savePrediction(false);
+		} catch (error: unknown) {
+			toast.error("Prediction could not be saved", {
+				description: error instanceof Error ? error.message : String(error),
+			});
+		}
 	};
 
 	return (
@@ -87,7 +160,7 @@ export function CreatePredictionModal({
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				exit={{ opacity: 0 }}
-				className="fixed flex inset-0 bg-black/50 backdrop-blur-sm z-40"
+				className="fixed inset-0 z-40 flex bg-black/40 backdrop-blur-sm"
 				onClick={() => setShowModal(false)}
 			>
 				<motion.div
@@ -95,155 +168,70 @@ export function CreatePredictionModal({
 					animate={{ x: 0, opacity: 1 }}
 					exit={{ x: "100%", opacity: 0 }}
 					transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-					className="relative flex flex-col flex-1 m-12 rounded-md bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-2xl z-50"
-					onClick={(e) => e.stopPropagation()}
+					className="relative z-50 m-8 flex flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
+					onClick={(event) => event.stopPropagation()}
 				>
-					<motion.div className="flex flex-row justify-between items-center p-8">
-						<motion.h1 className="text-5xl leading-20 font-bold bg-gradient-to-r from-gray-900 to-violet-600 dark:from-white dark:to-violet-400 bg-clip-text text-transparent">
-							Create New Prediction
-						</motion.h1>
-						<motion.button
-							type="button"
-							aria-label="Close modal"
-							onClick={() => setShowModal(false)}
-							whileHover={{ scale: 1.05 }}
-							whileTap={{ scale: 0.95 }}
-							className="place-content-end max-w-fit p-3 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 dark:focus:ring-gray-600 dark:focus:ring-offset-gray-900"
-						>
+					<div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">
+						<div className="space-y-2">
+							<AppCopy className="text-xs uppercase tracking-[0.22em]">Prediction Review</AppCopy>
+							<AppSectionTitle className="text-4xl">Create New Prediction</AppSectionTitle>
+						</div>
+						<AppIconButton type="button" aria-label="Close modal" onClick={() => setShowModal(false)}>
 							<X size={24} />
-						</motion.button>
-					</motion.div>
-					<motion.div className="flex flex-row flex-1 overflow-hidden">
-						{/* Columna Izquierda */}
-						<motion.div className="flex flex-col flex-1 p-8 gap-8 overflow-hidden">
-							{/* Details */}
-							<motion.div className="min-h-fit bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-								<motion.div className="flex items-center justify-between ">
-									<motion.span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-										Type:
-									</motion.span>
-									<motion.span
-										className={`font-mono font-medium text-gray-800 dark:text-gray-200`}
-									>
-										{/* @ts-ignore */}
-										{prediction.outputs[0]?.type || "N/A"}
-									</motion.span>
-								</motion.div>
-								<motion.div className="flex items-center justify-between">
-									<motion.span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-										Execution Time:
-									</motion.span>
-									<motion.span
-										className={`font-mono font-medium text-gray-800 dark:text-gray-200`}
-									>
-										{/* @ts-ignore */}
-										{prediction.outputs[0]?.execution_time || "N/A"}
-									</motion.span>
-								</motion.div>
-								<motion.div className="flex items-center justify-between">
-									<motion.span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-										Status:
-									</motion.span>
-									<motion.span
-										className={`font-mono font-medium text-gray-800 dark:text-gray-200`}
-									>
-										{"pending"}
-									</motion.span>
-								</motion.div>
-							</motion.div>
-							{/* Inputs */}
-							<motion.div className="flex flex-col flex-1 space-y-4 overflow-hidden bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-								<h3 className="font-semibold text-gray-900 dark:text-white">
-									Input Features
-								</h3>
-								<div className="space-y-3 overflow-y-auto">
-									{Object.entries(inputs).map(([key, value]) => (
-										<div
-											key={key}
-											className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
-										>
-											<span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-												{key}:
-											</span>
-											<span className="font-mono text-sm text-gray-900 dark:text-white">
-												{formatInputValue(value)}
-											</span>
-										</div>
-									))}
-								</div>
-							</motion.div>
-						</motion.div>
-						{/* Columna Derecha*/}
-						<motion.div className="flex flex-col flex-1 gap-8 p-8 overflow-hidden">
-							{/* Targets */}
-							<motion.div className="flex flex-col flex-1 space-y-4 overflow-hidden bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-								<h3 className="font-semibold text-gray-900 dark:text-white">
-									Targets
-								</h3>
-								<motion.div className="space-y-3 overflow-y-auto">
-									{Object.entries(targets).map(([key, value]) => (
-										<motion.div
-											key={key}
-											className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
-										>
-											<motion.span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-												target_{key}:
-											</motion.span>
-											<motion.span className="font-mono text-sm text-gray-900 dark:text-white">
-												{value.toString()}
-											</motion.span>
-										</motion.div>
-									))}
-								</motion.div>
-							</motion.div>
+						</AppIconButton>
+					</div>
 
-							<motion.div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-								{/* Name */}
-								<motion.div className="mb-3">
-									<motion.label
-										htmlFor="prediction-name"
-										className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3"
-									>
-										Prediction Name
-									</motion.label>
-									<motion.input
-										id="prediction-name"
-										type="text"
-										value={predictionName}
-										onChange={(e) => setPredictionName(e.target.value)}
-										placeholder="Ex: Customer Churn v2.0"
-										className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-									/>
-								</motion.div>
+					<div className="grid flex-1 gap-8 overflow-auto p-8 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(28rem,1.2fr)]">
+						<CreatePredictionModalSummary
+							outputType={output?.type}
+							executionTime={output?.execution_time}
+							inputs={inputs}
+							targets={targets}
+							signatureSchema={signatureSchema}
+							predictionName={predictionName}
+							onPredictionNameChange={setPredictionName}
+							onCancel={() => setShowModal(false)}
+							onSave={() => void handleSave()}
+							isSaveDisabled={
+								!predictionName.trim() ||
+								explanationsPending ||
+								mutation.isPending ||
+								mutationTarget.isPending ||
+								explanationFeedbackMutation.isPending
+							}
+						/>
 
-								{/* Actions */}
-								<motion.div className="flex space-x-4 pt-6">
-									<motion.button
-										onClick={() => setShowModal(false)}
-										className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-										whileHover={{ scale: 1.02 }}
-										whileTap={{ scale: 0.98 }}
-									>
-										Cancel
-									</motion.button>
+						<div className="space-y-6">
+							{explanationsPending ? <AppCopy>Waiting for explanation plugin result...</AppCopy> : null}
+							{explanationEntries.map((explanation) => (
+								<PredictionExplanationReviewCard
+									key={explanation.explanationId}
+									explanation={explanation}
+									theme={theme}
+									draftValues={draftExplanationValues[explanation.explanationId] ?? {}}
+									questionnaireRef={(handle) => {
+										questionnaireRefs.current[explanation.explanationId] = handle;
+									}}
+									onValuesChange={(values) =>
+										setDraftExplanationValues((prev) => ({
+											...prev,
+											[explanation.explanationId]: { ...values },
+										}))
+									}
+								/>
+							))}
+						</div>
+					</div>
 
-									<motion.button
-										onClick={handleSave}
-										disabled={!predictionName}
-										className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${predictionName
-											? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
-											: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-											}`}
-										whileHover={predictionName ? { scale: 1.02 } : {}}
-										whileTap={predictionName ? { scale: 0.98 } : {}}
-									>
-										<Save size={18} />
-										<span>Save Prediction</span>
-									</motion.button>
-								</motion.div>
-							</motion.div>
-						</motion.div>
-					</motion.div>
+					<PredictionOverwriteDialog
+						open={showOverwriteDialog}
+						predictionName={predictionName.trim()}
+						onCancel={() => setShowOverwriteDialog(false)}
+						onConfirm={async () => {
+							setShowOverwriteDialog(false);
+							await savePrediction(true);
+						}}
+					/>
 				</motion.div>
 			</motion.div>
 		</AnimatePresence>

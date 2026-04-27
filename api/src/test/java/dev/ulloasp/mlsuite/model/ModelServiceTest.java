@@ -1,393 +1,102 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 package dev.ulloasp.mlsuite.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.entities.Model;
+import dev.ulloasp.mlsuite.model.exceptions.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
 import dev.ulloasp.mlsuite.model.services.ModelServiceImpl;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.storage.ObjectStorageService;
+import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.service.UserLookupService;
 
 @ExtendWith(MockitoExtension.class)
-public class ModelServiceTest {
+class ModelServiceTest {
 
-        @Mock
-        private RestTemplate restTemplate;
+    @Mock
+    private UserLookupService userLookupService;
 
-        @Mock
-        private UserRepository userRepository;
+    @Mock
+    private ModelRepository modelRepository;
 
-        @Mock
-        private ModelRepository modelRepository;
+    @Mock
+    private ObjectStorageService objectStorageService;
 
-        @Mock
-        private MultipartFile modelFile;
+    @Mock
+    private RestTemplate restTemplate;
 
-        private ModelServiceImpl modelService;
+    @Mock
+    private MultipartFile modelFile;
 
-        private User testUser;
-        private Model testModel;
-        private final OAuthProvider oauthProvider = OAuthProvider.GITHUB;
-        private final String oauthId = "12345";
-        private final String modelName = "test-model";
-        private final String username = "testuser";
+    private ModelServiceImpl service;
 
-        @BeforeEach
-        void setUp() throws Exception {
-                // Create the service instance
-                modelService = new ModelServiceImpl(userRepository, modelRepository);
+    @BeforeEach
+    void setUp() {
+        service = new ModelServiceImpl(userLookupService, modelRepository, objectStorageService);
+        ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
+        ReflectionTestUtils.setField(service, "analyzerUrl", "http://analyzer");
+    }
 
-                // Use reflection to inject the mocked RestTemplate
-                java.lang.reflect.Field restTemplateField = ModelServiceImpl.class.getDeclaredField("restTemplate");
-                restTemplateField.setAccessible(true);
-                restTemplateField.set(modelService, restTemplate);
+    @Test
+    void getModels_UsesInternalUserId() {
+        when(userLookupService.requireById(3L)).thenReturn(user());
+        when(modelRepository.findByUserId(3L)).thenReturn(List.of(new Model()));
 
-                testUser = new User();
-                testUser.setId(1L);
-                testUser.setUsername(username);
-                testUser.setOauthProvider(oauthProvider);
-                testUser.setOauthId(oauthId);
+        assertEquals(1, service.getModels(3L).size());
+    }
 
-                testModel = new Model();
-                testModel.setId(1L);
-                testModel.setUser(testUser);
-                testModel.setName(modelName);
-                testModel.setType("classifier");
-                testModel.setSpecificType("RandomForestClassifier");
-                testModel.setFileName("model.pkl");
-                testModel.setModelFile(new byte[] { 1, 2, 3, 4, 5 });
-        }
+    @Test
+    void createModel_ThrowsWhenNameExists() {
+        when(userLookupService.requireById(3L)).thenReturn(user());
+        when(modelRepository.existsByNameAndUserId("demo", 3L)).thenReturn(true);
 
-        // ===============================
-        // CREATE MODEL TESTS
-        // ===============================
-        /*
-         * @Test
-         * void createModel_Success() throws Exception {
-         * // Given
-         * byte[] modelBytes = new byte[] { 1, 2, 3, 4, 5 };
-         * Map<String, Object> apiResponse = Map.of(
-         * "type", "classifier",
-         * "specificType", "RandomForestClassifier",
-         * "fileName", "model.pkl");
-         * 
-         * when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-         * .thenReturn(Optional.of(testUser));
-         * when(modelRepository.existsByNameAndUserId(modelName, testUser.getId()))
-         * .thenReturn(false);
-         * when(modelFile.getBytes()).thenReturn(modelBytes);
-         * when(modelFile.getResource()).thenReturn(mock(org.springframework.core.io.
-         * Resource.class));
-         * when(restTemplate.postForObject(
-         * eq("https://localhost:8000/model/metadata"),
-         * any(HttpEntity.class),
-         * eq(Map.class))).thenReturn(apiResponse);
-         * when(modelRepository.save(any(Model.class))).thenReturn(testModel);
-         * 
-         * // When
-         * Model result = modelService.createModel(oauthProvider, oauthId, modelName,
-         * modelFile);
-         * 
-         * // Then
-         * assertNotNull(result);
-         * assertEquals(testModel.getId(), result.getId());
-         * assertEquals(testModel.getName(), result.getName());
-         * assertEquals(testModel.getType(), result.getType());
-         * assertEquals(testModel.getSpecificType(), result.getSpecificType());
-         * assertEquals(testModel.getFileName(), result.getFileName());
-         * 
-         * verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-         * verify(modelRepository).existsByNameAndUserId(modelName, testUser.getId());
-         * verify(modelFile).getBytes();
-         * verify(restTemplate).postForObject(
-         * eq("https://localhost:8000/model/metadata"),
-         * any(HttpEntity.class),
-         * eq(Map.class));
-         * verify(modelRepository).save(any(Model.class));
-         * }
-         * 
-         * @Test
-         * void createModel_UserDoesNotExist_ThrowsException() {
-         * // Given
-         * when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-         * .thenReturn(Optional.empty());
-         * 
-         * // When & Then
-         * UserDoesNotExistException exception = assertThrows(
-         * UserDoesNotExistException.class,
-         * () -> modelService.createModel(oauthProvider, oauthId, modelName,
-         * modelFile));
-         * 
-         * assertTrue(exception.getMessage().contains(oauthProvider.toString()));
-         * assertTrue(exception.getMessage().contains(oauthId));
-         * 
-         * verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-         * verifyNoInteractions(modelRepository);
-         * verifyNoInteractions(restTemplate);
-         * }
-         * 
-         * @Test
-         * void createModel_ModelAlreadyExists_ThrowsException() {
-         * // Given
-         * when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-         * .thenReturn(Optional.of(testUser));
-         * when(modelRepository.existsByNameAndUserId(modelName, testUser.getId()))
-         * .thenReturn(true);
-         * 
-         * // When & Then
-         * ModelAlreadyExistsException exception = assertThrows(
-         * ModelAlreadyExistsException.class,
-         * () -> modelService.createModel(oauthProvider, oauthId, modelName,
-         * modelFile));
-         * 
-         * assertTrue(exception.getMessage().contains(modelName));
-         * assertTrue(exception.getMessage().contains(username));
-         * 
-         * verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-         * verify(modelRepository).existsByNameAndUserId(modelName, testUser.getId());
-         * verifyNoInteractions(restTemplate);
-         * verify(modelRepository, never()).save(any());
-         * }
-         * 
-         * @Test
-         * void createModel_InvalidModelFile_ThrowsException() throws Exception {
-         * // Given
-         * when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-         * .thenReturn(Optional.of(testUser));
-         * when(modelRepository.existsByNameAndUserId(modelName, testUser.getId()))
-         * .thenReturn(false);
-         * when(modelFile.getBytes()).thenThrow(new RuntimeException("File error"));
-         * 
-         * // When & Then
-         * IllegalArgumentException exception = assertThrows(
-         * IllegalArgumentException.class,
-         * () -> modelService.createModel(oauthProvider, oauthId, modelName,
-         * modelFile));
-         * 
-         * assertTrue(exception.getMessage().contains("Model file is empty or invalid"))
-         * ;
-         * 
-         * verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-         * verify(modelRepository).existsByNameAndUserId(modelName, testUser.getId());
-         * verify(modelFile).getBytes();
-         * verifyNoInteractions(restTemplate);
-         * verify(modelRepository, never()).save(any());
-         * }
-         * 
-         * @Test
-         * void createModel_RestClientException_ThrowsAnalyzerServiceException() throws
-         * Exception {
-         * // Given
-         * byte[] modelBytes = new byte[] { 1, 2, 3, 4, 5 };
-         * String responseBody = "{\"detail\":\"Not a sklearn estimator\"}";
-         * RestClientResponseException restException = new RestClientResponseException(
-         * "Not a sklearn estimator", 400, "Bad Request", null, responseBody.getBytes(),
-         * null);
-         * 
-         * when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-         * .thenReturn(Optional.of(testUser));
-         * when(modelRepository.existsByNameAndUserId(modelName, testUser.getId()))
-         * .thenReturn(false);
-         * when(modelFile.getBytes()).thenReturn(modelBytes);
-         * when(modelFile.getResource()).thenReturn(mock(org.springframework.core.io.
-         * Resource.class));
-         * when(restTemplate.postForObject(
-         * eq("https://localhost:8000/model/metadata"),
-         * any(HttpEntity.class),
-         * eq(Map.class))).thenThrow(restException);
-         * 
-         * // When & Then
-         * AnalyzerServiceException exception = assertThrows(
-         * AnalyzerServiceException.class,
-         * () -> modelService.createModel(oauthProvider, oauthId, modelName,
-         * modelFile));
-         * 
-         * assertEquals(400, exception.getStatus());
-         * assertEquals("https://localhost:8000/model/metadata",
-         * exception.getEndpoint());
-         * assertEquals("Not a sklearn estimator", exception.getDetail());
-         * 
-         * verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-         * verify(modelRepository).existsByNameAndUserId(modelName, testUser.getId());
-         * verify(modelFile).getBytes();
-         * verify(restTemplate).postForObject(
-         * eq("https://localhost:8000/model/metadata"),
-         * any(HttpEntity.class),
-         * eq(Map.class));
-         * verify(modelRepository, never()).save(any());
-         * }
-         * 
-         * @Test
-         * void createModel_ResourceAccessException_ThrowsAnalyzerServiceException()
-         * throws Exception {
-         * // Given
-         * byte[] modelBytes = new byte[] { 1, 2, 3, 4, 5 };
-         * ResourceAccessException resourceException = new
-         * ResourceAccessException("Connection refused");
-         * 
-         * when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-         * .thenReturn(Optional.of(testUser));
-         * when(modelRepository.existsByNameAndUserId(modelName, testUser.getId()))
-         * .thenReturn(false);
-         * when(modelFile.getBytes()).thenReturn(modelBytes);
-         * when(modelFile.getResource()).thenReturn(mock(org.springframework.core.io.
-         * Resource.class));
-         * when(restTemplate.postForObject(
-         * eq("https://localhost:8000/model/metadata"),
-         * any(HttpEntity.class),
-         * eq(Map.class))).thenThrow(resourceException);
-         * 
-         * // When & Then
-         * AnalyzerServiceException exception = assertThrows(
-         * AnalyzerServiceException.class,
-         * () -> modelService.createModel(oauthProvider, oauthId, modelName,
-         * modelFile));
-         * 
-         * assertEquals(0, exception.getStatus()); // Network error has status 0
-         * assertEquals("https://localhost:8000/model/metadata",
-         * exception.getEndpoint());
-         * assertEquals("Analyzer service unreachable", exception.getDetail());
-         * 
-         * verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-         * verify(modelRepository).existsByNameAndUserId(modelName, testUser.getId());
-         * verify(modelFile).getBytes();
-         * verify(restTemplate).postForObject(
-         * eq("https://localhost:8000/model/metadata"),
-         * any(HttpEntity.class),
-         * eq(Map.class));
-         * verify(modelRepository, never()).save(any());
-         * }
-         * 
-         * @Test
-         * void createModel_ApiResponseWithNullValues_HandlesGracefully() throws
-         * Exception {
-         * // Given
-         * byte[] modelBytes = new byte[] { 1, 2, 3, 4, 5 };
-         * Map<String, Object> apiResponse = Map.of(
-         * "type", "classifier"
-         * // specificType and fileName are null
-         * );
-         * 
-         * when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-         * .thenReturn(Optional.of(testUser));
-         * when(modelRepository.existsByNameAndUserId(modelName, testUser.getId()))
-         * .thenReturn(false);
-         * when(modelFile.getBytes()).thenReturn(modelBytes);
-         * when(modelFile.getResource()).thenReturn(mock(org.springframework.core.io.
-         * Resource.class));
-         * when(restTemplate.postForObject(
-         * eq("https://localhost:8000/model/metadata"),
-         * any(HttpEntity.class),
-         * eq(Map.class))).thenReturn(apiResponse);
-         * when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> {
-         * Model model = invocation.getArgument(0);
-         * model.setId(1L);
-         * return model;
-         * });
-         * 
-         * // When
-         * Model result = modelService.createModel(oauthProvider, oauthId, modelName,
-         * modelFile);
-         * 
-         * // Then
-         * assertNotNull(result);
-         * assertEquals("classifier", result.getType());
-         * assertNull(result.getSpecificType());
-         * assertNull(result.getFileName());
-         * 
-         * verify(modelRepository).save(any(Model.class));
-         * }
-         */
-        // ===============================
-        // GET MODELS TESTS
-        // ===============================
+        assertThrows(ModelAlreadyExistsException.class, () -> service.createModel(3L, "demo", modelFile));
+    }
 
-        @Test
-        void getModels_Success() {
-                // Given
-                Model model2 = new Model();
-                model2.setId(2L);
-                model2.setUser(testUser);
-                model2.setName("model2");
+    @Test
+    void createModel_StoresObjectAndPersistsModel() throws Exception {
+        when(userLookupService.requireById(3L)).thenReturn(user());
+        when(modelRepository.existsByNameAndUserId("demo", 3L)).thenReturn(false);
+        when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
+                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.pkl"));
+        when(modelFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(modelFile.getInputStream()).thenReturn(new java.io.ByteArrayInputStream("x".getBytes()));
+        when(modelFile.getSize()).thenReturn(1L);
+        when(modelFile.getContentType()).thenReturn("application/octet-stream");
+        when(objectStorageService.store(any(), any(), any(), any(), anyLong()))
+                .thenReturn(new StoredObject("bucket", "key", 1L, "etag"));
+        when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-                List<Model> expectedModels = Arrays.asList(testModel, model2);
+        Model result = service.createModel(3L, "demo", modelFile);
 
-                when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-                                .thenReturn(Optional.of(testUser));
-                when(modelRepository.findByUserId(testUser.getId()))
-                                .thenReturn(expectedModels);
+        assertEquals("demo", result.getName());
+        verify(modelRepository).save(any(Model.class));
+    }
 
-                // When
-                List<Model> result = modelService.getModels(oauthProvider, oauthId);
-
-                // Then
-                assertNotNull(result);
-                assertEquals(2, result.size());
-                assertEquals(expectedModels, result);
-
-                verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-                verify(modelRepository).findByUserId(testUser.getId());
-        }
-
-        @Test
-        void getModels_UserDoesNotExist_ThrowsException() {
-                // Given
-                when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-                                .thenReturn(Optional.empty());
-
-                // When & Then
-                UserDoesNotExistException exception = assertThrows(
-                                UserDoesNotExistException.class,
-                                () -> modelService.getModels(oauthProvider, oauthId));
-
-                assertTrue(exception.getMessage().contains(oauthProvider.toString()));
-                assertTrue(exception.getMessage().contains(oauthId));
-
-                verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-                verifyNoInteractions(modelRepository);
-        }
-
-        @Test
-        void getModels_EmptyList_ReturnsEmptyList() {
-                // Given
-                when(userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId))
-                                .thenReturn(Optional.of(testUser));
-                when(modelRepository.findByUserId(testUser.getId()))
-                                .thenReturn(Arrays.asList());
-
-                // When
-                List<Model> result = modelService.getModels(oauthProvider, oauthId);
-
-                // Then
-                assertNotNull(result);
-                assertTrue(result.isEmpty());
-
-                verify(userRepository).findByOauthProviderAndOauthId(oauthProvider, oauthId);
-                verify(modelRepository).findByUserId(testUser.getId());
-        }
+    private User user() {
+        User user = new User();
+        user.setId(3L);
+        user.setUsername("alice");
+        return user;
+    }
 }

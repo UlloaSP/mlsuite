@@ -14,4 +14,8 @@ public class UserDoesNotExistException extends RuntimeException {
         super("User with OAuth provider '" + provider + "' and ID '" + oauthId + "' does not exist");
     }
 
+    public UserDoesNotExistException(Long userId) {
+        super("User with ID '" + userId + "' does not exist");
+    }
+
 }

@@ -3,40 +3,72 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import type { LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
+import type { ComponentType } from "react";
+import { cx, FOCUS_RING } from "./ui";
 
 export function SidebarTile({
 	icon: Icon,
 	label,
 	isActive = false,
 	variant = "navigation",
+	collapsed = false,
+	ariaExpanded,
 	onClick,
 	className = "",
-}: any) {
+}: {
+	icon: LucideIcon | ComponentType<{ size?: number; className?: string }>;
+	label: string;
+	isActive?: boolean;
+	variant?: "navigation" | "action" | "auth";
+	collapsed?: boolean;
+	ariaExpanded?: boolean;
+	onClick?: () => void;
+	className?: string;
+}) {
 	const getVariantStyles = () => {
 		switch (variant) {
 			case "navigation":
 				return isActive
-					? "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400"
-					: "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800";
+					? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
+					: "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 			case "action":
-				return "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800";
-			case "auth":
-				return "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700";
+				return "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 			default:
-				return "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800";
+				return "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]";
 		}
 	};
 
-	return (
-		<motion.button
+	const button = (
+		<button
+			type="button"
 			onClick={onClick}
-			className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-colors ${getVariantStyles()} ${className}`}
-			whileHover={{ scale: 1.02 }}
-			whileTap={{ scale: 0.98 }}
+			aria-label={label}
+			aria-expanded={ariaExpanded}
+			className={cx(
+				"flex flex-1 min-w-0 box-border items-center rounded-xl text-left text-sm font-medium transition active:scale-[0.985]",
+				FOCUS_RING,
+				collapsed ? "justify-center p-3" : "gap-3 px-4 py-3",
+				getVariantStyles(),
+				className,
+			)}
 		>
-			<Icon size={18} />
-			<span className="text-sm">{label}</span>
-		</motion.button>
+			<Icon size={18} className="shrink-0" />
+			{!collapsed && (
+				<motion.span
+					key="label"
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					exit={{ opacity: 0 }}
+					transition={{ duration: 0.15 }}
+					className="whitespace-nowrap text-sm"
+				>
+					{label}
+				</motion.span>
+			)}
+		</button>
 	);
+
+	return button;
 }

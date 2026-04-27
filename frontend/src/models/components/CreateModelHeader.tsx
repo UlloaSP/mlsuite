@@ -3,36 +3,32 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowLeft } from "lucide-react";
 import { motion } from "motion/react";
-import { useNavigate } from "react-router";
+import {
+	AppBreadcrumbs,
+	AppCopy,
+	AppEyebrow,
+	AppTitle,
+} from "../../app/components";
 
 const CREATE_MODEL_HEADER = "Create New Model";
-const CREATE_MODEL_SUBHEADER = "Upload your model file and configure its details.";
+const CREATE_MODEL_SUBHEADER =
+	"Start with the model artifact, optionally attach the companion dataframe, and refine the name before publishing it to the catalog.";
 
 export function CreateModelHeader() {
-    const navigate = useNavigate();
-    return (
-        <motion.div className="flex-1 flex flex-col">
-            <motion.div className="flex-start justify-self-start flex flex-col gap-4">
-                <motion.button
-                    onClick={() => navigate("/models")}
-                    className="self-start inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
-                >
-                    <ArrowLeft size={18} />
-                    Back
-                </motion.button>
-
-                {/* Title */}
-                <motion.h1 className="text-5xl leading-20 font-bold bg-gradient-to-r from-gray-900 to-emerald-600 dark:from-white dark:to-emerald-400 bg-clip-text text-transparent">
-                    {CREATE_MODEL_HEADER}
-                </motion.h1>
-
-                {/* Subtitle */}
-                <motion.p className="text-slate-400">
-                    {CREATE_MODEL_SUBHEADER}
-                </motion.p>
-            </motion.div>
-        </motion.div>
-    );
+	return (
+		<motion.div className="space-y-4">
+			<AppBreadcrumbs
+				items={[
+					{ label: "Models", to: "/models" },
+					{ label: "Create Model" },
+				]}
+			/>
+			<div className="space-y-3">
+				<AppEyebrow>Model Studio</AppEyebrow>
+				<AppTitle>{CREATE_MODEL_HEADER}</AppTitle>
+				<AppCopy className="max-w-3xl">{CREATE_MODEL_SUBHEADER}</AppCopy>
+			</div>
+		</motion.div>
+	);
 }

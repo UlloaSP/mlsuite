@@ -2,9 +2,9 @@
 FROM maven:3.9.11-eclipse-temurin-25 AS build
 WORKDIR /workspace
 COPY ./pom.xml .
-RUN mvn -q -DskipTests dependency:go-offline
+RUN mvn -q -Dmaven.test.skip=true dependency:go-offline
 COPY ./src ./src
-RUN mvn -q -DskipTests package
+RUN mvn -q -Dmaven.test.skip=true package
 
 # Runtime stage
 FROM eclipse-temurin:25-jre-alpine

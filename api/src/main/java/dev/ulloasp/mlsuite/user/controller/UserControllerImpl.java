@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.user.dto.UserDto;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import dev.ulloasp.mlsuite.user.entity.User;
 import dev.ulloasp.mlsuite.user.exceptions.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
@@ -24,19 +24,18 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 public class UserControllerImpl implements UserController {
 
+    private final CurrentUserResolver currentUserResolver;
     private final UserService userService;
 
-    public UserControllerImpl(UserService userService) {
+    public UserControllerImpl(CurrentUserResolver currentUserResolver, UserService userService) {
+        this.currentUserResolver = currentUserResolver;
         this.userService = userService;
     }
 
     @Override
     public ResponseEntity<UserDto> getProfile(OAuth2AuthenticationToken authentication)
             throws UserDoesNotExistException {
-        String oauthId = authentication.getPrincipal().getName();
-        String provider = authentication.getAuthorizedClientRegistrationId();
-
-        User user = userService.getProfile(oauthId, OAuthProvider.fromString(provider));
+        User user = userService.getProfile(currentUserResolver.resolve(authentication).userId());
 
         return ResponseEntity.ok(UserDto.toDto(user));
     }

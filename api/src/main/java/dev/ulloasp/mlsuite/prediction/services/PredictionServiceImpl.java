@@ -15,41 +15,49 @@ import dev.ulloasp.mlsuite.prediction.entities.Prediction;
 import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionAlreadyExistsException;
 import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.repositories.ExplanationFeedbackRepository;
+import dev.ulloasp.mlsuite.prediction.repositories.OutputFeedbackRepository;
 import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
+import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
 import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
 import dev.ulloasp.mlsuite.signature.repositories.SignatureRepository;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.signature.services.SignatureSchemaCompatibilityService;
 import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.service.UserLookupService;
 import jakarta.transaction.Transactional;
 
 @Service
 @Transactional
 public class PredictionServiceImpl implements PredictionService {
 
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final SignatureRepository signatureRepository;
     private final PredictionRepository predictionRepository;
+    private final TargetRepository targetRepository;
+    private final OutputFeedbackRepository outputFeedbackRepository;
+    private final ExplanationFeedbackRepository explanationFeedbackRepository;
+    private final SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
 
-    public PredictionServiceImpl(UserRepository userRepository, SignatureRepository signatureRepository,
-            PredictionRepository predictionRepository) {
-        this.userRepository = userRepository;
+    public PredictionServiceImpl(UserLookupService userLookupService, SignatureRepository signatureRepository,
+            PredictionRepository predictionRepository,
+            TargetRepository targetRepository,
+            OutputFeedbackRepository outputFeedbackRepository,
+            ExplanationFeedbackRepository explanationFeedbackRepository,
+            SignatureSchemaCompatibilityService signatureSchemaCompatibilityService) {
+        this.userLookupService = userLookupService;
         this.signatureRepository = signatureRepository;
         this.predictionRepository = predictionRepository;
+        this.targetRepository = targetRepository;
+        this.outputFeedbackRepository = outputFeedbackRepository;
+        this.explanationFeedbackRepository = explanationFeedbackRepository;
+        this.signatureSchemaCompatibilityService = signatureSchemaCompatibilityService;
     }
 
     @Override
-    public Prediction createPrediction(OAuthProvider oauthProvider, String oauthId, Long signatureId, String name,
-            Map<String, Object> prediction, Map<String, Object> data) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
+    public Prediction createPrediction(Long userId, Long signatureId, String name,
+            boolean overwrite, Map<String, Object> prediction, Map<String, Object> data) {
+        User user = userLookupService.requireById(userId);
 
         Optional<Signature> optionalSignature = signatureRepository.findByIdAndUserId(signatureId, user.getId());
 
@@ -58,9 +66,24 @@ public class PredictionServiceImpl implements PredictionService {
         }
 
         Signature signature = optionalSignature.get();
+        signatureSchemaCompatibilityService.validate(user.getId(), signature.getInputSignature());
 
-        if (predictionRepository.existsBySignatureIdAndName(signature.getId(), name)) {
+        Optional<Prediction> existingPrediction = predictionRepository.findBySignatureIdAndName(signature.getId(),
+                name);
+
+        if (existingPrediction.isPresent() && !overwrite) {
             throw new PredictionAlreadyExistsException(name, signature.getName());
+        }
+
+        if (existingPrediction.isPresent()) {
+            Prediction storedPrediction = existingPrediction.get();
+            storedPrediction.setData(data);
+            storedPrediction.setPrediction(prediction);
+            storedPrediction.setStatus(PredictionStatus.PENDING);
+            targetRepository.deleteByPredictionId(storedPrediction.getId());
+            outputFeedbackRepository.deleteByPredictionId(storedPrediction.getId());
+            explanationFeedbackRepository.deleteByPredictionId(storedPrediction.getId());
+            return predictionRepository.save(storedPrediction);
         }
 
         Prediction pred = new Prediction(signature, name, data, prediction);
@@ -70,17 +93,10 @@ public class PredictionServiceImpl implements PredictionService {
     }
 
     @Override
-    public Prediction updatePrediction(OAuthProvider oauthProvider, String oauthId, Long predictionId,
+    public Prediction updatePrediction(Long userId, Long predictionId,
             PredictionStatus status) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Prediction> optionalPrediction = predictionRepository.findById(predictionId);
+        User user = userLookupService.requireById(userId);
+        Optional<Prediction> optionalPrediction = predictionRepository.findByIdAndUserId(predictionId, userId);
 
         if (optionalPrediction.isEmpty()) {
             throw new PredictionDoesNotExistsException(predictionId, user.getUsername());
@@ -93,16 +109,9 @@ public class PredictionServiceImpl implements PredictionService {
     }
 
     @Override
-    public Prediction getPrediction(OAuthProvider oauthProvider, String oauthId, Long predictionId) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
-
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Prediction> optionalPrediction = predictionRepository.findById(predictionId);
+    public Prediction getPrediction(Long userId, Long predictionId) {
+        User user = userLookupService.requireById(userId);
+        Optional<Prediction> optionalPrediction = predictionRepository.findByIdAndUserId(predictionId, userId);
 
         if (optionalPrediction.isEmpty()) {
             throw new PredictionDoesNotExistsException(predictionId, user.getUsername());
@@ -112,24 +121,16 @@ public class PredictionServiceImpl implements PredictionService {
     }
 
     @Override
-    public List<Prediction> getPredictionsBySignatureId(OAuthProvider oauthProvider, String oauthId, Long signatureId) {
-        Optional<User> optionalUser = userRepository.findByOauthProviderAndOauthId(oauthProvider, oauthId);
+    public List<Prediction> getPredictionsBySignatureId(Long userId, Long signatureId) {
+        userLookupService.requireById(userId);
 
-        if (optionalUser.isEmpty()) {
-            throw new UserDoesNotExistException(oauthProvider.toString(), oauthId);
-        }
-
-        User user = optionalUser.get();
-
-        Optional<Signature> optionalSignature = signatureRepository.findByIdAndUserId(signatureId, user.getId());
+        Optional<Signature> optionalSignature = signatureRepository.findByIdAndUserId(signatureId, userId);
 
         if (optionalSignature.isEmpty()) {
             throw new SignatureDoesNotExistsException(signatureId);
         }
 
-        Signature signature = optionalSignature.get();
-
-        return predictionRepository.findBySignatureId(signature.getId());
+        return predictionRepository.findBySignatureIdAndUserId(signatureId, userId);
     }
 
 }
