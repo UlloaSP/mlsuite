@@ -1,0 +1,175 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import { normalizeCustomExplanationResult } from "../app/utils/mlform/custom-explanation";
+import type { CatalogExplanationDefinition } from "../app/utils/mlform/custom-explanation";
+import { toMlformSchema } from "../app/utils/mlform";
+import type { PredictionExplanationDescriptor } from "./questionnaire-feedback";
+
+type JsonRecord = Record<string, unknown>;
+
+type ExplanationPayload = {
+	explanations?: unknown;
+};
+
+const isRecord = (value: unknown): value is JsonRecord =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+const stripTreeToken = (value: string): string =>
+	value
+		.trim()
+		.replace(/^[*\d.)\-\s]+/, "")
+		.replace(/^[|_\\/\->:\s]+/, "")
+		.trim();
+
+const formatExplanationTree = (value: string): string => {
+	const parts = value
+		.split(/(?:\s*\|\s*){2,}/)
+		.map((part) => stripTreeToken(part))
+		.filter((part) => part.length > 0);
+
+	if (parts.length === 0) {
+		return value.trim();
+	}
+
+	if (parts.length === 1) {
+		return parts[0];
+	}
+
+	return parts
+		.map((part, index) => {
+			if (index === 0) {
+				return part;
+			}
+
+			const indent = "  ".repeat(index - 1);
+			return `${indent}└─ ${part}`;
+		})
+		.join("\n");
+};
+
+const normalizeDisplayedExplanation = (value: string): string => {
+	const trimmed = value.trim();
+	if (!trimmed) {
+		return "";
+	}
+
+	if (trimmed.includes("|__") || trimmed.includes("||") || trimmed.startsWith("*")) {
+		return formatExplanationTree(trimmed);
+	}
+
+	return trimmed;
+};
+
+const getExplanationContent = (payload: unknown): string[] => {
+	const explanationPayload = isRecord(payload) ? (payload as ExplanationPayload) : null;
+	const explanationsFromLegacyPayload =
+		explanationPayload && Array.isArray(explanationPayload.explanations)
+			? explanationPayload.explanations.filter(
+				(item): item is string => typeof item === "string" && item.trim().length > 0,
+			)
+			: [];
+	const normalizedExplanation = explanationPayload
+		? normalizeCustomExplanationResult(explanationPayload)
+		: null;
+
+	return explanationsFromLegacyPayload.length > 0
+		? explanationsFromLegacyPayload
+		: normalizedExplanation
+			? [
+					...normalizedExplanation.blocks,
+					...(normalizedExplanation.html ? [normalizedExplanation.html] : []),
+					...(normalizedExplanation.jsonFallback ? [normalizedExplanation.jsonFallback] : []),
+				].filter((item) => item.trim().length > 0)
+			: [];
+};
+
+const getExplanationDefinitionMap = (
+	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
+): Map<string, CatalogExplanationDefinition> =>
+	new Map(customExplanationDefinitions.map((definition) => [definition.kind, definition]));
+
+const getFallbackExplanationEntries = (predictionValue: unknown): PredictionExplanationDescriptor[] => {
+	if (!isRecord(predictionValue)) {
+		return [];
+	}
+
+	const reports = isRecord(predictionValue.reports) ? predictionValue.reports : null;
+	const fallbackReportEntries =
+		reports
+			? Object.entries(reports).filter(([, value]) => {
+				if (!isRecord(value)) {
+					return false;
+				}
+				const normalized = normalizeCustomExplanationResult(value);
+				const hasLegacyExplanations =
+					Array.isArray(value.explanations) &&
+					value.explanations.some(
+						(item) => typeof item === "string" && item.trim().length > 0,
+					);
+				return (
+					hasLegacyExplanations ||
+					normalized.blocks.length > 0 ||
+					normalized.html !== null ||
+					normalized.jsonFallback !== null
+				);
+			})
+			: [];
+	return fallbackReportEntries.flatMap(([reportId, value], index) => {
+		const content = getExplanationContent(value);
+		if (content.length === 0) {
+			return [];
+		}
+
+		return [{
+			order: index,
+			explanationId: reportId,
+			label: reportId,
+			content: content.map((item) => normalizeDisplayedExplanation(item)),
+			error: null,
+		}];
+	});
+};
+
+export const extractPredictionExplanationEntries = (
+	predictionValue: unknown,
+	signatureSchema?: unknown,
+	customExplanationDefinitions: readonly CatalogExplanationDefinition[] = [],
+): PredictionExplanationDescriptor[] => {
+	if (!isRecord(predictionValue)) {
+		return [];
+	}
+
+	try {
+		const schema = toMlformSchema(signatureSchema, {
+			customExplanationDefinitions,
+		});
+		const definitionMap = getExplanationDefinitionMap(customExplanationDefinitions);
+		const reports = isRecord(predictionValue.reports) ? predictionValue.reports : {};
+		const meta = isRecord(predictionValue.meta) ? predictionValue.meta : {};
+		const explainErrors = isRecord(meta.explainErrors) ? meta.explainErrors : {};
+
+		return (schema.explanations ?? []).flatMap((explanation, index) => {
+			const explanationId = explanation.id ?? `explanation-${index + 1}`;
+			const content = getExplanationContent(reports[explanationId]);
+			const nextError = explainErrors[explanationId];
+
+			if (content.length === 0 && typeof nextError !== "string") {
+				return [];
+			}
+
+			return [{
+				order: index,
+				explanationId,
+				label: explanation.label ?? explanationId,
+				content: content.map((item) => normalizeDisplayedExplanation(item)),
+				error: typeof nextError === "string" ? nextError : null,
+				feedbackQuestionnaire: definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire,
+			}];
+		});
+	} catch {
+		return getFallbackExplanationEntries(predictionValue);
+	}
+};

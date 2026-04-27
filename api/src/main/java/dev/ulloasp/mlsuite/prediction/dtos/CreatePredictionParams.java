@@ -19,6 +19,7 @@ import lombok.Setter;
 public class CreatePredictionParams {
     private Long signatureId;
     private String name;
+    private boolean overwrite;
     private Map<String, Object> inputs;
     private Map<String, Object> prediction;
 }

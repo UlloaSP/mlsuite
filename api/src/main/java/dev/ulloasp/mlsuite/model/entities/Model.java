@@ -71,6 +71,18 @@ public class Model {
     @Column(name = "model_file", nullable = false)
     private byte[] modelFile;
 
+    @Column(name = "storage_bucket", length = 100)
+    private String storageBucket;
+
+    @Column(name = "storage_object_key", length = 512)
+    private String storageObjectKey;
+
+    @Column(name = "storage_etag", length = 128)
+    private String storageEtag;
+
+    @Column(name = "model_size_bytes")
+    private Long modelSizeBytes;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
@@ -78,4 +90,15 @@ public class Model {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
+
+    public boolean hasStoredObject() {
+        return this.storageBucket != null
+                && !this.storageBucket.isBlank()
+                && this.storageObjectKey != null
+                && !this.storageObjectKey.isBlank();
+    }
+
+    public boolean hasInlineModelFile() {
+        return this.modelFile != null && this.modelFile.length > 0;
+    }
 }

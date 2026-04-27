@@ -3,22 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { motion } from "motion/react";
 import { SidebarFooter } from "./SidebarFooter";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarNavigation } from "./SidebarNavigation";
 
 export function Sidebar() {
 	return (
-		<motion.div
-			className="w-full h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 flex flex-col"
-			initial={{ x: "100%" }}
-			animate={{ x: 0 }}
-			transition={{ duration: 0.3 }}
-		>
+		<div className="flex size-full flex-col overflow-hidden bg-[var(--sidebar-bg)] backdrop-blur-xl">
 			<SidebarHeader />
 			<SidebarNavigation />
 			<SidebarFooter />
-		</motion.div>
+		</div>
 	);
 }

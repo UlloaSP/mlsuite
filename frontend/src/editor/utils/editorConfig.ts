@@ -3,9 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import * as monaco from "monaco-editor";
+import type * as Monaco from "monaco-editor";
 
-export const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions =
+export const editorOptions: Monaco.editor.IStandaloneEditorConstructionOptions =
 {
 	minimap: { enabled: false },
 	fontSize: 14,

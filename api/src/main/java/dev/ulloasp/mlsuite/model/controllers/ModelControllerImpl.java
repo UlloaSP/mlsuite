@@ -27,9 +27,10 @@ import dev.ulloasp.mlsuite.model.exceptions.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.exceptions.ModelNotFromUserException;
 import dev.ulloasp.mlsuite.model.services.AnalyzerService;
 import dev.ulloasp.mlsuite.model.services.ModelService;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.signature.entities.Signature;
 import dev.ulloasp.mlsuite.signature.services.SignatureService;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,12 +38,17 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 public class ModelControllerImpl implements ModelController {
 
+        private final CurrentUserResolver currentUserResolver;
         private final ModelService modelService;
         private final SignatureService signatureService;
         private final AnalyzerService analyzerService;
 
-        public ModelControllerImpl(ModelService modelService, SignatureService signatureService,
+        public ModelControllerImpl(
+                        CurrentUserResolver currentUserResolver,
+                        ModelService modelService,
+                        SignatureService signatureService,
                         AnalyzerService analyzerService) {
+                this.currentUserResolver = currentUserResolver;
                 this.modelService = modelService;
                 this.signatureService = signatureService;
                 this.analyzerService = analyzerService;
@@ -53,29 +59,24 @@ public class ModelControllerImpl implements ModelController {
                         @RequestParam String name,
                         @RequestParam MultipartFile modelFile,
                         @RequestParam @Nullable MultipartFile dataframeFile) {
+                CurrentUser currentUser = currentUserResolver.resolve(authentication);
 
-                Model model = this.modelService.createModel(
-                                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                                authentication.getPrincipal().getName(), name, modelFile);
+                Model model = this.modelService.createModel(currentUser.userId(), name, modelFile);
 
                 Map<String, Object> schemaFromModel = this.analyzerService.generateInputSignature(
-                                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                                authentication.getPrincipal().getName(), modelFile, null);
+                                currentUser.userId(), modelFile, null);
                 Signature signatureFromModel = this.signatureService.createSignature(
-                                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                                authentication.getPrincipal().getName(), model.getId(),
+                                currentUser.userId(), model.getId(),
                                 schemaFromModel, "Model", 0, 0, 0, null);
 
                 Signature signatureFromDataframe = null;
 
                 if (dataframeFile != null) {
                         Map<String, Object> schemaFromDataframe = this.analyzerService.generateInputSignature(
-                                        OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                                        authentication.getPrincipal().getName(), modelFile, dataframeFile);
+                                        currentUser.userId(), modelFile, dataframeFile);
 
                         signatureFromDataframe = this.signatureService.createSignature(
-                                        OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                                        authentication.getPrincipal().getName(), model.getId(),
+                                        currentUser.userId(), model.getId(),
                                         schemaFromDataframe, "Dataframe", 0, 0, 1, signatureFromModel.getId());
                 }
 
@@ -85,9 +86,7 @@ public class ModelControllerImpl implements ModelController {
 
         @Override
         public ResponseEntity<List<ModelDto>> getAllModels(OAuth2AuthenticationToken authentication) {
-                List<Model> models = this.modelService.getModels(
-                                OAuthProvider.fromString(authentication.getAuthorizedClientRegistrationId()),
-                                authentication.getPrincipal().getName());
+                List<Model> models = this.modelService.getModels(currentUserResolver.resolve(authentication).userId());
 
                 return ResponseEntity.ok(ModelDto.toDtoList(models));
         }

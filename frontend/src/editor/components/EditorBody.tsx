@@ -7,216 +7,321 @@ import { Editor } from "@monaco-editor/react";
 import { useAtom } from "jotai";
 import { parse as parseWithSourceMap } from "json-source-map";
 import { getLocation } from "jsonc-parser";
-import { MLForm } from "mlform";
-import {
-	BooleanStrategy,
-	CategoryStrategy,
-	ClassifierStrategy,
-	DateStrategy,
-	NumberStrategy,
-	RegressorStrategy,
-	TextStrategy,
-} from "mlform/strategies";
-import * as monaco from "monaco-editor";
+import type * as Monaco from "monaco-editor";
 import { useEffect, useRef } from "react";
-
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
 import {
-	editorDarkTheme,
-	editorLightTheme,
-	editorOptions,
-} from "../utils/editorConfig";
+	getActiveCustomFieldDefinitions,
+	type CatalogFieldDefinition,
+} from "../../app/utils/mlform/custom-field";
+import {
+	getActiveCustomExplanationDefinitions,
+	type CatalogExplanationDefinition,
+} from "../../app/utils/mlform/custom-explanation";
+import {
+	getActiveCustomReportDefinitions,
+	type CatalogReportDefinition,
+} from "../../app/utils/mlform/custom-report";
+import {
+	invalidatePluginCatalog,
+} from "../../app/utils/mlform/plugin-catalog";
+import { pluginCatalogVersionAtom } from "../../app/utils/mlform/plugin-catalog-state";
+import {
+	mlformJsonSchema,
+	schemaNeedsActivePluginCatalog,
+	validateMlformSchema,
+} from "../../app/utils/mlform/index";
+import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
+import { editorDarkTheme, editorLightTheme, editorOptions } from "../utils/editorConfig";
 
-/**
- * Estructura consumida por <EditorErrorCard>.
- */
 interface EditorErrorCard {
 	line: number;
 	column: number;
 	path: string;
 	message: string;
+	severity: "error" | "warning";
 }
 
-// ────────────────────────────────────────── Helpers ──
-const isInputTypePath = (p: (string | number)[]) =>
+type MonacoNamespace = typeof import("monaco-editor");
+
+const isFieldKindPath = (p: (string | number)[]) =>
 	p.length === 3 &&
-	p[0] === "inputs" &&
+	p[0] === "fields" &&
 	typeof p[1] === "number" &&
-	p[2] === "type";
+	p[2] === "kind";
 
 const pathToPos = (content: string, pathArr: (string | number)[]) => {
-	const pointer = "/" + pathArr.map(String).join("/");
-	const loc = parseWithSourceMap(content).pointers[pointer]?.key ||
-		parseWithSourceMap(content).pointers[pointer]?.value || {
+	const pointer = `/${pathArr.map(String).join("/")}`;
+	const parsed = parseWithSourceMap(content);
+	const loc = parsed.pointers[pointer]?.key || parsed.pointers[pointer]?.value || {
 		line: 0,
 		column: 0,
 	};
 	return { line: loc.line + 1, column: loc.column + 1 };
 };
 
-// ────────────────────────────────────────── Componente ──
 export function EditorBody() {
-	/** MLForm + estrategias */
-	const f = new MLForm(
-		`${import.meta.env.VITE_BACKEND_URL}/api/analyzer/predict/by-blob`,
-	);
-	[
-		new DateStrategy(),
-		new RegressorStrategy(),
-		new ClassifierStrategy(),
-		new NumberStrategy(),
-		new TextStrategy(),
-		new CategoryStrategy(),
-		new BooleanStrategy(),
-	].forEach((s) => f.register(s));
-
-	/** Atoms */
 	const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
 	const [, setSchema] = useAtom(schemaAtom);
 	const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
 	const [theme] = useAtom(themeWithHtmlAtom);
+	const [pluginCatalogVersion] = useAtom(pluginCatalogVersionAtom);
 
-	/** Refs */
-	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-	const monacoRef = useRef<typeof monaco | null>(null);
-	const refineCardsRef = useRef<EditorErrorCard[]>([]); // último resultado Zod
+	const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
+	const monacoRef = useRef<MonacoNamespace | null>(null);
+	const compatCardsRef = useRef<EditorErrorCard[]>([]);
+	const validationSequenceRef = useRef(0);
+	const catalogFieldDefinitionsRef = useRef<readonly CatalogFieldDefinition[]>([]);
+	const catalogReportDefinitionsRef = useRef<readonly CatalogReportDefinition[]>([]);
+	const catalogDefinitionsRef = useRef<readonly CatalogExplanationDefinition[]>([]);
+	const catalogWarningRef = useRef<EditorErrorCard | null>(null);
 
-	// ────────────────────────────── Mount ──
+	const applyCompatValidation = (
+		text: string,
+		customFieldDefinitions: readonly CatalogFieldDefinition[],
+		customReportDefinitions: readonly CatalogReportDefinition[],
+		customExplanationDefinitions: readonly CatalogExplanationDefinition[],
+	) => {
+		if (!editorRef.current || !monacoRef.current) {
+			return;
+		}
+
+		const monacoNs = monacoRef.current;
+		const model = editorRef.current.getModel();
+		if (!model) {
+			return;
+		}
+
+		const runId = ++validationSequenceRef.current;
+		const compatMarkers: Monaco.editor.IMarkerData[] = [];
+		const compatCards: EditorErrorCard[] = [];
+
+		try {
+			const parsed = JSON.parse(text);
+			const result = validateMlformSchema(parsed, {
+				customFieldDefinitions,
+				customReportDefinitions,
+				customExplanationDefinitions,
+			});
+
+			if (runId !== validationSequenceRef.current) {
+				return;
+			}
+
+			if (result.success) {
+				setSchema(parsed);
+			}
+
+			for (const issue of result.issues) {
+				const { line, column } = pathToPos(text, issue.path);
+				const pathStr = issue.path.length ? issue.path.join(".") : "root";
+
+				compatCards.push({
+					line,
+					column,
+					path: pathStr,
+					message: issue.message,
+					severity: issue.severity,
+				});
+				compatMarkers.push({
+					startLineNumber: line,
+					startColumn: (() => {
+						const lineContent = text.split("\n")[line - 1] || "";
+						const colonIdx = lineContent.indexOf(":");
+						if (colonIdx !== -1) {
+							const quoteIdx = lineContent.indexOf('"', colonIdx);
+							return quoteIdx !== -1 ? quoteIdx + 1 : column;
+						}
+						return column;
+					})(),
+					endLineNumber: line,
+					endColumn: model.getLineMaxColumn(line),
+					message: issue.message,
+					severity:
+						issue.severity === "warning"
+							? monacoNs.MarkerSeverity.Warning
+							: monacoNs.MarkerSeverity.Error,
+					source: "mlform-compat",
+					code: pathStr,
+				});
+			}
+
+			if (catalogWarningRef.current) {
+				compatCards.push(catalogWarningRef.current);
+				compatMarkers.push({
+					startLineNumber: 1,
+					startColumn: 1,
+					endLineNumber: 1,
+					endColumn: model.getLineMaxColumn(1),
+					message: catalogWarningRef.current.message,
+					severity: monacoNs.MarkerSeverity.Warning,
+					source: "mlform-compat",
+					code: "catalog",
+				});
+			}
+
+			monacoNs.editor.setModelMarkers(model, "mlform-compat", compatMarkers);
+			compatCardsRef.current = compatCards;
+		} catch {
+			monacoNs.editor.setModelMarkers(model, "mlform-compat", []);
+			compatCardsRef.current = catalogWarningRef.current ? [catalogWarningRef.current] : [];
+		}
+	};
+
 	const handleOnMount = (
-		editor: monaco.editor.IStandaloneCodeEditor,
-		monacoNs: typeof monaco,
+		editor: Monaco.editor.IStandaloneCodeEditor,
+		monacoNs: MonacoNamespace,
 	) => {
 		editorRef.current = editor;
 		monacoRef.current = monacoNs;
 
-		/* Temas corporativos */
 		monacoNs.editor.defineTheme(
 			"corporate-light",
-			editorLightTheme as monaco.editor.IStandaloneThemeData,
+			editorLightTheme as Monaco.editor.IStandaloneThemeData,
 		);
 		monacoNs.editor.defineTheme(
 			"corporate-dark",
-			editorDarkTheme as monaco.editor.IStandaloneThemeData,
+			editorDarkTheme as Monaco.editor.IStandaloneThemeData,
 		);
-		monacoNs.editor.setTheme(
-			theme === "dark" ? "corporate-dark" : "corporate-light",
-		);
+		monacoNs.editor.setTheme(theme === "dark" ? "corporate-dark" : "corporate-light");
 
-		/* JSON Schema generado por MLForm */
-		monacoNs.languages.json.jsonDefaults.setDiagnosticsOptions({
+		(monacoNs.languages as typeof Monaco.languages & {
+			json: {
+				jsonDefaults: {
+					setDiagnosticsOptions(options: unknown): void;
+				};
+			};
+		}).json.jsonDefaults.setDiagnosticsOptions({
 			validate: true,
 			enableSchemaRequest: false,
 			schemas: [
 				{
 					uri: "internal://root.schema.json",
 					fileMatch: ["*"],
-					schema: f.schema(),
+					schema: mlformJsonSchema,
 				},
 			],
 		});
+
+		applyCompatValidation(
+			editor.getValue(),
+			catalogFieldDefinitionsRef.current,
+			catalogReportDefinitionsRef.current,
+			catalogDefinitionsRef.current,
+		);
 	};
 
-	// ────────────────────────────── Change ──
-	const handleOnChange = async (value?: string) => {
+	const handleOnChange = (value?: string) => {
 		const text = value ?? "";
 		setSchemaText(text);
-
-		/* Validación semántica (Zod) + markers owner "zod" */
-		if (editorRef.current && monacoRef.current) {
-			const monacoNs = monacoRef.current;
-			const model = editorRef.current.getModel();
-			if (!model) return;
-
-			const zodMarkers: monaco.editor.IMarkerData[] = [];
-			const refineCards: EditorErrorCard[] = [];
-			let parsed: any = null;
-			try {
-				parsed = JSON.parse(text);
-
-				const res = await f.validateSchema(parsed);
-				if (res.success && res.data) {
-					setSchema(parsed);
-				}
-
-				if (!res.success && res.error) {
-					const customIssues = res.error.issues.filter(
-						(issue: any) => issue.code === "custom",
-					);
-					if (customIssues.length > 0) {
-						customIssues.map((issue: any) => {
-							const path: any[] = ["inputs", ...(issue.path ?? [])];
-							const { line, column } = pathToPos(text, path);
-							const pathStr = path.length ? path.join(".") : "root";
-
-							refineCards.push({
-								line,
-								column,
-								path: pathStr,
-								message: issue.message,
-							});
-							zodMarkers.push({
-								startLineNumber: line,
-								// Move startColumn to the first quote after the colon
-								startColumn: (() => {
-									const lineContent = text.split("\n")[line - 1] || "";
-									const colonIdx = lineContent.indexOf(":");
-									if (colonIdx !== -1) {
-										const quoteIdx = lineContent.indexOf('"', colonIdx);
-										return quoteIdx !== -1 ? quoteIdx + 1 : column;
-									}
-									return column;
-								})(),
-								endLineNumber: line,
-								endColumn: model.getLineMaxColumn(line),
-								message: issue.message,
-								severity: monacoNs.MarkerSeverity.Error,
-								source: "zod",
-								code: pathStr,
-							});
-						});
-					}
-				}
-
-				monacoNs.editor.setModelMarkers(model, "zod", zodMarkers);
-				refineCardsRef.current = refineCards;
-			} catch (e) { }
-		}
+		applyCompatValidation(
+			text,
+			catalogFieldDefinitionsRef.current,
+			catalogReportDefinitionsRef.current,
+			catalogDefinitionsRef.current,
+		);
 	};
 
-	// ─────────────────────────── Validate ──
-	const handleOnValidate = (markers: monaco.editor.IMarker[]) => {
-		if (!editorRef.current) return;
+	const handleOnValidate = (markers: Monaco.editor.IMarker[]) => {
+		if (!editorRef.current) {
+			return;
+		}
+
 		const model = editorRef.current.getModel();
-		if (!model) return;
+		if (!model) {
+			return;
+		}
+
 		const content = model.getValue();
 
-		/* Solo markers del worker (fuente !== "zod") */
 		const workerCards: EditorErrorCard[] = markers
-			.filter((m) => m.source !== "zod")
-			.map((m) => {
+			.filter((marker) => marker.source !== "mlform-compat")
+			.map((marker) => {
 				const pathArr = getLocation(
 					content,
 					model.getOffsetAt({
-						lineNumber: m.startLineNumber,
-						column: m.startColumn,
+						lineNumber: marker.startLineNumber,
+						column: marker.startColumn,
 					}),
 				).path;
 				const pathStr = pathArr.length ? pathArr.join(".") : "root";
 
 				return {
-					line: m.startLineNumber,
-					column: m.startColumn,
+					line: marker.startLineNumber,
+					column: marker.startColumn,
 					path: pathStr,
-					message: isInputTypePath(pathArr)
-						? 'Valor "type" no válido. Tipos permitidos: "date" | "string" | "number" | …'
-						: m.message,
+					message: isFieldKindPath(pathArr)
+						? 'Valor "kind" no válido. Tipos permitidos: "text" | "number" | "boolean" | "category" | "date" | "time-series".'
+						: marker.message,
+					severity:
+						marker.severity === monacoRef.current?.MarkerSeverity.Warning
+							? "warning"
+							: "error",
 				};
 			});
-		setSchemaErrors([...workerCards, ...refineCardsRef.current]);
+
+		setSchemaErrors([...workerCards, ...compatCardsRef.current]);
 	};
 
-	// Cambio de tema en caliente
+	useEffect(() => {
+		let cancelled = false;
+
+		void (async () => {
+			try {
+				const [customFieldDefinitions, customReportDefinitions, customDefinitions] = await Promise.all([
+					getActiveCustomFieldDefinitions(),
+					getActiveCustomReportDefinitions(),
+					getActiveCustomExplanationDefinitions(),
+				]);
+				if (cancelled) {
+					return;
+				}
+
+				catalogFieldDefinitionsRef.current = customFieldDefinitions;
+				catalogReportDefinitionsRef.current = customReportDefinitions;
+				catalogDefinitionsRef.current = customDefinitions;
+				catalogWarningRef.current = null;
+				const nextText = editorRef.current?.getValue() ?? schemaText;
+				applyCompatValidation(
+					nextText,
+					customFieldDefinitions,
+					customReportDefinitions,
+					customDefinitions,
+				);
+			} catch (error: unknown) {
+				if (cancelled) {
+					return;
+				}
+
+				catalogFieldDefinitionsRef.current = [];
+				catalogReportDefinitionsRef.current = [];
+				catalogDefinitionsRef.current = [];
+				catalogWarningRef.current = {
+					line: 1,
+					column: 1,
+					path: "catalog",
+					message:
+						error instanceof Error
+							? `Custom plugin catalog could not be loaded: ${error.message}`
+							: `Custom plugin catalog could not be loaded: ${String(error)}`,
+					severity: schemaNeedsActivePluginCatalog(editorRef.current?.getValue() ?? schemaText)
+						? "error"
+						: "warning",
+				};
+				const nextText = editorRef.current?.getValue() ?? schemaText;
+				applyCompatValidation(nextText, [], [], []);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [pluginCatalogVersion]);
+
+	useEffect(() => {
+		invalidatePluginCatalog();
+	}, [pluginCatalogVersion]);
+
 	useEffect(() => {
 		if (monacoRef.current) {
 			monacoRef.current.editor.setTheme(
@@ -225,7 +330,6 @@ export function EditorBody() {
 		}
 	}, [theme]);
 
-	// ───────────────────────────── Render ──
 	return (
 		<Editor
 			className="w-full"

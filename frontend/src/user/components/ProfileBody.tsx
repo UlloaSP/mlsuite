@@ -34,7 +34,7 @@ export function ProfileBody({ user }: ProfileBodyProps) {
 			transition={{ delay: 0.4 }}
 			className="space-y-6"
 		>
-			<motion.div className="grid grid-cols-2 gap-6">
+			<motion.div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
 				<InfoCard
 					icon={Mail}
 					title="Email"

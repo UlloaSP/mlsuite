@@ -15,13 +15,13 @@ export function EditorErrorPanel() {
 		<AnimatePresence mode="wait">
 			<motion.div
 				key="errors"
-				className="flex-1 overflow-y-auto bg-white dark:bg-gray-900"
+				className="flex-1 overflow-y-auto rounded-b-[20px] border border-t-0 border-[var(--border-soft)] bg-[var(--surface-primary)]"
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				exit={{ opacity: 0 }}
 				transition={{ duration: 0.2 }}
 			>
-				<motion.div className="p-4 space-y-3">
+				<motion.div className="space-y-3 p-4">
 					{schemaErrors.map((error: any, index: number) => (
 						<EditorErrorCard key={index} error={error} />
 					))}

@@ -6,14 +6,21 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { RefreshCcw, Save } from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import {
+	AppButton,
+	AppSelect,
+	AppTextField
+} from "../../app/components";
+import { getActiveCustomExplanationDefinitions } from "../../app/utils/mlform/custom-explanation";
 import {
 	schemaAtom,
 	schemaErrorsAtom,
 	schemaTextAtom,
 } from "../../editor/atoms";
 import { useCreateSignatureMutation, useGetSignatures } from "../hooks";
+import { applyExplanationFeedbackMetadata } from "../signature-feedback-metadata";
 
 function compareSemverDesc(
 	major: number,
@@ -28,6 +35,27 @@ function compareSemverDesc(
 	return patch1 - patch;
 }
 
+type BumpKind = "patch" | "minor" | "major";
+
+function getNextVersion(
+	signature: { major: number; minor: number; patch: number } | undefined,
+	bump: BumpKind,
+): string {
+	if (!signature) {
+		return "";
+	}
+
+	if (bump === "major") {
+		return `${signature.major + 1}.0.0`;
+	}
+
+	if (bump === "minor") {
+		return `${signature.major}.${signature.minor + 1}.0`;
+	}
+
+	return `${signature.major}.${signature.minor}.${signature.patch + 1}`;
+}
+
 export function CreateSignatureActionSection() {
 	const { modelId } = useParams<{ modelId: string }>();
 	const navigate = useNavigate();
@@ -40,31 +68,40 @@ export function CreateSignatureActionSection() {
 	const [schemaErrors] = useAtom(schemaErrorsAtom);
 
 	const [signatureName, setSignatureName] = useState("");
-	const [version, setVersion] = useState("");
 	const [signatureId, setSignatureId] = useState<string>("");
+	const [bumpKind, setBumpKind] = useState<BumpKind>("patch");
 	const [isLoading, setIsLoading] = useState(false);
 
+	const selectedSignature = useMemo(
+		() => signatures.find((signature) => String(signature.id) === String(signatureId)),
+		[signatureId, signatures],
+	);
+	const version = useMemo(
+		() => getNextVersion(selectedSignature, bumpKind),
+		[selectedSignature, bumpKind],
+	);
 	const isFormValid =
-		schemaErrors <= 0 && signatureName && version && signatureId;
+		schemaErrors <= 0 && signatureName.trim() && version && signatureId;
 
 	const handleSaveSignature = async () => {
 		const [major, minor, patch] = version.split(".").map(Number);
 		setIsLoading(true);
 		try {
+			const customExplanationDefinitions = await getActiveCustomExplanationDefinitions();
 			await mutation.mutateAsync({
 				modelId: modelId!,
 				name: signatureName,
-				inputSignature: schema,
+				inputSignature: applyExplanationFeedbackMetadata(schema, customExplanationDefinitions),
 				major: major,
 				minor: minor,
 				patch: patch,
 				origin: signatureId,
 			});
+			navigate(`/models/${modelId}?tab=signatures`);
 		} catch (err) {
 		} finally {
 			setIsLoading(false);
 		}
-		navigate("/models");
 	};
 
 	useEffect(() => {
@@ -81,98 +118,109 @@ export function CreateSignatureActionSection() {
 		if (!sig) return;
 		setSchema(sig.inputSignature);
 		setSchemaText(JSON.stringify(sig.inputSignature, null, 2));
-		setVersion("");
-		setSignatureName("");
-	}, [signatureId, signatures]);
+	}, [setSchema, setSchemaText, signatureId, signatures]);
 
 	return (
-		<motion.div className="flex flex-col flex-1 justify-between px-6">
-			<motion.div className="flex flex-col gap-6">
-				{/* Base Signature Selection */}
-				<motion.div>
-					<motion.label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+		<motion.div className="shrink-0">
+
+			<div className="grid gap-4 xl:grid-cols-[minmax(240px,1.2fr)_minmax(280px,1.4fr)_minmax(360px,1.7fr)_auto]">
+				<div className="space-y-2">
+					<label className="text-sm font-semibold text-[var(--text-primary)]">
 						Base Version
-					</motion.label>
-					<motion.select
+					</label>
+					<AppSelect
 						value={signatureId}
 						onChange={(e) => setSignatureId(e.target.value)}
-						className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+						className="w-full"
+						disabled={!signatures.length}
 					>
+						{signatures.length ? null : (
+							<option value="">No base signatures available</option>
+						)}
 						{signatures.map((signature) => (
-							<motion.option key={signature.id} value={signature.id}>
-								{signature.name} (v{signature.major}.{signature.minor}.
-								{signature.patch})
-							</motion.option>
+							<option key={signature.id} value={signature.id}>
+								{signature.name} (v{signature.major}.{signature.minor}.{signature.patch})
+							</option>
 						))}
-					</motion.select>
-					<motion.p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-						Select an existing signature as base for the new version
-					</motion.p>
-				</motion.div>
+					</AppSelect>
+				</div>
 
-				{/* Signature Name */}
-				<motion.div>
-					<motion.label
+				<div className="space-y-2">
+					<label
 						htmlFor="signature-name"
-						className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3"
+						className="text-sm font-semibold text-[var(--text-primary)]"
 					>
 						Signature Name
-					</motion.label>
-					<motion.input
+					</label>
+					<AppTextField
 						id="signature-name"
 						type="text"
 						value={signatureName}
 						onChange={(e) => setSignatureName(e.target.value)}
-						placeholder="Ej: Customer Churn v2.0"
-						className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+						placeholder="Ej: Customer Churn input contract"
+						className="w-full"
 					/>
-				</motion.div>
+				</div>
 
-				{/* Version */}
-				<motion.div>
-					<motion.label
-						htmlFor="version"
-						className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3"
+				<div className="space-y-3">
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<label className="text-sm font-semibold text-[var(--text-primary)]">
+							Version Bump
+						</label>
+						{selectedSignature ? (
+							<span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-sm font-semibold text-[var(--text-primary)]">
+								v{selectedSignature.major}.{selectedSignature.minor}.{selectedSignature.patch}
+								{" "}
+								<span className="text-[var(--text-muted)]">-&gt;</span>
+								{" "}
+								v{version}
+							</span>
+						) : (
+							<span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-sm font-semibold text-[var(--text-primary)]">
+								No version
+							</span>
+						)}
+					</div>
+					<div className="flex flex-wrap gap-2">
+						{(["major", "minor", "patch"] as const).map((value) => {
+							const active = bumpKind === value;
+							return (
+								<AppButton
+									key={value}
+									type="button"
+									variant={active ? "primary" : "secondary"}
+									onClick={() => setBumpKind(value)}
+									className="px-3 py-2 text-xs uppercase tracking-[0.18em]"
+								>
+									{value}
+								</AppButton>
+							);
+						})}
+					</div>
+				</div>
+
+				<div className="flex min-w-[180px] items-end">
+					<AppButton
+						onClick={handleSaveSignature}
+						disabled={!isFormValid || isLoading}
+						className="w-full"
 					>
-						Version
-					</motion.label>
-					<motion.input
-						id="version"
-						type="text"
-						value={version}
-						onChange={(e) => setVersion(e.target.value)}
-						placeholder="1.0.0"
-						className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-					/>
-					<motion.p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-						Semantic Versioning Format (MAJOR.MINOR.PATCH)
-					</motion.p>
-				</motion.div>
-			</motion.div>
-			<motion.button
-				onClick={handleSaveSignature}
-				disabled={!isFormValid}
-				className={`flex flex-row w-full items-center justify-center space-x-2 px-6 py-3 font-medium rounded-xl transition-all duration-300 ${isFormValid
-					? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl"
-					: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-					}`}
-				whileHover={isFormValid ? { scale: 1.02 } : {}}
-				whileTap={isFormValid ? { scale: 0.98 } : {}}
-			>
-				{isLoading ? (
-					<>
-						<span className="animate-spin">
-							<RefreshCcw size={18} />
-						</span>
-						<span>Saving...</span>
-					</>
-				) : (
-					<>
-						<Save size={18} />
-						<span>Save</span>
-					</>
-				)}
-			</motion.button>
+						{isLoading ? (
+							<>
+								<span className="animate-spin">
+									<RefreshCcw size={18} />
+								</span>
+								<span>Saving...</span>
+							</>
+						) : (
+							<>
+								<Save size={18} />
+								<span>Save</span>
+							</>
+						)}
+					</AppButton>
+				</div>
+			</div>
 		</motion.div>
 	);
 }

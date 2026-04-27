@@ -3,200 +3,204 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import {
-	FileText,
-	RefreshCcw,
-	Save
-} from "lucide-react";
-import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
-import { Unauthorized } from "../../app/pages/Unauthorized";
+import { AppBreadcrumbs, AppPage } from "../../app/components";
+import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
-import { CreateModelHeader } from "../components/CreateModelHeader";
-import { CreateModelInfoSection } from "../components/CreateModelInfoSection";
-import { UploadFile } from "../components/UploadFile";
+import type { Bundle } from "../bundle-types";
+import { DF_EXTS, getStem, isDfFile, isModelFile, slugToTitle } from "../bundle-utils";
+import { BundleCard } from "../components/BundleCard";
+import { BundleDropZone } from "../components/BundleDropZone";
+import { BundleEmptyState } from "../components/BundleEmptyState";
+import { BundleSummaryPanel } from "../components/BundleSummaryPanel";
 import { useCreateModelMutation } from "../hooks";
 
-
-
-const container = {
-	hidden: { opacity: 0, x: -40 },
-	show: {
-		opacity: 1,
-		x: 0,
-		transition: { staggerChildren: 0.12, duration: 0.5 },
-	},
-};
+let _nextId = 1;
 
 export function CreateModelPage() {
-	const [selectedModelFile, setSelectedModelFile] = useState<File | null>(null);
-	const [selectedDataframeFile, setSelectedDataframeFile] =
-		useState<File | null>(null);
-	const [name, setName] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
-
+	const [bundles, setBundles] = useState<Bundle[]>([]);
 	const mutation = useCreateModelMutation();
 	const navigate = useNavigate();
-
 	const { data: user, error } = useUser();
 
-	const handleSave = async () => {
-		if (!selectedModelFile || !name) return;
+	// ── Ingest dropped/selected files ───────────────────────────────────────
 
-		setIsLoading(true);
+	const handleFiles = useCallback((files: File[]) => {
+		const models = files.filter((f) => isModelFile(f.name));
+		const dfs = files.filter((f) => isDfFile(f.name));
+		const pool = [...dfs];
+
+		setBundles((prev) => {
+			const next = [...prev];
+
+			models.forEach((modelFile) => {
+				if (next.some((b) => b.modelFile.name === modelFile.name)) return;
+				const stem = getStem(modelFile.name);
+				const idx = pool.findIndex(
+					(df) => getStem(df.name).toLowerCase() === stem.toLowerCase(),
+				);
+				const dfFile = idx !== -1 ? pool.splice(idx, 1)[0] : null;
+				next.push({
+					id: _nextId++,
+					modelFile,
+					dfFile,
+					name: slugToTitle(stem),
+					saved: false,
+					saving: false,
+				});
+			});
+
+			// Attach remaining dfs to the first bundle that lacks one
+			pool.forEach((df) => {
+				const stem = getStem(df.name).toLowerCase();
+				const target =
+					next.find(
+						(b) =>
+							getStem(b.modelFile.name).toLowerCase() === stem && !b.dfFile,
+					) ?? next.find((b) => !b.dfFile);
+				if (target) {
+					target.dfFile = df;
+					target.saved = false;
+				}
+			});
+
+			return next;
+		});
+	}, []);
+
+	// ── Bundle actions ───────────────────────────────────────────────────────
+
+	const removeBundle = (id: number) =>
+		setBundles((prev) => prev.filter((b) => b.id !== id));
+
+	const setBundleName = (id: number, value: string) =>
+		setBundles((prev) =>
+			prev.map((b) => (b.id === id ? { ...b, name: value } : b)),
+		);
+
+	const attachDf = (bundleId: number) => {
+		const input = document.createElement("input");
+		input.type = "file";
+		input.accept = DF_EXTS.join(",");
+		input.onchange = (e) => {
+			const files = Array.from((e.target as HTMLInputElement).files ?? []);
+			if (!files.length) return;
+			setBundles((prev) =>
+				prev.map((b) =>
+					b.id === bundleId ? { ...b, dfFile: files[0], saved: false } : b,
+				),
+			);
+		};
+		input.click();
+	};
+
+	const saveBundle = async (id: number) => {
+		const bundle = bundles.find((b) => b.id === id);
+		if (!bundle || !bundle.name.trim() || bundle.saved || bundle.saving) return;
+
+		setBundles((prev) =>
+			prev.map((b) => (b.id === id ? { ...b, saving: true } : b)),
+		);
 		try {
 			await mutation.mutateAsync({
-				name,
-				modelFile: selectedModelFile,
-				dataframeFile: selectedDataframeFile ?? undefined,
+				name: bundle.name.trim(),
+				modelFile: bundle.modelFile,
+				dataframeFile: bundle.dfFile ?? undefined,
 			});
-			navigate("/models");
-		} catch (err) {
-		} finally {
-			setIsLoading(false);
+			setBundles((prev) =>
+				prev.map((b) => (b.id === id ? { ...b, saved: true, saving: false } : b)),
+			);
+		} catch {
+			setBundles((prev) =>
+				prev.map((b) => (b.id === id ? { ...b, saving: false } : b)),
+			);
 		}
 	};
 
-	const isFormValid = selectedModelFile && name.trim();
-
-	useEffect(() => {
-		if (!selectedModelFile) return;
-		const nameWithoutExtension = selectedModelFile.name.replace(
-			/\.[^/.]+$/,
-			"",
+	const saveAll = async () => {
+		const unsaved = bundles.filter(
+			(b) => b.name.trim() && !b.saved && !b.saving,
 		);
-		setName(
-			nameWithoutExtension
-				.replace(/[_-]/g, " ")
-				.replace(/\b\w/g, (l) => l.toUpperCase()),
-		);
-	}, [selectedModelFile]);
+		for (const b of unsaved) await saveBundle(b.id);
+		navigate("/models");
+	};
 
+	// ── Derived stats ────────────────────────────────────────────────────────
 
-	if (!user || error) return <Unauthorized />;
+	const total = bundles.length;
+	const withDf = bundles.filter((b) => b.dfFile).length;
+	const saved = bundles.filter((b) => b.saved).length;
+	const unsavedReady = bundles.filter(
+		(b) => b.name.trim() && !b.saved && !b.saving,
+	).length;
+	const anySaving = bundles.some((b) => b.saving);
+
+	if (!user || error) return <NotFoundError />;
 
 	return (
-		<div className="flex flex-1 size-full overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-800 dark:to-indigo-900">
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5 }}
-				className="flex flex-1 overflow-hidden m-12 p-12 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/20 dark:border-gray-700/20"
-			>
-				<motion.span
-					initial={{ opacity: 0, scale: 0.8 }}
-					animate={{ opacity: 0.12, scale: 2 }}
-					transition={{ repeat: Infinity, repeatType: "mirror", duration: 14 }}
-					className="absolute top-1/3 -left-16 w-96 h-96 rounded-full bg-blue-600 blur-3xl pointer-events-none"
+		<AppPage>
+			<div className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
+				{/* ── Page header ─────────────────────────────────────────── */}
+				<AppBreadcrumbs
+					items={[
+						{ label: "Models", to: "/models" },
+						{ label: "Create Model" },
+					]}
 				/>
-				<motion.span
-					initial={{ opacity: 0, scale: 0.8 }}
-					animate={{ opacity: 0.12, scale: 2 }}
-					transition={{ repeat: Infinity, repeatType: "mirror", duration: 18 }}
-					className="absolute bottom-10 -right-10 w-72 h-72 rounded-full bg-purple-700 blur-3xl pointer-events-none"
-				/>
-				<div className="flex flex-rows flex-1">
-					<motion.div
-						variants={container}
-						initial="hidden"
-						animate="show"
-						className="grid grid-rows-[1fr_2fr] justify-between px-10"
+				<header className="my-5 flex-shrink-0">
+					<p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-primary)]">
+						Model Studio
+					</p>
+					<h1 className="text-[27px] font-bold leading-[1.05] tracking-[-0.8px] text-[var(--text-primary)]">
+						Create New Model
+					</h1>
+					<p className="mt-1.5 text-[13px] text-[var(--text-muted)]">
+						Drop model artifacts and dataframes. Files are grouped by name when
+						possible.
+					</p>
+				</header>
+
+				{/* ── Two-column layout ────────────────────────────────────── */}
+				<div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
+					{/* Left: drop zone + bundle list */}
+					<section
+						aria-label="Model bundles"
+						className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)]"
 					>
-						<CreateModelHeader />
-						<CreateModelInfoSection />
-					</motion.div>
+						<BundleDropZone onFiles={handleFiles} />
 
-					{/* File Upload Section */}
-					<div className="flex flex-col flex-1 justify-between px-10">
-						<div>
-							<label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-								Model File
-							</label>
-							<UploadFile
-								acceptedFormats={[".joblib"]}
-								selectedFile={selectedModelFile}
-								setSelectedFile={setSelectedModelFile}
-							/>
-						</div>
-
-						<div>
-							<label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-								Model Dataframe (optional)
-							</label>
-							<UploadFile
-								acceptedFormats={[".joblib"]}
-								selectedFile={selectedDataframeFile}
-								setSelectedFile={setSelectedDataframeFile}
-							/>
-						</div>
-
-						{/* Model Name Input */}
-						<div>
-							<label
-								htmlFor="model-name"
-								className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3"
-							>
-								Model Name
-							</label>
-							<div className="relative">
-								<FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-								<input
-									id="model-name"
-									type="text"
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									placeholder="Introduce el nombre del modelo..."
-									className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-								/>
-							</div>
-							{selectedModelFile && (
-								<p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-									Name auto-filled from file. You can modify it if desired.
-								</p>
+						<div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-[var(--border-soft)] px-4 pb-4 pt-3">
+							{bundles.length === 0 ? (
+								<BundleEmptyState />
+							) : (
+								bundles.map((bundle, i) => (
+									<BundleCard
+										key={bundle.id}
+										bundle={bundle}
+										index={i}
+										onSave={() => saveBundle(bundle.id)}
+										onRemove={() => removeBundle(bundle.id)}
+										onRename={(v) => setBundleName(bundle.id, v)}
+										onAttachDf={() => attachDf(bundle.id)}
+									/>
+								))
 							)}
 						</div>
+					</section>
 
-						{/* Action Buttons */}
-						<div className="flex space-x-4 pt-6">
-							<motion.button
-								onClick={() => navigate(-1)}
-								disabled={isLoading}
-								className={`flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isLoading ? "cursor-not-allowed" : ""}`}
-								whileHover={{ scale: 1.02 }}
-								whileTap={{ scale: 0.98 }}
-							>
-								Cancel
-							</motion.button>
-
-							<motion.button
-								onClick={handleSave}
-								disabled={!isFormValid || isLoading}
-								className={`flex-1 flex items-center justify-center space-x-2 px-6 py-3 ${isLoading ? "cursor-not-allowed" : ""} font-medium rounded-xl transition-all duration-300 ${isFormValid
-									? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl"
-									: "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-									}`}
-								whileHover={isFormValid ? { scale: 1.02 } : {}}
-								whileTap={isFormValid ? { scale: 0.98 } : {}}
-							>
-								{isLoading ? (
-									<>
-										<span className="animate-spin">
-											<RefreshCcw size={18} />
-										</span>
-										<span>Saving...</span>
-									</>
-								) : (
-									<>
-										<Save size={18} />
-										<span>Save</span>
-									</>
-								)}
-							</motion.button>
-						</div>
-					</div>
+					{/* Right: summary panel */}
+					<BundleSummaryPanel
+						total={total}
+						withDf={withDf}
+						saved={saved}
+						unsavedReady={unsavedReady}
+						anySaving={anySaving}
+						onSaveAll={saveAll}
+						onClear={() => setBundles([])}
+					/>
 				</div>
-			</motion.div>
-		</div>
+			</div>
+		</AppPage>
 	);
 }

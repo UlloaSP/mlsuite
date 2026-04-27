@@ -11,4 +11,8 @@ public class SignatureDoesNotExistsException extends RuntimeException {
         super("Signature with ID '" + signatureId + "' does not exist.");
     }
 
+    public SignatureDoesNotExistsException(Long signatureId, String userName) {
+        super("Signature with ID '" + signatureId + "' does not exist for user '" + userName + "'.");
+    }
+
 }

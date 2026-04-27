@@ -1,22 +1,29 @@
 # Backend - MLSuite
 
-API FastAPI para manejo de modelos de machine learning.
+Runtime FastAPI para metadata, schema, predict y explain.
 
-## Instalación
+## Install
 
 ```bash
-uv sync
+uv sync --extra dev
 ```
 
-## Desarrollo
+## Run
 
 ```bash
-uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn mlsuite_backend.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+## Test
+
+```bash
+uv run pytest tests/test_runtime_api.py
 ```
 
 ## Endpoints
 
-- **GET /health** - Verifica el estado del servicio
-- **POST /metadata** - Extrae metadatos de un modelo sklearn
-- **POST /build_schema** - Genera esquema MLSchema
-- **POST /predict** - Realiza predicciones con el modelo
+- `GET /health`
+- `POST /metadata`
+- `POST /build_schema`
+- `POST /predict`
+- `POST /explain`

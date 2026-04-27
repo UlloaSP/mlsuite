@@ -10,14 +10,13 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.prediction.entities.Target;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
 
 public interface TargetService {
 
-    Target createTarget(OAuthProvider oauthProvider, String oauthId, Long predictionId, int order, JsonNode value);
+    Target createTarget(Long userId, Long predictionId, int order, JsonNode value);
 
-    Target updateTarget(OAuthProvider oauthProvider, String oauthId, Long targetId, JsonNode real_value);
+    Target updateTarget(Long userId, Long targetId, JsonNode realValue);
 
-    List<Target> getTargetsByPredictionId(OAuthProvider oauthProvider, String oauthId, Long predictionId);
+    List<Target> getTargetsByPredictionId(Long userId, Long predictionId);
 
 }
