@@ -16,6 +16,16 @@ import { ModelsPage } from "../models/pages/models-page";
 import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
 import { SignatureDetailPage } from "../models/pages/signature-detail-page";
 import { ProfilePage } from "../user/pages/profilePage";
+import { CreateOrganizationPage } from "../workspace/pages/create-organization-page";
+import { InvitationAcceptPage } from "../workspace/pages/invitation-accept-page";
+import { InvitationsPage } from "../workspace/pages/invitations-page";
+import { MembersPage } from "../workspace/pages/members-page";
+import { OrganizationSettingsPage } from "../workspace/pages/organization-settings-page";
+import { OrganizationsPage } from "../workspace/pages/organizations-page";
+import { TeamDetailPage } from "../workspace/pages/team-detail-page";
+import { TeamsPage } from "../workspace/pages/teams-page";
+import { WorkspaceHomePage } from "../workspace/pages/workspace-home-page";
+import { useWorkspaceContextSync } from "../workspace/hooks";
 
 const CreatePredictionPage = lazy(async () => {
 	const module = await import("../models/pages/create-prediction-page");
@@ -41,7 +51,7 @@ function IndexRoute() {
 	const { data: user, error } = useUser();
 
 	if (user && !error) {
-		return <Navigate to="/models" replace />;
+		return <Navigate to="/workspace" replace />;
 	}
 
 	return <Unauthorized />;
@@ -49,12 +59,13 @@ function IndexRoute() {
 
 function ProtectedRoute() {
 	const { data: user, error, isLoading } = useUser();
+	const workspace = useWorkspaceContextSync(Boolean(user) && !error);
 
-	if (isLoading) {
+	if (isLoading || workspace.isLoading) {
 		return <EditorRouteFallback />;
 	}
 
-	if (!user || error) {
+	if (!user || error || workspace.error) {
 		return <NotFoundError />;
 	}
 
@@ -75,6 +86,42 @@ export const routes: RouteObject[] = [
 			{
 				element: <ProtectedRoute />,
 				children: [
+					{
+						path: "workspace",
+						element: <WorkspaceHomePage />,
+					},
+					{
+						path: "workspace/organizations",
+						element: <OrganizationsPage />,
+					},
+					{
+						path: "workspace/organizations/create",
+						element: <CreateOrganizationPage />,
+					},
+					{
+						path: "workspace/organizations/:organizationId",
+						element: <OrganizationSettingsPage />,
+					},
+					{
+						path: "workspace/organizations/:organizationId/teams",
+						element: <TeamsPage />,
+					},
+					{
+						path: "workspace/organizations/:organizationId/members",
+						element: <MembersPage />,
+					},
+					{
+						path: "workspace/organizations/:organizationId/invitations",
+						element: <InvitationsPage />,
+					},
+					{
+						path: "workspace/teams/:teamId",
+						element: <TeamDetailPage />,
+					},
+					{
+						path: "invite/:token",
+						element: <InvitationAcceptPage />,
+					},
 					{
 						path: "profile",
 						element: <ProfilePage />,

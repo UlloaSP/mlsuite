@@ -4,7 +4,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.user.domain.model.OAuthProvider;
 
 @Component
 public class OAuth2ExternalIdentityExtractor {
@@ -24,3 +24,4 @@ public class OAuth2ExternalIdentityExtractor {
         return value == null ? "" : value.toString();
     }
 }
+

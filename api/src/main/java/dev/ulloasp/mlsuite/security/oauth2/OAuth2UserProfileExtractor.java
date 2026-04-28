@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 import dev.ulloasp.mlsuite.security.identity.ExternalIdentity;
 import dev.ulloasp.mlsuite.security.identity.OAuth2ExternalIdentityExtractor;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.user.domain.model.OAuthProvider;
 
 @Component
 public class OAuth2UserProfileExtractor {
@@ -47,3 +47,4 @@ public class OAuth2UserProfileExtractor {
         return value == null ? "" : value.toString();
     }
 }
+

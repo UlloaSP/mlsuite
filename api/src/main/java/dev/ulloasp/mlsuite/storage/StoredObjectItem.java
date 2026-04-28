@@ -9,3 +9,4 @@ public record StoredObjectItem(
         String etag,
         OffsetDateTime lastModified) {
 }
+

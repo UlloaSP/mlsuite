@@ -14,10 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import dev.ulloasp.mlsuite.plugin.dtos.PluginDto;
-import dev.ulloasp.mlsuite.plugin.services.PluginService;
-import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
-import dev.ulloasp.mlsuite.signature.services.SignatureSchemaCompatibilityServiceImpl;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
+import dev.ulloasp.mlsuite.plugin.application.service.PluginService;
+import dev.ulloasp.mlsuite.signature.domain.exception.InvalidSignatureSchemaException;
+import dev.ulloasp.mlsuite.signature.application.service.SignatureSchemaCompatibilityServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class SignatureSchemaCompatibilityServiceTest {
@@ -84,3 +84,4 @@ class SignatureSchemaCompatibilityServiceTest {
         return new PluginDto(id, id + ".ts", "application/typescript", source.length(), now, now, active, source);
     }
 }
+

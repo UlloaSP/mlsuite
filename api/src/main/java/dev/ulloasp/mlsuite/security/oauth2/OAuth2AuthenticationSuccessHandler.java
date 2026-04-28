@@ -12,20 +12,26 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import dev.ulloasp.mlsuite.user.exceptions.UserAlreadyExistsException;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.service.UserService;
+import dev.ulloasp.mlsuite.user.application.port.in.SignInUserUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.SignUpUserUseCase;
+import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
+import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final UserService userService;
+    private final SignInUserUseCase signInUserUseCase;
+    private final SignUpUserUseCase signUpUserUseCase;
     private final OAuth2UserProfileExtractor profileExtractor;
 
-    public OAuth2AuthenticationSuccessHandler(UserService userService, OAuth2UserProfileExtractor profileExtractor) {
-        this.userService = userService;
+    public OAuth2AuthenticationSuccessHandler(
+            SignInUserUseCase signInUserUseCase,
+            SignUpUserUseCase signUpUserUseCase,
+            OAuth2UserProfileExtractor profileExtractor) {
+        this.signInUserUseCase = signInUserUseCase;
+        this.signUpUserUseCase = signUpUserUseCase;
         this.profileExtractor = profileExtractor;
     }
 
@@ -35,10 +41,10 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         OAuth2UserProfile profile = profileExtractor.extract((OAuth2AuthenticationToken) authentication);
 
         try {
-            userService.signIn(profile.identity().provider(), profile.identity().subject());
+            signInUserUseCase.signIn(profile.identity().provider(), profile.identity().subject());
         } catch (UserDoesNotExistException ex) {
             try {
-                userService.signUp(
+                signUpUserUseCase.signUp(
                         profile.username(),
                         profile.email(),
                         profile.identity().provider(),
@@ -47,9 +53,10 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                         profile.fullName());
             } catch (UserAlreadyExistsException e) {
                 // Raza: otro hilo lo creó; volvemos a intentar login
-                userService.signIn(profile.identity().provider(), profile.identity().subject());
+                signInUserUseCase.signIn(profile.identity().provider(), profile.identity().subject());
             }
         }
         response.sendRedirect("https://localhost:5173/models");
     }
 }
+

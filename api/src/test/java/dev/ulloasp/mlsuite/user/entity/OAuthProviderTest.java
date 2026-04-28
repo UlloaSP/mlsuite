@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-package dev.ulloasp.mlsuite.user.entity;
+package dev.ulloasp.mlsuite.user.domain.model;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -116,3 +116,4 @@ class OAuthProviderTest {
         assertThrows(IllegalArgumentException.class, () -> OAuthProvider.valueOf("system")); // lowercase
     }
 }
+

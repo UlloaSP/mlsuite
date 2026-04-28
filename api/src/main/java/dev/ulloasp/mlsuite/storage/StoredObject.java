@@ -6,3 +6,4 @@ public record StoredObject(
         long sizeBytes,
         String etag) {
 }
+

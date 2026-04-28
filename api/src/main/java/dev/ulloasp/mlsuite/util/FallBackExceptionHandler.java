@@ -25,3 +25,4 @@ public class FallBackExceptionHandler {
         return ResponseEntity.status(status).body(dto);
     }
 }
+

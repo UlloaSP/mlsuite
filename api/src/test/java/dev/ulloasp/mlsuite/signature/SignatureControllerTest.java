@@ -17,17 +17,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
-import dev.ulloasp.mlsuite.signature.controllers.SignatureControllerImpl;
-import dev.ulloasp.mlsuite.signature.dtos.CreateSignatureParams;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
-import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
-import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
-import dev.ulloasp.mlsuite.signature.services.SignatureService;
-import dev.ulloasp.mlsuite.util.ErrorDto;
-import jakarta.servlet.http.HttpServletRequest;
+import dev.ulloasp.mlsuite.signature.adapter.in.web.SignatureControllerImpl;
+import dev.ulloasp.mlsuite.signature.application.dto.CreateSignatureParams;
+import dev.ulloasp.mlsuite.signature.application.port.in.SignatureCatalogUseCase;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
+import dev.ulloasp.mlsuite.signature.domain.exception.SignatureDoesNotExistsException;
 
 @ExtendWith(MockitoExtension.class)
 class SignatureControllerTest {
@@ -36,64 +33,43 @@ class SignatureControllerTest {
     private CurrentUserResolver currentUserResolver;
 
     @Mock
-    private SignatureService signatureService;
+    private SignatureCatalogUseCase signatureCatalogUseCase;
 
     @Mock
     private OAuth2AuthenticationToken authentication;
-
-    @Mock
-    private HttpServletRequest request;
 
     private SignatureControllerImpl controller;
 
     @BeforeEach
     void setUp() {
-        controller = new SignatureControllerImpl(currentUserResolver, signatureService);
+        controller = new SignatureControllerImpl(currentUserResolver, signatureCatalogUseCase);
         when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(6L, "alice"));
     }
 
     @Test
     void createSignature_UsesInternalUserId() {
-        CreateSignatureParams params = new CreateSignatureParams();
-        params.setModelId(11L);
-        params.setName("sig");
-        params.setMajor(1);
-        params.setMinor(0);
-        params.setPatch(0);
-        params.setInputSignature(Map.of("x", "int"));
-        when(signatureService.createSignature(6L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null))
+        CreateSignatureParams params = new CreateSignatureParams(11L, "sig", Map.of("x", "int"), 1, 0, 0, null);
+        when(signatureCatalogUseCase.createSignature(6L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null))
                 .thenReturn(signature());
 
         ResponseEntity<?> response = controller.createSignature(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(signatureService).createSignature(6L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null);
+        verify(signatureCatalogUseCase).createSignature(6L, 11L, Map.of("x", "int"), "sig", 1, 0, 0, null);
     }
 
     @Test
     void getAllSignatures_ReturnsDtos() {
-        when(signatureService.getSignatureByModelId(6L, 11L)).thenReturn(List.of(signature()));
+        when(signatureCatalogUseCase.getSignatureByModelId(6L, 11L)).thenReturn(List.of(signature()));
 
         assertEquals(1, controller.getAllSignatures(authentication, 11L).getBody().size());
     }
 
     @Test
     void getSignatureById_PropagatesMissingSignature() {
-        when(signatureService.getSignature(6L, 99L)).thenThrow(new SignatureDoesNotExistsException(99L));
+        when(signatureCatalogUseCase.getSignature(6L, 99L)).thenThrow(new SignatureDoesNotExistsException(99L));
 
         assertThrows(SignatureDoesNotExistsException.class, () -> controller.getSignatureById(authentication, 99L));
-    }
-
-    @Test
-    void handleInvalidSignatureSchemaException_ReturnsBadRequest() {
-        when(request.getRequestURI()).thenReturn("/api/signatures");
-
-        ResponseEntity<ErrorDto> response = controller.handleInvalidSignatureSchemaException(
-                new InvalidSignatureSchemaException(
-                        "Custom explanation kind \"old-kind\" does not exist in active plugin catalog."),
-                request);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     private Signature signature() {
@@ -110,3 +86,4 @@ class SignatureControllerTest {
         return signature;
     }
 }
+

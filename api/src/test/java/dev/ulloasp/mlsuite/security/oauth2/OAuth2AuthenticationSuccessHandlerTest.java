@@ -16,10 +16,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 
 import dev.ulloasp.mlsuite.security.identity.ExternalIdentity;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
-import dev.ulloasp.mlsuite.user.exceptions.UserAlreadyExistsException;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.service.UserService;
+import dev.ulloasp.mlsuite.user.application.port.in.SignInUserUseCase;
+import dev.ulloasp.mlsuite.user.application.port.in.SignUpUserUseCase;
+import dev.ulloasp.mlsuite.user.domain.model.OAuthProvider;
+import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
+import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -27,7 +28,10 @@ import jakarta.servlet.http.HttpServletResponse;
 class OAuth2AuthenticationSuccessHandlerTest {
 
     @Mock
-    private UserService userService;
+    private SignInUserUseCase signInUserUseCase;
+
+    @Mock
+    private SignUpUserUseCase signUpUserUseCase;
 
     @Mock
     private OAuth2UserProfileExtractor profileExtractor;
@@ -45,7 +49,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new OAuth2AuthenticationSuccessHandler(userService, profileExtractor);
+        handler = new OAuth2AuthenticationSuccessHandler(signInUserUseCase, signUpUserUseCase, profileExtractor);
     }
 
     @Test
@@ -57,11 +61,11 @@ class OAuth2AuthenticationSuccessHandlerTest {
                 "avatar",
                 "Alice");
         when(profileExtractor.extract(authentication)).thenReturn(profile);
-        doNothing().when(userService).signIn(OAuthProvider.GITHUB, "123");
+        doNothing().when(signInUserUseCase).signIn(OAuthProvider.GITHUB, "123");
 
         handler.onAuthenticationSuccess(request, response, authentication);
 
-        verify(userService).signIn(OAuthProvider.GITHUB, "123");
+        verify(signInUserUseCase).signIn(OAuthProvider.GITHUB, "123");
         verify(response).sendRedirect("https://localhost:5173/models");
     }
 
@@ -74,12 +78,12 @@ class OAuth2AuthenticationSuccessHandlerTest {
                 "avatar",
                 "Alice");
         when(profileExtractor.extract(authentication)).thenReturn(profile);
-        doThrow(new UserDoesNotExistException("google", "sub-1")).when(userService).signIn(OAuthProvider.GOOGLE,
+        doThrow(new UserDoesNotExistException("google", "sub-1")).when(signInUserUseCase).signIn(OAuthProvider.GOOGLE,
                 "sub-1");
 
         handler.onAuthenticationSuccess(request, response, authentication);
 
-        verify(userService).signUp("alice", "alice@example.com", OAuthProvider.GOOGLE, "sub-1", "avatar", "Alice");
+        verify(signUpUserUseCase).signUp("alice", "alice@example.com", OAuthProvider.GOOGLE, "sub-1", "avatar", "Alice");
     }
 
     @Test
@@ -93,14 +97,15 @@ class OAuth2AuthenticationSuccessHandlerTest {
         when(profileExtractor.extract(authentication)).thenReturn(profile);
         doThrow(new UserDoesNotExistException("github", "123"))
                 .doNothing()
-                .when(userService)
+                .when(signInUserUseCase)
                 .signIn(OAuthProvider.GITHUB, "123");
         doThrow(new UserAlreadyExistsException("github", "123"))
-                .when(userService)
+                .when(signUpUserUseCase)
                 .signUp("alice", "alice@example.com", OAuthProvider.GITHUB, "123", "avatar", "Alice");
 
         handler.onAuthenticationSuccess(request, response, authentication);
 
-        verify(userService, times(2)).signIn(OAuthProvider.GITHUB, "123");
+        verify(signInUserUseCase, times(2)).signIn(OAuthProvider.GITHUB, "123");
     }
 }
+

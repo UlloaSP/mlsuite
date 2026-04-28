@@ -32,3 +32,4 @@ class DisabledObjectStorageService implements ObjectStorageService {
     public void delete(String bucket, String objectKey) {
     }
 }
+

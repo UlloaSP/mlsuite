@@ -15,12 +15,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.exceptions.UserAlreadyExistsException;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.repository.UserRepository;
-import dev.ulloasp.mlsuite.user.service.UserServiceImpl;
+import dev.ulloasp.mlsuite.user.domain.model.OAuthProvider;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
+import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
+import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.application.service.UserServiceImpl;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -28,11 +29,14 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private WorkspaceBootstrapService workspaceBootstrapService;
+
     private UserServiceImpl userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserServiceImpl(userRepository);
+        userService = new UserServiceImpl(userRepository, workspaceBootstrapService);
     }
 
     @Test
@@ -57,7 +61,7 @@ class UserServiceTest {
 
     @Test
     void signIn_ThrowsWhenUserMissing() {
-        when(userRepository.existsByOauthProviderAndOauthId(OAuthProvider.GITHUB, "ext-1")).thenReturn(false);
+        when(userRepository.findByOauthProviderAndOauthId(OAuthProvider.GITHUB, "ext-1")).thenReturn(Optional.empty());
 
         assertThrows(UserDoesNotExistException.class, () -> userService.signIn(OAuthProvider.GITHUB, "ext-1"));
     }
@@ -86,3 +90,4 @@ class UserServiceTest {
         assertEquals("User with ID '7' does not exist", exception.getMessage());
     }
 }
+

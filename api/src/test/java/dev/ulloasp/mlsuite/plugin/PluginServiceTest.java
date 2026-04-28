@@ -25,22 +25,24 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.plugin.dtos.PluginDto;
-import dev.ulloasp.mlsuite.plugin.exceptions.PluginNotFoundException;
-import dev.ulloasp.mlsuite.plugin.services.PluginServiceImpl;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
+import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
+import dev.ulloasp.mlsuite.plugin.application.service.PluginServiceImpl;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.storage.StoredObjectItem;
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.OAuthProvider;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class PluginServiceTest {
 
     private static final String BUCKET = "mlsuite-models";
-    private static final String NEW_PREFIX = "users/7/plugins";
+    private static final String NEW_PREFIX = "organizations/41/plugins";
     private static final String FIELD_PREFIX = "custom-fields/github/user-1";
     private static final String REPORT_PREFIX = "custom-reports/github/user-1";
     private static final String EXPLANATION_PREFIX = "custom-explanations/github/user-1";
@@ -54,15 +56,19 @@ class PluginServiceTest {
     @Mock
     private UserLookupService userLookupService;
 
+    @Mock
+    private WorkspaceAccessService workspaceAccessService;
+
     private PluginServiceImpl service;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper().findAndRegisterModules();
-        service = new PluginServiceImpl(objectStorageService, storageProperties, objectMapper, userLookupService);
+        service = new PluginServiceImpl(objectStorageService, storageProperties, objectMapper, userLookupService, workspaceAccessService);
         when(storageProperties.getBucket()).thenReturn(BUCKET);
         when(userLookupService.requireById(7L)).thenReturn(user());
+        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization());
     }
 
     @Test
@@ -157,6 +163,15 @@ class PluginServiceTest {
         return user;
     }
 
+    private Organization organization() {
+        Organization organization = new Organization();
+        organization.setId(41L);
+        organization.setName("Org");
+        organization.setSlug("org");
+        organization.setCreatedBy(user());
+        return organization;
+    }
+
     private record StoredPluginRecord(
             String id,
             String fileName,
@@ -170,3 +185,4 @@ class PluginServiceTest {
     private record ActivePointer(String id, OffsetDateTime updatedAt) {
     }
 }
+

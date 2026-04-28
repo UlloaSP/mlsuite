@@ -10,7 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import dev.ulloasp.mlsuite.user.entity.OAuthProvider;
+import dev.ulloasp.mlsuite.user.domain.model.OAuthProvider;
 
 @ExtendWith(MockitoExtension.class)
 class OAuth2ExternalIdentityExtractorTest {
@@ -47,3 +47,4 @@ class OAuth2ExternalIdentityExtractorTest {
         assertEquals("sub-1", identity.subject());
     }
 }
+

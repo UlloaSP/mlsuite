@@ -20,3 +20,4 @@ public record ErrorDto(
         return new ErrorDto(Instant.now(), status, message, path);
     }
 }
+

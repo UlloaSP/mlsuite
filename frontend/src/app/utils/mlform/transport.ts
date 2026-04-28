@@ -129,7 +129,7 @@ export const createPredictionTransport = (
 		);
 
 		const response = await fetch(
-			`${import.meta.env.VITE_BACKEND_URL}/api/analyzer/predict/by-id?modelId=${modelId}`,
+			`${import.meta.env.VITE_BACKEND_URL}/api/analyzer/predictions?modelId=${modelId}`,
 			{
 				method: "POST",
 				body: formData,

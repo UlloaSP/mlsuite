@@ -21,6 +21,7 @@ import {
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
+import { useWorkspaceContext } from "../../workspace/hooks";
 import * as modelApi from "../api/modelService";
 import { ModelListItem } from "../components/ModelListItem";
 import type { ModelAction } from "../components/ModelActionsMenu";
@@ -31,6 +32,7 @@ type ModelSortMode = "updated" | "name" | "algorithm";
 export function ModelsPage() {
 	const navigate = useNavigate();
 	const { data: user, error } = useUser();
+	const { data: workspace } = useWorkspaceContext();
 	const { data: models = [], isLoading } = useGetModels();
 	const [query, setQuery] = useState("");
 	const [sort, setSort] = useState<ModelSortMode>("updated");
@@ -109,11 +111,14 @@ export function ModelsPage() {
 					<AppPageHeader
 						eyebrow="Models"
 						title="Machine Learning Models"
-						description="Navigate models, inspect derived signature metrics, and drill into signatures and prediction history."
+						description={`Navigate models, inspect derived signature metrics, and drill into prediction history for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
 						aside={
-							<AppButton type="button" onClick={() => navigate("/models/create")}>
-								+ New Model
-							</AppButton>
+							<div className="flex items-center gap-3">
+								{workspace ? <AppBadge tone="accent">{workspace.currentOrganization.name}</AppBadge> : null}
+								<AppButton type="button" onClick={() => navigate("/models/create")}>
+									+ New Model
+								</AppButton>
+							</div>
 						}
 					/>
 

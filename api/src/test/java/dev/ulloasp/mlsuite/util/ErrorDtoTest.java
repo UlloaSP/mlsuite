@@ -129,3 +129,4 @@ class ErrorDtoTest {
         assertTrue(toString.contains(timestamp.toString()));
     }
 }
+
