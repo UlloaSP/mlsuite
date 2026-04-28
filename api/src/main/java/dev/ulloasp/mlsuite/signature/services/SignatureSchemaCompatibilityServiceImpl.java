@@ -23,6 +23,12 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
             "boolean",
             "category",
             "date",
+            "series",
+            "long-text",
+            "single-choice",
+            "multi-choice",
+            "rating",
+            "mapped-category",
             "time-series");
     private static final Set<String> BUILTIN_REPORT_KINDS = Set.of("classifier", "regressor");
     private static final Pattern KIND_PATTERN = Pattern.compile("\\bkind\\s*:\\s*[\"']([^\"']+)[\"']");
