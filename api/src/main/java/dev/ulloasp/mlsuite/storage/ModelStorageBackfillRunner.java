@@ -8,8 +8,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 
 @Component
 public class ModelStorageBackfillRunner implements ApplicationRunner {
@@ -90,3 +90,4 @@ public class ModelStorageBackfillRunner implements ApplicationRunner {
                 .replaceAll("_+", "_");
     }
 }
+

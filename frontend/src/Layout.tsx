@@ -7,7 +7,7 @@ import { useAtom } from "jotai";
 import { motion } from "motion/react";
 import { Outlet } from "react-router";
 import { sidebarCollapsedAtom } from "./app/atoms";
-import { Sidebar } from "./app/components";
+import { AppHeader, Sidebar } from "./app/components";
 import { useUser } from "./user/hooks";
 
 function Layout() {
@@ -15,19 +15,22 @@ function Layout() {
 	const [collapsed] = useAtom(sidebarCollapsedAtom);
 
 	return (
-		<div className="flex h-screen w-screen overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)]">
-			<div className="relative flex-1 overflow-hidden">
-				<Outlet />
+		<div className="flex h-screen w-screen flex-col bg-[var(--page-bg)] text-[var(--text-primary)]">
+			{user ? <AppHeader /> : null}
+			<div className="flex min-h-0 flex-1 overflow-hidden">
+				<div className="relative min-w-0 flex-1 overflow-hidden">
+					<Outlet />
+				</div>
+				{user ? (
+					<motion.div
+						className="hidden shrink-0 border-l border-[var(--border-soft)] will-change-[width] xl:block"
+						animate={{ width: collapsed ? 52 : 260 }}
+						transition={{ duration: 0.1, ease: "easeInOut" }}
+					>
+						<Sidebar />
+					</motion.div>
+				) : null}
 			</div>
-			{user ? (
-				<motion.div
-					className="hidden shrink-0 border-l border-[var(--border-soft)] will-change-[width] xl:block"
-					animate={{ width: collapsed ? 52 : 260 }}
-					transition={{ duration: 0.1, ease: "easeInOut" }}
-				>
-					<Sidebar />
-				</motion.div>
-			) : null}
 		</div>
 	);
 }

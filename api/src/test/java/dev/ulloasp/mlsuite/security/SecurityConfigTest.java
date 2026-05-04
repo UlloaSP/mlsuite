@@ -110,3 +110,4 @@ class SecurityConfigTest {
         assertNotNull(config);
     }
 }
+

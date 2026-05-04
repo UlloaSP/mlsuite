@@ -10,3 +10,4 @@ public class ObjectStorageException extends RuntimeException {
         super(message, cause);
     }
 }
+

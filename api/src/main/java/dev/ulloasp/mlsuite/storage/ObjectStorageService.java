@@ -21,3 +21,4 @@ public interface ObjectStorageService {
 
     void delete(String bucket, String objectKey);
 }
+

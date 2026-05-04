@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-package dev.ulloasp.mlsuite.user.exceptions;
+package dev.ulloasp.mlsuite.user.domain.exception;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -130,3 +130,4 @@ class UserDoesNotExistExceptionTest {
         assertTrue(stackTrace.length > 0);
     }
 }
+

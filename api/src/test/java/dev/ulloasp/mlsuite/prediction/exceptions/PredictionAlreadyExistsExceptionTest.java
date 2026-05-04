@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-package dev.ulloasp.mlsuite.prediction.exceptions;
+package dev.ulloasp.mlsuite.prediction.domain.exception;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -135,3 +135,4 @@ class PredictionAlreadyExistsExceptionTest {
         assertTrue(stackTrace.length > 0);
     }
 }
+

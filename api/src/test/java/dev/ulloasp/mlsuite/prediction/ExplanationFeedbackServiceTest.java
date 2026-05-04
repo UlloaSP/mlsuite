@@ -17,19 +17,21 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.prediction.entities.ExplanationFeedback;
-import dev.ulloasp.mlsuite.prediction.entities.Prediction;
-import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
-import dev.ulloasp.mlsuite.prediction.exceptions.ExplanationFeedbackDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.repositories.ExplanationFeedbackRepository;
-import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
-import dev.ulloasp.mlsuite.prediction.services.ExplanationFeedbackServiceImpl;
-import dev.ulloasp.mlsuite.prediction.services.PredictionFeedbackStatusResolver;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.prediction.domain.model.ExplanationFeedback;
+import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
+import dev.ulloasp.mlsuite.prediction.domain.model.PredictionStatus;
+import dev.ulloasp.mlsuite.prediction.domain.exception.ExplanationFeedbackDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.ExplanationFeedbackRepository;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
+import dev.ulloasp.mlsuite.prediction.application.service.ExplanationFeedbackServiceImpl;
+import dev.ulloasp.mlsuite.prediction.application.service.PredictionFeedbackStatusResolver;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class ExplanationFeedbackServiceTest {
@@ -46,6 +48,9 @@ class ExplanationFeedbackServiceTest {
     @Mock
     private PredictionFeedbackStatusResolver predictionFeedbackStatusResolver;
 
+    @Mock
+    private WorkspaceAccessService workspaceAccessService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private ExplanationFeedbackServiceImpl service;
 
@@ -55,14 +60,16 @@ class ExplanationFeedbackServiceTest {
                 userLookupService,
                 explanationFeedbackRepository,
                 predictionRepository,
-                predictionFeedbackStatusResolver);
+                predictionFeedbackStatusResolver,
+                workspaceAccessService);
+        when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
 
     @Test
     void createExplanationFeedback_UsesOwnerScopedPrediction() throws Exception {
         Prediction prediction = prediction();
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(prediction));
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction));
         when(explanationFeedbackRepository.save(any(ExplanationFeedback.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
@@ -78,7 +85,7 @@ class ExplanationFeedbackServiceTest {
     @Test
     void createExplanationFeedback_ThrowsWhenPredictionMissing() throws Exception {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.empty());
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(PredictionDoesNotExistsException.class,
                 () -> service.createExplanationFeedback(3L, 11L, 1, objectMapper.readTree("\"tree\"")));
@@ -89,7 +96,7 @@ class ExplanationFeedbackServiceTest {
         Prediction prediction = prediction();
         ExplanationFeedback feedback = explanationFeedback(prediction);
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(explanationFeedbackRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.of(feedback));
+        when(explanationFeedbackRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(feedback));
         when(explanationFeedbackRepository.save(any(ExplanationFeedback.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
@@ -104,7 +111,7 @@ class ExplanationFeedbackServiceTest {
     @Test
     void updateExplanationFeedback_ThrowsWhenOwnerScopedItemMissing() throws Exception {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(explanationFeedbackRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.empty());
+        when(explanationFeedbackRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(ExplanationFeedbackDoesNotExistsException.class,
                 () -> service.updateExplanationFeedback(3L, 12L, objectMapper.readTree("\"fixed\"")));
@@ -113,8 +120,8 @@ class ExplanationFeedbackServiceTest {
     @Test
     void getExplanationFeedbackByPredictionId_ReturnsOrderedList() {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(prediction()));
-        when(explanationFeedbackRepository.findByPredictionIdAndUserId(11L, 3L))
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction()));
+        when(explanationFeedbackRepository.findByPredictionIdAndOrganizationId(11L, 41L))
                 .thenReturn(List.of(explanationFeedback(prediction())));
 
         assertEquals(1, service.getExplanationFeedbackByPredictionId(3L, 11L).size());
@@ -130,6 +137,7 @@ class ExplanationFeedbackServiceTest {
     private Prediction prediction() {
         Model model = new Model();
         model.setUser(user());
+        model.setOrganization(organization());
         Signature signature = new Signature();
         signature.setModel(model);
         signature.setInputSignature(Map.of());
@@ -150,4 +158,14 @@ class ExplanationFeedbackServiceTest {
         explanationFeedback.setValue(objectMapper.valueToTree("tree"));
         return explanationFeedback;
     }
+
+    private Organization organization() {
+        Organization organization = new Organization();
+        organization.setId(41L);
+        organization.setName("Org");
+        organization.setSlug("org");
+        organization.setCreatedBy(user());
+        return organization;
+    }
 }
+

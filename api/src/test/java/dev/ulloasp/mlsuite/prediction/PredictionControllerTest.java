@@ -18,20 +18,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.prediction.controllers.PredictionControllerImpl;
-import dev.ulloasp.mlsuite.prediction.dtos.CreatePredictionParams;
-import dev.ulloasp.mlsuite.prediction.dtos.UpdatePredictionParams;
-import dev.ulloasp.mlsuite.prediction.entities.Prediction;
-import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
-import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.services.PredictionService;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.prediction.adapter.in.web.PredictionControllerImpl;
+import dev.ulloasp.mlsuite.prediction.application.dto.CreatePredictionParams;
+import dev.ulloasp.mlsuite.prediction.application.dto.UpdatePredictionParams;
+import dev.ulloasp.mlsuite.prediction.application.port.in.PredictionCatalogUseCase;
+import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
+import dev.ulloasp.mlsuite.prediction.domain.model.PredictionStatus;
+import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
-import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
-import dev.ulloasp.mlsuite.util.ErrorDto;
-import jakarta.servlet.http.HttpServletRequest;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 
 @ExtendWith(MockitoExtension.class)
 class PredictionControllerTest {
@@ -40,56 +37,46 @@ class PredictionControllerTest {
     private CurrentUserResolver currentUserResolver;
 
     @Mock
-    private PredictionService predictionService;
+    private PredictionCatalogUseCase predictionCatalogUseCase;
 
     @Mock
     private OAuth2AuthenticationToken authentication;
-
-    @Mock
-    private HttpServletRequest request;
 
     private PredictionControllerImpl controller;
 
     @BeforeEach
     void setUp() {
-        controller = new PredictionControllerImpl(currentUserResolver, predictionService);
+        controller = new PredictionControllerImpl(currentUserResolver, predictionCatalogUseCase);
         lenient().when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice"));
     }
 
     @Test
     void createPrediction_UsesInternalUserId() {
-        CreatePredictionParams params = new CreatePredictionParams();
-        params.setSignatureId(11L);
-        params.setName("pred");
-        params.setOverwrite(true);
-        params.setPrediction(Map.of("value", 1));
-        params.setInputs(Map.of("x", 2));
-        when(predictionService.createPrediction(3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2)))
+        CreatePredictionParams params = new CreatePredictionParams(11L, "pred", true, Map.of("x", 2), Map.of("value", 1));
+        when(predictionCatalogUseCase.createPrediction(3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2)))
                 .thenReturn(prediction("pred", PredictionStatus.PENDING));
 
         ResponseEntity<?> response = controller.createPrediction(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(predictionService).createPrediction(3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2));
+        verify(predictionCatalogUseCase).createPrediction(3L, 11L, "pred", true, Map.of("value", 1), Map.of("x", 2));
     }
 
     @Test
     void updatePrediction_UsesInternalUserId() {
-        UpdatePredictionParams params = new UpdatePredictionParams();
-        params.setPredictionId(12L);
-        params.setStatus("COMPLETED");
-        when(predictionService.updatePrediction(3L, 12L, PredictionStatus.COMPLETED))
+        UpdatePredictionParams params = new UpdatePredictionParams(12L, "COMPLETED");
+        when(predictionCatalogUseCase.updatePrediction(3L, 12L, PredictionStatus.COMPLETED))
                 .thenReturn(prediction("pred", PredictionStatus.COMPLETED));
 
         ResponseEntity<?> response = controller.updatePrediction(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(predictionService).updatePrediction(3L, 12L, PredictionStatus.COMPLETED);
+        verify(predictionCatalogUseCase).updatePrediction(3L, 12L, PredictionStatus.COMPLETED);
     }
 
     @Test
     void getAllPredictions_PropagatesMissingPredictionErrors() {
-        when(predictionService.getPredictionsBySignatureId(3L, 99L))
+        when(predictionCatalogUseCase.getPredictionsBySignatureId(3L, 99L))
                 .thenThrow(new PredictionDoesNotExistsException(99L, "alice"));
 
         assertThrows(PredictionDoesNotExistsException.class, () -> controller.getAllPredictions(authentication, 99L));
@@ -97,22 +84,10 @@ class PredictionControllerTest {
 
     @Test
     void getAllPredictions_ReturnsDtos() {
-        when(predictionService.getPredictionsBySignatureId(3L, 11L))
+        when(predictionCatalogUseCase.getPredictionsBySignatureId(3L, 11L))
                 .thenReturn(List.of(prediction("pred", PredictionStatus.PENDING)));
 
         assertEquals(1, controller.getAllPredictions(authentication, 11L).getBody().size());
-    }
-
-    @Test
-    void handleInvalidSignatureSchemaException_ReturnsBadRequest() {
-        when(request.getRequestURI()).thenReturn("/api/predictions");
-
-        ResponseEntity<ErrorDto> response = controller.handleInvalidSignatureSchemaException(
-                new InvalidSignatureSchemaException(
-                        "Custom explanation kind \"old-kind\" does not exist in active plugin catalog."),
-                request);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 
     private Prediction prediction(String name, PredictionStatus status) {
@@ -131,3 +106,4 @@ class PredictionControllerTest {
         return prediction;
     }
 }
+

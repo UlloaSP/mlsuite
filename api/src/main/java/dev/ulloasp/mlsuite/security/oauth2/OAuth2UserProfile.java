@@ -9,3 +9,4 @@ public record OAuth2UserProfile(
         String avatarUrl,
         String fullName) {
 }
+

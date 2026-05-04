@@ -3,8 +3,8 @@ package dev.ulloasp.mlsuite.security.identity;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Component;
 
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 
 @Component
 public class CurrentUserResolver {
@@ -24,3 +24,4 @@ public class CurrentUserResolver {
         return new CurrentUser(user.getId(), user.getUsername());
     }
 }
+

@@ -18,14 +18,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.model.exceptions.ModelDoesNotExistsException;
-import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
-import dev.ulloasp.mlsuite.model.services.AnalyzerServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
+import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
+import dev.ulloasp.mlsuite.model.application.service.AnalyzerServiceImpl;
 import dev.ulloasp.mlsuite.storage.ObjectStorageException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 
 @ExtendWith(MockitoExtension.class)
 class AnalyzerServiceTest {
@@ -42,12 +44,18 @@ class AnalyzerServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    private ObjectMapper objectMapper;
     private AnalyzerServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new AnalyzerServiceImpl(modelRepository, objectStorageService, userLookupService);
-        ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
+        objectMapper = new ObjectMapper();
+        service = new AnalyzerServiceImpl(
+                restTemplate,
+                modelRepository,
+                objectStorageService,
+                userLookupService,
+                objectMapper);
         ReflectionTestUtils.setField(service, "analyzerUrl", "https://py-analyzer:8000");
     }
 
@@ -105,3 +113,4 @@ class AnalyzerServiceTest {
         return model;
     }
 }
+

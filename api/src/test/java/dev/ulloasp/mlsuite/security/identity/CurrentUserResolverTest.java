@@ -11,9 +11,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.exceptions.UserDoesNotExistException;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 
 @ExtendWith(MockitoExtension.class)
 class CurrentUserResolverTest {
@@ -58,3 +58,4 @@ class CurrentUserResolverTest {
         assertThrows(UserDoesNotExistException.class, () -> resolver.resolve(authentication));
     }
 }
+

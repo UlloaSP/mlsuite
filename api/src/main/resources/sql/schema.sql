@@ -31,9 +31,48 @@ CREATE TRIGGER set_updated_at BEFORE
 UPDATE ON app_user FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at ();
 
 CREATE TABLE
+    IF NOT EXISTS organization (
+        id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        slug VARCHAR(120) NOT NULL,
+        name VARCHAR(150) NOT NULL,
+        description TEXT,
+        logo_url TEXT,
+        created_by BIGINT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT uq_organization_slug UNIQUE (slug),
+        CONSTRAINT fk_organization_creator FOREIGN KEY (created_by) REFERENCES app_user (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE
+    );
+
+DROP TRIGGER IF EXISTS set_updated_at ON organization;
+
+CREATE TRIGGER set_updated_at BEFORE
+UPDATE ON organization FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at ();
+
+CREATE TABLE
+    IF NOT EXISTS organization_membership (
+        id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        organization_id BIGINT NOT NULL,
+        user_id BIGINT NOT NULL,
+        role SMALLINT NOT NULL,
+        status SMALLINT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT uq_org_membership_org_user UNIQUE (organization_id, user_id),
+        CONSTRAINT fk_org_membership_org FOREIGN KEY (organization_id) REFERENCES organization (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE,
+        CONSTRAINT fk_org_membership_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE
+    );
+
+DROP TRIGGER IF EXISTS set_updated_at ON organization_membership;
+
+CREATE TRIGGER set_updated_at BEFORE
+UPDATE ON organization_membership FOR EACH ROW EXECUTE FUNCTION trg_set_updated_at ();
+
+CREATE TABLE
     IF NOT EXISTS model (
         id BIGINT GENERATED ALWAYS AS IDENTITY,
         user_id BIGINT NOT NULL,
+        organization_id BIGINT,
         name VARCHAR(100) NOT NULL,
         type VARCHAR(255) NOT NULL,
         specific_type VARCHAR(255) NOT NULL,
@@ -47,7 +86,8 @@ CREATE TABLE
         updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT pk_model PRIMARY KEY (id),
         CONSTRAINT fk_model_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE,
-        CONSTRAINT uq_model_name_user UNIQUE (user_id, name)
+        CONSTRAINT fk_model_organization FOREIGN KEY (organization_id) REFERENCES organization (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE,
+        CONSTRAINT uq_model_name_org UNIQUE (organization_id, name)
     );
 
 DROP TRIGGER IF EXISTS set_updated_at ON model;

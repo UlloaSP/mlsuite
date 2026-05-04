@@ -8,6 +8,7 @@ import { useAtom } from "jotai";
 import {
 	Blocks,
 	BrainCircuit,
+	Building2,
 	Maximize,
 	Minimize,
 	Moon,
@@ -28,6 +29,7 @@ export function SidebarNavigation() {
 	const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
 
 	const navigation = [
+		{ to: "/workspace", icon: Building2, label: "Workspace" },
 		{ to: "/models", icon: BrainCircuit, label: "Catalog" },
 		{ to: "/plugins", icon: Blocks, label: "Plugins" },
 	];
@@ -48,7 +50,7 @@ export function SidebarNavigation() {
 							<SidebarTile
 								icon={item.icon}
 								label={item.label}
-								isActive={location.pathname === item.to}
+								isActive={location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)}
 								variant="navigation"
 								collapsed={collapsed}
 							/>

@@ -21,14 +21,16 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.model.exceptions.ModelAlreadyExistsException;
-import dev.ulloasp.mlsuite.model.repositories.ModelRepository;
-import dev.ulloasp.mlsuite.model.services.ModelServiceImpl;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
+import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
+import dev.ulloasp.mlsuite.model.application.service.ModelServiceImpl;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StoredObject;
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class ModelServiceTest {
@@ -48,27 +50,30 @@ class ModelServiceTest {
     @Mock
     private MultipartFile modelFile;
 
+    @Mock
+    private WorkspaceAccessService workspaceAccessService;
+
     private ModelServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ModelServiceImpl(userLookupService, modelRepository, objectStorageService);
+        service = new ModelServiceImpl(userLookupService, modelRepository, objectStorageService, workspaceAccessService);
         ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
         ReflectionTestUtils.setField(service, "analyzerUrl", "http://analyzer");
+        when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
 
     @Test
     void getModels_UsesInternalUserId() {
-        when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.findByUserId(3L)).thenReturn(List.of(new Model()));
+        when(modelRepository.findByOrganizationId(41L)).thenReturn(List.of(new Model()));
 
         assertEquals(1, service.getModels(3L).size());
     }
 
     @Test
-    void createModel_ThrowsWhenNameExists() {
+    void createModel_ThrowsWhenNameExistsInOrganization() {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.existsByNameAndUserId("demo", 3L)).thenReturn(true);
+        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(true);
 
         assertThrows(ModelAlreadyExistsException.class, () -> service.createModel(3L, "demo", modelFile));
     }
@@ -76,7 +81,7 @@ class ModelServiceTest {
     @Test
     void createModel_StoresObjectAndPersistsModel() throws Exception {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(modelRepository.existsByNameAndUserId("demo", 3L)).thenReturn(false);
+        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
                 .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.pkl"));
         when(modelFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
@@ -99,4 +104,14 @@ class ModelServiceTest {
         user.setUsername("alice");
         return user;
     }
+
+    private Organization organization() {
+        Organization organization = new Organization();
+        organization.setId(41L);
+        organization.setName("Org");
+        organization.setSlug("org");
+        organization.setCreatedBy(user());
+        return organization;
+    }
 }
+

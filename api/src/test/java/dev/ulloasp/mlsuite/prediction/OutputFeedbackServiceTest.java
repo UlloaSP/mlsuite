@@ -17,19 +17,21 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.prediction.entities.OutputFeedback;
-import dev.ulloasp.mlsuite.prediction.entities.Prediction;
-import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
-import dev.ulloasp.mlsuite.prediction.exceptions.OutputFeedbackDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.repositories.OutputFeedbackRepository;
-import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
-import dev.ulloasp.mlsuite.prediction.services.OutputFeedbackServiceImpl;
-import dev.ulloasp.mlsuite.prediction.services.PredictionFeedbackStatusResolver;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.prediction.domain.model.OutputFeedback;
+import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
+import dev.ulloasp.mlsuite.prediction.domain.model.PredictionStatus;
+import dev.ulloasp.mlsuite.prediction.domain.exception.OutputFeedbackDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.OutputFeedbackRepository;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
+import dev.ulloasp.mlsuite.prediction.application.service.OutputFeedbackServiceImpl;
+import dev.ulloasp.mlsuite.prediction.application.service.PredictionFeedbackStatusResolver;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class OutputFeedbackServiceTest {
@@ -46,6 +48,9 @@ class OutputFeedbackServiceTest {
     @Mock
     private PredictionFeedbackStatusResolver predictionFeedbackStatusResolver;
 
+    @Mock
+    private WorkspaceAccessService workspaceAccessService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private OutputFeedbackServiceImpl service;
 
@@ -55,14 +60,16 @@ class OutputFeedbackServiceTest {
                 userLookupService,
                 outputFeedbackRepository,
                 predictionRepository,
-                predictionFeedbackStatusResolver);
+                predictionFeedbackStatusResolver,
+                workspaceAccessService);
+        when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
 
     @Test
     void createOutputFeedback_UsesOwnerScopedPrediction() throws Exception {
         Prediction prediction = prediction();
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(prediction));
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction));
         when(outputFeedbackRepository.save(any(OutputFeedback.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
         when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -80,7 +87,7 @@ class OutputFeedbackServiceTest {
     @Test
     void createOutputFeedback_ThrowsWhenPredictionMissing() throws Exception {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.empty());
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(PredictionDoesNotExistsException.class,
                 () -> service.createOutputFeedback(
@@ -95,7 +102,7 @@ class OutputFeedbackServiceTest {
         Prediction prediction = prediction();
         OutputFeedback outputFeedback = outputFeedback(prediction);
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(outputFeedbackRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.of(outputFeedback));
+        when(outputFeedbackRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(outputFeedback));
         when(outputFeedbackRepository.save(any(OutputFeedback.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
         when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -112,7 +119,7 @@ class OutputFeedbackServiceTest {
     @Test
     void updateOutputFeedback_ThrowsWhenOwnerScopedItemMissing() throws Exception {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(outputFeedbackRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.empty());
+        when(outputFeedbackRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(OutputFeedbackDoesNotExistsException.class,
                 () -> service.updateOutputFeedback(
@@ -124,8 +131,8 @@ class OutputFeedbackServiceTest {
     @Test
     void getOutputFeedbackByPredictionId_ReturnsOrderedList() {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(prediction()));
-        when(outputFeedbackRepository.findByPredictionIdAndUserId(11L, 3L))
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction()));
+        when(outputFeedbackRepository.findByPredictionIdAndOrganizationId(11L, 41L))
                 .thenReturn(List.of(outputFeedback(prediction())));
 
         assertEquals(1, service.getOutputFeedbackByPredictionId(3L, 11L).size());
@@ -141,6 +148,7 @@ class OutputFeedbackServiceTest {
     private Prediction prediction() {
         Model model = new Model();
         model.setUser(user());
+        model.setOrganization(organization());
         Signature signature = new Signature();
         signature.setModel(model);
         signature.setInputSignature(Map.of("reports", List.of(Map.of("kind", "classifier"))));
@@ -161,4 +169,14 @@ class OutputFeedbackServiceTest {
         outputFeedback.setValue(objectMapper.valueToTree(Map.of("assessment", "correct")));
         return outputFeedback;
     }
+
+    private Organization organization() {
+        Organization organization = new Organization();
+        organization.setId(41L);
+        organization.setName("Org");
+        organization.setSlug("org");
+        organization.setCreatedBy(user());
+        return organization;
+    }
 }
+

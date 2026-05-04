@@ -17,7 +17,7 @@ export interface UserDTO {
 }
 
 export const getProfile = (): Promise<UserDTO> =>
-	appFetch<UserDTO>("/api/user/profile");
+	appFetch<UserDTO>("/api/users/me");
 
 export const logout = (): Promise<void> =>
 	appFetch<void>("/api/logout", { method: "POST" });

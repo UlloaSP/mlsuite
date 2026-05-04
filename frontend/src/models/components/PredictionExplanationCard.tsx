@@ -19,6 +19,7 @@ type PredictionExplanationCardProps = {
 	predictionId: string;
 	explanation: PredictionExplanationDescriptor;
 	feedback?: ExplanationFeedbackDto;
+	otherFeedback?: ExplanationFeedbackDto[];
 	theme: "light" | "dark";
 };
 
@@ -26,6 +27,7 @@ export function PredictionExplanationCard({
 	predictionId,
 	explanation,
 	feedback,
+	otherFeedback,
 	theme,
 }: PredictionExplanationCardProps) {
 	const questionnaireRef = useRef<ExplanationQuestionnaireMountHandle | null>(null);
@@ -128,6 +130,23 @@ export function PredictionExplanationCard({
 				)
 			) : (
 				<AppCopy>No feedback questionnaire configured for this explanation.</AppCopy>
+			)}
+
+			{otherFeedback && otherFeedback.length > 0 && explanation.feedbackQuestionnaire && (
+				<div className="mt-4 space-y-3 border-t border-[var(--border-soft)] pt-4">
+					<p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+						Other reviews ({otherFeedback.length})
+					</p>
+					{otherFeedback.map((fb) => (
+						<div key={fb.id} className="rounded-[14px] bg-[var(--surface-muted)] p-3">
+							<p className="mb-1 text-xs font-medium text-[var(--text-secondary)]">{fb.userName}</p>
+							<ExplanationFeedbackSummary
+								schema={explanation.feedbackQuestionnaire!}
+								values={getEffectiveFeedbackValues(fb, explanation.feedbackQuestionnaire)}
+							/>
+						</div>
+					))}
+				</div>
 			)}
 		</AppPanel>
 	);
