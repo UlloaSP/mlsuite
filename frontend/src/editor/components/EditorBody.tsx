@@ -5,8 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Editor } from "@monaco-editor/react";
 import { useAtom } from "jotai";
-import { parse as parseWithSourceMap } from "json-source-map";
-import { getLocation } from "jsonc-parser";
 import type * as Monaco from "monaco-editor";
 import { useEffect, useRef } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
@@ -22,43 +20,23 @@ import {
 	getActiveCustomReportDefinitions,
 	type CatalogReportDefinition,
 } from "../../app/utils/mlform/custom-report";
-import {
-	invalidatePluginCatalog,
-} from "../../app/utils/mlform/plugin-catalog";
+import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
 import { pluginCatalogVersionAtom } from "../../app/utils/mlform/plugin-catalog-state";
 import {
 	mlformJsonSchema,
 	schemaNeedsActivePluginCatalog,
 	validateMlformSchema,
 } from "../../app/utils/mlform/index";
+import {
+	type EditorErrorCard,
+	getCompatMarkerStartColumn,
+	getMarkerMessage,
+	pathToPos,
+} from "./editor-schema-diagnostics";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
 import { editorDarkTheme, editorLightTheme, editorOptions } from "../utils/editorConfig";
 
-interface EditorErrorCard {
-	line: number;
-	column: number;
-	path: string;
-	message: string;
-	severity: "error" | "warning";
-}
-
 type MonacoNamespace = typeof import("monaco-editor");
-
-const isFieldKindPath = (p: (string | number)[]) =>
-	p.length === 3 &&
-	p[0] === "fields" &&
-	typeof p[1] === "number" &&
-	p[2] === "kind";
-
-const pathToPos = (content: string, pathArr: (string | number)[]) => {
-	const pointer = `/${pathArr.map(String).join("/")}`;
-	const parsed = parseWithSourceMap(content);
-	const loc = parsed.pointers[pointer]?.key || parsed.pointers[pointer]?.value || {
-		line: 0,
-		column: 0,
-	};
-	return { line: loc.line + 1, column: loc.column + 1 };
-};
 
 export function EditorBody() {
 	const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
@@ -95,7 +73,6 @@ export function EditorBody() {
 		const runId = ++validationSequenceRef.current;
 		const compatMarkers: Monaco.editor.IMarkerData[] = [];
 		const compatCards: EditorErrorCard[] = [];
-
 		try {
 			const parsed = JSON.parse(text);
 			const result = validateMlformSchema(parsed, {
@@ -125,15 +102,7 @@ export function EditorBody() {
 				});
 				compatMarkers.push({
 					startLineNumber: line,
-					startColumn: (() => {
-						const lineContent = text.split("\n")[line - 1] || "";
-						const colonIdx = lineContent.indexOf(":");
-						if (colonIdx !== -1) {
-							const quoteIdx = lineContent.indexOf('"', colonIdx);
-							return quoteIdx !== -1 ? quoteIdx + 1 : column;
-						}
-						return column;
-					})(),
+					startColumn: getCompatMarkerStartColumn(text, line, column),
 					endLineNumber: line,
 					endColumn: model.getLineMaxColumn(line),
 					message: issue.message,
@@ -233,32 +202,17 @@ export function EditorBody() {
 		}
 
 		const content = model.getValue();
-
 		const workerCards: EditorErrorCard[] = markers
 			.filter((marker) => marker.source !== "mlform-compat")
-			.map((marker) => {
-				const pathArr = getLocation(
-					content,
-					model.getOffsetAt({
+			.map((marker) =>
+				getMarkerMessage(content, {
+					...marker,
+					startOffset: model.getOffsetAt({
 						lineNumber: marker.startLineNumber,
 						column: marker.startColumn,
 					}),
-				).path;
-				const pathStr = pathArr.length ? pathArr.join(".") : "root";
-
-				return {
-					line: marker.startLineNumber,
-					column: marker.startColumn,
-					path: pathStr,
-					message: isFieldKindPath(pathArr)
-						? 'Valor "kind" no válido. Tipos permitidos: "text" | "number" | "boolean" | "category" | "date" | "time-series".'
-						: marker.message,
-					severity:
-						marker.severity === monacoRef.current?.MarkerSeverity.Warning
-							? "warning"
-							: "error",
-				};
-			});
+				}),
+			);
 
 		setSchemaErrors([...workerCards, ...compatCardsRef.current]);
 	};

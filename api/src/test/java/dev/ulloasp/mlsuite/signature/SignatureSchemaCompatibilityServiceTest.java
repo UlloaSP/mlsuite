@@ -46,6 +46,20 @@ class SignatureSchemaCompatibilityServiceTest {
     }
 
     @Test
+    void validate_AllowsBuiltinKindsIntroducedByNewerMlformVersions() {
+        when(pluginService.list(7L)).thenReturn(List.of());
+
+        assertDoesNotThrow(() -> service.validate(7L, Map.of(
+                "fields", List.of(
+                        Map.of("kind", "series"),
+                        Map.of("kind", "long-text"),
+                        Map.of("kind", "single-choice"),
+                        Map.of("kind", "multi-choice"),
+                        Map.of("kind", "rating"),
+                        Map.of("kind", "mapped-category")))));
+    }
+
+    @Test
     void validate_ThrowsWhenExplanationKindMissing() {
         when(pluginService.list(7L)).thenReturn(List.of());
 

@@ -3,8 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-const BUILTIN_FIELD_KINDS = new Set(["text", "number", "boolean", "category", "date", "time-series"]);
-const BUILTIN_REPORT_KINDS = new Set(["classifier", "regressor"]);
+import { isBuiltinFieldKind, isBuiltinReportKind } from "./builtin-registry";
 
 export const schemaNeedsActivePluginCatalog = (schema: unknown): boolean => {
 	if (!schema || typeof schema !== "object") {
@@ -29,7 +28,7 @@ export const schemaNeedsActivePluginCatalog = (schema: unknown): boolean => {
 				field !== null &&
 				"kind" in field &&
 				typeof (field as { kind?: unknown }).kind === "string" &&
-				!BUILTIN_FIELD_KINDS.has((field as { kind: string }).kind),
+				!isBuiltinFieldKind((field as { kind: string }).kind),
 		)
 	) {
 		return true;
@@ -43,7 +42,7 @@ export const schemaNeedsActivePluginCatalog = (schema: unknown): boolean => {
 				report !== null &&
 				"kind" in report &&
 				typeof (report as { kind?: unknown }).kind === "string" &&
-				!BUILTIN_REPORT_KINDS.has((report as { kind: string }).kind),
+				!isBuiltinReportKind((report as { kind: string }).kind),
 		)
 	);
 };
