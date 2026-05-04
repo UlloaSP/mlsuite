@@ -3,10 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FieldConfig, FormSchema, ReportConfig } from "mlform/engine";
+import type { FormSchema } from "mlform/engine";
 import type { CatalogFieldDefinition } from "./custom-field";
 import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";
+import { isBuiltinFieldKind, isBuiltinReportKind } from "./builtin-registry";
 import {
 	mlformJsonSchema,
 	validateMlformSchema as validateBaseMlformSchema,
@@ -19,16 +20,6 @@ type ValidateMlformSchemaOptions = {
 	customReportDefinitions?: readonly CatalogReportDefinition[];
 	customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
 };
-
-const BUILTIN_FIELD_KINDS = new Set<FieldConfig["kind"]>([
-	"text",
-	"number",
-	"boolean",
-	"category",
-	"date",
-	"time-series",
-]);
-const BUILTIN_REPORT_KINDS = new Set<ReportConfig["kind"]>(["classifier", "regressor"]);
 
 const makeUnknownKindIssue = (
 	path: Array<string | number>,
@@ -60,7 +51,7 @@ const appendFieldIssues = (
 		return;
 	}
 	schema.fields.forEach((field, index) => {
-		if (!isRecord(field) || typeof field.kind !== "string" || BUILTIN_FIELD_KINDS.has(field.kind)) {
+		if (!isRecord(field) || typeof field.kind !== "string" || isBuiltinFieldKind(field.kind)) {
 			return;
 		}
 		if (!allKinds.has(field.kind)) {
@@ -83,7 +74,7 @@ const appendReportIssues = (
 		return;
 	}
 	schema.reports.forEach((report, index) => {
-		if (!isRecord(report) || typeof report.kind !== "string" || BUILTIN_REPORT_KINDS.has(report.kind)) {
+		if (!isRecord(report) || typeof report.kind !== "string" || isBuiltinReportKind(report.kind)) {
 			return;
 		}
 		if (!allKinds.has(report.kind)) {
@@ -131,11 +122,11 @@ const mergeIssues = (
 		}
 		if (section === "fields" && Array.isArray(schema.fields)) {
 			const field = schema.fields[index];
-			return !isRecord(field) || typeof field.kind !== "string" || BUILTIN_FIELD_KINDS.has(field.kind);
+			return !isRecord(field) || typeof field.kind !== "string" || isBuiltinFieldKind(field.kind);
 		}
 		if (section === "reports" && Array.isArray(schema.reports)) {
 			const report = schema.reports[index];
-			return !isRecord(report) || typeof report.kind !== "string" || BUILTIN_REPORT_KINDS.has(report.kind);
+			return !isRecord(report) || typeof report.kind !== "string" || isBuiltinReportKind(report.kind);
 		}
 		if (section === "explanations" && Array.isArray(schema.explanations)) {
 			const explanation = schema.explanations[index];
