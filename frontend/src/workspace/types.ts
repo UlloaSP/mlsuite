@@ -50,6 +50,7 @@ export interface TeamMembershipDto {
 export interface InvitationDto {
 	id: number;
 	organizationId: number;
+	organizationName: string;
 	teamId?: number | null;
 	email: string;
 	role: OrganizationRole;

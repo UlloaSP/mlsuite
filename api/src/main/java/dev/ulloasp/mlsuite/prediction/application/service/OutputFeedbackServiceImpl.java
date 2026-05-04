@@ -53,7 +53,7 @@ public class OutputFeedbackServiceImpl implements OutputFeedbackService {
         Prediction prediction = predictionRepository.findByIdAndOrganizationId(predictionId, organizationId)
                 .orElseThrow(() -> new PredictionDoesNotExistsException(predictionId, user.getUsername()));
 
-        OutputFeedback outputFeedback = outputFeedbackRepository.save(new OutputFeedback(prediction, order, value));
+        OutputFeedback outputFeedback = outputFeedbackRepository.save(new OutputFeedback(prediction, user, order, value));
         prediction.setStatus(predictionFeedbackStatusResolver.resolve(userId, prediction));
         predictionRepository.save(prediction);
         return outputFeedback;

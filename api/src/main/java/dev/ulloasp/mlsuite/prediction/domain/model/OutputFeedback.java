@@ -14,6 +14,7 @@ import org.hibernate.type.SqlTypes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -31,7 +32,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "output_feedback", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_output_feedback_prediction_order", columnNames = { "prediction_id", "orden" })
+        @UniqueConstraint(name = "uq_output_feedback_prediction_order_user", columnNames = { "prediction_id", "orden", "user_id" })
 })
 @Setter
 @Getter
@@ -39,8 +40,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class OutputFeedback {
 
-    public OutputFeedback(Prediction prediction, int order, JsonNode value) {
+    public OutputFeedback(Prediction prediction, User user, int order, JsonNode value) {
         this.prediction = prediction;
+        this.user = user;
         this.order = order;
         this.value = value;
     }
@@ -52,6 +54,10 @@ public class OutputFeedback {
     @ManyToOne(optional = false)
     @JoinColumn(name = "prediction_id", nullable = false, foreignKey = @ForeignKey(name = "fk_output_feedback_prediction", foreignKeyDefinition = "FOREIGN KEY (prediction_id) REFERENCES prediction(id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE"))
     private Prediction prediction;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_output_feedback_user"))
+    private User user;
 
     @Column(name = "orden", nullable = false)
     private int order;

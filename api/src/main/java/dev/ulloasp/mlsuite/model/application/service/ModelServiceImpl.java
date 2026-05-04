@@ -66,7 +66,7 @@ public class ModelServiceImpl implements ModelService {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
 
         if (modelRepository.existsByNameAndOrganizationId(name, organization.getId())) {
-            throw new ModelAlreadyExistsException(name, user.getUsername());
+            throw new ModelAlreadyExistsException(name, organization.getName());
         }
 
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();

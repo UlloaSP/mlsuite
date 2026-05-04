@@ -14,6 +14,9 @@ import dev.ulloasp.mlsuite.prediction.domain.model.OutputFeedback;
 public record OutputFeedbackDto(
         Long id,
         Long predictionId,
+        Long userId,
+        String userName,
+        String userEmail,
         int order,
         JsonNode value,
         OffsetDateTime createdAt,
@@ -23,6 +26,9 @@ public record OutputFeedbackDto(
         return new OutputFeedbackDto(
                 outputFeedback.getId(),
                 outputFeedback.getPrediction().getId(),
+                outputFeedback.getUser().getId(),
+                outputFeedback.getUser().getFullName(),
+                outputFeedback.getUser().getEmail(),
                 outputFeedback.getOrder(),
                 outputFeedback.getValue(),
                 outputFeedback.getCreatedAt(),

@@ -46,6 +46,11 @@ public class InvitationControllerImpl implements InvitationController {
     }
 
     @Override
+    public ResponseEntity<List<InvitationDto>> listPendingForUser(OAuth2AuthenticationToken authentication) {
+        return ResponseEntity.ok(invitationManagementUseCase.listPendingForUser(currentUserResolver.resolve(authentication).userId()));
+    }
+
+    @Override
     public ResponseEntity<InvitationDto> acceptInvitation(OAuth2AuthenticationToken authentication, String token) {
         return ResponseEntity.ok(invitationManagementUseCase.acceptInvitation(currentUserResolver.resolve(authentication).userId(), token));
     }

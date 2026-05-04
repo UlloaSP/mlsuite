@@ -24,6 +24,9 @@ public interface ExplanationFeedbackRepository extends JpaRepository<Explanation
 
     List<ExplanationFeedback> findByPredictionId(Long predictionId);
 
+    @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.prediction.id = :predictionId AND ef.user.id = :userId ORDER BY ef.order ASC")
+    List<ExplanationFeedback> findByPredictionIdAndUserId(Long predictionId, Long userId);
+
     void deleteByPredictionId(Long predictionId);
 }
 

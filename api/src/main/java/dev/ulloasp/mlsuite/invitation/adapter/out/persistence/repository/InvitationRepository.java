@@ -17,4 +17,6 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     Optional<Invitation> findByToken(String token);
 
     List<Invitation> findByOrganizationIdAndStatus(Long organizationId, InvitationStatus status);
+
+    List<Invitation> findByEmailAndStatusOrderByCreatedAtDesc(String email, InvitationStatus status);
 }

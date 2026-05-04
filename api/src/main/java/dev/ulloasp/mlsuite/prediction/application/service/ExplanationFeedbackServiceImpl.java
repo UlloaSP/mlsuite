@@ -55,7 +55,7 @@ public class ExplanationFeedbackServiceImpl implements ExplanationFeedbackServic
             throw new PredictionDoesNotExistsException(predictionId, user.getUsername());
         }
 
-        ExplanationFeedback explanationFeedback = new ExplanationFeedback(optionalPrediction.get(), order, value);
+        ExplanationFeedback explanationFeedback = new ExplanationFeedback(optionalPrediction.get(), user, order, value);
         ExplanationFeedback saved = explanationFeedbackRepository.save(explanationFeedback);
         Prediction prediction = saved.getPrediction();
         prediction.setStatus(predictionFeedbackStatusResolver.resolve(userId, prediction));

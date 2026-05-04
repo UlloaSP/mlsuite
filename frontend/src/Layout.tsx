@@ -15,7 +15,7 @@ function Layout() {
 	const [collapsed] = useAtom(sidebarCollapsedAtom);
 
 	return (
-		<div className="flex h-screen w-screen flex-col overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)]">
+		<div className="flex h-screen w-screen flex-col bg-[var(--page-bg)] text-[var(--text-primary)]">
 			{user ? <AppHeader /> : null}
 			<div className="flex min-h-0 flex-1 overflow-hidden">
 				<div className="relative min-w-0 flex-1 overflow-hidden">

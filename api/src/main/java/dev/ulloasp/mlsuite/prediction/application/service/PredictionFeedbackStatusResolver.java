@@ -42,8 +42,8 @@ public class PredictionFeedbackStatusResolver {
     public PredictionStatus resolve(Long userId, Prediction prediction) {
         int requiredOutputs = countReports(prediction.getSignature().getInputSignature());
         int requiredExplanations = countFeedbackEnabledExplanations(userId, prediction.getSignature().getInputSignature());
-        int savedOutputs = outputFeedbackRepository.findByPredictionId(prediction.getId()).size();
-        int savedExplanations = explanationFeedbackRepository.findByPredictionId(prediction.getId()).size();
+        int savedOutputs = outputFeedbackRepository.findByPredictionIdAndUserId(prediction.getId(), userId).size();
+        int savedExplanations = explanationFeedbackRepository.findByPredictionIdAndUserId(prediction.getId(), userId).size();
 
         return savedOutputs >= requiredOutputs && savedExplanations >= requiredExplanations
                 ? PredictionStatus.COMPLETED

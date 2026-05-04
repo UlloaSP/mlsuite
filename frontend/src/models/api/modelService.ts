@@ -121,6 +121,9 @@ export interface TargetDto {
 export interface OutputFeedbackDto {
 	id: string;
 	predictionId: string;
+	userId: number;
+	userName: string;
+	userEmail: string;
 	order: number;
 	value: unknown;
 	createdAt: string;
@@ -130,6 +133,9 @@ export interface OutputFeedbackDto {
 export interface ExplanationFeedbackDto {
 	id: string;
 	predictionId: string;
+	userId: number;
+	userName: string;
+	userEmail: string;
 	order: number;
 	value: unknown;
 	realValue?: unknown;

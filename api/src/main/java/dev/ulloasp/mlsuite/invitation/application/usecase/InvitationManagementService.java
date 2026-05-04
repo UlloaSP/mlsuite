@@ -139,6 +139,16 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         invitationRepository.save(invitation);
     }
 
+    @Override
+    public List<InvitationDto> listPendingForUser(Long userId) {
+        User user = userLookupService.requireById(userId);
+        return invitationRepository.findByEmailAndStatusOrderByCreatedAtDesc(user.getEmail().toLowerCase(), InvitationStatus.PENDING)
+                .stream()
+                .filter(inv -> inv.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
+                .map(InvitationDto::from)
+                .toList();
+    }
+
     private TeamRole mapRole(OrganizationRole role) {
         return switch (role) {
             case OWNER, ADMIN -> TeamRole.TEAM_ADMIN;

@@ -7,8 +7,8 @@ package dev.ulloasp.mlsuite.model.domain.exception;
 
 public class ModelAlreadyExistsException extends RuntimeException {
 
-    public ModelAlreadyExistsException(String modelName, String userName) {
-        super("Model '" + modelName + "' already exists for user '" + userName + "'.");
+    public ModelAlreadyExistsException(String modelName, String orgName) {
+        super("Model '" + modelName + "' already exists for organization '" + orgName + "'.");
     }
 
 }

@@ -14,6 +14,9 @@ import dev.ulloasp.mlsuite.prediction.domain.model.ExplanationFeedback;
 public record ExplanationFeedbackDto(
         Long id,
         Long predictionId,
+        Long userId,
+        String userName,
+        String userEmail,
         int order,
         JsonNode value,
         JsonNode realValue,
@@ -24,6 +27,9 @@ public record ExplanationFeedbackDto(
         return new ExplanationFeedbackDto(
                 explanationFeedback.getId(),
                 explanationFeedback.getPrediction().getId(),
+                explanationFeedback.getUser().getId(),
+                explanationFeedback.getUser().getFullName(),
+                explanationFeedback.getUser().getEmail(),
                 explanationFeedback.getOrder(),
                 explanationFeedback.getValue(),
                 explanationFeedback.getRealValue(),

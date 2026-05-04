@@ -76,6 +76,9 @@ export const createInvitation = (organizationId: number, payload: CreateInvitati
 export const revokeInvitation = (organizationId: number, invitationId: number): Promise<void> =>
 	appFetch<void>(`/api/organizations/${organizationId}/invitations/${invitationId}`, { method: "DELETE" });
 
+export const getPendingInvitations = (): Promise<InvitationDto[]> =>
+	appFetch<InvitationDto[]>("/api/invitations/pending");
+
 export const acceptInvitation = (token: string): Promise<InvitationDto> =>
 	appFetch<InvitationDto>(`/api/invitations/${encodeURIComponent(token)}/accept`, { method: "POST" });
 

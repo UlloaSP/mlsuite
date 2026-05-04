@@ -8,8 +8,8 @@ import { FileDown } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../app/components";
-import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { toMlformSchema, validateMlformSchema } from "../../app/utils/mlform";
+import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService";
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
@@ -17,7 +17,7 @@ import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, GET_TARGETS_QUERY_KEY } from "../ho
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
 import { getOutputFeedbackFieldIds } from "../output-feedback-questionnaire";
 import { getEffectiveFeedbackValues, getQuestionnaireFieldIds } from "../questionnaire-feedback";
-import { getSchemaAwareTargetValue, getTargetReportKey } from "../target-utils";
+import { buildTargetFeedbackValue, getSchemaAwareTargetValue, getTargetReportKey } from "../target-utils";
 
 export type ExportButtonProps = {
 	predictions: PredictionDto[];
@@ -179,14 +179,13 @@ export function ExportButton({
 			const targetKey = getTargetReportKey(signatureSchema, index);
 			return [
 				`output.${targetKey}.predicted`,
-				`output.${targetKey}.assessment`,
-				`output.${targetKey}.realValue`,
+				`output.${targetKey}.feedback`,
 			];
 		});
 		const explanationHeaders = signatureSchema
 			? getExplanationHeaders(signatureSchema, customExplanationDefinitions)
 			: [];
-		const nextHeaders = [...inputKeys, ...targetHeaders, ...explanationHeaders];
+		const nextHeaders = ["prediction_id", "reviewer", ...inputKeys, ...targetHeaders, ...explanationHeaders];
 
 		const nextRows = predictions.flatMap((prediction, index) => {
 			const targets = ((targetsQueries[index]?.data ?? []) as TargetDto[]).sort(
@@ -194,60 +193,86 @@ export function ExportButton({
 			);
 			const inputs = flatten(toRecord(prediction.inputs));
 			const targetMap = new Map(targets.map((target) => [target.order, target]));
-			const outputFeedbackByOrder = new Map(
-				((outputFeedbackQueries[index]?.data ?? []) as OutputFeedbackDto[])
-					.map((item) => [item.order, item]),
-			);
-			const targetValues = (schema?.reports ?? []).flatMap((_, order) => {
-				const target = targetMap.get(order);
-				const reportConfig = schema?.reports?.[order];
-				const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;
-				const fieldIds = getOutputFeedbackFieldIds(kind);
-				const outputFeedback = outputFeedbackByOrder.get(order);
-				const feedbackRecord =
-					outputFeedback?.value &&
-					typeof outputFeedback.value === "object" &&
-					!Array.isArray(outputFeedback.value)
-						? outputFeedback.value as Record<string, unknown>
-						: null;
-				const feedbackValue = feedbackRecord?.[fieldIds.assessment] ?? "";
-				return [
-					toCell(target ? getSchemaAwareTargetValue(target.value, signatureSchema, order, prediction.prediction) : ""),
-					toCell(feedbackValue),
-					toCell(target ? getSchemaAwareTargetValue(target.realValue, signatureSchema, order, prediction.prediction) : ""),
-				];
-			});
-			const explanationEntries = extractPredictionExplanationEntries(
-				prediction.prediction,
-				signatureSchema,
-				customExplanationDefinitions,
-			);
-			const feedbackByOrder = new Map(
-				((explanationFeedbackQueries[index]?.data ?? []) as modelApi.ExplanationFeedbackDto[])
-					.map((item) => [item.order, item]),
-			);
-			const explanationValues = explanationEntries.flatMap((explanation) => {
-				const cells = [toCell(explanation.content.join("\n\n"))];
-				if (!explanation.feedbackQuestionnaire) {
-					return cells;
-				}
+			const allOutputFeedback = (outputFeedbackQueries[index]?.data ?? []) as OutputFeedbackDto[];
+			const allExplanationFeedback = (explanationFeedbackQueries[index]?.data ?? []) as modelApi.ExplanationFeedbackDto[];
 
-				const feedbackValues = getEffectiveFeedbackValues(
-					feedbackByOrder.get(explanation.order),
-					explanation.feedbackQuestionnaire,
+			const reviewerIds = new Set<number>();
+			const reviewerEmails = new Map<number, string>();
+			for (const fb of allOutputFeedback) {
+				reviewerIds.add(fb.userId);
+				reviewerEmails.set(fb.userId, fb.userEmail);
+			}
+			for (const fb of allExplanationFeedback) {
+				reviewerIds.add(fb.userId);
+				reviewerEmails.set(fb.userId, fb.userEmail);
+			}
+
+			const buildRow = (reviewerEmail: string, outputFeedbackForUser: OutputFeedbackDto[], explanationFeedbackForUser: modelApi.ExplanationFeedbackDto[]) => {
+				const outputFeedbackByOrder = new Map(outputFeedbackForUser.map((item) => [item.order, item]));
+				const targetValues = (schema?.reports ?? []).flatMap((_, order) => {
+					const target = targetMap.get(order);
+					const reportConfig = schema?.reports?.[order];
+					const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;
+					const fieldIds = getOutputFeedbackFieldIds(kind);
+					const outputFeedback = outputFeedbackByOrder.get(order);
+					const feedbackRecord =
+						outputFeedback?.value &&
+							typeof outputFeedback.value === "object" &&
+							!Array.isArray(outputFeedback.value)
+							? outputFeedback.value as Record<string, unknown>
+							: null;
+					const assessmentRaw = feedbackRecord?.[fieldIds.assessment] ?? "";
+					const userRealValue = assessmentRaw !== ""
+						? buildTargetFeedbackValue(String(assessmentRaw), signatureSchema, order)
+						: "";
+					return [
+						toCell(target ? getSchemaAwareTargetValue(target.value, signatureSchema, order, prediction.prediction) : ""),
+						toCell(userRealValue !== "" ? getSchemaAwareTargetValue(userRealValue, signatureSchema, order, prediction.prediction) : ""),
+					];
+				});
+
+				const explanationEntries = extractPredictionExplanationEntries(
+					prediction.prediction,
+					signatureSchema,
+					customExplanationDefinitions,
 				);
-				return [
-					...cells,
-					...getQuestionnaireFieldIds(explanation.feedbackQuestionnaire).map((fieldId) =>
-						toCell(feedbackValues[fieldId])),
-				];
-			});
+				const feedbackByOrder = new Map(explanationFeedbackForUser.map((item) => [item.order, item]));
+				const explanationValues = explanationEntries.flatMap((explanation) => {
+					const cells = [toCell(explanation.content.join("\n\n"))];
+					if (!explanation.feedbackQuestionnaire) {
+						return cells;
+					}
+					const feedbackValues = getEffectiveFeedbackValues(
+						feedbackByOrder.get(explanation.order),
+						explanation.feedbackQuestionnaire,
+					);
+					return [
+						...cells,
+						...getQuestionnaireFieldIds(explanation.feedbackQuestionnaire).map((fieldId) =>
+							toCell(feedbackValues[fieldId])),
+					];
+				});
 
-			return [[
-				...inputKeys.map((key) => toCell(inputs[key])),
-				...targetValues,
-				...explanationValues,
-			]];
+				return [
+					toCell(prediction.id),
+					reviewerEmail,
+					...inputKeys.map((key) => toCell(inputs[key])),
+					...targetValues,
+					...explanationValues,
+				];
+			};
+
+			if (reviewerIds.size === 0) {
+				return [buildRow("", [], [])];
+			}
+
+			return [...reviewerIds].map((userId) =>
+				buildRow(
+					reviewerEmails.get(userId) ?? "",
+					allOutputFeedback.filter((fb) => fb.userId === userId),
+					allExplanationFeedback.filter((fb) => fb.userId === userId),
+				),
+			);
 		});
 
 		return { headers: nextHeaders, rows: nextRows };

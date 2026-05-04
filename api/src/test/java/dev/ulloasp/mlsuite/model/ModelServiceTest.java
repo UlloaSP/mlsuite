@@ -71,7 +71,7 @@ class ModelServiceTest {
     }
 
     @Test
-    void createModel_ThrowsWhenNameExists() {
+    void createModel_ThrowsWhenNameExistsInOrganization() {
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(true);
 

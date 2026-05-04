@@ -41,4 +41,3 @@ public interface AnalyzerController {
                         @RequestParam Long modelId,
                         @Valid @RequestBody ExplainRequest request);
 }
-

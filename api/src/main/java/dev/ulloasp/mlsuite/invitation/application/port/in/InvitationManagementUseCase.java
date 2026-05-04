@@ -16,4 +16,6 @@ public interface InvitationManagementUseCase {
     InvitationDto acceptInvitation(Long userId, String token);
 
     void declineInvitation(Long userId, String token);
+
+    List<InvitationDto> listPendingForUser(Long userId);
 }

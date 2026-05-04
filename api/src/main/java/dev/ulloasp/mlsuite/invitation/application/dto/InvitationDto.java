@@ -7,6 +7,7 @@ import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 public record InvitationDto(
         Long id,
         Long organizationId,
+        String organizationName,
         Long teamId,
         String email,
         String role,
@@ -19,6 +20,7 @@ public record InvitationDto(
         return new InvitationDto(
                 invitation.getId(),
                 invitation.getOrganization().getId(),
+                invitation.getOrganization().getName(),
                 invitation.getTeam() != null ? invitation.getTeam().getId() : null,
                 invitation.getEmail(),
                 invitation.getRole().name(),

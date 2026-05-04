@@ -29,8 +29,8 @@ import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 
@@ -42,6 +42,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     private final ModelRepository modelRepository;
     private final ObjectStorageService objectStorageService;
     private final UserLookupService userLookupService;
+    private final WorkspaceAccessService workspaceAccessService;
     private final ObjectMapper objectMapper;
 
     @Value("${analyzer.url}")
@@ -52,11 +53,13 @@ public class AnalyzerServiceImpl implements AnalyzerService {
             ModelRepository modelRepository,
             ObjectStorageService objectStorageService,
             UserLookupService userLookupService,
+            WorkspaceAccessService workspaceAccessService,
             ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.modelRepository = modelRepository;
         this.objectStorageService = objectStorageService;
         this.userLookupService = userLookupService;
+        this.workspaceAccessService = workspaceAccessService;
         this.objectMapper = objectMapper;
     }
 
@@ -168,9 +171,9 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     }
 
     private Model requireModel(Long userId, Long modelId) {
-        User user = userLookupService.requireById(userId);
-        return modelRepository.findByIdAndUserId(modelId, userId)
-                .orElseThrow(() -> new ModelDoesNotExistsException(modelId, user.getUsername()));
+        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        return modelRepository.findByIdAndOrganizationId(modelId, organizationId)
+                .orElseThrow(() -> new ModelDoesNotExistsException(modelId, userLookupService.requireById(userId).getUsername()));
     }
 }
 

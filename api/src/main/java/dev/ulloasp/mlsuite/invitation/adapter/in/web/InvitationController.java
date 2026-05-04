@@ -31,6 +31,9 @@ public interface InvitationController {
             @PathVariable Long organizationId,
             @PathVariable Long invitationId);
 
+    @GetMapping("/api/invitations/pending")
+    ResponseEntity<List<InvitationDto>> listPendingForUser(OAuth2AuthenticationToken authentication);
+
     @PostMapping("/api/invitations/{token}/accept")
     ResponseEntity<InvitationDto> acceptInvitation(
             OAuth2AuthenticationToken authentication,
