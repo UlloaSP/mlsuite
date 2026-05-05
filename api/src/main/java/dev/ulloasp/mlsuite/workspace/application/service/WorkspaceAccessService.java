@@ -14,6 +14,7 @@ import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepositor
 import dev.ulloasp.mlsuite.team.domain.exception.TeamNotFoundException;
 import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 @Service
@@ -50,13 +51,22 @@ public class WorkspaceAccessService {
     }
 
     public OrganizationMembership requireMembership(Long userId, Long organizationId) {
-        organizationRepository.findById(organizationId)
+        User user = requireUser(userId);
+        Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        if (isSuperadmin(user)) {
+            return new OrganizationMembership(organization, user, OrganizationRole.OWNER, dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE);
+        }
         return membershipRepository.findByOrganizationIdAndUserId(organizationId, userId)
                 .orElseThrow(() -> new OrganizationAccessDeniedException(organizationId));
     }
 
     public Organization requireAdminOrganization(Long userId, Long organizationId) {
+        User user = requireUser(userId);
+        if (isSuperadmin(user)) {
+            return organizationRepository.findById(organizationId)
+                    .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        }
         OrganizationMembership membership = requireMembership(userId, organizationId);
         if (membership.getRole() == OrganizationRole.VIEWER) {
             throw new OrganizationAccessDeniedException(organizationId);
@@ -65,6 +75,11 @@ public class WorkspaceAccessService {
     }
 
     public Organization requireOwnerOrganization(Long userId, Long organizationId) {
+        User user = requireUser(userId);
+        if (isSuperadmin(user)) {
+            return organizationRepository.findById(organizationId)
+                    .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        }
         OrganizationMembership membership = requireMembership(userId, organizationId);
         if (membership.getRole() != OrganizationRole.OWNER) {
             throw new OrganizationAccessDeniedException(organizationId);
@@ -76,5 +91,13 @@ public class WorkspaceAccessService {
         Team team = teamRepository.findById(teamId).orElseThrow(() -> new TeamNotFoundException(teamId));
         requireMembership(userId, team.getOrganization().getId());
         return team;
+    }
+
+    public boolean isSuperadmin(Long userId) {
+        return isSuperadmin(userLookupService.requireById(userId));
+    }
+
+    private boolean isSuperadmin(User user) {
+        return user.getSystemRole() == SystemRole.SUPERADMIN;
     }
 }

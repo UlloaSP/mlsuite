@@ -9,6 +9,7 @@ import {
 	Blocks,
 	BrainCircuit,
 	Building2,
+	ShieldCheck,
 	Maximize,
 	Minimize,
 	Moon,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { fullscreenAtom, sidebarCollapsedAtom, themeWithHtmlAtom } from "../atoms";
+import { useUser } from "../../user/hooks";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarTile } from "./SidebarTile";
 import { cx, FOCUS_RING } from "./ui";
@@ -27,11 +29,15 @@ export function SidebarNavigation() {
 	const [theme, setTheme] = useAtom(themeWithHtmlAtom);
 	const [isFullscreen, setIsFullscreen] = useAtom(fullscreenAtom);
 	const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
+	const { data: user } = useUser();
 
 	const navigation = [
 		{ to: "/workspace", icon: Building2, label: "Workspace" },
 		{ to: "/models", icon: BrainCircuit, label: "Catalog" },
 		{ to: "/plugins", icon: Blocks, label: "Plugins" },
+		...(user?.systemRole === "SUPERADMIN"
+			? [{ to: "/admin/users", icon: ShieldCheck, label: "Admin" }]
+			: []),
 	];
 
 	return (

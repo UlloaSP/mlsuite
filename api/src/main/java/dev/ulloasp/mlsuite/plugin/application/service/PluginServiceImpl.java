@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
-import dev.ulloasp.mlsuite.plugin.domain.model.LegacyActivePluginPointer;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginState;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginStoragePaths;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
@@ -37,11 +36,6 @@ public class PluginServiceImpl implements PluginService {
 
     private static final String ROOT_PREFIX = "plugins";
     private static final String STATE_FILE = "state.json";
-    private static final String LEGACY_ACTIVE_FILE = "active.json";
-    private static final List<String> LEGACY_ROOTS = List.of(
-            "custom-fields",
-            "custom-reports",
-            "custom-explanations");
 
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
@@ -95,10 +89,6 @@ public class PluginServiceImpl implements PluginService {
         Map<String, StoredPlugin> storedItems = new LinkedHashMap<>();
         Map<String, String> origins = new LinkedHashMap<>();
         readItems(itemsPrefix(organization.getId())).forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
-        for (String legacyRoot : LEGACY_ROOTS) {
-            readItems(legacyItemsPrefix(legacyRoot, user))
-                    .forEach(item -> putStored(storedItems, origins, item, legacyRoot, false));
-        }
         List<PluginDto> catalog = new ArrayList<>();
         storedItems.values().forEach(item -> catalog.add(toDto(item, activeIds.contains(item.id()))));
         catalog.sort(Comparator
@@ -147,9 +137,6 @@ public class PluginServiceImpl implements PluginService {
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
         activeIds.remove(id);
         objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(organization.getId(), id));
-        for (String legacyRoot : LEGACY_ROOTS) {
-            objectStorageService.delete(storageProperties.getBucket(), legacyItemObjectKey(legacyRoot, user, id));
-        }
         writeState(organization.getId(), activeIds);
     }
 
@@ -163,21 +150,7 @@ public class PluginServiceImpl implements PluginService {
                 throw new IllegalStateException("Could not deserialize plugin state.", ex);
             }
         }
-        LinkedHashSet<String> activeIds = new LinkedHashSet<>();
-        for (String legacyRoot : LEGACY_ROOTS) {
-            objectStorageService.loadOptional(storageProperties.getBucket(), legacyActiveObjectKey(legacyRoot, user))
-                    .ifPresent(bytes -> readLegacyPointer(bytes).ifPresent(activeIds::add));
-        }
-        return new PluginState(List.copyOf(activeIds), null);
-    }
-
-    private Optional<String> readLegacyPointer(byte[] bytes) {
-        try {
-            LegacyActivePluginPointer pointer = objectMapper.readValue(bytes, LegacyActivePluginPointer.class);
-            return pointer.id() == null || pointer.id().isBlank() ? Optional.empty() : Optional.of(pointer.id());
-        } catch (IOException ex) {
-            throw new IllegalStateException("Could not deserialize legacy plugin pointer.", ex);
-        }
+        return new PluginState(List.of(), null);
     }
 
     private PluginState normalizeState(PluginState state) {
@@ -207,12 +180,6 @@ public class PluginServiceImpl implements PluginService {
         Optional<byte[]> bytes = objectStorageService.loadOptional(storageProperties.getBucket(), itemObjectKey(organizationId, id));
         if (bytes.isPresent()) {
             return readStored(bytes.get());
-        }
-        for (String legacyRoot : LEGACY_ROOTS) {
-            bytes = objectStorageService.loadOptional(storageProperties.getBucket(), legacyItemObjectKey(legacyRoot, user, id));
-            if (bytes.isPresent()) {
-                return readStored(bytes.get());
-            }
         }
         throw new PluginNotFoundException(id);
     }
@@ -278,18 +245,6 @@ public class PluginServiceImpl implements PluginService {
 
     private String stateObjectKey(Long organizationId) {
         return PluginStoragePaths.organizationStateObjectKey(ROOT_PREFIX, organizationId, STATE_FILE);
-    }
-
-    private String legacyActiveObjectKey(String rootPrefix, User user) {
-        return PluginStoragePaths.legacyActiveObjectKey(rootPrefix, user, LEGACY_ACTIVE_FILE);
-    }
-
-    private String legacyItemsPrefix(String rootPrefix, User user) {
-        return PluginStoragePaths.legacyItemsPrefix(rootPrefix, user);
-    }
-
-    private String legacyItemObjectKey(String rootPrefix, User user, String id) {
-        return PluginStoragePaths.legacyItemObjectKey(rootPrefix, user, id);
     }
 
     private String sanitizeFileName(String value) {

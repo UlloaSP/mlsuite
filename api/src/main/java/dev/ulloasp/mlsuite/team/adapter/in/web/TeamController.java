@@ -3,7 +3,7 @@ package dev.ulloasp.mlsuite.team.adapter.in.web;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,39 +21,39 @@ import jakarta.validation.Valid;
 public interface TeamController {
 
     @GetMapping("/api/organizations/{organizationId}/teams")
-    ResponseEntity<List<TeamDto>> listTeams(OAuth2AuthenticationToken authentication, @PathVariable Long organizationId);
+    ResponseEntity<List<TeamDto>> listTeams(Authentication authentication, @PathVariable Long organizationId);
 
     @PostMapping("/api/organizations/{organizationId}/teams")
     ResponseEntity<TeamDto> createTeam(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long organizationId,
             @Valid @RequestBody CreateTeamRequest request);
 
     @GetMapping("/api/teams/{teamId}")
-    ResponseEntity<TeamDto> getTeam(OAuth2AuthenticationToken authentication, @PathVariable Long teamId);
+    ResponseEntity<TeamDto> getTeam(Authentication authentication, @PathVariable Long teamId);
 
     @PatchMapping("/api/teams/{teamId}")
     ResponseEntity<TeamDto> updateTeam(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long teamId,
             @Valid @RequestBody UpdateTeamRequest request);
 
     @DeleteMapping("/api/teams/{teamId}")
-    ResponseEntity<Void> deleteTeam(OAuth2AuthenticationToken authentication, @PathVariable Long teamId);
+    ResponseEntity<Void> deleteTeam(Authentication authentication, @PathVariable Long teamId);
 
     @GetMapping("/api/teams/{teamId}/members")
-    ResponseEntity<List<TeamMembershipDto>> listMembers(OAuth2AuthenticationToken authentication, @PathVariable Long teamId);
+    ResponseEntity<List<TeamMembershipDto>> listMembers(Authentication authentication, @PathVariable Long teamId);
 
     @PatchMapping("/api/teams/{teamId}/members/{membershipId}")
     ResponseEntity<TeamMembershipDto> updateMemberRole(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long teamId,
             @PathVariable Long membershipId,
             @Valid @RequestBody UpdateTeamMembershipRoleRequest request);
 
     @DeleteMapping("/api/teams/{teamId}/members/{membershipId}")
     ResponseEntity<Void> removeMember(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long teamId,
             @PathVariable Long membershipId);
 }

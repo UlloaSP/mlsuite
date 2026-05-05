@@ -8,7 +8,7 @@ package dev.ulloasp.mlsuite.model.adapter.in.web;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -34,7 +34,7 @@ public class AnalyzerControllerImpl implements AnalyzerController {
 
     @Override
     public ResponseEntity<Map<String, Object>> generateSchema(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestPart("model") MultipartFile model,
             @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe) {
         Map<String, Object> schema = analyzerUseCase.generateInputSignature(
@@ -46,7 +46,7 @@ public class AnalyzerControllerImpl implements AnalyzerController {
 
     @Override
     public ResponseEntity<Map<String, Object>> predict(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestParam Long modelId,
             @RequestPart("data") Map<String, Object> data) {
         Map<String, Object> prediction = analyzerUseCase.predict(
@@ -58,7 +58,7 @@ public class AnalyzerControllerImpl implements AnalyzerController {
 
     @Override
     public ResponseEntity<Map<String, Object>> explain(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestParam Long modelId,
             @Valid @RequestBody ExplainRequest request) {
         Map<String, Object> result = analyzerUseCase.explain(

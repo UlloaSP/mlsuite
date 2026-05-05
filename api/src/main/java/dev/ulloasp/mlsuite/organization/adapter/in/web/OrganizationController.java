@@ -3,7 +3,7 @@ package dev.ulloasp.mlsuite.organization.adapter.in.web;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -23,44 +23,44 @@ import jakarta.validation.Valid;
 public interface OrganizationController {
 
     @GetMapping
-    ResponseEntity<List<OrganizationDto>> listOrganizations(OAuth2AuthenticationToken authentication);
+    ResponseEntity<List<OrganizationDto>> listOrganizations(Authentication authentication);
 
     @PostMapping
     ResponseEntity<OrganizationDto> createOrganization(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid @RequestBody CreateOrganizationRequest request);
 
     @GetMapping("/{organizationId}")
     ResponseEntity<OrganizationDto> getOrganization(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long organizationId);
 
     @PatchMapping("/{organizationId}")
     ResponseEntity<OrganizationDto> updateOrganization(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long organizationId,
             @Valid @RequestBody UpdateOrganizationRequest request);
 
     @DeleteMapping("/{organizationId}")
     ResponseEntity<Void> deleteOrganization(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long organizationId);
 
     @GetMapping("/{organizationId}/members")
     ResponseEntity<List<OrganizationMembershipDto>> listMembers(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long organizationId);
 
     @PatchMapping("/{organizationId}/members/{membershipId}")
     ResponseEntity<OrganizationMembershipDto> updateMemberRole(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long organizationId,
             @PathVariable Long membershipId,
             @Valid @RequestBody UpdateOrganizationMembershipRoleRequest request);
 
     @DeleteMapping("/{organizationId}/members/{membershipId}")
     ResponseEntity<Void> removeMember(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long organizationId,
             @PathVariable Long membershipId);
 }

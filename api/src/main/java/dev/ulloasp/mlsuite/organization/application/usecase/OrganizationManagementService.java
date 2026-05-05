@@ -41,6 +41,9 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     @Override
     public List<OrganizationDto> listOrganizations(Long userId) {
         workspaceAccessService.requireUser(userId);
+        if (workspaceAccessService.isSuperadmin(userId)) {
+            return organizationRepository.findAll().stream().map(OrganizationDto::from).toList();
+        }
         return membershipRepository.findActiveByUserId(userId).stream()
                 .map(OrganizationMembership::getOrganization)
                 .map(OrganizationDto::from)

@@ -7,7 +7,7 @@ import { motion } from "motion/react";
 import { AppBadge, AppCopy, AppEyebrow } from "../../app/components";
 
 export type ProfileHeaderProps = {
-	imageUrl: string;
+	imageUrl: string | null;
 	name: string;
 	provider: string;
 };
@@ -25,12 +25,18 @@ export function ProfileHeader({
 			className="mb-8 flex-1 self-center justify-self-center text-center"
 		>
 			<motion.div className="relative inline-block">
-				<motion.img
-					src={imageUrl}
-					alt="Profile"
-					className="mx-auto mb-4 h-32 w-32 rounded-full border-4 border-[var(--surface-primary)] shadow-[var(--shadow-card)]"
-					referrerPolicy="no-referrer"
-				/>
+				{imageUrl ? (
+					<motion.img
+						src={imageUrl}
+						alt="Profile"
+						className="mx-auto mb-4 h-32 w-32 rounded-full border-4 border-[var(--surface-primary)] object-cover shadow-[var(--shadow-card)]"
+						referrerPolicy="no-referrer"
+					/>
+				) : (
+					<div className="mx-auto mb-4 grid h-32 w-32 place-items-center rounded-full border-4 border-[var(--surface-primary)] bg-[var(--accent-quiet)] text-3xl font-semibold text-[var(--accent-primary-strong)] shadow-[var(--shadow-card)]">
+						{name.slice(0, 2).toUpperCase()}
+					</div>
+				)}
 				<motion.div
 					className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-4 border-[var(--surface-primary)] bg-[var(--accent-primary)]"
 					initial={{ scale: 0 }}

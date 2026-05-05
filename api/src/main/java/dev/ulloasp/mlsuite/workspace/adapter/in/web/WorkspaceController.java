@@ -1,7 +1,7 @@
 package dev.ulloasp.mlsuite.workspace.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,10 +15,10 @@ import jakarta.validation.Valid;
 public interface WorkspaceController {
 
     @GetMapping
-    ResponseEntity<WorkspaceContextDto> getContext(OAuth2AuthenticationToken authentication);
+    ResponseEntity<WorkspaceContextDto> getContext(Authentication authentication);
 
     @PatchMapping
     ResponseEntity<WorkspaceContextDto> selectOrganization(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid @RequestBody SelectOrganizationRequest request);
 }

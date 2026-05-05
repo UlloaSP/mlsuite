@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, User2 } from "lucide-react";
+import { ChevronDown, LogOut, ShieldCheck, User2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useLogout, useUser } from "../../user/hooks";
@@ -25,6 +25,7 @@ export function AppHeaderProfileMenu() {
 	}
 
 	const displayName = user.userName || user.fullName || "Guest";
+	const initials = displayName.slice(0, 2).toUpperCase();
 
 	return (
 		<div ref={ref} className="relative">
@@ -36,12 +37,18 @@ export function AppHeaderProfileMenu() {
 					"inline-flex items-center gap-3 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-2 shadow-[var(--shadow-card)]",
 				)}
 			>
-				<img
-					src={user.avatarUrl}
-					alt={displayName}
-					className="size-9 rounded-full border border-[var(--border-soft)] object-cover"
-					referrerPolicy="no-referrer"
-				/>
+				{user.avatarUrl ? (
+					<img
+						src={user.avatarUrl}
+						alt={displayName}
+						className="size-9 rounded-full border border-[var(--border-soft)] object-cover"
+						referrerPolicy="no-referrer"
+					/>
+				) : (
+					<span className="grid size-9 place-items-center rounded-full bg-[var(--accent-quiet)] text-xs font-semibold text-[var(--accent-primary-strong)]">
+						{initials}
+					</span>
+				)}
 				<div className="hidden text-left lg:block">
 					<p className="text-sm font-semibold text-[var(--text-primary)]">{displayName}</p>
 					<p className="text-xs text-[var(--text-secondary)]">{user.email}</p>
@@ -71,6 +78,16 @@ export function AppHeaderProfileMenu() {
 							<User2 size={16} />
 							Workspace
 						</Link>
+						{user.systemRole === "SUPERADMIN" ? (
+							<Link
+								to="/admin/users"
+								onClick={() => setOpen(false)}
+								className="flex items-center gap-3 rounded-[18px] px-3 py-3 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]"
+							>
+								<ShieldCheck size={16} />
+								Admin
+							</Link>
+						) : null}
 					</div>
 					<div className="mt-3 border-t border-[var(--border-soft)] pt-3">
 						<button

@@ -29,11 +29,7 @@ export function ProfilePage() {
 					<ProfileHeader
 						imageUrl={user?.avatarUrl}
 						name={user?.userName || user?.fullName || "Guest"}
-						provider={
-							user
-								? `Logged in with ${user.oauthProvider.charAt(0).toUpperCase() + user.oauthProvider.slice(1)}`
-							: "Not logged in"
-						}
+						provider={user.systemRole}
 					/>
 					{workspace ? (
 						<AppPanel className="mb-6 mt-6">

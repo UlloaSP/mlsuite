@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,7 +35,7 @@ public class SignatureControllerImpl implements SignatureController {
 
     @Override
     public ResponseEntity<SignatureDto> createSignature(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid @RequestBody CreateSignatureParams params) {
         Signature signature = signatureCatalogUseCase.createSignature(
                 currentUserResolver.resolve(authentication).userId(),
@@ -51,7 +51,7 @@ public class SignatureControllerImpl implements SignatureController {
 
     @Override
     public ResponseEntity<List<SignatureDto>> getAllSignatures(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestParam Long modelId) {
         List<Signature> signatures = signatureCatalogUseCase.getSignatureByModelId(
                 currentUserResolver.resolve(authentication).userId(),
@@ -61,7 +61,7 @@ public class SignatureControllerImpl implements SignatureController {
 
     @Override
     public ResponseEntity<SignatureDto> getSignatureById(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @PathVariable Long signatureId) {
         Signature signature = signatureCatalogUseCase.getSignature(
                 currentUserResolver.resolve(authentication).userId(),

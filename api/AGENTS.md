@@ -12,7 +12,7 @@ If this file conflicts with root, this file wins for `api/`.
 - Java 25.
 - Spring Boot 3.5.x.
 - Maven via `mvn`.
-- Spring Data JPA, Spring Security, OAuth2 client, PostgreSQL/H2, Testcontainers.
+- Spring Data JPA, Spring Security, PostgreSQL/H2, Testcontainers.
 
 ## Tooling Commands
 - Use Maven commands from `api/` for build and test work.

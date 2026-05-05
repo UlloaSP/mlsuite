@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.prediction.application.dto.CreateExplanationFeedbackParams;
@@ -35,7 +35,7 @@ public class ExplanationFeedbackControllerImpl implements ExplanationFeedbackCon
 
     @Override
     public ResponseEntity<ExplanationFeedbackDto> createExplanationFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid CreateExplanationFeedbackParams params) {
         ExplanationFeedback explanationFeedback = explanationFeedbackCatalogUseCase.createExplanationFeedback(
                 currentUserResolver.resolve(authentication).userId(),
@@ -47,7 +47,7 @@ public class ExplanationFeedbackControllerImpl implements ExplanationFeedbackCon
 
     @Override
     public ResponseEntity<ExplanationFeedbackDto> updateExplanationFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid UpdateExplanationFeedbackParams params) {
         ExplanationFeedback explanationFeedback = explanationFeedbackCatalogUseCase.updateExplanationFeedback(
                 currentUserResolver.resolve(authentication).userId(),
@@ -58,7 +58,7 @@ public class ExplanationFeedbackControllerImpl implements ExplanationFeedbackCon
 
     @Override
     public ResponseEntity<List<ExplanationFeedbackDto>> getAllExplanationFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             Long predictionId) {
         List<ExplanationFeedback> explanationFeedback = explanationFeedbackCatalogUseCase.getExplanationFeedbackByPredictionId(
                 currentUserResolver.resolve(authentication).userId(),

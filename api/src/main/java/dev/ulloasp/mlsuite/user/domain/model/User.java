@@ -33,18 +33,17 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "app_user", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_app_user_oauth", columnNames = { "oauth_provider", "oauth_id" })
+        @UniqueConstraint(name = "uq_app_user_email", columnNames = { "email" })
 })
 public class User {
 
-    public User(String username, String email, OAuthProvider oauthProvider, String oauthId, String avatarUrl,
-            String fullName) {
+    public User(String username, String email, String passwordHash, String fullName, SystemRole systemRole) {
         this.username = username;
         this.email = email;
-        this.oauthProvider = oauthProvider;
-        this.oauthId = oauthId;
-        this.avatarUrl = avatarUrl;
         this.fullName = fullName;
+        this.passwordHash = passwordHash;
+        this.systemRole = systemRole;
+        this.enabled = true;
     }
 
     @Id
@@ -57,18 +56,21 @@ public class User {
     @Column(name = "email", nullable = false, length = 100)
     private String email;
 
-    @Enumerated(EnumType.ORDINAL)
-    @Column(name = "oauth_provider", nullable = false)
-    private OAuthProvider oauthProvider;
-
-    @Column(name = "oauth_id", nullable = false)
-    private String oauthId;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
     @Column(name = "avatar_url", columnDefinition = "TEXT")
     private String avatarUrl;
 
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "system_role", nullable = false, length = 32)
+    private SystemRole systemRole = SystemRole.USER;
+
+    @Column(name = "enabled", nullable = false)
+    private boolean enabled = true;
 
     @ManyToOne
     @JoinColumn(name = "current_organization_id")

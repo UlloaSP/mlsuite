@@ -1,7 +1,7 @@
 package dev.ulloasp.mlsuite.search.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
@@ -23,7 +23,7 @@ public class SearchControllerImpl implements SearchController {
 
     @Override
     public ResponseEntity<SearchResponseDto> search(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             String query) {
         return ResponseEntity.ok(searchWorkspaceUseCase.search(
                 currentUserResolver.resolve(authentication).userId(),

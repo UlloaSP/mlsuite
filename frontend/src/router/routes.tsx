@@ -7,6 +7,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router";
 import { useUser } from "../user/hooks";
 import { Unauthorized } from "../app/pages/Unauthorized";
+import { AdminUsersPage } from "../admin/pages/admin-users-page";
 import { NotFoundError } from "../app/pages/error-page";
 import { PluginCatalogPage } from "../app/pages/plugin-catalog-page";
 import Layout from "../Layout";
@@ -66,7 +67,7 @@ function ProtectedRoute() {
 	}
 
 	if (!user || error || workspace.error) {
-		return <NotFoundError />;
+		return <Unauthorized />;
 	}
 
 	return <Outlet />;
@@ -125,6 +126,10 @@ export const routes: RouteObject[] = [
 					{
 						path: "profile",
 						element: <ProfilePage />,
+					},
+					{
+						path: "admin/users",
+						element: <AdminUsersPage />,
 					},
 					{
 						path: "models",

@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -41,7 +41,7 @@ class ExplanationFeedbackControllerTest {
     private ExplanationFeedbackCatalogUseCase explanationFeedbackCatalogUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private ExplanationFeedbackControllerImpl controller;
@@ -49,7 +49,7 @@ class ExplanationFeedbackControllerTest {
     @BeforeEach
     void setUp() {
         controller = new ExplanationFeedbackControllerImpl(currentUserResolver, explanationFeedbackCatalogUseCase);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice"));
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
     }
 
     @Test

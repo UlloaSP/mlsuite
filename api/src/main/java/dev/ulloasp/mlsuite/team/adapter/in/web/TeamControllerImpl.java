@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
@@ -27,13 +27,13 @@ public class TeamControllerImpl implements TeamController {
     }
 
     @Override
-    public ResponseEntity<List<TeamDto>> listTeams(OAuth2AuthenticationToken authentication, Long organizationId) {
+    public ResponseEntity<List<TeamDto>> listTeams(Authentication authentication, Long organizationId) {
         return ResponseEntity.ok(teamManagementUseCase.listTeams(currentUserResolver.resolve(authentication).userId(), organizationId));
     }
 
     @Override
     public ResponseEntity<TeamDto> createTeam(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             Long organizationId,
             CreateTeamRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -41,29 +41,29 @@ public class TeamControllerImpl implements TeamController {
     }
 
     @Override
-    public ResponseEntity<TeamDto> getTeam(OAuth2AuthenticationToken authentication, Long teamId) {
+    public ResponseEntity<TeamDto> getTeam(Authentication authentication, Long teamId) {
         return ResponseEntity.ok(teamManagementUseCase.getTeam(currentUserResolver.resolve(authentication).userId(), teamId));
     }
 
     @Override
-    public ResponseEntity<TeamDto> updateTeam(OAuth2AuthenticationToken authentication, Long teamId, UpdateTeamRequest request) {
+    public ResponseEntity<TeamDto> updateTeam(Authentication authentication, Long teamId, UpdateTeamRequest request) {
         return ResponseEntity.ok(teamManagementUseCase.updateTeam(currentUserResolver.resolve(authentication).userId(), teamId, request));
     }
 
     @Override
-    public ResponseEntity<Void> deleteTeam(OAuth2AuthenticationToken authentication, Long teamId) {
+    public ResponseEntity<Void> deleteTeam(Authentication authentication, Long teamId) {
         teamManagementUseCase.deleteTeam(currentUserResolver.resolve(authentication).userId(), teamId);
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<List<TeamMembershipDto>> listMembers(OAuth2AuthenticationToken authentication, Long teamId) {
+    public ResponseEntity<List<TeamMembershipDto>> listMembers(Authentication authentication, Long teamId) {
         return ResponseEntity.ok(teamManagementUseCase.listMembers(currentUserResolver.resolve(authentication).userId(), teamId));
     }
 
     @Override
     public ResponseEntity<TeamMembershipDto> updateMemberRole(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             Long teamId,
             Long membershipId,
             UpdateTeamMembershipRoleRequest request) {
@@ -75,7 +75,7 @@ public class TeamControllerImpl implements TeamController {
     }
 
     @Override
-    public ResponseEntity<Void> removeMember(OAuth2AuthenticationToken authentication, Long teamId, Long membershipId) {
+    public ResponseEntity<Void> removeMember(Authentication authentication, Long teamId, Long membershipId) {
         teamManagementUseCase.removeMember(currentUserResolver.resolve(authentication).userId(), teamId, membershipId);
         return ResponseEntity.noContent().build();
     }

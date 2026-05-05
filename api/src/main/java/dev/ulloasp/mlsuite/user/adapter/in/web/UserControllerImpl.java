@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.user.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
@@ -29,7 +29,7 @@ public class UserControllerImpl implements UserController {
     }
 
     @Override
-    public ResponseEntity<UserDto> getProfile(OAuth2AuthenticationToken authentication)
+    public ResponseEntity<UserDto> getProfile(Authentication authentication)
             throws UserDoesNotExistException {
         User user = getCurrentUserProfileUseCase.getProfile(currentUserResolver.resolve(authentication).userId());
         return ResponseEntity.ok(UserDto.toDto(user));

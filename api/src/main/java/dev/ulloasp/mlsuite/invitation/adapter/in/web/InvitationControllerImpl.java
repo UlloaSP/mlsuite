@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
@@ -26,13 +26,13 @@ public class InvitationControllerImpl implements InvitationController {
     }
 
     @Override
-    public ResponseEntity<List<InvitationDto>> listInvitations(OAuth2AuthenticationToken authentication, Long organizationId) {
+    public ResponseEntity<List<InvitationDto>> listInvitations(Authentication authentication, Long organizationId) {
         return ResponseEntity.ok(invitationManagementUseCase.listInvitations(currentUserResolver.resolve(authentication).userId(), organizationId));
     }
 
     @Override
     public ResponseEntity<InvitationDto> createInvitation(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             Long organizationId,
             CreateInvitationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -40,23 +40,23 @@ public class InvitationControllerImpl implements InvitationController {
     }
 
     @Override
-    public ResponseEntity<Void> revokeInvitation(OAuth2AuthenticationToken authentication, Long organizationId, Long invitationId) {
+    public ResponseEntity<Void> revokeInvitation(Authentication authentication, Long organizationId, Long invitationId) {
         invitationManagementUseCase.revokeInvitation(currentUserResolver.resolve(authentication).userId(), organizationId, invitationId);
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<List<InvitationDto>> listPendingForUser(OAuth2AuthenticationToken authentication) {
+    public ResponseEntity<List<InvitationDto>> listPendingForUser(Authentication authentication) {
         return ResponseEntity.ok(invitationManagementUseCase.listPendingForUser(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
-    public ResponseEntity<InvitationDto> acceptInvitation(OAuth2AuthenticationToken authentication, String token) {
+    public ResponseEntity<InvitationDto> acceptInvitation(Authentication authentication, String token) {
         return ResponseEntity.ok(invitationManagementUseCase.acceptInvitation(currentUserResolver.resolve(authentication).userId(), token));
     }
 
     @Override
-    public ResponseEntity<Void> declineInvitation(OAuth2AuthenticationToken authentication, String token) {
+    public ResponseEntity<Void> declineInvitation(Authentication authentication, String token) {
         invitationManagementUseCase.declineInvitation(currentUserResolver.resolve(authentication).userId(), token);
         return ResponseEntity.noContent().build();
     }

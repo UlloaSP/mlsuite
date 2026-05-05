@@ -13,9 +13,10 @@ public record UserDto(
         Long id,
         String userName,
         String email,
-        String oauthProvider,
         String fullName,
         String avatarUrl,
+        String systemRole,
+        boolean enabled,
         String createdAt) {
 
     public static final UserDto toDto(User user) {
@@ -23,10 +24,13 @@ public record UserDto(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getOauthProvider().toString(),
                 user.getFullName(),
                 user.getAvatarUrl(),
-                user.getCreatedAt().format(DateTimeFormatter.ofPattern("MMM, yyyy")));
+                user.getSystemRole().name(),
+                user.isEnabled(),
+                user.getCreatedAt() == null
+                        ? null
+                        : user.getCreatedAt().format(DateTimeFormatter.ofPattern("MMM, yyyy")));
     }
 }
 

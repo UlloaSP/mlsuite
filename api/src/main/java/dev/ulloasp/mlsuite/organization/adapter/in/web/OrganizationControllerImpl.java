@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
@@ -29,24 +29,24 @@ public class OrganizationControllerImpl implements OrganizationController {
     }
 
     @Override
-    public ResponseEntity<List<OrganizationDto>> listOrganizations(OAuth2AuthenticationToken authentication) {
+    public ResponseEntity<List<OrganizationDto>> listOrganizations(Authentication authentication) {
         return ResponseEntity.ok(organizationManagementUseCase.listOrganizations(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
-    public ResponseEntity<OrganizationDto> createOrganization(OAuth2AuthenticationToken authentication, CreateOrganizationRequest request) {
+    public ResponseEntity<OrganizationDto> createOrganization(Authentication authentication, CreateOrganizationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(organizationManagementUseCase.createOrganization(currentUserResolver.resolve(authentication).userId(), request));
     }
 
     @Override
-    public ResponseEntity<OrganizationDto> getOrganization(OAuth2AuthenticationToken authentication, Long organizationId) {
+    public ResponseEntity<OrganizationDto> getOrganization(Authentication authentication, Long organizationId) {
         return ResponseEntity.ok(organizationManagementUseCase.getOrganization(currentUserResolver.resolve(authentication).userId(), organizationId));
     }
 
     @Override
     public ResponseEntity<OrganizationDto> updateOrganization(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             Long organizationId,
             UpdateOrganizationRequest request) {
         return ResponseEntity.ok(organizationManagementUseCase.updateOrganization(
@@ -56,19 +56,19 @@ public class OrganizationControllerImpl implements OrganizationController {
     }
 
     @Override
-    public ResponseEntity<Void> deleteOrganization(OAuth2AuthenticationToken authentication, Long organizationId) {
+    public ResponseEntity<Void> deleteOrganization(Authentication authentication, Long organizationId) {
         organizationManagementUseCase.deleteOrganization(currentUserResolver.resolve(authentication).userId(), organizationId);
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<List<OrganizationMembershipDto>> listMembers(OAuth2AuthenticationToken authentication, Long organizationId) {
+    public ResponseEntity<List<OrganizationMembershipDto>> listMembers(Authentication authentication, Long organizationId) {
         return ResponseEntity.ok(organizationManagementUseCase.listMembers(currentUserResolver.resolve(authentication).userId(), organizationId));
     }
 
     @Override
     public ResponseEntity<OrganizationMembershipDto> updateMemberRole(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             Long organizationId,
             Long membershipId,
             UpdateOrganizationMembershipRoleRequest request) {
@@ -80,7 +80,7 @@ public class OrganizationControllerImpl implements OrganizationController {
     }
 
     @Override
-    public ResponseEntity<Void> removeMember(OAuth2AuthenticationToken authentication, Long organizationId, Long membershipId) {
+    public ResponseEntity<Void> removeMember(Authentication authentication, Long organizationId, Long membershipId) {
         organizationManagementUseCase.removeMember(currentUserResolver.resolve(authentication).userId(), organizationId, membershipId);
         return ResponseEntity.noContent().build();
     }
