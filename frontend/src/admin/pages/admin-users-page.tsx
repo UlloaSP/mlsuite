@@ -1,6 +1,7 @@
 import { KeyRound, Plus, ShieldCheck } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { Navigate } from "react-router";
 import {
 	AppBadge,
 	AppButton,
@@ -11,7 +12,6 @@ import {
 	AppSurface,
 	AppTextField,
 } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import {
 	useAdminUsers,
@@ -34,7 +34,7 @@ export function AdminUsersPage() {
 	const [role, setRole] = useState<Role>("USER");
 
 	if (user?.systemRole !== "SUPERADMIN") {
-		return <NotFoundError />;
+		return <Navigate to="/workspace" replace />;
 	}
 
 	const submit = (event: FormEvent) => {

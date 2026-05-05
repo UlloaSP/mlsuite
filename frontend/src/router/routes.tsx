@@ -5,17 +5,18 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router";
-import { useUser } from "../user/hooks";
-import { Unauthorized } from "../app/pages/Unauthorized";
 import { AdminUsersPage } from "../admin/pages/admin-users-page";
+import { AuthLandingPage } from "../app/pages/AuthLandingPage";
 import { NotFoundError } from "../app/pages/error-page";
 import { PluginCatalogPage } from "../app/pages/plugin-catalog-page";
-import Layout from "../Layout";
+import { AppShellLayout } from "../layout/AppShellLayout";
+import { PublicLayout } from "../layout/PublicLayout";
 import { CreateModelPage } from "../models/pages/create-model-page";
 import { ModelDetailPage } from "../models/pages/model-detail-page";
 import { ModelsPage } from "../models/pages/models-page";
 import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
 import { SignatureDetailPage } from "../models/pages/signature-detail-page";
+import { useUser } from "../user/hooks";
 import { ProfilePage } from "../user/pages/profilePage";
 import { CreateOrganizationPage } from "../workspace/pages/create-organization-page";
 import { InvitationAcceptPage } from "../workspace/pages/invitation-accept-page";
@@ -55,7 +56,7 @@ function IndexRoute() {
 		return <Navigate to="/workspace" replace />;
 	}
 
-	return <Unauthorized />;
+	return <AuthLandingPage />;
 }
 
 function ProtectedRoute() {
@@ -67,7 +68,7 @@ function ProtectedRoute() {
 	}
 
 	if (!user || error || workspace.error) {
-		return <Unauthorized />;
+		return <Navigate to="/" replace />;
 	}
 
 	return <Outlet />;
@@ -75,109 +76,116 @@ function ProtectedRoute() {
 
 export const routes: RouteObject[] = [
 	{
-		path: "/",
-		element: <Layout />,
 		errorElement: <NotFoundError />,
-
 		children: [
 			{
-				index: true,
-				element: <IndexRoute />,
+				element: <PublicLayout />,
+				children: [
+					{
+						index: true,
+						element: <IndexRoute />,
+					},
+				],
 			},
 			{
 				element: <ProtectedRoute />,
 				children: [
 					{
-						path: "workspace",
-						element: <WorkspaceHomePage />,
-					},
-					{
-						path: "workspace/organizations",
-						element: <OrganizationsPage />,
-					},
-					{
-						path: "workspace/organizations/create",
-						element: <CreateOrganizationPage />,
-					},
-					{
-						path: "workspace/organizations/:organizationId",
-						element: <OrganizationSettingsPage />,
-					},
-					{
-						path: "workspace/organizations/:organizationId/teams",
-						element: <TeamsPage />,
-					},
-					{
-						path: "workspace/organizations/:organizationId/members",
-						element: <MembersPage />,
-					},
-					{
-						path: "workspace/organizations/:organizationId/invitations",
-						element: <InvitationsPage />,
-					},
-					{
-						path: "workspace/teams/:teamId",
-						element: <TeamDetailPage />,
-					},
-					{
-						path: "invite/:token",
-						element: <InvitationAcceptPage />,
-					},
-					{
-						path: "profile",
-						element: <ProfilePage />,
-					},
-					{
-						path: "admin/users",
-						element: <AdminUsersPage />,
-					},
-					{
-						path: "models",
-						element: <ModelsPage />,
-					},
-					{
-						path: "models/create",
-						element: <CreateModelPage />,
-					},
-					{
-						path: "models/:modelId",
-						element: <ModelDetailPage />,
-					},
-					{
-						path: "plugins",
-						element: <PluginCatalogPage />,
-					},
-					{
-						path: "models/:modelId/signatures/:signatureId",
-						element: <SignatureDetailPage />,
-					},
-					{
-						path: "models/:modelId/signatures/create",
-						element: (
-							<Suspense fallback={<EditorRouteFallback />}>
-								<CreateSignaturePage />
-							</Suspense>
-						),
-					},
-					{
-						path: "models/:modelId/signatures/:signatureId/predictions/:predictionId",
-						element: <PredictionDetailPage />,
-					},
-					{
-						path: "models/:modelId/signatures/:signatureId/predictions/create",
-						element: (
-							<Suspense fallback={<EditorRouteFallback />}>
-								<CreatePredictionPage />
-							</Suspense>
-						),
-					},
-					{
-						path: "models/:modelId/signatures/:signatureId/predictions/create/:inputs",
-						element: (
-							<Suspense fallback={<EditorRouteFallback />}>
-								<CreatePredictionPage />
-							</Suspense>
-						),
+						element: <AppShellLayout />,
+						children: [
+							{
+								path: "workspace",
+								element: <WorkspaceHomePage />,
+							},
+							{
+								path: "workspace/organizations",
+								element: <OrganizationsPage />,
+							},
+							{
+								path: "workspace/organizations/create",
+								element: <CreateOrganizationPage />,
+							},
+							{
+								path: "workspace/organizations/:organizationId",
+								element: <OrganizationSettingsPage />,
+							},
+							{
+								path: "workspace/organizations/:organizationId/teams",
+								element: <TeamsPage />,
+							},
+							{
+								path: "workspace/organizations/:organizationId/members",
+								element: <MembersPage />,
+							},
+							{
+								path: "workspace/organizations/:organizationId/invitations",
+								element: <InvitationsPage />,
+							},
+							{
+								path: "workspace/teams/:teamId",
+								element: <TeamDetailPage />,
+							},
+							{
+								path: "invite/:token",
+								element: <InvitationAcceptPage />,
+							},
+							{
+								path: "profile",
+								element: <ProfilePage />,
+							},
+							{
+								path: "admin/users",
+								element: <AdminUsersPage />,
+							},
+							{
+								path: "models",
+								element: <ModelsPage />,
+							},
+							{
+								path: "models/create",
+								element: <CreateModelPage />,
+							},
+							{
+								path: "models/:modelId",
+								element: <ModelDetailPage />,
+							},
+							{
+								path: "plugins",
+								element: <PluginCatalogPage />,
+							},
+							{
+								path: "models/:modelId/signatures/:signatureId",
+								element: <SignatureDetailPage />,
+							},
+							{
+								path: "models/:modelId/signatures/create",
+								element: (
+									<Suspense fallback={<EditorRouteFallback />}>
+										<CreateSignaturePage />
+									</Suspense>
+								),
+							},
+							{
+								path: "models/:modelId/signatures/:signatureId/predictions/:predictionId",
+								element: <PredictionDetailPage />,
+							},
+							{
+								path: "models/:modelId/signatures/:signatureId/predictions/create",
+								element: (
+									<Suspense fallback={<EditorRouteFallback />}>
+										<CreatePredictionPage />
+									</Suspense>
+								),
+							},
+							{
+								path: "models/:modelId/signatures/:signatureId/predictions/create/:inputs",
+								element: (
+									<Suspense fallback={<EditorRouteFallback />}>
+										<CreatePredictionPage />
+									</Suspense>
+								),
+							},
+						],
 					},
 				],
 			},
