@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.team.application.dto.CreateTeamRequest;
+import dev.ulloasp.mlsuite.team.application.dto.TeamDetailDto;
 import dev.ulloasp.mlsuite.team.application.dto.TeamDto;
 import dev.ulloasp.mlsuite.team.application.dto.TeamMembershipDto;
+import dev.ulloasp.mlsuite.team.application.dto.TeamMembershipRowDto;
 import dev.ulloasp.mlsuite.team.application.dto.UpdateTeamMembershipRoleRequest;
 import dev.ulloasp.mlsuite.team.application.dto.UpdateTeamRequest;
 import dev.ulloasp.mlsuite.team.application.port.in.TeamManagementUseCase;
@@ -41,7 +43,7 @@ public class TeamControllerImpl implements TeamController {
     }
 
     @Override
-    public ResponseEntity<TeamDto> getTeam(Authentication authentication, Long teamId) {
+    public ResponseEntity<TeamDetailDto> getTeam(Authentication authentication, Long teamId) {
         return ResponseEntity.ok(teamManagementUseCase.getTeam(currentUserResolver.resolve(authentication).userId(), teamId));
     }
 
@@ -57,7 +59,7 @@ public class TeamControllerImpl implements TeamController {
     }
 
     @Override
-    public ResponseEntity<List<TeamMembershipDto>> listMembers(Authentication authentication, Long teamId) {
+    public ResponseEntity<List<TeamMembershipRowDto>> listMembers(Authentication authentication, Long teamId) {
         return ResponseEntity.ok(teamManagementUseCase.listMembers(currentUserResolver.resolve(authentication).userId(), teamId));
     }
 

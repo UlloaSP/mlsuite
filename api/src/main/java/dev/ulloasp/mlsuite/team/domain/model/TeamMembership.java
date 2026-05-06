@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
+import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -54,6 +55,10 @@ public class TeamMembership {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 32)
     private TeamRole role;
+
+    @ManyToOne
+    @JoinColumn(name = "role_definition_id", foreignKey = @ForeignKey(name = "fk_team_membership_role_definition"))
+    private RoleDefinition roleDefinition;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)

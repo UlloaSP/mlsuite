@@ -19,6 +19,7 @@ import {
 } from "./plugin-catalog-shared";
 
 type PluginCatalogListItemProps = {
+	canManage: boolean;
 	index: number;
 	isBusy: boolean;
 	item: PluginPageItem;
@@ -27,6 +28,7 @@ type PluginCatalogListItemProps = {
 };
 
 export function PluginCatalogListItem({
+	canManage,
 	index,
 	isBusy,
 	item,
@@ -64,31 +66,33 @@ export function PluginCatalogListItem({
 				</p>
 			</div>
 
-			<div className="flex items-center justify-start gap-2 lg:justify-end">
-				<AppButton
-					type="button"
-					onClick={() => {
-						void onToggle(item);
-					}}
-					disabled={isBusy}
-					variant={item.active ? "secondary" : "primary"}
-				>
-					<Power size={14} />
-					{item.active ? "Deactivate" : "Activate"}
-				</AppButton>
+			{canManage ? (
+				<div className="flex items-center justify-start gap-2 lg:justify-end">
+					<AppButton
+						type="button"
+						onClick={() => {
+							void onToggle(item);
+						}}
+						disabled={isBusy}
+						variant={item.active ? "secondary" : "primary"}
+					>
+						<Power size={14} />
+						{item.active ? "Deactivate" : "Activate"}
+					</AppButton>
 
-				<AppIconButton
-					type="button"
-					onClick={() => {
-						void onDelete(item);
-					}}
-					disabled={isBusy}
-					aria-label={`Delete ${displayName}`}
-					className="hover:border-[color:var(--danger-quiet)] hover:bg-[var(--danger-quiet)] hover:text-[var(--danger-text)]"
-				>
-					<Trash2 size={16} />
-				</AppIconButton>
-			</div>
+					<AppIconButton
+						type="button"
+						onClick={() => {
+							void onDelete(item);
+						}}
+						disabled={isBusy}
+						aria-label={`Delete ${displayName}`}
+						className="hover:border-[color:var(--danger-quiet)] hover:bg-[var(--danger-quiet)] hover:text-[var(--danger-text)]"
+					>
+						<Trash2 size={16} />
+					</AppIconButton>
+				</div>
+			) : null}
 		</motion.div>
 	);
 }

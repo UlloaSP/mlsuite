@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import dev.ulloasp.mlsuite.team.application.dto.CreateTeamRequest;
+import dev.ulloasp.mlsuite.team.application.dto.TeamDetailDto;
 import dev.ulloasp.mlsuite.team.application.dto.TeamDto;
 import dev.ulloasp.mlsuite.team.application.dto.TeamMembershipDto;
+import dev.ulloasp.mlsuite.team.application.dto.TeamMembershipRowDto;
 import dev.ulloasp.mlsuite.team.application.dto.UpdateTeamMembershipRoleRequest;
 import dev.ulloasp.mlsuite.team.application.dto.UpdateTeamRequest;
 import jakarta.validation.Valid;
@@ -30,7 +32,7 @@ public interface TeamController {
             @Valid @RequestBody CreateTeamRequest request);
 
     @GetMapping("/api/teams/{teamId}")
-    ResponseEntity<TeamDto> getTeam(Authentication authentication, @PathVariable Long teamId);
+    ResponseEntity<TeamDetailDto> getTeam(Authentication authentication, @PathVariable Long teamId);
 
     @PatchMapping("/api/teams/{teamId}")
     ResponseEntity<TeamDto> updateTeam(
@@ -42,7 +44,7 @@ public interface TeamController {
     ResponseEntity<Void> deleteTeam(Authentication authentication, @PathVariable Long teamId);
 
     @GetMapping("/api/teams/{teamId}/members")
-    ResponseEntity<List<TeamMembershipDto>> listMembers(Authentication authentication, @PathVariable Long teamId);
+    ResponseEntity<List<TeamMembershipRowDto>> listMembers(Authentication authentication, @PathVariable Long teamId);
 
     @PatchMapping("/api/teams/{teamId}/members/{membershipId}")
     ResponseEntity<TeamMembershipDto> updateMemberRole(

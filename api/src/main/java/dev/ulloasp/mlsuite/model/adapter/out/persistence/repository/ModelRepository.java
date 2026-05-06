@@ -28,5 +28,9 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     Optional<Model> findByIdAndOrganizationId(Long modelId, Long organizationId);
 
+    long countByOrganizationId(Long organizationId);
+
+    long countByTeamId(Long teamId);
+
 }
 

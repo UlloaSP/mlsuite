@@ -68,7 +68,7 @@ public class WorkspaceAccessService {
                     .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         }
         OrganizationMembership membership = requireMembership(userId, organizationId);
-        if (membership.getRole() == OrganizationRole.VIEWER) {
+        if (membership.getRole() != OrganizationRole.OWNER && membership.getRole() != OrganizationRole.ADMIN) {
             throw new OrganizationAccessDeniedException(organizationId);
         }
         return membership.getOrganization();

@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
+import dev.ulloasp.mlsuite.invitation.application.dto.BulkInvitationRequest;
 import dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto;
 import dev.ulloasp.mlsuite.invitation.application.port.in.InvitationManagementUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
@@ -40,8 +41,25 @@ public class InvitationControllerImpl implements InvitationController {
     }
 
     @Override
+    public ResponseEntity<InvitationDto> resendInvitation(Authentication authentication, Long organizationId, Long invitationId) {
+        return ResponseEntity.ok(invitationManagementUseCase.resendInvitation(
+                currentUserResolver.resolve(authentication).userId(),
+                organizationId,
+                invitationId));
+    }
+
+    @Override
     public ResponseEntity<Void> revokeInvitation(Authentication authentication, Long organizationId, Long invitationId) {
         invitationManagementUseCase.revokeInvitation(currentUserResolver.resolve(authentication).userId(), organizationId, invitationId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> bulkRevokeInvitations(Authentication authentication, Long organizationId, BulkInvitationRequest request) {
+        invitationManagementUseCase.bulkRevokeInvitations(
+                currentUserResolver.resolve(authentication).userId(),
+                organizationId,
+                request.invitationIds());
         return ResponseEntity.noContent().build();
     }
 

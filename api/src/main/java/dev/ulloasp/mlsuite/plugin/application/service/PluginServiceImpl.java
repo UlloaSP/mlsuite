@@ -30,6 +30,7 @@ import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @Service
 public class PluginServiceImpl implements PluginService {
@@ -42,23 +43,27 @@ public class PluginServiceImpl implements PluginService {
     private final ObjectMapper objectMapper;
     private final UserLookupService userLookupService;
     private final WorkspaceAccessService workspaceAccessService;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     public PluginServiceImpl(
             ObjectStorageService objectStorageService,
             StorageProperties storageProperties,
             ObjectMapper objectMapper,
             UserLookupService userLookupService,
-            WorkspaceAccessService workspaceAccessService) {
+            WorkspaceAccessService workspaceAccessService,
+            WorkspaceAuthorizationService workspaceAuthorizationService) {
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
         this.objectMapper = objectMapper;
         this.userLookupService = userLookupService;
         this.workspaceAccessService = workspaceAccessService;
+        this.workspaceAuthorizationService = workspaceAuthorizationService;
     }
 
     @Override
     public PluginDto upload(Long userId, MultipartFile file) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
+        workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
         try {
             String id = UUID.randomUUID().toString();
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -85,6 +90,7 @@ public class PluginServiceImpl implements PluginService {
     public List<PluginDto> list(Long userId) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
+        workspaceAuthorizationService.requirePluginView(userId, organization.getId());
         Set<String> activeIds = Set.copyOf(readState(user).activeIds());
         Map<String, StoredPlugin> storedItems = new LinkedHashMap<>();
         Map<String, String> origins = new LinkedHashMap<>();
@@ -107,6 +113,7 @@ public class PluginServiceImpl implements PluginService {
     public PluginDto activate(Long userId, String id) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
+        workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
         StoredPlugin stored = readStored(user, id);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
         activeIds.add(id);
@@ -118,6 +125,7 @@ public class PluginServiceImpl implements PluginService {
     public void deactivate(Long userId, String id) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
+        workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
         activeIds.remove(id);
         writeState(organization.getId(), activeIds);
@@ -126,13 +134,16 @@ public class PluginServiceImpl implements PluginService {
     @Override
     public void deactivateAll(Long userId) {
         userLookupService.requireById(userId);
-        writeState(workspaceAccessService.requireCurrentOrganization(userId).getId(), Set.of());
+        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requirePluginManage(userId, organizationId);
+        writeState(organizationId, Set.of());
     }
 
     @Override
     public void delete(Long userId, String id) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
+        workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
         readStored(user, id);
         LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
         activeIds.remove(id);

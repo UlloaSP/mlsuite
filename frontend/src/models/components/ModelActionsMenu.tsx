@@ -20,11 +20,15 @@ const ACTIONS: Array<{
 ];
 
 type ModelActionsMenuProps = {
+	canDelete: boolean;
+	canEdit: boolean;
 	modelName: string;
 	onAction: (action: ModelAction) => void;
 };
 
 export function ModelActionsMenu({
+	canDelete,
+	canEdit,
 	modelName,
 	onAction,
 }: ModelActionsMenuProps) {
@@ -57,7 +61,9 @@ export function ModelActionsMenu({
 
 			{open ? (
 				<div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded-[20px] border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
-					{ACTIONS.map((action) => {
+					{ACTIONS.filter((action) =>
+						action.value === "delete" ? canDelete : canEdit
+					).map((action) => {
 						const Icon = action.icon;
 						return (
 							<button

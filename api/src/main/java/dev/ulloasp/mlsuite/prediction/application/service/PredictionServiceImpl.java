@@ -26,6 +26,7 @@ import dev.ulloasp.mlsuite.signature.application.service.SignatureSchemaCompatib
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -40,6 +41,7 @@ public class PredictionServiceImpl implements PredictionService {
     private final ExplanationFeedbackRepository explanationFeedbackRepository;
     private final SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
     private final WorkspaceAccessService workspaceAccessService;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     public PredictionServiceImpl(UserLookupService userLookupService, SignatureRepository signatureRepository,
             PredictionRepository predictionRepository,
@@ -47,7 +49,8 @@ public class PredictionServiceImpl implements PredictionService {
             OutputFeedbackRepository outputFeedbackRepository,
             ExplanationFeedbackRepository explanationFeedbackRepository,
             SignatureSchemaCompatibilityService signatureSchemaCompatibilityService,
-            WorkspaceAccessService workspaceAccessService) {
+            WorkspaceAccessService workspaceAccessService,
+            WorkspaceAuthorizationService workspaceAuthorizationService) {
         this.userLookupService = userLookupService;
         this.signatureRepository = signatureRepository;
         this.predictionRepository = predictionRepository;
@@ -56,6 +59,7 @@ public class PredictionServiceImpl implements PredictionService {
         this.explanationFeedbackRepository = explanationFeedbackRepository;
         this.signatureSchemaCompatibilityService = signatureSchemaCompatibilityService;
         this.workspaceAccessService = workspaceAccessService;
+        this.workspaceAuthorizationService = workspaceAuthorizationService;
     }
 
     @Override
@@ -63,6 +67,7 @@ public class PredictionServiceImpl implements PredictionService {
             boolean overwrite, Map<String, Object> prediction, Map<String, Object> data) {
         User user = userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationOperate(userId, organizationId);
 
         Optional<Signature> optionalSignature = signatureRepository.findByIdAndOrganizationId(signatureId, organizationId);
 
@@ -102,6 +107,7 @@ public class PredictionServiceImpl implements PredictionService {
             PredictionStatus status) {
         User user = userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationOperate(userId, organizationId);
         Optional<Prediction> optionalPrediction = predictionRepository.findByIdAndOrganizationId(predictionId, organizationId);
 
         if (optionalPrediction.isEmpty()) {
@@ -118,6 +124,7 @@ public class PredictionServiceImpl implements PredictionService {
     public Prediction getPrediction(Long userId, Long predictionId) {
         User user = userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
         Optional<Prediction> optionalPrediction = predictionRepository.findByIdAndOrganizationId(predictionId, organizationId);
 
         if (optionalPrediction.isEmpty()) {
@@ -132,6 +139,7 @@ public class PredictionServiceImpl implements PredictionService {
         userLookupService.requireById(userId);
 
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
         Optional<Signature> optionalSignature = signatureRepository.findByIdAndOrganizationId(signatureId, organizationId);
 
         if (optionalSignature.isEmpty()) {

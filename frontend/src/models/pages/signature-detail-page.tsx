@@ -1,24 +1,12 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 import { useQueries } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import {
-	AppBreadcrumbs,
-	AppButton,
-	AppEmptyState,
-	AppPage,
-	AppPageHeader,
-	AppSurface,
-	AppTabs,
-} from "../../app/components";
+import { AppBreadcrumbs, AppButton, AppEmptyState, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { useUser } from "../../user/hooks";
+import { useWorkspaceContext } from "../../workspace/hooks";
 import { PredictionHistoryTable } from "../components/PredictionHistoryTable";
 import { PredictionHistoryToolbar, type PredictionDateRangeFilter, type PredictionFeedbackStatusFilter } from "../components/PredictionHistoryToolbar";
 import { BulkUploadButton } from "../components/BulkUploadButton";
@@ -27,11 +15,7 @@ import { extractPredictionExplanationEntries } from "../explanation-feedback-uti
 import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, useGetModels, useGetPredictions, useGetSignature } from "../hooks";
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
 import * as modelApi from "../api/modelService";
-import {
-	findModelById,
-	getPredictionTimestamp,
-	getSignatureVersionLabel,
-} from "../utils";
+import { findModelById, getPredictionTimestamp, getSignatureVersionLabel } from "../utils";
 
 type SignatureDetailTab = "technical" | "history";
 
@@ -67,6 +51,7 @@ export function SignatureDetailPage() {
 	const { modelId, signatureId } = useParams<{ modelId: string; signatureId: string }>();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { data: user, error } = useUser();
+	const { data: workspace } = useWorkspaceContext();
 	const { data: models = [] } = useGetModels();
 	const model = useMemo(() => findModelById(models, modelId), [models, modelId]);
 	const { data: signature, isLoading: isSignatureLoading } = useGetSignature({
@@ -178,6 +163,7 @@ export function SignatureDetailPage() {
 	if (!user || error) {
 		return <NotFoundError />;
 	}
+	const canRunPredictions = workspace?.permissions.canRunPredictions ?? false;
 
 	return (
 		<AppPage>
@@ -220,19 +206,23 @@ export function SignatureDetailPage() {
 								description={`${signature.name} · Created ${new Date(signature.createdAt).toLocaleString()}${signature.origin ? " · Based on previous version" : ""}`}
 								aside={
 									<>
-										<BulkUploadButton
-											signatureId={signatureId ?? ""}
-											modelId={modelId ?? ""}
-											signatureSchema={signature.inputSignature}
-										/>
-										<AppButton
-											type="button"
-											onClick={() =>
-												navigate(`/models/${modelId}/signatures/${signature.id}/predictions/create`)
-											}
-										>
-											+ New Prediction
-										</AppButton>
+										{canRunPredictions ? (
+											<>
+												<BulkUploadButton
+													signatureId={signatureId ?? ""}
+													modelId={modelId ?? ""}
+													signatureSchema={signature.inputSignature}
+												/>
+												<AppButton
+													type="button"
+													onClick={() =>
+														navigate(`/models/${modelId}/signatures/${signature.id}/predictions/create`)
+													}
+												>
+													+ New Prediction
+												</AppButton>
+											</>
+										) : null}
 									</>
 								}
 							/>
@@ -269,7 +259,7 @@ export function SignatureDetailPage() {
 													? "No prediction matches the current search terms."
 													: "Create the first prediction for this signature to populate history."
 											}
-											action={
+											action={canRunPredictions ? (
 												<AppButton
 													type="button"
 													onClick={() =>
@@ -278,7 +268,7 @@ export function SignatureDetailPage() {
 												>
 													+ New Prediction
 												</AppButton>
-											}
+											) : undefined}
 										/>
 									) : (
 									<PredictionHistoryTable

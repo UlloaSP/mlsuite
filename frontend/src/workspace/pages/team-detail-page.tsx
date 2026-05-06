@@ -10,6 +10,7 @@ import {
 	AppTextArea,
 	AppTextField,
 } from "../../app/components";
+import { NotFoundError } from "../../app/pages/error-page";
 import {
 	getTeam,
 	getTeamMembers,
@@ -18,8 +19,6 @@ import {
 	updateTeamMemberRole,
 } from "../api/workspaceService";
 import { MemberTable } from "../components/MemberTable";
-
-const teamRoles = ["TEAM_ADMIN", "TEAM_MEMBER", "TEAM_VIEWER"] as const;
 
 export function TeamDetailPage() {
 	const { teamId = "" } = useParams();
@@ -52,6 +51,9 @@ export function TeamDetailPage() {
 	if (!team) {
 		return null;
 	}
+	if (!team.permissions.canViewTeam) {
+		return <NotFoundError />;
+	}
 
 	return (
 		<AppPage>
@@ -66,18 +68,29 @@ export function TeamDetailPage() {
 					<div className="grid gap-6 xl:grid-cols-[0.9fr_1.2fr]">
 						<div className="rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-card)]">
 							<div className="grid gap-3">
-								<AppTextField value={name || team.name} onChange={(event) => setName(event.target.value)} />
-								<AppTextArea value={description || team.description || ""} onChange={(event) => setDescription(event.target.value)} />
-								<AppButton type="button" onClick={() => void saveTeam()}>
+								<AppTextField
+									value={name || team.name}
+									onChange={(event) => setName(event.target.value)}
+									disabled={!team.permissions.canEditTeam}
+								/>
+								<AppTextArea
+									value={description || team.description || ""}
+									onChange={(event) => setDescription(event.target.value)}
+									disabled={!team.permissions.canEditTeam}
+								/>
+								<AppButton
+									type="button"
+									onClick={() => void saveTeam()}
+									disabled={!team.permissions.canEditTeam}
+								>
 									Save Team
 								</AppButton>
 							</div>
 						</div>
 						<MemberTable
 							rows={members}
-							roles={[...teamRoles]}
-							onRoleChange={(membershipId, role) => {
-								void updateTeamMemberRole(id, membershipId, role).then(() =>
+							onRoleChange={(membershipId, roleDefinitionId) => {
+								void updateTeamMemberRole(id, membershipId, roleDefinitionId).then(() =>
 									qc.invalidateQueries({ queryKey: ["teamMembers", id] }),
 								);
 							}}

@@ -19,4 +19,12 @@ public interface OrganizationMembershipRepository extends JpaRepository<Organiza
     List<OrganizationMembership> findActiveByUserId(Long userId);
 
     Optional<OrganizationMembership> findByOrganizationIdAndUserId(Long organizationId, Long userId);
+
+    long countByOrganizationIdAndRoleAndStatus(Long organizationId, dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole role, MembershipStatus status);
+
+    long countByOrganizationIdAndStatus(Long organizationId, MembershipStatus status);
+
+    long countByRoleDefinitionIdAndStatus(Long roleDefinitionId, MembershipStatus status);
+
+    List<OrganizationMembership> findByRoleDefinitionIdAndStatus(Long roleDefinitionId, MembershipStatus status);
 }

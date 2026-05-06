@@ -13,8 +13,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
+import dev.ulloasp.mlsuite.organization.application.dto.OrganizationAdminDashboardDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipDto;
+import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipRowDto;
+import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
 import jakarta.validation.Valid;
@@ -35,6 +38,11 @@ public interface OrganizationController {
             Authentication authentication,
             @PathVariable Long organizationId);
 
+    @GetMapping("/{organizationId}/admin-dashboard")
+    ResponseEntity<OrganizationAdminDashboardDto> getAdminDashboard(
+            Authentication authentication,
+            @PathVariable Long organizationId);
+
     @PatchMapping("/{organizationId}")
     ResponseEntity<OrganizationDto> updateOrganization(
             Authentication authentication,
@@ -47,7 +55,7 @@ public interface OrganizationController {
             @PathVariable Long organizationId);
 
     @GetMapping("/{organizationId}/members")
-    ResponseEntity<List<OrganizationMembershipDto>> listMembers(
+    ResponseEntity<List<OrganizationMembershipRowDto>> listMembers(
             Authentication authentication,
             @PathVariable Long organizationId);
 
@@ -63,4 +71,10 @@ public interface OrganizationController {
             Authentication authentication,
             @PathVariable Long organizationId,
             @PathVariable Long membershipId);
+
+    @PostMapping("/{organizationId}/transfer-ownership")
+    ResponseEntity<OrganizationMembershipDto> transferOwnership(
+            Authentication authentication,
+            @PathVariable Long organizationId,
+            @Valid @RequestBody TransferOrganizationOwnershipRequest request);
 }

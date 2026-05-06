@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
+import dev.ulloasp.mlsuite.invitation.application.dto.BulkInvitationRequest;
 import dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto;
 import jakarta.validation.Valid;
 
@@ -25,11 +26,23 @@ public interface InvitationController {
             @PathVariable Long organizationId,
             @Valid @RequestBody CreateInvitationRequest request);
 
+    @PostMapping("/api/organizations/{organizationId}/invitations/{invitationId}/resend")
+    ResponseEntity<InvitationDto> resendInvitation(
+            Authentication authentication,
+            @PathVariable Long organizationId,
+            @PathVariable Long invitationId);
+
     @DeleteMapping("/api/organizations/{organizationId}/invitations/{invitationId}")
     ResponseEntity<Void> revokeInvitation(
             Authentication authentication,
             @PathVariable Long organizationId,
             @PathVariable Long invitationId);
+
+    @PostMapping("/api/organizations/{organizationId}/invitations/bulk-revoke")
+    ResponseEntity<Void> bulkRevokeInvitations(
+            Authentication authentication,
+            @PathVariable Long organizationId,
+            @Valid @RequestBody BulkInvitationRequest request);
 
     @GetMapping("/api/invitations/pending")
     ResponseEntity<List<InvitationDto>> listPendingForUser(Authentication authentication);

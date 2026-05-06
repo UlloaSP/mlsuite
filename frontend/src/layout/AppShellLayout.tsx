@@ -5,11 +5,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { motion } from "motion/react";
+import type { PropsWithChildren } from "react";
 import { Outlet } from "react-router";
 import { sidebarCollapsedAtom } from "../app/atoms";
 import { AppHeader, Sidebar } from "../app/components";
 
-export function AppShellLayout() {
+export function AppShellFrame({ children }: PropsWithChildren) {
 	const [collapsed] = useAtom(sidebarCollapsedAtom);
 
 	return (
@@ -17,7 +18,7 @@ export function AppShellLayout() {
 			<AppHeader />
 			<div className="flex min-h-0 flex-1 overflow-hidden">
 				<div className="relative min-w-0 flex-1 overflow-hidden">
-					<Outlet />
+					{children}
 				</div>
 				<motion.div
 					className="hidden shrink-0 border-l border-[var(--border-soft)] will-change-[width] xl:block"
@@ -28,5 +29,13 @@ export function AppShellLayout() {
 				</motion.div>
 			</div>
 		</div>
+	);
+}
+
+export function AppShellLayout() {
+	return (
+		<AppShellFrame>
+			<Outlet />
+		</AppShellFrame>
 	);
 }

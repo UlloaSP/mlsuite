@@ -8,8 +8,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
+import dev.ulloasp.mlsuite.organization.application.dto.OrganizationAdminDashboardDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipDto;
+import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipRowDto;
+import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.port.in.OrganizationManagementUseCase;
@@ -45,6 +48,13 @@ public class OrganizationControllerImpl implements OrganizationController {
     }
 
     @Override
+    public ResponseEntity<OrganizationAdminDashboardDto> getAdminDashboard(Authentication authentication, Long organizationId) {
+        return ResponseEntity.ok(organizationManagementUseCase.getAdminDashboard(
+                currentUserResolver.resolve(authentication).userId(),
+                organizationId));
+    }
+
+    @Override
     public ResponseEntity<OrganizationDto> updateOrganization(
             Authentication authentication,
             Long organizationId,
@@ -62,7 +72,7 @@ public class OrganizationControllerImpl implements OrganizationController {
     }
 
     @Override
-    public ResponseEntity<List<OrganizationMembershipDto>> listMembers(Authentication authentication, Long organizationId) {
+    public ResponseEntity<List<OrganizationMembershipRowDto>> listMembers(Authentication authentication, Long organizationId) {
         return ResponseEntity.ok(organizationManagementUseCase.listMembers(currentUserResolver.resolve(authentication).userId(), organizationId));
     }
 
@@ -83,5 +93,16 @@ public class OrganizationControllerImpl implements OrganizationController {
     public ResponseEntity<Void> removeMember(Authentication authentication, Long organizationId, Long membershipId) {
         organizationManagementUseCase.removeMember(currentUserResolver.resolve(authentication).userId(), organizationId, membershipId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<OrganizationMembershipDto> transferOwnership(
+            Authentication authentication,
+            Long organizationId,
+            TransferOrganizationOwnershipRequest request) {
+        return ResponseEntity.ok(organizationManagementUseCase.transferOwnership(
+                currentUserResolver.resolve(authentication).userId(),
+                organizationId,
+                request));
     }
 }

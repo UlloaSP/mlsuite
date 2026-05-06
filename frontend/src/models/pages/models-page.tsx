@@ -89,6 +89,13 @@ export function ModelsPage() {
 	if (!user || error) {
 		return <NotFoundError />;
 	}
+	if (workspace && !workspace.permissions.canViewModels) {
+		return <NotFoundError />;
+	}
+
+	const canCreateModels = workspace?.permissions.canCreateModels ?? false;
+	const canDeleteModels = workspace?.permissions.canDeleteModels ?? false;
+	const canEditModels = workspace?.permissions.canEditModels ?? false;
 
 	const handleMockAction = (action: ModelAction, model: modelApi.ModelDto) => {
 		const labels: Record<ModelAction, string> = {
@@ -115,9 +122,11 @@ export function ModelsPage() {
 						aside={
 							<div className="flex items-center gap-3">
 								{workspace ? <AppBadge tone="accent">{workspace.currentOrganization.name}</AppBadge> : null}
-								<AppButton type="button" onClick={() => navigate("/models/create")}>
-									+ New Model
-								</AppButton>
+								{canCreateModels ? (
+									<AppButton type="button" onClick={() => navigate("/models/create")}>
+										+ New Model
+									</AppButton>
+								) : null}
 							</div>
 						}
 					/>
@@ -153,16 +162,20 @@ export function ModelsPage() {
 									? "No model matches the current search terms."
 									: "Create your first model to start the new master-detail flow."
 							}
-							action={
-								<AppButton type="button" onClick={() => navigate("/models/create")}>
-									+ New Model
-								</AppButton>
-							}
+							action={canCreateModels
+								? (
+									<AppButton type="button" onClick={() => navigate("/models/create")}>
+										+ New Model
+									</AppButton>
+								)
+								: undefined}
 						/>
 					) : (
 						<div className="space-y-3">
 							{visibleItems.map(({ model, signatureCount }) => (
 								<ModelListItem
+									canDelete={canDeleteModels}
+									canEdit={canEditModels}
 									key={model.id}
 									item={model}
 									signatureCount={signatureCount}

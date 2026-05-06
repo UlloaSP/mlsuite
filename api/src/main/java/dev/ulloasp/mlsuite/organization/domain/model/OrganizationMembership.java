@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -53,6 +54,10 @@ public class OrganizationMembership {
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 32)
     private OrganizationRole role;
+
+    @ManyToOne
+    @JoinColumn(name = "role_definition_id", foreignKey = @ForeignKey(name = "fk_org_membership_role_definition"))
+    private RoleDefinition roleDefinition;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)

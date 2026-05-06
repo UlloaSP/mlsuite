@@ -15,4 +15,10 @@ public interface TeamMembershipRepository extends JpaRepository<TeamMembership, 
     List<TeamMembership> findByTeamIdAndStatusOrderByCreatedAtAsc(Long teamId, MembershipStatus status);
 
     Optional<TeamMembership> findByTeamIdAndUserId(Long teamId, Long userId);
+
+    long countByTeamIdAndStatus(Long teamId, MembershipStatus status);
+
+    long countByRoleDefinitionIdAndStatus(Long roleDefinitionId, MembershipStatus status);
+
+    List<TeamMembership> findByRoleDefinitionIdAndStatus(Long roleDefinitionId, MembershipStatus status);
 }

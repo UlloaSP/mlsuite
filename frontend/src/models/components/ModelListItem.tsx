@@ -21,6 +21,8 @@ const getModelIcon = (type: string) => {
 };
 
 type ModelListItemProps = {
+	canDelete: boolean;
+	canEdit: boolean;
 	item: ModelDto;
 	signatureCount: number;
 	onOpen: () => void;
@@ -28,6 +30,8 @@ type ModelListItemProps = {
 };
 
 export function ModelListItem({
+	canDelete,
+	canEdit,
 	item,
 	signatureCount,
 	onOpen,
@@ -69,10 +73,14 @@ export function ModelListItem({
 			</div>
 
 			<div className="flex items-start gap-2">
-				<ModelActionsMenu
-					modelName={item.name}
-					onAction={(action) => onAction(action, item)}
-				/>
+				{canDelete || canEdit ? (
+					<ModelActionsMenu
+						canDelete={canDelete}
+						canEdit={canEdit}
+						modelName={item.name}
+						onAction={(action) => onAction(action, item)}
+					/>
+				) : null}
 				<div className="flex size-10 items-center justify-center rounded-full text-[var(--text-muted)]">
 					<ArrowRight size={16} />
 				</div>
