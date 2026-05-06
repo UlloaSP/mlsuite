@@ -14,7 +14,7 @@ In practical terms, MLSuite lets you upload a machine learning model (e.g. a sci
 
 ## Getting Started (Production Deployment with Docker Compose or Podman)
 
-**Follow these steps to deploy MLSuite using Docker Compose or Podman.** This guide assumes minimal experience with containers and OAuth setup, and will walk you through the process in detail.
+**Follow these steps to deploy MLSuite using Docker Compose or Podman.** This guide assumes minimal experience with containers and environment setup, and will walk you through the process in detail.
 
 1. **Prerequisites**: Install either **Docker** with **Docker Compose** or **Podman** with `podman compose`/`podman-compose`. Verify your chosen engine works before continuing.
 
@@ -27,21 +27,14 @@ cd mlsuite
 
 This repository contains pre-configured compose files that define all required services (frontend, backend, ML analyzer, database).
 
-3. OAuth Credentials Setup: MLSuite uses OAuth2 for user authentication (Google and GitHub login). You will need to register OAuth applications to obtain Client IDs and Secrets:
+3. Superadmin Setup: MLSuite uses manual email/password authentication with server-side sessions. Configure the initial superadmin account so you can manage users after startup.
 
-- Google OAuth: Go to the Google Cloud Console and create a new OAuth 2.0 client ID (of type "Web application"). Add an authorized redirect URI pointing to your deployment URL + /login/oauth2/code/google (for example, http://localhost:8080/login/oauth2/code/google for local deployment). Note the generated Client ID and Client Secret.
-
-- GitHub OAuth: On GitHub, go to Settings > Developer settings > OAuth Apps and register a new application. Use http://localhost:8080/login/oauth2/code/github as the authorization callback URL (or your production domain accordingly). After registration, you’ll get a Client ID and Client Secret.
-
-Why this step? – MLSuite delegates user authentication to Google/GitHub, so users can log in securely. The OAuth credentials enable MLSuite’s backend to redirect users for login and then accept the callback with a token.
-
-4. Configure Environment Variables: Open the .env.example (or create a .env) file in the project and add your OAuth credentials and any other necessary settings. At minimum, set:
+4. Configure Environment Variables: Open the .env.example (or create a .env) file in the project and add the superadmin seed values and any other necessary settings. At minimum, set:
 
 ```env
-GOOGLE_CLIENT_ID=<your Google OAuth client id>
-GOOGLE_CLIENT_SECRET=<your Google OAuth client secret>
-GITHUB_CLIENT_ID=<your GitHub OAuth client id>
-GITHUB_CLIENT_SECRET=<your GitHub OAuth client secret>
+MLSUITE_SUPERADMIN_EMAIL=admin@example.com
+MLSUITE_SUPERADMIN_PASSWORD=change_me_superadmin
+MLSUITE_SUPERADMIN_FULL_NAME=MLSuite Admin
 ```
 
 You can also adjust other settings (like database password, etc.) here. The Docker Compose file will load these values and pass them to the containers. If you prefer, you can edit the docker-compose.yml to directly insert these env vars under the backend service.
@@ -56,23 +49,13 @@ docker compose -f docker-compose.prod.yml up --build -d
 podman compose -f docker-compose.prod.yml up --build -d
 ```
 
-You can also use the helper wrappers:
-
-```bash
-./scripts/compose.sh prod up --build -d
-```
-
-```powershell
-.\scripts\compose.ps1 -Env prod up --build -d
-```
-
 This will spin up all components of MLSuite in separate containers. The first run may take a few minutes to download base images and build the code. Subsequent starts will be faster.
 
-6. Access MLSuite: Once the containers are running, open your web browser and go to https://localhost:5173 (or the appropriate host/port if deploying to a server). You should see the MLSuite web interface. Click “Login” to sign in via Google or GitHub (depending on how you configured OAuth). Upon first login, your user account will be created in the system automatically.
+6. Access MLSuite: Once the containers are running, open your web browser and go to https://localhost:5173 (or the appropriate host/port if deploying to a server). You should see the MLSuite web interface. Click “Login” and sign in with an email/password account. You can also create a normal account from the same screen.
 
 7. Use MLSuite: After logging in, you can start uploading models and running predictions (see the Functionality section below for an overview of features). By default, the React frontend will be served on port 5173. If you need to change ports or other settings, adjust the environment variables or compose file accordingly.
 
-Troubleshooting: If some containers fail to start, run `docker compose logs -f` or `podman compose logs -f` to inspect the logs of each service. Common issues often involve misconfigured environment variables (e.g. incorrect OAuth secrets or database connection issues). Make sure the OAuth redirect URLs exactly match your deployment address. If running on a remote server, update the OAuth app settings to use your server’s URL instead of localhost.
+Troubleshooting: If some containers fail to start, run `docker compose logs -f` or `podman compose logs -f` to inspect the logs of each service. Common issues often involve misconfigured environment variables, missing superadmin seed values, or database connection issues.
 
 ## Development Containers
 
@@ -102,7 +85,7 @@ MLSuite provides a rich set of features to manage the entire lifecycle of ML mod
 
 - Export to CSV (Data Export): All your prediction data – inputs, model outputs, and any feedback (true values for incorrect predictions) – can be exported as a CSV file. This feature allows you to easily take the accumulated prediction records and use them for downstream tasks. For example, you might export the data to create a new training dataset (including the model’s mistakes with corrections) for retraining or improving the model. The export function lets you filter by status (e.g. only failed predictions with corrections, only completed predictions, etc.) and produces a CSV with one row per prediction, including all input fields, the model’s output, the user-provided correct output (if any), timestamps, and identifiers for the model/signature version used.
 
-- User Management & Security: The platform is secured via OAuth2 authentication. Only authenticated users can access the system, and each user’s models and prediction data are kept separate (each model is associated with the user who uploaded it). MLSuite uses industry-standard OAuth (Google, GitHub) for login, so it never stores raw passwords. This also means you can easily control who has access by managing authorized accounts via your OAuth providers. Session management is handled server-side via Spring Security, and API routes enforce proper authorization checks.
+- User Management & Security: The platform is secured via manual email/password authentication. Passwords are stored as BCrypt hashes, sessions are managed server-side by Spring Security, and API routes enforce tenant RBAC. Superadmins can manage accounts and bypass tenant checks when needed.
 
 In summary, MLSuite offers a full suite of functionalities to treat a machine learning model as a product: upload and manage models, define input contracts, interact with models through autogenerated UIs, validate their outputs, and iterate with new data – all through a unified web interface.
 
@@ -110,9 +93,9 @@ In summary, MLSuite offers a full suite of functionalities to treat a machine le
 
 MLSuite’s architecture is modular and follows a microservices-inspired design. The system is composed of several interacting components, each with a specific role. At a high level, the architecture consists of:
 
-- Frontend – React SPA (with MLForm): The user interface is a single-page application built with React and TypeScript. It uses the MLForm library to dynamically render forms from JSON schemas (signatures). This frontend provides all the visuals: model catalog, forms for input, tables for prediction history, etc. When a user interacts (e.g. submitting a prediction or uploading a model), the React app calls the backend REST API. The UI is protected by login – unauthenticated users are redirected to the OAuth2 login flow.
+- Frontend – React SPA (with MLForm): The user interface is a single-page application built with React and TypeScript. It uses the MLForm library to dynamically render forms from JSON schemas (signatures). This frontend provides all the visuals: model catalog, forms for input, tables for prediction history, etc. When a user interacts (e.g. submitting a prediction or uploading a model), the React app calls the backend REST API. The UI is protected by manual login.
 
-- Backend API – Spring Boot (Java): The core of MLSuite is a Spring Boot application that serves as the API Gateway and orchestrator. This backend exposes RESTful endpoints for all operations (model management, signature CRUD, running a prediction, fetching history, etc.). It handles authentication via Spring Security with OAuth2 (delegating to Google/GitHub and maintaining user sessions). The backend contains the business logic to validate inputs against the schema and ensures that each prediction request is routed to the correct model and signature. It also interacts with the database to store/retrieve models, signatures, users, and predictions. In essence, the Spring Boot API coordinates the other parts: it receives requests from the frontend, checks permissions and data validity, calls the ML analyzer service for predictions, and returns results back to the frontend.
+- Backend API – Spring Boot (Java): The core of MLSuite is a Spring Boot application that serves as the API Gateway and orchestrator. This backend exposes RESTful endpoints for all operations (model management, signature CRUD, running a prediction, fetching history, etc.). It handles manual authentication with Spring Security sessions and tenant RBAC. The backend contains the business logic to validate inputs against the schema and ensures that each prediction request is routed to the correct model and signature. It also interacts with the database to store/retrieve models, signatures, users, and predictions. In essence, the Spring Boot API coordinates the other parts: it receives requests from the frontend, checks permissions and data validity, calls the ML analyzer service for predictions, and returns results back to the frontend.
 
 - Analyzer Service – FastAPI (Python): The analyzer is a Python microservice (using FastAPI) responsible for the heavy lifting of loading ML models and executing predictions. When a prediction request comes in, the Spring Boot backend forwards the request to this service (over HTTPS). The FastAPI analyzer takes the model,  and runs the model’s predict method on the input data. It uses the MLSchema library to ensure the input conforms to the expected schema (for extra safety) and then returns the prediction result (and any metadata) back to the Java backend. By isolating this functionality in a Python service, MLSuite can leverage Python’s rich ML ecosystem (scikit-learn, pandas, etc.) while keeping the main API in Java. This design also paves the way to support multiple backend frameworks in the future (for example, separate services for R models, TensorFlow/PyTorch models, etc., each with their own runtime). In the current implementation, the analyzer supports scikit-learn models; the architecture is designed to be extensible via a plugin mechanism to add more.
 
@@ -130,24 +113,15 @@ flowchart LR
       ML[FastAPI Analyzer<br/> Python Service ]
       DB[PostgreSQL Database]
     end
-    subgraph OAuth_Providers
-      Google[Google OAuth] 
-      GitHub[GitHub OAuth]
-    end
-
     UI --Requests--> API
-    UI --OAuth Login--> API
-    API --Browser Redirect--> Google
-    API --Browser Redirect--> GitHub
-    Google --OAuth Callback--> API
-    GitHub --OAuth Callback--> API
+    UI --Login/Register--> API
     API --DB Queries--> DB
     API --Prediction Job--> ML
     ML --Result--> API
     API --Response--> UI
 ```
 
-Communication flow: When a user logs in, the React app redirects to the Spring Boot API’s OAuth endpoint, which then redirects the user to Google or GitHub. After authentication, the OAuth provider sends the user back with a token, and the Spring backend creates a session. Now authenticated, the user can use the app. When the user uploads a model or creates a signature, the frontend sends a request to the Spring Boot API, which stores the model (possibly as a file on disk or object in the database) and records metadata in PostgreSQL. If a sample dataset is provided, the Spring backend might call the FastAPI service (or use an internal routine) to analyze it and produce an initial schema. When the user wants to run a prediction, the frontend sends the input data to the Spring API, which validates it against the selected signature, then calls the FastAPI analyzer with the model and input. The analyzer takes the model and computes the prediction. The result is sent back to the Spring API, which stores the new Prediction record in PostgreSQL and forwards the result to the frontend to display. If the user provides feedback on that prediction, another API call updates the record in the DB. This separation of concerns (UI, API, ML processing, storage) makes the system scalable and easier to maintain.
+Communication flow: When a user logs in, the React app posts credentials to the Spring Boot API, and the backend creates a server-side session. Now authenticated, the user can use the app. When the user uploads a model or creates a signature, the frontend sends a request to the Spring Boot API, which stores the model (possibly as a file on disk or object in the database) and records metadata in PostgreSQL. If a sample dataset is provided, the Spring backend might call the FastAPI service (or use an internal routine) to analyze it and produce an initial schema. When the user wants to run a prediction, the frontend sends the input data to the Spring API, which validates it against the selected signature, then calls the FastAPI analyzer with the model and input. The analyzer takes the model and computes the prediction. The result is sent back to the Spring API, which stores the new Prediction record in PostgreSQL and forwards the result to the frontend to display. If the user provides feedback on that prediction, another API call updates the record in the DB. This separation of concerns (UI, API, ML processing, storage) makes the system scalable and easier to maintain.
 
 ## Contributing
 

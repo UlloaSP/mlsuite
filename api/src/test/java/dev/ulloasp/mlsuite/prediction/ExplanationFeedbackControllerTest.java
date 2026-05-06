@@ -15,21 +15,21 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.prediction.controllers.ExplanationFeedbackControllerImpl;
-import dev.ulloasp.mlsuite.prediction.dtos.CreateExplanationFeedbackParams;
-import dev.ulloasp.mlsuite.prediction.dtos.UpdateExplanationFeedbackParams;
-import dev.ulloasp.mlsuite.prediction.entities.ExplanationFeedback;
-import dev.ulloasp.mlsuite.prediction.entities.Prediction;
-import dev.ulloasp.mlsuite.prediction.exceptions.ExplanationFeedbackDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.services.ExplanationFeedbackService;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.prediction.adapter.in.web.ExplanationFeedbackControllerImpl;
+import dev.ulloasp.mlsuite.prediction.application.dto.CreateExplanationFeedbackParams;
+import dev.ulloasp.mlsuite.prediction.application.dto.UpdateExplanationFeedbackParams;
+import dev.ulloasp.mlsuite.prediction.application.port.in.ExplanationFeedbackCatalogUseCase;
+import dev.ulloasp.mlsuite.prediction.domain.model.ExplanationFeedback;
+import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
+import dev.ulloasp.mlsuite.prediction.domain.exception.ExplanationFeedbackDoesNotExistsException;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 
 @ExtendWith(MockitoExtension.class)
 class ExplanationFeedbackControllerTest {
@@ -38,52 +38,52 @@ class ExplanationFeedbackControllerTest {
     private CurrentUserResolver currentUserResolver;
 
     @Mock
-    private ExplanationFeedbackService explanationFeedbackService;
+    private ExplanationFeedbackCatalogUseCase explanationFeedbackCatalogUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private ExplanationFeedbackControllerImpl controller;
 
     @BeforeEach
     void setUp() {
-        controller = new ExplanationFeedbackControllerImpl(currentUserResolver, explanationFeedbackService);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice"));
+        controller = new ExplanationFeedbackControllerImpl(currentUserResolver, explanationFeedbackCatalogUseCase);
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
     }
 
     @Test
     void createExplanationFeedback_UsesInternalUserId() throws Exception {
-        CreateExplanationFeedbackParams params = new CreateExplanationFeedbackParams();
-        params.setPredictionId(11L);
-        params.setOrder(1);
-        params.setValue(objectMapper.valueToTree(Map.of("feedback-step-notes", "tree")));
-        when(explanationFeedbackService.createExplanationFeedback(3L, 11L, 1, params.getValue()))
-                .thenReturn(explanationFeedback(params.getValue()));
+        CreateExplanationFeedbackParams params = new CreateExplanationFeedbackParams(
+                11L,
+                1,
+                objectMapper.valueToTree(Map.of("feedback-step-notes", "tree")));
+        when(explanationFeedbackCatalogUseCase.createExplanationFeedback(3L, 11L, 1, params.value()))
+                .thenReturn(explanationFeedback(params.value()));
 
         ResponseEntity<?> response = controller.createExplanationFeedback(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(explanationFeedbackService).createExplanationFeedback(3L, 11L, 1, params.getValue());
+        verify(explanationFeedbackCatalogUseCase).createExplanationFeedback(3L, 11L, 1, params.value());
     }
 
     @Test
     void updateExplanationFeedback_UsesInternalUserId() throws Exception {
-        UpdateExplanationFeedbackParams params = new UpdateExplanationFeedbackParams();
-        params.setExplanationFeedbackId(12L);
-        params.setRealValue(objectMapper.valueToTree(Map.of("feedback-step-notes", "fixed")));
-        when(explanationFeedbackService.updateExplanationFeedback(3L, 12L, params.getRealValue()))
-                .thenReturn(explanationFeedback(params.getRealValue()));
+        UpdateExplanationFeedbackParams params = new UpdateExplanationFeedbackParams(
+                12L,
+                objectMapper.valueToTree(Map.of("feedback-step-notes", "fixed")));
+        when(explanationFeedbackCatalogUseCase.updateExplanationFeedback(3L, 12L, params.realValue()))
+                .thenReturn(explanationFeedback(params.realValue()));
 
         ResponseEntity<?> response = controller.updateExplanationFeedback(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(explanationFeedbackService).updateExplanationFeedback(3L, 12L, params.getRealValue());
+        verify(explanationFeedbackCatalogUseCase).updateExplanationFeedback(3L, 12L, params.realValue());
     }
 
     @Test
     void getAllExplanationFeedback_PropagatesMissingErrors() {
-        when(explanationFeedbackService.getExplanationFeedbackByPredictionId(3L, 99L))
+        when(explanationFeedbackCatalogUseCase.getExplanationFeedbackByPredictionId(3L, 99L))
                 .thenThrow(new ExplanationFeedbackDoesNotExistsException(99L, "alice"));
 
         assertThrows(ExplanationFeedbackDoesNotExistsException.class,
@@ -92,7 +92,7 @@ class ExplanationFeedbackControllerTest {
 
     @Test
     void getAllExplanationFeedback_ReturnsDtos() {
-        when(explanationFeedbackService.getExplanationFeedbackByPredictionId(3L, 11L))
+        when(explanationFeedbackCatalogUseCase.getExplanationFeedbackByPredictionId(3L, 11L))
                 .thenReturn(List.of(explanationFeedback(objectMapper.valueToTree("tree"))));
 
         assertEquals(1, controller.getAllExplanationFeedback(authentication, 11L).getBody().size());
@@ -117,3 +117,4 @@ class ExplanationFeedbackControllerTest {
         return explanationFeedback;
     }
 }
+

@@ -121,6 +121,9 @@ export interface TargetDto {
 export interface OutputFeedbackDto {
 	id: string;
 	predictionId: string;
+	userId: number;
+	userName: string;
+	userEmail: string;
 	order: number;
 	value: unknown;
 	createdAt: string;
@@ -130,6 +133,9 @@ export interface OutputFeedbackDto {
 export interface ExplanationFeedbackDto {
 	id: string;
 	predictionId: string;
+	userId: number;
+	userName: string;
+	userEmail: string;
 	order: number;
 	value: unknown;
 	realValue?: unknown;
@@ -162,7 +168,7 @@ export const createModel = async ({
 	if (dataframeFile) formData.append("dataframeFile", dataframeFile);
 
 	// Browser sets multipart boundary; do not set Content-Type manually
-	return appFetch<CreateModelDto>("/api/model/create", { method: "POST", body: formData });
+	return appFetch<CreateModelDto>("/api/models", { method: "POST", body: formData });
 };
 
 export const createSignature = async (req: CreateSignatureRequest): Promise<SignatureDto> => {
@@ -170,7 +176,7 @@ export const createSignature = async (req: CreateSignatureRequest): Promise<Sign
 		...req,
 		inputSignature: req.inputSignature,
 	};
-	return appFetch<SignatureDto>("/api/signature/create", json("POST", payload as Record<string, any>));
+	return appFetch<SignatureDto>("/api/signatures", json("POST", payload as Record<string, any>));
 };
 
 export const createPrediction = async (req: CreatePredictionRequest): Promise<PredictionDto> => {
@@ -179,36 +185,36 @@ export const createPrediction = async (req: CreatePredictionRequest): Promise<Pr
 		inputs: req.inputs,
 		prediction: req.prediction,
 	};
-	return appFetch<PredictionDto>("/api/prediction/create", json("POST", payload as Record<string, any>));
+	return appFetch<PredictionDto>("/api/predictions", json("POST", payload as Record<string, any>));
 };
 
 export const createTarget = async (req: CreateTargetRequest): Promise<TargetDto> => {
-	return appFetch<TargetDto>("/api/target/create", json("POST", req as Record<string, any>));
+	return appFetch<TargetDto>("/api/targets", json("POST", req as Record<string, any>));
 };
 
 export const updatePrediction = async (req: UpdatePredictionRequest): Promise<PredictionDto> => {
-	return appFetch<PredictionDto>("/api/prediction/update", json("POST", req as Record<string, any>));
+	return appFetch<PredictionDto>("/api/predictions", json("PATCH", req as Record<string, any>));
 };
 
 export const updateTarget = async (req: UpdateTargetRequest): Promise<TargetDto> => {
-	return appFetch<TargetDto>("/api/target/update", json("POST", req as Record<string, any>));
+	return appFetch<TargetDto>("/api/targets", json("PATCH", req as Record<string, any>));
 };
 
 export const createOutputFeedback = async (
 	req: CreateOutputFeedbackRequest,
 ): Promise<OutputFeedbackDto> =>
-	appFetch<OutputFeedbackDto>("/api/output-feedback/create", json("POST", req as Record<string, any>));
+	appFetch<OutputFeedbackDto>("/api/output-feedback", json("POST", req as Record<string, any>));
 
 export const updateOutputFeedback = async (
 	req: UpdateOutputFeedbackRequest,
 ): Promise<OutputFeedbackDto> =>
-	appFetch<OutputFeedbackDto>("/api/output-feedback/update", json("POST", req as Record<string, any>));
+	appFetch<OutputFeedbackDto>("/api/output-feedback", json("PATCH", req as Record<string, any>));
 
 export const createExplanationFeedback = async (
 	req: CreateExplanationFeedbackRequest,
 ): Promise<ExplanationFeedbackDto> =>
 	appFetch<ExplanationFeedbackDto>(
-		"/api/explanation-feedback/create",
+		"/api/explanation-feedback",
 		json("POST", req as Record<string, any>),
 	);
 
@@ -216,44 +222,44 @@ export const updateExplanationFeedback = async (
 	req: UpdateExplanationFeedbackRequest,
 ): Promise<ExplanationFeedbackDto> =>
 	appFetch<ExplanationFeedbackDto>(
-		"/api/explanation-feedback/update",
-		json("POST", req as Record<string, any>),
+		"/api/explanation-feedback",
+		json("PATCH", req as Record<string, any>),
 	);
 
 export const getModels = async (): Promise<ModelDto[]> => {
-	return appFetch<ModelDto[]>("/api/model/all");
+	return appFetch<ModelDto[]>("/api/models");
 };
 
 export const getSignatures = async ({ modelId }: GetAllSignaturesRequest): Promise<SignatureDto[]> => {
-	const url = `/api/signature/all?modelId=${encodeURIComponent(modelId)}`;
+	const url = `/api/signatures?modelId=${encodeURIComponent(modelId)}`;
 	return appFetch<SignatureDto[]>(url);
 };
 
 export const getPredictions = async ({ signatureId }: GetPredictionsRequest): Promise<PredictionDto[]> => {
-	const url = `/api/prediction/all?signatureId=${encodeURIComponent(signatureId)}`;
+	const url = `/api/predictions?signatureId=${encodeURIComponent(signatureId)}`;
 	return appFetch<PredictionDto[]>(url);
 };
 
 export const getTargets = async ({ predictionId }: GetTargetsRequest): Promise<TargetDto[]> => {
-	const url = `/api/target/all?predictionId=${encodeURIComponent(predictionId)}`;
+	const url = `/api/targets?predictionId=${encodeURIComponent(predictionId)}`;
 	return appFetch<TargetDto[]>(url);
 };
 
 export const getOutputFeedback = async ({
 	predictionId,
 }: GetOutputFeedbackRequest): Promise<OutputFeedbackDto[]> => {
-	const url = `/api/output-feedback/all?predictionId=${encodeURIComponent(predictionId)}`;
+	const url = `/api/output-feedback?predictionId=${encodeURIComponent(predictionId)}`;
 	return appFetch<OutputFeedbackDto[]>(url);
 };
 
 export const getExplanationFeedback = async ({
 	predictionId,
 }: GetExplanationFeedbackRequest): Promise<ExplanationFeedbackDto[]> => {
-	const url = `/api/explanation-feedback/all?predictionId=${encodeURIComponent(predictionId)}`;
+	const url = `/api/explanation-feedback?predictionId=${encodeURIComponent(predictionId)}`;
 	return appFetch<ExplanationFeedbackDto[]>(url);
 };
 
 export const getSignature = async ({ signatureId }: GetSignatureRequest): Promise<SignatureDto> => {
-	const url = `/api/signature/${encodeURIComponent(signatureId)}`;
+	const url = `/api/signatures/${encodeURIComponent(signatureId)}`;
 	return appFetch<SignatureDto>(url);
 };

@@ -4,14 +4,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { motion } from "motion/react";
-import { AppPage, AppSurface } from "../../app/components";
+import { AppBadge, AppPage, AppPanel, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
+import { useWorkspaceContext } from "../../workspace/hooks";
 import { ProfileBody } from "../components/ProfileBody";
 import { ProfileHeader } from "../components/ProfileHeader";
 import { useUser } from "../hooks"; // Adjust the import path as necessary
 
 export function ProfilePage() {
 	const { data: user, isError } = useUser();
+	const { data: workspace } = useWorkspaceContext();
 
 	if (!user || isError) return <NotFoundError />;
 
@@ -27,12 +29,26 @@ export function ProfilePage() {
 					<ProfileHeader
 						imageUrl={user?.avatarUrl}
 						name={user?.userName || user?.fullName || "Guest"}
-						provider={
-							user
-								? `Logged in with ${user.oauthProvider.charAt(0).toUpperCase() + user.oauthProvider.slice(1)}`
-								: "Not logged in"
-						}
+						provider={user.systemRole}
 					/>
+					{workspace ? (
+						<AppPanel className="mb-6 mt-6">
+							<div className="flex flex-wrap items-center justify-between gap-4">
+								<div>
+									<p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+										Current Workspace
+									</p>
+									<p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">
+										{workspace.currentOrganization.name}
+									</p>
+									<p className="mt-1 text-sm text-[var(--text-secondary)]">
+										{workspace.memberships.length} organization memberships
+									</p>
+								</div>
+								<AppBadge tone="accent">{workspace.currentMembership.role}</AppBadge>
+							</div>
+						</AppPanel>
+					) : null}
 					<ProfileBody user={user} />
 				</AppSurface>
 			</motion.div>

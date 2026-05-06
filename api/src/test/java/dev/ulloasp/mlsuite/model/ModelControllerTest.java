@@ -14,16 +14,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
-import dev.ulloasp.mlsuite.model.controllers.ModelControllerImpl;
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.model.services.AnalyzerService;
-import dev.ulloasp.mlsuite.model.services.ModelService;
+import dev.ulloasp.mlsuite.model.adapter.in.web.ModelControllerImpl;
+import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
+import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
-import dev.ulloasp.mlsuite.signature.services.SignatureService;
+import dev.ulloasp.mlsuite.signature.application.port.in.SignatureCatalogUseCase;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 
 @ExtendWith(MockitoExtension.class)
 class ModelControllerTest {
@@ -32,23 +32,27 @@ class ModelControllerTest {
     private CurrentUserResolver currentUserResolver;
 
     @Mock
-    private ModelService modelService;
+    private ModelCatalogUseCase modelCatalogUseCase;
 
     @Mock
-    private SignatureService signatureService;
+    private SignatureCatalogUseCase signatureCatalogUseCase;
 
     @Mock
-    private AnalyzerService analyzerService;
+    private AnalyzerUseCase analyzerUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private ModelControllerImpl controller;
 
     @BeforeEach
     void setUp() {
-        controller = new ModelControllerImpl(currentUserResolver, modelService, signatureService, analyzerService);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(4L, "alice"));
+        controller = new ModelControllerImpl(
+                currentUserResolver,
+                modelCatalogUseCase,
+                signatureCatalogUseCase,
+                analyzerUseCase);
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(4L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
     }
 
     @Test
@@ -59,21 +63,22 @@ class ModelControllerTest {
         Signature signature = new Signature();
         signature.setId(12L);
         signature.setModel(model);
-        when(modelService.createModel(4L, "demo", modelFile)).thenReturn(model);
-        when(analyzerService.generateInputSignature(4L, modelFile, null)).thenReturn(Map.of("x", "int"));
-        when(signatureService.createSignature(4L, 11L, Map.of("x", "int"), "Model", 0, 0, 0, null))
+        when(modelCatalogUseCase.createModel(4L, "demo", modelFile)).thenReturn(model);
+        when(analyzerUseCase.generateInputSignature(4L, modelFile, null)).thenReturn(Map.of("x", "int"));
+        when(signatureCatalogUseCase.createSignature(4L, 11L, Map.of("x", "int"), "Model", 0, 0, 0, null))
                 .thenReturn(signature);
 
         assertEquals(HttpStatus.CREATED, controller.createModel(authentication, "demo", modelFile, null).getStatusCode());
-        verify(modelService).createModel(4L, "demo", modelFile);
-        verify(analyzerService).generateInputSignature(4L, modelFile, null);
+        verify(modelCatalogUseCase).createModel(4L, "demo", modelFile);
+        verify(analyzerUseCase).generateInputSignature(4L, modelFile, null);
     }
 
     @Test
     void getAllModels_UsesInternalUserId() {
-        when(modelService.getModels(4L)).thenReturn(List.of(new Model()));
+        when(modelCatalogUseCase.getModels(4L)).thenReturn(List.of(new Model()));
 
         assertEquals(1, controller.getAllModels(authentication).getBody().size());
-        verify(modelService).getModels(4L);
+        verify(modelCatalogUseCase).getModels(4L);
     }
 }
+

@@ -24,3 +24,4 @@ public class ObjectStorageConfig {
         return new MinioObjectStorageService(minioClient, properties);
     }
 }
+

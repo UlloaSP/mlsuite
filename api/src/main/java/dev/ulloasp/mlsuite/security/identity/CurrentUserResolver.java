@@ -1,26 +1,27 @@
 package dev.ulloasp.mlsuite.security.identity;
 
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 
 @Component
 public class CurrentUserResolver {
 
-    private final OAuth2ExternalIdentityExtractor externalIdentityExtractor;
     private final UserLookupService userLookupService;
 
-    public CurrentUserResolver(
-            OAuth2ExternalIdentityExtractor externalIdentityExtractor,
-            UserLookupService userLookupService) {
-        this.externalIdentityExtractor = externalIdentityExtractor;
+    public CurrentUserResolver(UserLookupService userLookupService) {
         this.userLookupService = userLookupService;
     }
 
-    public CurrentUser resolve(OAuth2AuthenticationToken authentication) {
-        User user = userLookupService.requireByExternalIdentity(externalIdentityExtractor.extract(authentication));
-        return new CurrentUser(user.getId(), user.getUsername());
+    public CurrentUser resolve(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof AuthenticatedUserPrincipal principal) {
+            return new CurrentUser(principal.userId(), principal.getUsername(), principal.systemRole());
+        }
+        User user = userLookupService.requireByEmail(authentication.getName());
+        return new CurrentUser(user.getId(), user.getUsername(), user.getSystemRole());
     }
 }
+

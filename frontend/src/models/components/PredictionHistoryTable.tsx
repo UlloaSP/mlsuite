@@ -14,11 +14,13 @@ import { PredictionStatusPill } from "./PredictionStatusPill";
 
 type PredictionHistoryTableProps = {
 	predictions: PredictionDto[];
+	statusByPredictionId: Map<string, "COMPLETED" | "PENDING">;
 	onOpenPrediction: (predictionId: string) => void;
 };
 
 export function PredictionHistoryTable({
 	predictions,
+	statusByPredictionId,
 	onOpenPrediction,
 }: PredictionHistoryTableProps) {
 	return (
@@ -52,7 +54,7 @@ export function PredictionHistoryTable({
 									{new Date(getPredictionTimestamp(prediction)).toLocaleString()}
 								</td>
 								<td className="px-5 py-4">
-									<PredictionStatusPill status={prediction.status} />
+									<PredictionStatusPill status={statusByPredictionId.get(prediction.id) ?? "PENDING"} />
 								</td>
 								<td className="px-5 py-4 text-right">
 									<span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)]">

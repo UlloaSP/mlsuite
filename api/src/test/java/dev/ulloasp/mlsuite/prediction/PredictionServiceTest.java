@@ -17,22 +17,25 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.prediction.entities.Prediction;
-import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
-import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.repositories.ExplanationFeedbackRepository;
-import dev.ulloasp.mlsuite.prediction.repositories.OutputFeedbackRepository;
-import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
-import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
-import dev.ulloasp.mlsuite.prediction.services.PredictionServiceImpl;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
-import dev.ulloasp.mlsuite.signature.exceptions.InvalidSignatureSchemaException;
-import dev.ulloasp.mlsuite.signature.exceptions.SignatureDoesNotExistsException;
-import dev.ulloasp.mlsuite.signature.repositories.SignatureRepository;
-import dev.ulloasp.mlsuite.signature.services.SignatureSchemaCompatibilityService;
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
+import dev.ulloasp.mlsuite.prediction.domain.model.PredictionStatus;
+import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.ExplanationFeedbackRepository;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.OutputFeedbackRepository;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.TargetRepository;
+import dev.ulloasp.mlsuite.prediction.application.service.PredictionServiceImpl;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
+import dev.ulloasp.mlsuite.signature.domain.exception.InvalidSignatureSchemaException;
+import dev.ulloasp.mlsuite.signature.domain.exception.SignatureDoesNotExistsException;
+import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.SignatureRepository;
+import dev.ulloasp.mlsuite.signature.application.service.SignatureSchemaCompatibilityService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
 class PredictionServiceTest {
@@ -58,13 +61,20 @@ class PredictionServiceTest {
     @Mock
     private SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
 
+    @Mock
+    private WorkspaceAccessService workspaceAccessService;
+
+    @Mock
+    private WorkspaceAuthorizationService workspaceAuthorizationService;
+
     private PredictionServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new PredictionServiceImpl(userLookupService, signatureRepository, predictionRepository,
                 targetRepository, outputFeedbackRepository, explanationFeedbackRepository,
-                signatureSchemaCompatibilityService);
+                signatureSchemaCompatibilityService, workspaceAccessService, workspaceAuthorizationService);
+        when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
 
     @Test
@@ -73,14 +83,14 @@ class PredictionServiceTest {
         Signature signature = signature(user);
         signature.setInputSignature(Map.of("fields", List.of()));
         when(userLookupService.requireById(3L)).thenReturn(user);
-        when(signatureRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(signature));
+        when(signatureRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(signature));
         when(predictionRepository.findBySignatureIdAndName(11L, "pred")).thenReturn(Optional.empty());
         when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Prediction result = service.createPrediction(3L, 11L, "pred", false, Map.of("value", 1), Map.of("x", 2));
 
         assertEquals("pred", result.getName());
-        verify(signatureRepository).findByIdAndUserId(11L, 3L);
+        verify(signatureRepository).findByIdAndOrganizationId(11L, 41L);
     }
 
     @Test
@@ -89,7 +99,7 @@ class PredictionServiceTest {
         Signature signature = signature(user);
         signature.setInputSignature(Map.of("explanations", List.of(Map.of("kind", "old-kind"))));
         when(userLookupService.requireById(3L)).thenReturn(user);
-        when(signatureRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(signature));
+        when(signatureRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(signature));
         doThrow(new InvalidSignatureSchemaException(
                 "Custom explanation kind \"old-kind\" does not exist in active plugin catalog."))
                 .when(signatureSchemaCompatibilityService).validate(3L, signature.getInputSignature());
@@ -101,7 +111,7 @@ class PredictionServiceTest {
     @Test
     void createPrediction_ThrowsWhenSignatureMissing() {
         when(userLookupService.requireById(3L)).thenReturn(user(3L));
-        when(signatureRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.empty());
+        when(signatureRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(SignatureDoesNotExistsException.class,
                 () -> service.createPrediction(3L, 11L, "pred", false, Map.of(), Map.of()));
@@ -116,7 +126,7 @@ class PredictionServiceTest {
         storedPrediction.setPrediction(Map.of("old", 2));
         signature.setInputSignature(Map.of("fields", List.of()));
         when(userLookupService.requireById(3L)).thenReturn(user);
-        when(signatureRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(signature));
+        when(signatureRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(signature));
         when(predictionRepository.findBySignatureIdAndName(11L, "pred")).thenReturn(Optional.of(storedPrediction));
         when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -133,7 +143,7 @@ class PredictionServiceTest {
     @Test
     void updatePrediction_UsesOwnerScopedLookup() {
         when(userLookupService.requireById(3L)).thenReturn(user(3L));
-        when(predictionRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.of(prediction(signature(user(3L)))));
+        when(predictionRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(prediction(signature(user(3L)))));
         when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Prediction result = service.updatePrediction(3L, 12L, PredictionStatus.COMPLETED);
@@ -144,7 +154,7 @@ class PredictionServiceTest {
     @Test
     void getPredictionsBySignatureId_ThrowsWhenMissing() {
         when(userLookupService.requireById(3L)).thenReturn(user(3L));
-        when(signatureRepository.findByIdAndUserId(99L, 3L)).thenReturn(Optional.empty());
+        when(signatureRepository.findByIdAndOrganizationId(99L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(SignatureDoesNotExistsException.class, () -> service.getPredictionsBySignatureId(3L, 99L));
     }
@@ -152,8 +162,8 @@ class PredictionServiceTest {
     @Test
     void getPredictionsBySignatureId_ReturnsOwnerScopedList() {
         when(userLookupService.requireById(3L)).thenReturn(user(3L));
-        when(signatureRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(signature(user(3L))));
-        when(predictionRepository.findBySignatureIdAndUserId(11L, 3L)).thenReturn(List.of(prediction(signature(user(3L)))));
+        when(signatureRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(signature(user(3L))));
+        when(predictionRepository.findBySignatureIdAndOrganizationId(11L, 41L)).thenReturn(List.of(prediction(signature(user(3L)))));
 
         assertEquals(1, service.getPredictionsBySignatureId(3L, 11L).size());
     }
@@ -168,11 +178,21 @@ class PredictionServiceTest {
     private Signature signature(User user) {
         Model model = new Model();
         model.setUser(user);
+        model.setOrganization(organization());
         Signature signature = new Signature();
         signature.setId(11L);
         signature.setModel(model);
         signature.setName("sig");
         return signature;
+    }
+
+    private Organization organization() {
+        Organization organization = new Organization();
+        organization.setId(41L);
+        organization.setName("Org");
+        organization.setSlug("org");
+        organization.setCreatedBy(user(3L));
+        return organization;
     }
 
     private Prediction prediction(Signature signature) {
@@ -186,3 +206,4 @@ class PredictionServiceTest {
         return prediction;
     }
 }
+

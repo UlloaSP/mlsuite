@@ -3,11 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export { AuthButton } from "./AuthButton";
+export { AppHeader } from "./AppHeader";
+export { MLSuiteMark } from "./MLSuiteMark";
 export { PageTransition } from "./PageTransition";
 export { Sidebar } from "./Sidebar";
-export { SidebarFooter } from "./SidebarFooter";
-export { SidebarHeader } from "./SidebarHeader";
 export { SidebarNavigation } from "./SidebarNavigation";
 export { SidebarSection } from "./SidebarSection";
 export { SidebarTile } from "./SidebarTile";
@@ -27,7 +26,10 @@ export {
 	AppSurface,
 	AppTabs,
 	AppTextArea,
-	AppTextField, AppTitle, AppToolbar, cx,
-	FOCUS_RING
+	AppTextField,
+	AppTitle,
+	AppToolbar,
+	cx,
+	FOCUS_RING,
 } from "./ui";
 

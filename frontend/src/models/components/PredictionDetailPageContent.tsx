@@ -11,9 +11,9 @@ import type { PredictionDto, SignatureDto } from "../api/modelService";
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
 import { useGetExplanationFeedback, useGetTargets } from "../hooks";
 import { useGetOutputFeedback } from "../output-feedback-hooks";
+import { useUser } from "../../user/hooks";
 import {
 	getPredictionExecutionTime,
-	getPredictionStatus,
 	getPredictionTimestamp,
 } from "../utils";
 import { PredictionDetailMetrics } from "./PredictionDetailMetrics";
@@ -32,6 +32,7 @@ export function PredictionDetailPageContent({
 	signature,
 }: PredictionDetailPageContentProps) {
 	const [theme] = useAtom(themeWithHtmlAtom);
+	const { data: user } = useUser();
 	const [inputsOpen, setInputsOpen] = useState(true);
 	const [targetsOpen, setTargetsOpen] = useState(true);
 	const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
@@ -70,14 +71,33 @@ export function PredictionDetailPageContent({
 			),
 		[prediction.prediction, signature?.inputSignature, customExplanationDefinitions],
 	);
-	const explanationFeedbackByOrder = useMemo(
-		() => new Map(explanationFeedback.map((item) => [item.order, item])),
-		[explanationFeedback],
+	const currentUserId = user?.id ? Number(user.id) : null;
+	const myExplanationFeedbackByOrder = useMemo(
+		() => new Map(explanationFeedback.filter((item) => item.userId === currentUserId).map((item) => [item.order, item])),
+		[explanationFeedback, currentUserId],
 	);
-	const outputFeedbackByOrder = useMemo(
-		() => new Map(outputFeedback.map((item) => [item.order, item])),
-		[outputFeedback],
+	const otherExplanationFeedbackByOrder = useMemo(() => {
+		const map = new Map<number, typeof explanationFeedback>();
+		for (const item of explanationFeedback.filter((fb) => fb.userId !== currentUserId)) {
+			const list = map.get(item.order) ?? [];
+			list.push(item);
+			map.set(item.order, list);
+		}
+		return map;
+	}, [explanationFeedback, currentUserId]);
+	const myOutputFeedbackByOrder = useMemo(
+		() => new Map(outputFeedback.filter((item) => item.userId === currentUserId).map((item) => [item.order, item])),
+		[outputFeedback, currentUserId],
 	);
+	const otherOutputFeedbackByOrder = useMemo(() => {
+		const map = new Map<number, typeof outputFeedback>();
+		for (const item of outputFeedback.filter((fb) => fb.userId !== currentUserId)) {
+			const list = map.get(item.order) ?? [];
+			list.push(item);
+			map.set(item.order, list);
+		}
+		return map;
+	}, [outputFeedback, currentUserId]);
 	const reports = useMemo(
 		() =>
 			signature?.inputSignature &&
@@ -89,13 +109,23 @@ export function PredictionDetailPageContent({
 		[signature?.inputSignature],
 	);
 
+	const myFeedbackStatus = useMemo(() => {
+		const requiredOutputs = reports.length;
+		const requiredExplanations = explanationEntries.filter((e) => e.feedbackQuestionnaire).length;
+		const myOutputCount = myOutputFeedbackByOrder.size;
+		const myExplanationCount = myExplanationFeedbackByOrder.size;
+		return myOutputCount >= requiredOutputs && myExplanationCount >= requiredExplanations
+			? "COMPLETED" as const
+			: "PENDING" as const;
+	}, [reports.length, explanationEntries, myOutputFeedbackByOrder.size, myExplanationFeedbackByOrder.size]);
+
 	return (
 		<div className="space-y-6">
 			<PredictionDetailMetrics
 				targetCount={targets.length}
 				executionTime={getPredictionExecutionTime(prediction.prediction)}
 				timestamp={new Date(getPredictionTimestamp(prediction)).toLocaleString()}
-				status={getPredictionStatus(prediction.status)}
+				status={myFeedbackStatus}
 			/>
 
 			<PredictionTargetsPanel
@@ -111,7 +141,8 @@ export function PredictionDetailPageContent({
 					key={target.id}
 					predictionId={prediction.id}
 					target={target}
-					outputFeedback={outputFeedbackByOrder.get(target.order)}
+					outputFeedback={myOutputFeedbackByOrder.get(target.order)}
+					otherFeedback={otherOutputFeedbackByOrder.get(target.order)}
 					reportConfig={reports[target.order]}
 					signatureSchema={signature?.inputSignature}
 					predictionValue={prediction.prediction}
@@ -130,7 +161,8 @@ export function PredictionDetailPageContent({
 					key={explanation.explanationId}
 					predictionId={prediction.id}
 					explanation={explanation}
-					feedback={explanationFeedbackByOrder.get(explanation.order)}
+					feedback={myExplanationFeedbackByOrder.get(explanation.order)}
+					otherFeedback={otherExplanationFeedbackByOrder.get(explanation.order)}
 					theme={theme}
 				/>
 			))}

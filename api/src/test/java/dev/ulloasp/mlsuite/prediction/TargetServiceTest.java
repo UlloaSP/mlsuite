@@ -18,18 +18,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.prediction.entities.Prediction;
-import dev.ulloasp.mlsuite.prediction.entities.PredictionStatus;
-import dev.ulloasp.mlsuite.prediction.entities.Target;
-import dev.ulloasp.mlsuite.prediction.exceptions.PredictionDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.exceptions.TargetDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.repositories.PredictionRepository;
-import dev.ulloasp.mlsuite.prediction.repositories.TargetRepository;
-import dev.ulloasp.mlsuite.prediction.services.TargetServiceImpl;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
-import dev.ulloasp.mlsuite.user.entity.User;
-import dev.ulloasp.mlsuite.user.service.UserLookupService;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
+import dev.ulloasp.mlsuite.prediction.domain.model.PredictionStatus;
+import dev.ulloasp.mlsuite.prediction.domain.model.Target;
+import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.domain.exception.TargetDoesNotExistsException;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
+import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.TargetRepository;
+import dev.ulloasp.mlsuite.prediction.application.service.TargetServiceImpl;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
+import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 
 @ExtendWith(MockitoExtension.class)
 class TargetServiceTest {
@@ -43,18 +45,22 @@ class TargetServiceTest {
     @Mock
     private PredictionRepository predictionRepository;
 
+    @Mock
+    private WorkspaceAccessService workspaceAccessService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private TargetServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new TargetServiceImpl(userLookupService, targetRepository, predictionRepository);
+        service = new TargetServiceImpl(userLookupService, targetRepository, predictionRepository, workspaceAccessService);
+        when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
 
     @Test
     void createTarget_UsesOwnerScopedPrediction() throws Exception {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(prediction()));
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction()));
         when(targetRepository.save(any(Target.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Target result = service.createTarget(3L, 11L, 1, objectMapper.readTree("{\"x\":1}"));
@@ -66,7 +72,7 @@ class TargetServiceTest {
     @Test
     void createTarget_ThrowsWhenPredictionMissing() throws Exception {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.empty());
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(PredictionDoesNotExistsException.class,
                 () -> service.createTarget(3L, 11L, 1, objectMapper.readTree("{\"x\":1}")));
@@ -75,7 +81,7 @@ class TargetServiceTest {
     @Test
     void updateTarget_ThrowsWhenOwnerScopedTargetMissing() throws Exception {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(targetRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.empty());
+        when(targetRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(TargetDoesNotExistsException.class,
                 () -> service.updateTarget(3L, 12L, objectMapper.readTree("{\"actual\":1}")));
@@ -85,7 +91,7 @@ class TargetServiceTest {
     void updateTarget_StoresRealValueOnly() throws Exception {
         Target target = target();
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(targetRepository.findByIdAndUserId(12L, 3L)).thenReturn(Optional.of(target));
+        when(targetRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(target));
         when(targetRepository.save(any(Target.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Target result = service.updateTarget(3L, 12L, objectMapper.readTree("{\"actual\":1}"));
@@ -97,8 +103,8 @@ class TargetServiceTest {
     @Test
     void getTargetsByPredictionId_ReturnsOwnerScopedList() {
         when(userLookupService.requireById(3L)).thenReturn(user());
-        when(predictionRepository.findByIdAndUserId(11L, 3L)).thenReturn(Optional.of(prediction()));
-        when(targetRepository.findByPredictionIdAndUserId(11L, 3L)).thenReturn(List.of(new Target()));
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction()));
+        when(targetRepository.findByPredictionIdAndOrganizationId(11L, 41L)).thenReturn(List.of(new Target()));
 
         assertEquals(1, service.getTargetsByPredictionId(3L, 11L).size());
     }
@@ -113,6 +119,7 @@ class TargetServiceTest {
     private Prediction prediction() {
         Model model = new Model();
         model.setUser(user());
+        model.setOrganization(organization());
         Signature signature = new Signature();
         signature.setModel(model);
         Prediction prediction = new Prediction();
@@ -130,4 +137,14 @@ class TargetServiceTest {
         target.setPrediction(prediction());
         return target;
     }
+
+    private Organization organization() {
+        Organization organization = new Organization();
+        organization.setId(41L);
+        organization.setName("Org");
+        organization.setSlug("org");
+        organization.setCreatedBy(user());
+        return organization;
+    }
 }
+

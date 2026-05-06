@@ -15,21 +15,21 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.ulloasp.mlsuite.model.entities.Model;
-import dev.ulloasp.mlsuite.prediction.controllers.OutputFeedbackControllerImpl;
-import dev.ulloasp.mlsuite.prediction.dtos.CreateOutputFeedbackParams;
-import dev.ulloasp.mlsuite.prediction.dtos.UpdateOutputFeedbackParams;
-import dev.ulloasp.mlsuite.prediction.entities.OutputFeedback;
-import dev.ulloasp.mlsuite.prediction.entities.Prediction;
-import dev.ulloasp.mlsuite.prediction.exceptions.OutputFeedbackDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.services.OutputFeedbackService;
+import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.prediction.adapter.in.web.OutputFeedbackControllerImpl;
+import dev.ulloasp.mlsuite.prediction.application.dto.CreateOutputFeedbackParams;
+import dev.ulloasp.mlsuite.prediction.application.dto.UpdateOutputFeedbackParams;
+import dev.ulloasp.mlsuite.prediction.application.port.in.OutputFeedbackCatalogUseCase;
+import dev.ulloasp.mlsuite.prediction.domain.model.OutputFeedback;
+import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
+import dev.ulloasp.mlsuite.prediction.domain.exception.OutputFeedbackDoesNotExistsException;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
-import dev.ulloasp.mlsuite.signature.entities.Signature;
+import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 
 @ExtendWith(MockitoExtension.class)
 class OutputFeedbackControllerTest {
@@ -38,52 +38,52 @@ class OutputFeedbackControllerTest {
     private CurrentUserResolver currentUserResolver;
 
     @Mock
-    private OutputFeedbackService outputFeedbackService;
+    private OutputFeedbackCatalogUseCase outputFeedbackCatalogUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private OutputFeedbackControllerImpl controller;
 
     @BeforeEach
     void setUp() {
-        controller = new OutputFeedbackControllerImpl(currentUserResolver, outputFeedbackService);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice"));
+        controller = new OutputFeedbackControllerImpl(currentUserResolver, outputFeedbackCatalogUseCase);
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
     }
 
     @Test
     void createOutputFeedback_UsesInternalUserId() throws Exception {
-        CreateOutputFeedbackParams params = new CreateOutputFeedbackParams();
-        params.setPredictionId(11L);
-        params.setOrder(1);
-        params.setValue(objectMapper.valueToTree(Map.of("assessment", "correct")));
-        when(outputFeedbackService.createOutputFeedback(3L, 11L, 1, params.getValue()))
-                .thenReturn(outputFeedback(params.getValue()));
+        CreateOutputFeedbackParams params = new CreateOutputFeedbackParams(
+                11L,
+                1,
+                objectMapper.valueToTree(Map.of("assessment", "correct")));
+        when(outputFeedbackCatalogUseCase.createOutputFeedback(3L, 11L, 1, params.value()))
+                .thenReturn(outputFeedback(params.value()));
 
         ResponseEntity<?> response = controller.createOutputFeedback(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(outputFeedbackService).createOutputFeedback(3L, 11L, 1, params.getValue());
+        verify(outputFeedbackCatalogUseCase).createOutputFeedback(3L, 11L, 1, params.value());
     }
 
     @Test
     void updateOutputFeedback_UsesInternalUserId() throws Exception {
-        UpdateOutputFeedbackParams params = new UpdateOutputFeedbackParams();
-        params.setOutputFeedbackId(12L);
-        params.setValue(objectMapper.valueToTree(Map.of("assessment", "incorrect")));
-        when(outputFeedbackService.updateOutputFeedback(3L, 12L, params.getValue()))
-                .thenReturn(outputFeedback(params.getValue()));
+        UpdateOutputFeedbackParams params = new UpdateOutputFeedbackParams(
+                12L,
+                objectMapper.valueToTree(Map.of("assessment", "incorrect")));
+        when(outputFeedbackCatalogUseCase.updateOutputFeedback(3L, 12L, params.value()))
+                .thenReturn(outputFeedback(params.value()));
 
         ResponseEntity<?> response = controller.updateOutputFeedback(authentication, params);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(outputFeedbackService).updateOutputFeedback(3L, 12L, params.getValue());
+        verify(outputFeedbackCatalogUseCase).updateOutputFeedback(3L, 12L, params.value());
     }
 
     @Test
     void getAllOutputFeedback_PropagatesMissingErrors() {
-        when(outputFeedbackService.getOutputFeedbackByPredictionId(3L, 99L))
+        when(outputFeedbackCatalogUseCase.getOutputFeedbackByPredictionId(3L, 99L))
                 .thenThrow(new OutputFeedbackDoesNotExistsException(99L, "alice"));
 
         assertThrows(OutputFeedbackDoesNotExistsException.class,
@@ -92,7 +92,7 @@ class OutputFeedbackControllerTest {
 
     @Test
     void getAllOutputFeedback_ReturnsDtos() throws Exception {
-        when(outputFeedbackService.getOutputFeedbackByPredictionId(3L, 11L))
+        when(outputFeedbackCatalogUseCase.getOutputFeedbackByPredictionId(3L, 11L))
                 .thenReturn(List.of(outputFeedback(objectMapper.valueToTree(Map.of("assessment", "correct")))));
 
         assertEquals(1, controller.getAllOutputFeedback(authentication, 11L).getBody().size());
@@ -116,3 +116,4 @@ class OutputFeedbackControllerTest {
         return outputFeedback;
     }
 }
+

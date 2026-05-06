@@ -8,6 +8,7 @@ import { useNavigate } from "react-router";
 import { AppBreadcrumbs, AppPage } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
+import { useWorkspaceContext } from "../../workspace/hooks";
 import type { Bundle } from "../bundle-types";
 import { DF_EXTS, getStem, isDfFile, isModelFile, slugToTitle } from "../bundle-utils";
 import { BundleCard } from "../components/BundleCard";
@@ -23,6 +24,7 @@ export function CreateModelPage() {
 	const mutation = useCreateModelMutation();
 	const navigate = useNavigate();
 	const { data: user, error } = useUser();
+	const { data: workspace } = useWorkspaceContext();
 
 	// ── Ingest dropped/selected files ───────────────────────────────────────
 
@@ -137,6 +139,7 @@ export function CreateModelPage() {
 	const anySaving = bundles.some((b) => b.saving);
 
 	if (!user || error) return <NotFoundError />;
+	if (workspace && !workspace.permissions.canCreateModels) return <NotFoundError />;
 
 	return (
 		<AppPage>

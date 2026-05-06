@@ -1,4 +1,4 @@
-package dev.ulloasp.mlsuite.prediction.entities;
+package dev.ulloasp.mlsuite.prediction.domain.model;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,3 +56,4 @@ class PredictionStatusTest {
         assertEquals(0, PredictionStatus.PENDING.compareTo(PredictionStatus.PENDING));
     }
 }
+

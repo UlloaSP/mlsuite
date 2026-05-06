@@ -1,0 +1,15 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+package dev.ulloasp.mlsuite.model.domain.exception;
+
+public class ModelAlreadyExistsException extends RuntimeException {
+
+    public ModelAlreadyExistsException(String modelName, String orgName) {
+        super("Model '" + modelName + "' already exists for organization '" + orgName + "'.");
+    }
+
+}
+

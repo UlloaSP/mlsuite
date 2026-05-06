@@ -27,6 +27,7 @@ type PredictionTargetFeedbackCardProps = {
 	predictionId: string;
 	target: TargetDto;
 	outputFeedback?: OutputFeedbackDto;
+	otherFeedback?: OutputFeedbackDto[];
 	reportConfig?: Record<string, unknown>;
 	signatureSchema?: unknown;
 	predictionValue: unknown;
@@ -37,6 +38,7 @@ export function PredictionTargetFeedbackCard({
 	predictionId,
 	target,
 	outputFeedback,
+	otherFeedback,
 	reportConfig,
 	signatureSchema,
 	predictionValue,
@@ -169,6 +171,27 @@ export function PredictionTargetFeedbackCard({
 							Save
 						</AppButton>
 					</div>
+				</div>
+			)}
+
+			{otherFeedback && otherFeedback.length > 0 && (
+				<div className="mt-4 space-y-3 border-t border-[var(--border-soft)] pt-4">
+					<p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+						Other reviews ({otherFeedback.length})
+					</p>
+					{otherFeedback.map((fb) => (
+						<div key={fb.id} className="rounded-[14px] bg-[var(--surface-muted)] p-3">
+							<p className="mb-1 text-xs font-medium text-[var(--text-secondary)]">{fb.userName}</p>
+							<ExplanationFeedbackSummary
+								schema={questionnaire}
+								values={
+									fb.value && typeof fb.value === "object" && !Array.isArray(fb.value)
+										? (fb.value as Record<string, unknown>)
+										: {}
+								}
+							/>
+						</div>
+					))}
 				</div>
 			)}
 		</AppPanel>

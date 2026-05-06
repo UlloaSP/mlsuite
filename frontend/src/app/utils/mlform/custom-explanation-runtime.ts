@@ -27,19 +27,13 @@ type DeclarativeExplanationFetchContext<TConfig extends ExplanationConfig = Expl
 	config: NormalizedExplanationConfig<TConfig>;
 	explanationId: string;
 };
-type DeclarativeExplanationRenderContext<
-	TConfig extends ExplanationConfig = ExplanationConfig,
-	TResult = unknown,
-> = {
+type DeclarativeExplanationRenderContext<TConfig extends ExplanationConfig = ExplanationConfig, TResult = unknown> = {
 	config: NormalizedExplanationConfig<TConfig>;
 	explanationId: string;
 	state: ExplanationStateSnapshot;
 	result: TResult;
 };
-type DeclarativeCatalogExplanationKind<
-	TConfig extends ExplanationConfig = ExplanationConfig,
-	TResult = unknown,
-> = {
+type DeclarativeCatalogExplanationKind<TConfig extends ExplanationConfig = ExplanationConfig, TResult = unknown> = {
 	kind: string;
 	schema: ExplanationDefinition<TConfig>["schema"];
 	fetch: (context: DeclarativeExplanationFetchContext<TConfig>) => ExplanationFetchTransport;
@@ -82,9 +76,7 @@ const loadZod = async (): Promise<ZodModule> => {
 const toPresentationNodes = (value: PresentationContentLike): unknown[] =>
 	value === undefined ? [] : Array.isArray(value) ? [...value] : [value];
 
-const toBackendPatchedRequest = (
-	request: ExplanationFetchRequest,
-): ExplanationFetchRequest => {
+const toBackendPatchedRequest = (request: ExplanationFetchRequest): ExplanationFetchRequest => {
 	const backendFieldValues = isRecord(request.meta.backendFieldValues)
 		? request.meta.backendFieldValues
 		: null;
@@ -179,10 +171,7 @@ const adaptDeclarativeExplanationKind = (
 	},
 });
 
-const formatDiagnostics = (
-	ts: TypeScriptModule,
-	diagnostics: readonly import("typescript").Diagnostic[],
-): string =>
+const formatDiagnostics = (ts: TypeScriptModule, diagnostics: readonly import("typescript").Diagnostic[]): string =>
 	diagnostics.length === 0
 		? "Unknown TypeScript error."
 		: diagnostics
@@ -219,9 +208,7 @@ const transpileSource = async (source: string): Promise<string> => {
 	return result.outputText;
 };
 
-function assertDeclarativeExplanationKind(
-	value: unknown,
-): asserts value is DeclarativeCatalogExplanationKind {
+function assertDeclarativeExplanationKind(value: unknown): asserts value is DeclarativeCatalogExplanationKind {
 	if (!isRecord(value)) {
 		throw new Error("Custom explanation module must export a default explanation kind.");
 	}
@@ -242,9 +229,7 @@ function assertDeclarativeExplanationKind(
 	}
 }
 
-const importDefinitionFromSource = async (
-	source: string,
-): Promise<ExplanationDefinition<ExplanationConfig>> => {
+const importDefinitionFromSource = async (source: string): Promise<ExplanationDefinition<ExplanationConfig>> => {
 	const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
 	const blob = new Blob([outputText], { type: "text/javascript" });
 	const url = URL.createObjectURL(blob);
@@ -264,9 +249,7 @@ const importDefinitionFromSource = async (
 	}
 };
 
-export const resolveCustomExplanationDefinition = async (
-	source: string,
-): Promise<ExplanationDefinition<ExplanationConfig>> => {
+export const resolveCustomExplanationDefinition = async (source: string): Promise<ExplanationDefinition<ExplanationConfig>> => {
 	const cacheKey = hashString(source);
 	let cachedModule = definitionCache.get(cacheKey);
 	if (!cachedModule) {
@@ -284,7 +267,7 @@ export const customExplanationTemplate = `export default defineExplanationKind({
       id: z.string().optional(),
       label: z.string().optional(),
       description: z.string().optional(),
-      endpoint: z.string().min(1).default("/api/analyzer/explain/by-id"),
+      endpoint: z.string().min(1).default("/api/analyzer/explanations"),
     })
     .passthrough(),
   fetch: ({ config }) => ({
@@ -329,6 +312,5 @@ export const customExplanationTemplate = `export default defineExplanationKind({
 });
 `;
 
-export const validateCustomExplanationSource = async (
-	source: string,
-): Promise<ExplanationDefinition<ExplanationConfig>> => resolveCustomExplanationDefinition(source);
+export const validateCustomExplanationSource = async (source: string): Promise<ExplanationDefinition<ExplanationConfig>> =>
+	resolveCustomExplanationDefinition(source);

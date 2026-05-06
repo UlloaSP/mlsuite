@@ -1,39 +1,21 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
+import { useQueries } from "@tanstack/react-query";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import {
-	AppBreadcrumbs,
-	AppButton,
-	AppEmptyState,
-	AppPage,
-	AppPageHeader,
-	AppSurface,
-	AppTabs,
-} from "../../app/components";
+import { AppBreadcrumbs, AppButton, AppEmptyState, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
+import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { useUser } from "../../user/hooks";
+import { useWorkspaceContext } from "../../workspace/hooks";
 import { PredictionHistoryTable } from "../components/PredictionHistoryTable";
-import type {
-	PredictionDateRangeFilter,
-	PredictionFeedbackStatusFilter,
-} from "../components/PredictionHistoryToolbar";
-import {
-	PredictionHistoryToolbar,
-} from "../components/PredictionHistoryToolbar";
+import { PredictionHistoryToolbar, type PredictionDateRangeFilter, type PredictionFeedbackStatusFilter } from "../components/PredictionHistoryToolbar";
 import { BulkUploadButton } from "../components/BulkUploadButton";
 import { SignatureTechnicalTab } from "../components/SignatureTechnicalTab";
-import { useGetModels, useGetPredictions, useGetSignature } from "../hooks";
-import {
-	findModelById,
-	getPredictionStatus,
-	getPredictionTimestamp,
-	getSignatureVersionLabel,
-} from "../utils";
+import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, useGetModels, useGetPredictions, useGetSignature } from "../hooks";
+import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
+import * as modelApi from "../api/modelService";
+import { findModelById, getPredictionTimestamp, getSignatureVersionLabel } from "../utils";
 
 type SignatureDetailTab = "technical" | "history";
 
@@ -69,6 +51,7 @@ export function SignatureDetailPage() {
 	const { modelId, signatureId } = useParams<{ modelId: string; signatureId: string }>();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { data: user, error } = useUser();
+	const { data: workspace } = useWorkspaceContext();
 	const { data: models = [] } = useGetModels();
 	const model = useMemo(() => findModelById(models, modelId), [models, modelId]);
 	const { data: signature, isLoading: isSignatureLoading } = useGetSignature({
@@ -77,7 +60,42 @@ export function SignatureDetailPage() {
 	const { data: predictions = [] } = useGetPredictions({
 		signatureId: signatureId ?? "",
 	});
-
+	const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
+		readonly CatalogExplanationDefinition[]
+	>([]);
+	useEffect(() => {
+		let active = true;
+		void getActiveCustomExplanationDefinitions()
+			.then((definitions) => {
+				if (active) setCustomExplanationDefinitions(definitions);
+			})
+			.catch(() => {
+				if (active) setCustomExplanationDefinitions([]);
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+	const outputFeedbackQueries = useQueries({
+		queries: predictions.map((prediction) => ({
+			queryKey: GET_OUTPUT_FEEDBACK_QUERY_KEY({ predictionId: prediction.id }),
+			queryFn: () => modelApi.getOutputFeedback({ predictionId: prediction.id }),
+			enabled: Boolean(prediction.id),
+			placeholderData: [],
+			staleTime: 5 * 60_000,
+			gcTime: 10 * 60_000,
+		})),
+	});
+	const explanationFeedbackQueries = useQueries({
+		queries: predictions.map((prediction) => ({
+			queryKey: GET_EXPLANATION_FEEDBACK_QUERY_KEY({ predictionId: prediction.id }),
+			queryFn: () => modelApi.getExplanationFeedback({ predictionId: prediction.id }),
+			enabled: Boolean(prediction.id),
+			placeholderData: [],
+			staleTime: 5 * 60_000,
+			gcTime: 10 * 60_000,
+		})),
+	});
 	const [query, setQuery] = useState("");
 	const [feedbackStatus, setFeedbackStatus] = useState<PredictionFeedbackStatusFilter>("all");
 	const [dateRange, setDateRange] = useState<PredictionDateRangeFilter>("all");
@@ -94,12 +112,47 @@ export function SignatureDetailPage() {
 	};
 
 	const normalizedQuery = query.trim().toLowerCase();
+	const currentUserId = user?.id ? Number(user.id) : null;
+	const statusByPredictionId = useMemo(() => {
+		const map = new Map<string, "COMPLETED" | "PENDING">();
+		predictions.forEach((prediction, index) => {
+			const outputFeedback = (outputFeedbackQueries[index]?.data ?? []) as modelApi.OutputFeedbackDto[];
+			const explanationFeedback = (explanationFeedbackQueries[index]?.data ?? []) as modelApi.ExplanationFeedbackDto[];
+			const myOutputFeedback = currentUserId === null
+				? []
+				: outputFeedback.filter((fb) => fb.userId === currentUserId);
+			const myExplanationFeedback = currentUserId === null
+				? []
+				: explanationFeedback.filter((fb) => fb.userId === currentUserId);
+			const predictionReports = (() => {
+				const signatureSchema = signature?.inputSignature;
+				if (!signatureSchema || typeof signatureSchema !== "object" || signatureSchema === null) {
+					return [] as Record<string, unknown>[];
+				}
+				const reports = (signatureSchema as { reports?: unknown[] }).reports;
+				return Array.isArray(reports) ? (reports as Record<string, unknown>[]) : [];
+			})();
+			const explanationEntries = extractPredictionExplanationEntries(
+				prediction.prediction,
+				signature?.inputSignature,
+				customExplanationDefinitions,
+			);
+			const requiredOutputs = predictionReports.length;
+			const requiredExplanations = explanationEntries.filter((entry) => entry.feedbackQuestionnaire).length;
+			const status = myOutputFeedback.length >= requiredOutputs
+				&& myExplanationFeedback.length >= requiredExplanations
+				? "COMPLETED" as const
+				: "PENDING" as const;
+			map.set(prediction.id, status);
+		});
+		return map;
+	}, [predictions, outputFeedbackQueries, explanationFeedbackQueries, currentUserId, signature?.inputSignature, customExplanationDefinitions]);
 	const visiblePredictions = [...predictions]
 		.filter((prediction) => {
 			const matchesName = !normalizedQuery
 				|| prediction.name.toLowerCase().includes(normalizedQuery);
 			const matchesStatus = feedbackStatus === "all"
-				|| getPredictionStatus(prediction.status) === feedbackStatus;
+				|| statusByPredictionId.get(prediction.id) === feedbackStatus;
 			const matchesDate = isWithinDateRange(getPredictionTimestamp(prediction), dateRange);
 			return matchesName && matchesStatus && matchesDate;
 		})
@@ -110,6 +163,7 @@ export function SignatureDetailPage() {
 	if (!user || error) {
 		return <NotFoundError />;
 	}
+	const canRunPredictions = workspace?.permissions.canRunPredictions ?? false;
 
 	return (
 		<AppPage>
@@ -152,19 +206,23 @@ export function SignatureDetailPage() {
 								description={`${signature.name} · Created ${new Date(signature.createdAt).toLocaleString()}${signature.origin ? " · Based on previous version" : ""}`}
 								aside={
 									<>
-										<BulkUploadButton
-											signatureId={signatureId ?? ""}
-											modelId={modelId ?? ""}
-											signatureSchema={signature.inputSignature}
-										/>
-										<AppButton
-											type="button"
-											onClick={() =>
-												navigate(`/models/${modelId}/signatures/${signature.id}/predictions/create`)
-											}
-										>
-											+ New Prediction
-										</AppButton>
+										{canRunPredictions ? (
+											<>
+												<BulkUploadButton
+													signatureId={signatureId ?? ""}
+													modelId={modelId ?? ""}
+													signatureSchema={signature.inputSignature}
+												/>
+												<AppButton
+													type="button"
+													onClick={() =>
+														navigate(`/models/${modelId}/signatures/${signature.id}/predictions/create`)
+													}
+												>
+													+ New Prediction
+												</AppButton>
+											</>
+										) : null}
 									</>
 								}
 							/>
@@ -201,7 +259,7 @@ export function SignatureDetailPage() {
 													? "No prediction matches the current search terms."
 													: "Create the first prediction for this signature to populate history."
 											}
-											action={
+											action={canRunPredictions ? (
 												<AppButton
 													type="button"
 													onClick={() =>
@@ -210,15 +268,16 @@ export function SignatureDetailPage() {
 												>
 													+ New Prediction
 												</AppButton>
-											}
+											) : undefined}
 										/>
 									) : (
-										<PredictionHistoryTable
-											predictions={visiblePredictions}
-											onOpenPrediction={(predictionId) =>
-												navigate(`/models/${modelId}/signatures/${signature.id}/predictions/${predictionId}`)
-											}
-										/>
+									<PredictionHistoryTable
+										predictions={visiblePredictions}
+										statusByPredictionId={statusByPredictionId}
+										onOpenPrediction={(predictionId) =>
+											navigate(`/models/${modelId}/signatures/${signature.id}/predictions/${predictionId}`)
+										}
+									/>
 									)}
 								</div>
 							)}
