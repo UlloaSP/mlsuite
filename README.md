@@ -49,16 +49,6 @@ docker compose -f docker-compose.prod.yml up --build -d
 podman compose -f docker-compose.prod.yml up --build -d
 ```
 
-You can also use the helper wrappers:
-
-```bash
-./scripts/compose.sh prod up --build -d
-```
-
-```powershell
-.\scripts\compose.ps1 -Env prod up --build -d
-```
-
 This will spin up all components of MLSuite in separate containers. The first run may take a few minutes to download base images and build the code. Subsequent starts will be faster.
 
 6. Access MLSuite: Once the containers are running, open your web browser and go to https://localhost:5173 (or the appropriate host/port if deploying to a server). You should see the MLSuite web interface. Click “Login” and sign in with an email/password account. You can also create a normal account from the same screen.
