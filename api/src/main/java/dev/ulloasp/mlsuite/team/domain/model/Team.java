@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -52,6 +53,17 @@ public class Team {
 
     @Column(name = "description", length = 600)
     private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "lead_membership_id", foreignKey = @ForeignKey(name = "fk_team_lead_membership"))
+    private OrganizationMembership leadMembership;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 32)
+    private TeamStatus status = TeamStatus.ACTIVE;
+
+    @Column(name = "monthly_inference_quota")
+    private Long monthlyInferenceQuota;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

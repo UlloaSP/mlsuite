@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import dev.ulloasp.mlsuite.search.adapter.in.web.SearchControllerImpl;
 import dev.ulloasp.mlsuite.search.application.dto.SearchGroupDto;
@@ -33,7 +33,7 @@ class SearchControllerTest {
     private SearchWorkspaceUseCase searchWorkspaceUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private SearchControllerImpl controller;
 
@@ -57,7 +57,7 @@ class SearchControllerTest {
                         null,
                         null,
                         null)))));
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice"));
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
         when(searchWorkspaceUseCase.search(7L, "ac")).thenReturn(response);
 
         ResponseEntity<SearchResponseDto> entity = controller.search(authentication, "ac");

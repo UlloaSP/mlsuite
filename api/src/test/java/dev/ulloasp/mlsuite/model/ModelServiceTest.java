@@ -31,6 +31,7 @@ import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
 class ModelServiceTest {
@@ -53,11 +54,19 @@ class ModelServiceTest {
     @Mock
     private WorkspaceAccessService workspaceAccessService;
 
+    @Mock
+    private WorkspaceAuthorizationService workspaceAuthorizationService;
+
     private ModelServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ModelServiceImpl(userLookupService, modelRepository, objectStorageService, workspaceAccessService);
+        service = new ModelServiceImpl(
+                userLookupService,
+                modelRepository,
+                objectStorageService,
+                workspaceAccessService,
+                workspaceAuthorizationService);
         ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
         ReflectionTestUtils.setField(service, "analyzerUrl", "http://analyzer");
         when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());

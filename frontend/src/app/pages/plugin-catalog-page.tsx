@@ -78,6 +78,11 @@ export function PluginCatalogPage() {
 	if (!user || error) {
 		return <NotFoundError />;
 	}
+	if (workspace && !workspace.permissions.canViewPlugins) {
+		return <NotFoundError />;
+	}
+
+	const canManagePlugins = workspace?.permissions.canManagePlugins ?? false;
 
 	const reloadCatalog = async () => {
 		invalidatePluginCatalog();
@@ -183,7 +188,7 @@ export function PluginCatalogPage() {
 		<AppPage>
 			<motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} className="flex flex-1">
 				<AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
-					<AppPageHeader eyebrow="Plugin Catalog" title={<span>Plugins</span>} description={`Unified catalog for MLForm plugins in ${workspace?.currentOrganization.name ?? "the current workspace"}. Use type filter, status, and search to manage plugin lifecycle in one place.`} aside={<><AppButton type="button" onClick={handleDeactivateAll} disabled={isBusy || selectedTypeActiveCount === 0} variant="secondary"><Power size={15} />Deactivate All</AppButton><AppButton type="button" onClick={() => inputRef.current?.click()} disabled={isBusy}><Upload size={16} />Upload Plugin</AppButton></>} />
+					<AppPageHeader eyebrow="Plugin Catalog" title={<span>Plugins</span>} description={`Unified catalog for MLForm plugins in ${workspace?.currentOrganization.name ?? "the current workspace"}. Use type filter, status, and search to manage plugin lifecycle in one place.`} aside={canManagePlugins ? <><AppButton type="button" onClick={handleDeactivateAll} disabled={isBusy || selectedTypeActiveCount === 0} variant="secondary"><Power size={15} />Deactivate All</AppButton><AppButton type="button" onClick={() => inputRef.current?.click()} disabled={isBusy}><Upload size={16} />Upload Plugin</AppButton></> : null} />
 					<AppPanel className="grid gap-3">
 						<input ref={inputRef} type="file" accept=".ts,text/typescript,application/typescript,text/plain" className="hidden" onChange={(event) => { void handleFileSelection(event); }} />
 						<div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_auto_auto]">
@@ -210,7 +215,7 @@ export function PluginCatalogPage() {
 					</AppPanel>
 					<section className="min-h-0 flex-1 overflow-auto">
 						<div className="space-y-3">
-							{filteredItems.length === 0 ? <AppPanel className="border-dashed px-6 py-16 text-center text-sm text-[var(--text-secondary)]">No plugins match current search/filter.</AppPanel> : filteredItems.map((item, index) => <PluginCatalogListItem key={item.uniqueKey} index={index} isBusy={isBusy} item={item} onDelete={handleDelete} onToggle={handleToggle} />)}
+							{filteredItems.length === 0 ? <AppPanel className="border-dashed px-6 py-16 text-center text-sm text-[var(--text-secondary)]">No plugins match current search/filter.</AppPanel> : filteredItems.map((item, index) => <PluginCatalogListItem key={item.uniqueKey} canManage={canManagePlugins} index={index} isBusy={isBusy} item={item} onDelete={handleDelete} onToggle={handleToggle} />)}
 						</div>
 					</section>
 				</AppSurface>

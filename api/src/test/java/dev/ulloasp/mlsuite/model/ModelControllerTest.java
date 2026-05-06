@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import dev.ulloasp.mlsuite.model.adapter.in.web.ModelControllerImpl;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
@@ -41,7 +41,7 @@ class ModelControllerTest {
     private AnalyzerUseCase analyzerUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private ModelControllerImpl controller;
 
@@ -52,7 +52,7 @@ class ModelControllerTest {
                 modelCatalogUseCase,
                 signatureCatalogUseCase,
                 analyzerUseCase);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(4L, "alice"));
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(4L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
     }
 
     @Test

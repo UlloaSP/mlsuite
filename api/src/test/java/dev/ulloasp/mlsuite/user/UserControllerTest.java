@@ -16,14 +16,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.user.adapter.in.web.UserControllerImpl;
 import dev.ulloasp.mlsuite.user.application.port.in.GetCurrentUserProfileUseCase;
 import dev.ulloasp.mlsuite.user.application.dto.UserDto;
-import dev.ulloasp.mlsuite.user.domain.model.OAuthProvider;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 
@@ -37,7 +36,7 @@ class UserControllerTest {
     private GetCurrentUserProfileUseCase getCurrentUserProfileUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private UserControllerImpl controller;
 
@@ -52,10 +51,9 @@ class UserControllerTest {
         user.setId(9L);
         user.setUsername("alice");
         user.setEmail("alice@example.com");
-        user.setOauthProvider(OAuthProvider.GITHUB);
         user.setFullName("Alice");
         user.setCreatedAt(OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC));
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(9L, "alice"));
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(9L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
         when(getCurrentUserProfileUseCase.getProfile(9L)).thenReturn(user);
 
         ResponseEntity<UserDto> response = controller.getProfile(authentication);
@@ -68,7 +66,7 @@ class UserControllerTest {
 
     @Test
     void getProfile_PropagatesMissingUser() {
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(9L, "alice"));
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(9L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
         when(getCurrentUserProfileUseCase.getProfile(9L)).thenThrow(new UserDoesNotExistException(9L));
 
         assertThrows(UserDoesNotExistException.class, () -> controller.getProfile(authentication));

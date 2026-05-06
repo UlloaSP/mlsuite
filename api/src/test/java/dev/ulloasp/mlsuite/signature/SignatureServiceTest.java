@@ -29,6 +29,7 @@ import dev.ulloasp.mlsuite.signature.application.service.SignatureServiceImpl;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
 class SignatureServiceTest {
@@ -48,12 +49,15 @@ class SignatureServiceTest {
     @Mock
     private WorkspaceAccessService workspaceAccessService;
 
+    @Mock
+    private WorkspaceAuthorizationService workspaceAuthorizationService;
+
     private SignatureServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new SignatureServiceImpl(userLookupService, signatureRepository, modelRepository,
-                signatureSchemaCompatibilityService, workspaceAccessService);
+                signatureSchemaCompatibilityService, workspaceAccessService, workspaceAuthorizationService);
         when(workspaceAccessService.requireCurrentOrganization(5L)).thenReturn(organization());
     }
 

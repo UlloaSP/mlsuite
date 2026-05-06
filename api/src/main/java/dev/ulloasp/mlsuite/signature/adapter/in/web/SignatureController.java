@@ -8,7 +8,7 @@ package dev.ulloasp.mlsuite.signature.adapter.in.web;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,15 +24,15 @@ import jakarta.validation.Valid;
 public interface SignatureController {
 
         @PostMapping
-        ResponseEntity<SignatureDto> createSignature(OAuth2AuthenticationToken authentication,
+        ResponseEntity<SignatureDto> createSignature(Authentication authentication,
                         @Valid @RequestBody CreateSignatureParams params);
 
         @GetMapping
-        public ResponseEntity<List<SignatureDto>> getAllSignatures(OAuth2AuthenticationToken authentication,
+        public ResponseEntity<List<SignatureDto>> getAllSignatures(Authentication authentication,
                         @RequestParam Long modelId);
 
         @GetMapping("/{signatureId}")
-        public ResponseEntity<SignatureDto> getSignatureById(OAuth2AuthenticationToken authentication,
+        public ResponseEntity<SignatureDto> getSignatureById(Authentication authentication,
                         @PathVariable Long signatureId);
 
 }

@@ -13,13 +13,6 @@ import {
 import { useGetModels } from "../../models/hooks";
 import { useWorkspaceContext } from "../hooks";
 
-const cards = [
-	{ title: "Teams", icon: Users, href: "teams" },
-	{ title: "Members", icon: Building2, href: "members" },
-	{ title: "Invitations", icon: FolderKanban, href: "invitations" },
-	{ title: "Plugins", icon: Puzzle, href: "/plugins" },
-] as const;
-
 export function WorkspaceHomePage() {
 	const { data: context } = useWorkspaceContext();
 	const { data: models = [] } = useGetModels();
@@ -29,6 +22,20 @@ export function WorkspaceHomePage() {
 	}
 
 	const basePath = `/workspace/organizations/${context.currentOrganization.id}`;
+	const cards = [
+		...(context.permissions.canViewTeams
+			? [{ title: "Teams", icon: Users, href: "teams" }]
+			: []),
+		...(context.permissions.canViewMembers
+			? [{ title: "Members", icon: Building2, href: "members" }]
+			: []),
+		...(context.permissions.canViewInvitations
+			? [{ title: "Invitations", icon: FolderKanban, href: "invitations" }]
+			: []),
+		...(context.permissions.canViewPlugins
+			? [{ title: "Plugins", icon: Puzzle, href: "/plugins" }]
+			: []),
+	] as const;
 	const stats = [
 		{ label: "Members", value: context.memberships.length },
 		{ label: "Teams", value: context.teams.length },

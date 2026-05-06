@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import dev.ulloasp.mlsuite.plugin.adapter.in.web.PluginControllerImpl;
 import dev.ulloasp.mlsuite.plugin.application.port.in.ActivatePluginUseCase;
@@ -58,7 +58,7 @@ class PluginControllerTest {
     private DeletePluginUseCase deletePluginUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private PluginControllerImpl controller;
     private PluginDto dto;
@@ -82,7 +82,7 @@ class PluginControllerTest {
     @Test
     void upload_UsesInternalUserId() {
         MockMultipartFile file = new MockMultipartFile("file", "plugin.ts", "application/typescript", "x".getBytes());
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice"));
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
         when(uploadPluginUseCase.upload(7L, file)).thenReturn(dto);
 
         ResponseEntity<PluginDto> response = controller.upload(authentication, file);
@@ -93,7 +93,7 @@ class PluginControllerTest {
 
     @Test
     void getAllAndActivate_UseInternalUserId() {
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice"));
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
         when(listPluginsUseCase.list(7L)).thenReturn(List.of(dto));
         when(activatePluginUseCase.activate(7L, "item-1")).thenReturn(dto);
 

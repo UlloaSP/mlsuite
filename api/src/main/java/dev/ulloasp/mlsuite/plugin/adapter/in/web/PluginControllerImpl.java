@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,40 +50,40 @@ public class PluginControllerImpl implements PluginController {
     }
 
     @Override
-    public ResponseEntity<PluginDto> upload(OAuth2AuthenticationToken authentication, MultipartFile file) {
+    public ResponseEntity<PluginDto> upload(Authentication authentication, MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(uploadPluginUseCase.upload(currentUserResolver.resolve(authentication).userId(), file));
     }
 
     @Override
-    public ResponseEntity<List<PluginDto>> getAll(OAuth2AuthenticationToken authentication) {
+    public ResponseEntity<List<PluginDto>> getAll(Authentication authentication) {
         return ResponseEntity.ok(listPluginsUseCase.list(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
-    public ResponseEntity<List<PluginDto>> getActive(OAuth2AuthenticationToken authentication) {
+    public ResponseEntity<List<PluginDto>> getActive(Authentication authentication) {
         return ResponseEntity.ok(listActivePluginsUseCase.getActive(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
-    public ResponseEntity<PluginDto> activate(OAuth2AuthenticationToken authentication, String id) {
+    public ResponseEntity<PluginDto> activate(Authentication authentication, String id) {
         return ResponseEntity.ok(activatePluginUseCase.activate(currentUserResolver.resolve(authentication).userId(), id));
     }
 
     @Override
-    public ResponseEntity<Void> deactivate(OAuth2AuthenticationToken authentication, String id) {
+    public ResponseEntity<Void> deactivate(Authentication authentication, String id) {
         deactivatePluginUseCase.deactivate(currentUserResolver.resolve(authentication).userId(), id);
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<Void> deactivateAll(OAuth2AuthenticationToken authentication) {
+    public ResponseEntity<Void> deactivateAll(Authentication authentication) {
         deactivateAllPluginsUseCase.deactivateAll(currentUserResolver.resolve(authentication).userId());
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<Void> delete(OAuth2AuthenticationToken authentication, String id) {
+    public ResponseEntity<Void> delete(Authentication authentication, String id) {
         deletePluginUseCase.delete(currentUserResolver.resolve(authentication).userId(), id);
         return ResponseEntity.noContent().build();
     }

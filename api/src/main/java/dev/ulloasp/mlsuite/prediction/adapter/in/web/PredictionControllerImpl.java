@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,7 +38,7 @@ public class PredictionControllerImpl implements PredictionController {
 
     @Override
     public ResponseEntity<PredictionDto> createPrediction(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid @RequestBody CreatePredictionParams params) {
         Prediction pred = predictionCatalogUseCase.createPrediction(
                 currentUserResolver.resolve(authentication).userId(),
@@ -52,7 +52,7 @@ public class PredictionControllerImpl implements PredictionController {
 
     @Override
     public ResponseEntity<PredictionDto> updatePrediction(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid @RequestBody UpdatePredictionParams params) {
         Prediction updatedPrediction = predictionCatalogUseCase.updatePrediction(
                 currentUserResolver.resolve(authentication).userId(),
@@ -63,7 +63,7 @@ public class PredictionControllerImpl implements PredictionController {
 
     @Override
     public ResponseEntity<List<PredictionDto>> getAllPredictions(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestParam Long signatureId) {
         List<Prediction> predictions = predictionCatalogUseCase.getPredictionsBySignatureId(
                 currentUserResolver.resolve(authentication).userId(),

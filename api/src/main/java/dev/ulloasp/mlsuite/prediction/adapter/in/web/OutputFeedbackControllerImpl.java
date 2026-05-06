@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.prediction.application.dto.CreateOutputFeedbackParams;
@@ -35,7 +35,7 @@ public class OutputFeedbackControllerImpl implements OutputFeedbackController {
 
     @Override
     public ResponseEntity<OutputFeedbackDto> createOutputFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid CreateOutputFeedbackParams params) {
         OutputFeedback outputFeedback = outputFeedbackCatalogUseCase.createOutputFeedback(
                 currentUserResolver.resolve(authentication).userId(),
@@ -47,7 +47,7 @@ public class OutputFeedbackControllerImpl implements OutputFeedbackController {
 
     @Override
     public ResponseEntity<OutputFeedbackDto> updateOutputFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @Valid UpdateOutputFeedbackParams params) {
         OutputFeedback outputFeedback = outputFeedbackCatalogUseCase.updateOutputFeedback(
                 currentUserResolver.resolve(authentication).userId(),
@@ -58,7 +58,7 @@ public class OutputFeedbackControllerImpl implements OutputFeedbackController {
 
     @Override
     public ResponseEntity<List<OutputFeedbackDto>> getAllOutputFeedback(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             Long predictionId) {
         List<OutputFeedback> outputFeedback = outputFeedbackCatalogUseCase.getOutputFeedbackByPredictionId(
                 currentUserResolver.resolve(authentication).userId(),

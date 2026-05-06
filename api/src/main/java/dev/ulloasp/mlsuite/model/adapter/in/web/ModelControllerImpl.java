@@ -10,7 +10,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,7 +47,7 @@ public class ModelControllerImpl implements ModelController {
 
     @Override
     public ResponseEntity<CreateModelDto> createModel(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             @RequestParam String name,
             @RequestParam MultipartFile modelFile,
             @RequestParam @Nullable MultipartFile dataframeFile) {
@@ -86,7 +86,7 @@ public class ModelControllerImpl implements ModelController {
     }
 
     @Override
-    public ResponseEntity<List<ModelDto>> getAllModels(OAuth2AuthenticationToken authentication) {
+    public ResponseEntity<List<ModelDto>> getAllModels(Authentication authentication) {
         List<Model> models = modelCatalogUseCase.getModels(currentUserResolver.resolve(authentication).userId());
         return ResponseEntity.ok(ModelDto.toDtoList(models));
     }

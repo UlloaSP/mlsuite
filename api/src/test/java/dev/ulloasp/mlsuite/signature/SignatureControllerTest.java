@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
@@ -36,14 +36,14 @@ class SignatureControllerTest {
     private SignatureCatalogUseCase signatureCatalogUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private SignatureControllerImpl controller;
 
     @BeforeEach
     void setUp() {
         controller = new SignatureControllerImpl(currentUserResolver, signatureCatalogUseCase);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(6L, "alice"));
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(6L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
     }
 
     @Test

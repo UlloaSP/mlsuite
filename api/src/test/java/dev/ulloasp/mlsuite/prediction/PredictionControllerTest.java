@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.prediction.adapter.in.web.PredictionControllerImpl;
@@ -40,14 +40,14 @@ class PredictionControllerTest {
     private PredictionCatalogUseCase predictionCatalogUseCase;
 
     @Mock
-    private OAuth2AuthenticationToken authentication;
+    private Authentication authentication;
 
     private PredictionControllerImpl controller;
 
     @BeforeEach
     void setUp() {
         controller = new PredictionControllerImpl(currentUserResolver, predictionCatalogUseCase);
-        lenient().when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice"));
+        lenient().when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(3L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
     }
 
     @Test

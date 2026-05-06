@@ -1,6 +1,6 @@
 package dev.ulloasp.mlsuite.team.application.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-public record UpdateTeamMembershipRoleRequest(@NotBlank String role) {
+public record UpdateTeamMembershipRoleRequest(@NotNull Long roleDefinitionId) {
 }

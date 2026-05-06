@@ -35,6 +35,7 @@ import dev.ulloasp.mlsuite.signature.application.service.SignatureSchemaCompatib
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
 class PredictionServiceTest {
@@ -63,13 +64,16 @@ class PredictionServiceTest {
     @Mock
     private WorkspaceAccessService workspaceAccessService;
 
+    @Mock
+    private WorkspaceAuthorizationService workspaceAuthorizationService;
+
     private PredictionServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new PredictionServiceImpl(userLookupService, signatureRepository, predictionRepository,
                 targetRepository, outputFeedbackRepository, explanationFeedbackRepository,
-                signatureSchemaCompatibilityService, workspaceAccessService);
+                signatureSchemaCompatibilityService, workspaceAccessService, workspaceAuthorizationService);
         when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
 

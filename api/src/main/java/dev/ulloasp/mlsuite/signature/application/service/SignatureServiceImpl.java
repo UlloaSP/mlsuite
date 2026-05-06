@@ -22,6 +22,7 @@ import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.Signatur
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 
@@ -34,15 +35,18 @@ public class SignatureServiceImpl implements SignatureService {
     private final ModelRepository modelRepository;
     private final SignatureSchemaCompatibilityService signatureSchemaCompatibilityService;
     private final WorkspaceAccessService workspaceAccessService;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     public SignatureServiceImpl(UserLookupService userLookupService, SignatureRepository signatureRepository,
             ModelRepository modelRepository, SignatureSchemaCompatibilityService signatureSchemaCompatibilityService,
-            WorkspaceAccessService workspaceAccessService) {
+            WorkspaceAccessService workspaceAccessService,
+            WorkspaceAuthorizationService workspaceAuthorizationService) {
         this.userLookupService = userLookupService;
         this.signatureRepository = signatureRepository;
         this.modelRepository = modelRepository;
         this.signatureSchemaCompatibilityService = signatureSchemaCompatibilityService;
         this.workspaceAccessService = workspaceAccessService;
+        this.workspaceAuthorizationService = workspaceAuthorizationService;
     }
 
     @Override
@@ -51,6 +55,7 @@ public class SignatureServiceImpl implements SignatureService {
             int major, int minor, int patch, @Nullable Long origin) {
         User user = userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationOperate(userId, organizationId);
 
         Optional<Model> optionalModel = modelRepository.findByIdAndOrganizationId(modelId, organizationId);
 
@@ -96,6 +101,7 @@ public class SignatureServiceImpl implements SignatureService {
         User user = userLookupService.requireById(userId);
 
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
         Optional<Signature> optionalSignature = signatureRepository.findByIdAndOrganizationId(signatureId, organizationId);
 
         if (optionalSignature.isEmpty()) {
@@ -110,6 +116,7 @@ public class SignatureServiceImpl implements SignatureService {
         User user = userLookupService.requireById(userId);
 
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
         Optional<Model> optionalModel = modelRepository.findByIdAndOrganizationId(modelId, organizationId);
 
         if (optionalModel.isEmpty()) {

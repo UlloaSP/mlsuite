@@ -33,6 +33,7 @@ import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -45,6 +46,7 @@ public class ModelServiceImpl implements ModelService {
     private final ModelRepository modelRepository;
     private final ObjectStorageService objectStorageService;
     private final WorkspaceAccessService workspaceAccessService;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     @Value("${analyzer.url}")
     private String analyzerUrl;
@@ -53,17 +55,20 @@ public class ModelServiceImpl implements ModelService {
             UserLookupService userLookupService,
             ModelRepository modelRepository,
             ObjectStorageService objectStorageService,
-            WorkspaceAccessService workspaceAccessService) {
+            WorkspaceAccessService workspaceAccessService,
+            WorkspaceAuthorizationService workspaceAuthorizationService) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
         this.objectStorageService = objectStorageService;
         this.workspaceAccessService = workspaceAccessService;
+        this.workspaceAuthorizationService = workspaceAuthorizationService;
     }
 
     @Override
     public Model createModel(Long userId, String name, MultipartFile modelFile) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
+        workspaceAuthorizationService.requireOrganizationOperate(userId, organization.getId());
 
         if (modelRepository.existsByNameAndOrganizationId(name, organization.getId())) {
             throw new ModelAlreadyExistsException(name, organization.getName());
@@ -133,7 +138,9 @@ public class ModelServiceImpl implements ModelService {
 
     @Override
     public List<Model> getModels(Long userId) {
-        return modelRepository.findByOrganizationId(workspaceAccessService.requireCurrentOrganization(userId).getId());
+        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
+        return modelRepository.findByOrganizationId(organizationId);
     }
 
     private String buildObjectKey(Long organizationId, String modelName, String fileName) {

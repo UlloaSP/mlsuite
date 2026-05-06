@@ -16,5 +16,5 @@ public record WorkspaceContextDto(
         OrganizationMembershipDto currentMembership,
         List<TeamDto> teams,
         List<InvitationDto> invitations,
-        Map<String, Boolean> permissions) {
+        WorkspacePermissionsDto permissions) {
 }

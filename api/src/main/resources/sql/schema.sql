@@ -3,13 +3,14 @@ CREATE TABLE
         id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         username VARCHAR(50) NOT NULL,
         email VARCHAR(100) NOT NULL,
-        oauth_provider SMALLINT NOT NULL,
-        oauth_id VARCHAR(255) NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
         avatar_url TEXT,
-        full_name VARCHAR(150),
+        full_name VARCHAR(150) NOT NULL,
+        system_role VARCHAR(32) NOT NULL DEFAULT 'USER',
+        enabled BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT uq_app_user_oauth UNIQUE (oauth_provider, oauth_id),
+        CONSTRAINT uq_app_user_email UNIQUE (email)
     );
 
 -- ============================================

@@ -3,29 +3,39 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router";
-import { useUser } from "../user/hooks";
-import { Unauthorized } from "../app/pages/Unauthorized";
+import { AdminUsersPage } from "../admin/pages/admin-users-page";
+import { AuthLandingPage } from "../app/pages/AuthLandingPage";
 import { NotFoundError } from "../app/pages/error-page";
 import { PluginCatalogPage } from "../app/pages/plugin-catalog-page";
-import Layout from "../Layout";
+import { AppShellFrame } from "../layout/AppShellLayout";
+import { PublicLayout } from "../layout/PublicLayout";
 import { CreateModelPage } from "../models/pages/create-model-page";
 import { ModelDetailPage } from "../models/pages/model-detail-page";
 import { ModelsPage } from "../models/pages/models-page";
 import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
 import { SignatureDetailPage } from "../models/pages/signature-detail-page";
+import { useUser } from "../user/hooks";
 import { ProfilePage } from "../user/pages/profilePage";
 import { CreateOrganizationPage } from "../workspace/pages/create-organization-page";
 import { InvitationAcceptPage } from "../workspace/pages/invitation-accept-page";
 import { InvitationsPage } from "../workspace/pages/invitations-page";
 import { MembersPage } from "../workspace/pages/members-page";
 import { OrganizationSettingsPage } from "../workspace/pages/organization-settings-page";
+import { OrganizationAdminPage } from "../workspace/pages/organization-admin-page";
 import { OrganizationsPage } from "../workspace/pages/organizations-page";
+import { RolesPage } from "../workspace/pages/roles-page";
 import { TeamDetailPage } from "../workspace/pages/team-detail-page";
 import { TeamsPage } from "../workspace/pages/teams-page";
 import { WorkspaceHomePage } from "../workspace/pages/workspace-home-page";
 import { useWorkspaceContextSync } from "../workspace/hooks";
+import { RequireTeamPermission } from "../workspace/components/RequireTeamPermission";
+import {
+	RequireSuperadmin,
+	RequireWorkspacePermission,
+} from "../workspace/components/RequireWorkspacePermission";
+import type { WorkspacePermissionKey } from "../workspace/types";
 
 const CreatePredictionPage = lazy(async () => {
 	const module = await import("../models/pages/create-prediction-page");
@@ -54,7 +64,7 @@ function IndexRoute() {
 		return <Navigate to="/workspace" replace />;
 	}
 
-	return <Unauthorized />;
+	return <AuthLandingPage />;
 }
 
 function ProtectedRoute() {
@@ -66,112 +76,153 @@ function ProtectedRoute() {
 	}
 
 	if (!user || error || workspace.error) {
-		return <NotFoundError />;
+		return <Navigate to="/" replace />;
 	}
 
 	return <Outlet />;
 }
 
+function app(element: ReactNode) {
+	return <AppShellFrame>{element}</AppShellFrame>;
+}
+
+function workspace(permission: WorkspacePermissionKey, element: ReactNode) {
+	return (
+		<RequireWorkspacePermission permission={permission}>
+			{app(element)}
+		</RequireWorkspacePermission>
+	);
+}
+
 export const routes: RouteObject[] = [
 	{
-		path: "/",
-		element: <Layout />,
 		errorElement: <NotFoundError />,
-
 		children: [
 			{
-				index: true,
-				element: <IndexRoute />,
+				element: <PublicLayout />,
+				children: [
+					{
+						index: true,
+						element: <IndexRoute />,
+					},
+				],
 			},
 			{
 				element: <ProtectedRoute />,
 				children: [
 					{
 						path: "workspace",
-						element: <WorkspaceHomePage />,
+						element: workspace("canViewWorkspace", <WorkspaceHomePage />),
 					},
 					{
 						path: "workspace/organizations",
-						element: <OrganizationsPage />,
+						element: workspace("canViewOrganization", <OrganizationsPage />),
 					},
 					{
 						path: "workspace/organizations/create",
-						element: <CreateOrganizationPage />,
+						element: workspace("canEditOrganization", <CreateOrganizationPage />),
 					},
 					{
 						path: "workspace/organizations/:organizationId",
-						element: <OrganizationSettingsPage />,
+						element: workspace("canViewOrganization", <OrganizationAdminPage />),
 					},
 					{
 						path: "workspace/organizations/:organizationId/teams",
-						element: <TeamsPage />,
+						element: workspace("canViewTeams", <TeamsPage />),
+					},
+					{
+						path: "workspace/organizations/:organizationId/teams/:teamId",
+						element: (
+							<RequireTeamPermission permission="canViewTeam">
+								{app(<TeamDetailPage />)}
+							</RequireTeamPermission>
+						),
 					},
 					{
 						path: "workspace/organizations/:organizationId/members",
-						element: <MembersPage />,
+						element: workspace("canViewMembers", <MembersPage />),
 					},
 					{
 						path: "workspace/organizations/:organizationId/invitations",
-						element: <InvitationsPage />,
+						element: workspace("canViewInvitations", <InvitationsPage />),
+					},
+					{
+						path: "workspace/organizations/:organizationId/roles",
+						element: workspace("canViewMembers", <RolesPage />),
+					},
+					{
+						path: "workspace/organizations/:organizationId/settings",
+						element: workspace("canViewOrganization", <OrganizationSettingsPage />),
 					},
 					{
 						path: "workspace/teams/:teamId",
-						element: <TeamDetailPage />,
+						element: (
+							<RequireTeamPermission permission="canViewTeam">
+								{app(<TeamDetailPage />)}
+							</RequireTeamPermission>
+						),
 					},
 					{
 						path: "invite/:token",
-						element: <InvitationAcceptPage />,
+						element: app(<InvitationAcceptPage />),
 					},
 					{
 						path: "profile",
-						element: <ProfilePage />,
+						element: app(<ProfilePage />),
+					},
+					{
+						path: "admin/users",
+						element: <RequireSuperadmin>{app(<AdminUsersPage />)}</RequireSuperadmin>,
 					},
 					{
 						path: "models",
-						element: <ModelsPage />,
+						element: workspace("canViewModels", <ModelsPage />),
 					},
 					{
 						path: "models/create",
-						element: <CreateModelPage />,
+						element: workspace("canCreateModels", <CreateModelPage />),
 					},
 					{
 						path: "models/:modelId",
-						element: <ModelDetailPage />,
+						element: workspace("canViewModels", <ModelDetailPage />),
 					},
 					{
 						path: "plugins",
-						element: <PluginCatalogPage />,
+						element: workspace("canViewPlugins", <PluginCatalogPage />),
 					},
 					{
 						path: "models/:modelId/signatures/:signatureId",
-						element: <SignatureDetailPage />,
+						element: workspace("canViewModels", <SignatureDetailPage />),
 					},
 					{
 						path: "models/:modelId/signatures/create",
-						element: (
+						element: workspace(
+							"canEditModels",
 							<Suspense fallback={<EditorRouteFallback />}>
 								<CreateSignaturePage />
-							</Suspense>
+							</Suspense>,
 						),
 					},
 					{
 						path: "models/:modelId/signatures/:signatureId/predictions/:predictionId",
-						element: <PredictionDetailPage />,
+						element: workspace("canViewModels", <PredictionDetailPage />),
 					},
 					{
 						path: "models/:modelId/signatures/:signatureId/predictions/create",
-						element: (
+						element: workspace(
+							"canRunPredictions",
 							<Suspense fallback={<EditorRouteFallback />}>
 								<CreatePredictionPage />
-							</Suspense>
+							</Suspense>,
 						),
 					},
 					{
 						path: "models/:modelId/signatures/:signatureId/predictions/create/:inputs",
-						element: (
+						element: workspace(
+							"canRunPredictions",
 							<Suspense fallback={<EditorRouteFallback />}>
 								<CreatePredictionPage />
-							</Suspense>
+							</Suspense>,
 						),
 					},
 				],

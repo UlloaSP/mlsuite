@@ -1,7 +1,7 @@
 package dev.ulloasp.mlsuite.workspace.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
@@ -21,13 +21,13 @@ public class WorkspaceControllerImpl implements WorkspaceController {
     }
 
     @Override
-    public ResponseEntity<WorkspaceContextDto> getContext(OAuth2AuthenticationToken authentication) {
+    public ResponseEntity<WorkspaceContextDto> getContext(Authentication authentication) {
         return ResponseEntity.ok(workspaceContextUseCase.getContext(currentUserResolver.resolve(authentication).userId()));
     }
 
     @Override
     public ResponseEntity<WorkspaceContextDto> selectOrganization(
-            OAuth2AuthenticationToken authentication,
+            Authentication authentication,
             SelectOrganizationRequest request) {
         return ResponseEntity.ok(workspaceContextUseCase.selectOrganization(
                 currentUserResolver.resolve(authentication).userId(),

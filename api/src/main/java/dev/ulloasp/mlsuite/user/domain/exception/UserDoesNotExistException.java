@@ -10,8 +10,8 @@ package dev.ulloasp.mlsuite.user.domain.exception;
  */
 public class UserDoesNotExistException extends RuntimeException {
 
-    public UserDoesNotExistException(String provider, String oauthId) {
-        super("User with OAuth provider '" + provider + "' and ID '" + oauthId + "' does not exist");
+    public UserDoesNotExistException(String email) {
+        super("User with email '" + email + "' does not exist");
     }
 
     public UserDoesNotExistException(Long userId) {

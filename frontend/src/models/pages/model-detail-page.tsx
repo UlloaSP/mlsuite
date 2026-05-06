@@ -17,6 +17,7 @@ import {
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
+import { useWorkspaceContext } from "../../workspace/hooks";
 import { ModelSignaturesTab } from "../components/ModelSignaturesTab";
 import { ModelSummaryTab } from "../components/ModelSummaryTab";
 import { useGetModels, useGetSignatures } from "../hooks";
@@ -31,6 +32,7 @@ export function ModelDetailPage() {
 	const { modelId } = useParams<{ modelId: string }>();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { data: user, error } = useUser();
+	const { data: workspace } = useWorkspaceContext();
 	const { data: models = [], isLoading } = useGetModels();
 	const model = useMemo(() => findModelById(models, modelId), [models, modelId]);
 	const { data: signatures = [] } = useGetSignatures({ modelId: modelId ?? "" });
@@ -49,6 +51,7 @@ export function ModelDetailPage() {
 	if (!user || error) {
 		return <NotFoundError />;
 	}
+	const canEditModels = workspace?.permissions.canEditModels ?? false;
 
 	return (
 		<AppPage>
@@ -82,14 +85,14 @@ export function ModelDetailPage() {
 								eyebrow="Model Detail"
 								title={model.name}
 								description={`${getModelAlgorithmLabel(model)} · Created ${new Date(model.createdAt).toLocaleString()}`}
-								aside={
+								aside={canEditModels ? (
 									<AppButton
 										type="button"
 										onClick={() => navigate(`/models/${model.id}/signatures/create`)}
 									>
 										+ New Signature
 									</AppButton>
-								}
+								) : null}
 							/>
 
 							<AppTabs<ModelDetailTab>

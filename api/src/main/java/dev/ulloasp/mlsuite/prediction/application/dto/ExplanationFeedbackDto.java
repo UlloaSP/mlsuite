@@ -11,6 +11,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.ulloasp.mlsuite.prediction.domain.model.ExplanationFeedback;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 public record ExplanationFeedbackDto(
         Long id,
         Long predictionId,
@@ -24,12 +25,13 @@ public record ExplanationFeedbackDto(
         OffsetDateTime updatedAt) {
 
     public static ExplanationFeedbackDto toDto(ExplanationFeedback explanationFeedback) {
+        User user = explanationFeedback.getUser();
         return new ExplanationFeedbackDto(
                 explanationFeedback.getId(),
                 explanationFeedback.getPrediction().getId(),
-                explanationFeedback.getUser().getId(),
-                explanationFeedback.getUser().getFullName(),
-                explanationFeedback.getUser().getEmail(),
+                user == null ? null : user.getId(),
+                user == null ? null : user.getFullName(),
+                user == null ? null : user.getEmail(),
                 explanationFeedback.getOrder(),
                 explanationFeedback.getValue(),
                 explanationFeedback.getRealValue(),

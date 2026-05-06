@@ -10,8 +10,9 @@ package dev.ulloasp.mlsuite.user.domain.exception;
  */
 public class UserAlreadyExistsException extends RuntimeException {
 
-    public UserAlreadyExistsException(String provider, String oauthId) {
-        super("User already exists with OAuth provider '" + provider + "' and ID '" + oauthId + "'");
+    public UserAlreadyExistsException(String email) {
+        super("User already exists with email '" + email + "'");
     }
+
 }
 

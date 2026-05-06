@@ -4,13 +4,17 @@ import type {
 	CreateOrganizationRequest,
 	CreateTeamRequest,
 	InvitationDto,
+	OrganizationAdminDashboardDto,
 	OrganizationDto,
 	OrganizationMembershipDto,
+	OrganizationMembershipRowDto,
+	TeamDetailDto,
 	TeamDto,
-	TeamMembershipDto,
+	TeamMembershipRowDto,
 	UpdateOrganizationRequest,
 	UpdateTeamRequest,
 	WorkspaceContextDto,
+	RolesResponseDto,
 } from "../types";
 
 const json = (method: "POST" | "PATCH", body: unknown): RequestInit => ({
@@ -34,35 +38,50 @@ export const createOrganization = (payload: CreateOrganizationRequest): Promise<
 export const getOrganization = (organizationId: number): Promise<OrganizationDto> =>
 	appFetch<OrganizationDto>(`/api/organizations/${organizationId}`);
 
+export const getOrganizationAdminDashboard = (organizationId: number): Promise<OrganizationAdminDashboardDto> =>
+	appFetch<OrganizationAdminDashboardDto>(`/api/organizations/${organizationId}/admin-dashboard`);
+
 export const updateOrganization = (organizationId: number, payload: UpdateOrganizationRequest): Promise<OrganizationDto> =>
 	appFetch<OrganizationDto>(`/api/organizations/${organizationId}`, json("PATCH", payload));
 
-export const getOrganizationMembers = (organizationId: number): Promise<OrganizationMembershipDto[]> =>
-	appFetch<OrganizationMembershipDto[]>(`/api/organizations/${organizationId}/members`);
+export const getOrganizationMembers = (organizationId: number): Promise<OrganizationMembershipRowDto[]> =>
+	appFetch<OrganizationMembershipRowDto[]>(`/api/organizations/${organizationId}/members`);
 
-export const updateOrganizationMemberRole = (organizationId: number, membershipId: number, role: string): Promise<OrganizationMembershipDto> =>
-	appFetch<OrganizationMembershipDto>(`/api/organizations/${organizationId}/members/${membershipId}`, json("PATCH", { role }));
+export const updateOrganizationMemberRole = (organizationId: number, membershipId: number, roleDefinitionId: number): Promise<OrganizationMembershipDto> =>
+	appFetch<OrganizationMembershipDto>(`/api/organizations/${organizationId}/members/${membershipId}`, json("PATCH", { roleDefinitionId }));
 
 export const removeOrganizationMember = (organizationId: number, membershipId: number): Promise<void> =>
 	appFetch<void>(`/api/organizations/${organizationId}/members/${membershipId}`, { method: "DELETE" });
 
+export const transferOrganizationOwnership = (
+	organizationId: number,
+	nextOwnerMembershipId: number,
+): Promise<OrganizationMembershipDto> =>
+	appFetch<OrganizationMembershipDto>(
+		`/api/organizations/${organizationId}/transfer-ownership`,
+		json("POST", { nextOwnerMembershipId }),
+	);
+
 export const getTeams = (organizationId: number): Promise<TeamDto[]> =>
 	appFetch<TeamDto[]>(`/api/organizations/${organizationId}/teams`);
+
+export const getRoles = (organizationId: number): Promise<RolesResponseDto> =>
+	appFetch<RolesResponseDto>(`/api/organizations/${organizationId}/roles`);
 
 export const createTeam = (organizationId: number, payload: CreateTeamRequest): Promise<TeamDto> =>
 	appFetch<TeamDto>(`/api/organizations/${organizationId}/teams`, json("POST", payload));
 
-export const getTeam = (teamId: number): Promise<TeamDto> =>
-	appFetch<TeamDto>(`/api/teams/${teamId}`);
+export const getTeam = (teamId: number): Promise<TeamDetailDto> =>
+	appFetch<TeamDetailDto>(`/api/teams/${teamId}`);
 
 export const updateTeam = (teamId: number, payload: UpdateTeamRequest): Promise<TeamDto> =>
 	appFetch<TeamDto>(`/api/teams/${teamId}`, json("PATCH", payload));
 
-export const getTeamMembers = (teamId: number): Promise<TeamMembershipDto[]> =>
-	appFetch<TeamMembershipDto[]>(`/api/teams/${teamId}/members`);
+export const getTeamMembers = (teamId: number): Promise<TeamMembershipRowDto[]> =>
+	appFetch<TeamMembershipRowDto[]>(`/api/teams/${teamId}/members`);
 
-export const updateTeamMemberRole = (teamId: number, membershipId: number, role: string): Promise<TeamMembershipDto> =>
-	appFetch<TeamMembershipDto>(`/api/teams/${teamId}/members/${membershipId}`, json("PATCH", { role }));
+export const updateTeamMemberRole = (teamId: number, membershipId: number, roleDefinitionId: number): Promise<TeamMembershipRowDto> =>
+	appFetch<TeamMembershipRowDto>(`/api/teams/${teamId}/members/${membershipId}`, json("PATCH", { roleDefinitionId }));
 
 export const removeTeamMember = (teamId: number, membershipId: number): Promise<void> =>
 	appFetch<void>(`/api/teams/${teamId}/members/${membershipId}`, { method: "DELETE" });
@@ -75,6 +94,12 @@ export const createInvitation = (organizationId: number, payload: CreateInvitati
 
 export const revokeInvitation = (organizationId: number, invitationId: number): Promise<void> =>
 	appFetch<void>(`/api/organizations/${organizationId}/invitations/${invitationId}`, { method: "DELETE" });
+
+export const resendInvitation = (organizationId: number, invitationId: number): Promise<InvitationDto> =>
+	appFetch<InvitationDto>(`/api/organizations/${organizationId}/invitations/${invitationId}/resend`, { method: "POST" });
+
+export const bulkRevokeInvitations = (organizationId: number, invitationIds: number[]): Promise<void> =>
+	appFetch<void>(`/api/organizations/${organizationId}/invitations/bulk-revoke`, json("POST", { invitationIds }));
 
 export const getPendingInvitations = (): Promise<InvitationDto[]> =>
 	appFetch<InvitationDto[]>("/api/invitations/pending");

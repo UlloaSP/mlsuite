@@ -35,3 +35,29 @@ export const useLogout = () => {
 	});
 };
 
+export const useLogin = () => {
+	const qc = useQueryClient();
+	const navigate = useNavigate();
+	return useMutation({
+		mutationFn: userApi.login,
+		onSuccess: (user) => {
+			qc.setQueryData(USER_QUERY_KEY, user);
+			void qc.invalidateQueries({ queryKey: USER_QUERY_KEY });
+			navigate("/workspace", { replace: true });
+		},
+	});
+};
+
+export const useRegister = () => {
+	const qc = useQueryClient();
+	const navigate = useNavigate();
+	return useMutation({
+		mutationFn: userApi.register,
+		onSuccess: (user) => {
+			qc.setQueryData(USER_QUERY_KEY, user);
+			void qc.invalidateQueries({ queryKey: USER_QUERY_KEY });
+			navigate("/workspace", { replace: true });
+		},
+	});
+};
+

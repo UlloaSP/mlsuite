@@ -7,9 +7,11 @@ const defaultRole: OrganizationRole = "MEMBER";
 export function InviteForm({
 	teams,
 	onSubmit,
+	roleOptions = ["ADMIN", "MEMBER", "VIEWER"],
 }: {
 	teams: TeamDto[];
 	onSubmit: (payload: { email: string; role: OrganizationRole; teamId?: number }) => Promise<void>;
+	roleOptions?: OrganizationRole[];
 }) {
 	const [email, setEmail] = useState("");
 	const [role, setRole] = useState<OrganizationRole>(defaultRole);
@@ -23,10 +25,11 @@ export function InviteForm({
 				placeholder="teammate@company.com"
 			/>
 			<AppSelect value={role} onChange={(event) => setRole(event.target.value as OrganizationRole)}>
-				<option value="OWNER">Owner</option>
-				<option value="ADMIN">Admin</option>
-				<option value="MEMBER">Member</option>
-				<option value="VIEWER">Viewer</option>
+				{roleOptions.map((option) => (
+					<option key={option} value={option}>
+						{option}
+					</option>
+				))}
 			</AppSelect>
 			<AppSelect value={teamId} onChange={(event) => setTeamId(event.target.value)}>
 				<option value="">No team</option>

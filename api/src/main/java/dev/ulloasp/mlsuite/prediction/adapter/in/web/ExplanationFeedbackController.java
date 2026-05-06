@@ -8,7 +8,7 @@ package dev.ulloasp.mlsuite.prediction.adapter.in.web;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,15 +25,15 @@ import jakarta.validation.Valid;
 public interface ExplanationFeedbackController {
 
     @PostMapping
-    ResponseEntity<ExplanationFeedbackDto> createExplanationFeedback(OAuth2AuthenticationToken authentication,
+    ResponseEntity<ExplanationFeedbackDto> createExplanationFeedback(Authentication authentication,
             @Valid @RequestBody CreateExplanationFeedbackParams params);
 
     @PatchMapping
-    ResponseEntity<ExplanationFeedbackDto> updateExplanationFeedback(OAuth2AuthenticationToken authentication,
+    ResponseEntity<ExplanationFeedbackDto> updateExplanationFeedback(Authentication authentication,
             @Valid @RequestBody UpdateExplanationFeedbackParams params);
 
     @GetMapping
     ResponseEntity<List<ExplanationFeedbackDto>> getAllExplanationFeedback(
-            OAuth2AuthenticationToken authentication, @RequestParam Long predictionId);
+            Authentication authentication, @RequestParam Long predictionId);
 }
 

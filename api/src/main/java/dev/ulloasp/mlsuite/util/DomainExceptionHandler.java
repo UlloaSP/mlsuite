@@ -12,6 +12,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -85,6 +87,16 @@ public class DomainExceptionHandler {
     })
     public ResponseEntity<ErrorDto> handleForbidden(RuntimeException ex, HttpServletRequest req) {
         return respond(HttpStatus.FORBIDDEN, ex, req);
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorDto> handleDisabled(DisabledException ex, HttpServletRequest req) {
+        return respond(HttpStatus.FORBIDDEN, ex, req);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorDto> handleBadCredentials(BadCredentialsException ex, HttpServletRequest req) {
+        return respond(HttpStatus.UNAUTHORIZED, ex, req);
     }
 
     // ---- 400 BAD REQUEST ----
