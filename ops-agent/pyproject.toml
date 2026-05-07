@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mlsuite-ops-agent"
+version = "0.1.0"
+description = "Host-side operations agent for MLSuite infrastructure dashboard"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.120.3",
+    "uvicorn[standard]>=0.38.0",
+    "psutil>=7.1.0",
+]
+
+[project.optional-dependencies]
+dev = ["httpx>=0.28.1", "pytest>=8.4.1"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

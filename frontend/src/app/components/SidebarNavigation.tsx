@@ -10,6 +10,7 @@ import {
 	BrainCircuit,
 	Building2,
 	ShieldCheck,
+	ServerCog,
 	Maximize,
 	Minimize,
 	Moon,
@@ -45,7 +46,10 @@ export function SidebarNavigation() {
 			? [{ to: "/plugins", icon: Blocks, label: "Plugins" }]
 			: []),
 		...(user?.systemRole === "SUPERADMIN"
-			? [{ to: "/admin/users", icon: ShieldCheck, label: "Admin" }]
+			? [
+				{ to: "/admin/users", icon: ShieldCheck, label: "Admin" },
+				{ to: "/admin/infrastructure", icon: ServerCog, label: "Infra" },
+			]
 			: []),
 	];
 

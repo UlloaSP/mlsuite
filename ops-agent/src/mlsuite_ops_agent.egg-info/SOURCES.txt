@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+src/mlsuite_ops_agent/__init__.py
+src/mlsuite_ops_agent/__main__.py
+src/mlsuite_ops_agent/app.py
+src/mlsuite_ops_agent/compose.py
+src/mlsuite_ops_agent/config.py
+src/mlsuite_ops_agent/metrics.py
+src/mlsuite_ops_agent/models.py
+src/mlsuite_ops_agent/state.py
+src/mlsuite_ops_agent/terminal.py
+src/mlsuite_ops_agent.egg-info/PKG-INFO
+src/mlsuite_ops_agent.egg-info/SOURCES.txt
+src/mlsuite_ops_agent.egg-info/dependency_links.txt
+src/mlsuite_ops_agent.egg-info/requires.txt
+src/mlsuite_ops_agent.egg-info/top_level.txt
+tests/test_ops_api.py

@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { lazy, Suspense, type ReactNode } from "react";
 import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router";
 import { AdminUsersPage } from "../admin/pages/admin-users-page";
+import { AdminInfrastructurePage } from "../admin/infrastructure/pages/admin-infrastructure-page";
 import { AuthLandingPage } from "../app/pages/AuthLandingPage";
 import { NotFoundError } from "../app/pages/error-page";
 import { PluginCatalogPage } from "../app/pages/plugin-catalog-page";
@@ -173,6 +174,10 @@ export const routes: RouteObject[] = [
 					{
 						path: "admin/users",
 						element: <RequireSuperadmin>{app(<AdminUsersPage />)}</RequireSuperadmin>,
+					},
+					{
+						path: "admin/infrastructure",
+						element: <RequireSuperadmin>{app(<AdminInfrastructurePage />)}</RequireSuperadmin>,
 					},
 					{
 						path: "models",

@@ -8,6 +8,29 @@ volumes:
 
 
 services:
+  ops-agent:
+    image: ${REGISTRY:-ghcr.io}/${OWNER}/${OPS_AGENT_IMAGE:-mlsuite-ops-agent}:${OPS_AGENT_VERSION:-latest}
+    container_name: ops-agent
+    environment:
+      OPS_AGENT_HOST: ${OPS_AGENT_HOST}
+      OPS_AGENT_PORT: ${OPS_AGENT_PORT}
+      OPS_AGENT_SHARED_SECRET: ${OPS_AGENT_SHARED_SECRET}
+      OPS_AGENT_DOCKER_BIN: ${OPS_AGENT_DOCKER_BIN}
+      OPS_AGENT_COMPOSE_FILE: /workspace/docker-compose.prod.yml
+      OPS_AGENT_MANAGED_SERVICES: ${OPS_AGENT_MANAGED_SERVICES}
+      OPS_AGENT_SAMPLE_INTERVAL_SECONDS: ${OPS_AGENT_SAMPLE_INTERVAL_SECONDS}
+      OPS_AGENT_RETENTION_MINUTES: ${OPS_AGENT_RETENTION_MINUTES}
+      OPS_AGENT_TERMINAL_IDLE_MINUTES: ${OPS_AGENT_TERMINAL_IDLE_MINUTES}
+      OPS_AGENT_TERMINAL_MAX_SESSIONS: ${OPS_AGENT_TERMINAL_MAX_SESSIONS}
+      OPS_AGENT_LOG_TAIL_LINES: ${OPS_AGENT_LOG_TAIL_LINES}
+    ports:
+      - ${OPS_AGENT_PORT}:${OPS_AGENT_PORT}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace:ro
+    networks: [ appnet ]
+    restart: unless-stopped
+
   postgres:
     image: postgres:latest
     container_name: db-postgres
@@ -31,6 +54,13 @@ services:
   py-analyzer:
     image: ${REGISTRY:-ghcr.io}/${OWNER}/${BACKEND_IMAGE:-mlsuite-sklearn-backend}:${BACKEND_VERSION:-latest}
     container_name: py-analyzer
+    environment:
+      PYTHON_HOST: ${PYTHON_HOST}
+      PYTHON_PORT: ${PYTHON_PORT}
+      PYTHON_SSL_ENABLED: ${PYTHON_SSL_ENABLED}
+      PYTHON_SSL_KEYFILE: ${PYTHON_SSL_KEYFILE}
+      PYTHON_SSL_CERTFILE: ${PYTHON_SSL_CERTFILE}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
     ports:
       - ${PYTHON_PORT}:${PYTHON_PORT}
     depends_on:
@@ -42,13 +72,13 @@ services:
   minio:
     image: quay.io/minio/minio:latest
     container_name: minio
-    command: server /data --console-address ":9001"
+    command: server /data --console-address "${MINIO_CONSOLE_ADDRESS}"
     environment:
-      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
     ports:
-      - ${MINIO_API_PORT:-9000}:9000
-      - ${MINIO_CONSOLE_PORT:-9001}:9001
+      - ${MINIO_API_PORT}:9000
+      - ${MINIO_CONSOLE_PORT}:9001
     volumes:
       - minio_data:/data
     networks: [ appnet ]
@@ -58,30 +88,39 @@ services:
     image: ${REGISTRY:-ghcr.io}/${OWNER}/${API_IMAGE:-mlsuite-api}:${API_VERSION:-latest}
     container_name: spring-app
     environment:
-      SERVER_PORT: ${SPRING_PORT}
-      SPRING_PROFILES_ACTIVE: prod
-
+      SPRING_PORT: ${SPRING_PORT}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      LOG_PATH: ${LOG_PATH}
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_PROD}
+      DB_PROD: ${DB_PROD}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
-
-      ANALYZER_BASE_URL: https://py-analyzer:8000
-      STORAGE_ENABLED: ${STORAGE_ENABLED:-true}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:9000}
-      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-minioadmin}
-      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-minioadmin}
-      STORAGE_BUCKET: ${STORAGE_BUCKET:-mlsuite-models}
-      STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET:-true}
-      STORAGE_BACKFILL_ON_STARTUP: ${STORAGE_BACKFILL_ON_STARTUP:-true}
-      MLSUITE_SUPERADMIN_EMAIL: ${MLSUITE_SUPERADMIN_EMAIL:-}
-      MLSUITE_SUPERADMIN_PASSWORD: ${MLSUITE_SUPERADMIN_PASSWORD:-}
-      MLSUITE_SUPERADMIN_FULL_NAME: ${MLSUITE_SUPERADMIN_FULL_NAME:-}
-      MLSUITE_SUPERADMIN_USERNAME: ${MLSUITE_SUPERADMIN_USERNAME:-}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
+      SERVER_SSL_ENABLED: ${SERVER_SSL_ENABLED}
+      SERVER_SSL_KEY_STORE: ${SERVER_SSL_KEY_STORE}
+      SERVER_SSL_KEY_STORE_PASSWORD: ${SERVER_SSL_KEY_STORE_PASSWORD}
+      SERVER_SSL_KEY_STORE_TYPE: ${SERVER_SSL_KEY_STORE_TYPE}
+      SERVER_SSL_KEY_ALIAS: ${SERVER_SSL_KEY_ALIAS}
+      ANALYZER_BASE_URL: ${ANALYZER_BASE_URL}
+      STORAGE_ENABLED: ${STORAGE_ENABLED}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET}
+      STORAGE_BACKFILL_ON_STARTUP: ${STORAGE_BACKFILL_ON_STARTUP}
+      MLSUITE_SUPERADMIN_EMAIL: ${MLSUITE_SUPERADMIN_EMAIL}
+      MLSUITE_SUPERADMIN_PASSWORD: ${MLSUITE_SUPERADMIN_PASSWORD}
+      MLSUITE_SUPERADMIN_FULL_NAME: ${MLSUITE_SUPERADMIN_FULL_NAME}
+      MLSUITE_SUPERADMIN_USERNAME: ${MLSUITE_SUPERADMIN_USERNAME}
+      OPS_AGENT_BASE_URL: ${OPS_AGENT_BASE_URL}
+      OPS_AGENT_SHARED_SECRET: ${OPS_AGENT_SHARED_SECRET}
     ports:
       - ${SPRING_PORT}:${SPRING_PORT}
     depends_on:
+      ops-agent:
+        condition: service_started
       postgres:
         condition: service_healthy
       minio:
@@ -93,7 +132,7 @@ services:
     image: ${REGISTRY:-ghcr.io}/${OWNER}/${FRONTEND_IMAGE:-mlsuite-frontend}:${FRONTEND_VERSION:-latest}
     container_name: web-frontend
     environment:
-      VITE_BACKEND_URL: https://localhost:${SPRING_PORT}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
     ports:
       - ${WEB_PORT}:5173
     depends_on:

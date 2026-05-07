@@ -1,3 +1,14 @@
+### AI SLOPE ###
+
+# Ignore tasks
+tasks/
+
+
+
+
+
+
+
 target/
 !**/src/main/**/target/
 !**/src/test/**/target/

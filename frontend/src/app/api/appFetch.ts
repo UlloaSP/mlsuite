@@ -3,6 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { getBackendBaseUrl } from "../config/runtimeConfig";
+
 // ---- Server contract (exact) ----
 export type ErrorDto = {
 	timestamp: string;
@@ -39,8 +41,6 @@ let netErrCb: NetworkErrorHandler = () => { };
 export const setReauthenticationCallback = (cb: ReauthenticationHandler) => (reauthCb = cb);
 export const initNetworkErrorHandler = (cb: NetworkErrorHandler) => (netErrCb = cb);
 
-const BASE = import.meta.env.VITE_BACKEND_URL;
-
 const buildInit = (init?: RequestInit): RequestInit => ({
 	credentials: "include",
 	...init,
@@ -48,6 +48,8 @@ const buildInit = (init?: RequestInit): RequestInit => ({
 		...(init?.headers || {}),
 	},
 });
+
+const toUrl = (path: string) => new URL(path, getBackendBaseUrl()).toString();
 
 const isJson = (res: Response) =>
 	res.headers.get("content-type")?.includes("application/json") ?? false;
@@ -59,7 +61,7 @@ function fabricateDto(res: Response, path: string, msg: string): ErrorDto {
 		timestamp: nowIso(),
 		status: res.status,
 		message: msg,
-		path: new URL(path, BASE).pathname,
+		path: new URL(path, getBackendBaseUrl()).pathname,
 	};
 }
 
@@ -68,14 +70,14 @@ function fabricateNetworkDto(path: string, msg = "Network Error"): ErrorDto {
 		timestamp: nowIso(),
 		status: 0, // non-HTTP failure
 		message: msg,
-		path: new URL(path, BASE).pathname,
+		path: new URL(path, getBackendBaseUrl()).pathname,
 	};
 }
 
 /** Query-ready fetcher that only throws HttpError wrapping ErrorDto */
 export async function appFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
 	try {
-		const res = await fetch(`${BASE}${path}`, buildInit(init));
+		const res = await fetch(toUrl(path), buildInit(init));
 
 		// Success
 		if (res.ok) {

@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig, SubmitRequest, Transport } from "mlform/engine";
+import { getBackendBaseUrl } from "../../config/runtimeConfig";
 import {
 	type JsonRecord,
 	type PredictionPayloadField,
@@ -129,7 +130,7 @@ export const createPredictionTransport = (
 		);
 
 		const response = await fetch(
-			`${import.meta.env.VITE_BACKEND_URL}/api/analyzer/predictions?modelId=${modelId}`,
+			`${getBackendBaseUrl()}/api/analyzer/predictions?modelId=${modelId}`,
 			{
 				method: "POST",
 				body: formData,
@@ -160,7 +161,7 @@ export const createPredictionTransport = (
 		normalizedMeta.modelId ??= modelId;
 		// Inestable y temporal: custom explanations still need backend base URL through `meta`
 		// because some plugins resolve relative endpoints against frontend origin instead of API origin.
-		normalizedMeta.backendUrl ??= import.meta.env.VITE_BACKEND_URL;
+		normalizedMeta.backendUrl ??= getBackendBaseUrl();
 		// Inestable y temporal: custom explanations may read form field ids instead of backend keys.
 		// Keep backend-shaped inputs in meta so explanation runtime can patch old plugins.
 		normalizedMeta.backendFieldValues ??= payload;
