@@ -29,15 +29,21 @@ This repository contains pre-configured compose files that define all required s
 
 3. Superadmin Setup: MLSuite uses manual email/password authentication with server-side sessions. Configure the initial superadmin account so you can manage users after startup.
 
-4. Configure Environment Variables: Open the .env.example (or create a .env) file in the project and add the superadmin seed values and any other necessary settings. At minimum, set:
+4. Configure Environment Variables: Copy `.env.example` to `.env` and edit the values before startup. Keep the env file as the source of truth for ports, URLs, SSL, CORS, storage, and the superadmin seed.
 
 ```env
+SPRING_PORT=8443
+PYTHON_PORT=8000
+WEB_PORT=5173
+ANALYZER_BASE_URL=https://py-analyzer:8000
+VITE_BACKEND_URL=https://localhost:8443
+CORS_ALLOW_ORIGINS=https://localhost:5173,https://localhost:8443
 MLSUITE_SUPERADMIN_EMAIL=admin@example.com
 MLSUITE_SUPERADMIN_PASSWORD=change_me_superadmin
 MLSUITE_SUPERADMIN_FULL_NAME=MLSuite Admin
 ```
 
-You can also adjust other settings (like database password, etc.) here. The Docker Compose file will load these values and pass them to the containers. If you prefer, you can edit the docker-compose.yml to directly insert these env vars under the backend service.
+You can also adjust other settings (database, storage, SSL keystore, registry/image tags) there. Keep `.env` and `.env.example` aligned when adding new config.
 
 5. Launch the Application: Run one of the following commands to build and start all services:
 

@@ -36,5 +36,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl && \
 # Exponer puerto
 EXPOSE 8000
 
-# Ejecutar la aplicación con uvicorn desde el entorno virtual de uv
-CMD [".venv/bin/python", "-m", "uvicorn", "mlsuite_backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--ssl-keyfile=/app/private.key", "--ssl-certfile=/app/certificate.crt"]
+# Ejecutar la aplicación con configuración tomada del entorno
+CMD [".venv/bin/python", "-m", "mlsuite_backend"]

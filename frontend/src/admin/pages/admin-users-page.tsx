@@ -1,7 +1,7 @@
 import { KeyRound, Plus, ShieldCheck } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { Navigate } from "react-router";
+import { Link, Navigate } from "react-router";
 import {
 	AppBadge,
 	AppButton,
@@ -57,7 +57,15 @@ export function AdminUsersPage() {
 					eyebrow="Admin"
 					title="Users"
 					description="Create accounts, set global access, and reset passwords."
-					aside={<AppBadge tone="accent"><ShieldCheck size={13} />SUPERADMIN</AppBadge>}
+					aside={<>
+						<AppBadge tone="accent"><ShieldCheck size={13} />SUPERADMIN</AppBadge>
+						<Link
+							to="/admin/infrastructure"
+							className="inline-flex items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] shadow-[var(--shadow-card)] transition hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)]"
+						>
+							Infrastructure
+						</Link>
+					</>}
 				/>
 				<AppPanel>
 					<form onSubmit={submit} className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">

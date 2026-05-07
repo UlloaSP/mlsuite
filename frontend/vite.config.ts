@@ -10,6 +10,16 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
 	fmt: {},
 	lint: { options: { typeAware: true, typeCheck: true } },
+	server: {
+		proxy: {
+			"/api": {
+				target: "https://localhost:8443",
+				changeOrigin: true,
+				secure: false,
+				ws: true,
+			},
+		},
+	},
 	plugins: [
 		react({
 			plugins: [],
