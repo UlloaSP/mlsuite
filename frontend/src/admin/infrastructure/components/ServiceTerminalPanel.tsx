@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { SquareTerminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AppBadge, AppPanel, AppSectionTitle } from "../../../app/components";
+import { AppBadge, AppButton, AppPanel, AppSectionTitle } from "../../../app/components";
 import { closeTerminalSession } from "../api/infrastructureService";
 import { useTerminalSession } from "../hooks/useInfrastructure";
 import { openTerminalSocket, sendTerminalFrame } from "../ws/infrastructureSocket";
@@ -20,8 +20,9 @@ export function ServiceTerminalPanel({ serviceName, enabled }: Props) {
 	const fitAddonRef = useRef<FitAddon | null>(null);
 	const socketRef = useRef<WebSocket | null>(null);
 	const sessionRef = useRef<string | null>(null);
-	const createSession = useTerminalSession();
+	const { mutateAsync: createTerminalSession, isPending } = useTerminalSession();
 	const [status, setStatus] = useState("idle");
+	const [requestedService, setRequestedService] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (!mountRef.current || terminalRef.current) {
@@ -69,6 +70,15 @@ export function ServiceTerminalPanel({ serviceName, enabled }: Props) {
 		}
 		const terminal = terminalRef.current;
 		terminal.reset();
+		if (requestedService !== serviceName) {
+			if (serviceName) {
+				terminal.write("Open shell to start session.\r\n");
+			} else {
+				terminal.write("Select service to start shell.\r\n");
+			}
+			setStatus("idle");
+			return;
+		}
 		if (!serviceName) {
 			terminal.write("Select service to start shell.\r\n");
 			setStatus("idle");
@@ -83,8 +93,7 @@ export function ServiceTerminalPanel({ serviceName, enabled }: Props) {
 		let dataDispose: { dispose: () => void } | null = null;
 		terminal.write(`Opening ${serviceName} shell...\r\n`);
 		setStatus("opening");
-		void createSession
-			.mutateAsync({
+		void createTerminalSession({
 				serviceName,
 				cols: terminal.cols || 120,
 				rows: terminal.rows || 36,
@@ -129,6 +138,7 @@ export function ServiceTerminalPanel({ serviceName, enabled }: Props) {
 			})
 			.catch((error: Error) => {
 				terminal.write(`\r\n${error.message}\r\n`);
+				setRequestedService(null);
 				setStatus("error");
 			});
 		return () => {
@@ -142,7 +152,7 @@ export function ServiceTerminalPanel({ serviceName, enabled }: Props) {
 				void closeTerminalSession(sessionId);
 			}
 		};
-	}, [createSession, enabled, serviceName]);
+	}, [createTerminalSession, enabled, requestedService, serviceName]);
 
 	return (
 		<AppPanel className="grid h-[520px] max-h-[520px] min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[20px] border-white/70 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(244,245,247,0.94))] p-0">
@@ -162,6 +172,15 @@ export function ServiceTerminalPanel({ serviceName, enabled }: Props) {
 						<SquareTerminal size={13} />
 						{status}
 					</AppBadge>
+					<AppButton
+						type="button"
+						variant="secondary"
+						className="px-3 py-1.5 text-xs"
+						disabled={!serviceName || !enabled || isPending || status === "live" || status === "opening"}
+						onClick={() => setRequestedService(serviceName)}
+					>
+						Open shell
+					</AppButton>
 				</div>
 			</div>
 			<div className="min-h-0 overflow-hidden bg-[linear-gradient(180deg,_#120d10,_#060507)] p-4">

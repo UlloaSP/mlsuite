@@ -5,7 +5,9 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 from mlsuite_ops_agent.app import create_app
-from mlsuite_ops_agent.compose import ComposeError
+from mlsuite_ops_agent.compose import ComposeError, ComposeGateway
+from mlsuite_ops_agent.config import Settings
+from mlsuite_ops_agent.terminal import TerminalManager
 
 
 class FakeCompose:
@@ -133,3 +135,145 @@ def test_action_logs_and_terminal_routes_work(monkeypatch) -> None:
         closed = client.delete("/internal/terminal/sessions/term-1", headers=auth_headers())
         assert closed.status_code == 200
         assert fake_terminals.closed == ["term-1"]
+
+
+def test_stream_socket_sends_service_status_fields(monkeypatch) -> None:
+    app = create_app()
+
+    async def fake_start():
+        app.state.agent.metrics.points = deque([
+            SimpleNamespace(
+                timestamp="2026-05-07T00:00:00+00:00",
+                cpu_percent=1.0,
+                ram_percent=2.0,
+                disk_percent=3.0,
+                vram_percent=None,
+                vram_supported=False,
+            )
+        ], maxlen=10)
+        app.state.agent._latest_services = [
+            {
+                "name": "spring-app",
+                "containerName": "spring-app",
+                "status": "running",
+                "health": "healthy",
+                "uptime": "1m",
+                "cpuPercent": 0.5,
+                "memoryBytes": 1024,
+                "ports": ["8443:8443/tcp"],
+                "terminalEnabled": True,
+            }
+        ]
+
+    async def fake_stop():
+        return None
+
+    monkeypatch.setattr(app.state.agent, "start", fake_start)
+    monkeypatch.setattr(app.state.agent, "stop", fake_stop)
+    with TestClient(app) as client:
+        with client.websocket_connect("/internal/stream", headers=auth_headers()) as websocket:
+            message = websocket.receive_json()
+
+    service = message["payload"]["services"][0]
+    assert message["type"] == "overview.snapshot"
+    assert service["status"] == "running"
+    assert service["health"] == "healthy"
+    assert service["containerName"] == "spring-app"
+    assert service["cpuPercent"] == 0.5
+    assert service["memoryBytes"] == 1024
+    assert service["ports"] == ["8443:8443/tcp"]
+
+
+def test_service_snapshot_treats_running_without_healthcheck_as_healthy_and_shell_disabled(monkeypatch) -> None:
+    gateway = ComposeGateway(Settings(
+        managed_services=("spring-app",),
+        terminal_services=(),
+    ))
+
+    async def fake_run(*args: str) -> str:
+        if args == ("ps", "--format", "json"):
+            return (
+                '{"Service":"spring-app","Name":"spring-app","State":"running",'
+                '"Health":"","RunningFor":"1m","Publishers":[]}'
+            )
+        if args == ("ps", "--services"):
+            return "spring-app\n"
+        if args[:3] == ("stats", "--no-stream", "--format"):
+            return '{"Name":"spring-app","CPUPerc":"0.5%","MemUsage":"1MiB / 2MiB"}'
+        return ""
+
+    monkeypatch.setattr(gateway, "run", fake_run)
+
+    service = asyncio.run(gateway.service_snapshot())[0]
+
+    assert service["status"] == "running"
+    assert service["health"] is None
+    assert service["terminalEnabled"] is False
+
+
+def test_terminal_creation_requires_shell_whitelist() -> None:
+    gateway = ComposeGateway(Settings(
+        managed_services=("spring-app",),
+        terminal_services=(),
+    ))
+
+    try:
+        gateway.assert_terminal_enabled("spring-app")
+    except ComposeError as error:
+        assert "Shell disabled" in str(error)
+    else:
+        raise AssertionError("Expected shell whitelist failure")
+
+
+def test_terminal_creation_uses_pty_backed_compose_exec(monkeypatch) -> None:
+    gateway = ComposeGateway(Settings(
+        managed_services=("spring-app",),
+        terminal_services=("spring-app",),
+    ))
+    manager = TerminalManager(gateway, max_sessions=1, idle_minutes=15)
+    captured: dict[str, object] = {}
+
+    async def fake_create_pty_process(command: list[str], cols: int, rows: int):
+        captured["command"] = command
+        captured["cols"] = cols
+        captured["rows"] = rows
+
+        async def wait() -> int:
+            return 0
+
+        return SimpleNamespace(returncode=0, wait=wait), 99
+
+    async def fake_pump_output(_session) -> None:
+        return None
+
+    monkeypatch.setattr(manager, "_create_pty_process", fake_create_pty_process)
+    monkeypatch.setattr(manager, "_pump_output", fake_pump_output)
+
+    session = asyncio.run(manager.create("spring-app", 100, 24))
+
+    command = captured["command"]
+    assert session.pty_fd == 99
+    assert captured["cols"] == 100
+    assert captured["rows"] == 24
+    assert "exec" in command
+    assert "-T" not in command
+    assert "spring-app" in command
+
+
+def test_stats_are_collected_one_service_at_a_time(monkeypatch) -> None:
+    gateway = ComposeGateway(Settings(managed_services=("spring-app", "frontend")))
+    calls: list[tuple[str, ...]] = []
+
+    async def fake_run(*args: str) -> str:
+        calls.append(args)
+        if args == ("ps", "--services"):
+            return "spring-app\nfrontend\n"
+        return f'{{"Name":"{args[-1]}","CPUPerc":"1.0%","MemUsage":"1MiB / 2MiB"}}'
+
+    monkeypatch.setattr(gateway, "run", fake_run)
+
+    output = asyncio.run(gateway._docker_stats())
+
+    assert output.count("CPUPerc") == 2
+    assert ("stats", "--no-stream", "--format", "json", "spring-app") in calls
+    assert ("stats", "--no-stream", "--format", "json", "frontend") in calls

@@ -33,6 +33,7 @@ class AgentState:
         )
         self.clients: set[StreamClient] = set()
         self.sampler_task: asyncio.Task[None] | None = None
+        self.service_task: asyncio.Task[None] | None = None
         self.cleanup_task: asyncio.Task[None] | None = None
         self._latest_services: list[dict[str, Any]] = []
         self._latest_vram_supported = False
@@ -46,10 +47,11 @@ class AgentState:
         except ComposeError:
             self._latest_services = []
         self.sampler_task = asyncio.create_task(self._sample_loop())
+        self.service_task = asyncio.create_task(self._service_loop())
         self.cleanup_task = asyncio.create_task(self._cleanup_loop())
 
     async def stop(self) -> None:
-        for task in (self.sampler_task, self.cleanup_task):
+        for task in (self.sampler_task, self.service_task, self.cleanup_task):
             if task is not None:
                 task.cancel()
         for session_id in list(self.terminals.sessions):
@@ -99,28 +101,31 @@ class AgentState:
             snapshot = collect_metrics()
             self.metrics.append(snapshot)
             self._latest_vram_supported = snapshot.vram_supported
+            await self.broadcast(
+                {
+                    "type": "overview.delta",
+                    "payload": {
+                        "host": {
+                            "timestamp": snapshot.timestamp,
+                            "cpuPercent": snapshot.cpu_percent,
+                            "ramPercent": snapshot.ram_percent,
+                            "diskPercent": snapshot.disk_percent,
+                            "vramPercent": snapshot.vram_percent,
+                            "vramSupported": snapshot.vram_supported,
+                        },
+                        "services": self._latest_services,
+                    },
+                }
+            )
+            await asyncio.sleep(self.settings.sample_interval_seconds)
+
+    async def _service_loop(self) -> None:
+        while True:
+            await asyncio.sleep(5)
             try:
                 self._latest_services = await self.compose.service_snapshot()
             except ComposeError as error:
                 await self.broadcast({"type": "error", "message": str(error)})
-            else:
-                await self.broadcast(
-                    {
-                        "type": "overview.delta",
-                        "payload": {
-                            "host": {
-                                "timestamp": snapshot.timestamp,
-                                "cpuPercent": snapshot.cpu_percent,
-                                "ramPercent": snapshot.ram_percent,
-                                "diskPercent": snapshot.disk_percent,
-                                "vramPercent": snapshot.vram_percent,
-                                "vramSupported": snapshot.vram_supported,
-                            },
-                            "services": self._latest_services,
-                        },
-                    }
-                )
-            await asyncio.sleep(self.settings.sample_interval_seconds)
 
     async def _cleanup_loop(self) -> None:
         while True:

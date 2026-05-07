@@ -26,8 +26,9 @@ class Settings:
         "OPS_AGENT_MANAGED_SERVICES",
         "postgres,py-analyzer,minio,spring-app,frontend",
     )
-    sample_interval_seconds: int = int(_env("OPS_AGENT_SAMPLE_INTERVAL_SECONDS", "5"))
+    sample_interval_seconds: int = int(_env("OPS_AGENT_SAMPLE_INTERVAL_SECONDS", "1"))
     retention_minutes: int = int(_env("OPS_AGENT_RETENTION_MINUTES", "60"))
+    terminal_services: tuple[str, ...] = _env_list("OPS_AGENT_TERMINAL_SERVICES", "")
     terminal_idle_minutes: int = int(_env("OPS_AGENT_TERMINAL_IDLE_MINUTES", "15"))
     terminal_max_sessions: int = int(_env("OPS_AGENT_TERMINAL_MAX_SESSIONS", "10"))
     log_tail_lines: int = int(_env("OPS_AGENT_LOG_TAIL_LINES", "200"))

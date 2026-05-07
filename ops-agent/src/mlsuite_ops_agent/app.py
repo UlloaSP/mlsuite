@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import asyncio
 import json
 
-from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket
+from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
 from .compose import ComposeError
@@ -88,11 +88,14 @@ def create_app() -> FastAPI:
 
             sender = asyncio.create_task(send_loop())
             while True:
-                text = await websocket.receive_text()
-                for topic in parse_topics(text):
-                    parts = topic.split(":")
-                    if len(parts) == 3 and parts[0] == "service" and parts[2] == "logs":
-                        await state.set_log_subscription(client, parts[1])
+                try:
+                    text = await websocket.receive_text()
+                    for topic in parse_topics(text):
+                        parts = topic.split(":")
+                        if len(parts) == 3 and parts[0] == "service" and parts[2] == "logs":
+                            await state.set_log_subscription(client, parts[1])
+                except WebSocketDisconnect:
+                    break
         finally:
             if sender is not None:
                 sender.cancel()
@@ -116,11 +119,14 @@ def create_app() -> FastAPI:
 
             sender = asyncio.create_task(send_loop())
             while True:
-                payload = json.loads(await websocket.receive_text())
-                if payload.get("type") == "input":
-                    await state.terminals.write(session_id, str(payload.get("data", "")))
-                if payload.get("type") == "resize":
-                    await state.terminals.resize(session_id, int(payload.get("cols", 120)), int(payload.get("rows", 36)))
+                try:
+                    payload = json.loads(await websocket.receive_text())
+                    if payload.get("type") == "input":
+                        await state.terminals.write(session_id, str(payload.get("data", "")))
+                    if payload.get("type") == "resize":
+                        await state.terminals.resize(session_id, int(payload.get("cols", 120)), int(payload.get("rows", 36)))
+                except WebSocketDisconnect:
+                    break
         finally:
             session.attached = False
             if sender is not None:

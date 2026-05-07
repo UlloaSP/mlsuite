@@ -47,7 +47,7 @@ export function SystemHealthChartPanel({ overview, streamConnected }: Props) {
 			</div>
 			<div className="px-4 pb-4 pt-3">
 				<div className="h-[360px] rounded-[26px] border border-[#20161b] bg-[radial-gradient(circle_at_top,_rgba(255,56,92,0.12),_transparent_28%),linear-gradient(180deg,_#161114,_#0c0a0d)] p-4">
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer width="100%" height="100%" minWidth={320} minHeight={320}>
 						<ComposedChart data={overview.history.points} margin={{ left: 4, right: 12, top: 12, bottom: 0 }}>
 							<CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="3 5" vertical={false} />
 							<XAxis

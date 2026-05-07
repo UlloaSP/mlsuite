@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigate } from "react-router";
-import { AppEmptyState, AppPage, AppSurface, AppTabs } from "../../../app/components";
+import { Navigate, useSearchParams } from "react-router";
+import { AppEmptyState, AppPage, AppSurface } from "../../../app/components";
 import { useUser } from "../../../user/hooks";
-import {
-	getOverviewTimestamp,
-} from "../dashboardSummary";
-import { InfrastructureAlertRail } from "../components/InfrastructureAlertRail";
-import { InfrastructureSummaryGrid } from "../components/InfrastructureSummaryGrid";
-import { InfrastructureTopBar } from "../components/InfrastructureTopBar";
-import { ServiceFocusBar } from "../components/ServiceFocusBar";
-import { ServiceLogsPanel } from "../components/ServiceLogsPanel";
-import { ServiceStatusTable } from "../components/ServiceStatusTable";
-import { ServiceTerminalPanel } from "../components/ServiceTerminalPanel";
-import { SystemHealthChartPanel } from "../components/SystemHealthChartPanel";
+import { AlertsView } from "../components/AlertsView";
+import { LogsView } from "../components/LogsView";
+import { OverviewView } from "../components/OverviewView";
+import { ServicesView } from "../components/ServicesView";
+import { TerminalView } from "../components/TerminalView";
 import {
 	useInfrastructureOverview,
 	useServiceAction,
@@ -30,6 +24,10 @@ import {
 	subscribeToServiceLogs,
 } from "../ws/infrastructureSocket";
 
+type InfraTab = "overview" | "services" | "logs" | "terminal" | "alerts";
+
+const INFRA_TABS: InfraTab[] = ["overview", "services", "logs", "terminal", "alerts"];
+
 export function AdminInfrastructurePage() {
 	const { data: user } = useUser();
 	const { data, isLoading } = useInfrastructureOverview();
@@ -38,27 +36,30 @@ export function AdminInfrastructurePage() {
 	const [selectedService, setSelectedService] = useState<string | null>(null);
 	const [logLines, setLogLines] = useState<string[]>([]);
 	const [streamConnected, setStreamConnected] = useState(false);
-	const [workspaceView, setWorkspaceView] = useState<"logs" | "terminal">("logs");
+	const [searchParams, setSearchParams] = useSearchParams();
 	const socketRef = useRef<WebSocket | null>(null);
 	const selectedServiceRef = useRef<string | null>(null);
 	const selectedServiceLogs = useServiceLogsSnapshot(selectedService);
+	const requestedTab = searchParams.get("tab");
+	const activeTab = INFRA_TABS.includes(requestedTab as InfraTab)
+		? (requestedTab as InfraTab)
+		: "overview";
+	const setActiveTab = (tab: InfraTab) => {
+		setSearchParams(tab === "overview" ? {} : { tab });
+	};
 
 	useEffect(() => {
 		selectedServiceRef.current = selectedService;
 	}, [selectedService]);
 
 	useEffect(() => {
-		if (!data) {
-			return;
-		}
+		if (!data) return;
 		setOverview(data);
 		setSelectedService((current) => resolveSelectedService(current, data));
 	}, [data]);
 
 	useEffect(() => {
-		if (!selectedServiceLogs.data || selectedServiceLogs.data.serviceName !== selectedService) {
-			return;
-		}
+		if (!selectedServiceLogs.data || selectedServiceLogs.data.serviceName !== selectedService) return;
 		setLogLines(selectedServiceLogs.data.lines);
 	}, [selectedService, selectedServiceLogs.data]);
 
@@ -97,100 +98,71 @@ export function AdminInfrastructurePage() {
 	}
 
 	const currentOverview = overview ?? data;
-	const selectedStatus = currentOverview?.services.find((service) => service.name === selectedService) ?? null;
+	const selectedStatus = currentOverview?.services.find(
+		(service) => service.name === selectedService,
+	) ?? null;
+
+	const handleSelectService = (serviceName: string) => {
+		setSelectedService(serviceName);
+		setLogLines([]);
+	};
 
 	return (
 		<AppPage>
-			<AppSurface className="flex flex-1 flex-col gap-6 overflow-auto app-scroll bg-[radial-gradient(circle_at_top_left,_rgba(255,56,92,0.08),_transparent_22%),linear-gradient(180deg,_#f8f5f2_0%,_#f4f6f9_42%,_#f7f4f1_100%)]">
-				<InfrastructureTopBar
-					streamConnected={streamConnected}
-					lastUpdated={currentOverview ? getOverviewTimestamp(currentOverview) : null}
-					selectedService={selectedService}
-				/>
-				{currentOverview ? (
-					<>
-						<InfrastructureSummaryGrid overview={currentOverview} />
-						<div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
-							<SystemHealthChartPanel overview={currentOverview} streamConnected={streamConnected} />
-							<InfrastructureAlertRail
-								overview={currentOverview}
-								streamConnected={streamConnected}
-								selectedService={selectedService}
-							/>
-						</div>
-						<ServiceStatusTable
-							services={currentOverview.services}
-							selectedService={selectedService}
-							busyService={action.variables?.serviceName ?? null}
-							onSelect={(serviceName) => {
-								setSelectedService(serviceName);
-								setLogLines([]);
-								setWorkspaceView("logs");
-							}}
-							onAction={(serviceName, nextAction) => action.mutate({ serviceName, action: nextAction })}
-						/>
-						<div className="min-h-0 space-y-4">
-							<div className="flex flex-wrap items-center justify-between gap-3">
-								<div>
-									<p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-										workspace
-									</p>
-									<p className="mt-1 text-sm text-[var(--text-secondary)]">
-										{selectedService ? `Focused on ${selectedService}` : "Select a service to inspect logs and shell."}
-									</p>
-								</div>
-								<AppTabs
-									className="xl:hidden"
-									items={[
-										{ label: "Logs", value: "logs" },
-										{ label: "Terminal", value: "terminal" },
-									]}
-									value={workspaceView}
-									onChange={setWorkspaceView}
-								/>
-							</div>
-							<ServiceFocusBar
-								services={currentOverview.services}
-								selectedService={selectedService}
-								onSelect={(serviceName) => {
-									setSelectedService(serviceName);
-									setLogLines([]);
-									setWorkspaceView("logs");
-								}}
-							/>
-							<div className="hidden min-h-0 gap-6 xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-								<ServiceLogsPanel
-									serviceName={selectedService}
-									lines={logLines}
+			<AppSurface className="flex flex-1 flex-col overflow-auto app-scroll bg-[var(--page-bg)]">
+				<div className="flex-1 px-6 py-5">
+					{currentOverview ? (
+						<>
+							{activeTab === "overview" && (
+								<OverviewView
+									overview={currentOverview}
 									streamConnected={streamConnected}
+									onNavigateTab={setActiveTab}
 								/>
-								<ServiceTerminalPanel
-									serviceName={selectedService}
-									enabled={Boolean(selectedStatus?.terminalEnabled)}
+							)}
+							{activeTab === "services" && (
+								<ServicesView
+									services={currentOverview.services}
+									selectedService={selectedService}
+									busyService={action.variables?.serviceName ?? null}
+									onSelect={(name) => {
+										handleSelectService(name);
+									}}
+									onAction={(name, a) => action.mutate({ serviceName: name, action: a })}
 								/>
-							</div>
-							<div className="xl:hidden">
-								{workspaceView === "logs" ? (
-									<ServiceLogsPanel
-										serviceName={selectedService}
-										lines={logLines}
-										streamConnected={streamConnected}
-									/>
-								) : (
-									<ServiceTerminalPanel
-										serviceName={selectedService}
-										enabled={Boolean(selectedStatus?.terminalEnabled)}
-									/>
-								)}
-							</div>
-						</div>
-					</>
-				) : (
-					<AppEmptyState
-						title={isLoading ? "Loading infrastructure snapshot" : "No infrastructure snapshot"}
-						description="The dashboard needs an ops-agent overview before it can render host metrics and service controls."
-					/>
-				)}
+							)}
+							{activeTab === "logs" && (
+								<LogsView
+									services={currentOverview.services}
+									selectedService={selectedService}
+									logLines={logLines}
+									streamConnected={streamConnected}
+									onSelectService={handleSelectService}
+								/>
+							)}
+							{activeTab === "terminal" && (
+								<TerminalView
+									services={currentOverview.services}
+									selectedService={selectedService}
+									terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
+									onSelectService={handleSelectService}
+								/>
+							)}
+							{activeTab === "alerts" && (
+								<AlertsView
+									overview={currentOverview}
+									streamConnected={streamConnected}
+									selectedService={selectedService}
+								/>
+							)}
+						</>
+					) : (
+						<AppEmptyState
+							title={isLoading ? "Loading infrastructure snapshot" : "No infrastructure snapshot"}
+							description="The dashboard needs an ops-agent overview before it can render host metrics and service controls."
+						/>
+					)}
+				</div>
 			</AppSurface>
 		</AppPage>
 	);

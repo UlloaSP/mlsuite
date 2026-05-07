@@ -33,6 +33,7 @@ class ComposeGateway:
         self.settings = settings
         self.compose_file = str(Path(settings.compose_file))
         self.managed_services = set(settings.managed_services)
+        self.terminal_services = set(settings.terminal_services)
 
     def compose_command(self, *args: str) -> list[str]:
         command = [self.settings.docker_bin, "compose", "-f", self.compose_file]
@@ -48,6 +49,11 @@ class ComposeGateway:
     def assert_managed(self, service_name: str) -> None:
         if service_name not in self.managed_services:
             raise ComposeError(f"Unknown managed service: {service_name}")
+
+    def assert_terminal_enabled(self, service_name: str) -> None:
+        self.assert_managed(service_name)
+        if service_name not in self.terminal_services:
+            raise ComposeError(f"Shell disabled for service: {service_name}")
 
     async def run(self, *args: str) -> str:
         command = self.compose_command(*args)
@@ -78,12 +84,12 @@ class ComposeGateway:
                     "name": service_name,
                     "containerName": row.get("Name"),
                     "status": (row.get("State") or "unknown").lower(),
-                    "health": row.get("Health"),
+                    "health": _normalize_health(row.get("Health")),
                     "uptime": row.get("RunningFor"),
                     "cpuPercent": _parse_percent(stat.get("CPUPerc")) if stat else None,
                     "memoryBytes": _parse_memory_bytes(stat.get("MemUsage")) if stat else None,
                     "ports": _parse_ports(row.get("Publishers")),
-                    "terminalEnabled": True,
+                    "terminalEnabled": service_name in self.terminal_services,
                 }
             )
         for service_name in sorted(self.managed_services):
@@ -109,7 +115,10 @@ class ComposeGateway:
         services = [item.strip() for item in names.splitlines() if item.strip() in self.managed_services]
         if not services:
             return ""
-        return await self.run("stats", "--no-stream", "--format", "json", *services)
+        rows = []
+        for service_name in services:
+            rows.append(await self.run("stats", "--no-stream", "--format", "json", service_name))
+        return "\n".join(row.strip() for row in rows if row.strip())
 
     async def action(self, service_name: str, action: str) -> None:
         self.assert_managed(service_name)
@@ -156,6 +165,11 @@ def _parse_ports(raw_publishers: Any) -> list[str]:
             ports.append(f"{published}:{target}/{protocol}")
         return ports
     return [str(raw_publishers)]
+
+
+def _normalize_health(value: Any) -> str | None:
+    text = str(value or "").strip().lower()
+    return text or None
 
 
 def _parse_percent(value: Any) -> float | None:
