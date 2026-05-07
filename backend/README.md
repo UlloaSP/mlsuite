@@ -11,7 +11,7 @@ uv sync --extra dev
 ## Run
 
 ```bash
-uv run uvicorn mlsuite_backend.main:app --host 0.0.0.0 --port 8000 --reload
+PYTHON_HOST=0.0.0.0 PYTHON_PORT=8000 CORS_ALLOW_ORIGINS=https://localhost:8443 uv run python -m mlsuite_backend
 ```
 
 ## Test

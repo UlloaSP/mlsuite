@@ -6,17 +6,24 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // src/app/components/SidebarNavigation.tsx
 import { useAtom } from "jotai";
 import {
+	AlertTriangle,
 	Blocks,
 	BrainCircuit,
 	Building2,
+	LayoutGrid,
+	List,
 	ShieldCheck,
+	Server,
+	ServerCog,
 	Maximize,
 	Minimize,
 	Moon,
 	PanelRightClose,
 	PanelRightOpen,
+	SquareTerminal,
 	Sun,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { fullscreenAtom, sidebarCollapsedAtom, themeWithHtmlAtom } from "../atoms";
 import { useUser } from "../../user/hooks";
@@ -24,6 +31,21 @@ import { useWorkspaceContext } from "../../workspace/hooks";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarTile } from "./SidebarTile";
 import { cx, FOCUS_RING } from "./ui";
+
+type NavigationItem = {
+	to: string;
+	icon: LucideIcon;
+	label: string;
+	children?: Array<{ to: string; icon: LucideIcon; label: string }>;
+};
+
+const INFRA_CHILDREN: NavigationItem["children"] = [
+	{ to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview" },
+	{ to: "/admin/infrastructure?tab=services", icon: Server, label: "Services" },
+	{ to: "/admin/infrastructure?tab=logs", icon: List, label: "Logs" },
+	{ to: "/admin/infrastructure?tab=terminal", icon: SquareTerminal, label: "Terminal" },
+	{ to: "/admin/infrastructure?tab=alerts", icon: AlertTriangle, label: "Alerts" },
+];
 
 export function SidebarNavigation() {
 	const location = useLocation();
@@ -34,7 +56,8 @@ export function SidebarNavigation() {
 	const { data: workspace } = useWorkspaceContext();
 	const permissions = workspace?.permissions;
 
-	const navigation = [
+	const currentPath = `${location.pathname}${location.search}`;
+	const navigation: NavigationItem[] = [
 		...(permissions?.canViewWorkspace
 			? [{ to: "/workspace", icon: Building2, label: "Workspace" }]
 			: []),
@@ -45,7 +68,15 @@ export function SidebarNavigation() {
 			? [{ to: "/plugins", icon: Blocks, label: "Plugins" }]
 			: []),
 		...(user?.systemRole === "SUPERADMIN"
-			? [{ to: "/admin/users", icon: ShieldCheck, label: "Admin" }]
+			? [
+				{ to: "/admin/users", icon: ShieldCheck, label: "Admin" },
+				{
+					to: "/admin/infrastructure",
+					icon: ServerCog,
+					label: "Infra",
+					children: INFRA_CHILDREN,
+				},
+			]
 			: []),
 	];
 
@@ -57,19 +88,48 @@ export function SidebarNavigation() {
 			>
 				<SidebarSection collapsed={collapsed} className="p-4">
 					{navigation.map((item) => (
-						<Link
-							key={item.to}
-							to={item.to}
-							className={cx(FOCUS_RING, "flex rounded-xl")}
-						>
-							<SidebarTile
-								icon={item.icon}
-								label={item.label}
-								isActive={location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)}
-								variant="navigation"
-								collapsed={collapsed}
-							/>
-						</Link>
+						<div key={item.to} className="space-y-1">
+							<Link
+								to={item.to}
+								className={cx(FOCUS_RING, "flex rounded-xl")}
+							>
+								<SidebarTile
+									icon={item.icon}
+									label={item.label}
+									isActive={location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)}
+									variant="navigation"
+									collapsed={collapsed}
+								/>
+							</Link>
+							{!collapsed &&
+								item.children &&
+								location.pathname.startsWith(item.to) && (
+									<div className="ml-6 space-y-1 border-l border-[var(--border-soft)] pl-3">
+										{item.children.map((child) => {
+											const active =
+												currentPath === child.to ||
+												(child.to === item.to && currentPath === `${item.to}?tab=overview`);
+											const Icon = child.icon;
+											return (
+												<Link
+													key={child.to}
+													to={child.to}
+													className={cx(
+														FOCUS_RING,
+														"flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition",
+														active
+															? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
+															: "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
+													)}
+												>
+													<Icon size={14} className="shrink-0" />
+													<span className="truncate">{child.label}</span>
+												</Link>
+											);
+										})}
+									</div>
+								)}
+						</div>
 					))}
 				</SidebarSection>
 			</nav>

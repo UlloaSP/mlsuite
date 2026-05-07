@@ -26,6 +26,7 @@ import dev.ulloasp.mlsuite.invitation.domain.exception.InvitationNotFoundExcepti
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExistsException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
+import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.prediction.domain.exception.ExplanationFeedbackDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.domain.exception.OutputFeedbackDoesNotExistsException;
@@ -124,6 +125,13 @@ public class DomainExceptionHandler {
         String message = (ex.getDetail() == null || ex.getDetail().isBlank()) ? "Analyzer Error" : ex.getDetail();
         return ResponseEntity.status(status)
                 .body(new ErrorDto(Instant.now(), status.value(), message, req.getRequestURI()));
+    }
+
+    @ExceptionHandler(OpsAgentException.class)
+    public ResponseEntity<ErrorDto> handleOpsAgent(OpsAgentException ex, HttpServletRequest req) {
+        HttpStatus status = ex.getStatus() > 0 ? HttpStatus.valueOf(ex.getStatus()) : HttpStatus.BAD_GATEWAY;
+        return ResponseEntity.status(status)
+                .body(new ErrorDto(Instant.now(), status.value(), ex.getMessage(), req.getRequestURI()));
     }
 
     // ---- Validation (@Valid) ----

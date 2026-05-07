@@ -5,13 +5,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "storage")
 public class StorageProperties {
 
-    private boolean enabled = true;
-    private String endpoint = "http://minio:9000";
-    private String accessKey = "minioadmin";
-    private String secretKey = "minioadmin";
-    private String bucket = "mlsuite-models";
-    private boolean autoCreateBucket = true;
-    private boolean backfillOnStartup = true;
+    private boolean enabled;
+    private String endpoint;
+    private String accessKey;
+    private String secretKey;
+    private String bucket;
+    private boolean autoCreateBucket;
+    private boolean backfillOnStartup;
 
     public boolean isEnabled() {
         return enabled;

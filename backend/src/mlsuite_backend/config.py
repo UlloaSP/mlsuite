@@ -2,7 +2,11 @@
 
 import os
 
-CORS_ALLOW_ORIGINS = os.environ.get("CORS_ALLOW_ORIGINS", "https://localhost:8443").split(",")
-HOST = "0.0.0.0"
-PORT = 8000
+
+def _split_csv(name: str) -> list[str]:
+    value = os.environ.get(name, "")
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+CORS_ALLOW_ORIGINS = _split_csv("CORS_ALLOW_ORIGINS")
 JOBLIB_SUFFIX = ".joblib"

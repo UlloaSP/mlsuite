@@ -5,6 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.security;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -29,6 +32,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+        private final List<String> allowedOrigins;
+
+        public SecurityConfig(@Value("${cors.allow-origins}") List<String> allowedOrigins) {
+                this.allowedOrigins = allowedOrigins;
+        }
 
         @Bean
         protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -81,8 +90,7 @@ public class SecurityConfig {
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
                 config.setAllowCredentials(true);
-                config.addAllowedOrigin("https://localhost:5173");
-                config.addAllowedOrigin("https://localhost:8443");
+                config.setAllowedOrigins(allowedOrigins);
                 config.addAllowedHeader("*");
                 config.addAllowedMethod("OPTIONS");
                 config.addAllowedMethod("GET");
