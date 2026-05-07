@@ -45,10 +45,18 @@ frontend/package-lock.json
 *.sw?
 
 # Custom
-backend/__pycache__/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
 backend/.venv/
-backend/.pytest_cache/
-backend/.ruff_cache/
+ops-agent/.venv/
 
 # Environment files
 .env.local
