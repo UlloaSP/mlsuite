@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from mlsuite_ops_agent.app import create_app
 from mlsuite_ops_agent.compose import ComposeError, ComposeGateway
 from mlsuite_ops_agent.config import Settings
+from mlsuite_ops_agent.metrics import collect_metrics
 from mlsuite_ops_agent.terminal import TerminalManager
 
 
@@ -88,9 +89,11 @@ def test_action_logs_and_terminal_routes_work(monkeypatch) -> None:
                 timestamp="2026-05-07T00:00:00+00:00",
                 cpu_percent=1.0,
                 ram_percent=2.0,
-                disk_percent=3.0,
-                vram_percent=None,
-                vram_supported=False,
+                disk_read_bytes=3,
+                disk_write_bytes=4,
+                network_rx_bytes=5,
+                network_tx_bytes=6,
+                services=[],
             )
         ], maxlen=10)
         app.state.agent._latest_services = await fake_compose.service_snapshot()
@@ -146,9 +149,11 @@ def test_stream_socket_sends_service_status_fields(monkeypatch) -> None:
                 timestamp="2026-05-07T00:00:00+00:00",
                 cpu_percent=1.0,
                 ram_percent=2.0,
-                disk_percent=3.0,
-                vram_percent=None,
-                vram_supported=False,
+                disk_read_bytes=3,
+                disk_write_bytes=4,
+                network_rx_bytes=5,
+                network_tx_bytes=6,
+                services=[],
             )
         ], maxlen=10)
         app.state.agent._latest_services = [
@@ -160,6 +165,11 @@ def test_stream_socket_sends_service_status_fields(monkeypatch) -> None:
                 "uptime": "1m",
                 "cpuPercent": 0.5,
                 "memoryBytes": 1024,
+                "memoryLimitBytes": 2048,
+                "diskReadBytes": 10,
+                "diskWriteBytes": 20,
+                "networkRxBytes": 30,
+                "networkTxBytes": 40,
                 "ports": ["8443:8443/tcp"],
                 "terminalEnabled": True,
             }
@@ -176,11 +186,18 @@ def test_stream_socket_sends_service_status_fields(monkeypatch) -> None:
 
     service = message["payload"]["services"][0]
     assert message["type"] == "overview.snapshot"
+    assert message["payload"]["aggregate"]["cpu"]["percent"] == 1.0
+    assert message["payload"]["aggregate"]["networkTx"]["bytes"] == 6
+    assert message["payload"]["history"]["points"][0]["services"] == []
+    assert "host" not in message["payload"]
     assert service["status"] == "running"
     assert service["health"] == "healthy"
     assert service["containerName"] == "spring-app"
     assert service["cpuPercent"] == 0.5
     assert service["memoryBytes"] == 1024
+    assert service["memoryLimitBytes"] == 2048
+    assert service["diskReadBytes"] == 10
+    assert service["networkTxBytes"] == 40
     assert service["ports"] == ["8443:8443/tcp"]
 
 
@@ -199,7 +216,10 @@ def test_service_snapshot_treats_running_without_healthcheck_as_healthy_and_shel
         if args == ("ps", "--services"):
             return "spring-app\n"
         if args[:3] == ("stats", "--no-stream", "--format"):
-            return '{"Name":"spring-app","CPUPerc":"0.5%","MemUsage":"1MiB / 2MiB"}'
+            return (
+                '{"Name":"spring-app","CPUPerc":"0.5%","MemUsage":"1MiB / 2MiB",'
+                '"BlockIO":"3MB / 4MB","NetIO":"5kB / 6kB"}'
+            )
         return ""
 
     monkeypatch.setattr(gateway, "run", fake_run)
@@ -209,6 +229,27 @@ def test_service_snapshot_treats_running_without_healthcheck_as_healthy_and_shel
     assert service["status"] == "running"
     assert service["health"] is None
     assert service["terminalEnabled"] is False
+    assert service["memoryBytes"] == 1024 * 1024
+    assert service["memoryLimitBytes"] == 2 * 1024 * 1024
+    assert service["diskReadBytes"] == 3_000_000
+    assert service["networkTxBytes"] == 6000
+
+
+def test_metrics_are_summed_from_services() -> None:
+    snapshot = collect_metrics([
+        {"name": "spring-app", "cpuPercent": 1.25, "memoryBytes": 1024, "memoryLimitBytes": 4096, "diskReadBytes": 10, "diskWriteBytes": 20, "networkRxBytes": 30, "networkTxBytes": 40},
+        {"name": "frontend", "cpuPercent": 2.75, "memoryBytes": 1024, "memoryLimitBytes": 4096, "diskReadBytes": 1, "diskWriteBytes": 2, "networkRxBytes": 3, "networkTxBytes": 4},
+        {"cpuPercent": None, "memoryBytes": None, "memoryLimitBytes": None},
+    ])
+
+    assert snapshot.cpu_percent == 4.0
+    assert snapshot.ram_percent == 25.0
+    assert snapshot.disk_read_bytes == 11
+    assert snapshot.network_tx_bytes == 44
+    assert snapshot.services[0].name == "spring-app"
+    assert snapshot.services[0].cpu_percent == 1.25
+    assert snapshot.services[0].ram_percent == 25.0
+    assert snapshot.services[0].disk_write_bytes == 20
 
 
 def test_terminal_creation_requires_shell_whitelist() -> None:

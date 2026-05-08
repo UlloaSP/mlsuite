@@ -79,6 +79,9 @@ class ComposeGateway:
             if service_name not in self.managed_services:
                 continue
             stat = stats.get(row.get("Name"))
+            memory_bytes, memory_limit_bytes = _parse_memory_usage(stat.get("MemUsage")) if stat else (None, None)
+            disk_read_bytes, disk_write_bytes = _parse_io_bytes(stat.get("BlockIO")) if stat else (None, None)
+            network_rx_bytes, network_tx_bytes = _parse_io_bytes(stat.get("NetIO")) if stat else (None, None)
             rows.append(
                 {
                     "name": service_name,
@@ -87,7 +90,12 @@ class ComposeGateway:
                     "health": _normalize_health(row.get("Health")),
                     "uptime": row.get("RunningFor"),
                     "cpuPercent": _parse_percent(stat.get("CPUPerc")) if stat else None,
-                    "memoryBytes": _parse_memory_bytes(stat.get("MemUsage")) if stat else None,
+                    "memoryBytes": memory_bytes,
+                    "memoryLimitBytes": memory_limit_bytes,
+                    "diskReadBytes": disk_read_bytes,
+                    "diskWriteBytes": disk_write_bytes,
+                    "networkRxBytes": network_rx_bytes,
+                    "networkTxBytes": network_tx_bytes,
                     "ports": _parse_ports(row.get("Publishers")),
                     "terminalEnabled": service_name in self.terminal_services,
                 }
@@ -104,6 +112,11 @@ class ComposeGateway:
                     "uptime": None,
                     "cpuPercent": None,
                     "memoryBytes": None,
+                    "memoryLimitBytes": None,
+                    "diskReadBytes": None,
+                    "diskWriteBytes": None,
+                    "networkRxBytes": None,
+                    "networkTxBytes": None,
                     "ports": [],
                     "terminalEnabled": False,
                 }
@@ -185,7 +198,7 @@ def _parse_percent(value: Any) -> float | None:
 def _parse_memory_bytes(value: Any) -> int | None:
     if value is None:
         return None
-    text = str(value).split("/")[0].strip().lower()
+    text = str(value).strip().lower()
     match = re.match(r"([0-9.]+)\s*([a-z]+)", text)
     if not match:
         return None
@@ -195,3 +208,21 @@ def _parse_memory_bytes(value: Any) -> int | None:
     if multiplier is None:
         return None
     return int(amount * multiplier)
+
+
+def _parse_memory_usage(value: Any) -> tuple[int | None, int | None]:
+    if value is None:
+        return None, None
+    parts = str(value).split("/", 1)
+    used = _parse_memory_bytes(parts[0])
+    limit = _parse_memory_bytes(parts[1]) if len(parts) > 1 else None
+    return used, limit
+
+
+def _parse_io_bytes(value: Any) -> tuple[int | None, int | None]:
+    if value is None:
+        return None, None
+    parts = str(value).split("/", 1)
+    left = _parse_memory_bytes(parts[0])
+    right = _parse_memory_bytes(parts[1]) if len(parts) > 1 else None
+    return left, right

@@ -1,18 +1,24 @@
-"""Host metrics collection."""
+"""Service aggregate metrics collection."""
 
 from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
-from datetime import datetime, UTC
-import os
-from pathlib import Path
-import shutil
-import subprocess
-
-import psutil
+from datetime import UTC, datetime
+from typing import Any
 
 from .config import Settings
+
+
+@dataclass
+class ServiceMetricSnapshot:
+    name: str
+    cpu_percent: float
+    ram_percent: float
+    disk_read_bytes: int
+    disk_write_bytes: int
+    network_rx_bytes: int
+    network_tx_bytes: int
 
 
 @dataclass
@@ -20,9 +26,11 @@ class MetricsSnapshot:
     timestamp: str
     cpu_percent: float
     ram_percent: float
-    disk_percent: float
-    vram_percent: float | None
-    vram_supported: bool
+    disk_read_bytes: int
+    disk_write_bytes: int
+    network_rx_bytes: int
+    network_tx_bytes: int
+    services: list[ServiceMetricSnapshot]
 
 
 class MetricsBuffer:
@@ -40,54 +48,89 @@ class MetricsBuffer:
                 "timestamp": point.timestamp,
                 "cpuPercent": point.cpu_percent,
                 "ramPercent": point.ram_percent,
-                "diskPercent": point.disk_percent,
-                "vramPercent": point.vram_percent,
+                "diskReadBytes": point.disk_read_bytes,
+                "diskWriteBytes": point.disk_write_bytes,
+                "networkRxBytes": point.network_rx_bytes,
+                "networkTxBytes": point.network_tx_bytes,
+                "services": [
+                    {
+                        "name": service.name,
+                        "cpuPercent": service.cpu_percent,
+                        "ramPercent": service.ram_percent,
+                        "diskReadBytes": service.disk_read_bytes,
+                        "diskWriteBytes": service.disk_write_bytes,
+                        "networkRxBytes": service.network_rx_bytes,
+                        "networkTxBytes": service.network_tx_bytes,
+                    }
+                    for service in point.services
+                ],
             }
             for point in self.points
         ]
 
 
-def collect_metrics() -> MetricsSnapshot:
-    vram_percent, vram_supported = _collect_vram_percent()
+def collect_metrics(services: list[dict[str, Any]]) -> MetricsSnapshot:
     return MetricsSnapshot(
         timestamp=datetime.now(UTC).isoformat(),
-        cpu_percent=round(psutil.cpu_percent(interval=None), 2),
-        ram_percent=round(psutil.virtual_memory().percent, 2),
-        disk_percent=round(psutil.disk_usage(_disk_root()).percent, 2),
-        vram_percent=vram_percent,
-        vram_supported=vram_supported,
-    )
-
-
-def _disk_root() -> str:
-    anchor = Path.cwd().anchor
-    return anchor or os.path.abspath(os.sep)
-
-
-def _collect_vram_percent() -> tuple[float | None, bool]:
-    if shutil.which("nvidia-smi") is None:
-        return None, False
-    result = subprocess.run(
-        [
-            "nvidia-smi",
-            "--query-gpu=memory.used,memory.total",
-            "--format=csv,noheader,nounits",
+        cpu_percent=_sum_numeric(services, "cpuPercent"),
+        ram_percent=_memory_percent(services),
+        disk_read_bytes=_sum_int(services, "diskReadBytes"),
+        disk_write_bytes=_sum_int(services, "diskWriteBytes"),
+        network_rx_bytes=_sum_int(services, "networkRxBytes"),
+        network_tx_bytes=_sum_int(services, "networkTxBytes"),
+        services=[
+            ServiceMetricSnapshot(
+                name=str(service.get("name")),
+                cpu_percent=_numeric_value(service.get("cpuPercent")),
+                ram_percent=_service_memory_percent(service),
+                disk_read_bytes=_int_value(service.get("diskReadBytes")),
+                disk_write_bytes=_int_value(service.get("diskWriteBytes")),
+                network_rx_bytes=_int_value(service.get("networkRxBytes")),
+                network_tx_bytes=_int_value(service.get("networkTxBytes")),
+            )
+            for service in services
+            if service.get("name")
         ],
-        capture_output=True,
-        text=True,
-        check=False,
     )
-    if result.returncode != 0:
-        return None, False
-    used_total = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    if not used_total:
-        return None, False
-    used = 0.0
+
+
+def _sum_numeric(rows: list[dict[str, Any]], key: str) -> float:
     total = 0.0
-    for line in used_total:
-        left, right = [part.strip() for part in line.split(",", 1)]
-        used += float(left)
-        total += float(right)
-    if total <= 0:
-        return None, False
-    return round((used / total) * 100, 2), True
+    for row in rows:
+        value = row.get(key)
+        if isinstance(value, int | float):
+            total += float(value)
+    return round(total, 2)
+
+
+def _numeric_value(value: Any) -> float:
+    return round(float(value), 2) if isinstance(value, int | float) else 0.0
+
+
+def _int_value(value: Any) -> int:
+    return value if isinstance(value, int) else 0
+
+
+def _memory_percent(services: list[dict[str, Any]]) -> float:
+    used = _sum_int(services, "memoryBytes")
+    limit = _sum_int(services, "memoryLimitBytes")
+    if limit <= 0:
+        return 0.0
+    return round((used / limit) * 100, 2)
+
+
+def _service_memory_percent(service: dict[str, Any]) -> float:
+    used = service.get("memoryBytes")
+    limit = service.get("memoryLimitBytes")
+    if not isinstance(used, int) or not isinstance(limit, int) or limit <= 0:
+        return 0.0
+    return round((used / limit) * 100, 2)
+
+
+def _sum_int(rows: list[dict[str, Any]], key: str) -> int:
+    total = 0
+    for row in rows:
+        value = row.get(key)
+        if isinstance(value, int):
+            total += value
+    return total

@@ -1,27 +1,46 @@
+export type ServiceMetricPointDto = {
+	name: string;
+	cpuPercent: number;
+	ramPercent: number;
+	diskReadBytes: number;
+	diskWriteBytes: number;
+	networkRxBytes: number;
+	networkTxBytes: number;
+};
+
 export type MetricPointDto = {
 	timestamp: string;
 	cpuPercent: number;
 	ramPercent: number;
-	diskPercent: number;
-	vramPercent: number | null;
+	diskReadBytes: number;
+	diskWriteBytes: number;
+	networkRxBytes: number;
+	networkTxBytes: number;
+	services: ServiceMetricPointDto[];
 };
 
-export type HostMetricValueDto = {
+export type ServiceAggregateMetricValueDto = {
 	percent: number | null;
 	supported: boolean;
 };
 
-export type HostMetricsDto = {
-	cpu: HostMetricValueDto;
-	ram: HostMetricValueDto;
-	disk: HostMetricValueDto;
-	vram: HostMetricValueDto;
+export type ServiceAggregateByteValueDto = {
+	bytes: number | null;
+	supported: boolean;
+};
+
+export type ServiceAggregateMetricsDto = {
+	cpu: ServiceAggregateMetricValueDto;
+	ram: ServiceAggregateMetricValueDto;
+	diskRead: ServiceAggregateByteValueDto;
+	diskWrite: ServiceAggregateByteValueDto;
+	networkRx: ServiceAggregateByteValueDto;
+	networkTx: ServiceAggregateByteValueDto;
 };
 
 export type MetricSeriesDto = {
 	sampleIntervalSeconds: number;
 	retentionMinutes: number;
-	supported: boolean;
 	points: MetricPointDto[];
 };
 
@@ -33,12 +52,17 @@ export type ServiceStatusDto = {
 	uptime: string | null;
 	cpuPercent: number | null;
 	memoryBytes: number | null;
+	memoryLimitBytes: number | null;
+	diskReadBytes: number | null;
+	diskWriteBytes: number | null;
+	networkRxBytes: number | null;
+	networkTxBytes: number | null;
 	ports: string[];
 	terminalEnabled: boolean;
 };
 
 export type InfrastructureOverviewDto = {
-	host: HostMetricsDto;
+	aggregate: ServiceAggregateMetricsDto;
 	services: ServiceStatusDto[];
 	history: MetricSeriesDto;
 };
@@ -56,7 +80,7 @@ export type TerminalSessionDto = {
 export type OverviewDeltaEvent = {
 	type: "overview.delta";
 	payload: {
-		host: MetricPointDto & { vramSupported: boolean };
+		aggregate: MetricPointDto;
 		services: ServiceStatusDto[];
 	};
 };

@@ -1,16 +1,10 @@
 import { useState } from "react";
-import {
-	Filter,
-	Play,
-	RefreshCw,
-	RotateCcw,
-	Search,
-	StopCircle,
-} from "lucide-react";
+import { Filter, RefreshCw, Search } from "lucide-react";
 import { AppBadge, AppButton, cx } from "../../../app/components";
 import { formatBytes, formatPercent } from "../formatters";
 import { labelForServiceHealth, toneForServiceStatus } from "../status";
 import type { ServiceStatusDto } from "../types";
+import { ActionBtn, SegmentedControl, SortTh } from "./ServicesViewSupport";
 
 type Props = {
 	services: ServiceStatusDto[];
@@ -20,8 +14,8 @@ type Props = {
 	onAction: (serviceName: string, action: "START" | "STOP" | "RESTART") => void;
 };
 
-type SortKey = "name" | "status" | "uptime" | "cpuPercent" | "memoryBytes";
-type SortDir = "asc" | "desc";
+export type SortKey = "name" | "status" | "uptime" | "cpuPercent" | "memoryBytes";
+export type SortDir = "asc" | "desc";
 
 export function ServicesView({
 	services,
@@ -38,12 +32,9 @@ export function ServicesView({
 		dir: "asc",
 	});
 
-	const toggleSort = (key: SortKey) =>
-		setSort((prev) =>
-			prev.key === key
-				? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
-				: { key, dir: "asc" },
-		);
+	const toggleSort = (key: SortKey) => setSort((prev) =>
+		prev.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
+	);
 
 	const filtered = services
 		.filter((s) => {
@@ -92,18 +83,12 @@ export function ServicesView({
 
 	return (
 		<div className="space-y-5">
-			{/* Header */}
 			<div className="flex flex-wrap items-end justify-between gap-4">
 				<div>
-					<p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-						Service control
-					</p>
-					<h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-						Managed services
-					</h1>
+					<p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">Service control</p>
+					<h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">Managed services</h1>
 					<p className="mt-1 text-sm text-[var(--text-secondary)]">
-						{filtered.length} of {services.length} services &middot; click a row for
-						details, logs, and shell.
+						{filtered.length} of {services.length} services &middot; click a row for details, logs, and shell.
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
@@ -113,9 +98,7 @@ export function ServicesView({
 				</div>
 			</div>
 
-			{/* Main card */}
 			<div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
-				{/* Filter toolbar */}
 				<div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-soft)] px-4 py-3">
 					<label className="flex items-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5">
 						<Search size={14} className="text-[var(--text-muted)]" />
@@ -168,21 +151,13 @@ export function ServicesView({
 						<thead>
 							<tr className="border-b border-[var(--border-soft)] bg-[var(--surface-primary)]">
 								<SortTh label="Service" sortKey="name" sort={sort} onSort={toggleSort} />
-								<th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-									State
-								</th>
-								<th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-									Health
-								</th>
+								<th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">State</th>
+								<th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Health</th>
 								<SortTh label="Uptime" sortKey="uptime" sort={sort} onSort={toggleSort} />
 								<SortTh label="CPU" sortKey="cpuPercent" sort={sort} onSort={toggleSort} />
 								<SortTh label="Memory" sortKey="memoryBytes" sort={sort} onSort={toggleSort} />
-								<th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-									Ports
-								</th>
-								<th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
-									Actions
-								</th>
+								<th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Ports</th>
+								<th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">Actions</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -213,12 +188,8 @@ export function ServicesView({
 													)}
 												/>
 												<div>
-													<p className="font-medium text-[var(--text-primary)]">
-														{s.name}
-													</p>
-													<p className="mt-0.5 text-[0.65rem] text-[var(--text-muted)]">
-														{s.containerName ?? "container missing"}
-													</p>
+													<p className="font-medium text-[var(--text-primary)]">{s.name}</p>
+													<p className="mt-0.5 text-[0.65rem] text-[var(--text-muted)]">{s.containerName ?? "container missing"}</p>
 												</div>
 											</div>
 										</td>
@@ -231,9 +202,7 @@ export function ServicesView({
 											</AppBadge>
 										</td>
 										<td className="px-4 py-3">
-											<span className="text-[var(--text-secondary)]">
-												{labelForServiceHealth(s.health)}
-											</span>
+											<span className="text-[var(--text-secondary)]">{labelForServiceHealth(s.health)}</span>
 										</td>
 										<td className="px-4 py-3 font-mono text-[var(--text-secondary)]">
 											{s.uptime ?? "n/a"}
@@ -279,21 +248,21 @@ export function ServicesView({
 											<div className="flex items-center gap-1.5">
 												{s.status !== "running" ? (
 													<ActionBtn
-														icon={<Play size={12} />}
+														action="START"
 														label="Start"
 														disabled={busy}
 														onClick={() => onAction(s.name, "START")}
 													/>
 												) : (
 													<ActionBtn
-														icon={<StopCircle size={12} />}
+														action="STOP"
 														label="Stop"
 														disabled={busy}
 														onClick={() => onAction(s.name, "STOP")}
 													/>
 												)}
 												<ActionBtn
-													icon={<RotateCcw size={12} />}
+													action="RESTART"
 													label="Restart"
 													disabled={busy}
 													danger
@@ -318,89 +287,6 @@ export function ServicesView({
 					</table>
 				</div>
 			</div>
-		</div>
-	);
-}
-
-function ActionBtn({
-	icon,
-	label,
-	disabled,
-	danger,
-	onClick,
-}: {
-	icon: React.ReactNode;
-	label: string;
-	disabled?: boolean;
-	danger?: boolean;
-	onClick: () => void;
-}) {
-	return (
-		<button
-			className={cx(
-				"inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[0.65rem] font-medium transition disabled:cursor-not-allowed disabled:opacity-40",
-				danger
-					? "border-[var(--danger-quiet)] text-[var(--danger-text)] hover:bg-[var(--danger-quiet)]"
-					: "border-[var(--border-soft)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
-			)}
-			disabled={disabled}
-			onClick={onClick}
-		>
-			{icon} {label}
-		</button>
-	);
-}
-
-function SortTh({
-	label,
-	sortKey,
-	sort,
-	onSort,
-}: {
-	label: string;
-	sortKey: SortKey;
-	sort: { key: SortKey; dir: SortDir };
-	onSort: (key: SortKey) => void;
-}) {
-	const active = sort.key === sortKey;
-	return (
-		<th
-			className="cursor-pointer select-none px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-			onClick={() => onSort(sortKey)}
-		>
-			{label}
-			{active && (
-				<span className="ml-1">{sort.dir === "asc" ? "↑" : "↓"}</span>
-			)}
-		</th>
-	);
-}
-
-function SegmentedControl({
-	options,
-	value,
-	onChange,
-}: {
-	options: Array<{ key: string; label: string }>;
-	value: string;
-	onChange: (v: string) => void;
-}) {
-	return (
-		<div className="inline-flex gap-0.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] p-0.5">
-			{options.map((opt) => (
-				<button
-					key={opt.key}
-					className={cx(
-						"rounded-md px-2.5 py-1 text-[0.68rem] font-medium transition",
-						value === opt.key
-							? "bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-sm"
-							: "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-					)}
-					onClick={() => onChange(opt.key)}
-				>
-					{opt.label}
-				</button>
-			))}
 		</div>
 	);
 }

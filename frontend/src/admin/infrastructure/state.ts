@@ -15,28 +15,29 @@ export function applyInfrastructureEvent(
 		return current;
 	}
 	const nextPoint = {
-		timestamp: event.payload.host.timestamp,
-		cpuPercent: event.payload.host.cpuPercent,
-		ramPercent: event.payload.host.ramPercent,
-		diskPercent: event.payload.host.diskPercent,
-		vramPercent: event.payload.host.vramPercent,
+		timestamp: event.payload.aggregate.timestamp,
+		cpuPercent: event.payload.aggregate.cpuPercent,
+		ramPercent: event.payload.aggregate.ramPercent,
+		diskReadBytes: event.payload.aggregate.diskReadBytes,
+		diskWriteBytes: event.payload.aggregate.diskWriteBytes,
+		networkRxBytes: event.payload.aggregate.networkRxBytes,
+		networkTxBytes: event.payload.aggregate.networkTxBytes,
+		services: event.payload.aggregate.services,
 	};
 	const maxPoints =
 		(current.history.retentionMinutes * 60) / current.history.sampleIntervalSeconds;
 	return {
-		host: {
-			cpu: { percent: event.payload.host.cpuPercent, supported: true },
-			ram: { percent: event.payload.host.ramPercent, supported: true },
-			disk: { percent: event.payload.host.diskPercent, supported: true },
-			vram: {
-				percent: event.payload.host.vramPercent,
-				supported: event.payload.host.vramSupported,
-			},
+		aggregate: {
+			cpu: { percent: event.payload.aggregate.cpuPercent, supported: true },
+			ram: { percent: event.payload.aggregate.ramPercent, supported: true },
+			diskRead: { bytes: event.payload.aggregate.diskReadBytes, supported: true },
+			diskWrite: { bytes: event.payload.aggregate.diskWriteBytes, supported: true },
+			networkRx: { bytes: event.payload.aggregate.networkRxBytes, supported: true },
+			networkTx: { bytes: event.payload.aggregate.networkTxBytes, supported: true },
 		},
 		services: event.payload.services,
 		history: {
 			...current.history,
-			supported: event.payload.host.vramSupported,
 			points: [...current.history.points, nextPoint].slice(-maxPoints),
 		},
 	};

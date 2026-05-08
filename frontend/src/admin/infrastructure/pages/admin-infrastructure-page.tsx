@@ -159,7 +159,7 @@ export function AdminInfrastructurePage() {
 					) : (
 						<AppEmptyState
 							title={isLoading ? "Loading infrastructure snapshot" : "No infrastructure snapshot"}
-							description="The dashboard needs an ops-agent overview before it can render host metrics and service controls."
+							description="The dashboard needs an ops-agent overview before it can render service metrics and controls."
 						/>
 					)}
 				</div>

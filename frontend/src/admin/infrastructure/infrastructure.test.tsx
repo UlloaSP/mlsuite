@@ -14,11 +14,13 @@ import type { InfrastructureOverviewDto } from "./types";
 import { buildWebSocketUrl } from "./ws/infrastructureSocket";
 
 const overview: InfrastructureOverviewDto = {
-	host: {
+	aggregate: {
 		cpu: { percent: 10, supported: true },
 		ram: { percent: 20, supported: true },
-		disk: { percent: 30, supported: true },
-		vram: { percent: null, supported: false },
+		diskRead: { bytes: 1024, supported: true },
+		diskWrite: { bytes: 2048, supported: true },
+		networkRx: { bytes: 4096, supported: true },
+		networkTx: { bytes: 8192, supported: true },
 	},
 	services: [
 		{
@@ -29,6 +31,11 @@ const overview: InfrastructureOverviewDto = {
 			uptime: "1m",
 			cpuPercent: 5,
 			memoryBytes: 1024,
+			memoryLimitBytes: 2048,
+			diskReadBytes: 1024,
+			diskWriteBytes: 2048,
+			networkRxBytes: 4096,
+			networkTxBytes: 8192,
 			ports: ["8443:8443/tcp"],
 			terminalEnabled: true,
 		},
@@ -36,14 +43,16 @@ const overview: InfrastructureOverviewDto = {
 	history: {
 		sampleIntervalSeconds: 5,
 		retentionMinutes: 60,
-		supported: false,
 		points: [
 			{
 				timestamp: "2026-05-07T00:00:00Z",
 				cpuPercent: 10,
 				ramPercent: 20,
-				diskPercent: 30,
-				vramPercent: null,
+				diskReadBytes: 1024,
+				diskWriteBytes: 2048,
+				networkRxBytes: 4096,
+				networkTxBytes: 8192,
+				services: [{ name: "spring-app", cpuPercent: 5, ramPercent: 50, diskReadBytes: 1024, diskWriteBytes: 2048, networkRxBytes: 4096, networkTxBytes: 8192 }],
 			},
 		],
 	},
@@ -54,21 +63,25 @@ describe("infra helpers", () => {
 		const next = applyInfrastructureEvent(overview, {
 			type: "overview.delta",
 			payload: {
-				host: {
+				aggregate: {
 					timestamp: "2026-05-07T00:00:05Z",
 					cpuPercent: 11,
 					ramPercent: 22,
-					diskPercent: 33,
-					vramPercent: 44,
-					vramSupported: true,
+					diskReadBytes: 2048,
+					diskWriteBytes: 4096,
+					networkRxBytes: 8192,
+					networkTxBytes: 16384,
+					services: [{ name: "spring-app", cpuPercent: 6, ramPercent: 55, diskReadBytes: 2048, diskWriteBytes: 4096, networkRxBytes: 8192, networkTxBytes: 16384 }],
 				},
 				services: overview.services,
 			},
 		});
 
 		expect(next?.history.points).toHaveLength(2);
-		expect(next?.host.vram.supported).toBe(true);
+		expect(next?.aggregate.ram.percent).toBe(22);
+		expect(next?.aggregate.networkTx.bytes).toBe(16384);
 		expect(next?.history.points.at(-1)?.cpuPercent).toBe(11);
+		expect(next?.history.points.at(-1)?.services[0]?.cpuPercent).toBe(6);
 	});
 
 	it("appends only selected service log lines", () => {
@@ -118,6 +131,11 @@ describe("infra helpers", () => {
 					uptime: null,
 					cpuPercent: null,
 					memoryBytes: null,
+					memoryLimitBytes: null,
+					diskReadBytes: null,
+					diskWriteBytes: null,
+					networkRxBytes: null,
+					networkTxBytes: null,
 					ports: [],
 					terminalEnabled: false,
 				},
