@@ -24,3 +24,9 @@
 - Rule: when contract changes affect UI, preserve established composition first; only rename labels/data bindings and add requested controls unless user asks for a redesign.
 - User correction: Docker service telemetry also includes disk read/write and network I/O, not only CPU/RAM.
 - Rule: when deriving infra metrics from Docker stats, map the full relevant stats contract (`CPUPerc`, `MemUsage`, `BlockIO`, `NetIO`) through backend models, frontend types, tests, and visible labels in one pass.
+- User correction: MLForm 0.1.8 questionnaire support should use `mountWizardForm`/kit API, not local questionnaire compatibility shims.
+- Rule: when upstream library replaces a removed subpath with a new public API, adapt to the new public API directly; do not preserve local legacy facades unless no upstream path exists.
+- User correction: Docker frontend build failed on `vp run build` TypeScript errors after a Vite-only verification missed them.
+- Rule: for frontend release/Docker readiness, run the package build script (`vp run build`) so `tsc -b` executes; `vp build` alone is insufficient for strict type checks.
+- User correction: MLForm builtins should come from registry pack API, not manual default field registration.
+- Rule: when upstream exposes a pack/factory for builtin registries, use that source of truth before composing local registries; only fall back to manual registration if no public pack exists.

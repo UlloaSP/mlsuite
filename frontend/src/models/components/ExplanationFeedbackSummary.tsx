@@ -9,7 +9,7 @@ import {
 	getQuestionnaireFieldDescriptors,
 	type QuestionnaireFieldDescriptor,
 } from "../questionnaire-feedback";
-import type { QuestionnaireSchema } from "mlform/questionnaire";
+import type { QuestionnaireSchema } from "../questionnaire-schema";
 
 type ExplanationFeedbackSummaryProps = {
 	schema?: QuestionnaireSchema;

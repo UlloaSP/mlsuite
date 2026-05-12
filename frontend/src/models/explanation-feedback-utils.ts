@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { normalizeCustomExplanationResult } from "../app/utils/mlform/custom-explanation";
 import type { CatalogExplanationDefinition } from "../app/utils/mlform/custom-explanation";
 import { toMlformSchema } from "../app/utils/mlform";
+import type { ExplanationConfig } from "mlform/runtime";
 import type { PredictionExplanationDescriptor } from "./questionnaire-feedback";
 
 type JsonRecord = Record<string, unknown>;
@@ -151,7 +152,7 @@ export const extractPredictionExplanationEntries = (
 		const meta = isRecord(predictionValue.meta) ? predictionValue.meta : {};
 		const explainErrors = isRecord(meta.explainErrors) ? meta.explainErrors : {};
 
-		return (schema.explanations ?? []).flatMap((explanation, index) => {
+		return (schema.explanations ?? []).flatMap((explanation: ExplanationConfig, index: number) => {
 			const explanationId = explanation.id ?? `explanation-${index + 1}`;
 			const content = getExplanationContent(reports[explanationId]);
 			const nextError = explainErrors[explanationId];

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FieldConfig, FieldDefinition } from "mlform/engine";
+import type { FieldConfig, FieldDefinition } from "mlform/runtime";
 import type { PluginDto } from "../../api/pluginService";
 import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "./plugin-catalog";
 import {

@@ -3,12 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createBuiltinRegistry, type FieldConfig } from "mlform/engine";
+import { type FieldConfig } from "mlform/runtime";
 import {
-	normalizeQuestionnaireSchema,
-	type MountedQuestionnaire,
+	buildQuestionnaireFormSchema,
 	type QuestionnaireSchema,
-} from "mlform/questionnaire";
+} from "./questionnaire-schema";
+import type { MountedWizardForm } from "mlform/kit";
 import type { ExplanationFeedbackDto } from "./api/modelService";
 
 type JsonRecord = Record<string, unknown>;
@@ -53,21 +53,18 @@ export const toQuestionnaireSchema = (
 export const getQuestionnaireFieldIds = (
 	schema: QuestionnaireSchema,
 ): string[] =>
-	normalizeQuestionnaireSchema(schema, createBuiltinRegistry()).formSchema.fields.map(
-		(field: { id: string }) => field.id,
+	buildQuestionnaireFormSchema(schema).fields.map((field: { id?: string }) =>
+		String(field.id),
 	);
 
 export const getQuestionnaireFieldDescriptors = (
 	schema: QuestionnaireSchema,
 ): QuestionnaireFieldDescriptor[] => {
-	const normalizedFields = normalizeQuestionnaireSchema(
-		schema,
-		createBuiltinRegistry(),
-	).formSchema.fields;
+	const normalizedFields = buildQuestionnaireFormSchema(schema).fields;
 	const sourceFields = schema.steps.flatMap((step) => step.fields);
 
-	return normalizedFields.map((field: { id: string; kind?: string }, index: number) => ({
-		id: field.id,
+	return normalizedFields.map((field: { id?: string; kind?: string }, index: number) => ({
+		id: String(field.id),
 		label: sourceFields[index]?.label ?? field.id,
 		kind: typeof field.kind === "string" ? field.kind : "unknown",
 	}));
@@ -115,7 +112,7 @@ export const formatFeedbackValue = (value: unknown): string => {
 };
 
 export const submitQuestionnaire = async (
-	mounted: MountedQuestionnaire | null | undefined,
+	mounted: MountedWizardForm | null | undefined,
 ): Promise<Record<string, unknown>> => {
 	if (!mounted) {
 		return {};
@@ -126,7 +123,7 @@ export const submitQuestionnaire = async (
 };
 
 export const getQuestionnaireValues = (
-	mounted: MountedQuestionnaire | null | undefined,
+	mounted: MountedWizardForm | null | undefined,
 ): Record<string, unknown> => {
 	if (!mounted || !isRecord(mounted.form.state.values)) {
 		return {};

@@ -455,3 +455,102 @@ Run grep audit again for forbidden literals in config paths. Then run targeted c
   - `docker build --file ./ops-agent/Dockerfile --tag mlsuite-ops-agent:docker-io-check ./ops-agent` ✅
   - `git diff --check` ✅ only CRLF warnings
   - line cap check ✅ no touched source/test file over 300 lines
+## MLForm 0.1.8 API Adaptation
+
+### Goal
+- [x] Adapt all MLSuite MLForm imports/usages to MLForm 0.1.8 public exports.
+- [x] Preserve prediction creation, bulk prediction, feedback questionnaire, plugin catalog, and custom renderer flows.
+- [x] Keep touched files under 300 lines and update graph after code changes.
+
+### Plan
+- [x] Phase 1. Inspect MLForm 0.1.8 package declarations and compare old import paths to new exports.
+- [x] Phase 2. Update MLSuite MLForm integration modules to use 0.1.8 paths/types/functions.
+- [x] Phase 3. Remove stale import paths and adjust local wrappers if API shapes changed.
+- [x] Phase 4. Run focused frontend build/tests, line-cap checks, stale import scan, and graphify update.
+
+### Review
+- Status: fixed.
+- Updated `mlform` dependency, lockfile, and workspace override from 0.1.7 to 0.1.8 only.
+- Replaced removed `mlform/engine` and `mlform/questionnaire` subpath imports with MLSuite adapters over 0.1.8 public exports.
+- Added local builtin registry and questionnaire schema/mount adapters to preserve prediction and feedback behavior after the public export split.
+- Split `primitive-registry.ts` custom renderers into separate files so touched files stay under 300 lines.
+- Verification:
+  - `vp build` ✅ warnings only: runtime-config non-module script, plugin timing, and large chunks.
+  - `vp test` ✅ 3 files / 12 tests.
+  - stale import scan for `mlform/engine` and `mlform/questionnaire` ✅ no matches.
+  - touched frontend source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 378 files, mostly `dist/` plus pre-existing tracked files.
+  - `vp check` ❌ blocked by existing formatting backlog in 365 files, mostly `dist/` plus pre-existing tracked files.
+
+## MLForm Wizard Questionnaire Cleanup
+
+### Goal
+- [x] Remove MLSuite local questionnaire legacy shim.
+- [x] Use MLForm 0.1.8 `mountWizardForm` kit API for feedback questionnaires.
+- [x] Keep feedback values/field ids compatible and verify build/tests.
+
+### Plan
+- [x] Phase 1. Inspect MLForm 0.1.8 wizard mount types and current feedback callsites.
+- [x] Phase 2. Replace local questionnaire schema/mount adapter with direct wizard schema builder + `mountWizardForm`.
+- [x] Phase 3. Delete stale shim exports/imports and update task docs.
+- [x] Phase 4. Verify build/tests, stale scans, line caps, graph update.
+
+### Review
+- Status: fixed.
+- Removed local `mountQuestionnaire`/`MountedQuestionnaire` adapter path.
+- Feedback questionnaire UI now calls MLForm 0.1.8 `mountWizardForm` from `mlform/kit` directly.
+- `questionnaire-schema.ts` only builds MLForm `FormSchema` + `WizardLayoutConfig`; it no longer wraps MLForm mounting.
+- Removed local `runtime.ts` MLForm facade; code imports 0.1.8 public subpaths directly (`mlform/runtime`, `mlform/builtins-ml`, `mlform/kit`).
+- Field id derivation remains stable for stored feedback values.
+- Captured correction in `tasks/lessons.md`.
+- Verification:
+  - `vp build` ✅ warnings only: runtime-config non-module script, plugin timing, and large chunks.
+  - `vp test` ✅ 3 files / 12 tests.
+  - stale scan for local MLForm facades, `mountQuestionnaire`, `normalizeQuestionnaireSchema`, `MountedQuestionnaire`, `mlform/questionnaire`, `mlform/engine` ✅ no matches.
+  - `mountWizardForm` usage scan ✅ direct usage in `ExplanationQuestionnaireMount`.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+
+## MLForm 0.1.8 Frontend Build Fix
+
+### Plan
+- [x] Fix strict TypeScript callback inference failures from MLForm 0.1.8 declarations.
+- [x] Split oversized touched component so all touched files stay under 300 lines.
+- [x] Verify exact Docker build command path with `vp run build`, tests, stale scans, diff check, and graph update.
+
+### Review
+- Status: fixed.
+- Added explicit public `mlform/runtime` types for schema filters, builtin definition registries, custom explanation adapters, headless prediction wrappers, export helpers, and explanation feedback extraction.
+- Split CSV/export helper logic out of `ExportButton.tsx`; component is now under line cap.
+- Captured the verification lesson in `tasks/lessons.md`.
+- Verification:
+  - `vp run build` ✅ runs `tsc -b` then Vite build; warnings only: runtime-config non-module script and large chunks.
+  - `vp test` ✅ 3 files / 12 tests.
+  - stale scan for MLForm legacy facades/subpaths ✅ no matches.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+
+## MLForm Builtin Registry Fix
+
+### Plan
+- [x] Compose MLSuite builtin registry from MLForm pack API.
+- [x] Route prediction/questionnaire mounts through same builtin registry helper.
+- [x] Verify builtin field kinds, build, tests, line caps, stale scans, diff check, graph update.
+
+### Review
+- Status: fixed.
+- `builtin-registry.ts` now uses `createMlRegistryPack()` from `mlform/builtins-ml`; fields/reports come from MLForm pack source of truth.
+- Prediction runtime and wizard feedback mount use `createMlSuiteBuiltinRegistry()`, so builtin fields no longer depend on plugin catalog.
+- Added regression test for builtin field/report registration, builtin-only schema validation, and unknown custom kind behavior.
+- Verification:
+  - `vp test src/app/utils/mlform/builtin-registry.test.ts` ✅ 3 tests.
+  - `vp run build` ✅ warnings only: runtime-config non-module script and large chunks.
+  - `vp test` ✅ 4 files / 15 tests.
+  - stale scan for `createBuiltinMlRegistry`, old MLForm subpaths/facades ✅ no matches.
+  - touched source/test line-cap check ✅ no touched file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅

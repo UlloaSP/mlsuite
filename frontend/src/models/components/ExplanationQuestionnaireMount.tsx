@@ -11,9 +11,14 @@ import {
 	useRef,
 	useState,
 } from "react";
-import type { QuestionnaireSchema } from "mlform/questionnaire";
-import { mountQuestionnaire, type MountedQuestionnaire } from "mlform/questionnaire";
+import { mountWizardForm, type MountedWizardForm } from "mlform/kit";
+import type { QuestionnaireSchema } from "../questionnaire-schema";
+import {
+	buildQuestionnaireFormSchema,
+	buildQuestionnaireWizardLayout,
+} from "../questionnaire-schema";
 import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
+import { createMlSuiteBuiltinRegistry } from "../../app/utils/mlform/builtin-registry";
 import { createLocalQuestionnaireTransport } from "../local-questionnaire-transport";
 import {
 	getQuestionnaireValues,
@@ -57,7 +62,7 @@ export const ExplanationQuestionnaireMount = forwardRef<
 	ref,
 ) {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const mountedRef = useRef<MountedQuestionnaire | null>(null);
+	const mountedRef = useRef<MountedWizardForm | null>(null);
 	const initialValuesRef = useRef(initialValues);
 	const onValuesChangeRef = useRef(onValuesChange);
 	const [mountError, setMountError] = useState<string | null>(null);
@@ -87,8 +92,10 @@ export const ExplanationQuestionnaireMount = forwardRef<
 
 		try {
 			setMountError(null);
-			const mounted = mountQuestionnaire(containerRef.current, {
-				schema: effectiveSchema,
+			const mounted = mountWizardForm(containerRef.current, {
+				schema: buildQuestionnaireFormSchema(effectiveSchema),
+				layout: buildQuestionnaireWizardLayout(effectiveSchema),
+				registry: createMlSuiteBuiltinRegistry(),
 				transport: createLocalQuestionnaireTransport(),
 				initialValues: initialValuesRef.current,
 				designSystem: {
@@ -96,10 +103,11 @@ export const ExplanationQuestionnaireMount = forwardRef<
 					theme: "cobalt",
 					recipe: "default",
 				},
-				text: {
-					submitLabel: editable ? "Check answers" : "Reviewed",
-					submittingLabel: "Checking answers...",
+				labels: {
+					submit: editable ? "Check answers" : "Reviewed",
+					submitting: "Checking answers...",
 				},
+				reportPane: "hidden",
 			});
 
 			if (mode === "embedded") {

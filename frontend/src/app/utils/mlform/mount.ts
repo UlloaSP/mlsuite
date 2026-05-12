@@ -7,7 +7,7 @@ import { mountForm } from "mlform";
 import {
 	type AfterSubmitContext,
 	type SubmitErrorContext,
-} from "mlform/engine";
+} from "mlform/runtime";
 import {
 	createPredictionRuntime,
 	getPredictionDesignSystem,

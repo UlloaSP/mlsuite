@@ -5,11 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type {
 	ExplanationConfig,
+	ExplanationDescriptorContext,
 	ExplanationDefinition,
+	ExplanationFetchRequest,
 	ExplanationFetchTransport,
 	ExplanationStateSnapshot,
 	NormalizedExplanationConfig,
-} from "mlform/engine";
+} from "mlform/runtime";
 import { normalizeExplanationConfig, toBackendPatchedRequest } from "./explanationConfig";
 
 type TypeScriptModule = typeof import("typescript");
@@ -81,7 +83,7 @@ const adaptDeclarativeExplanationKind = (
 ): ExplanationDefinition<ExplanationConfig> => ({
 	kind: kind.kind,
 	schema: kind.schema,
-	transport: (config) => {
+	transport: (config: ExplanationConfig) => {
 		const normalizedConfig = normalizeExplanationConfig(
 			config as NormalizedExplanationConfig<ExplanationConfig>,
 		);
@@ -90,10 +92,10 @@ const adaptDeclarativeExplanationKind = (
 			explanationId: (config as NormalizedExplanationConfig<ExplanationConfig>).id,
 		});
 		return {
-			submit: (request) => transport.submit(toBackendPatchedRequest(request)),
+			submit: (request: ExplanationFetchRequest) => transport.submit(toBackendPatchedRequest(request)),
 		};
 	},
-	describe: (config, context) => {
+	describe: (config: NormalizedExplanationConfig<ExplanationConfig>, context: ExplanationDescriptorContext) => {
 		const normalizedConfig = normalizeExplanationConfig(
 			config as NormalizedExplanationConfig<ExplanationConfig>,
 		);

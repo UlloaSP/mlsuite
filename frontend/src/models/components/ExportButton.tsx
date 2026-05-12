@@ -5,10 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQueries } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
+import type { ReportConfig } from "mlform/runtime";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../app/components";
-import { toMlformSchema, validateMlformSchema } from "../../app/utils/mlform";
+import { validateMlformSchema } from "../../app/utils/mlform";
 import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService";
@@ -18,6 +19,7 @@ import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
 import { getOutputFeedbackFieldIds } from "../output-feedback-questionnaire";
 import { getEffectiveFeedbackValues, getQuestionnaireFieldIds } from "../questionnaire-feedback";
 import { buildTargetFeedbackValue, getSchemaAwareTargetValue, getTargetReportKey } from "../target-utils";
+import { csvEscape, flatten, getExplanationHeaders, toCell, toRecord } from "./export-csv-utils";
 
 export type ExportButtonProps = {
 	predictions: PredictionDto[];
@@ -25,76 +27,12 @@ export type ExportButtonProps = {
 	signatureSchema?: unknown;
 };
 
-const isPlainObject = (value: unknown) =>
-	value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
-
-const toRecord = (value: Record<string, unknown>): Record<string, unknown> =>
-	value instanceof Map ? Object.fromEntries(value.entries()) : (value ?? {});
-
-const flatten = (obj: unknown, prefix = ""): Record<string, unknown> => {
-	const out: Record<string, unknown> = {};
-	if (Array.isArray(obj)) {
-		obj.forEach((value, index) =>
-			Object.assign(out, flatten(value, prefix ? `${prefix}.${index}` : String(index))));
-	} else if (isPlainObject(obj)) {
-		Object.entries(obj as Record<string, unknown>).forEach(([key, value]) =>
-			Object.assign(out, flatten(value, prefix ? `${prefix}.${key}` : key)));
-	} else {
-		out[prefix || "value"] = obj;
-	}
-	return out;
-};
-
-const toCell = (value: unknown): string => {
-	if (value === null || value === undefined) return "";
-	if (value instanceof Date) return value.toISOString();
-	if (typeof value === "object") return JSON.stringify(value);
-	return String(value);
-};
-
-const csvEscape = (value: string, separator: string) => {
-	let next = value;
-	if (next.includes('"')) next = next.replace(/"/g, '""');
-	if (next.includes(separator) || next.includes("\n") || next.includes("\r")) next = `"${next}"`;
-	return next;
-};
-
-const getExplanationHeaders = (
-	signatureSchema: unknown,
-	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
-): string[] => {
-	try {
-		const schema = toMlformSchema(signatureSchema, {
-			customExplanationDefinitions,
-		});
-		const definitionMap = new Map(
-			customExplanationDefinitions.map((definition) => [definition.kind, definition]),
-		);
-
-		return (schema.explanations ?? []).flatMap((explanation) => {
-			const questionnaire = definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire;
-			return [
-				`explanation.${explanation.id}.content`,
-				...(questionnaire
-					? getQuestionnaireFieldIds(questionnaire).map(
-						(fieldId) => `explanation.${explanation.id}.${fieldId}`,
-					)
-					: []),
-			];
-		});
-	} catch {
-		return [];
-	}
-};
-
 export function ExportButton({
 	predictions,
 	delimiter = ",",
 	signatureSchema,
 }: ExportButtonProps) {
-	const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
-		readonly CatalogExplanationDefinition[]
-	>([]);
+	const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<readonly CatalogExplanationDefinition[]>([]);
 
 	useEffect(() => {
 		let active = true;
@@ -175,7 +113,7 @@ export function ExportButton({
 			? validateMlformSchema(signatureSchema, { customExplanationDefinitions })
 			: null;
 		const schema = schemaResult?.success ? schemaResult.data : null;
-		const targetHeaders = (schema?.reports ?? []).flatMap((_, index) => {
+		const targetHeaders = (schema?.reports ?? []).flatMap((_report: ReportConfig, index: number) => {
 			const targetKey = getTargetReportKey(signatureSchema, index);
 			return [
 				`output.${targetKey}.predicted`,
@@ -209,7 +147,7 @@ export function ExportButton({
 
 			const buildRow = (reviewerEmail: string, outputFeedbackForUser: OutputFeedbackDto[], explanationFeedbackForUser: modelApi.ExplanationFeedbackDto[]) => {
 				const outputFeedbackByOrder = new Map(outputFeedbackForUser.map((item) => [item.order, item]));
-				const targetValues = (schema?.reports ?? []).flatMap((_, order) => {
+				const targetValues = (schema?.reports ?? []).flatMap((_report: ReportConfig, order: number) => {
 					const target = targetMap.get(order);
 					const reportConfig = schema?.reports?.[order];
 					const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;

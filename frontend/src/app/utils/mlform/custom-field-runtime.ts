@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FieldConfig, FieldDefinition } from "mlform/engine";
+import type { FieldConfig, FieldDefinition } from "mlform/runtime";
 
 type TypeScriptModule = typeof import("typescript");
 type ZodModule = typeof import("zod");

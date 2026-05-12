@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig, FieldConfig, FormSchema, ReportConfig } from "mlform/engine";
+import type { ExplanationConfig, FieldConfig, FormSchema, ReportConfig } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "./custom-field";
 import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";
@@ -258,9 +258,9 @@ export const filterInactiveCustomDefinitionsFromSchema = (
 
 	return {
 		...schema,
-		fields: schema.fields.filter((field) => isBuiltinFieldKind(field.kind) || activeFieldKinds.has(field.kind)),
-		reports: (schema.reports ?? []).filter((report) => isBuiltinReportKind(report.kind) || activeReportKinds.has(report.kind)),
-		explanations: (schema.explanations ?? []).filter((explanation) => engineRegistry.getExplanation(explanation.kind) !== undefined || activeExplanationKinds.has(explanation.kind)),
+		fields: schema.fields.filter((field: FieldConfig) => isBuiltinFieldKind(field.kind) || activeFieldKinds.has(field.kind)),
+		reports: (schema.reports ?? []).filter((report: ReportConfig) => isBuiltinReportKind(report.kind) || activeReportKinds.has(report.kind)),
+		explanations: (schema.explanations ?? []).filter((explanation: ExplanationConfig) => engineRegistry.getExplanation(explanation.kind) !== undefined || activeExplanationKinds.has(explanation.kind)),
 	};
 };
 

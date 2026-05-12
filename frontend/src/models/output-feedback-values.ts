@@ -10,7 +10,7 @@ import type {
 import {
 	buildTargetFeedbackValue,
 } from "./target-utils";
-import type { QuestionnaireSchema } from "mlform/questionnaire";
+import type { QuestionnaireSchema } from "./questionnaire-schema";
 import { normalizeFeedbackValues } from "./questionnaire-feedback";
 
 export const buildOutputFeedbackInitialValues = (

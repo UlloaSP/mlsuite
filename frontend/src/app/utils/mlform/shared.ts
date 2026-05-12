@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FieldConfig, FormController, FormSchema, NormalizedFieldConfig } from "mlform/engine";
+import type { FieldConfig, FormController, FormSchema, NormalizedFieldConfig } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "./custom-field";
 import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";

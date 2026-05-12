@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig, ExplanationFetchRequest, NormalizedExplanationConfig } from "mlform/engine";
+import type { ExplanationConfig, ExplanationFetchRequest, NormalizedExplanationConfig } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../config/runtimeConfig";
 import { isRecord } from "./shared";
 

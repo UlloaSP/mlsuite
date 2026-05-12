@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { QuestionnaireSchema } from "mlform/questionnaire";
+import type { QuestionnaireSchema } from "./questionnaire-schema";
 import type { TargetDto } from "./api/modelService";
 
 const OUTPUT_STEP_ID = "output-feedback";

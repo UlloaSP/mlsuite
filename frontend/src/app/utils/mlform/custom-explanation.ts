@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig, ExplanationDefinition } from "mlform/engine";
+import type { ExplanationConfig, ExplanationDefinition } from "mlform/runtime";
 import type { PluginDto } from "../../api/pluginService";
 import {
 	type ExplanationDefinitionWithFeedback,

@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  mlform: 0.1.7
+  mlform: 0.1.8
 
 importers:
 
@@ -36,8 +36,8 @@ importers:
         specifier: ^1.8.0
         version: 1.8.0(react@19.2.5)
       mlform:
-        specifier: 0.1.7
-        version: 0.1.7
+        specifier: 0.1.8
+        version: 0.1.8
       monaco-editor:
         specifier: ^0.55.1
         version: 0.55.1
@@ -1073,8 +1073,8 @@ packages:
     engines: {node: '>= 18'}
     hasBin: true
 
-  mlform@0.1.7:
-    resolution: {integrity: sha512-DOf73cuQ/ghWB0RYMMmMyUTBepkmra00Yfl1oSdr8pjODSAo2rlycXECRHW8OTjlVwi6eI0nzOK50nyhX8NQVQ==}
+  mlform@0.1.8:
+    resolution: {integrity: sha512-XN0G0DbU4ujiKmLKd5gyVCfDfklzLR9nfN8gwu6TFSlCpc8eCxVORm6DxwOefEj+BuDacF7PhFQEdIR/A71bpg==}
     engines: {node: '>=24.9.0'}
 
   monaco-editor@0.55.1:
@@ -1927,7 +1927,7 @@ snapshots:
 
   marked@14.0.0: {}
 
-  mlform@0.1.7:
+  mlform@0.1.8:
     dependencies:
       lit: 3.3.2
       zod: 4.3.6

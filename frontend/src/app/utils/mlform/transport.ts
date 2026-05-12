@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ReportConfig, SubmitRequest, Transport } from "mlform/engine";
+import type { ReportConfig, SubmitRequest, Transport } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../config/runtimeConfig";
 import {
 	type JsonRecord,

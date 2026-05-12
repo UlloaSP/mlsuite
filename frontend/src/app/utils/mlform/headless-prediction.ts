@@ -4,19 +4,22 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import {
-	createBuiltinRegistry,
 	createForm,
 	defineFieldDefinition,
 	defineReportDefinition,
 	type FieldConfig,
 	type FieldDefinition,
+	type FieldStateSnapshot,
 	type FormSchema,
 	type FormController,
+	type NormalizedFieldConfig,
+	type NormalizedReportConfig,
 	type Registry,
 	type ReportConfig,
 	type ReportDefinition,
+	type ReportStateSnapshot,
 	type Transport,
-} from "mlform/engine";
+} from "mlform/runtime";
 import {
 	CUSTOM_FIELD_COMPONENT,
 	type CatalogFieldDefinition,
@@ -32,13 +35,14 @@ import {
 	type PredictionTheme,
 } from "./shared";
 import { createPredictionTransport } from "./transport";
+import { createMlSuiteBuiltinRegistry } from "./builtin-registry";
 
 const wrapCustomFieldDefinition = (
 	definition: CatalogFieldDefinition,
 ): FieldDefinition<FieldConfig, unknown> =>
 	defineFieldDefinition({
 		...definition.definition,
-		describe(config, context) {
+		describe(config: NormalizedFieldConfig<FieldConfig>, context: { fieldId: string; state: FieldStateSnapshot }) {
 			const descriptor = definition.definition.describe(config, context);
 			if (descriptor.component !== CUSTOM_FIELD_COMPONENT) {
 				throw new Error(
@@ -54,7 +58,10 @@ const wrapCustomReportDefinition = (
 ): ReportDefinition<ReportConfig> =>
 	defineReportDefinition({
 		...definition.definition,
-		describe(config, context) {
+		describe(
+			config: NormalizedReportConfig<ReportConfig>,
+			context: { reportId: string; state: ReportStateSnapshot; payload: unknown; result: unknown },
+		) {
 			const descriptor = definition.definition.describe(config, context);
 			if (descriptor && descriptor.component !== CUSTOM_REPORT_COMPONENT) {
 				throw new Error(
@@ -70,7 +77,7 @@ export const createPredictionEngineRegistry = (
 	customReportDefinitions: readonly CatalogReportDefinition[],
 	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
 ) => {
-	const engineRegistry = createBuiltinRegistry();
+	const engineRegistry = createMlSuiteBuiltinRegistry();
 	for (const definition of customFieldDefinitions) {
 		if (definition.active) {
 			engineRegistry.registerField(wrapCustomFieldDefinition(definition));

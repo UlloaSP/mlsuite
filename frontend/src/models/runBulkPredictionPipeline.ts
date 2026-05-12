@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { executeFormPipeline } from "mlform/engine";
+import { executeFormPipeline } from "mlform/runtime";
 import { createHeadlessPredictionForm } from "../app/utils/mlform/headless-prediction";
 import type { CatalogFieldDefinition } from "../app/utils/mlform/custom-field";
 import type { CatalogExplanationDefinition } from "../app/utils/mlform/custom-explanation";

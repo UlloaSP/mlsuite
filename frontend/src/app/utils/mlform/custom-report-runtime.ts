@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ReportConfig, ReportDefinition } from "mlform/engine";
+import type { ReportConfig, ReportDefinition } from "mlform/runtime";
 
 type TypeScriptModule = typeof import("typescript");
 type ZodModule = typeof import("zod");

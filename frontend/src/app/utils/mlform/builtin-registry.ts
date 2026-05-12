@@ -3,15 +3,27 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createBuiltinRegistry } from "mlform/engine";
+import { createMlRegistryPack } from "mlform/builtins-ml";
+import type {
+	ExplanationConfig,
+	ExplanationDefinition,
+	FieldConfig,
+	FieldDefinition,
+	Registry,
+	ReportConfig,
+	ReportDefinition,
+} from "mlform/runtime";
 
-const builtinRegistry = createBuiltinRegistry();
+export const createMlSuiteBuiltinRegistry = (): Registry => createMlRegistryPack().registry;
+
+const builtinRegistry = createMlSuiteBuiltinRegistry();
 
 export const getBuiltinRegistry = () => builtinRegistry;
 
-export const BUILTIN_FIELD_DEFINITIONS = builtinRegistry.listFields();
-export const BUILTIN_REPORT_DEFINITIONS = builtinRegistry.listReports();
-export const BUILTIN_EXPLANATION_DEFINITIONS = builtinRegistry.listExplanations();
+export const BUILTIN_FIELD_DEFINITIONS = builtinRegistry.listFields() as FieldDefinition<FieldConfig, unknown>[];
+export const BUILTIN_REPORT_DEFINITIONS = builtinRegistry.listReports() as ReportDefinition<ReportConfig>[];
+export const BUILTIN_EXPLANATION_DEFINITIONS =
+	builtinRegistry.listExplanations() as ExplanationDefinition<ExplanationConfig>[];
 
 export const BUILTIN_FIELD_KINDS = BUILTIN_FIELD_DEFINITIONS.map((definition) => definition.kind);
 export const BUILTIN_REPORT_KINDS = BUILTIN_REPORT_DEFINITIONS.map((definition) => definition.kind);
