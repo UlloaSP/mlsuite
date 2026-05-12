@@ -13,8 +13,8 @@ import {
 } from "../../app/components";
 import { useGetModels } from "../hooks";
 
-const CREATE_SIGNATURE_HEADER = "Create New Signature";
-const CREATE_SIGNATURE_SUBHEADER = "Choose a base signature, define the next semantic bump, and edit the JSON schema in one view.";
+const CREATE_SIGNATURE_HEADER = "Create New Schema";
+const CREATE_SIGNATURE_SUBHEADER = "Choose a base schema, define the next semantic bump, and edit the UI JSON schema in one view.";
 
 export function CreateSignatureHeader() {
 	const { modelId } = useParams<{ modelId: string }>();
@@ -30,11 +30,11 @@ export function CreateSignatureHeader() {
 					...(modelId
 						? [{ label: modelName, to: `/models/${modelId}?tab=signatures` }]
 						: []),
-					{ label: "Create Signature" },
+					{ label: "Create Schema" },
 				]}
 			/>
 			<div className="space-y-3">
-				<AppEyebrow>Signature Studio</AppEyebrow>
+				<AppEyebrow>Schema Studio</AppEyebrow>
 				<AppTitle>{CREATE_SIGNATURE_HEADER}</AppTitle>
 				<AppCopy className="max-w-3xl">{CREATE_SIGNATURE_SUBHEADER}</AppCopy>
 			</div>

@@ -65,10 +65,10 @@ export function PredictionDetailPage() {
 							model ? { label: model.name, to: `/models/${model.id}?tab=signatures` } : { label: "Model", to: "/models" },
 							signature
 								? {
-									label: `Signature ${getSignatureVersionLabel(signature)}`,
+									label: `Schema ${getSignatureVersionLabel(signature)}`,
 									to: `/models/${modelId}/signatures/${signature.id}?tab=history`,
 								}
-								: { label: "Signature", to: modelId ? `/models/${modelId}` : "/models" },
+								: { label: "Schema", to: modelId ? `/models/${modelId}` : "/models" },
 							{ label: prediction ? getPredictionDetailTitle(prediction) : "Prediction" },
 						]}
 					/>
@@ -76,7 +76,7 @@ export function PredictionDetailPage() {
 					{!prediction && !isLoading ? (
 						<AppEmptyState
 							title="Prediction not found"
-							description="The selected prediction could not be resolved from the current signature history."
+							description="The selected prediction could not be resolved from the current schema history."
 							action={
 								<AppButton
 									type="button"

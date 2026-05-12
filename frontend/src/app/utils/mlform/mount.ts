@@ -61,10 +61,10 @@ export const mountPredictionForm = ({
 		layout: "split",
 		reportPane: "always",
 		labels: {
-			form: "Signature Inputs",
+			form: "Schema Inputs",
 			reports: "Prediction Output",
 			submit: "Run Prediction",
-			validating: "Checking signature...",
+			validating: "Checking schema...",
 			submitting: "Running model...",
 		},
 		designSystem: getPredictionDesignSystem(theme),

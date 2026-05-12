@@ -12,7 +12,7 @@ import { ToggleButton } from "./ToggleButton";
 
 const CREATE_PREDICTION_HEADER = "Create New Prediction";
 const CREATE_PREDICTION_SUBHEADER =
-	"Use saved signature contract. To change schema, create a new signature version.";
+	"Use the saved schema contract. To change UI fields, create a new schema version.";
 
 export type CreatePredictionHeaderProps = {
 	isEditorActive: boolean;

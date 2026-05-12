@@ -93,7 +93,7 @@ export function AppHeaderSearch() {
 							}
 						}
 					}}
-					placeholder="Search models, teams, plugins, signatures..."
+					placeholder="Search models, teams, plugins, schemas..."
 					className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
 				/>
 				<div className="hidden items-center gap-1 rounded-full border border-[var(--border-soft)] px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] md:inline-flex">

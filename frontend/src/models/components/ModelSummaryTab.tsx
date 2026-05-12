@@ -53,12 +53,12 @@ export function ModelSummaryTab({
 				<AppSectionTitle>Operational Status</AppSectionTitle>
 				<AppBadge tone="success">active</AppBadge>
 				<AppCopy>
-					Model is available for signature creation and prediction workflows.
+					Model is available for schema creation and prediction workflows.
 				</AppCopy>
 			</AppPanel>
 
 			<AppPanel className="space-y-4 xl:col-span-2">
-				<AppSectionTitle>Latest Signature</AppSectionTitle>
+				<AppSectionTitle>Latest Schema</AppSectionTitle>
 				{latestSignature ? (
 					<div className="flex flex-wrap items-center justify-between gap-4">
 						<div className="space-y-2">
@@ -75,11 +75,11 @@ export function ModelSummaryTab({
 							variant="secondary"
 							onClick={() => onOpenLatestSignature(latestSignature.id)}
 						>
-							Open Signature
+							Open Schema
 						</AppButton>
 					</div>
 				) : (
-					<AppCopy>No signatures registered for this model yet.</AppCopy>
+					<AppCopy>No schemas registered for this model yet.</AppCopy>
 				)}
 			</AppPanel>
 		</div>

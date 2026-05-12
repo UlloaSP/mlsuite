@@ -118,7 +118,7 @@ export function ModelsPage() {
 					<AppPageHeader
 						eyebrow="Models"
 						title="Machine Learning Models"
-						description={`Navigate models, inspect derived signature metrics, and drill into prediction history for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
+						description={`Navigate models, inspect derived schema metrics, and drill into prediction history for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
 						aside={
 							<div className="flex items-center gap-3">
 								{workspace ? <AppBadge tone="accent">{workspace.currentOrganization.name}</AppBadge> : null}

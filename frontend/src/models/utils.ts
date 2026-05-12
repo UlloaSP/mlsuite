@@ -80,7 +80,7 @@ export const getLatestSignature = (signatures: SignatureDto[]): SignatureDto | u
 	[...signatures].sort(compareSignatureVersionsDesc)[0];
 
 export const getModelDerivedMetric = (signatures: SignatureDto[]): string =>
-	`${signatures.length} signature${signatures.length === 1 ? "" : "s"}`;
+	`${signatures.length} schema${signatures.length === 1 ? "" : "s"}`;
 
 export const getPredictionStatus = (status: unknown): PredictionFeedbackStatus => {
 	const normalized = String(status ?? "PENDING").toUpperCase();

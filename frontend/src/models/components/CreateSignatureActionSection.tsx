@@ -135,7 +135,7 @@ export function CreateSignatureActionSection() {
 						disabled={!signatures.length}
 					>
 						{signatures.length ? null : (
-							<option value="">No base signatures available</option>
+							<option value="">No base schemas available</option>
 						)}
 						{signatures.map((signature) => (
 							<option key={signature.id} value={signature.id}>
@@ -150,7 +150,7 @@ export function CreateSignatureActionSection() {
 						htmlFor="signature-name"
 						className="text-sm font-semibold text-[var(--text-primary)]"
 					>
-						Signature Name
+						Schema Name
 					</label>
 					<AppTextField
 						id="signature-name"

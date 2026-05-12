@@ -58,7 +58,7 @@ export function ModelListItem({
 						{item.name}
 					</h3>
 					<AppBadge tone="success">active</AppBadge>
-					<AppBadge>{signatureCount} signatures</AppBadge>
+					<AppBadge>{signatureCount} schema{signatureCount === 1 ? "" : "s"}</AppBadge>
 				</div>
 
 				<p className="text-sm font-medium text-[var(--text-secondary)]">

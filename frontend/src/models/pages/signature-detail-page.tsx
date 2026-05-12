@@ -178,14 +178,14 @@ export function SignatureDetailPage() {
 						items={[
 							{ label: "Models", to: "/models" },
 							model ? { label: model.name, to: `/models/${model.id}?tab=signatures` } : { label: "Model", to: "/models" },
-							{ label: signature ? `Signature ${getSignatureVersionLabel(signature)}` : "Signature" },
+							{ label: signature ? `Schema ${getSignatureVersionLabel(signature)}` : "Schema" },
 						]}
 					/>
 
 					{!signature && !isSignatureLoading ? (
 						<AppEmptyState
-							title="Signature not found"
-							description="The selected signature could not be resolved from the current dataset."
+							title="Schema not found"
+							description="The selected schema could not be resolved from the current dataset."
 							action={
 								<AppButton
 									type="button"
@@ -201,8 +201,8 @@ export function SignatureDetailPage() {
 					) : signature ? (
 						<>
 							<AppPageHeader
-								eyebrow="Signature Detail"
-								title={`Signature ${getSignatureVersionLabel(signature)}`}
+								eyebrow="Schema Detail"
+								title={`Schema ${getSignatureVersionLabel(signature)}`}
 								description={`${signature.name} · Created ${new Date(signature.createdAt).toLocaleString()}${signature.origin ? " · Based on previous version" : ""}`}
 								aside={
 									<>
@@ -257,7 +257,7 @@ export function SignatureDetailPage() {
 											description={
 												query || feedbackStatus !== "all" || dateRange !== "all"
 													? "No prediction matches the current search terms."
-													: "Create the first prediction for this signature to populate history."
+													: "Create the first prediction for this schema to populate history."
 											}
 											action={canRunPredictions ? (
 												<AppButton

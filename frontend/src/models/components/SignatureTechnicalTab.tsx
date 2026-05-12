@@ -57,7 +57,7 @@ export function SignatureTechnicalTab({
 				<AppSectionTitle>Prediction Form Readiness</AppSectionTitle>
 				<AppBadge tone="success">ready</AppBadge>
 				<AppCopy>
-					This signature is ready to power the prediction form used in the create prediction flow.
+					This schema is ready to power the prediction form used in the create prediction flow.
 				</AppCopy>
 			</AppPanel>
 
@@ -81,7 +81,7 @@ export function SignatureTechnicalTab({
 						Based on {signature.origin.name} · {getSignatureVersionLabel(signature.origin)}
 					</AppCopy>
 				) : (
-					<AppCopy>Initial version. No previous signature origin is attached.</AppCopy>
+					<AppCopy>Initial version. No previous schema origin is attached.</AppCopy>
 				)}
 			</AppPanel>
 		</div>

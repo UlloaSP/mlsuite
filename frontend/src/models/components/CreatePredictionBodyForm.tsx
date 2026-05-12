@@ -180,7 +180,7 @@ export function CreatePredictionBodyForm() {
 			};
 		} catch (error: unknown) {
 			const message = error instanceof Error ? error.message : String(error);
-			toast.error("Signature schema incompatible", {
+			toast.error("Schema incompatible", {
 				description: message,
 			});
 			setMountError(message);
@@ -198,7 +198,7 @@ export function CreatePredictionBodyForm() {
 				<div className="px-4 pb-4">
 					<AppPanel className="space-y-4">
 						<h2 className="text-lg font-semibold text-[var(--text-primary)]">
-							Signature schema incompatible
+							Schema incompatible
 						</h2>
 						<AppCopy>{mountError}</AppCopy>
 					</AppPanel>

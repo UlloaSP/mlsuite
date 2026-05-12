@@ -90,7 +90,7 @@ export function ModelDetailPage() {
 										type="button"
 										onClick={() => navigate(`/models/${model.id}/signatures/create`)}
 									>
-										+ New Signature
+										+ New Schema
 									</AppButton>
 								) : null}
 							/>
@@ -98,7 +98,7 @@ export function ModelDetailPage() {
 							<AppTabs<ModelDetailTab>
 								items={[
 									{ value: "summary", label: "Resumen" },
-									{ value: "signatures", label: "Signatures" },
+									{ value: "signatures", label: "Schemas" },
 								]}
 								value={activeTab}
 								onChange={setTab}

@@ -1,6 +1,6 @@
-import { KeyRound, Plus, ShieldCheck } from "lucide-react";
+import { Check, KeyRound, Plus, ShieldCheck } from "lucide-react";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router";
 import {
 	AppBadge,
@@ -21,6 +21,7 @@ import {
 } from "../hooks";
 
 type Role = "USER" | "SUPERADMIN";
+type UserSortMode = "current" | "name" | "newest" | "oldest" | "enabled" | "disabled";
 
 export function AdminUsersPage() {
 	const { data: user } = useUser();
@@ -32,6 +33,48 @@ export function AdminUsersPage() {
 	const [fullName, setFullName] = useState("");
 	const [password, setPassword] = useState("");
 	const [role, setRole] = useState<Role>("USER");
+	const [sortMode, setSortMode] = useState<UserSortMode>("current");
+	const userOrderRef = useRef(new Map<number, number>());
+
+	const visibleUsers = useMemo(() => {
+		const order = userOrderRef.current;
+		const liveIds = new Set(users.map((row) => row.id));
+		users.forEach((row) => {
+			if (!order.has(row.id)) {
+				order.set(row.id, order.size);
+			}
+		});
+		for (const id of order.keys()) {
+			if (!liveIds.has(id)) {
+				order.delete(id);
+			}
+		}
+		const byCurrentOrder = (left: { id: number }, right: { id: number }) =>
+			(order.get(left.id) ?? 0) - (order.get(right.id) ?? 0);
+		const sorted = [...users];
+
+		switch (sortMode) {
+			case "name":
+				return sorted.sort((left, right) =>
+					left.fullName.localeCompare(right.fullName, undefined, { sensitivity: "base" }) || byCurrentOrder(left, right),
+				);
+			case "newest":
+				return sorted.sort((left, right) =>
+					new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime() || byCurrentOrder(left, right),
+				);
+			case "oldest":
+				return sorted.sort((left, right) =>
+					new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime() || byCurrentOrder(left, right),
+				);
+			case "enabled":
+				return sorted.sort((left, right) => Number(right.enabled) - Number(left.enabled) || byCurrentOrder(left, right));
+			case "disabled":
+				return sorted.sort((left, right) => Number(left.enabled) - Number(right.enabled) || byCurrentOrder(left, right));
+			case "current":
+			default:
+				return sorted.sort(byCurrentOrder);
+		}
+	}, [sortMode, users]);
 
 	if (user?.systemRole !== "SUPERADMIN") {
 		return <Navigate to="/workspace" replace />;
@@ -80,19 +123,37 @@ export function AdminUsersPage() {
 					</form>
 				</AppPanel>
 				<AppPanel className="overflow-auto">
+					<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+						<span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
+							User order
+						</span>
+						<AppSelect
+							value={sortMode}
+							onChange={(event) => setSortMode(event.target.value as UserSortMode)}
+							className="min-w-[180px]"
+							aria-label="Sort users"
+						>
+							<option value="current">Current order</option>
+							<option value="name">Name</option>
+							<option value="newest">Newest</option>
+							<option value="oldest">Oldest</option>
+							<option value="enabled">Enabled first</option>
+							<option value="disabled">Disabled first</option>
+						</AppSelect>
+					</div>
 					<table className="w-full min-w-[820px] text-left text-sm">
 						<thead className="text-xs uppercase tracking-[0.14em] text-[var(--text-secondary)]">
 							<tr>
 								<th className="px-3 py-3">User</th>
 								<th className="px-3 py-3">Role</th>
-								<th className="px-3 py-3">Enabled</th>
+								<th className="w-32 px-3 py-3 text-center">Enabled</th>
 								<th className="px-3 py-3">Password</th>
 							</tr>
 						</thead>
 						<tbody>
 							{isLoading ? (
 								<tr><td className="px-3 py-5 text-[var(--text-secondary)]" colSpan={4}>Loading...</td></tr>
-							) : users.map((row) => (
+							) : visibleUsers.map((row) => (
 								<tr key={row.id} className="border-t border-[var(--border-soft)]">
 									<td className="px-3 py-4">
 										<p className="font-semibold text-[var(--text-primary)]">{row.fullName}</p>
@@ -107,13 +168,19 @@ export function AdminUsersPage() {
 											<option value="SUPERADMIN">SUPERADMIN</option>
 										</AppSelect>
 									</td>
-									<td className="px-3 py-4">
-										<input
-											type="checkbox"
-											checked={row.enabled}
-											onChange={(e) => updateUser.mutate({ id: row.id, payload: { enabled: e.target.checked } })}
-											className="size-5 accent-[var(--accent-primary)]"
-										/>
+									<td className="w-32 px-3 py-4 text-center">
+										<label className="inline-grid size-9 place-items-center rounded-full transition hover:bg-[var(--surface-muted)]">
+											<input
+												type="checkbox"
+												checked={row.enabled}
+												onChange={(e) => updateUser.mutate({ id: row.id, payload: { enabled: e.target.checked } })}
+												className="peer sr-only"
+												aria-label={`${row.fullName} enabled`}
+											/>
+											<span className="grid size-5 place-items-center rounded-[5px] border border-[var(--border-soft)] bg-[var(--surface-primary)] text-transparent transition peer-checked:border-[var(--accent-primary)] peer-checked:bg-[var(--accent-primary)] peer-checked:text-white">
+												<Check size={14} strokeWidth={3} />
+											</span>
+										</label>
 									</td>
 									<td className="px-3 py-4">
 										<AppButton

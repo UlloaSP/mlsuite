@@ -160,7 +160,7 @@ export function CreatePredictionModal({
 				initial={{ opacity: 0 }}
 				animate={{ opacity: 1 }}
 				exit={{ opacity: 0 }}
-				className="fixed inset-0 z-40 flex bg-black/40 backdrop-blur-sm"
+				className="fixed inset-x-0 bottom-0 top-[88px] z-40 flex bg-black/40 backdrop-blur-sm"
 				onClick={() => setShowModal(false)}
 			>
 				<motion.div
@@ -168,7 +168,7 @@ export function CreatePredictionModal({
 					animate={{ x: 0, opacity: 1 }}
 					exit={{ x: "100%", opacity: 0 }}
 					transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-					className="relative z-50 m-8 flex flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
+					className="relative z-50 m-6 flex max-h-[calc(100dvh-136px)] flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
 					onClick={(event) => event.stopPropagation()}
 				>
 					<div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">
