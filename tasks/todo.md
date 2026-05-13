@@ -484,6 +484,74 @@ Run grep audit again for forbidden literals in config paths. Then run targeted c
   - `vp check` ❌ blocked by existing formatting backlog in 378 files, mostly `dist/` plus pre-existing tracked files.
   - `vp check` ❌ blocked by existing formatting backlog in 365 files, mostly `dist/` plus pre-existing tracked files.
 
+## React Doctor 100 Frontend Cleanup
+
+### Goal
+- [x] Reach `npx react-doctor@latest --verbose` score 100/100.
+- [x] Preserve existing visual layout and behavior.
+- [x] Keep all touched source files under 300 lines.
+
+### Plan
+- [x] Phase 1. Fix error diagnostics: conditional hook in plugin catalog and reduced-motion support.
+- [x] Phase 2. Fix dead-code diagnostics: unused exports, unused types, unused files, misplaced files.
+- [x] Phase 3. Fix performance/state diagnostics: motion imports, heavy imports, iteration chains, async sequencing, effect chains, derived state, query invalidation.
+- [x] Phase 4. Fix accessibility/design diagnostics without visual regression.
+- [x] Phase 5. Re-run React Doctor until 100, then build/tests/line caps/graph update.
+
+### Review
+- Status: fixed.
+- Baseline: React Doctor 67/100, 2 errors, 314 warnings, 143 affected files.
+- Final: React Doctor 100/100, no issues.
+- Removed dead frontend files/exports and stale custom explanation runtime/template paths.
+- Optimized safe logic without visual changes: stable defaults, shared timestamp formatting, combined iteration passes, direct imports, lazy Monaco editor load, and query invalidation for mutations.
+- Split shared UI controls into `ui-controls.tsx`; all frontend source files are now <=300 lines.
+- Verification:
+  - `npx react-doctor@latest --verbose --offline --fail-on none` ✅ 100/100, no issues.
+  - `vp run build` ✅ warnings only: runtime-config non-module script and large chunks.
+  - `vp test` ✅ 4 files / 15 tests.
+  - source line-cap check ✅ no `frontend/src` `.ts`/`.tsx` file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅
+
+## Auth Landing Current User Request Fix
+
+### Plan
+- [x] Reproduce source by tracing `/api/users/me` callers around auth landing.
+- [x] Remove public index route profile query.
+- [x] Verify no auth landing path calls `useUser`, build, graph update.
+
+### Review
+- Status: fixed.
+- Root cause: `AuthLandingPage` no longer called `useUser`, but `IndexRoute` in `frontend/src/router/routes.tsx` still called `useUser()` before rendering it.
+- Fix: root public index route now renders `AuthLandingPage` directly. Current-user query remains only in `ProtectedRoute`.
+- Verification:
+  - `rg "IndexRoute|element: <AuthLandingPage|useUser\\(" frontend/src/router/routes.tsx frontend/src/app/pages/AuthLandingPage.tsx frontend/src/app/pages/auth-landing` ✅ only protected route uses `useUser`.
+  - touched line-cap check ✅ `routes.tsx` 229 lines, `AuthLandingPage.tsx` 72 lines.
+  - `vp run build` ✅ warnings only: runtime-config non-module script and large chunks.
+  - `vp test` ✅ 4 files / 15 tests.
+  - `git diff --check` ✅ CRLF warnings only.
+  - `graphify update .` ✅
+
+## Auth Landing Page Visual Match
+
+### Plan
+- [x] Split auth landing UI into small files under line cap.
+- [x] Match supplied visual/copy structure and keep real login/register calls wired.
+- [x] Verify build/typecheck, line caps, graph update.
+
+### Review
+- Status: fixed.
+- Rebuilt `AuthLandingPage` around supplied visual structure, copy, mark, rules, hero, option buttons, sentence form, tabs, and back button.
+- Login/register submit now reads real form data and calls existing `useLogin` / `useRegister` mutations.
+- Split auth landing pieces into `frontend/src/app/pages/auth-landing/`; all touched auth files are 73 lines or less.
+- Verification:
+  - `vp run build` ✅ warnings only: runtime-config non-module script, plugin timing, and large chunks.
+  - `vp test` ✅ 4 files / 15 tests.
+  - touched auth line-cap check ✅ no file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 411 files, mostly `dist/`.
+
 ## MLForm Wizard Questionnaire Cleanup
 
 ### Goal

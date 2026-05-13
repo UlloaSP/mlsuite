@@ -4,20 +4,26 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowLeft, Check, Home, X } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { useUser } from "../../user/hooks";
 import { MLSuiteMark } from "../components/MLSuiteMark";
 import { AppPage } from "../components";
 
+const errorDateFormatter = new Intl.DateTimeFormat("en-US", {
+	month: "long",
+	day: "numeric",
+	year: "numeric",
+});
+const gridLines = [1, 2, 3, 4, 5, 6, 7].map((value) => ({
+	key: `grid-${value}`,
+	left: `${value * (100 / 8)}%`,
+}));
+
 export function NotFoundError() {
 	const navigate = useNavigate();
 	const { data: user } = useUser();
-	const currentDate = new Intl.DateTimeFormat("en-US", {
-		month: "long",
-		day: "numeric",
-		year: "numeric",
-	}).format(new Date());
+	const currentDate = errorDateFormatter.format(Date.now());
 
 	return (
 		<AppPage className="min-h-dvh bg-[#fdfcf8] text-[#111111]">
@@ -27,11 +33,11 @@ export function NotFoundError() {
 				transition={{ duration: 0.4 }}
 				className="relative flex min-h-dvh w-full flex-col overflow-hidden font-[var(--font-display)]"
 			>
-				{[1, 2, 3, 4, 5, 6, 7].map((index) => (
+				{gridLines.map((line) => (
 					<div
-						key={index}
+						key={line.key}
 						className="pointer-events-none absolute bottom-0 top-0 w-px bg-black/[0.04]"
-						style={{ left: `${index * (100 / 8)}%` }}
+						style={{ left: line.left }}
 					/>
 				))}
 
@@ -58,7 +64,7 @@ export function NotFoundError() {
 						<p className="mb-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#ff385c]">
 							HTTP 404 - Page Not Found
 						</p>
-						<h1 className="m-0 text-[4.4rem] font-bold leading-[0.93] tracking-[-0.05em] sm:text-[5.6rem] lg:text-[5.25rem] xl:text-[6rem]">
+						<h1 className="m-0 text-[4.4rem] font-semibold leading-[0.93] tracking-[-0.05em] sm:text-[5.6rem] lg:text-[5.25rem] xl:text-[6rem]">
 							This route
 							<br />
 							could not
@@ -83,7 +89,7 @@ export function NotFoundError() {
 								onClick={() => navigate(user ? "/workspace" : "/")}
 								className="flex w-full items-center justify-center gap-2 rounded-md bg-[#ff385c] px-4 py-[11px] text-[13px] font-semibold text-white transition hover:bg-[#e8294d]"
 							>
-								<Home className="h-4 w-4" />
+								<Home className="size-4" />
 								{user ? "Go to Workspace" : "Go to Sign in"}
 							</button>
 							<button
@@ -91,22 +97,22 @@ export function NotFoundError() {
 								onClick={() => navigate(-1)}
 								className="flex w-full items-center justify-center gap-2 rounded-md border-[1.5px] border-[#ddd] bg-white px-4 py-[11px] text-[13px] font-semibold text-[#222] transition hover:border-[#ccc] hover:bg-[#f5f5f5]"
 							>
-								<ArrowLeft className="h-4 w-4" />
+								<ArrowLeft className="size-4" />
 								Go Back
 							</button>
 						</div>
 
-						<div className="mt-6 rounded-r-md border-l-2 border-[#ff385c] bg-[#ff385c]/[0.04] px-4 py-3.5">
+						<div className="mt-6 rounded-md border border-[#ff385c]/20 bg-[#ff385c]/[0.04] px-4 py-3.5">
 							<p className="flex items-center gap-2 font-mono text-[11px] leading-7 text-[#aaa]">
-								<Check className="h-3.5 w-3.5 text-[#22c55e]" />
+								<Check className="size-3.5 text-[#22c55e]" />
 								API services operational
 							</p>
 							<p className="flex items-center gap-2 font-mono text-[11px] leading-7 text-[#aaa]">
-								<Check className="h-3.5 w-3.5 text-[#22c55e]" />
+								<Check className="size-3.5 text-[#22c55e]" />
 								Manual auth services reachable
 							</p>
 							<p className="flex items-center gap-2 font-mono text-[11px] leading-7 text-[#aaa]">
-								<X className="h-3.5 w-3.5 text-[#ff385c]" />
+								<X className="size-3.5 text-[#ff385c]" />
 								Requested route: not found
 							</p>
 						</div>

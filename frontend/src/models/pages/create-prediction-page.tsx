@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { AppPage, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
-import { applyPredictionInputsToSchema } from "../../app/utils/mlform/index";
+import { applyPredictionInputsToSchema } from "../../app/utils/mlform/schema";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
 import {
 	schemaAtom,
@@ -34,15 +34,14 @@ export function CreatePredictionPage() {
 	const { data: signature } = useGetSignature({ signatureId: signatureId! });
 
 	const [isEditorActive, setIsEditorActive] = useState(searchParams.get("view") !== "form");
-	const [isCatalogReady, setIsCatalogReady] = useState(false);
 
 	const { data: user, error } = useUser();
 
 	useEffect(() => {
 		invalidatePluginCatalog();
-		setIsCatalogReady(true);
 	}, []);
 
+	// react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Three independent Jotai atoms must mirror the loaded schema/editor contract together.
 	useEffect(() => {
 		if (!signature) return;
 
@@ -94,11 +93,7 @@ export function CreatePredictionPage() {
 							isEditorActive={isEditorActive}
 							onToggleMode={() => setIsEditorActive(!isEditorActive)}
 						/>
-						{isCatalogReady
-							? isEditorActive
-								? <PredictionSchemaPreview />
-								: <CreatePredictionBodyForm />
-							: null}
+						{isEditorActive ? <PredictionSchemaPreview /> : <CreatePredictionBodyForm />}
 					</motion.div>
 				</AppSurface>
 			</motion.div>

@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { AppBadge, AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import type { ModelDto, SignatureDto } from "../api/modelService";
 import {
+	formatTimestamp,
 	getLatestSignature,
 	getModelAlgorithmLabel,
 	getModelDerivedMetric,
@@ -40,7 +41,7 @@ export function ModelSummaryTab({
 					</div>
 					<div>
 						<p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Created</p>
-						<p className="mt-1 text-sm font-medium text-[var(--text-primary)]">{new Date(model.createdAt).toLocaleString()}</p>
+						<p className="mt-1 text-sm font-medium text-[var(--text-primary)]">{formatTimestamp(model.createdAt)}</p>
 					</div>
 					<div>
 						<p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Derived Metric</p>
@@ -66,7 +67,7 @@ export function ModelSummaryTab({
 								{latestSignature.name} · {getSignatureVersionLabel(latestSignature)}
 							</p>
 							<AppCopy>
-								Created {new Date(latestSignature.createdAt).toLocaleString()}
+								Created {formatTimestamp(latestSignature.createdAt)}
 								{latestSignature.origin ? " · Based on previous version" : " · Initial version"}
 							</AppCopy>
 						</div>

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { EditorBody } from "./EditorBody";
 import { EditorFooter } from "./EditorFooter";
 

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m as motion } from "motion/react";
 import { schemaErrorsAtom } from "../atoms";
 import { EditorErrorCard } from "./EditorErrorCard";
 
@@ -22,8 +22,8 @@ export function EditorErrorPanel() {
 				transition={{ duration: 0.2 }}
 			>
 				<motion.div className="space-y-3 p-4">
-					{schemaErrors.map((error: any, index: number) => (
-						<EditorErrorCard key={index} error={error} />
+					{schemaErrors.map((error: any) => (
+						<EditorErrorCard key={JSON.stringify(error)} error={error} />
 					))}
 				</motion.div>
 			</motion.div>

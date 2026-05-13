@@ -72,7 +72,7 @@ const wrapCustomReportDefinition = (
 		},
 	});
 
-export const createPredictionEngineRegistry = (
+const createPredictionEngineRegistry = (
 	customFieldDefinitions: readonly CatalogFieldDefinition[],
 	customReportDefinitions: readonly CatalogReportDefinition[],
 	customExplanationDefinitions: readonly CatalogExplanationDefinition[],

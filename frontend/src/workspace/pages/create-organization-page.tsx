@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import {

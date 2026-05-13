@@ -3,11 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig, FieldConfig, FormSchema, ReportConfig } from "mlform/runtime";
+import type { ExplanationConfig, FieldConfig, ReportConfig } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "./custom-field";
 import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";
-import { getBuiltinRegistry, isBuiltinFieldKind, isBuiltinReportKind } from "./builtin-registry";
+import { getBuiltinRegistry } from "./builtin-registry";
 import { getAllowedFieldKeys, getAllowedReportKeys, mlformJsonSchema, SUPPORTED_TOP_LEVEL_KEYS } from "./builtin-json-schema";
 import {
 	createCustomExplanationDefinitionMap,
@@ -232,38 +232,6 @@ export const validateMlformSchema = (
 	};
 };
 
-export const toMlformSchema = (
-	schema: unknown,
-	options: ValidateMlformSchemaOptions = {},
-): FormSchema => {
-	const result = validateMlformSchema(schema, options);
-
-	if (!result.success) {
-		const firstIssue = result.issues.find((issue) => issue.severity === "error") ?? result.issues[0];
-		throw new Error(firstIssue?.message ?? "Invalid MLForm schema.");
-	}
-
-	return result.data;
-};
-
-export const filterInactiveCustomDefinitionsFromSchema = (
-	schema: FormSchema,
-	customFieldDefinitions: readonly CatalogFieldDefinition[] = [],
-	customReportDefinitions: readonly CatalogReportDefinition[] = [],
-	customExplanationDefinitions: readonly CatalogExplanationDefinition[] = [],
-): FormSchema => {
-	const activeFieldKinds = new Set(customFieldDefinitions.filter((definition) => definition.active).map((definition) => definition.kind));
-	const activeReportKinds = new Set(customReportDefinitions.filter((definition) => definition.active).map((definition) => definition.kind));
-	const activeExplanationKinds = new Set(customExplanationDefinitions.filter((definition) => definition.active).map((definition) => definition.kind));
-
-	return {
-		...schema,
-		fields: schema.fields.filter((field: FieldConfig) => isBuiltinFieldKind(field.kind) || activeFieldKinds.has(field.kind)),
-		reports: (schema.reports ?? []).filter((report: ReportConfig) => isBuiltinReportKind(report.kind) || activeReportKinds.has(report.kind)),
-		explanations: (schema.explanations ?? []).filter((explanation: ExplanationConfig) => engineRegistry.getExplanation(explanation.kind) !== undefined || activeExplanationKinds.has(explanation.kind)),
-	};
-};
-
 export const applyPredictionInputsToSchema = (
 	schema: unknown,
 	inputs: Record<string, unknown>,
@@ -290,7 +258,5 @@ export const applyPredictionInputsToSchema = (
 		}),
 	};
 };
-
-const engineRegistry = getBuiltinRegistry();
 
 export { mlformJsonSchema };

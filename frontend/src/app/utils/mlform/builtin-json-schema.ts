@@ -55,15 +55,17 @@ const toLiteralConst = (schema: { def?: { values?: readonly unknown[] } }): Json
 
 const getRequiredKeys = (shape: Record<string, unknown>): string[] =>
 	Object.entries(shape)
-		.filter(([, schema]) => {
+		.reduce<string[]>((keys, [key, schema]) => {
 			if (!schema || typeof schema !== "object" || !("def" in schema)) {
-				return false;
+				return keys;
 			}
 
 			const def = (schema as { def: Record<string, unknown> }).def;
-			return typeof def === "object" && def !== null && def.type !== "optional" && def.type !== "default";
-		})
-		.map(([key]) => key);
+			if (typeof def === "object" && def !== null && def.type !== "optional" && def.type !== "default") {
+				keys.push(key);
+			}
+			return keys;
+		}, []);
 
 const zodToJsonSchema = (input: unknown): JsonSchema => {
 	if (!input || typeof input !== "object") {

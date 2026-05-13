@@ -28,7 +28,7 @@ export function BulkUploadButton({ signatureId, modelId, signatureSchema }: Bulk
 		}
 	};
 
-	const handleClick = () => {
+	const handleBulkUploadPress = () => {
 		if (bulk.status === "processing" || bulk.status === "parsing") {
 			bulk.cancel();
 			return;
@@ -52,7 +52,7 @@ export function BulkUploadButton({ signatureId, modelId, signatureSchema }: Bulk
 	const processing = bulk.status === "processing" || bulk.status === "parsing";
 	const label = (() => {
 		if (bulk.status === "parsing") {
-			return "Parsing...";
+			return "Parsing…";
 		}
 		if (bulk.status === "processing") {
 			return `Bulk ${bulk.processed}/${bulk.total}`;
@@ -81,7 +81,7 @@ export function BulkUploadButton({ signatureId, modelId, signatureSchema }: Bulk
 			<AppButton
 				type="button"
 				variant="secondary"
-				onClick={handleClick}
+				onClick={handleBulkUploadPress}
 				title={
 					bulk.status === "done"
 						? `${bulk.saved} saved, ${bulk.failed} failed, ${bulk.skipped} skipped. Click to upload another file.`

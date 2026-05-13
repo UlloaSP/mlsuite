@@ -5,8 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { AlertCircle, CheckCircle, ChevronUp } from "lucide-react";
-import { motion } from "motion/react";
-import { useEffect } from "react";
+import { m as motion } from "motion/react";
 import { schemaErrorsAtom } from "../atoms";
 
 type EditorErrorBarProps = {
@@ -18,10 +17,6 @@ export function EditorErrorBar({ expanded, setExpanded }: EditorErrorBarProps) {
 	const [schemaErrors] = useAtom(schemaErrorsAtom);
 
 	const hasErrors = schemaErrors.length > 0;
-
-	useEffect(() => {
-		!hasErrors ? setExpanded(false) : {};
-	}, [hasErrors]);
 
 	return (
 		<motion.button
@@ -35,7 +30,7 @@ export function EditorErrorBar({ expanded, setExpanded }: EditorErrorBarProps) {
 		>
 			{hasErrors ? (
 				<>
-					<motion.span className="flex items-center space-x-2 text-sm font-bold">
+					<motion.span className="flex items-center gap-x-2 text-sm font-bold">
 						<AlertCircle size={16} />
 						<motion.span>
 							{schemaErrors.length} Error{schemaErrors.length > 1 && "s"}
@@ -49,7 +44,7 @@ export function EditorErrorBar({ expanded, setExpanded }: EditorErrorBarProps) {
 					</motion.div>
 				</>
 			) : (
-				<motion.span className="flex items-center space-x-2 text-sm font-bold">
+				<motion.span className="flex items-center gap-x-2 text-sm font-bold">
 					<CheckCircle size={16} />
 					<motion.span>Valid</motion.span>
 				</motion.span>

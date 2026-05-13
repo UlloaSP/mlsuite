@@ -46,11 +46,12 @@ export const mountPredictionForm = ({
 		hooks: {
 			afterSubmit({ result }: AfterSubmitContext) {
 				onSubmit?.(
-					Object.fromEntries(
-						runtime.normalizedFields
-							.filter((field) => field.id in result.serializedValues)
-							.map((field) => [getBackendKey(field), result.serializedValues[field.id]]),
-					),
+					runtime.normalizedFields.reduce<Record<string, unknown>>((payload, field) => {
+						if (field.id in result.serializedValues) {
+							payload[getBackendKey(field)] = result.serializedValues[field.id];
+						}
+						return payload;
+					}, {}),
 					isRecord(result.raw) ? result.raw : { raw: result.raw },
 				);
 			},
@@ -64,8 +65,8 @@ export const mountPredictionForm = ({
 			form: "Schema Inputs",
 			reports: "Prediction Output",
 			submit: "Run Prediction",
-			validating: "Checking schema...",
-			submitting: "Running model...",
+			validating: "Checking schema…",
+			submitting: "Running model…",
 		},
 		designSystem: getPredictionDesignSystem(theme),
 	});

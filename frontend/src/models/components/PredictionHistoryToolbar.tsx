@@ -51,7 +51,7 @@ export function PredictionHistoryToolbar({
 				<AppTextField
 					value={query}
 					onChange={(event) => onQueryChange(event.target.value)}
-					placeholder="Search by prediction name..."
+					placeholder="Search by prediction name…"
 					prefix={<Search size={16} className="text-[var(--text-muted)]" />}
 					className="min-w-[280px] flex-1"
 				/>

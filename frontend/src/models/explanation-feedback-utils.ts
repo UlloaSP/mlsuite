@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { normalizeCustomExplanationResult } from "../app/utils/mlform/custom-explanation";
 import type { CatalogExplanationDefinition } from "../app/utils/mlform/custom-explanation";
-import { toMlformSchema } from "../app/utils/mlform";
+import { toMlformSchema } from "../app/utils/mlform/schema-validation";
 import type { ExplanationConfig } from "mlform/runtime";
 import type { PredictionExplanationDescriptor } from "./questionnaire-feedback";
 
@@ -26,10 +26,13 @@ const stripTreeToken = (value: string): string =>
 		.trim();
 
 const formatExplanationTree = (value: string): string => {
-	const parts = value
-		.split(/(?:\s*\|\s*){2,}/)
-		.map((part) => stripTreeToken(part))
-		.filter((part) => part.length > 0);
+	const parts = value.split(/(?:\s*\|\s*){2,}/).reduce<string[]>((items, part) => {
+		const stripped = stripTreeToken(part);
+		if (stripped.length > 0) {
+			items.push(stripped);
+		}
+		return items;
+	}, []);
 
 	if (parts.length === 0) {
 		return value.trim();

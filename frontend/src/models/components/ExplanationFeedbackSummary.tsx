@@ -16,9 +16,11 @@ type ExplanationFeedbackSummaryProps = {
 	values?: Record<string, unknown>;
 };
 
+const EMPTY_VALUES: Record<string, unknown> = {};
+
 export function ExplanationFeedbackSummary({
 	schema,
-	values = {},
+	values = EMPTY_VALUES,
 }: ExplanationFeedbackSummaryProps) {
 	if (!schema) {
 		return <AppCopy>No feedback questionnaire configured for this explanation.</AppCopy>;

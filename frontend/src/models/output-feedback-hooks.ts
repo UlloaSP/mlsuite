@@ -24,7 +24,7 @@ export const useGetOutputFeedback = ({ predictionId }: modelApi.GetOutputFeedbac
 		},
 	});
 
-export const CREATE_OUTPUT_FEEDBACK_QUERY_KEY = ["createOutputFeedback"] as const;
+const CREATE_OUTPUT_FEEDBACK_QUERY_KEY = ["createOutputFeedback"] as const;
 
 export function useCreateOutputFeedbackMutation() {
 	const qc = useQueryClient();
@@ -43,7 +43,7 @@ export function useCreateOutputFeedbackMutation() {
 	});
 }
 
-export const UPDATE_OUTPUT_FEEDBACK_QUERY_KEY = ["updateOutputFeedback"] as const;
+const UPDATE_OUTPUT_FEEDBACK_QUERY_KEY = ["updateOutputFeedback"] as const;
 
 export function useUpdateOutputFeedbackMutation() {
 	const qc = useQueryClient();

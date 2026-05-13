@@ -193,6 +193,7 @@ const importDefinition = async (source: string): Promise<ExplanationDefinitionWi
 
 	try {
 		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
+		// react-doctor-disable-next-line react-doctor/no-dynamic-import-path -- Runtime plugin modules are compiled to Blob URLs; no static chunk path exists.
 		const moduleValue = await import(/* @vite-ignore */ url);
 		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
 			throw new Error("Custom explanation module must export exactly one default explanation kind.");

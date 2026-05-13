@@ -62,10 +62,12 @@ export function PredictionTargetFeedbackCard({
 		outputFeedbackValue: outputFeedback?.value,
 		realValue: target.realValue,
 	});
+	// react-doctor-disable-next-line react-doctor/no-derived-useState -- Local saved copy reflects optimistic create/update before parent query refresh completes.
 	const [savedOutputFeedback, setSavedOutputFeedback] = useState(outputFeedback);
 	const [draftValues, setDraftValues] = useState<Record<string, unknown>>({});
 	const [mode, setMode] = useState<"view" | "edit">("view");
 
+	// react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Prop snapshot reset must restore saved feedback, draft form values, and view mode atomically.
 	useEffect(() => {
 		setSavedOutputFeedback(outputFeedback);
 		setDraftValues(buildOutputFeedbackInitialValues(outputFeedback, questionnaire));

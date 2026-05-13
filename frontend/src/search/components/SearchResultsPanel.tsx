@@ -20,7 +20,7 @@ export function SearchResultsPanel({
 	return (
 		<AppPanel className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-30 max-h-[28rem] overflow-y-auto p-3">
 			{loading ? (
-				<AppCopy className="px-2 py-3">Searching workspace...</AppCopy>
+				<AppCopy className="px-2 py-3">Searching workspace…</AppCopy>
 			) : groups.length === 0 ? (
 				<AppCopy className="px-2 py-3">No results.</AppCopy>
 			) : (

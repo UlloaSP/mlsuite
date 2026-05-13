@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Mail, Plus, RotateCcw, X } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppSelect, AppSurface } from "../../app/components";
@@ -16,6 +16,7 @@ import { invitationRoleOptions } from "../permissions/invitationRoleOptions";
 import type { InvitationStatus, OrganizationRole } from "../types";
 
 const statuses: Array<InvitationStatus | "ALL"> = ["ALL", "PENDING", "ACCEPTED", "EXPIRED", "REVOKED"];
+const invitationDateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "short" });
 
 export function InvitationsPage() {
 	const { organizationId = "" } = useParams();
@@ -62,7 +63,7 @@ export function InvitationsPage() {
 										<td><RoleBadge value={invite.role} /></td>
 										<td>{teams.find((team) => team.id === invite.teamId)?.name ?? "No team"}</td>
 										<td><StatusBadge value={invite.status} /></td>
-										<td>{new Date(invite.expiresAt).toLocaleDateString()}</td>
+										<td>{invitationDateFormatter.format(Date.parse(invite.expiresAt))}</td>
 										<td className="flex gap-2 py-3">
 											<AppButton variant="secondary" onClick={() => void resendInvitation(id, invite.id).then(() => qc.invalidateQueries({ queryKey: ["invitations", id] }))}><RotateCcw size={14} />Resend</AppButton>
 											<AppButton variant="secondary" onClick={() => void navigator.clipboard?.writeText(`${window.location.origin}/invite/${invite.token}`)}>Copy</AppButton>

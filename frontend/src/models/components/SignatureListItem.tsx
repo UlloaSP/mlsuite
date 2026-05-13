@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ArrowRight, FileCode } from "lucide-react";
 import { AppBadge, cx } from "../../app/components";
 import type { SignatureDto } from "../api/modelService";
-import { getSignatureVersionLabel } from "../utils";
+import { formatTimestamp, getSignatureVersionLabel } from "../utils";
 
 type SignatureListItemProps = {
 	item: SignatureDto;
@@ -39,7 +39,7 @@ export function SignatureListItem({
 				</div>
 				<p className="text-sm font-medium text-[var(--text-secondary)]">{item.name}</p>
 				<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
-					<span>Created {new Date(item.createdAt).toLocaleString()}</span>
+					<span>Created {formatTimestamp(item.createdAt)}</span>
 					<span>{item.origin ? "Based on previous version" : "Initial version"}</span>
 				</div>
 			</div>

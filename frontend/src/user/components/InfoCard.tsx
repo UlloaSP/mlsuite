@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { LucideIcon } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { AppCopy, AppPanel } from "../../app/components";
 
 export type InfoCardProps = {
@@ -17,7 +17,7 @@ export function InfoCard({ icon: Icon, title, value }: InfoCardProps) {
 	return (
 		<motion.div whileHover={{ scale: 1.01, y: -2 }}>
 			<AppPanel className="h-full">
-				<motion.div className="flex items-center space-x-3">
+				<motion.div className="flex items-center gap-x-3">
 					<div className="flex size-11 items-center justify-center rounded-2xl bg-[var(--accent-quiet)]">
 						<Icon className="text-[var(--accent-primary)]" size={20} />
 					</div>

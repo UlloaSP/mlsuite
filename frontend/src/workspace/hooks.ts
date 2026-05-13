@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import * as workspaceApi from "./api/workspaceService";
 import { syncCurrentOrganizationAtom } from "./atoms";
 
-export const WORKSPACE_CONTEXT_QUERY_KEY = ["workspaceContext"] as const;
+const WORKSPACE_CONTEXT_QUERY_KEY = ["workspaceContext"] as const;
 
 export const useWorkspaceContext = (enabled = true) =>
 	useQuery({
@@ -25,7 +25,7 @@ export const useWorkspaceContextSync = (enabled = true) => {
 	return query;
 };
 
-export const PENDING_INVITATIONS_QUERY_KEY = ["pendingInvitations"] as const;
+const PENDING_INVITATIONS_QUERY_KEY = ["pendingInvitations"] as const;
 
 export const usePendingInvitations = () =>
 	useQuery({

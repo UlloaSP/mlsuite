@@ -10,11 +10,6 @@ import { validateCustomReportSource } from "./custom-report-runtime";
 
 export type DetectedPluginType = "field" | "report" | "explanation";
 
-export type PluginCatalogItem = PluginDto & {
-	pluginType: DetectedPluginType;
-	kind: string;
-};
-
 type DetectionResult = {
 	pluginType: DetectedPluginType;
 	kind: string;
@@ -102,13 +97,12 @@ export const detectPluginType = async (source: string): Promise<DetectionResult>
 			if (attempts[2].status === "fulfilled") {
 				return { pluginType: "explanation", kind: attempts[2].value.kind };
 			}
-			const reasons = attempts
-				.map((attempt) =>
-					attempt.status === "rejected"
-						? getErrorMessage(attempt.reason)
-						: null,
-				)
-				.filter((reason): reason is string => Boolean(reason));
+			const reasons = attempts.reduce<string[]>((messages, attempt) => {
+				if (attempt.status === "rejected") {
+					messages.push(getErrorMessage(attempt.reason));
+				}
+				return messages;
+			}, []);
 			throw new Error(
 				reasons.length > 0
 					? `Plugin validation failed for field/report/explanation: ${reasons.join(" | ")}`
@@ -119,9 +113,3 @@ export const detectPluginType = async (source: string): Promise<DetectionResult>
 	}
 	return detection;
 };
-
-export const splitPluginCatalogByType = (items: readonly PluginCatalogItem[]) => ({
-	field: items.filter((item) => item.pluginType === "field"),
-	report: items.filter((item) => item.pluginType === "report"),
-	explanation: items.filter((item) => item.pluginType === "explanation"),
-});

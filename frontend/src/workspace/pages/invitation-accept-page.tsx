@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useNavigate, useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
 import { acceptInvitation, declineInvitation } from "../api/workspaceService";

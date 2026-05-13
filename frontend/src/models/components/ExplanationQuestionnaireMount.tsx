@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import {
-	forwardRef,
+	type Ref,
 	useEffect,
 	useImperativeHandle,
 	useMemo,
@@ -32,6 +32,7 @@ export type ExplanationQuestionnaireMountHandle = {
 };
 
 type ExplanationQuestionnaireMountProps = {
+	ref?: Ref<ExplanationQuestionnaireMountHandle>;
 	title: string;
 	schema: QuestionnaireSchema;
 	initialValues: Record<string, unknown>;
@@ -46,21 +47,16 @@ const buildEmbeddedStyles = (singleStep: boolean): string => `
 	${singleStep ? "mlf-step-indicator { display: none !important; } .pane-header { gap: 0 !important; }" : ""}
 `;
 
-export const ExplanationQuestionnaireMount = forwardRef<
-	ExplanationQuestionnaireMountHandle,
-	ExplanationQuestionnaireMountProps
->(function ExplanationQuestionnaireMount(
-	{
-		title,
-		schema,
-		initialValues,
-		editable,
-		theme,
-		mode = "embedded",
-		onValuesChange,
-	},
+export function ExplanationQuestionnaireMount({
 	ref,
-) {
+	title,
+	schema,
+	initialValues,
+	editable,
+	theme,
+	mode = "embedded",
+	onValuesChange,
+}: ExplanationQuestionnaireMountProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mountedRef = useRef<MountedWizardForm | null>(null);
 	const initialValuesRef = useRef(initialValues);
@@ -105,7 +101,7 @@ export const ExplanationQuestionnaireMount = forwardRef<
 				},
 				labels: {
 					submit: editable ? "Check answers" : "Reviewed",
-					submitting: "Checking answers...",
+					submitting: "Checking answers…",
 				},
 				reportPane: "hidden",
 			});
@@ -154,4 +150,4 @@ export const ExplanationQuestionnaireMount = forwardRef<
 			/>
 		</div>
 	);
-});
+}

@@ -65,7 +65,7 @@ export function AppHeaderProfileMenu() {
 						<Link
 							to="/profile"
 							onClick={() => setOpen(false)}
-							className="flex items-center gap-3 rounded-[18px] px-3 py-3 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]"
+							className="flex items-center gap-3 rounded-[18px] p-3 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]"
 						>
 							<User2 size={16} />
 							Profile
@@ -73,7 +73,7 @@ export function AppHeaderProfileMenu() {
 						<Link
 							to="/workspace"
 							onClick={() => setOpen(false)}
-							className="flex items-center gap-3 rounded-[18px] px-3 py-3 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]"
+							className="flex items-center gap-3 rounded-[18px] p-3 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]"
 						>
 							<User2 size={16} />
 							Workspace
@@ -82,7 +82,7 @@ export function AppHeaderProfileMenu() {
 							<Link
 								to="/admin/users"
 								onClick={() => setOpen(false)}
-								className="flex items-center gap-3 rounded-[18px] px-3 py-3 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]"
+								className="flex items-center gap-3 rounded-[18px] p-3 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]"
 							>
 								<ShieldCheck size={16} />
 								Admin
@@ -93,7 +93,7 @@ export function AppHeaderProfileMenu() {
 						<button
 							type="button"
 							onClick={() => logout()}
-							className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-sm font-medium text-[var(--danger-text)] transition hover:bg-[var(--danger-quiet)]"
+							className="flex w-full items-center gap-3 rounded-[18px] p-3 text-sm font-medium text-[var(--danger-text)] transition hover:bg-[var(--danger-quiet)]"
 						>
 							<LogOut size={16} />
 							Sign out

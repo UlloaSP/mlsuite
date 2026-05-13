@@ -30,7 +30,7 @@ export function AdminDataPanel({
 						<AppTextField
 							value={search ?? ""}
 							onChange={(event) => onSearch(event.target.value)}
-							placeholder="Search..."
+							placeholder="Search…"
 							className="min-w-[260px]"
 						/>
 					) : null}

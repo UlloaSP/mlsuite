@@ -19,10 +19,6 @@ export function countProblemServices(services: ServiceStatusDto[]): number {
 	return services.length - countHealthyServices(services);
 }
 
-export function countShellReadyServices(services: ServiceStatusDto[]): number {
-	return services.filter((service) => service.terminalEnabled).length;
-}
-
 export function buildDashboardAlerts(
 	overview: InfrastructureOverviewDto,
 	streamConnected: boolean,

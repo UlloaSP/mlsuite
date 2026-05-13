@@ -30,8 +30,10 @@ export function TerminalView({
 	const sessionRef = useRef<string | null>(null);
 	const { mutateAsync: createTerminalSession, isPending } = useTerminalSession();
 	const [status, setStatus] = useState("idle");
+	// react-doctor-disable-next-line react-doctor/rerender-state-only-in-handlers -- Requested service gates terminal session lifecycle and effect resubscription.
 	const [requestedService, setRequestedService] = useState<string | null>(null);
 
+	// react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Terminal lifecycle must coordinate xterm, socket, status text, and cleanup in one effect.
 	useEffect(() => {
 		if (!mountRef.current || terminalRef.current) return;
 		const terminal = new Terminal({
@@ -70,6 +72,7 @@ export function TerminalView({
 		};
 	}, []);
 
+	// react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Terminal session effect coordinates selected service, xterm status, socket setup, and cleanup.
 	useEffect(() => {
 		if (!terminalRef.current) return;
 		const terminal = terminalRef.current;
@@ -95,7 +98,7 @@ export function TerminalView({
 		}
 		let disposed = false;
 		let dataDispose: { dispose: () => void } | null = null;
-		terminal.write(`Opening ${selectedService} shell...\r\n`);
+		terminal.write(`Opening ${selectedService} shell…\r\n`);
 		setStatus("opening");
 		void createTerminalSession({
 			serviceName: selectedService,

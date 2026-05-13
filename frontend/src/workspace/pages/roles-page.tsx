@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Lock, Plus, Shield } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { AppBadge, AppButton, AppPage, AppPageHeader, AppSurface, AppTabs, AppTextArea, AppTextField } from "../../app/components";
@@ -12,6 +12,7 @@ import type { PermissionKey, RoleDefinitionDto, RoleTemplateDto } from "../types
 
 type Tab = "roles" | "templates" | "permissions";
 
+// react-doctor-disable-next-line react-doctor/prefer-useReducer -- Drawer, modal, tab, and search state are separate controls with separate lifetimes.
 export function RolesPage() {
 	const { organizationId = "" } = useParams();
 	const id = Number(organizationId);
@@ -136,7 +137,7 @@ function RoleForm({ role, initial, permissions, onClose, onSave }: { role: RoleD
 					<AppTextArea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" />
 					<div className="grid gap-2">{permissions.map((permission) => {
 						const checked = selected.includes(permission.key);
-						return <label key={permission.key} className="flex gap-3 rounded-[14px] border border-[var(--border-soft)] p-3 text-sm"><input type="checkbox" checked={checked} onChange={(e) => setSelected((current) => e.target.checked ? [...current, permission.key] : current.filter((key) => key !== permission.key))} /><span><b>{permission.label}</b><br /><span className="text-[var(--text-secondary)]">{permission.description}</span></span></label>;
+						return <label key={permission.key} className="flex gap-3 rounded-[14px] border border-[var(--border-soft)] p-3 text-sm"><input type="checkbox" aria-label={permission.label} checked={checked} onChange={(e) => setSelected((current) => e.target.checked ? [...current, permission.key] : current.filter((key) => key !== permission.key))} /><span><b>{permission.label}</b><br /><span className="text-[var(--text-secondary)]">{permission.description}</span></span></label>;
 					})}</div>
 					<div className="flex justify-end gap-3"><AppButton variant="secondary" onClick={onClose}>Cancel</AppButton><AppButton disabled={!name.trim() || selected.length === 0} onClick={() => onSave({ name, description, permissionKeys: selected })}>Save Role</AppButton></div>
 				</div>

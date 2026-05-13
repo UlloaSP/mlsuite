@@ -61,11 +61,12 @@ export function ModelActionsMenu({
 
 			{open ? (
 				<div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded-[20px] border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
-					{ACTIONS.filter((action) =>
-						action.value === "delete" ? canDelete : canEdit
-					).map((action) => {
+					{ACTIONS.reduce<React.JSX.Element[]>((items, action) => {
+						if (!(action.value === "delete" ? canDelete : canEdit)) {
+							return items;
+						}
 						const Icon = action.icon;
-						return (
+						items.push(
 							<button
 								key={action.value}
 								type="button"
@@ -83,9 +84,10 @@ export function ModelActionsMenu({
 							>
 								<Icon size={15} />
 								{action.label}
-							</button>
+							</button>,
 						);
-					})}
+						return items;
+					}, [])}
 				</div>
 			) : null}
 		</div>

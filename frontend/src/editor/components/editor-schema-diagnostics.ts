@@ -5,7 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { parse as parseWithSourceMap } from "json-source-map";
 import { getLocation } from "jsonc-parser";
+// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- MarkerSeverity enum is tiny and needed by synchronous marker formatting.
 import { MarkerSeverity } from "monaco-editor";
+// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only Monaco import is erased from runtime.
 import type * as Monaco from "monaco-editor";
 import { builtinFieldKindsDisplay } from "../../app/utils/mlform/builtin-registry";
 
@@ -17,7 +19,7 @@ export interface EditorErrorCard {
 	severity: "error" | "warning";
 }
 
-export const isFieldKindPath = (p: (string | number)[]) =>
+const isFieldKindPath = (p: (string | number)[]) =>
 	p.length === 3 &&
 	p[0] === "fields" &&
 	typeof p[1] === "number" &&
@@ -33,7 +35,7 @@ export const pathToPos = (content: string, pathArr: (string | number)[]) => {
 	return { line: loc.line + 1, column: loc.column + 1 };
 };
 
-export const getBuiltinFieldKindsMessage = (): string =>
+const getBuiltinFieldKindsMessage = (): string =>
 	`Valor "kind" no valido. Tipos permitidos: ${builtinFieldKindsDisplay()}.`;
 
 export const getMarkerMessage = (

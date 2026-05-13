@@ -4,9 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import type { PropsWithChildren } from "react";
-import { Outlet } from "react-router";
 import { sidebarCollapsedAtom } from "../app/atoms";
 import { AppHeader, Sidebar } from "../app/components";
 
@@ -29,13 +28,5 @@ export function AppShellFrame({ children }: PropsWithChildren) {
 				</motion.div>
 			</div>
 		</div>
-	);
-}
-
-export function AppShellLayout() {
-	return (
-		<AppShellFrame>
-			<Outlet />
-		</AppShellFrame>
 	);
 }

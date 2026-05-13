@@ -3,12 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export interface BulkPredictionRecord {
+interface BulkPredictionRecord {
 	name: string;
 	inputs: Record<string, unknown>;
 }
 
-export interface SkippedRecord {
+interface SkippedRecord {
 	line: number;
 	name?: string;
 	reason: string;
@@ -26,10 +26,16 @@ export function parseJsonlFile(
 	text: string,
 	maxRecords = 10000,
 ): ParseJsonlResult {
-	const lines = text.split("\n").map((line) => line.trim());
-	const nonEmpty = lines
-		.map((content, index) => ({ content, line: index + 1 }))
-		.filter((entry) => entry.content.length > 0);
+	const nonEmpty = text.split("\n").reduce<Array<{ content: string; line: number }>>(
+		(entries, line, index) => {
+			const content = line.trim();
+			if (content.length > 0) {
+				entries.push({ content, line: index + 1 });
+			}
+			return entries;
+		},
+		[],
+	);
 
 	const records: BulkPredictionRecord[] = [];
 	const skipped: SkippedRecord[] = [];

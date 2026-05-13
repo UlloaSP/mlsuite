@@ -16,11 +16,12 @@ export const applyExplanationFeedbackMetadata = (
 		return {};
 	}
 
-	const feedbackKinds = new Set(
-		customExplanationDefinitions
-			.filter((definition) => definition.definition.feedbackQuestionnaire)
-			.map((definition) => definition.kind),
-	);
+	const feedbackKinds = new Set<string>();
+	for (const definition of customExplanationDefinitions) {
+		if (definition.definition.feedbackQuestionnaire) {
+			feedbackKinds.add(definition.kind);
+		}
+	}
 	const explanations = Array.isArray(schema.explanations)
 		? schema.explanations.map((item) => {
 			if (!isRecord(item)) {

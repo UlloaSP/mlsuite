@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
@@ -22,6 +22,7 @@ import {
 	findModelById,
 	findPredictionById,
 	formatExecutionTime,
+	formatTimestamp,
 	getPredictionDetailTitle,
 	getPredictionExecutionTime,
 	getPredictionStatusLabel,
@@ -94,7 +95,7 @@ export function PredictionDetailPage() {
 							<AppPageHeader
 								eyebrow="Prediction Detail"
 								title={getPredictionDetailTitle(prediction)}
-								description={`Feedback Status: ${getPredictionStatusLabel(prediction.status)} · ${new Date(getPredictionTimestamp(prediction)).toLocaleString()} · ${formatExecutionTime(getPredictionExecutionTime(prediction.prediction))}`}
+								description={`Feedback Status: ${getPredictionStatusLabel(prediction.status)} · ${formatTimestamp(getPredictionTimestamp(prediction))} · ${formatExecutionTime(getPredictionExecutionTime(prediction.prediction))}`}
 								aside={
 									<>
 										<AppButton

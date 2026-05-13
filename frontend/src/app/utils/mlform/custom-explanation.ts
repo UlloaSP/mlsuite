@@ -8,18 +8,11 @@ import type { PluginDto } from "../../api/pluginService";
 import {
 	type ExplanationDefinitionWithFeedback,
 	resolveCustomExplanationDefinitionWithFeedback,
-	validateCustomExplanationSourceWithFeedback,
 } from "./custom-explanation-questionnaire";
-import { detectPluginType, invalidatePluginCatalog, loadActivePlugins, loadPlugins } from "./plugin-catalog";
-import { customExplanationTemplate } from "./custom-explanation-runtime";
-import { type CustomExplanationResult, type NormalizedCustomExplanationResult, normalizeCustomExplanationResult } from "./custom-explanation-result";
+import { detectPluginType, invalidatePluginCatalog, loadActivePlugins } from "./plugin-catalog";
+import { normalizeCustomExplanationResult } from "./custom-explanation-result";
 
-export {
-	customExplanationTemplate,
-	normalizeCustomExplanationResult,
-	validateCustomExplanationSourceWithFeedback as validateCustomExplanationSource,
-};
-export type { CustomExplanationResult, NormalizedCustomExplanationResult };
+export { normalizeCustomExplanationResult };
 
 export type CatalogExplanationDefinition = Pick<
 	PluginDto,
@@ -28,8 +21,6 @@ export type CatalogExplanationDefinition = Pick<
 	kind: string;
 	definition: ExplanationDefinitionWithFeedback;
 };
-
-let catalogDefinitionsPromise: Promise<CatalogExplanationDefinition[]> | null = null;
 
 const assertUniqueKinds = (definitions: readonly CatalogExplanationDefinition[]): void => {
 	const seenKinds = new Map<string, string>();
@@ -64,35 +55,7 @@ const toCatalogDefinition = async (item: PluginDto): Promise<CatalogExplanationD
 };
 
 export const invalidateActiveCustomExplanationDefinition = (): void => {
-	catalogDefinitionsPromise = null;
 	invalidatePluginCatalog();
-};
-
-export const getCatalogExplanationDefinitions = async (): Promise<
-	readonly CatalogExplanationDefinition[]
-> => {
-	catalogDefinitionsPromise ??= loadPlugins().then(async (items) => {
-		const settled = await Promise.all(
-			items.map(async (item) => {
-				try {
-					return await toCatalogDefinition(item);
-				} catch (error: unknown) {
-					console.warn(
-						`Skipping explanation plugin "${item.fileName}" (${item.id}): ${
-							error instanceof Error ? error.message : String(error)
-						}`,
-					);
-					return null;
-				}
-			}),
-		);
-		const definitions = settled.filter(
-			(definition): definition is CatalogExplanationDefinition => definition !== null,
-		);
-		assertUniqueKinds(definitions);
-		return definitions;
-	});
-	return catalogDefinitionsPromise;
 };
 
 export const getActiveCustomExplanationDefinitions = async (): Promise<

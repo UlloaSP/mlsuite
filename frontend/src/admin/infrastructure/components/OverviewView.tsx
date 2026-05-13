@@ -1,4 +1,5 @@
 import { useState } from "react";
+// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Overview charts render in the first dashboard viewport; delaying them causes layout churn.
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle, CheckCircle2, ChevronRight, Download, RefreshCw } from "lucide-react";
 import { AppBadge, AppButton, cx } from "../../../app/components";
@@ -265,8 +266,8 @@ function ChartTooltip({
 	return (
 		<div className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-2 text-xs shadow-lg">
 			<p className="mb-1.5 font-mono text-[0.6rem] text-[var(--text-muted)]">{formatTimestamp(String(label ?? ""))}</p>
-			{payload.map((entry, i) => (
-				<div key={`${entry.name}-${i}`} className="flex items-center justify-between gap-4">
+			{payload.map((entry) => (
+				<div key={`${entry.name ?? "metric"}-${entry.color ?? "color"}`} className="flex items-center justify-between gap-4">
 					<span className="flex items-center gap-1.5">
 						<span className="inline-block size-2 rounded-sm" style={{ background: entry.color }} />
 						{entry.name}

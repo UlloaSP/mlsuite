@@ -12,7 +12,7 @@ import { loadPredictionCatalogDefinitions } from "./loadPredictionCatalogDefinit
 import { parseJsonlFile } from "./parseJsonlFile";
 import { runBulkPredictionPipeline } from "./runBulkPredictionPipeline";
 
-export type BulkUploadStatus = "idle" | "parsing" | "processing" | "done";
+type BulkUploadStatus = "idle" | "parsing" | "processing" | "done";
 
 export interface BulkUploadState {
 	status: BulkUploadStatus;
@@ -67,7 +67,7 @@ export function useBulkPredictionUpload() {
 					});
 				}
 				if (skippedCount > 5) {
-					toast.error(`...and ${skippedCount - 5} more skipped`);
+					toast.error(`…and ${skippedCount - 5} more skipped`);
 				}
 			}
 
@@ -100,6 +100,7 @@ export function useBulkPredictionUpload() {
 
 				const record = records[i];
 				try {
+					// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Bulk upload is intentionally sequential for progress, cancellation, and backend load control.
 					const prediction = await runBulkPredictionPipeline({
 						schema: signatureSchema,
 						modelId,

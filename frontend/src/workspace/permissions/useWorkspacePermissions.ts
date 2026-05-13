@@ -4,7 +4,7 @@ import { useWorkspaceContext } from "../hooks";
 import { useUser } from "../../user/hooks";
 import type { TeamPermissionsDto, WorkspacePermissionKey } from "../types";
 
-export function useWorkspacePermissions() {
+function useWorkspacePermissions() {
 	return useWorkspaceContext().data?.permissions ?? null;
 }
 

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, Mail, Plus, Settings, Shield, Users } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { Link, useNavigate, useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";

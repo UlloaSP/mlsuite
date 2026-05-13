@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 export function BundleEmptyState() {
 	return (
 		<div className="flex min-h-[180px] flex-1 flex-col items-center justify-center px-6 py-9 text-center">
-			<div className="mb-3 flex h-[42px] w-[42px] items-center justify-center rounded-[11px] border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]">
+			<div className="mb-3 flex size-[42px] items-center justify-center rounded-[11px] border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]">
 				<svg
 					width="20"
 					height="20"

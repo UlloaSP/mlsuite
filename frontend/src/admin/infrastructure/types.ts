@@ -1,4 +1,4 @@
-export type ServiceMetricPointDto = {
+type ServiceMetricPointDto = {
 	name: string;
 	cpuPercent: number;
 	ramPercent: number;
@@ -19,17 +19,17 @@ export type MetricPointDto = {
 	services: ServiceMetricPointDto[];
 };
 
-export type ServiceAggregateMetricValueDto = {
+type ServiceAggregateMetricValueDto = {
 	percent: number | null;
 	supported: boolean;
 };
 
-export type ServiceAggregateByteValueDto = {
+type ServiceAggregateByteValueDto = {
 	bytes: number | null;
 	supported: boolean;
 };
 
-export type ServiceAggregateMetricsDto = {
+type ServiceAggregateMetricsDto = {
 	cpu: ServiceAggregateMetricValueDto;
 	ram: ServiceAggregateMetricValueDto;
 	diskRead: ServiceAggregateByteValueDto;
@@ -38,7 +38,7 @@ export type ServiceAggregateMetricsDto = {
 	networkTx: ServiceAggregateByteValueDto;
 };
 
-export type MetricSeriesDto = {
+type MetricSeriesDto = {
 	sampleIntervalSeconds: number;
 	retentionMinutes: number;
 	points: MetricPointDto[];

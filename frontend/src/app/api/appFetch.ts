@@ -32,15 +32,6 @@ export class HttpError extends Error {
 export const isHttpError = (e: unknown): e is HttpError =>
 	e instanceof HttpError;
 
-type ReauthenticationHandler = () => void;
-type NetworkErrorHandler = () => void;
-
-let reauthCb: ReauthenticationHandler | null = null;
-let netErrCb: NetworkErrorHandler = () => { };
-
-export const setReauthenticationCallback = (cb: ReauthenticationHandler) => (reauthCb = cb);
-export const initNetworkErrorHandler = (cb: NetworkErrorHandler) => (netErrCb = cb);
-
 const buildInit = (init?: RequestInit): RequestInit => ({
 	credentials: "include",
 	...init,
@@ -86,9 +77,6 @@ export async function appFetch<T = unknown>(path: string, init?: RequestInit): P
 			return undefined as T;
 		}
 
-		// Auth hook
-		if (res.status === 401 && reauthCb) reauthCb();
-
 		// Error: prefer server ErrorDto JSON
 		if (isJson(res)) {
 			const dto = (await res.json()) as ErrorDto;
@@ -99,7 +87,6 @@ export async function appFetch<T = unknown>(path: string, init?: RequestInit): P
 		throw new HttpError(fabricateDto(res, path, res.statusText || "Request error"));
 	} catch (e) {
 		// Network / CORS / DNS, etc.
-		netErrCb();
 		// If it's already our HttpError, bubble it; otherwise wrap as network HttpError
 		if (isHttpError(e)) throw e;
 		throw new HttpError(fabricateNetworkDto(path));

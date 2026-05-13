@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQueries } from "@tanstack/react-query";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -136,7 +136,7 @@ export function ModelsPage() {
 							<AppTextField
 								value={query}
 								onChange={(event) => setQuery(event.target.value)}
-								placeholder="Search models..."
+								placeholder="Search models…"
 								className="min-w-[280px] flex-1"
 							/>
 

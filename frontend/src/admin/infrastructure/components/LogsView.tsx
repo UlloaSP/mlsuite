@@ -92,7 +92,7 @@ export function LogsView({
 						<Search size={14} className="text-[var(--text-muted)]" />
 						<input
 							type="text"
-							placeholder="Search log message..."
+							placeholder="Search log message…"
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							className="w-52 bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"

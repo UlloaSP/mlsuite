@@ -11,7 +11,7 @@ type SignatureTechnicalTabProps = {
 	signature: SignatureDto;
 };
 
-const renderKeyValueList = (items: Record<string, number>) => {
+function KeyValueList({ items }: { items: Record<string, number> }) {
 	const entries = Object.entries(items);
 	if (entries.length === 0) {
 		return <AppCopy>No entries detected.</AppCopy>;
@@ -26,7 +26,7 @@ const renderKeyValueList = (items: Record<string, number>) => {
 			))}
 		</div>
 	);
-};
+}
 
 export function SignatureTechnicalTab({
 	signature,
@@ -63,12 +63,12 @@ export function SignatureTechnicalTab({
 
 			<AppPanel className="space-y-4">
 				<AppSectionTitle>Field Types</AppSectionTitle>
-				{renderKeyValueList(stats.fieldKinds)}
+				<KeyValueList items={stats.fieldKinds} />
 			</AppPanel>
 
 			<AppPanel className="space-y-4">
 				<AppSectionTitle>Report Types</AppSectionTitle>
-				{renderKeyValueList(stats.reportKinds)}
+				<KeyValueList items={stats.reportKinds} />
 				{stats.classifierLabelsCount > 0 ? (
 					<AppCopy>Classifier labels detected: {stats.classifierLabelsCount}</AppCopy>
 				) : null}

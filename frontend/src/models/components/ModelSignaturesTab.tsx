@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import type { SignatureDto } from "../api/modelService";
-import { compareSignatureVersionsDesc } from "../utils";
+import { sortSignaturesByVersionDesc } from "../utils";
 import { SignatureListItem } from "./SignatureListItem";
 
 type ModelSignaturesTabProps = {
@@ -17,7 +17,7 @@ export function ModelSignaturesTab({
 	signatures,
 	onOpenSignature,
 }: ModelSignaturesTabProps) {
-	const sorted = [...signatures].sort(compareSignatureVersionsDesc);
+	const sorted = sortSignaturesByVersionDesc(signatures);
 
 	return (
 		<div className="space-y-4">

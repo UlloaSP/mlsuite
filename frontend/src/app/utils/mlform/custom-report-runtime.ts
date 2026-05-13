@@ -107,6 +107,7 @@ const importDefinitionFromSource = async (source: string): Promise<ReportDefinit
 	const zodGlobalKey = getZodGlobalKey(source);
 	try {
 		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
+		// react-doctor-disable-next-line react-doctor/no-dynamic-import-path -- Runtime plugin modules are compiled to Blob URLs; no static chunk path exists.
 		const moduleValue = await import(/* @vite-ignore */ url);
 		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
 			throw new Error("Custom report module must export exactly one default report definition.");
@@ -131,34 +132,6 @@ export const resolveCustomReportDefinition = async (
 	}
 	return cachedModule;
 };
-
-export const customReportTemplate = `export default defineReportDefinition({
-  kind: "custom-summary-report",
-  schema: z
-    .object({
-      kind: z.literal("custom-summary-report"),
-      id: z.string().optional(),
-      label: z.string().optional(),
-      description: z.string().optional(),
-    })
-    .passthrough(),
-  resolvePayload: (_config, context) => context.result.raw,
-  describe: (config, context) => ({
-    component: "${CUSTOM_REPORT_COMPONENT}",
-    props: {
-      label: config.label ?? "Custom Summary",
-      description: config.description,
-      result: {
-        title: config.label ?? "Custom Summary",
-        blocks: [
-          "Custom report plugin active.",
-          JSON.stringify(context.payload ?? {}, null, 2),
-        ],
-      },
-    },
-  }),
-});
-`;
 
 export const validateCustomReportSource = async (
 	source: string,

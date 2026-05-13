@@ -9,6 +9,7 @@ If this file conflicts with root, this file wins for `frontend/`.
 - Covers React UI, MLForm integration, plugin catalog, and prediction flows.
 
 ## Frontend Rules
+- Use `npx react-doctor@latest --verbose` to find bugs, error and dead code.
 - For any visual frontend change, always use the `frontend-design` skill and review `../DESIGN.md` before editing.
 - UI must reflect backend contract, not historical assumptions.
 - Do not label items as `system`, `builtin`, or special unless backend model explicitly supports it.

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { RefreshCcw, Save } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
@@ -21,19 +21,7 @@ import {
 } from "../../editor/atoms";
 import { useCreateSignatureMutation, useGetSignatures } from "../hooks";
 import { applyExplanationFeedbackMetadata } from "../signature-feedback-metadata";
-
-function compareSemverDesc(
-	major: number,
-	minor: number,
-	patch: number,
-	major1: number,
-	minor1: number,
-	patch1: number,
-): number {
-	if (major !== major1) return major1 - major;
-	if (minor !== minor1) return minor1 - minor;
-	return patch1 - patch;
-}
+import { sortSignaturesByVersionDesc } from "../utils";
 
 type BumpKind = "patch" | "minor" | "major";
 
@@ -70,18 +58,21 @@ export function CreateSignatureActionSection() {
 	const [signatureName, setSignatureName] = useState("");
 	const [signatureId, setSignatureId] = useState<string>("");
 	const [bumpKind, setBumpKind] = useState<BumpKind>("patch");
+	// react-doctor-disable-next-line react-doctor/rendering-usetransition-loading -- This state tracks an async API save, not a render-only transition.
 	const [isLoading, setIsLoading] = useState(false);
 
+	const latestSignature = useMemo(() => sortSignaturesByVersionDesc(signatures)[0], [signatures]);
+	const effectiveSignatureId = signatureId || latestSignature?.id.toString() || "";
 	const selectedSignature = useMemo(
-		() => signatures.find((signature) => String(signature.id) === String(signatureId)),
-		[signatureId, signatures],
+		() => signatures.find((signature) => String(signature.id) === effectiveSignatureId),
+		[effectiveSignatureId, signatures],
 	);
 	const version = useMemo(
 		() => getNextVersion(selectedSignature, bumpKind),
 		[selectedSignature, bumpKind],
 	);
 	const isFormValid =
-		schemaErrors <= 0 && signatureName.trim() && version && signatureId;
+		schemaErrors <= 0 && signatureName.trim() && version && effectiveSignatureId;
 
 	const handleSaveSignature = async () => {
 		const [major, minor, patch] = version.split(".").map(Number);
@@ -95,7 +86,7 @@ export function CreateSignatureActionSection() {
 				major: major,
 				minor: minor,
 				patch: patch,
-				origin: signatureId,
+				origin: effectiveSignatureId,
 			});
 			navigate(`/models/${modelId}?tab=signatures`);
 		} catch (err) {
@@ -105,31 +96,22 @@ export function CreateSignatureActionSection() {
 	};
 
 	useEffect(() => {
-		if (!signatures.length) return;
-		const [latest] = [...signatures].sort((a, b) =>
-			compareSemverDesc(a.major, a.minor, a.patch, b.major, b.minor, b.patch),
-		);
-		setSignatureId(latest.id.toString()); // ← conversión aquí
-	}, [signatures]);
-
-	useEffect(() => {
-		if (!signatureId) return;
-		const sig = signatures.find((s) => s.id.toString() === signatureId);
-		if (!sig) return;
-		setSchema(sig.inputSignature);
-		setSchemaText(JSON.stringify(sig.inputSignature, null, 2));
-	}, [setSchema, setSchemaText, signatureId, signatures]);
+		if (!selectedSignature) return;
+		setSchema(selectedSignature.inputSignature);
+		setSchemaText(JSON.stringify(selectedSignature.inputSignature, null, 2));
+	}, [selectedSignature, setSchema, setSchemaText]);
 
 	return (
 		<motion.div className="shrink-0">
 
 			<div className="grid gap-4 xl:grid-cols-[minmax(240px,1.2fr)_minmax(280px,1.4fr)_minmax(360px,1.7fr)_auto]">
 				<div className="space-y-2">
-					<label className="text-sm font-semibold text-[var(--text-primary)]">
+					<label htmlFor="base-version" className="text-sm font-semibold text-[var(--text-primary)]">
 						Base Version
 					</label>
 					<AppSelect
-						value={signatureId}
+						id="base-version"
+						value={effectiveSignatureId}
 						onChange={(e) => setSignatureId(e.target.value)}
 						className="w-full"
 						disabled={!signatures.length}
@@ -164,9 +146,9 @@ export function CreateSignatureActionSection() {
 
 				<div className="space-y-3">
 					<div className="flex flex-wrap items-center justify-between gap-2">
-						<label className="text-sm font-semibold text-[var(--text-primary)]">
+						<span className="text-sm font-semibold text-[var(--text-primary)]">
 							Version Bump
-						</label>
+						</span>
 						{selectedSignature ? (
 							<span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-sm font-semibold text-[var(--text-primary)]">
 								v{selectedSignature.major}.{selectedSignature.minor}.{selectedSignature.patch}
@@ -210,7 +192,7 @@ export function CreateSignatureActionSection() {
 								<span className="animate-spin">
 									<RefreshCcw size={18} />
 								</span>
-								<span>Saving...</span>
+								<span>Saving…</span>
 							</>
 						) : (
 							<>

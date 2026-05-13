@@ -4,13 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { m as motion } from "motion/react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton, AppCopy, AppPanel } from "../../app/components";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { mountPredictionForm, schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/index";
+import { mountPredictionForm } from "../../app/utils/mlform/mount";
+import { schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/schema-needs-plugin-catalog";
 import { schemaAtom } from "../../editor/atoms";
 import { showModalAtom } from "../atoms";
 import {
@@ -48,6 +49,42 @@ const initialCatalogLoadState: CatalogLoadState = {
 	error: null,
 };
 
+type PredictionState = {
+	response: Record<string, unknown>;
+	inputs: Record<string, unknown>;
+	explanationsPending: boolean;
+};
+
+type PredictionStateAction =
+	| { type: "submitted"; inputs: Record<string, unknown>; response: Record<string, unknown>; explanationsPending: boolean }
+	| { type: "response"; response: Record<string, unknown>; explanationsPending: boolean };
+
+const predictionStateReducer = (
+	state: PredictionState,
+	action: PredictionStateAction,
+): PredictionState => {
+	switch (action.type) {
+		case "submitted":
+			return {
+				inputs: action.inputs,
+				response: action.response,
+				explanationsPending: action.explanationsPending,
+			};
+		case "response":
+			return {
+				...state,
+				response: action.response,
+				explanationsPending: action.explanationsPending,
+			};
+	}
+};
+
+const initialPredictionState: PredictionState = {
+	response: {},
+	inputs: {},
+	explanationsPending: false,
+};
+
 const getPersistedExplanations = (
 	form: NonNullable<ReturnType<typeof mountPredictionForm>>["form"],
 ): PersistedExplanationState[] =>
@@ -71,18 +108,22 @@ export function CreatePredictionBodyForm() {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mountedRef = useRef<ReturnType<typeof mountPredictionForm> | null>(null);
 
-	const [response, setResponse] = useState<Record<string, unknown>>({});
-	const [inputs, setInputs] = useState<Record<string, unknown>>({});
-	const [explanationsPending, setExplanationsPending] = useState(false);
+	const [{ response, inputs, explanationsPending }, dispatchPredictionState] = useReducer(
+		predictionStateReducer,
+		initialPredictionState,
+	);
 	const [catalogState, setCatalogState] = useState<CatalogLoadState>(initialCatalogLoadState);
 	const [mountError, setMountError] = useState<string | null>(null);
 	const schemaNeedsPlugins = schemaNeedsActivePluginCatalog(schema);
 
 	const handleSubmit = useCallback(
 		(nextInputs: Record<string, unknown>, nextResponse: Record<string, unknown>) => {
-			setInputs(nextInputs);
-			setResponse(nextResponse);
-			setExplanationsPending(Boolean(mountedRef.current?.form.explanations.length));
+			dispatchPredictionState({
+				type: "submitted",
+				inputs: nextInputs,
+				response: nextResponse,
+				explanationsPending: Boolean(mountedRef.current?.form.explanations.length),
+			});
 			setShowModal(true);
 		},
 		[setShowModal]
@@ -158,19 +199,18 @@ export function CreatePredictionBodyForm() {
 					return;
 				}
 
-				setResponse(
-					buildPersistedPredictionPayload(
-						state.lastResult.raw,
-						getPersistedExplanations(mounted.form),
-					),
-				);
-				setExplanationsPending(
-					mounted.form.explanations.some((explanation) => {
+				dispatchPredictionState({
+					type: "response",
+					response: buildPersistedPredictionPayload(
+							state.lastResult.raw,
+							getPersistedExplanations(mounted.form),
+						),
+					explanationsPending: mounted.form.explanations.some((explanation) => {
 						const explanationState =
 							state.explanationStates[explanation.id] ?? explanation.state;
 						return explanationState.status === "idle" || explanationState.status === "loading";
 					}),
-				);
+				});
 			});
 
 			return () => {

@@ -58,11 +58,13 @@ export function AdminInfrastructurePage() {
 		setSelectedService((current) => resolveSelectedService(current, data));
 	}, [data]);
 
+	// react-doctor-disable-next-line react-doctor/no-effect-chain -- Log snapshot is keyed by selected service and must reset only after that query resolves.
 	useEffect(() => {
 		if (!selectedServiceLogs.data || selectedServiceLogs.data.serviceName !== selectedService) return;
 		setLogLines(selectedServiceLogs.data.lines);
 	}, [selectedService, selectedServiceLogs.data]);
 
+	// react-doctor-disable-next-line react-doctor/no-cascading-set-state -- WebSocket events update independent live dashboard slices from one event stream.
 	useEffect(() => {
 		const socket = openInfrastructureSocket({
 			onOpen: () => setStreamConnected(true),
@@ -87,6 +89,7 @@ export function AdminInfrastructurePage() {
 		};
 	}, []);
 
+	// react-doctor-disable-next-line react-doctor/no-effect-chain -- Socket subscription must follow the latest selected service and connection state.
 	useEffect(() => {
 		if (socketRef.current?.readyState === WebSocket.OPEN) {
 			subscribeToServiceLogs(socketRef.current, selectedService);

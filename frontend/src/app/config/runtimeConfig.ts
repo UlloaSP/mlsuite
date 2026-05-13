@@ -17,7 +17,7 @@ const runtimeConfig =
 const configuredBackendUrl =
 	runtimeConfig.VITE_BACKEND_URL ?? import.meta.env.VITE_BACKEND_URL ?? "";
 
-export const BACKEND_URL = configuredBackendUrl.trim();
+const BACKEND_URL = configuredBackendUrl.trim();
 
 export const getBackendBaseUrl = () =>
 	BACKEND_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost");

@@ -3,15 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import {
-	toMlformSchema,
-} from "../app/utils/mlform/index";
 import type { ModelDto, PredictionDto, SignatureDto } from "./api/modelService";
-import { extractPredictionExplanationEntries } from "./explanation-feedback-utils";
 
 type JsonRecord = Record<string, unknown>;
 
-export type PredictionFeedbackStatus = "PENDING" | "COMPLETED";
+type PredictionFeedbackStatus = "PENDING" | "COMPLETED";
 
 export type SignatureSummaryStats = {
 	fieldCount: number;
@@ -22,16 +18,24 @@ export type SignatureSummaryStats = {
 	classifierLabelsCount: number;
 };
 
-export type ExplanationSnapshot = {
-	label: string;
-	explanations: string[];
-	error: string | null;
-} | null;
-
 const isRecord = (value: unknown): value is JsonRecord =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const toIdString = (value: unknown): string => String(value ?? "");
+const toIdString = (value: unknown): string => String(value ?? "");
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+	dateStyle: "short",
+	timeStyle: "short",
+});
+
+export const toTimestampMillis = (value: string): number => {
+	const timestamp = Date.parse(value);
+	return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
+export const formatTimestamp = (value: string): string => {
+	const timestamp = toTimestampMillis(value);
+	return timestamp === 0 ? value : dateTimeFormatter.format(timestamp);
+};
 
 export const findModelById = (models: ModelDto[], modelId?: string): ModelDto | undefined =>
 	models.find((model) => toIdString(model.id) === toIdString(modelId));
@@ -42,7 +46,7 @@ export const findPredictionById = (
 ): PredictionDto | undefined =>
 	predictions.find((prediction) => toIdString(prediction.id) === toIdString(predictionId));
 
-export const getModelTypeLabel = (type: string): string => {
+const getModelTypeLabel = (type: string): string => {
 	switch (type) {
 		case "classifier":
 			return "Classifier";
@@ -60,7 +64,7 @@ export const getSignatureVersionLabel = (
 	signature: Pick<SignatureDto, "major" | "minor" | "patch">,
 ): string => `v${signature.major}.${signature.minor}.${signature.patch}`;
 
-export const compareSignatureVersionsDesc = (left: SignatureDto, right: SignatureDto): number => {
+const compareSignatureVersionsDesc = (left: SignatureDto, right: SignatureDto): number => {
 	if (left.major !== right.major) {
 		return right.major - left.major;
 	}
@@ -73,16 +77,25 @@ export const compareSignatureVersionsDesc = (left: SignatureDto, right: Signatur
 		return right.patch - left.patch;
 	}
 
-	return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+	return toTimestampMillis(right.createdAt) - toTimestampMillis(left.createdAt);
 };
 
+export const sortSignaturesByVersionDesc = (signatures: readonly SignatureDto[]): SignatureDto[] =>
+	Array.from(signatures).sort(compareSignatureVersionsDesc);
+
 export const getLatestSignature = (signatures: SignatureDto[]): SignatureDto | undefined =>
-	[...signatures].sort(compareSignatureVersionsDesc)[0];
+	signatures.reduce<SignatureDto | undefined>(
+		(latest, signature) =>
+			latest === undefined || compareSignatureVersionsDesc(latest, signature) > 0
+				? signature
+				: latest,
+		undefined,
+	);
 
 export const getModelDerivedMetric = (signatures: SignatureDto[]): string =>
 	`${signatures.length} schema${signatures.length === 1 ? "" : "s"}`;
 
-export const getPredictionStatus = (status: unknown): PredictionFeedbackStatus => {
+const getPredictionStatus = (status: unknown): PredictionFeedbackStatus => {
 	const normalized = String(status ?? "PENDING").toUpperCase();
 	if (normalized === "COMPLETED" || normalized === "SUCCESS" || normalized === "FAILED") {
 		return "COMPLETED";
@@ -194,46 +207,6 @@ export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSumm
 		fieldKinds,
 		reportKinds,
 		classifierLabelsCount,
-	};
-};
-
-export const getExplanationSnapshot = (
-	predictionValue: unknown,
-	signatureSchema: unknown,
-): ExplanationSnapshot => {
-	if (!isRecord(predictionValue)) {
-		return null;
-	}
-
-	const explanations = extractPredictionExplanationEntries(predictionValue, signatureSchema).map(
-		(entry) => entry.content.join("\n\n"),
-	);
-
-	const meta = isRecord(predictionValue.meta) ? predictionValue.meta : null;
-	const explainErrors = meta && isRecord(meta.explainErrors) ? meta.explainErrors : null;
-	let reportLabel = "Model explanation";
-	try {
-		const schema = toMlformSchema(signatureSchema);
-		const explanation = schema.explanations?.[0];
-		if (explanation?.label) {
-			reportLabel = `${explanation.label} explanation`;
-		}
-	} catch {
-		reportLabel = "Model explanation";
-	}
-	const nextError = explainErrors
-		? Object.values(explainErrors).find((value) => typeof value === "string") ?? null
-		: null;
-	const error = typeof nextError === "string" ? nextError : null;
-
-	if (explanations.length === 0 && !error) {
-		return null;
-	}
-
-	return {
-		label: reportLabel,
-		explanations,
-		error,
 	};
 };
 

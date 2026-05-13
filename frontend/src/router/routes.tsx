@@ -50,22 +50,12 @@ const CreateSignaturePage = lazy(async () => {
 
 function EditorRouteFallback() {
 	return (
-		<div className="flex size-full items-center justify-center bg-gray-100 dark:bg-gray-900">
-			<div className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-				Loading editor...
+		<div className="flex size-full items-center justify-center bg-neutral-100 dark:bg-neutral-900">
+			<div className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-600 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+				Loading editor…
 			</div>
 		</div>
 	);
-}
-
-function IndexRoute() {
-	const { data: user, error } = useUser();
-
-	if (user && !error) {
-		return <Navigate to="/workspace" replace />;
-	}
-
-	return <AuthLandingPage />;
 }
 
 function ProtectedRoute() {
@@ -95,7 +85,7 @@ function workspace(permission: WorkspacePermissionKey, element: ReactNode) {
 	);
 }
 
-export const routes: RouteObject[] = [
+const routes: RouteObject[] = [
 	{
 		errorElement: <NotFoundError />,
 		children: [
@@ -104,7 +94,7 @@ export const routes: RouteObject[] = [
 				children: [
 					{
 						index: true,
-						element: <IndexRoute />,
+						element: <AuthLandingPage />,
 					},
 				],
 			},

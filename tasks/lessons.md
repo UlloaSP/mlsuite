@@ -30,3 +30,7 @@
 - Rule: for frontend release/Docker readiness, run the package build script (`vp run build`) so `tsc -b` executes; `vp build` alone is insufficient for strict type checks.
 - User correction: MLForm builtins should come from registry pack API, not manual default field registration.
 - Rule: when upstream exposes a pack/factory for builtin registries, use that source of truth before composing local registries; only fall back to manual registration if no public pack exists.
+- User correction: auth landing page called current-user profile even though public auth UI does not need user state.
+- Rule: public/login pages must not mount profile/session queries unless they render auth state or redirect from it; keep submit busy state scoped to active auth mutations.
+- User correction: removing a query from a page was insufficient because its route wrapper still mounted the query.
+- Rule: when stopping a public-page request, trace parent route/layout wrappers too; verify the rendered route branch, not just the leaf component.

@@ -107,6 +107,7 @@ const importDefinitionFromSource = async (source: string): Promise<FieldDefiniti
 	const zodGlobalKey = getZodGlobalKey(source);
 	try {
 		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
+		// react-doctor-disable-next-line react-doctor/no-dynamic-import-path -- Runtime plugin modules are compiled to Blob URLs; no static chunk path exists.
 		const moduleValue = await import(/* @vite-ignore */ url);
 		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
 			throw new Error("Custom field module must export exactly one default field definition.");
@@ -131,40 +132,6 @@ export const resolveCustomFieldDefinition = async (
 	}
 	return cachedModule;
 };
-
-export const customFieldTemplate = `export default defineFieldDefinition({
-  kind: "custom-slider",
-  schema: z
-    .object({
-      kind: z.literal("custom-slider"),
-      id: z.string().optional(),
-      label: z.string(),
-      description: z.string().optional(),
-      min: z.number().default(0),
-      max: z.number().default(100),
-      step: z.number().positive().default(1),
-      defaultValue: z.number().optional(),
-    })
-    .passthrough(),
-  getDefaultValue: (config) => config.defaultValue ?? config.min ?? 0,
-  normalizeValue: (value, config) => {
-    const fallback = config.defaultValue ?? config.min ?? 0;
-    const numeric = typeof value === "number" ? value : Number(value);
-    return Number.isFinite(numeric) ? numeric : fallback;
-  },
-  describe: (config, context) => ({
-    component: "${CUSTOM_FIELD_COMPONENT}",
-    props: {
-      mode: "range",
-      min: config.min ?? 0,
-      max: config.max ?? 100,
-      step: config.step ?? 1,
-      value: context.state.value,
-      state: context.state.status,
-    },
-  }),
-});
-`;
 
 export const validateCustomFieldSource = async (
 	source: string,

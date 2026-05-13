@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box, MoreHorizontal, Plus, Users, Zap } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppSelect, AppSurface, AppTextArea, AppTextField } from "../../app/components";

@@ -14,7 +14,6 @@ import type {
 	UpdateOrganizationRequest,
 	UpdateTeamRequest,
 	WorkspaceContextDto,
-	RolesResponseDto,
 } from "../types";
 
 const json = (method: "POST" | "PATCH", body: unknown): RequestInit => ({
@@ -64,9 +63,6 @@ export const transferOrganizationOwnership = (
 
 export const getTeams = (organizationId: number): Promise<TeamDto[]> =>
 	appFetch<TeamDto[]>(`/api/organizations/${organizationId}/teams`);
-
-export const getRoles = (organizationId: number): Promise<RolesResponseDto> =>
-	appFetch<RolesResponseDto>(`/api/organizations/${organizationId}/roles`);
 
 export const createTeam = (organizationId: number, payload: CreateTeamRequest): Promise<TeamDto> =>
 	appFetch<TeamDto>(`/api/organizations/${organizationId}/teams`, json("POST", payload));

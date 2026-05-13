@@ -13,7 +13,7 @@ const getReports = (signatureSchema: unknown): Record<string, unknown>[] =>
 		? signatureSchema.reports.filter(isRecord)
 		: [];
 
-export const getTargetReportConfig = (
+const getTargetReportConfig = (
 	signatureSchema: unknown,
 	order: number,
 ): Record<string, unknown> | undefined => getReports(signatureSchema)[order];
@@ -31,7 +31,7 @@ export const getTargetReportKey = (
 	return `target-${order + 1}`;
 };
 
-export const getTargetDisplayValue = (value: unknown): unknown =>
+const getTargetDisplayValue = (value: unknown): unknown =>
 	isRecord(value) && "value" in value ? value.value : value;
 
 export const getTargetProbability = (value: unknown): number | null => {
@@ -49,12 +49,12 @@ export const getTargetLabel = (signatureSchema: unknown, order: number): string 
 		: `Target ${order + 1}`;
 };
 
-export const getTargetKind = (signatureSchema: unknown, order: number): string | null => {
+const getTargetKind = (signatureSchema: unknown, order: number): string | null => {
 	const kind = getReports(signatureSchema)[order]?.kind;
 	return typeof kind === "string" ? kind : null;
 };
 
-export const getTargetClassLabel = (
+const getTargetClassLabel = (
 	signatureSchema: unknown,
 	order: number,
 	classIndex: number,
@@ -62,32 +62,6 @@ export const getTargetClassLabel = (
 	const labels = getReports(signatureSchema)[order]?.labels;
 	const label = Array.isArray(labels) ? labels[classIndex] : undefined;
 	return typeof label === "string" ? label : null;
-};
-
-export const getTargetClassOptions = (
-	signatureSchema: unknown,
-	order: number,
-	predictionValue?: unknown,
-) => {
-	const output = getPredictionOutputs(predictionValue).find((item) => item.type === "classifier");
-	const mapping = Array.isArray(output?.mapping) ? output.mapping : [];
-	const labels = getReports(signatureSchema)[order]?.labels;
-	const size = Math.max(Array.isArray(labels) ? labels.length : 0, mapping.length);
-	return Array.from({ length: size }, (_, index) => ({
-		value: String(index),
-		label: getTargetClassLabel(signatureSchema, order, index) ?? String(mapping[index] ?? index),
-	}));
-};
-
-export const getTargetClassIndex = (value: unknown, predictionValue?: unknown): string => {
-	if (isRecord(value) && typeof value.classIndex === "number") {
-		return String(value.classIndex);
-	}
-	const displayValue = getTargetDisplayValue(value);
-	const output = getPredictionOutputs(predictionValue).find((item) => item.type === "classifier");
-	const mapping = Array.isArray(output?.mapping) ? output.mapping : [];
-	const index = mapping.findIndex((item) => String(item) === String(displayValue));
-	return index >= 0 ? String(index) : "";
 };
 
 export const getSchemaAwareTargetValue = (

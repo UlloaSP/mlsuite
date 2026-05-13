@@ -7,7 +7,7 @@ import { ArrowRight, Database, TrendingUp } from "lucide-react";
 import { AppBadge, cx } from "../../app/components";
 import type { ModelDto } from "../api/modelService";
 import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
-import { getModelAlgorithmLabel } from "../utils";
+import { formatTimestamp, getModelAlgorithmLabel } from "../utils";
 
 const getModelIcon = (type: string) => {
 	switch (type) {
@@ -66,8 +66,8 @@ export function ModelListItem({
 				</p>
 
 				<div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
-					<span>Created {new Date(item.createdAt).toLocaleString()}</span>
-					<span>Updated {new Date(item.createdAt).toLocaleString()}</span>
+					<span>Created {formatTimestamp(item.createdAt)}</span>
+					<span>Updated {formatTimestamp(item.createdAt)}</span>
 					<span>{item.fileName}</span>
 				</div>
 			</div>

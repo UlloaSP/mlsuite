@@ -33,8 +33,11 @@ export function chartPointForService(point: MetricPointDto, serviceName: string)
 }
 
 export function yAxisMode(layers: Record<ChartLayer, boolean>) {
-	const active = Object.entries(layers)
-		.filter(([, enabled]) => enabled)
-		.map(([key]) => LAYER_CONFIG[key as ChartLayer].unit);
+	const active = Object.entries(layers).reduce<Array<"percent" | "bytes">>((units, [key, enabled]) => {
+		if (enabled) {
+			units.push(LAYER_CONFIG[key as ChartLayer].unit);
+		}
+		return units;
+	}, []);
 	return active.length > 0 && active.every((unit) => unit === "bytes") ? "bytes" : "percent";
 }

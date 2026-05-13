@@ -13,12 +13,12 @@ import type {
 import * as modelApi from "./api/modelService";
 
 /** -------------------- Query Keys -------------------- */
-export const GET_MODELS_QUERY_KEY = ["getModels"] as const;
+const GET_MODELS_QUERY_KEY = ["getModels"] as const;
 
 export const GET_SIGNATURES_QUERY_KEY = ({ modelId }: modelApi.GetAllSignaturesRequest) =>
 	["getSignatures", { modelId }] as const;
 
-export const GET_PREDICTIONS_QUERY_KEY = (p: modelApi.GetPredictionsRequest) =>
+const GET_PREDICTIONS_QUERY_KEY = (p: modelApi.GetPredictionsRequest) =>
 	["getPredictions", { signatureId: p.signatureId }] as const;
 
 export const GET_TARGETS_QUERY_KEY = (p: modelApi.GetTargetsRequest) =>
@@ -27,7 +27,7 @@ export const GET_TARGETS_QUERY_KEY = (p: modelApi.GetTargetsRequest) =>
 export const GET_EXPLANATION_FEEDBACK_QUERY_KEY = (p: modelApi.GetExplanationFeedbackRequest) =>
 	["getExplanationFeedback", { predictionId: p.predictionId }] as const;
 
-export const GET_SIGNATURE_QUERY_KEY = ({ signatureId }: modelApi.GetSignatureRequest) =>
+const GET_SIGNATURE_QUERY_KEY = ({ signatureId }: modelApi.GetSignatureRequest) =>
 	["getSignature", { signatureId }] as const;
 
 /** -------------------- Reads -------------------- */
@@ -113,7 +113,7 @@ export const useGetSignature = ({ signatureId }: modelApi.GetSignatureRequest) =
 	});
 
 /** -------------------- Writes -------------------- */
-export const CREATE_MODEL_QUERY_KEY = ["createModel"] as const;
+const CREATE_MODEL_QUERY_KEY = ["createModel"] as const;
 
 export function useCreateModelMutation() {
 	const qc = useQueryClient();
@@ -146,7 +146,7 @@ export function useCreateModelMutation() {
 	});
 }
 
-export const CREATE_SIGNATURE_QUERY_KEY = ["createSignature"] as const;
+const CREATE_SIGNATURE_QUERY_KEY = ["createSignature"] as const;
 
 export function useCreateSignatureMutation() {
 	const qc = useQueryClient();
@@ -163,7 +163,7 @@ export function useCreateSignatureMutation() {
 	});
 }
 
-export const CREATE_PREDICTION_QUERY_KEY = ["createPrediction"] as const;
+const CREATE_PREDICTION_QUERY_KEY = ["createPrediction"] as const;
 
 export function useCreatePredictionMutation() {
 	const qc = useQueryClient();
@@ -180,7 +180,7 @@ export function useCreatePredictionMutation() {
 	});
 }
 
-export const CREATE_TARGET_QUERY_KEY = ["createTarget"] as const;
+const CREATE_TARGET_QUERY_KEY = ["createTarget"] as const;
 
 export function useCreateTargetMutation() {
 	const qc = useQueryClient();
@@ -198,7 +198,7 @@ export function useCreateTargetMutation() {
 	});
 }
 
-export const CREATE_EXPLANATION_FEEDBACK_QUERY_KEY = ["createExplanationFeedback"] as const;
+const CREATE_EXPLANATION_FEEDBACK_QUERY_KEY = ["createExplanationFeedback"] as const;
 
 export function useCreateExplanationFeedbackMutation() {
 	const qc = useQueryClient();
@@ -218,28 +218,7 @@ export function useCreateExplanationFeedbackMutation() {
 	});
 }
 
-export const UPDATE_PREDICTION_QUERY_KEY = ["updatePrediction"] as const;
-
-export function useUpdatePredictionMutation() {
-	const qc = useQueryClient();
-	return useMutation({
-		mutationKey: UPDATE_PREDICTION_QUERY_KEY,
-		mutationFn: (data: modelApi.UpdatePredictionRequest) => modelApi.updatePrediction(data),
-		onSuccess: (prediction: PredictionDto) => {
-			qc.setQueryData<PredictionDto[]>(
-				GET_PREDICTIONS_QUERY_KEY({ signatureId: prediction.signatureId }),
-				(prev) =>
-					prev
-						? prev.map((p) => (p.id === prediction.id ? prediction : p))
-						: [prediction],
-			);
-			qc.invalidateQueries({ queryKey: ["getPredictions"] });
-			qc.invalidateQueries({ queryKey: ["getTargets"] });
-		},
-	});
-}
-
-export const UPDATE_TARGET_QUERY_KEY = ["updateTarget"] as const;
+const UPDATE_TARGET_QUERY_KEY = ["updateTarget"] as const;
 
 export function useUpdateTargetMutation() {
 	const qc = useQueryClient();
@@ -258,7 +237,7 @@ export function useUpdateTargetMutation() {
 	});
 }
 
-export const UPDATE_EXPLANATION_FEEDBACK_QUERY_KEY = ["updateExplanationFeedback"] as const;
+const UPDATE_EXPLANATION_FEEDBACK_QUERY_KEY = ["updateExplanationFeedback"] as const;
 
 export function useUpdateExplanationFeedbackMutation() {
 	const qc = useQueryClient();

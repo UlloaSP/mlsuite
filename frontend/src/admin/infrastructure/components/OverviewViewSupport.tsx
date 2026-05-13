@@ -1,3 +1,4 @@
+// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- KPI sparklines are part of the overview's first paint and share the same chart bundle.
 import {
 	Line as RechartsLine,
 	LineChart as RechartsLineChart,

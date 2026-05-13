@@ -2,56 +2,11 @@ export type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
 export type TeamRole = "TEAM_ADMIN" | "TEAM_MEMBER" | "TEAM_VIEWER";
 export type MembershipStatus = "ACTIVE" | "PENDING" | "REMOVED";
 export type InvitationStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
-export type RoleScope = "SYSTEM" | "ORGANIZATION" | "TEAM";
-export type PermissionKey =
-	| "VIEW_WORKSPACE"
-	| "VIEW_ORGANIZATION"
-	| "EDIT_ORGANIZATION"
-	| "DELETE_ORGANIZATION"
-	| "TRANSFER_OWNERSHIP"
-	| "VIEW_MEMBERS"
-	| "INVITE_MEMBERS"
-	| "MANAGE_MEMBER_ROLES"
-	| "REMOVE_MEMBERS"
-	| "VIEW_INVITATIONS"
-	| "MANAGE_INVITATIONS"
-	| "VIEW_TEAMS"
-	| "CREATE_TEAMS"
-	| "EDIT_TEAMS"
-	| "DELETE_TEAMS"
-	| "VIEW_MODELS"
-	| "CREATE_MODELS"
-	| "EDIT_MODELS"
-	| "DELETE_MODELS"
-	| "RUN_PREDICTIONS"
-	| "VIEW_PLUGINS"
-	| "MANAGE_PLUGINS"
-	| "VIEW_AUDIT_LOG";
-export type WorkspacePermissionKey =
-	| "canViewWorkspace"
-	| "canViewOrganization"
-	| "canEditOrganization"
-	| "canDeleteOrganization"
-	| "canTransferOwnership"
-	| "canViewMembers"
-	| "canInviteMembers"
-	| "canManageMemberRoles"
-	| "canRemoveMembers"
-	| "canViewInvitations"
-	| "canManageInvitations"
-	| "canViewTeams"
-	| "canCreateTeams"
-	| "canEditTeams"
-	| "canDeleteTeams"
-	| "canViewModels"
-	| "canCreateModels"
-	| "canEditModels"
-	| "canDeleteModels"
-	| "canRunPredictions"
-	| "canViewPlugins"
-	| "canManagePlugins";
+type RoleScope = "SYSTEM" | "ORGANIZATION" | "TEAM";
+export type PermissionKey = "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_TEAMS" | "CREATE_TEAMS" | "EDIT_TEAMS" | "DELETE_TEAMS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG";
+export type WorkspacePermissionKey = "canViewWorkspace" | "canViewOrganization" | "canEditOrganization" | "canDeleteOrganization" | "canTransferOwnership" | "canViewMembers" | "canInviteMembers" | "canManageMemberRoles" | "canRemoveMembers" | "canViewInvitations" | "canManageInvitations" | "canViewTeams" | "canCreateTeams" | "canEditTeams" | "canDeleteTeams" | "canViewModels" | "canCreateModels" | "canEditModels" | "canDeleteModels" | "canRunPredictions" | "canViewPlugins" | "canManagePlugins";
 
-export interface WorkspacePermissionsDto {
+interface WorkspacePermissionsDto {
 	canViewWorkspace: boolean;
 	canViewOrganization: boolean;
 	canEditOrganization: boolean;
@@ -158,18 +113,6 @@ export interface TeamDetailDto extends TeamDto {
 	permissions: TeamPermissionsDto;
 }
 
-export interface TeamMembershipDto {
-	id: number;
-	teamId: number;
-	userId: number;
-	fullName: string;
-	email: string;
-	avatarUrl?: string | null;
-	role: TeamRole;
-	status: MembershipStatus;
-	createdAt: string;
-}
-
 export interface TeamMembershipRowDto {
 	id: number;
 	teamId: number;
@@ -197,7 +140,7 @@ export interface InvitationDto {
 	createdAt: string;
 }
 
-export interface WorkspaceUserDto {
+interface WorkspaceUserDto {
 	id: number;
 	fullName: string;
 	email: string;
@@ -248,7 +191,7 @@ export interface CreateInvitationRequest {
 	teamId?: number;
 }
 
-export interface OrganizationAdminStatsDto {
+interface OrganizationAdminStatsDto {
 	totalTeams: number;
 	activeTeams: number;
 	totalMembers: number;
@@ -267,14 +210,14 @@ export interface OrganizationAdminDashboardDto {
 	recentInvitations: InvitationDto[];
 }
 
-export interface PermissionDto {
+interface PermissionDto {
 	key: PermissionKey;
 	label: string;
 	description: string;
 	dangerous: boolean;
 }
 
-export interface PermissionGroupDto {
+interface PermissionGroupDto {
 	name: string;
 	permissions: PermissionDto[];
 }

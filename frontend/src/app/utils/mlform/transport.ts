@@ -16,11 +16,12 @@ const toAnalyzerPayload = (
 	serializedValues: Record<string, unknown>,
 	fields: readonly PredictionPayloadField[],
 ): Record<string, unknown> =>
-	Object.fromEntries(
-		fields
-			.filter((field) => field.id in serializedValues)
-			.map((field) => [getBackendKey(field), serializedValues[field.id]]),
-	);
+	fields.reduce<Record<string, unknown>>((payload, field) => {
+		if (field.id in serializedValues) {
+			payload[getBackendKey(field)] = serializedValues[field.id];
+		}
+		return payload;
+	}, {});
 
 const parseResponse = async (response: Response): Promise<unknown> => {
 	const contentType = response.headers.get("content-type") ?? "";
@@ -55,9 +56,13 @@ const toNumericArray = (value: unknown): number[] => {
 		return [];
 	}
 
-	return value
-		.map((item) => (typeof item === "number" ? item : Number(item)))
-		.filter((item) => !Number.isNaN(item));
+	return value.reduce<number[]>((items, item) => {
+		const numeric = typeof item === "number" ? item : Number(item);
+		if (!Number.isNaN(numeric)) {
+			items.push(numeric);
+		}
+		return items;
+	}, []);
 };
 
 const getClassifierPrediction = (output: JsonRecord): string | undefined => {

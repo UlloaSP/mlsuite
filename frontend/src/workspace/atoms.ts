@@ -1,7 +1,7 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
-export const currentOrganizationIdAtom = atomWithStorage<number | null>(
+const currentOrganizationIdAtom = atomWithStorage<number | null>(
 	"workspace/current-organization-id",
 	null,
 );

@@ -36,11 +36,6 @@ export interface CreateTargetRequest {
 	value: unknown;
 }
 
-export interface UpdatePredictionRequest {
-	predictionId: string;
-	status: "PENDING" | "COMPLETED";
-}
-
 export interface UpdateTargetRequest {
 	targetId: string;
 	realValue?: unknown | null;
@@ -190,10 +185,6 @@ export const createPrediction = async (req: CreatePredictionRequest): Promise<Pr
 
 export const createTarget = async (req: CreateTargetRequest): Promise<TargetDto> => {
 	return appFetch<TargetDto>("/api/targets", json("POST", req as Record<string, any>));
-};
-
-export const updatePrediction = async (req: UpdatePredictionRequest): Promise<PredictionDto> => {
-	return appFetch<PredictionDto>("/api/predictions", json("PATCH", req as Record<string, any>));
 };
 
 export const updateTarget = async (req: UpdateTargetRequest): Promise<TargetDto> => {

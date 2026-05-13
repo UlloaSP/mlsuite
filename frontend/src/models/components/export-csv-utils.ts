@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ExplanationConfig } from "mlform/runtime";
-import { toMlformSchema } from "../../app/utils/mlform";
+import { toMlformSchema } from "../../app/utils/mlform/schema-validation";
 import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { getQuestionnaireFieldIds } from "../questionnaire-feedback";
 

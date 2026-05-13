@@ -6,7 +6,7 @@ import {
 	runServiceAction,
 } from "../api/infrastructureService";
 
-export const INFRASTRUCTURE_QUERY_KEY = ["adminInfrastructure"];
+const INFRASTRUCTURE_QUERY_KEY = ["adminInfrastructure"];
 
 export function useInfrastructureOverview() {
 	return useQuery({
@@ -38,8 +38,13 @@ export function useServiceAction() {
 }
 
 export function useTerminalSession() {
+	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: ({ serviceName, cols, rows }: { serviceName: string; cols: number; rows: number }) =>
 			createTerminalSession(serviceName, cols, rows),
+		onSuccess: () =>
+			queryClient.invalidateQueries({
+				queryKey: INFRASTRUCTURE_QUERY_KEY,
+			}),
 	});
 }

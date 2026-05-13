@@ -3,10 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Editor } from "@monaco-editor/react";
 import { useAtom } from "jotai";
+// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only import; editor component is lazy-loaded below.
 import type * as Monaco from "monaco-editor";
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
 	getActiveCustomFieldDefinitions,
@@ -22,11 +22,8 @@ import {
 } from "../../app/utils/mlform/custom-report";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
 import { pluginCatalogVersionAtom } from "../../app/utils/mlform/plugin-catalog-state";
-import {
-	mlformJsonSchema,
-	schemaNeedsActivePluginCatalog,
-	validateMlformSchema,
-} from "../../app/utils/mlform/index";
+import { schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/schema-needs-plugin-catalog";
+import { mlformJsonSchema, validateMlformSchema } from "../../app/utils/mlform/schema-validation";
 import {
 	type EditorErrorCard,
 	getCompatMarkerStartColumn,
@@ -37,6 +34,7 @@ import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
 import { editorDarkTheme, editorLightTheme, editorOptions } from "../utils/editorConfig";
 
 type MonacoNamespace = typeof import("monaco-editor");
+const MonacoEditor = lazy(() => import("@monaco-editor/react").then((module) => ({ default: module.Editor })));
 
 export function EditorBody() {
 	const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
@@ -53,7 +51,6 @@ export function EditorBody() {
 	const catalogReportDefinitionsRef = useRef<readonly CatalogReportDefinition[]>([]);
 	const catalogDefinitionsRef = useRef<readonly CatalogExplanationDefinition[]>([]);
 	const catalogWarningRef = useRef<EditorErrorCard | null>(null);
-
 	const applyCompatValidation = (
 		text: string,
 		customFieldDefinitions: readonly CatalogFieldDefinition[],
@@ -202,17 +199,20 @@ export function EditorBody() {
 		}
 
 		const content = model.getValue();
-		const workerCards: EditorErrorCard[] = markers
-			.filter((marker) => marker.source !== "mlform-compat")
-			.map((marker) =>
-				getMarkerMessage(content, {
-					...marker,
-					startOffset: model.getOffsetAt({
-						lineNumber: marker.startLineNumber,
-						column: marker.startColumn,
+		const workerCards = markers.reduce<EditorErrorCard[]>((cards, marker) => {
+			if (marker.source !== "mlform-compat") {
+				cards.push(
+					getMarkerMessage(content, {
+						...marker,
+						startOffset: model.getOffsetAt({
+							lineNumber: marker.startLineNumber,
+							column: marker.startColumn,
+						}),
 					}),
-				}),
-			);
+				);
+			}
+			return cards;
+		}, []);
 
 		setSchemaErrors([...workerCards, ...compatCardsRef.current]);
 	};
@@ -285,14 +285,16 @@ export function EditorBody() {
 	}, [theme]);
 
 	return (
-		<Editor
-			className="w-full"
-			defaultLanguage="json"
-			value={schemaText}
-			onChange={handleOnChange}
-			onMount={handleOnMount}
-			onValidate={handleOnValidate}
-			options={editorOptions}
-		/>
+		<Suspense fallback={<div className="h-full w-full bg-[var(--surface-primary)]" />}>
+			<MonacoEditor
+				className="w-full"
+				defaultLanguage="json"
+				value={schemaText}
+				onChange={handleOnChange}
+				onMount={handleOnMount}
+				onValidate={handleOnValidate}
+				options={editorOptions}
+			/>
+		</Suspense>
 	);
 }

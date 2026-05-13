@@ -1,5 +1,5 @@
 import { Building2, FolderKanban, Puzzle, Users } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { Link } from "react-router";
 import {
 	AppBadge,

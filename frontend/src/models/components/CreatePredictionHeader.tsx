@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useParams } from "react-router";
 import { AppPageHeader } from "../../app/components";
 import { schemaErrorsAtom } from "../../editor/atoms";

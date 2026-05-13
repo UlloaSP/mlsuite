@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { X } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m as motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ export type CreatePredictionModalProps = {
 };
 
 type PredictionOutput = { type?: string; execution_time?: number | string };
+const EMPTY_CUSTOM_EXPLANATION_DEFINITIONS: readonly CatalogExplanationDefinition[] = [];
 
 const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
 	const outputs = value.outputs;
@@ -52,7 +53,7 @@ export function CreatePredictionModal({
 	inputs,
 	signatureSchema,
 	explanationsPending,
-	customExplanationDefinitions = [],
+	customExplanationDefinitions = EMPTY_CUSTOM_EXPLANATION_DEFINITIONS,
 	theme,
 }: CreatePredictionModalProps) {
 	const { signatureId } = useParams<{ signatureId: string }>();
@@ -87,24 +88,22 @@ export function CreatePredictionModal({
 	}, [prediction, signatureSchema]);
 
 	const collectQuestionnaireValues = async () => {
-		const results: Array<{ order: number; value: Record<string, unknown> }> = [];
-
-		for (const explanation of explanationEntries) {
-			if (!explanation.feedbackQuestionnaire) {
-				continue;
-			}
-
-			const handle = questionnaireRefs.current[explanation.explanationId];
-			const value = await handle?.submit();
-			if (value && hasFeedbackValues(value)) {
-				results.push({ order: explanation.order, value });
-			}
-		}
-
-		return results;
+		const submitted = await Promise.all(
+			explanationEntries.map(async (explanation) => {
+				if (!explanation.feedbackQuestionnaire) {
+					return null;
+				}
+				const value = await questionnaireRefs.current[explanation.explanationId]?.submit();
+				return value && hasFeedbackValues(value)
+					? { order: explanation.order, value }
+					: null;
+			}),
+		);
+		return submitted.filter((item): item is { order: number; value: Record<string, unknown> } => item !== null);
 	};
 
 	const savePrediction = async (overwrite: boolean) => {
+		// react-doctor-disable-next-line react-doctor/async-parallel -- Create must finish before dependent target and feedback writes can use the prediction id.
 		const created = await mutation.mutateAsync({
 			signatureId: signatureId!,
 			name: predictionName.trim(),
@@ -202,7 +201,7 @@ export function CreatePredictionModal({
 						/>
 
 						<div className="space-y-6">
-							{explanationsPending ? <AppCopy>Waiting for explanation plugin result...</AppCopy> : null}
+							{explanationsPending ? <AppCopy>Waiting for explanation plugin result…</AppCopy> : null}
 							{explanationEntries.map((explanation) => (
 								<PredictionExplanationReviewCard
 									key={explanation.explanationId}

@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import * as userApi from "./api/userService";
 
-export const USER_QUERY_KEY = ["user"];
+const USER_QUERY_KEY = ["user"];
 
 export const useUser = () =>
 	useQuery({

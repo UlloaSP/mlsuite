@@ -3,16 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export type CustomExplanationResult =
-	| string
-	| string[]
-	| {
-			title?: string;
-			html?: string;
-			blocks?: string[];
-			emptyText?: string;
-	  };
-
 export type NormalizedCustomExplanationResult = {
 	title: string | null;
 	html: string | null;

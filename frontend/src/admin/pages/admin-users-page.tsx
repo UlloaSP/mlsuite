@@ -23,6 +23,7 @@ import {
 type Role = "USER" | "SUPERADMIN";
 type UserSortMode = "current" | "name" | "newest" | "oldest" | "enabled" | "disabled";
 
+// react-doctor-disable-next-line react-doctor/prefer-useReducer -- The create-user form fields and sort selector are independent controls.
 export function AdminUsersPage() {
 	const { data: user } = useUser();
 	const { data: users = [], isLoading } = useAdminUsers();
@@ -144,15 +145,15 @@ export function AdminUsersPage() {
 					<table className="w-full min-w-[820px] text-left text-sm">
 						<thead className="text-xs uppercase tracking-[0.14em] text-[var(--text-secondary)]">
 							<tr>
-								<th className="px-3 py-3">User</th>
-								<th className="px-3 py-3">Role</th>
-								<th className="w-32 px-3 py-3 text-center">Enabled</th>
-								<th className="px-3 py-3">Password</th>
+								<th className="p-3">User</th>
+								<th className="p-3">Role</th>
+								<th className="w-32 p-3 text-center">Enabled</th>
+								<th className="p-3">Password</th>
 							</tr>
 						</thead>
 						<tbody>
 							{isLoading ? (
-								<tr><td className="px-3 py-5 text-[var(--text-secondary)]" colSpan={4}>Loading...</td></tr>
+								<tr><td className="px-3 py-5 text-[var(--text-secondary)]" colSpan={4}>Loading…</td></tr>
 							) : visibleUsers.map((row) => (
 								<tr key={row.id} className="border-t border-[var(--border-soft)]">
 									<td className="px-3 py-4">

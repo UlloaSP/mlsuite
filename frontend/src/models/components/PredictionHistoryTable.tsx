@@ -7,6 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { AppPanel } from "../../app/components";
 import type { PredictionDto } from "../api/modelService";
 import {
+	formatTimestamp,
 	getPredictionShortId,
 	getPredictionTimestamp,
 } from "../utils";
@@ -51,7 +52,7 @@ export function PredictionHistoryTable({
 									</div>
 								</td>
 								<td className="px-5 py-4 text-[var(--text-secondary)]">
-									{new Date(getPredictionTimestamp(prediction)).toLocaleString()}
+									{formatTimestamp(getPredictionTimestamp(prediction))}
 								</td>
 								<td className="px-5 py-4">
 									<PredictionStatusPill status={statusByPredictionId.get(prediction.id) ?? "PENDING"} />

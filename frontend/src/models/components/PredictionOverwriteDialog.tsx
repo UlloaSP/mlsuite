@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 
 type PredictionOverwriteDialogProps = {
@@ -19,6 +19,11 @@ export function PredictionOverwriteDialog({
 	onCancel,
 	onConfirm,
 }: PredictionOverwriteDialogProps) {
+	const onCancelRef = useRef(onCancel);
+	useEffect(() => {
+		onCancelRef.current = onCancel;
+	}, [onCancel]);
+
 	useEffect(() => {
 		if (!open) {
 			return;
@@ -26,13 +31,13 @@ export function PredictionOverwriteDialog({
 
 		const handleEscape = (event: KeyboardEvent) => {
 			if (event.key === "Escape") {
-				onCancel();
+				onCancelRef.current();
 			}
 		};
 
 		window.addEventListener("keydown", handleEscape);
 		return () => window.removeEventListener("keydown", handleEscape);
-	}, [onCancel, open]);
+	}, [open]);
 
 	if (!open) {
 		return null;
@@ -40,7 +45,12 @@ export function PredictionOverwriteDialog({
 
 	return (
 		<div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
-			<div className="absolute inset-0" onClick={onCancel} />
+			<button
+				type="button"
+				aria-label="Close overwrite dialog"
+				className="absolute inset-0 cursor-default"
+				onClick={onCancel}
+			/>
 			<AppPanel className="relative z-10 w-full max-w-lg space-y-5 p-6">
 				<div className="space-y-2">
 					<AppSectionTitle>Overwrite prediction?</AppSectionTitle>

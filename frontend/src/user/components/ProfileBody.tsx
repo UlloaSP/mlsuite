@@ -14,7 +14,7 @@ import {
 	SunMoon,
 	User,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { fullscreenAtom, themeAtom } from "../../app/atoms";
 import type { UserDTO } from "../api/userService";
 import { InfoCard } from "./InfoCard";

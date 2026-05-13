@@ -1,5 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { AppBreadcrumbs, AppButton, AppEmptyState, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components";
@@ -15,7 +15,7 @@ import { extractPredictionExplanationEntries } from "../explanation-feedback-uti
 import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, useGetModels, useGetPredictions, useGetSignature } from "../hooks";
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
 import * as modelApi from "../api/modelService";
-import { findModelById, getPredictionTimestamp, getSignatureVersionLabel } from "../utils";
+import { findModelById, formatTimestamp, getPredictionTimestamp, getSignatureVersionLabel, toTimestampMillis } from "../utils";
 
 type SignatureDetailTab = "technical" | "history";
 
@@ -26,7 +26,7 @@ const isWithinDateRange = (timestamp: string, range: PredictionDateRangeFilter):
 		return true;
 	}
 
-	const time = new Date(timestamp).getTime();
+	const time = toTimestampMillis(timestamp);
 	if (Number.isNaN(time)) {
 		return false;
 	}
@@ -157,8 +157,8 @@ export function SignatureDetailPage() {
 			return matchesName && matchesStatus && matchesDate;
 		})
 		.sort((left, right) =>
-			new Date(getPredictionTimestamp(right)).getTime()
-			- new Date(getPredictionTimestamp(left)).getTime());
+			toTimestampMillis(getPredictionTimestamp(right))
+			- toTimestampMillis(getPredictionTimestamp(left)));
 
 	if (!user || error) {
 		return <NotFoundError />;
@@ -203,7 +203,7 @@ export function SignatureDetailPage() {
 							<AppPageHeader
 								eyebrow="Schema Detail"
 								title={`Schema ${getSignatureVersionLabel(signature)}`}
-								description={`${signature.name} · Created ${new Date(signature.createdAt).toLocaleString()}${signature.origin ? " · Based on previous version" : ""}`}
+								description={`${signature.name} · Created ${formatTimestamp(signature.createdAt)}${signature.origin ? " · Based on previous version" : ""}`}
 								aside={
 									<>
 										{canRunPredictions ? (

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { Braces, Code, RefreshCw } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { schemaErrorsAtom } from "../../editor/atoms";
 
@@ -107,11 +107,11 @@ export function ToggleButton({
 								transition={{ duration: 0.2 }}
 							>
 								{isTransitioning ? (
-									<RefreshCw className="h-5 w-5 animate-spin" />
+									<RefreshCw className="size-5 animate-spin" />
 								) : isJsonActive ? (
-									<Braces className="h-5 w-5" />
+									<Braces className="size-5" />
 								) : (
-									<Code className="h-5 w-5" />
+									<Code className="size-5" />
 								)}
 							</motion.div>
 						</div>
@@ -125,7 +125,7 @@ export function ToggleButton({
 							transition={{ duration: 0.2 }}
 							className="flex h-10 w-20 items-center justify-center text-[var(--text-secondary)]"
 						>
-							<Braces className="h-5 w-5" />
+							<Braces className="size-5" />
 						</motion.div>
 
 						<motion.div
@@ -135,7 +135,7 @@ export function ToggleButton({
 							transition={{ duration: 0.2 }}
 							className="flex h-10 w-20 items-center justify-center text-[var(--text-secondary)]"
 						>
-							<Code className="h-5 w-5" />
+							<Code className="size-5" />
 						</motion.div>
 					</div>
 				</motion.button>
@@ -150,8 +150,8 @@ export function ToggleButton({
 			>
 				{isTransitioning ? (
 					<span className="flex items-center gap-2">
-						<RefreshCw className="h-3 w-3 animate-spin" />
-						Processing...
+						<RefreshCw className="size-3 animate-spin" />
+						Processing…
 					</span>
 				) : (
 					`${isJsonActive ? "JSON" : "HTML"} Mode`

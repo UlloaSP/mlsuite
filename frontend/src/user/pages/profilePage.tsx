@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { AppBadge, AppPage, AppPanel, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useWorkspaceContext } from "../../workspace/hooks";

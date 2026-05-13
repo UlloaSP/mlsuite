@@ -124,9 +124,9 @@ export function CreateModelPage() {
 		const unsaved = bundles.filter(
 			(b) => b.name.trim() && !b.saved && !b.saving,
 		);
-		for (const b of unsaved) await saveBundle(b.id);
-		navigate("/models");
-	};
+	await Promise.all(unsaved.map((bundle) => saveBundle(bundle.id)));
+	navigate("/models");
+};
 
 	// ── Derived stats ────────────────────────────────────────────────────────
 
@@ -155,7 +155,7 @@ export function CreateModelPage() {
 					<p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-primary)]">
 						Model Studio
 					</p>
-					<h1 className="text-[27px] font-bold leading-[1.05] tracking-[-0.8px] text-[var(--text-primary)]">
+					<h1 className="text-[27px] font-semibold leading-[1.05] tracking-[-0.8px] text-[var(--text-primary)]">
 						Create New Model
 					</h1>
 					<p className="mt-1.5 text-[13px] text-[var(--text-muted)]">

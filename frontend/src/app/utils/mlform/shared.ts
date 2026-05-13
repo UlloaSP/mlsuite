@@ -9,7 +9,7 @@ import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";
 
 export type JsonRecord = Record<string, unknown>;
-export type CompatIssueSeverity = "error" | "warning";
+type CompatIssueSeverity = "error" | "warning";
 
 export type CompatIssue = {
 	path: Array<string | number>;
@@ -54,7 +54,7 @@ export type PredictionPayloadField = Pick<NormalizedFieldConfig, "id" | "label" 
 export const isRecord = (value: unknown): value is JsonRecord =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const slugify = (value: string): string => {
+const slugify = (value: string): string => {
 	const normalized = value
 		.trim()
 		.toLowerCase()

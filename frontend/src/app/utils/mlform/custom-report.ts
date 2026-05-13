@@ -6,14 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReportConfig, ReportDefinition } from "mlform/runtime";
 import type { PluginDto } from "../../api/pluginService";
 import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "./plugin-catalog";
-import {
-	CUSTOM_REPORT_COMPONENT,
-	customReportTemplate,
-	resolveCustomReportDefinition,
-	validateCustomReportSource,
-} from "./custom-report-runtime";
+import { CUSTOM_REPORT_COMPONENT, resolveCustomReportDefinition } from "./custom-report-runtime";
 
-export { CUSTOM_REPORT_COMPONENT, customReportTemplate, validateCustomReportSource };
+export { CUSTOM_REPORT_COMPONENT };
 
 export type CatalogReportDefinition = Pick<
 	PluginDto,
@@ -62,7 +57,7 @@ export const invalidateActiveCustomReportDefinition = (): void => {
 	invalidatePluginCatalog();
 };
 
-export const getCatalogReportDefinitions = async (): Promise<readonly CatalogReportDefinition[]> => {
+const getCatalogReportDefinitions = async (): Promise<readonly CatalogReportDefinition[]> => {
 	catalogDefinitionsPromise ??= loadPlugins().then(async (items) => {
 		const definitions = (await Promise.all(items.map((item) => toCatalogDefinition(item)))).filter(
 			(definition): definition is CatalogReportDefinition => definition !== null,

@@ -3,11 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export const MODEL_EXTS = [".onnx", ".joblib", ".pkl", ".h5", ".pt", ".pth", ".mlmodel", ".tflite"];
+const MODEL_EXTS = [".onnx", ".joblib", ".pkl", ".h5", ".pt", ".pth", ".mlmodel", ".tflite"];
 export const DF_EXTS = [".csv", ".parquet", ".feather", ".xlsx"];
 export const ALL_EXTS = [...MODEL_EXTS, ...DF_EXTS];
 
-export function getExt(name: string): string {
+function getExt(name: string): string {
 	const dot = name.lastIndexOf(".");
 	return dot === -1 ? "" : name.slice(dot).toLowerCase();
 }

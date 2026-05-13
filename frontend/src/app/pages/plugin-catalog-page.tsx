@@ -4,12 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowUpDown, Check, ChevronDown, Power, Search, Upload } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useSetAtom } from "jotai";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { deactivateAllPlugins, deletePlugin, getPlugins, uploadPlugin, activatePlugin, deactivatePlugin } from "../api/pluginService";
 import { AppButton, AppPage, AppPageHeader, AppPanel, AppSelect, AppSurface, AppTextField, cx } from "../components";
+import { invalidateActiveCustomExplanationDefinition } from "../utils/mlform/custom-explanation";
+import { invalidateActiveCustomFieldDefinition } from "../utils/mlform/custom-field";
+import { invalidateActiveCustomReportDefinition } from "../utils/mlform/custom-report";
 import { detectPluginType, invalidatePluginCatalog } from "../utils/mlform/plugin-catalog";
 import { bumpPluginCatalogVersionAtom } from "../utils/mlform/plugin-catalog-state";
 import { useUser } from "../../user/hooks";
@@ -28,6 +31,7 @@ const enrichPlugin = async (item: PluginPageItem | Awaited<ReturnType<typeof get
 	}
 };
 
+// react-doctor-disable-next-line react-doctor/prefer-useReducer -- Filters, menu state, upload busy state, and catalog rows are independent UI controls.
 export function PluginCatalogPage() {
 	const { data: user, error } = useUser();
 	const { data: workspace } = useWorkspaceContext();
@@ -75,17 +79,13 @@ export function PluginCatalogPage() {
 		};
 	}, []);
 
-	if (!user || error) {
-		return <NotFoundError />;
-	}
-	if (workspace && !workspace.permissions.canViewPlugins) {
-		return <NotFoundError />;
-	}
-
 	const canManagePlugins = workspace?.permissions.canManagePlugins ?? false;
 
 	const reloadCatalog = async () => {
 		invalidatePluginCatalog();
+		invalidateActiveCustomFieldDefinition();
+		invalidateActiveCustomReportDefinition();
+		invalidateActiveCustomExplanationDefinition();
 		bumpPluginCatalogVersion();
 		await refreshItems();
 	};
@@ -183,6 +183,13 @@ export function PluginCatalogPage() {
 	const activeCount = items.filter((item) => item.active).length;
 	const selectedTypeItems = typeFilter === "all" ? items : items.filter((item) => item.pluginType === typeFilter);
 	const selectedTypeActiveCount = selectedTypeItems.filter((item) => item.active).length;
+
+	if (!user || error) {
+		return <NotFoundError />;
+	}
+	if (workspace && !workspace.permissions.canViewPlugins) {
+		return <NotFoundError />;
+	}
 
 	return (
 		<AppPage>

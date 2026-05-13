@@ -128,7 +128,7 @@ export class PredictionCustomReportRendererElement
 			empty.className = "empty";
 			empty.textContent =
 				normalized.emptyText ??
-				(state?.status === "loading" ? "Loading report..." : "No report content returned.");
+				(state?.status === "loading" ? "Loading report…" : "No report content returned.");
 			shell.append(empty);
 		}
 

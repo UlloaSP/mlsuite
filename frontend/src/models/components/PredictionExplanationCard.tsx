@@ -42,6 +42,7 @@ export function PredictionExplanationCard({
 	const [draftValues, setDraftValues] = useState<Record<string, unknown>>(savedValues);
 	const [mode, setMode] = useState<"view" | "edit">("view");
 
+	// react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Feedback refresh must reset saved snapshot, draft values, and mode together.
 	useEffect(() => {
 		setSavedSnapshot(savedValues);
 		setDraftValues(savedValues);

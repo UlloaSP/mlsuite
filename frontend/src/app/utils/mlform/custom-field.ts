@@ -6,14 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { FieldConfig, FieldDefinition } from "mlform/runtime";
 import type { PluginDto } from "../../api/pluginService";
 import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "./plugin-catalog";
-import {
-	CUSTOM_FIELD_COMPONENT,
-	customFieldTemplate,
-	resolveCustomFieldDefinition,
-	validateCustomFieldSource,
-} from "./custom-field-runtime";
+import { CUSTOM_FIELD_COMPONENT, resolveCustomFieldDefinition } from "./custom-field-runtime";
 
-export { CUSTOM_FIELD_COMPONENT, customFieldTemplate, validateCustomFieldSource };
+export { CUSTOM_FIELD_COMPONENT };
 
 export type CatalogFieldDefinition = Pick<
 	PluginDto,
@@ -62,7 +57,7 @@ export const invalidateActiveCustomFieldDefinition = (): void => {
 	invalidatePluginCatalog();
 };
 
-export const getCatalogFieldDefinitions = async (): Promise<readonly CatalogFieldDefinition[]> => {
+const getCatalogFieldDefinitions = async (): Promise<readonly CatalogFieldDefinition[]> => {
 	catalogDefinitionsPromise ??= loadPlugins().then(async (items) => {
 		const definitions = (await Promise.all(items.map((item) => toCatalogDefinition(item)))).filter(
 			(definition): definition is CatalogFieldDefinition => definition !== null,

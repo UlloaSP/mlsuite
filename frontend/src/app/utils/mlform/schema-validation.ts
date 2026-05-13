@@ -134,26 +134,31 @@ const mergeIssues = (
 		}
 		return true;
 	});
-	const allFieldKinds = new Set((options.customFieldDefinitions ?? []).map((definition) => definition.kind));
-	const activeFieldKinds = new Set(
-		(options.customFieldDefinitions ?? [])
-			.filter((definition) => definition.active)
-			.map((definition) => definition.kind),
-	);
-	const allReportKinds = new Set((options.customReportDefinitions ?? []).map((definition) => definition.kind));
-	const activeReportKinds = new Set(
-		(options.customReportDefinitions ?? [])
-			.filter((definition) => definition.active)
-			.map((definition) => definition.kind),
-	);
+	const allFieldKinds = new Set<string>();
+	const activeFieldKinds = new Set<string>();
+	for (const definition of options.customFieldDefinitions ?? []) {
+		allFieldKinds.add(definition.kind);
+		if (definition.active) {
+			activeFieldKinds.add(definition.kind);
+		}
+	}
+	const allReportKinds = new Set<string>();
+	const activeReportKinds = new Set<string>();
+	for (const definition of options.customReportDefinitions ?? []) {
+		allReportKinds.add(definition.kind);
+		if (definition.active) {
+			activeReportKinds.add(definition.kind);
+		}
+	}
 	const allExplanationKinds = new Set(
 		(options.customExplanationDefinitions ?? []).map((definition) => definition.kind),
 	);
-	const activeExplanationKinds = new Set(
-		(options.customExplanationDefinitions ?? [])
-			.filter((definition) => definition.active)
-			.map((definition) => definition.kind),
-	);
+	const activeExplanationKinds = new Set<string>();
+	for (const definition of options.customExplanationDefinitions ?? []) {
+		if (definition.active) {
+			activeExplanationKinds.add(definition.kind);
+		}
+	}
 	appendFieldIssues(schema, allFieldKinds, activeFieldKinds, filteredIssues);
 	appendReportIssues(schema, allReportKinds, activeReportKinds, filteredIssues);
 	appendExplanationIssues(schema, allExplanationKinds, activeExplanationKinds, filteredIssues);

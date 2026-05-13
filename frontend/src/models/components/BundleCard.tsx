@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Check, Plus, RefreshCcw, Save, X } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { cx } from "../../app/components";
 import type { Bundle } from "../bundle-types";
 import { BundleFilePill } from "./BundleFilePill";
@@ -117,7 +117,7 @@ export function BundleCard({
 							type="button"
 							onClick={onRemove}
 							aria-label="Remove bundle"
-							className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[7px] border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-muted)] transition-all duration-150 hover:border-[var(--accent-primary)] hover:bg-[var(--accent-quiet)] hover:text-[var(--accent-primary)]"
+							className="inline-flex size-7 flex-shrink-0 items-center justify-center rounded-[7px] border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-muted)] transition-all duration-150 hover:border-[var(--accent-primary)] hover:bg-[var(--accent-quiet)] hover:text-[var(--accent-primary)]"
 						>
 							<X size={12} />
 						</button>

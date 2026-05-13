@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import {
@@ -21,7 +21,7 @@ import { useWorkspaceContext } from "../../workspace/hooks";
 import { ModelSignaturesTab } from "../components/ModelSignaturesTab";
 import { ModelSummaryTab } from "../components/ModelSummaryTab";
 import { useGetModels, useGetSignatures } from "../hooks";
-import { findModelById, getModelAlgorithmLabel } from "../utils";
+import { findModelById, formatTimestamp, getModelAlgorithmLabel } from "../utils";
 
 type ModelDetailTab = "summary" | "signatures";
 
@@ -84,7 +84,7 @@ export function ModelDetailPage() {
 							<AppPageHeader
 								eyebrow="Model Detail"
 								title={model.name}
-								description={`${getModelAlgorithmLabel(model)} · Created ${new Date(model.createdAt).toLocaleString()}`}
+								description={`${getModelAlgorithmLabel(model)} · Created ${formatTimestamp(model.createdAt)}`}
 								aside={canEditModels ? (
 									<AppButton
 										type="button"

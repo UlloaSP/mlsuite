@@ -13,6 +13,7 @@ import { useGetExplanationFeedback, useGetTargets } from "../hooks";
 import { useGetOutputFeedback } from "../output-feedback-hooks";
 import { useUser } from "../../user/hooks";
 import {
+	formatTimestamp,
 	getPredictionExecutionTime,
 	getPredictionTimestamp,
 } from "../utils";
@@ -72,26 +73,42 @@ export function PredictionDetailPageContent({
 		[prediction.prediction, signature?.inputSignature, customExplanationDefinitions],
 	);
 	const currentUserId = user?.id ? Number(user.id) : null;
-	const myExplanationFeedbackByOrder = useMemo(
-		() => new Map(explanationFeedback.filter((item) => item.userId === currentUserId).map((item) => [item.order, item])),
-		[explanationFeedback, currentUserId],
-	);
 	const otherExplanationFeedbackByOrder = useMemo(() => {
 		const map = new Map<number, typeof explanationFeedback>();
-		for (const item of explanationFeedback.filter((fb) => fb.userId !== currentUserId)) {
+		for (const item of explanationFeedback) {
+			if (item.userId === currentUserId) {
+				continue;
+			}
 			const list = map.get(item.order) ?? [];
 			list.push(item);
 			map.set(item.order, list);
 		}
 		return map;
 	}, [explanationFeedback, currentUserId]);
-	const myOutputFeedbackByOrder = useMemo(
-		() => new Map(outputFeedback.filter((item) => item.userId === currentUserId).map((item) => [item.order, item])),
-		[outputFeedback, currentUserId],
-	);
+	const myExplanationFeedbackByOrder = useMemo(() => {
+		const map = new Map<number, (typeof explanationFeedback)[number]>();
+		for (const item of explanationFeedback) {
+			if (item.userId === currentUserId) {
+				map.set(item.order, item);
+			}
+		}
+		return map;
+	}, [explanationFeedback, currentUserId]);
+	const myOutputFeedbackByOrder = useMemo(() => {
+		const map = new Map<number, (typeof outputFeedback)[number]>();
+		for (const item of outputFeedback) {
+			if (item.userId === currentUserId) {
+				map.set(item.order, item);
+			}
+		}
+		return map;
+	}, [outputFeedback, currentUserId]);
 	const otherOutputFeedbackByOrder = useMemo(() => {
 		const map = new Map<number, typeof outputFeedback>();
-		for (const item of outputFeedback.filter((fb) => fb.userId !== currentUserId)) {
+		for (const item of outputFeedback) {
+			if (item.userId === currentUserId) {
+				continue;
+			}
 			const list = map.get(item.order) ?? [];
 			list.push(item);
 			map.set(item.order, list);
@@ -111,7 +128,12 @@ export function PredictionDetailPageContent({
 
 	const myFeedbackStatus = useMemo(() => {
 		const requiredOutputs = reports.length;
-		const requiredExplanations = explanationEntries.filter((e) => e.feedbackQuestionnaire).length;
+		let requiredExplanations = 0;
+		for (const entry of explanationEntries) {
+			if (entry.feedbackQuestionnaire) {
+				requiredExplanations += 1;
+			}
+		}
 		const myOutputCount = myOutputFeedbackByOrder.size;
 		const myExplanationCount = myExplanationFeedbackByOrder.size;
 		return myOutputCount >= requiredOutputs && myExplanationCount >= requiredExplanations
@@ -124,7 +146,7 @@ export function PredictionDetailPageContent({
 			<PredictionDetailMetrics
 				targetCount={targets.length}
 				executionTime={getPredictionExecutionTime(prediction.prediction)}
-				timestamp={new Date(getPredictionTimestamp(prediction)).toLocaleString()}
+				timestamp={formatTimestamp(getPredictionTimestamp(prediction))}
 				status={myFeedbackStatus}
 			/>
 

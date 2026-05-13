@@ -18,10 +18,12 @@ type PredictionExplanationReviewCardProps = {
 	onValuesChange?: (values: Record<string, unknown>) => void;
 };
 
+const EMPTY_DRAFT_VALUES: Record<string, unknown> = {};
+
 export function PredictionExplanationReviewCard({
 	explanation,
 	theme,
-	draftValues = {},
+	draftValues = EMPTY_DRAFT_VALUES,
 	questionnaireRef,
 	onValuesChange,
 }: PredictionExplanationReviewCardProps) {

@@ -6,10 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueries } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
 import type { ReportConfig } from "mlform/runtime";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../app/components";
-import { validateMlformSchema } from "../../app/utils/mlform";
+import { validateMlformSchema } from "../../app/utils/mlform/schema-validation";
 import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService";

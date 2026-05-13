@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AlertCircle } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 
 type EditorErrorCardProps = {
 	error: {
@@ -31,7 +31,7 @@ export function EditorErrorCard({ error }: EditorErrorCardProps) {
 				className={`mt-0.5 ${isWarning ? "text-[var(--warning-text)]" : "text-[var(--danger-text)]"}`}
 			/>
 			<motion.div>
-				<motion.div className="flex items-center space-x-2 mb-1">
+				<motion.div className="flex items-center gap-x-2 mb-1">
 					<motion.span
 						className={`text-sm font-semibold ${
 							isWarning ? "text-[var(--warning-text)]" : "text-[var(--danger-text)]"

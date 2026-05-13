@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as adminApi from "./api/adminUserService";
 
-export const ADMIN_USERS_QUERY_KEY = ["adminUsers"];
+const ADMIN_USERS_QUERY_KEY = ["adminUsers"];
 
 export const useAdminUsers = () =>
 	useQuery({
@@ -26,8 +26,11 @@ export const useUpdateAdminUser = () => {
 	});
 };
 
-export const useResetAdminUserPassword = () =>
-	useMutation({
+export const useResetAdminUserPassword = () => {
+	const qc = useQueryClient();
+	return useMutation({
 		mutationFn: ({ id, password }: { id: number; password: string }) =>
 			adminApi.resetPassword(id, password),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
 	});
+};
