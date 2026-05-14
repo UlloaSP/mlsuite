@@ -134,6 +134,7 @@ export interface InvitationDto {
 	teamId?: number | null;
 	email: string;
 	role: OrganizationRole;
+	roleDefinition?: RoleSummaryDto | null;
 	status: InvitationStatus;
 	token: string;
 	expiresAt: string;
@@ -187,7 +188,8 @@ export interface UpdateTeamRequest {
 
 export interface CreateInvitationRequest {
 	email: string;
-	role: OrganizationRole;
+	role?: OrganizationRole;
+	roleDefinitionId?: number;
 	teamId?: number;
 }
 

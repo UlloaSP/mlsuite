@@ -90,6 +90,14 @@ class PredictionControllerTest {
         assertEquals(1, controller.getAllPredictions(authentication, 11L).getBody().size());
     }
 
+    @Test
+    void getLastPredictionId_ReturnsSequenceDto() {
+        when(predictionCatalogUseCase.getLastPredictionId(3L)).thenReturn(42L);
+
+        assertEquals(42L, controller.getLastPredictionId(authentication).getBody().lastId());
+        verify(predictionCatalogUseCase).getLastPredictionId(3L);
+    }
+
     private Prediction prediction(String name, PredictionStatus status) {
         Model model = new Model();
         model.setId(1L);

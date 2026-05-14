@@ -36,3 +36,11 @@
 - Rule: when stopping a public-page request, trace parent route/layout wrappers too; verify the rendered route branch, not just the leaf component.
 - User correction: auth landing refactor accidentally changed the intended typography.
 - Rule: when splitting visual components, preserve page-level font families and display/mono font assignments from the original design unless typography change is explicitly requested.
+
+- User correction: invite-user role selector used a hardcoded legacy role list, so newly created roles could not be assigned from invitations.
+- Rule: role assignment UI must read role definitions from the role catalog and persist role definition ids; legacy enum roles are fallback compatibility only.
+
+- User correction: admin reset password used browser prompt, exposing password text and giving poor UI.
+- Rule: password entry/reset flows must use masked inputs by default with explicit eye-toggle reveal; never collect secrets through browser prompt/plain text UI.
+- User correction: bulk upload generated names used upload row index, but names need real DB prediction sequence base.
+- Rule: when UI generates persisted auto names that must align with DB ids, fetch authoritative DB sequence/max id from API and use row order only as offset.

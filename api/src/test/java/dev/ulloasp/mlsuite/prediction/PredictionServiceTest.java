@@ -168,6 +168,15 @@ class PredictionServiceTest {
         assertEquals(1, service.getPredictionsBySignatureId(3L, 11L).size());
     }
 
+    @Test
+    void getLastPredictionId_ReturnsGlobalDbMaxAfterOperateAuth() {
+        when(userLookupService.requireById(3L)).thenReturn(user(3L));
+        when(predictionRepository.findLastPredictionId()).thenReturn(42L);
+
+        assertEquals(42L, service.getLastPredictionId(3L));
+        verify(workspaceAuthorizationService).requireOrganizationOperate(3L, 41L);
+    }
+
     private User user(Long id) {
         User user = new User();
         user.setId(id);

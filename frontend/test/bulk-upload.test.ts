@@ -59,13 +59,30 @@ describe("bulk upload helpers", () => {
 		});
 	});
 
+	it("generates prediction names when name column is omitted", () => {
+		const result = parseCsvPredictionFile(
+			'age,active,segment,tags,points\n42,true,A,red; blue,"[1,2]"\n31,false,B,,"[]"',
+			bulkSchema,
+			10000,
+			41,
+		);
+
+		expect(result.skipped).toHaveLength(0);
+		expect(result.records.map((record) => record.name)).toEqual(["bulk-upload-42", "bulk-upload-43"]);
+		expect(result.records[0]?.inputs.age).toBe(42);
+	});
+
+	it("requires db prediction id base when name column is omitted", () => {
+		const result = parseCsvPredictionFile('age,active,segment,tags,points\n42,true,A,red; blue,"[1,2]"', bulkSchema);
+
+		expect(result.records).toHaveLength(0);
+		expect(result.skipped[0]?.reason).toContain("prediction id base");
+	});
+
 	it("reports missing and unknown csv headers", () => {
-		const missingName = parseCsvPredictionFile("age,active,segment,tags,points\n1,true,A,,[]", bulkSchema);
 		const missingInput = parseCsvPredictionFile("name,age,active,segment,tags\nrow,1,true,A,,", bulkSchema);
 		const unknownInput = parseCsvPredictionFile("name,age,active,segment,tags,points,extra\nrow,1,true,A,,[],x", bulkSchema);
 
-		expect(missingName.records).toHaveLength(0);
-		expect(missingName.skipped[0]?.reason).toContain("name");
 		expect(missingInput.skipped[0]?.reason).toContain("Missing input columns");
 		expect(unknownInput.skipped[0]?.reason).toContain("Unknown input columns");
 	});

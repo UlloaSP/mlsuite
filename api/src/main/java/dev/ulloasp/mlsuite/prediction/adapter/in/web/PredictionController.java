@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import dev.ulloasp.mlsuite.prediction.application.dto.CreatePredictionParams;
 import dev.ulloasp.mlsuite.prediction.application.dto.PredictionDto;
+import dev.ulloasp.mlsuite.prediction.application.dto.PredictionSequenceDto;
 import dev.ulloasp.mlsuite.prediction.application.dto.UpdatePredictionParams;
 import jakarta.validation.Valid;
 
@@ -35,6 +36,9 @@ public interface PredictionController {
         @GetMapping
         public ResponseEntity<List<PredictionDto>> getAllPredictions(Authentication authentication,
                         @RequestParam Long signatureId);
+
+        @GetMapping("/last-id")
+        public ResponseEntity<PredictionSequenceDto> getLastPredictionId(Authentication authentication);
 
 }
 

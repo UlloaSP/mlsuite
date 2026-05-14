@@ -13,6 +13,7 @@ import {
 	AppTextField,
 } from "../../app/components";
 import { useUser } from "../../user/hooks";
+import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
 import {
 	useAdminUsers,
 	useCreateAdminUser,
@@ -22,6 +23,7 @@ import {
 
 type Role = "USER" | "SUPERADMIN";
 type UserSortMode = "current" | "name" | "newest" | "oldest" | "enabled" | "disabled";
+type ResetTarget = { id: number; fullName: string } | null;
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- The create-user form fields and sort selector are independent controls.
 export function AdminUsersPage() {
@@ -35,6 +37,7 @@ export function AdminUsersPage() {
 	const [password, setPassword] = useState("");
 	const [role, setRole] = useState<Role>("USER");
 	const [sortMode, setSortMode] = useState<UserSortMode>("current");
+	const [resetTarget, setResetTarget] = useState<ResetTarget>(null);
 	const userOrderRef = useRef(new Map<number, number>());
 
 	const visibleUsers = useMemo(() => {
@@ -91,6 +94,13 @@ export function AdminUsersPage() {
 				setPassword("");
 				setRole("USER");
 			} },
+		);
+	};
+	const submitResetPassword = (nextPassword: string) => {
+		if (!resetTarget) return;
+		resetPassword.mutate(
+			{ id: resetTarget.id, password: nextPassword },
+			{ onSuccess: () => setResetTarget(null) },
 		);
 	};
 
@@ -187,10 +197,7 @@ export function AdminUsersPage() {
 										<AppButton
 											type="button"
 											variant="secondary"
-											onClick={() => {
-												const next = window.prompt("New password");
-												if (next) resetPassword.mutate({ id: row.id, password: next });
-											}}
+											onClick={() => setResetTarget({ id: row.id, fullName: row.fullName })}
 										>
 											<KeyRound size={15} />Reset
 										</AppButton>
@@ -200,6 +207,14 @@ export function AdminUsersPage() {
 						</tbody>
 					</table>
 				</AppPanel>
+				{resetTarget ? (
+					<ResetPasswordDialog
+						fullName={resetTarget.fullName}
+						isPending={resetPassword.isPending}
+						onClose={() => setResetTarget(null)}
+						onSubmit={submitResetPassword}
+					/>
+				) : null}
 			</AppSurface>
 		</AppPage>
 	);

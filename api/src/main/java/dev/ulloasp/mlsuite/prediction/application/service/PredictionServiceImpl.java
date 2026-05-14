@@ -149,5 +149,13 @@ public class PredictionServiceImpl implements PredictionService {
         return predictionRepository.findBySignatureIdAndOrganizationId(signatureId, organizationId);
     }
 
+    @Override
+    public Long getLastPredictionId(Long userId) {
+        userLookupService.requireById(userId);
+        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        workspaceAuthorizationService.requireOrganizationOperate(userId, organizationId);
+        return predictionRepository.findLastPredictionId();
+    }
+
 }
 

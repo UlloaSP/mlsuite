@@ -1,5 +1,139 @@
 # Config Hardcode Removal Plan
 
+## Prediction Export Feedback Columns
+
+### Goal
+- [x] Export prediction `name`, not prediction `id`.
+- [x] Remove standalone `reviewer` column.
+- [x] Put reviewer email in feedback column names, e.g. `output.<key>.feedback.<email>`.
+
+### Plan
+- [x] Phase 1. Update export header/row construction.
+- [x] Phase 2. Add focused export helper test coverage if helper boundary exists; otherwise cover via narrow build/test.
+- [x] Phase 3. Verify frontend build/checks/line caps/graph and document review.
+
+### Acceptance
+- [x] CSV first metadata column is `prediction_name`.
+- [x] No `prediction_id` or `reviewer` header remains in prediction export.
+- [x] Each prediction emits one row with feedback values spread across email-specific columns.
+
+### Review
+- Status: fixed.
+- Prediction export CSV now starts with `prediction_name`; `prediction_id` is removed.
+- Standalone `reviewer` column removed; output feedback headers now include reviewer email, e.g. `output.score.feedback.ana@example.com`.
+- Export now emits one row per prediction and spreads feedback into reviewer-specific columns.
+- Split export row construction into `buildPredictionExportData` to keep component under line cap and add focused test coverage.
+- Verification:
+  - `vp test test/export-csv.test.ts` ✅ 1 test
+  - `vp run build` from `frontend/` ✅ warnings only: existing `runtime-config.js` non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; remaining warnings are pre-existing infra unused exports and restored auth hero bold typography
+  - `vp check` ❌ blocked by existing formatting backlog in 469 files, mostly `dist/`
+  - touched file line caps ✅ all touched source/test files under 300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+
+## Bulk Upload Auto Names
+
+### Goal
+- [x] Allow prediction bulk upload files without `name` column.
+- [x] Assign missing-column names as `bulk-upload-${lastPredictionId+n}` from DB.
+- [x] Keep explicit `name` column behavior unchanged.
+
+### Plan
+- [x] Phase 1. Add backend last-prediction-id read endpoint from DB.
+- [x] Phase 2. Pass DB id base into tabular parser from bulk upload hook.
+- [x] Phase 3. Update bulk upload tests for DB-based no-name auto naming.
+- [x] Phase 4. Verify focused tests/build/line caps/graph and document review.
+
+### Acceptance
+- [x] CSV/XLSX with no `name` header still parse if schema input columns exist.
+- [x] Generated names are deterministic from DB base: `bulk-upload-${lastId+1}`, ...
+- [x] Existing `name` column still requires non-empty values.
+
+### Review
+- Status: fixed.
+- Backend adds `GET /api/predictions/last-id`, guarded by current-org operate permission, reading global max `Prediction.id` from DB.
+- Bulk upload hook fetches that DB base before parsing CSV/XLSX.
+- `parseTabularPredictionRecords` still keeps explicit `name` behavior; no-name files now require an id base and generate `bulk-upload-${lastId+1}`, `bulk-upload-${lastId+2}`, etc.
+- Applies to CSV and XLSX because both route through the tabular parser.
+- Verification:
+  - `vp test test/bulk-upload.test.ts` ✅ 9 tests
+  - `mvn -q "-Dtest=PredictionControllerTest,PredictionServiceTest" test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` from `api/` ✅ warnings only from Lombok/Unsafe
+  - `vp run build` from `frontend/` ✅ warnings only: existing `runtime-config.js` non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; remaining warnings are pre-existing infra unused exports and restored auth hero bold typography
+  - touched file line caps ✅ all touched source/test files under 300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 459 files, mostly `dist/`
+
+## Admin Reset Password Privacy UI
+
+### Goal
+- [x] Replace browser prompt with proper reset-password dialog.
+- [x] Hide password by default and add eye icon visibility toggle.
+- [x] Keep admin users page under 300 lines by splitting UI.
+
+### Plan
+- [x] Phase 1. Add dedicated reset-password dialog component.
+- [x] Phase 2. Wire admin users table reset action to dialog state.
+- [x] Phase 3. Capture lesson, verify build/checks/line caps/graph.
+
+### Acceptance
+- [x] Reset password value is never shown in a browser prompt/plain text UI.
+- [x] Eye icon toggles password field between masked/visible.
+- [x] Dialog has bounded, polished admin UI and disabled submit until valid length.
+
+### Review
+- Status: fixed.
+- Replaced `window.prompt("New password")` with `ResetPasswordDialog`.
+- Password field defaults to masked `type="password"`; Eye/EyeOff icon toggles visibility.
+- Submit disabled until password length >= 10 and reset mutation is idle.
+- Admin users page stays under line cap by moving dialog into `frontend/src/admin/components/ResetPasswordDialog.tsx`.
+- Verification:
+  - `vp run build` from `frontend/` ✅ warnings only: existing `runtime-config.js` non-module script and large chunks
+  - stale prompt scan in admin frontend ✅ no `window.prompt`/`prompt()` refs
+  - `npx react-doctor@latest --verbose` ✅ 99/100; remaining warnings are pre-existing infra unused exports and restored auth hero bold typography
+  - line caps ✅ `admin-users-page.tsx` 214 lines, `ResetPasswordDialog.tsx` 75 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 458 files, mostly `dist/`
+
+## Invitation Custom Role Assignment
+
+### Goal
+- [x] Invite modal lists assignable organization roles from the role catalog, including custom roles.
+- [x] Invitation creation persists the chosen role definition so accepted users get the requested custom role.
+- [x] Modal layout stays bounded, usable, and consistent with workspace UI.
+
+### Plan
+- [x] Phase 1. Add role-definition support to invitation request/entity/DTO and acceptance flow.
+- [x] Phase 2. Load role catalog on invitations page and send `roleDefinitionId` from invite form.
+- [x] Phase 3. Replace hardcoded role helper tests with role-catalog option tests.
+- [x] Phase 4. Verify frontend/backend builds/tests, line caps, graph update, and record review.
+
+### Acceptance
+- [x] New custom organization roles appear in invite role selector.
+- [x] Legacy `role` request remains tolerated for existing clients.
+- [x] Accepted invite creates membership with selected `roleDefinition`.
+- [x] Invite dialog content remains inside modal bounds on desktop/mobile.
+
+### Review
+- Status: fixed.
+- Backend invitation creation now accepts `roleDefinitionId`, stores it on `Invitation`, returns it in `InvitationDto`, and applies it to organization membership on accept.
+- Legacy `role` request remains supported by resolving it through seeded system role definitions.
+- Invite UI now loads organization role definitions from `/roles`; custom roles appear in selector, owner is hidden unless transfer ownership is allowed.
+- Invite modal moved into a dedicated bounded dialog with real close icon and no escaped inline grid/card.
+- Verification:
+  - `vp test test/rbac-permissions.test.ts` ✅
+  - `vp run build` from `frontend/` ✅ warnings only: existing `runtime-config.js` non-module script and large chunks
+  - `mvn -q "-Dmaven.test.skip=true" package` from `api/` ✅
+  - `npx react-doctor@latest --verbose` ✅ 99/100; remaining warnings are pre-existing infra unused exports and restored auth hero bold typography
+  - `vp check` ❌ blocked by existing formatting backlog in 455 files, mostly `dist/`
+  - touched file line caps ✅ all under 300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+
 ## CSV Bulk Prediction Upload
 
 ### Goal

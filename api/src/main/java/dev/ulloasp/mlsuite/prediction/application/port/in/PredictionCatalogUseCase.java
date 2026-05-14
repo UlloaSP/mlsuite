@@ -21,4 +21,6 @@ public interface PredictionCatalogUseCase {
     Prediction getPrediction(Long userId, Long predictionId);
 
     List<Prediction> getPredictionsBySignatureId(Long userId, Long signatureId);
+
+    Long getLastPredictionId(Long userId);
 }

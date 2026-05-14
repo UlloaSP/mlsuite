@@ -183,6 +183,11 @@ export const createPrediction = async (req: CreatePredictionRequest): Promise<Pr
 	return appFetch<PredictionDto>("/api/predictions", json("POST", payload as Record<string, any>));
 };
 
+export const getLastPredictionId = async (): Promise<number> => {
+	const dto = await appFetch<{ lastId: number }>("/api/predictions/last-id");
+	return Number(dto.lastId ?? 0);
+};
+
 export const createTarget = async (req: CreateTargetRequest): Promise<TargetDto> => {
 	return appFetch<TargetDto>("/api/targets", json("POST", req as Record<string, any>));
 };

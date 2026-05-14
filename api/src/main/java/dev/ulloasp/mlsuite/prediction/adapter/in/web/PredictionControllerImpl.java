@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.prediction.application.dto.CreatePredictionParams;
 import dev.ulloasp.mlsuite.prediction.application.dto.PredictionDto;
+import dev.ulloasp.mlsuite.prediction.application.dto.PredictionSequenceDto;
 import dev.ulloasp.mlsuite.prediction.application.dto.UpdatePredictionParams;
 import dev.ulloasp.mlsuite.prediction.application.port.in.PredictionCatalogUseCase;
 import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
@@ -69,6 +70,13 @@ public class PredictionControllerImpl implements PredictionController {
                 currentUserResolver.resolve(authentication).userId(),
                 signatureId);
         return ResponseEntity.ok(PredictionDto.toDtoList(predictions));
+    }
+
+    @Override
+    public ResponseEntity<PredictionSequenceDto> getLastPredictionId(Authentication authentication) {
+        Long lastId = predictionCatalogUseCase.getLastPredictionId(
+                currentUserResolver.resolve(authentication).userId());
+        return ResponseEntity.ok(new PredictionSequenceDto(lastId));
     }
 }
 

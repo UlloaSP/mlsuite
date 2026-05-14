@@ -20,6 +20,11 @@ import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
+import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
+import dev.ulloasp.mlsuite.role.application.service.LegacyRolePermissionMapper;
+import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
+import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
+import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
 import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.team.domain.model.TeamMembership;
@@ -41,6 +46,12 @@ class WorkspaceAuthorizationServiceTest {
     @Mock
     private TeamMembershipRepository teamMembershipRepository;
 
+    @Mock
+    private RoleDefinitionRepository roleDefinitionRepository;
+
+    @Mock
+    private RoleSeedService roleSeedService;
+
     private WorkspaceAuthorizationService service;
 
     @BeforeEach
@@ -48,7 +59,10 @@ class WorkspaceAuthorizationServiceTest {
         service = new WorkspaceAuthorizationService(
                 workspaceAccessService,
                 organizationMembershipRepository,
-                teamMembershipRepository);
+                teamMembershipRepository,
+                roleDefinitionRepository,
+                roleSeedService,
+                new LegacyRolePermissionMapper());
     }
 
     @Test
@@ -139,6 +153,11 @@ class WorkspaceAuthorizationServiceTest {
         when(workspaceAccessService.isSuperadmin(9L)).thenReturn(false);
         when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 9L))
                 .thenReturn(Optional.of(organizationMembership(OrganizationRole.ADMIN, 9L)));
+        when(roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(41L, RoleScope.ORGANIZATION))
+                .thenReturn(java.util.List.of(
+                        roleDefinition(1L, "Admin", "ADMIN"),
+                        roleDefinition(2L, "Member", "MEMBER"),
+                        roleDefinition(3L, "Viewer", "VIEWER")));
 
         MembershipActionsDto ownerActions = service.organizationMemberActions(9L, 41L, organizationMembership(OrganizationRole.OWNER, 10L));
         MembershipActionsDto memberActions = service.organizationMemberActions(9L, 41L, organizationMembership(OrganizationRole.MEMBER, 11L));
@@ -224,5 +243,11 @@ class WorkspaceAuthorizationServiceTest {
         membership.setRole(role);
         membership.setStatus(MembershipStatus.ACTIVE);
         return membership;
+    }
+
+    private RoleDefinition roleDefinition(Long id, String name, String systemKey) {
+        RoleDefinition role = new RoleDefinition(organization(), null, RoleScope.ORGANIZATION, name, name.toLowerCase(), systemKey);
+        role.setId(id);
+        return role;
     }
 }

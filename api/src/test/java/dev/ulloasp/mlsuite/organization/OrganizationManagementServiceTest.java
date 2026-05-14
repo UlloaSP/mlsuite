@@ -28,6 +28,8 @@ import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
+import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
+import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -59,6 +61,12 @@ class OrganizationManagementServiceTest {
     @Mock
     private InvitationRepository invitationRepository;
 
+    @Mock
+    private RoleSeedService roleSeedService;
+
+    @Mock
+    private RoleDefinitionRepository roleDefinitionRepository;
+
     private OrganizationManagementService service;
 
     @BeforeEach
@@ -71,7 +79,9 @@ class OrganizationManagementServiceTest {
                 teamRepository,
                 teamMembershipRepository,
                 modelRepository,
-                invitationRepository);
+                invitationRepository,
+                roleSeedService,
+                roleDefinitionRepository);
     }
 
     @Test

@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { createPrediction, createTarget } from "./api/modelService";
+import { createPrediction, createTarget, getLastPredictionId } from "./api/modelService";
 import { derivePredictionTargets } from "./derivePredictionTargets";
 import { loadPredictionCatalogDefinitions } from "./loadPredictionCatalogDefinitions";
 import {
@@ -35,6 +35,7 @@ const INITIAL_STATE: BulkUploadState = {
 	failed: 0,
 	skipped: 0,
 };
+const MAX_BULK_RECORDS = 10000;
 
 type BulkUploadStartOptions = {
 	signatureId: string;
@@ -60,7 +61,13 @@ export function useBulkPredictionUpload() {
 		try {
 			setState({ ...INITIAL_STATE, status: "parsing" });
 
-			const parsed = await parseSpreadsheetPredictionFile(file, signatureSchema);
+			const lastPredictionId = await getLastPredictionId();
+			const parsed = await parseSpreadsheetPredictionFile(
+				file,
+				signatureSchema,
+				MAX_BULK_RECORDS,
+				lastPredictionId,
+			);
 			const records: BulkPredictionRecord[] = parsed.records;
 			const skipped: SkippedRecord[] = parsed.skipped;
 

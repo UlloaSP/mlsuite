@@ -42,9 +42,10 @@ export async function parseSpreadsheetPredictionFile(
 	file: File,
 	signatureSchema: unknown,
 	maxRecords = 10000,
+	autoNameBase?: number,
 ): Promise<ParseSpreadsheetPredictionResult> {
 	if (isCsvFile(file)) {
-		return parseCsvPredictionFile(await file.text(), signatureSchema, maxRecords);
+		return parseCsvPredictionFile(await file.text(), signatureSchema, maxRecords, autoNameBase);
 	}
 
 	if (!isXlsxFile(file)) {
@@ -56,7 +57,7 @@ export async function parseSpreadsheetPredictionFile(
 
 	try {
 		const rows = await readSheet(file);
-		return parseTabularPredictionRecords(toRows(rows), signatureSchema, maxRecords);
+		return parseTabularPredictionRecords(toRows(rows), signatureSchema, maxRecords, autoNameBase);
 	} catch (error: unknown) {
 		return {
 			records: [],

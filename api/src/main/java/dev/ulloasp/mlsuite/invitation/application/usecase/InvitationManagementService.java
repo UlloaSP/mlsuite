@@ -16,9 +16,12 @@ import dev.ulloasp.mlsuite.invitation.domain.exception.InvitationNotFoundExcepti
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
+import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
@@ -44,6 +47,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final AuditLogService auditLogService;
     private final RoleSeedService roleSeedService;
+    private final RoleDefinitionRepository roleDefinitionRepository;
 
     public InvitationManagementService(
             WorkspaceAccessService workspaceAccessService,
@@ -54,7 +58,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
             UserLookupService userLookupService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
             AuditLogService auditLogService,
-            RoleSeedService roleSeedService) {
+            RoleSeedService roleSeedService,
+            RoleDefinitionRepository roleDefinitionRepository) {
         this.workspaceAccessService = workspaceAccessService;
         this.invitationRepository = invitationRepository;
         this.teamRepository = teamRepository;
@@ -64,6 +69,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.auditLogService = auditLogService;
         this.roleSeedService = roleSeedService;
+        this.roleDefinitionRepository = roleDefinitionRepository;
     }
 
     @Override
@@ -79,8 +85,10 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         User user = workspaceAccessService.requireUser(userId);
         workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
         var organization = workspaceAccessService.requireMembership(userId, organizationId).getOrganization();
-        String nextRole = request.role().trim().toUpperCase();
-        if (!workspaceAuthorizationService.workspacePermissions(userId, organizationId).canTransferOwnership() && "OWNER".equals(nextRole)) {
+        roleSeedService.ensureOrganizationRoles(organization);
+        RoleDefinition roleDefinition = resolveRoleDefinition(organization, request);
+        OrganizationRole legacyRole = legacyRole(roleDefinition);
+        if (!workspaceAuthorizationService.workspacePermissions(userId, organizationId).canTransferOwnership() && legacyRole == OrganizationRole.OWNER) {
             throw new IllegalArgumentException("Only owners can transfer ownership.");
         }
         Team team = request.teamId() != null ? teamRepository.findById(request.teamId())
@@ -91,7 +99,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
                 organization,
                 team,
                 request.email().strip().toLowerCase(),
-                OrganizationRole.valueOf(nextRole),
+                legacyRole,
+                roleDefinition,
                 UUID.randomUUID().toString(),
                 user,
                 OffsetDateTime.now(ZoneOffset.UTC).plusDays(7));
@@ -163,7 +172,9 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         organizationMembershipRepository.findByOrganizationIdAndUserId(invitation.getOrganization().getId(), user.getId())
                 .orElseGet(() -> {
                     OrganizationMembership membership = new OrganizationMembership(invitation.getOrganization(), user, invitation.getRole(), MembershipStatus.ACTIVE);
-                    membership.setRoleDefinition(roleSeedService.orgRole(invitation.getOrganization(), invitation.getRole()));
+                    membership.setRoleDefinition(invitation.getRoleDefinition() != null
+                            ? invitation.getRoleDefinition()
+                            : roleSeedService.orgRole(invitation.getOrganization(), invitation.getRole()));
                     return organizationMembershipRepository.save(membership);
                 });
         if (invitation.getTeam() != null) {
@@ -207,6 +218,25 @@ public class InvitationManagementService implements InvitationManagementUseCase 
             case MEMBER -> TeamRole.TEAM_MEMBER;
             case VIEWER -> TeamRole.TEAM_VIEWER;
         };
+    }
+
+    private RoleDefinition resolveRoleDefinition(Organization organization, CreateInvitationRequest request) {
+        if (request.roleDefinitionId() != null) {
+            return roleDefinitionRepository.findByIdAndOrganizationId(request.roleDefinitionId(), organization.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Role does not exist."));
+        }
+        if (request.role() == null || request.role().isBlank()) {
+            throw new IllegalArgumentException("Role is required.");
+        }
+        OrganizationRole role = OrganizationRole.valueOf(request.role().trim().toUpperCase());
+        return roleSeedService.orgRole(organization, role);
+    }
+
+    private OrganizationRole legacyRole(RoleDefinition roleDefinition) {
+        if (roleDefinition.getSystemKey() == null) {
+            return OrganizationRole.MEMBER;
+        }
+        return OrganizationRole.valueOf(roleDefinition.getSystemKey());
     }
 
     private Invitation requireOrganizationInvitation(Long organizationId, Long invitationId) {

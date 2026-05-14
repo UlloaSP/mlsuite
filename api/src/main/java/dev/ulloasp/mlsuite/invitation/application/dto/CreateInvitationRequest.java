@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public record CreateInvitationRequest(
         @Email @NotBlank String email,
-        @NotBlank String role,
+        String role,
+        Long roleDefinitionId,
         Long teamId) {
 }

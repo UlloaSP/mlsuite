@@ -5,21 +5,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQueries } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
-import type { ReportConfig } from "mlform/runtime";
 import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../app/components";
-import { validateMlformSchema } from "../../app/utils/mlform/schema-validation";
 import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService";
-import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import { buildPredictionExportData } from "../buildPredictionExport";
 import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, GET_TARGETS_QUERY_KEY } from "../hooks";
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
-import { getOutputFeedbackFieldIds } from "../output-feedback-questionnaire";
-import { getEffectiveFeedbackValues, getQuestionnaireFieldIds } from "../questionnaire-feedback";
-import { buildTargetFeedbackValue, getSchemaAwareTargetValue, getTargetReportKey } from "../target-utils";
-import { csvEscape, flatten, getExplanationHeaders, toCell, toRecord } from "./export-csv-utils";
+import { csvEscape } from "./export-csv-utils";
 
 export type ExportButtonProps = {
 	predictions: PredictionDto[];
@@ -104,116 +99,16 @@ export function ExportButton({
 	});
 
 	const { headers, rows } = useMemo(() => {
-		if (!predictions.length) {
-			return { headers: [] as string[], rows: [] as string[][] };
-		}
-
-		const inputKeys = Object.keys(flatten(toRecord(predictions[0].inputs))).sort();
-		const schemaResult = signatureSchema
-			? validateMlformSchema(signatureSchema, { customExplanationDefinitions })
-			: null;
-		const schema = schemaResult?.success ? schemaResult.data : null;
-		const targetHeaders = (schema?.reports ?? []).flatMap((_report: ReportConfig, index: number) => {
-			const targetKey = getTargetReportKey(signatureSchema, index);
-			return [
-				`output.${targetKey}.predicted`,
-				`output.${targetKey}.feedback`,
-			];
+		return buildPredictionExportData({
+			predictions,
+			targetsByPrediction: targetsQueries.map((query) => (query.data ?? []) as TargetDto[]),
+			outputFeedbackByPrediction: outputFeedbackQueries.map((query) => (query.data ?? []) as OutputFeedbackDto[]),
+			explanationFeedbackByPrediction: explanationFeedbackQueries.map(
+				(query) => (query.data ?? []) as modelApi.ExplanationFeedbackDto[],
+			),
+			signatureSchema,
+			customExplanationDefinitions,
 		});
-		const explanationHeaders = signatureSchema
-			? getExplanationHeaders(signatureSchema, customExplanationDefinitions)
-			: [];
-		const nextHeaders = ["prediction_id", "reviewer", ...inputKeys, ...targetHeaders, ...explanationHeaders];
-
-		const nextRows = predictions.flatMap((prediction, index) => {
-			const targets = ((targetsQueries[index]?.data ?? []) as TargetDto[]).sort(
-				(left, right) => Number(left.order) - Number(right.order),
-			);
-			const inputs = flatten(toRecord(prediction.inputs));
-			const targetMap = new Map(targets.map((target) => [target.order, target]));
-			const allOutputFeedback = (outputFeedbackQueries[index]?.data ?? []) as OutputFeedbackDto[];
-			const allExplanationFeedback = (explanationFeedbackQueries[index]?.data ?? []) as modelApi.ExplanationFeedbackDto[];
-
-			const reviewerIds = new Set<number>();
-			const reviewerEmails = new Map<number, string>();
-			for (const fb of allOutputFeedback) {
-				reviewerIds.add(fb.userId);
-				reviewerEmails.set(fb.userId, fb.userEmail);
-			}
-			for (const fb of allExplanationFeedback) {
-				reviewerIds.add(fb.userId);
-				reviewerEmails.set(fb.userId, fb.userEmail);
-			}
-
-			const buildRow = (reviewerEmail: string, outputFeedbackForUser: OutputFeedbackDto[], explanationFeedbackForUser: modelApi.ExplanationFeedbackDto[]) => {
-				const outputFeedbackByOrder = new Map(outputFeedbackForUser.map((item) => [item.order, item]));
-				const targetValues = (schema?.reports ?? []).flatMap((_report: ReportConfig, order: number) => {
-					const target = targetMap.get(order);
-					const reportConfig = schema?.reports?.[order];
-					const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;
-					const fieldIds = getOutputFeedbackFieldIds(kind);
-					const outputFeedback = outputFeedbackByOrder.get(order);
-					const feedbackRecord =
-						outputFeedback?.value &&
-							typeof outputFeedback.value === "object" &&
-							!Array.isArray(outputFeedback.value)
-							? outputFeedback.value as Record<string, unknown>
-							: null;
-					const assessmentRaw = feedbackRecord?.[fieldIds.assessment] ?? "";
-					const userRealValue = assessmentRaw !== ""
-						? buildTargetFeedbackValue(String(assessmentRaw), signatureSchema, order)
-						: "";
-					return [
-						toCell(target ? getSchemaAwareTargetValue(target.value, signatureSchema, order, prediction.prediction) : ""),
-						toCell(userRealValue !== "" ? getSchemaAwareTargetValue(userRealValue, signatureSchema, order, prediction.prediction) : ""),
-					];
-				});
-
-				const explanationEntries = extractPredictionExplanationEntries(
-					prediction.prediction,
-					signatureSchema,
-					customExplanationDefinitions,
-				);
-				const feedbackByOrder = new Map(explanationFeedbackForUser.map((item) => [item.order, item]));
-				const explanationValues = explanationEntries.flatMap((explanation) => {
-					const cells = [toCell(explanation.content.join("\n\n"))];
-					if (!explanation.feedbackQuestionnaire) {
-						return cells;
-					}
-					const feedbackValues = getEffectiveFeedbackValues(
-						feedbackByOrder.get(explanation.order),
-						explanation.feedbackQuestionnaire,
-					);
-					return [
-						...cells,
-						...getQuestionnaireFieldIds(explanation.feedbackQuestionnaire).map((fieldId) =>
-							toCell(feedbackValues[fieldId])),
-					];
-				});
-
-				return [
-					toCell(prediction.id),
-					reviewerEmail,
-					...inputKeys.map((key) => toCell(inputs[key])),
-					...targetValues,
-					...explanationValues,
-				];
-			};
-
-			if (reviewerIds.size === 0) {
-				return [buildRow("", [], [])];
-			}
-
-			return [...reviewerIds].map((userId) =>
-				buildRow(
-					reviewerEmails.get(userId) ?? "",
-					allOutputFeedback.filter((fb) => fb.userId === userId),
-					allExplanationFeedback.filter((fb) => fb.userId === userId),
-				),
-			);
-		});
-
-		return { headers: nextHeaders, rows: nextRows };
 	}, [
 		customExplanationDefinitions,
 		explanationFeedbackQueries,

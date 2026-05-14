@@ -45,6 +45,7 @@ export const csvEscape = (value: string, separator: string) => {
 export const getExplanationHeaders = (
 	signatureSchema: unknown,
 	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
+	reviewerLabels: readonly string[] = [],
 ): string[] => {
 	try {
 		const schema = toMlformSchema(signatureSchema, {
@@ -59,8 +60,10 @@ export const getExplanationHeaders = (
 			return [
 				`explanation.${explanation.id}.content`,
 				...(questionnaire
-					? getQuestionnaireFieldIds(questionnaire).map(
-						(fieldId) => `explanation.${explanation.id}.${fieldId}`,
+					? getQuestionnaireFieldIds(questionnaire).flatMap(
+						(fieldId) => reviewerLabels.map(
+							(reviewer) => `explanation.${explanation.id}.${fieldId}.${reviewer}`,
+						),
 					)
 					: []),
 			];

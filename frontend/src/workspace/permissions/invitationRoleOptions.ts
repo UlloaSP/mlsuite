@@ -1,7 +1,12 @@
-import type { OrganizationRole } from "../types";
+import type { RoleDefinitionDto } from "../types";
 
-export function invitationRoleOptions(canTransferOwnership: boolean): OrganizationRole[] {
-	return canTransferOwnership
-		? ["OWNER", "ADMIN", "MEMBER", "VIEWER"]
-		: ["ADMIN", "MEMBER", "VIEWER"];
+export function invitationRoleOptions(
+	roles: RoleDefinitionDto[],
+	canTransferOwnership: boolean,
+): RoleDefinitionDto[] {
+	return roles.filter((role) => (
+		role.scope === "ORGANIZATION"
+		&& role.id != null
+		&& (canTransferOwnership || role.systemKey !== "OWNER")
+	));
 }
