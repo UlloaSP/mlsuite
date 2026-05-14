@@ -11,7 +11,7 @@ export function BackButton({ onClick }: { onClick: () => void }) {
 			type="button"
 			onClick={onClick}
 			aria-label="Back to authentication options"
-			className="group inline-flex items-center gap-2 border-b border-transparent pb-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[#999] transition hover:border-[#ff385c] hover:text-[#ff385c] xl:text-[11px]"
+			className="group inline-flex items-center gap-2 border-b border-transparent pb-1 text-[10px] uppercase tracking-[0.14em] text-[#999] transition [font-family:'DM_Mono',monospace] hover:border-[#ff385c] hover:text-[#ff385c] xl:text-[11px]"
 		>
 			<span className="transition group-hover:-translate-x-1">
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">

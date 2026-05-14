@@ -1,5 +1,38 @@
 # Config Hardcode Removal Plan
 
+## CSV Bulk Prediction Upload
+
+### Goal
+- [x] Replace JSONL bulk prediction upload with schema-aware CSV upload.
+- [x] Coerce CSV cell values by signature field kind before running the prediction pipeline.
+- [x] Keep existing bulk progress/cancel/save behavior and verification rules.
+
+### Plan
+- [x] Phase 1. Add `parseCsvPredictionFile` with CSV parsing, header validation, schema field lookup, and kind-based coercion.
+- [x] Phase 2. Wire bulk upload hook and button to CSV.
+- [x] Phase 3. Replace JSONL bulk tests with CSV success/error coverage.
+- [x] Phase 4. Run focused tests/checks, line caps, graph update, and record review.
+
+### Acceptance
+- [x] CSV requires `name` and one column per schema input.
+- [x] Numeric/boolean/list/series inputs are typed before MLForm submit.
+- [x] Invalid rows are skipped with useful reasons.
+- [x] No JSONL copy or file accept remains in bulk upload UI.
+
+### Review
+- Status: implemented.
+- Bulk prediction upload now accepts CSV only and parses `name` plus schema input columns.
+- Parser maps CSV headers to `signatureSchema.fields[]` by `ui.backendKey`, then `label`, then `id`; values are coerced by field `kind` before MLForm pipeline submit.
+- Invalid headers or rows return skipped records with concrete reasons; valid rows continue.
+- Verification:
+  - `vp test test/bulk-upload.test.ts` ✅ 6 tests
+  - `vp run build` ✅ warnings only: existing `runtime-config.js` non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; remaining warnings are pre-existing infra unused exports
+  - `vp check` ❌ blocked by existing formatting backlog in 447 files, mostly `dist/`
+  - line-cap check ✅ touched files under 300 lines
+  - stale JSONL scan ✅ no frontend source/test refs
+  - `graphify update .` ✅
+
 ## Admin Users Sort Stability Fix
 
 ### Goal

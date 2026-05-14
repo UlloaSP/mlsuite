@@ -39,7 +39,7 @@ export function AuthLandingPage() {
 	};
 
 	return (
-		<div className="min-h-svh overflow-x-hidden bg-[#fdfcf8] font-sans text-[#111] transition-colors">
+		<div className="min-h-svh overflow-x-hidden bg-[#fdfcf8] text-[#111] transition-colors [font-family:'Space_Grotesk',sans-serif]">
 			<div className="relative flex min-h-svh w-full flex-col overflow-x-hidden">
 				<AuthHeader />
 

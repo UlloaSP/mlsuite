@@ -9,7 +9,11 @@ import { toast } from "sonner";
 import { createPrediction, createTarget } from "./api/modelService";
 import { derivePredictionTargets } from "./derivePredictionTargets";
 import { loadPredictionCatalogDefinitions } from "./loadPredictionCatalogDefinitions";
-import { parseJsonlFile } from "./parseJsonlFile";
+import {
+	parseCsvPredictionFile,
+	type BulkPredictionRecord,
+	type SkippedRecord,
+} from "./parseCsvPredictionFile";
 import { runBulkPredictionPipeline } from "./runBulkPredictionPipeline";
 
 type BulkUploadStatus = "idle" | "parsing" | "processing" | "done";
@@ -57,7 +61,9 @@ export function useBulkPredictionUpload() {
 			setState({ ...INITIAL_STATE, status: "parsing" });
 
 			const text = await file.text();
-			const { records, skipped } = parseJsonlFile(text);
+			const parsed = parseCsvPredictionFile(text, signatureSchema);
+			const records: BulkPredictionRecord[] = parsed.records;
+			const skipped: SkippedRecord[] = parsed.skipped;
 
 			const skippedCount = skipped.length;
 			if (skippedCount > 0) {

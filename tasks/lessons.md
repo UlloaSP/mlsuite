@@ -34,3 +34,5 @@
 - Rule: public/login pages must not mount profile/session queries unless they render auth state or redirect from it; keep submit busy state scoped to active auth mutations.
 - User correction: removing a query from a page was insufficient because its route wrapper still mounted the query.
 - Rule: when stopping a public-page request, trace parent route/layout wrappers too; verify the rendered route branch, not just the leaf component.
+- User correction: auth landing refactor accidentally changed the intended typography.
+- Rule: when splitting visual components, preserve page-level font families and display/mono font assignments from the original design unless typography change is explicitly requested.

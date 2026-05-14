@@ -34,7 +34,7 @@ export function AuthFormPanel({
 							role="tab"
 							aria-selected={mode === item}
 							onClick={() => onModeChange(item)}
-							className={`px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.12em] transition sm:px-3.5 sm:text-[10px] xl:px-[18px] xl:py-2 xl:text-[11px] ${mode === item ? "bg-[#111] text-[#fdfcf8]" : "bg-transparent text-[#111] hover:bg-black/5"}`}
+							className={`px-3 py-1.5 text-[9px] uppercase tracking-[0.14em] transition [font-family:'DM_Mono',monospace] sm:px-3.5 sm:text-[10px] xl:px-[18px] xl:py-2 xl:text-[11px] ${mode === item ? "bg-[#111] text-[#fdfcf8]" : "bg-transparent text-[#111] hover:bg-black/5"}`}
 						>
 							{AUTH_COPY[item].tab}
 						</button>
@@ -58,13 +58,13 @@ export function AuthFormPanel({
 					<button
 						type="button"
 						onClick={() => onModeChange(mode === "login" ? "register" : "login")}
-						className="bg-transparent p-0 text-left font-mono text-[11px] text-[#999] transition hover:text-[#ff385c] sm:text-center xl:text-[13px]"
+						className="bg-transparent p-0 text-left text-[11px] text-[#999] transition [font-family:'DM_Mono',monospace] hover:text-[#ff385c] sm:text-center xl:text-[13px]"
 					>
 						{AUTH_COPY[mode].switch}
 					</button>
 				</div>
 
-				<p className="mt-3.5 font-mono text-[10px] tracking-[0.06em] text-[#bbb] xl:mt-[18px] xl:text-[11px]">
+				<p className="mt-3.5 text-[10px] tracking-[0.06em] text-[#bbb] [font-family:'DM_Mono',monospace] xl:mt-[18px] xl:text-[11px]">
 					{AUTH_COPY[mode].foot}
 				</p>
 			</form>
