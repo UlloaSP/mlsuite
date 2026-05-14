@@ -74,7 +74,7 @@ export function BulkUploadButton({ signatureId, modelId, signatureSchema }: Bulk
 			<input
 				ref={inputRef}
 				type="file"
-				accept=".csv,text/csv"
+				accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 				className="sr-only"
 				onChange={handleFileChange}
 			/>
@@ -87,7 +87,7 @@ export function BulkUploadButton({ signatureId, modelId, signatureSchema }: Bulk
 						? `${bulk.saved} saved, ${bulk.failed} failed, ${bulk.skipped} skipped. Click to upload another file.`
 						: processing
 							? `Processing ${bulk.processed} of ${bulk.total}. Click to cancel.`
-							: "Upload a CSV file with up to 10000 records."
+							: "Upload a CSV or XLSX file with up to 10000 records."
 				}
 				className="min-w-[168px] justify-between"
 			>

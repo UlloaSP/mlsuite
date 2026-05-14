@@ -10,10 +10,10 @@ import { createPrediction, createTarget } from "./api/modelService";
 import { derivePredictionTargets } from "./derivePredictionTargets";
 import { loadPredictionCatalogDefinitions } from "./loadPredictionCatalogDefinitions";
 import {
-	parseCsvPredictionFile,
 	type BulkPredictionRecord,
+	parseSpreadsheetPredictionFile,
 	type SkippedRecord,
-} from "./parseCsvPredictionFile";
+} from "./parseSpreadsheetPredictionFile";
 import { runBulkPredictionPipeline } from "./runBulkPredictionPipeline";
 
 type BulkUploadStatus = "idle" | "parsing" | "processing" | "done";
@@ -60,8 +60,7 @@ export function useBulkPredictionUpload() {
 		try {
 			setState({ ...INITIAL_STATE, status: "parsing" });
 
-			const text = await file.text();
-			const parsed = parseCsvPredictionFile(text, signatureSchema);
+			const parsed = await parseSpreadsheetPredictionFile(file, signatureSchema);
 			const records: BulkPredictionRecord[] = parsed.records;
 			const skipped: SkippedRecord[] = parsed.skipped;
 

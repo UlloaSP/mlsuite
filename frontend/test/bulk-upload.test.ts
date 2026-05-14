@@ -7,6 +7,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { buildPersistedPredictionPayload } from "../src/models/buildPersistedPredictionPayload";
 import { derivePredictionTargets } from "../src/models/derivePredictionTargets";
 import { parseCsvPredictionFile } from "../src/models/parseCsvPredictionFile";
+import { parseTabularPredictionRecords } from "../src/models/parseTabularPredictionRecords";
 
 const bulkSchema = {
 	fields: [
@@ -36,6 +37,26 @@ describe("bulk upload helpers", () => {
 		});
 		expect(result.records[1]?.inputs.active).toBe(false);
 		expect(result.records[1]?.inputs.tags).toBeUndefined();
+	});
+
+	it("parses worksheet rows with native xlsx cell values", () => {
+		const result = parseTabularPredictionRecords(
+			[
+				{ line: 1, values: ["name", "age", "active", "segment", "tags", "points"] },
+				{ line: 2, values: ["row-1", 42, true, "A", "red; blue", [1, 2]] },
+			],
+			bulkSchema,
+		);
+
+		expect(result.records).toHaveLength(1);
+		expect(result.skipped).toHaveLength(0);
+		expect(result.records[0]?.inputs).toEqual({
+			age: 42,
+			active: true,
+			segment: "A",
+			tags: ["red", "blue"],
+			points: [1, 2],
+		});
 	});
 
 	it("reports missing and unknown csv headers", () => {

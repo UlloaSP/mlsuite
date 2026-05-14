@@ -33,6 +33,40 @@
   - stale JSONL scan ✅ no frontend source/test refs
   - `graphify update .` ✅
 
+## XLSX Bulk Prediction Upload
+
+### Goal
+- [x] Accept `.xlsx` files in the same bulk prediction upload flow as CSV.
+- [x] Reuse the schema-aware column/type contract from CSV.
+- [x] Keep CSV behavior unchanged.
+
+### Plan
+- [x] Phase 1. Add minimal XLSX runtime parser dependency with explicit reason.
+- [x] Phase 2. Split tabular record validation/coercion out of CSV parser.
+- [x] Phase 3. Route CSV and XLSX files through a single spreadsheet upload parser.
+- [x] Phase 4. Update upload accept/copy and tests.
+- [x] Phase 5. Verify focused tests, build, line caps, graph.
+
+### Acceptance
+- [x] CSV and XLSX both require first column `name` and schema input columns.
+- [x] XLSX numeric/boolean/date/string cells are coerced by schema field `kind`.
+- [x] Unsupported file types fail before processing with clear message.
+- [x] No `.xls` claim is made; parser supports `.xlsx`, not legacy binary Excel.
+
+### Review
+- Status: implemented.
+- Added `read-excel-file` dependency because XLSX is zipped XML and cannot be parsed by browser APIs alone.
+- Shared schema-aware validation/coercion now lives in `parseTabularPredictionRecords`.
+- CSV parser only converts CSV text into tabular rows; XLSX parser reads first worksheet into same row shape.
+- Upload button accepts `.csv` and `.xlsx`; title copy says CSV or XLSX.
+- Verification:
+  - `vp test test/bulk-upload.test.ts` ✅ 7 tests
+  - `vp run build` ✅ warnings only: existing `runtime-config.js` non-module script and large chunks
+  - line-cap check ✅ touched source/test files under 300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `npx react-doctor@latest --verbose` ✅ ran; remaining warnings include pre-existing infra unused exports and restored AuthLanding `font-bold`
+  - `vp check` ❌ blocked by existing formatting backlog in 453 files, mostly `dist/`
+
 ## Admin Users Sort Stability Fix
 
 ### Goal
