@@ -14,7 +14,9 @@ import * as modelApi from "../api/modelService";
 import { buildPredictionExportData } from "../buildPredictionExport";
 import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, GET_TARGETS_QUERY_KEY } from "../hooks";
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
+import { ExportReviewModal } from "./ExportReviewModal";
 import { csvEscape } from "./export-csv-utils";
+import { selectedExportData, type ExportReviewSelection } from "./export-review-selection";
 
 export type ExportButtonProps = {
 	predictions: PredictionDto[];
@@ -28,6 +30,7 @@ export function ExportButton({
 	signatureSchema,
 }: ExportButtonProps) {
 	const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<readonly CatalogExplanationDefinition[]>([]);
+	const [modalOpen, setModalOpen] = useState(false);
 
 	useEffect(() => {
 		let active = true;
@@ -98,34 +101,37 @@ export function ExportButton({
 		})),
 	});
 
+	const targetsByPrediction = targetsQueries.map((query) => (query.data ?? []) as TargetDto[]);
+	const outputFeedbackByPrediction = outputFeedbackQueries.map((query) => (query.data ?? []) as OutputFeedbackDto[]);
+	const explanationFeedbackByPrediction = explanationFeedbackQueries.map(
+		(query) => (query.data ?? []) as modelApi.ExplanationFeedbackDto[],
+	);
 	const { headers, rows } = useMemo(() => {
 		return buildPredictionExportData({
 			predictions,
-			targetsByPrediction: targetsQueries.map((query) => (query.data ?? []) as TargetDto[]),
-			outputFeedbackByPrediction: outputFeedbackQueries.map((query) => (query.data ?? []) as OutputFeedbackDto[]),
-			explanationFeedbackByPrediction: explanationFeedbackQueries.map(
-				(query) => (query.data ?? []) as modelApi.ExplanationFeedbackDto[],
-			),
+			targetsByPrediction,
+			outputFeedbackByPrediction,
+			explanationFeedbackByPrediction,
 			signatureSchema,
 			customExplanationDefinitions,
 		});
 	}, [
 		customExplanationDefinitions,
-		explanationFeedbackQueries,
-		outputFeedbackQueries,
+		explanationFeedbackByPrediction,
+		outputFeedbackByPrediction,
 		predictions,
 		signatureSchema,
-		targetsQueries,
+		targetsByPrediction,
 	]);
 
 	const hasData = rows.length > 0 && headers.length > 0;
 
-	const handleExport = () => {
-		if (!hasData) {
+	const downloadCsv = (exportHeaders: string[], exportRows: string[][]) => {
+		if (exportRows.length === 0 || exportHeaders.length === 0) {
 			return;
 		}
 
-		const content = `\uFEFF${headers.map((header) => csvEscape(header, delimiter)).join(delimiter)}\n${rows
+		const content = `\uFEFF${exportHeaders.map((header) => csvEscape(header, delimiter)).join(delimiter)}\n${exportRows
 			.map((row) => row.map((cell) => csvEscape(cell, delimiter)).join(delimiter))
 			.join("\n")}`;
 		const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
@@ -139,26 +145,56 @@ export function ExportButton({
 		setTimeout(() => URL.revokeObjectURL(url), 0);
 	};
 
+	const handleExport = (selection: ExportReviewSelection) => {
+		const selected = selectedExportData(
+			selection,
+			predictions,
+			targetsByPrediction,
+			outputFeedbackByPrediction,
+			explanationFeedbackByPrediction,
+		);
+		const next = buildPredictionExportData({
+			predictions: selected.predictions,
+			targetsByPrediction: selected.targetsByPrediction as TargetDto[][],
+			outputFeedbackByPrediction: selected.outputFeedbackByPrediction,
+			explanationFeedbackByPrediction: selected.explanationFeedbackByPrediction,
+			signatureSchema,
+			customExplanationDefinitions,
+		});
+		downloadCsv(next.headers, next.rows);
+		setModalOpen(false);
+	};
+
 	return (
-		<motion.button
-			type="button"
-			aria-label="Export predictions to CSV"
-			onClick={handleExport}
-			disabled={!hasData}
-			initial={false}
-			whileHover={{ scale: hasData ? 1.015 : 1, y: hasData ? -1 : 0 }}
-			whileTap={{ scale: hasData ? 0.985 : 1, y: 0 }}
-			transition={{ type: "spring", stiffness: 420, damping: 32 }}
-			className={cx(
-				"group inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3",
-				"text-sm font-medium outline-none transition-shadow",
-				"border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-card)]",
-				"hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)] hover:shadow-[var(--shadow-hover)]",
-				!hasData && "cursor-not-allowed opacity-60 hover:shadow-none",
-			)}
-		>
-			<FileDown size={18} className="opacity-90 group-hover:opacity-100" />
-			<span>Export to CSV</span>
-		</motion.button>
+		<>
+			<motion.button
+				type="button"
+				aria-label="Export predictions to CSV"
+				onClick={() => setModalOpen(true)}
+				disabled={!hasData}
+				initial={false}
+				whileHover={{ scale: hasData ? 1.015 : 1, y: hasData ? -1 : 0 }}
+				whileTap={{ scale: hasData ? 0.985 : 1, y: 0 }}
+				transition={{ type: "spring", stiffness: 420, damping: 32 }}
+				className={cx(
+					"group inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3",
+					"text-sm font-medium outline-none transition-shadow",
+					"border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-card)]",
+					"hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)] hover:shadow-[var(--shadow-hover)]",
+					!hasData && "cursor-not-allowed opacity-60 hover:shadow-none",
+				)}
+			>
+				<FileDown size={18} className="opacity-90 group-hover:opacity-100" />
+				<span>Export to CSV</span>
+			</motion.button>
+			<ExportReviewModal
+				open={modalOpen}
+				predictions={predictions}
+				outputFeedbackByPrediction={outputFeedbackByPrediction}
+				explanationFeedbackByPrediction={explanationFeedbackByPrediction}
+				onClose={() => setModalOpen(false)}
+				onExport={handleExport}
+			/>
+		</>
 	);
 }

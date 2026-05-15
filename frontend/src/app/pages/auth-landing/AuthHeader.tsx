@@ -13,7 +13,7 @@ export function AuthHeader() {
 
 	return (
 		<header className="relative z-10 shrink-0">
-			<div className="mb-2.5 flex items-center justify-between gap-4 px-5 pt-[18px] text-[9px] uppercase tracking-[0.08em] text-[#aaa] [font-family:'DM_Mono',monospace] sm:px-7 sm:text-[10px] lg:px-[44px]">
+			<div className="mb-2.5 flex items-center justify-between gap-4 px-5 pt-[18px] text-[9px] uppercase tracking-[0.08em] text-[#aaa] [font-family:'DM_Mono',monospace] dark:text-[#8d97a3] sm:px-7 sm:text-[10px] lg:px-[44px]">
 				<span>{ISSUE_LABEL}</span>
 				<time dateTime={today}>{date}</time>
 			</div>

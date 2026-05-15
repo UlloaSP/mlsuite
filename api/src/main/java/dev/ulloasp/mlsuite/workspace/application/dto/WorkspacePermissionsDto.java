@@ -21,6 +21,7 @@ public record WorkspacePermissionsDto(
         boolean canEditModels,
         boolean canDeleteModels,
         boolean canRunPredictions,
+        boolean canManageReviewLinks,
         boolean canViewPlugins,
         boolean canManagePlugins) {
 }

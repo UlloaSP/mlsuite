@@ -12,6 +12,7 @@ import {
 	useState,
 } from "react";
 import { mountWizardForm, type MountedWizardForm } from "mlform/kit";
+import type { Transport } from "mlform/runtime";
 import type { QuestionnaireSchema } from "../questionnaire-schema";
 import {
 	buildQuestionnaireFormSchema,
@@ -40,6 +41,12 @@ type ExplanationQuestionnaireMountProps = {
 	theme: "light" | "dark";
 	mode?: "embedded" | "standalone";
 	onValuesChange?: (values: Record<string, unknown>) => void;
+	transport?: Transport;
+	labels?: {
+		submit?: string;
+		submitting?: string;
+	};
+	square?: boolean;
 };
 
 const buildEmbeddedStyles = (singleStep: boolean): string => `
@@ -56,6 +63,9 @@ export function ExplanationQuestionnaireMount({
 	theme,
 	mode = "embedded",
 	onValuesChange,
+	transport,
+	labels,
+	square = false,
 }: ExplanationQuestionnaireMountProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const mountedRef = useRef<MountedWizardForm | null>(null);
@@ -92,7 +102,7 @@ export function ExplanationQuestionnaireMount({
 				schema: buildQuestionnaireFormSchema(effectiveSchema),
 				layout: buildQuestionnaireWizardLayout(effectiveSchema),
 				registry: createMlSuiteBuiltinRegistry(),
-				transport: createLocalQuestionnaireTransport(),
+				transport: transport ?? createLocalQuestionnaireTransport(),
 				initialValues: initialValuesRef.current,
 				designSystem: {
 					mode: theme,
@@ -100,8 +110,8 @@ export function ExplanationQuestionnaireMount({
 					recipe: "default",
 				},
 				labels: {
-					submit: editable ? "Check answers" : "Reviewed",
-					submitting: "Checking answers…",
+					submit: labels?.submit ?? (editable ? "Check answers" : "Reviewed"),
+					submitting: labels?.submitting ?? "Checking answers…",
 				},
 				reportPane: "hidden",
 			});
@@ -109,6 +119,11 @@ export function ExplanationQuestionnaireMount({
 			if (mode === "embedded") {
 				const style = document.createElement("style");
 				style.textContent = buildEmbeddedStyles(effectiveSchema.steps.length === 1);
+				mounted.host.shadowRoot?.append(style);
+			}
+			if (square) {
+				const style = document.createElement("style");
+				style.textContent = "* { border-radius: 0 !important; }";
 				mounted.host.shadowRoot?.append(style);
 			}
 
@@ -130,7 +145,7 @@ export function ExplanationQuestionnaireMount({
 			setMountError(error instanceof Error ? error.message : String(error));
 			return;
 		}
-	}, [effectiveSchema, mode, serializedSchema, theme, editable]);
+	}, [effectiveSchema, mode, serializedSchema, theme, editable, transport, labels?.submit, labels?.submitting, square]);
 
 	if (mountError) {
 		return (
@@ -146,7 +161,7 @@ export function ExplanationQuestionnaireMount({
 			<AppSectionTitle>{title}</AppSectionTitle>
 			<div
 				ref={containerRef}
-				className="min-h-[18rem] overflow-hidden rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)]"
+				className="min-h-[18rem] overflow-hidden border border-[var(--border-soft)] bg-[var(--surface-primary)]"
 			/>
 		</div>
 	);

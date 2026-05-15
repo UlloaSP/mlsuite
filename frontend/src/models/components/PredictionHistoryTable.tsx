@@ -17,19 +17,25 @@ type PredictionHistoryTableProps = {
 	predictions: PredictionDto[];
 	statusByPredictionId: Map<string, "COMPLETED" | "PENDING">;
 	onOpenPrediction: (predictionId: string) => void;
+	selectedIds?: Set<string>;
+	onToggleSelection?: (predictionId: string) => void;
 };
 
 export function PredictionHistoryTable({
 	predictions,
 	statusByPredictionId,
 	onOpenPrediction,
+	selectedIds,
+	onToggleSelection,
 }: PredictionHistoryTableProps) {
+	const selectable = Boolean(selectedIds && onToggleSelection);
 	return (
 		<AppPanel className="overflow-hidden p-0">
 			<div className="overflow-x-auto">
 				<table className="min-w-full border-collapse">
 					<thead className="bg-[var(--surface-secondary)]">
 						<tr className="text-left text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
+							{selectable ? <th className="w-12 px-5 py-4">Select</th> : null}
 							<th className="px-5 py-4">Prediction</th>
 							<th className="px-5 py-4">Date & time</th>
 							<th className="px-5 py-4">Feedback Status</th>
@@ -43,6 +49,17 @@ export function PredictionHistoryTable({
 								className="cursor-pointer border-t border-[var(--border-soft)] text-sm text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]"
 								onClick={() => onOpenPrediction(prediction.id)}
 							>
+								{selectable ? (
+									<td className="px-5 py-4" onClick={(event) => event.stopPropagation()}>
+										<input
+											type="checkbox"
+											aria-label={`Select ${prediction.name}`}
+											checked={selectedIds?.has(prediction.id) ?? false}
+											onChange={() => onToggleSelection?.(prediction.id)}
+											className="size-4 rounded border-[var(--border-soft)] accent-[var(--accent-primary)]"
+										/>
+									</td>
+								) : null}
 								<td className="px-5 py-4">
 									<div className="space-y-1">
 										<p className="font-medium">{prediction.name}</p>

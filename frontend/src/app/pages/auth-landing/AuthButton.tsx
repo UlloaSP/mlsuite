@@ -14,8 +14,8 @@ export function AuthButton({
 }) {
 	const variant =
 		type === "register"
-			? "bg-[#111] text-white hover:bg-[#ff385c]"
-			: "border-[1.5px] border-[#ddd] bg-white text-[#222] hover:border-[#ccc] hover:bg-[#f5f5f5]";
+			? "bg-[#111] text-white hover:bg-[#ff385c] dark:bg-[#f5f5f5] dark:text-[#101418] dark:hover:bg-[#ff385c] dark:hover:text-white"
+			: "border-[1.5px] border-[#ddd] bg-white text-[#222] hover:border-[#ccc] hover:bg-[#f5f5f5] dark:border-[#3b4148] dark:bg-[#171a1d] dark:text-[#f5f5f5] dark:hover:border-[#5b6470] dark:hover:bg-[#262b31]";
 
 	return (
 		<button

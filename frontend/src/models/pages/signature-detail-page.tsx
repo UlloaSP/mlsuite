@@ -7,14 +7,15 @@ import { NotFoundError } from "../../app/pages/error-page";
 import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";
-import { PredictionHistoryTable } from "../components/PredictionHistoryTable";
-import { PredictionHistoryToolbar, type PredictionDateRangeFilter, type PredictionFeedbackStatusFilter } from "../components/PredictionHistoryToolbar";
+import * as modelApi from "../api/modelService";
 import { BulkUploadButton } from "../components/BulkUploadButton";
+import type { PredictionDateRangeFilter, PredictionFeedbackStatusFilter } from "../components/PredictionHistoryToolbar";
+import { ReviewLinkButton } from "../components/ReviewLinkButton";
+import { SignatureHistorySection } from "../components/SignatureHistorySection";
 import { SignatureTechnicalTab } from "../components/SignatureTechnicalTab";
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
 import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, useGetModels, useGetPredictions, useGetSignature } from "../hooks";
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
-import * as modelApi from "../api/modelService";
 import { findModelById, formatTimestamp, getPredictionTimestamp, getSignatureVersionLabel, toTimestampMillis } from "../utils";
 
 type SignatureDetailTab = "technical" | "history";
@@ -164,6 +165,7 @@ export function SignatureDetailPage() {
 		return <NotFoundError />;
 	}
 	const canRunPredictions = workspace?.permissions.canRunPredictions ?? false;
+	const canManageReviewLinks = workspace?.permissions.canManageReviewLinks ?? false;
 
 	return (
 		<AppPage>
@@ -208,6 +210,14 @@ export function SignatureDetailPage() {
 									<>
 										{canRunPredictions ? (
 											<>
+												{modelId && canManageReviewLinks ? (
+													<ReviewLinkButton
+														modelId={modelId}
+														signature={signature}
+														predictions={predictions}
+														statusByPredictionId={statusByPredictionId}
+													/>
+												) : null}
 												<BulkUploadButton
 													signatureId={signatureId ?? ""}
 													modelId={modelId ?? ""}
@@ -239,47 +249,24 @@ export function SignatureDetailPage() {
 							{activeTab === "technical" ? (
 								<SignatureTechnicalTab signature={signature} />
 							) : (
-								<div className="space-y-4">
-									<PredictionHistoryToolbar
-										query={query}
-										status={feedbackStatus}
-										dateRange={dateRange}
-										onQueryChange={setQuery}
-										onStatusChange={setFeedbackStatus}
-										onDateRangeChange={setDateRange}
-										predictions={visiblePredictions}
-										signatureSchema={signature.inputSignature}
-									/>
-
-									{visiblePredictions.length === 0 ? (
-										<AppEmptyState
-											title="No predictions found"
-											description={
-												query || feedbackStatus !== "all" || dateRange !== "all"
-													? "No prediction matches the current search terms."
-													: "Create the first prediction for this schema to populate history."
-											}
-											action={canRunPredictions ? (
-												<AppButton
-													type="button"
-													onClick={() =>
-														navigate(`/models/${modelId}/signatures/${signature.id}/predictions/create`)
-													}
-												>
-													+ New Prediction
-												</AppButton>
-											) : undefined}
-										/>
-									) : (
-									<PredictionHistoryTable
-										predictions={visiblePredictions}
-										statusByPredictionId={statusByPredictionId}
-										onOpenPrediction={(predictionId) =>
-											navigate(`/models/${modelId}/signatures/${signature.id}/predictions/${predictionId}`)
-										}
-									/>
-									)}
-								</div>
+								<SignatureHistorySection
+									signature={signature}
+									predictions={visiblePredictions}
+									statusByPredictionId={statusByPredictionId}
+									canRunPredictions={canRunPredictions}
+									query={query}
+									status={feedbackStatus}
+									dateRange={dateRange}
+									onQueryChange={setQuery}
+									onStatusChange={setFeedbackStatus}
+									onDateRangeChange={setDateRange}
+									onOpenPrediction={(predictionId) =>
+										navigate(`/models/${modelId}/signatures/${signature.id}/predictions/${predictionId}`)
+									}
+									onCreatePrediction={() =>
+										navigate(`/models/${modelId}/signatures/${signature.id}/predictions/create`)
+									}
+								/>
 							)}
 						</>
 					) : null}

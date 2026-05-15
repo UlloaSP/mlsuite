@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { describe, expect, it } from "vite-plus/test";
 import { buildPredictionExportData } from "../src/models/buildPredictionExport";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../src/models/api/modelService";
+import { emptyExportReviewSelection, predictionReviewerKey, selectedExportData } from "../src/models/components/export-review-selection";
 
 const prediction = (overrides: Partial<PredictionDto> = {}): PredictionDto => ({
 	id: "99",
@@ -66,5 +67,31 @@ describe("prediction CSV export", () => {
 		expect(result.headers).not.toContain("prediction_id");
 		expect(result.headers).not.toContain("reviewer");
 		expect(result.rows).toEqual([["customer-row-1", "42", "2.5", "4.5", "3.5"]]);
+	});
+
+	it("filters export reviews by prediction, global reviewer, and per-prediction reviewer", () => {
+		const predictions = [
+			prediction({ id: "1", name: "row-1" }),
+			prediction({ id: "2", name: "row-2" }),
+		];
+		const selection = emptyExportReviewSelection();
+		selection.excludedPredictionIds.add("2");
+		selection.excludedReviewers.add("zoe@example.com");
+		selection.excludedPredictionReviewers.add(predictionReviewerKey("1", "ana@example.com"));
+
+		const selected = selectedExportData(
+			selection,
+			predictions,
+			[[target({ predictionId: "1" })], [target({ predictionId: "2" })]],
+			[[
+				outputFeedback("ana@example.com", "4.5"),
+				outputFeedback("zoe@example.com", "3.5"),
+				outputFeedback("mike@example.com", "2.5"),
+			], [outputFeedback("mike@example.com", "1.5")]],
+			[[], []],
+		);
+
+		expect(selected.predictions.map((item) => item.name)).toEqual(["row-1"]);
+		expect(selected.outputFeedbackByPrediction[0].map((item) => item.userEmail)).toEqual(["mike@example.com"]);
 	});
 });

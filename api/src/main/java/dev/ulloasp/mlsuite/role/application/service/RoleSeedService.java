@@ -16,6 +16,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
+import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
@@ -71,6 +72,7 @@ public class RoleSeedService implements ApplicationRunner {
                     .filter(membership -> membership.getRoleDefinition() == null && membership.getRole() == role)
                     .forEach(membership -> membership.setRoleDefinition(def));
         }
+        externalReviewerRole(organization);
     }
 
     @Transactional
@@ -87,6 +89,18 @@ public class RoleSeedService implements ApplicationRunner {
     public RoleDefinition orgRole(Organization org, OrganizationRole role) {
         return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.name())
                 .orElseGet(() -> saveRole(new RoleDefinition(org, null, RoleScope.ORGANIZATION, label(role.name()), role.name().toLowerCase(), role.name()), mapper.organization(role)));
+    }
+
+    public RoleDefinition externalReviewerRole(Organization org) {
+        OrganizationSystemRole role = OrganizationSystemRole.EXTERNAL_REVIEWER;
+        return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.systemKey())
+                .orElseGet(() -> saveRole(new RoleDefinition(
+                        org,
+                        null,
+                        RoleScope.ORGANIZATION,
+                        role.label(),
+                        role.slug(),
+                        role.systemKey()), Set.of()));
     }
 
     public RoleDefinition teamRole(Team team, TeamRole role) {

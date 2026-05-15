@@ -67,7 +67,6 @@ class WorkspaceAuthorizationServiceTest {
 
     @Test
     void workspacePermissions_GiveSuperadminFullAccess() {
-        when(workspaceAccessService.requireUser(7L)).thenReturn(user(7L));
         when(workspaceAccessService.isSuperadmin(7L)).thenReturn(true);
 
         var permissions = service.workspacePermissions(7L, 41L);
@@ -104,6 +103,7 @@ class WorkspaceAuthorizationServiceTest {
 
         assertTrue(permissions.canDeleteOrganization());
         assertTrue(permissions.canTransferOwnership());
+        assertTrue(permissions.canManageReviewLinks());
         assertTrue(permissions.canManagePlugins());
     }
 
@@ -117,6 +117,7 @@ class WorkspaceAuthorizationServiceTest {
         var permissions = service.workspacePermissions(4L, 41L);
 
         assertTrue(permissions.canManageMemberRoles());
+        assertTrue(permissions.canManageReviewLinks());
         assertTrue(permissions.canManagePlugins());
         assertFalse(permissions.canDeleteOrganization());
         assertFalse(permissions.canTransferOwnership());
@@ -134,7 +135,19 @@ class WorkspaceAuthorizationServiceTest {
         assertTrue(permissions.canViewModels());
         assertTrue(permissions.canViewPlugins());
         assertFalse(permissions.canCreateModels());
+        assertFalse(permissions.canManageReviewLinks());
         assertFalse(permissions.canManagePlugins());
+    }
+
+    @Test
+    void reviewLinkChecks_ReturnFalseForUsersOutsideOrganization() {
+        when(workspaceAccessService.requireUser(17L)).thenReturn(user(17L));
+        when(workspaceAccessService.isSuperadmin(17L)).thenReturn(false);
+        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 17L))
+                .thenReturn(Optional.empty());
+
+        assertFalse(service.canPreviewReviewLink(17L, 41L));
+        assertFalse(service.isExternalReviewer(17L, 41L));
     }
 
     @Test

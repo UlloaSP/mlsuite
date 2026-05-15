@@ -13,7 +13,7 @@ export const AUTH_HELP_TEXT = "Use your MLSuite account to enter the workspace."
 export const BACK_LABEL = "Back";
 export const PASSWORD_MIN_LENGTH = 10;
 
-export const AUTH_MODES = ["login", "register"] as const;
+const AUTH_MODES = ["login", "register"] as const;
 export type AuthMode = (typeof AUTH_MODES)[number];
 
 export const DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {

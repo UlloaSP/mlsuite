@@ -4,7 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FormEvent } from "react";
+import { useAtom } from "jotai";
 import { useState } from "react";
+import { themeWithHtmlAtom } from "../atoms";
+import type { LoginPayload, RegisterPayload } from "../../user/api/userService";
 import { useLogin, useRegister } from "../../user/hooks";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
 import { AuthHeader } from "./auth-landing/AuthHeader";
@@ -12,11 +15,37 @@ import { AuthHero } from "./auth-landing/AuthHero";
 import { AuthOptions } from "./auth-landing/AuthOptions";
 import type { AuthMode } from "./auth-landing/authLandingCopy";
 
-export function AuthLandingPage() {
-	const [mode, setMode] = useState<AuthMode | null>(null);
+const DEFAULT_AUTH_MODES = ["login", "register"] as const satisfies readonly AuthMode[];
+
+type AuthLandingPageProps = {
+	defaultMode?: AuthMode | null;
+	availableModes?: readonly AuthMode[];
+	onLogin?: (request: LoginPayload) => void;
+	onRegister?: (request: RegisterPayload) => void;
+	loginBusy?: boolean;
+	registerBusy?: boolean;
+	loginError?: unknown;
+	registerError?: unknown;
+};
+
+export function AuthLandingPage({
+	defaultMode = null,
+	availableModes = DEFAULT_AUTH_MODES,
+	onLogin,
+	onRegister,
+	loginBusy,
+	registerBusy,
+	loginError,
+	registerError,
+}: AuthLandingPageProps = {}) {
+	const [theme] = useAtom(themeWithHtmlAtom);
+	const [selectedMode, setSelectedMode] = useState<AuthMode | null>(null);
+	const mode = selectedMode ?? defaultMode;
 	const login = useLogin();
 	const register = useRegister();
-	const busy = login.isPending || register.isPending;
+	const busy = (loginBusy ?? login.isPending) || (registerBusy ?? register.isPending);
+	const submitError = mode === "login" ? (loginError ?? login.error) : (registerError ?? register.error);
+	const enabledModes = availableModes.length > 0 ? availableModes : DEFAULT_AUTH_MODES;
 
 	const submit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
@@ -27,19 +56,29 @@ export function AuthLandingPage() {
 		const password = String(formData.get("password") ?? "");
 
 		if (mode === "login") {
-			login.mutate({ email, password });
+			const request: LoginPayload = { email, password };
+			if (onLogin) {
+				onLogin(request);
+				return;
+			}
+			login.mutate(request);
 			return;
 		}
 
-		register.mutate({
+		const request: RegisterPayload = {
 			email,
 			password,
 			fullName: String(formData.get("fullName") ?? ""),
-		});
+		};
+		if (onRegister) {
+			onRegister(request);
+			return;
+		}
+		register.mutate(request);
 	};
 
 	return (
-		<div className="min-h-svh overflow-x-hidden bg-[#fdfcf8] text-[#111] transition-colors [font-family:'Space_Grotesk',sans-serif]">
+		<div className={`min-h-svh overflow-x-hidden bg-[#fdfcf8] text-[#111] transition-colors [font-family:'Space_Grotesk',sans-serif] dark:bg-[#101418] dark:text-[#f5f5f5] ${theme === "dark" ? "dark" : ""}`}>
 			<div className="relative flex min-h-svh w-full flex-col overflow-x-hidden">
 				<AuthHeader />
 
@@ -54,12 +93,14 @@ export function AuthLandingPage() {
 					>
 						<div className="w-full max-w-[620px] lg:mt-auto lg:max-w-none">
 							{mode === null ? (
-								<AuthOptions onSelect={setMode} />
+								<AuthOptions modes={enabledModes} onSelect={setSelectedMode} />
 							) : (
 								<AuthFormPanel
 									mode={mode}
+									modes={enabledModes}
 									busy={busy}
-									onModeChange={setMode}
+									error={submitError}
+									onModeChange={setSelectedMode}
 									onSubmit={submit}
 								/>
 							)}

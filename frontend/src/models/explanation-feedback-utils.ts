@@ -8,6 +8,7 @@ import type { CatalogExplanationDefinition } from "../app/utils/mlform/custom-ex
 import { toMlformSchema } from "../app/utils/mlform/schema-validation";
 import type { ExplanationConfig } from "mlform/runtime";
 import type { PredictionExplanationDescriptor } from "./questionnaire-feedback";
+import type { QuestionnaireSchema } from "./questionnaire-schema";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -95,6 +96,26 @@ const getExplanationDefinitionMap = (
 ): Map<string, CatalogExplanationDefinition> =>
 	new Map(customExplanationDefinitions.map((definition) => [definition.kind, definition]));
 
+const DEFAULT_EXPLANATION_FEEDBACK_QUESTIONNAIRE: QuestionnaireSchema = {
+	steps: [{
+		id: "explanation-feedback",
+		title: "Explanation Feedback",
+		fields: [
+			{ kind: "rating", id: "explanation-feedback-clarity", label: "Clarity", max: 5 },
+			{ kind: "rating", id: "explanation-feedback-usefulness", label: "Usefulness", max: 5 },
+			{ kind: "rating", id: "explanation-feedback-trust", label: "Trust", max: 5 },
+		],
+	}],
+};
+
+const getMetadataFeedbackQuestionnaire = (explanation: Record<string, unknown>): QuestionnaireSchema | undefined =>
+	explanation.feedbackEnabled === true ? DEFAULT_EXPLANATION_FEEDBACK_QUESTIONNAIRE : undefined;
+
+const getEmbeddedFeedbackQuestionnaire = (explanation: ExplanationConfig): QuestionnaireSchema | undefined => {
+	const value = (explanation as Record<string, unknown>).feedbackQuestionnaire;
+	return isRecord(value) && Array.isArray(value.steps) ? value as QuestionnaireSchema : undefined;
+};
+
 const getFallbackExplanationEntries = (predictionValue: unknown): PredictionExplanationDescriptor[] => {
 	if (!isRecord(predictionValue)) {
 		return [];
@@ -137,6 +158,50 @@ const getFallbackExplanationEntries = (predictionValue: unknown): PredictionExpl
 	});
 };
 
+const getRawSchemaExplanationEntries = (
+	predictionValue: unknown,
+	signatureSchema: unknown,
+	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
+): PredictionExplanationDescriptor[] => {
+	if (!isRecord(predictionValue) || !isRecord(signatureSchema) || !Array.isArray(signatureSchema.explanations)) {
+		return getFallbackExplanationEntries(predictionValue);
+	}
+
+	const definitionMap = getExplanationDefinitionMap(customExplanationDefinitions);
+	const reports = isRecord(predictionValue.reports) ? predictionValue.reports : {};
+	const meta = isRecord(predictionValue.meta) ? predictionValue.meta : {};
+	const explainErrors = isRecord(meta.explainErrors) ? meta.explainErrors : {};
+	const entries = signatureSchema.explanations.flatMap((item, index) => {
+		if (!isRecord(item) || typeof item.kind !== "string") {
+			return [];
+		}
+
+		const explanationId =
+			typeof item.id === "string" && item.id.trim().length > 0
+				? item.id
+				: `explanation-${index + 1}`;
+		const content = getExplanationContent(reports[explanationId]);
+		const nextError = explainErrors[explanationId];
+
+		if (content.length === 0 && typeof nextError !== "string") {
+			return [];
+		}
+
+		return [{
+			order: index,
+			explanationId,
+			label: typeof item.label === "string" ? item.label : explanationId,
+			content: content.map((value) => normalizeDisplayedExplanation(value)),
+			error: typeof nextError === "string" ? nextError : null,
+			feedbackQuestionnaire:
+				getEmbeddedFeedbackQuestionnaire(item as ExplanationConfig) ??
+				definitionMap.get(item.kind)?.definition.feedbackQuestionnaire ??
+				getMetadataFeedbackQuestionnaire(item),
+		}];
+	});
+	return entries.length > 0 ? entries : getFallbackExplanationEntries(predictionValue);
+};
+
 export const extractPredictionExplanationEntries = (
 	predictionValue: unknown,
 	signatureSchema?: unknown,
@@ -170,10 +235,17 @@ export const extractPredictionExplanationEntries = (
 				label: explanation.label ?? explanationId,
 				content: content.map((item) => normalizeDisplayedExplanation(item)),
 				error: typeof nextError === "string" ? nextError : null,
-				feedbackQuestionnaire: definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire,
+				feedbackQuestionnaire:
+					getEmbeddedFeedbackQuestionnaire(explanation) ??
+					definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire ??
+					getMetadataFeedbackQuestionnaire(explanation as Record<string, unknown>),
 			}];
 		});
 	} catch {
-		return getFallbackExplanationEntries(predictionValue);
+		return getRawSchemaExplanationEntries(
+			predictionValue,
+			signatureSchema,
+			customExplanationDefinitions,
+		);
 	}
 };

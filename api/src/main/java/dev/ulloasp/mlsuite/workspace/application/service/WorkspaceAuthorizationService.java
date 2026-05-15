@@ -10,10 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
 import dev.ulloasp.mlsuite.role.application.service.LegacyRolePermissionMapper;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
+import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
@@ -54,7 +56,7 @@ public class WorkspaceAuthorizationService {
 
     public WorkspacePermissionsDto workspacePermissions(Long userId, Long organizationId) {
         if (workspaceAccessService.isSuperadmin(userId)) {
-            return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
+            return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
         }
         Set<PermissionKey> permissions = effectiveOrganizationPermissions(userId, organizationId);
         return new WorkspacePermissionsDto(
@@ -78,6 +80,7 @@ public class WorkspaceAuthorizationService {
                 has(permissions, PermissionKey.EDIT_MODELS),
                 has(permissions, PermissionKey.DELETE_MODELS),
                 has(permissions, PermissionKey.RUN_PREDICTIONS),
+                has(permissions, PermissionKey.MANAGE_REVIEW_LINKS),
                 has(permissions, PermissionKey.VIEW_PLUGINS),
                 has(permissions, PermissionKey.MANAGE_PLUGINS));
     }
@@ -202,9 +205,33 @@ public class WorkspaceAuthorizationService {
         }
     }
 
+    public void requireReviewLinkManagement(Long userId, Long organizationId) {
+        if (!workspacePermissions(userId, organizationId).canManageReviewLinks()) {
+            throw new OrganizationAccessDeniedException(organizationId);
+        }
+    }
+
+    public boolean canPreviewReviewLink(Long userId, Long organizationId) {
+        try {
+            return workspacePermissions(userId, organizationId).canManageReviewLinks();
+        } catch (OrganizationAccessDeniedException ex) {
+            return false;
+        }
+    }
+
+    public boolean isExternalReviewer(Long userId, Long organizationId) {
+        try {
+            User user = workspaceAccessService.requireUser(userId);
+            OrganizationMembership membership = requireOrganizationMembership(user, organizationId);
+            return OrganizationSystemRole.EXTERNAL_REVIEWER.matches(membership.getRoleDefinition());
+        } catch (OrganizationAccessDeniedException ex) {
+            return false;
+        }
+    }
+
     public MembershipActionsDto organizationMemberActions(Long actorUserId, Long organizationId, OrganizationMembership target) {
         WorkspacePermissionsDto workspace = workspacePermissions(actorUserId, organizationId);
-        if (!workspace.canViewMembers() || actorUserId.equals(target.getUser().getId()) || "OWNER".equals(systemKey(target.getRoleDefinition()))) {
+        if (!workspace.canViewMembers() || actorUserId.equals(target.getUser().getId()) || isOwner(target)) {
             return new MembershipActionsDto(false, false, List.of());
         }
         if (!workspace.canManageMemberRoles()) {
@@ -212,7 +239,7 @@ public class WorkspaceAuthorizationService {
         }
         var roles = roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)
                 .stream()
-                .filter(role -> !"OWNER".equals(role.getSystemKey()))
+                .filter(role -> !OrganizationRole.OWNER.name().equals(role.getSystemKey()))
                 .map(RoleSummaryDto::from)
                 .toList();
         return new MembershipActionsDto(true, workspace.canRemoveMembers(), roles);
@@ -251,5 +278,10 @@ public class WorkspaceAuthorizationService {
 
     private String systemKey(RoleDefinition role) {
         return role == null ? null : role.getSystemKey();
+    }
+
+    private boolean isOwner(OrganizationMembership membership) {
+        return OrganizationRole.OWNER.name().equals(systemKey(membership.getRoleDefinition()))
+                || membership.getRole() == OrganizationRole.OWNER;
     }
 }

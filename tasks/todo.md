@@ -1,5 +1,492 @@
 # Config Hardcode Removal Plan
 
+## Backend Lessons Audit
+
+### Goal
+- [x] Audit backend for patterns already captured in `tasks/lessons.md`.
+- [x] Prioritize source-of-truth, hardcoded role/plugin assumptions, review-link auth scope, placeholder data, and legacy compatibility leaks.
+- [x] Report findings with file/line refs.
+
+### Plan
+- [x] Scan backend for duplicated system-role strings and enum `valueOf` role paths.
+- [x] Scan review APIs for current-org vs token-org leaks and generic error handling.
+- [x] Scan persisted explanation/feedback metadata paths for legacy fallback or frontend-only source assumptions.
+- [x] Scan admin/dashboard/infra contracts for placeholder or misleading metrics.
+- [x] Read candidate files and produce review findings.
+
+### Review
+- Status: fixed two backend regressions; one residual risk reported.
+- Fixed global `ResponseStatusException` handling so review/access errors keep 4xx status instead of falling to generic 500.
+- Fixed prediction feedback status source-of-truth: no more plugin source parsing or active-catalog dependency; status uses persisted signature metadata.
+- Replaced remaining hardcoded owner role string in workspace auth with `OrganizationRole.OWNER.name()`.
+- Residual risk: org/team quota DTO fields still expose `quotaUsed` as hardcoded zero without a usage source.
+- Verification:
+  - `mvn -q "-Dtest=PredictionFeedbackStatusResolverTest,DomainExceptionHandlerTest,InvitationManagementServiceTest,OrganizationManagementServiceTest,WorkspaceAuthorizationServiceTest,ReviewLinkServiceTest" test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` ✅
+  - touched line cap ✅ all touched Java files <=300.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+
+## Review Tray Scroll State Matrix
+
+### States to support
+- [x] A. Revision collapsed, Pending collapsed: both section headers at top, no list bodies, no internal scroll.
+- [x] B. Revision open empty, Pending open empty: both headers only, no blank list area.
+- [x] C. One open short, sibling collapsed/empty/short: open section list uses natural item height only, no scroll.
+- [x] D. One open long, sibling collapsed/empty/short: long section expands into available sidebar space, scroll only after using freed space.
+- [x] E. Both open short: both lists use natural item height, no scroll, remaining space stays below sections.
+- [x] F. One open short, other open long: short list natural, long list gets all remaining height, scroll only if still needed.
+- [x] G. Both open long: available list space split between both, both may scroll internally.
+- [x] H. Items move between pending/revision: layout recomputes after DOM/content change.
+- [x] I. Viewport resize: layout recomputes and still obeys same rules.
+
+### Plan
+- [x] Phase 1. Remove count heuristic and static half/full max-height guess.
+- [x] Phase 2. Add DOM-measured tray layout hook: measure tray body height, section chrome height, list natural scroll heights.
+- [x] Phase 3. Allocate list max-heights:
+  - collapsed/empty list = 0.
+  - if natural heights fit available list space: use natural heights.
+  - if one list overflows and sibling fits: sibling natural, overflowing list gets all remaining.
+  - if both overflow: split available after required minimums.
+- [x] Phase 4. Wire measured heights into section list bodies only; do not change outer sidebar shell.
+- [x] Phase 5. Build a visual harness covering states A-I.
+- [x] Phase 6. Use Playwright screenshots to verify no blank reserved list space and scroll appears only when needed.
+- [x] Phase 7. Run normal build/react-doctor/diff/graph.
+
+### Review
+- Status: fixed.
+- Replaced count heuristic with DOM measurement.
+- `useReviewTrayLayout` measures body height, section chrome, and each list's natural `scrollHeight`.
+- Allocation rules now match state matrix:
+  - collapsed/empty = no list body.
+  - short lists = natural height, no scroll.
+  - one long + sibling short/collapsed/empty = long list gets remaining available height.
+  - both long = available height split.
+- Visual verification:
+  - Created temporary harness with scenarios A-I.
+  - Ran Playwright desktop screenshots at 1300x980.
+  - Reviewed key states: both collapsed/empty, short+long, both long, collapsed+long.
+  - Removed harness/screenshots after verification.
+  - Attempted Playwright DOM metric test; blocked because temporary `npx playwright` CLI could not resolve `@playwright/test` from repo context.
+- Verification:
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing unused admin exports/AuthHero heading warnings.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅ graph updated; `graph.html` skipped because graph has 5154 nodes over viz limit.
+
+## Review Tray Shared Scroll Space
+
+### Goal
+- [x] Outer sidebar stays fixed.
+- [x] Long section expands when sibling is collapsed, empty, or short.
+- [x] Two long sections split scroll space.
+
+### Plan
+- [x] Phase 1. Detect whether each open section needs shared scroll space.
+- [x] Phase 2. Give full list max-height unless both sections need scroll.
+- [x] Phase 3. Verify build/react-doctor/graph.
+
+### Review
+- Status: fixed.
+- Outer sidebar unchanged.
+- If only one list needs scroll, it gets full available list max-height.
+- If both lists are long, each gets half max-height.
+- Short/collapsed/empty sibling no longer wastes scroll capacity.
+- Verification:
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing unused admin exports/AuthHero heading warnings.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅ graph updated; `graph.html` skipped because graph has 5069 nodes over viz limit.
+
+## Review Tray Simple Section Height
+
+### Goal
+- [x] Sidebar outer shell unchanged.
+- [x] Collapsed section height equals header only.
+- [x] Open short section uses natural list height.
+- [x] Open long section scrolls after half-tray max.
+
+### Plan
+- [x] Phase 1. Restore outer tray fixed height behavior.
+- [x] Phase 2. Keep accordion sections non-flex natural height.
+- [x] Phase 3. Set list max-height to half available tray height.
+- [x] Phase 4. Verify build/react-doctor/graph.
+
+### Review
+- Status: fixed.
+- Reverted outer tray to fixed sticky height; only section/list behavior changed.
+- Sections stay natural height; collapsed section is header only.
+- Open section list grows with content until half-tray max, then scrolls internally.
+- Verification:
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing unused admin exports/AuthHero heading warnings.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅ graph updated; `graph.html` skipped because graph has 5002 nodes over viz limit.
+
+## Review Tray Natural Height
+
+### Goal
+- [x] Empty open accordion does not reserve blank height.
+- [x] Short lists use natural content height.
+- [x] Long lists still scroll internally.
+
+### Plan
+- [x] Phase 1. Replace fixed tray height with max-height.
+- [x] Phase 2. Remove flex-fill behavior from accordion groups.
+- [x] Phase 3. Render list body only when open and non-empty.
+- [x] Phase 4. Verify build/react-doctor/graph.
+
+### Review
+- Status: fixed.
+- Tray now uses `max-height`, not fixed `height`, so it shrinks to real content when content is short.
+- Accordion groups no longer use `flex-1`; empty open groups render no list body.
+- Long lists still get internal scroll via list `max-height`.
+- Verification:
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing unused admin exports/AuthHero heading warnings.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+
+## Review Tray Pending Active Color
+
+### Goal
+- [x] Pending selected row uses light orange.
+- [x] Revision selected row keeps light green.
+
+### Plan
+- [x] Phase 1. Derive active row background from row tone.
+- [x] Phase 2. Verify build/react-doctor/graph.
+
+### Review
+- Status: fixed.
+- Pending active row now uses light orange `#fff7ed`.
+- Revision active row keeps light green `#eaf8ef`.
+- Verification:
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing unused admin exports/AuthHero heading warnings.
+  - touched source line-cap check ✅ row file 39 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+
+## Review Tray Compact Scale
+
+### Goal
+- [x] Keep current tray layout.
+- [x] Reduce text/button/icon/pill scale.
+- [x] Preserve readability and reference hierarchy.
+
+### Plan
+- [x] Phase 1. Compact tray header, CTA, icon, section controls.
+- [x] Phase 2. Compact row typography and padding.
+- [x] Phase 3. Verify build/react-doctor/line caps/graph.
+
+### Review
+- Status: fixed.
+- Reduced tray padding, header, helper copy, send button, icon box, section titles, count pills, chevrons, row text, row padding, and status dots.
+- Layout/accordion behavior unchanged.
+- Verification:
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing unused admin exports/AuthHero heading warnings.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+
+## Review Tray Accordion Height
+
+### Goal
+- [x] Closed accordion does not reserve list height.
+- [x] Open accordion uses remaining tray space.
+- [x] Internal scroll appears only when open list content exceeds available space.
+
+### Plan
+- [x] Phase 1. Make tray body a flex column with fixed shell height.
+- [x] Phase 2. Make open groups flex and closed groups shrink to header height.
+- [x] Phase 3. Remove static half-height max from list body.
+- [x] Phase 4. Verify build/react-doctor/line caps/graph.
+
+### Review
+- Status: fixed.
+- Removed static per-accordion max height.
+- Tray body now uses flex layout; open groups fill available height, closed groups shrink to header only.
+- List scroll stays inside the open list body and only appears when content overflows that allocated space.
+- Verification:
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing unused admin exports/AuthHero heading warnings.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+
+## Review Tray Selection Flicker
+
+### Goal
+- [x] Sidebar click keeps selected prediction in center panel.
+- [x] Route validation handles backend numeric ids and URL string params.
+- [x] Regression test locks id normalization.
+
+### Plan
+- [x] Phase 1. Add review id normalization helper.
+- [x] Phase 2. Use helper in workspace selection, route guard, rail active state, submit ids.
+- [x] Phase 3. Add regression test for numeric backend id vs string URL param.
+- [x] Phase 4. Verify focused tests/build/graph.
+
+### Review
+- Status: fixed.
+- Cause: backend serializes prediction ids as numbers, URL params are strings, so route guard rejected clicked id and navigated back to first item.
+- Added shared id normalization for review selection, active state, default selection, route guard, row click, and submit ids.
+- Verification:
+  - `vp test test/review-link-service.test.ts` ✅ 3 tests.
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing unused admin exports/AuthHero heading warnings.
+  - touched source line-cap check ✅ no touched source file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+
+## Review Tray Reference Detail
+
+### Goal
+- [x] Match reference tray structure: dots, group subtitles, count pills, chevrons, item status dots.
+- [x] Show entered revision/pending date per item.
+- [x] Keep data backend-sourced.
+
+### Plan
+- [x] Phase 1. Add `stateEnteredAt` to review context items.
+- [x] Phase 2. Compute pending date from prediction created date and revision date from own feedback timestamps.
+- [x] Phase 3. Restyle tray to match reference and add collapsible groups.
+- [x] Phase 4. Verify tests/build/react-doctor/graph.
+
+### Review
+- Status: fixed.
+- Review tray now matches the provided reference structure: header microcopy, send button, colored section dots, count pills, chevrons, item status dots, and active revision highlight.
+- Review context now sends `stateEnteredAt`; pending uses prediction creation time, revision uses the first own feedback creation time.
+- Tray shell stays sticky/right with hidden outer overflow; each accordion list owns its own scroll.
+- Verification:
+  - `mvn -q -Dtest=ReviewLinkServiceTest test` ✅ warnings only from Lombok/Unsafe.
+  - `vp test test/review-link-service.test.ts` ✅ 1 file / 2 tests.
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script, plugin timings, large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing warnings for unused admin exports and `AuthHero` heading weight.
+  - touched source line-cap check ✅ no touched source files over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
+  - `graphify update .` ✅
+
+## Review Tray Right Sticky Layout
+
+### Goal
+- [x] Move review tray to right side.
+- [x] Keep tray sticky.
+- [x] Remove tray-level scroll.
+- [x] Keep scroll only inside Pending/Revision lists.
+
+### Plan
+- [x] Phase 1. Swap workspace grid order/columns.
+- [x] Phase 2. Change tray CSS: sticky shell, fixed viewport height, internal list scroll.
+- [x] Phase 3. Verify build/react-doctor/line caps/graph.
+
+### Review
+- Status: fixed.
+- Review workspace now renders detail first and review tray as right column.
+- Tray is sticky on desktop with fixed viewport height and no tray-level scroll.
+- Pending and Revision item lists have their own internal scroll regions.
+- Verification:
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script, plugin timings, large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; existing warnings only
+  - line caps ✅ touched files <=300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+
+## Review Portal Staging Flow
+
+### Goal
+- [x] After feedback save, show saved answers with edit button instead of live questionnaire.
+- [x] Show original explanation content in review page.
+- [x] Put questionnaire first, then accordions: outputs, explanations, inputs.
+- [x] Add pending/revision tray; saved feedback moves prediction to revision; submitted items disappear.
+- [x] Avoid nested cards, extra boxes, and heavy rounding.
+
+### Plan
+- [x] Phase 1. Add backend submitted state per review link prediction and reviewer.
+- [x] Phase 2. Extend review context/detail DTOs and submit endpoint.
+- [x] Phase 3. Refactor review UI layout/order and rail/tray state.
+- [x] Phase 4. Add saved answer summary + edit mode for questionnaire.
+- [x] Phase 5. Update tests, verify backend/frontend, graph, lessons.
+
+### Review
+- Status: fixed.
+- Added persisted `ReviewLinkPredictionSubmission`, scoped by review link prediction + reviewer.
+- Review context now returns only not-submitted items with `PENDING`/`REVISION` state.
+- Saved feedback moves item to Revision tray; Send revision persists submitted state and removes items from tray/detail navigation.
+- Questionnaire is first. Saved answers render read-only with Edit button; edit reopens MLForm wizard.
+- Outputs, explanations, and inputs moved below as flat accordions. Explanations show original explanation text.
+- UI removes extra metric box/card nesting and squares review questionnaire chrome.
+- Verification:
+  - `mvn -q -Dtest=ReviewLinkServiceTest test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` ✅
+  - `vp test test/explanation-feedback.test.ts test/review-link-service.test.ts` ✅ 7 tests
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; existing warnings only
+  - line caps ✅ touched source/test files <=300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 515 files, mostly `dist/`
+
+## Review Portal Router And Wizard Repair
+
+### Goal
+- [x] Route review paths directly to workspace page, no wrapper pages.
+- [x] Fix combined questionnaire field ids so MLForm schema and layout match.
+- [x] Remove card-inside-card around review questionnaire.
+
+### Plan
+- [x] Phase 1. Replace review route wrapper page imports with direct `ReviewWorkspacePage`.
+- [x] Phase 2. Make combined questionnaire step fields keep source ids; prefix only step id to avoid layout mismatch.
+- [x] Phase 3. Remove outer `AppPanel` around embedded MLForm questionnaire.
+- [x] Phase 4. Update tests, verify build/checks, update lessons.
+
+### Review
+- Status: fixed.
+- Removed `ReviewHistoryPage` and `ReviewPredictionDetailPage` wrappers; router now points both review paths directly to `ReviewWorkspacePage`.
+- Root cause: combined questionnaire used `__` in field ids, but MLForm normalizes explicit ids through its slugger; schema id became hyphenated while layout still referenced underscore id.
+- Combined questionnaire now uses slug-stable hyphen ids, so MLForm schema/layout agree.
+- Removed review detail outer card and questionnaire `AppPanel`, avoiding card-inside-card nesting.
+- Verification:
+  - `vp test test/explanation-feedback.test.ts` ✅ 5 tests
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; existing warnings only
+  - line caps ✅ touched source/test files <=300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 508 files, mostly `dist/`
+
+## Review Portal Combined Questionnaire
+
+### Goal
+- [x] Replace separate review output/explanation questionnaires with one wizard.
+- [x] Step order: all outputs, then all explanations.
+- [x] Each step shows prediction result/explanation context.
+- [x] Use MLForm questionnaire controls, not custom save/edit buttons.
+
+### Plan
+- [x] Phase 1. Build combined review questionnaire component with MLForm wizard transport saving through review APIs.
+- [x] Phase 2. Replace separate review output/explanation cards in detail panel.
+- [x] Phase 3. Add focused tests for combined step/value mapping.
+- [x] Phase 4. Verify tests/build/line caps/graph and document review.
+
+### Review
+- Status: fixed.
+- Review prediction detail now renders one MLForm wizard: output steps first, then explanation steps.
+- Each step title/description includes the result or explanation being reviewed.
+- Save/edit custom cards were removed from the review flow; submit is handled by MLForm's own controls through a review API transport.
+- Verification:
+  - `vp test test/explanation-feedback.test.ts` ✅ 5 tests
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; existing warnings only
+  - line caps ✅ touched review/model/test files <=300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 508 files, mostly `dist/`
+
+## Review Portal Single Page And Questionnaire Fix
+
+### Goal
+- [x] Make review portal one page with prediction sidebar/drawer navigation.
+- [x] Remove back-and-forth detail/history flow.
+- [x] Make explanation questionnaire editable in review portal when normal prediction detail can detect it.
+
+### Plan
+- [x] Phase 1. Split review portal into shared workspace page + sidebar/detail components under line cap.
+- [x] Phase 2. Route both `/review/:token` and `/review/:token/predictions/:predictionId` to same workspace page.
+- [x] Phase 3. Add questionnaire fallback path for review detail: embedded schema first, active plugin catalog fallback, metadata fallback for old schemas.
+- [x] Phase 4. Update/add tests and run build/check/line caps/graph.
+
+### Review
+- Status: fixed.
+- Review portal now uses `ReviewWorkspacePage` for both `/review/:token` and `/review/:token/predictions/:predictionId`.
+- Prediction list is persistent `ReviewPredictionRail`: horizontal drawer on small screens, sticky left rail on desktop.
+- Detail no longer shows “Back to review history”; selected prediction changes from rail.
+- Review detail now tries embedded questionnaire metadata, active plugin catalog fallback, then old-schema `feedbackEnabled` fallback with editable Clarity/Usefulness/Trust questionnaire.
+- Verification:
+  - `vp test test/explanation-feedback.test.ts` ✅ 3 tests
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; existing warnings only
+  - line caps ✅ touched review/explanation files <=300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 505 files, mostly `dist/`
+
+## Explanation Feedback Questionnaire Detection Fix
+
+### Goal
+- [x] Detect plugin `feedbackQuestionnaire` on prediction detail explanation cards.
+- [x] Preserve existing prediction/review feedback behavior.
+- [x] Keep touched files <=300 lines.
+
+### Plan
+- [x] Phase 1. Reproduce with focused extraction/helper test or harness.
+- [x] Phase 2. Trace explanation descriptor creation and plugin definition lookup.
+- [x] Phase 3. Apply minimal fix at metadata/lookup boundary.
+- [x] Phase 4. Verify focused tests/build/line caps/graph and document review.
+
+### Review
+- Status: fixed.
+- Root cause: restricted review detail called `extractPredictionExplanationEntries(..., [])` to avoid normal plugin catalog APIs, while saved schema only stored `feedbackEnabled`; no questionnaire schema reached the portal.
+- `applyExplanationFeedbackMetadata` now persists `feedbackQuestionnaire` on matching schema explanations when saving schema versions.
+- `extractPredictionExplanationEntries` now reads embedded questionnaire metadata from schema and has a raw-schema fallback when plugin catalog validation is unavailable.
+- Verification:
+  - `vp test test/explanation-feedback.test.ts` ✅ 2 tests
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; existing warnings only
+  - line caps ✅ `signature-feedback-metadata.ts` 47, `explanation-feedback-utils.ts` 234, `explanation-feedback.test.ts` 76
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+  - `vp check` ❌ blocked by existing formatting backlog in 499 files, mostly `dist/`
+- Note: existing schemas saved before this fix only have `feedbackEnabled`; resave schema with plugin active to embed the questionnaire.
+
+## External Review Links For Prediction Feedback
+
+### Goal
+- [x] Add encrypted, expiring, revocable review links scoped to selected predictions.
+- [x] Add locked `External Reviewer` role and `MANAGE_REVIEW_LINKS` permission.
+- [x] Add restricted review portal outside normal app shell.
+- [x] Let owner/admin share visible schema history predictions and revoke links.
+
+### Plan
+- [x] Phase 1. Backend RBAC/role seed: permission, workspace DTOs, role catalog, legacy mapper, locked reviewer seed.
+- [x] Phase 2. Backend review link persistence/token/API/service with selected prediction validation and current-user feedback scope.
+- [x] Phase 3. Backend tests for link create/access/revoke/detail/feedback.
+- [x] Phase 4. Frontend permission types and review-link API hooks.
+- [x] Phase 5. Split schema detail history/share UI before edits; add selection modal and revoke list.
+- [x] Phase 6. Add review routes outside app shell with local login and restricted history/detail.
+- [x] Phase 7. Frontend tests and required verification commands, line caps, diff check, graph update.
+
+### Acceptance
+- [x] Token alone never grants access; auth + org membership + selected prediction scope enforced by backend.
+- [x] External reviewer sees no normal app shell/nav/org switcher/create/export/bulk/predict-again controls.
+- [x] Review portal feedback lists and writes only current user's feedback.
+- [x] Owner/admin preview works through same restricted portal.
+- [x] Touched source files stay <=300 lines.
+
+### Review
+- Status: implemented.
+- Added `MANAGE_REVIEW_LINKS`, workspace permission exposure, role catalog entry, and locked seeded `External Reviewer` role.
+- Added review-link persistence, AES-GCM token crypto, token hash lookup, revoke/expiry checks, org-membership checks, selected-prediction checks, and review feedback create/update endpoints scoped to current user.
+- Added `/review/:token` and `/review/:token/predictions/:predictionId` outside the normal app shell with local login, compact review shell, restricted prediction history/detail, and review API feedback writes.
+- Split schema history UI into `SignatureHistorySection`, `ReviewLinkButton`, and `ReviewLinkDialog`; owners/admins can select visible rows, set expiry, generate a URL, copy it, list links, and revoke.
+- Added backend service/RBAC tests for create, validation, token rejection, external reviewer access, unrelated member denial, selected-prediction detail, and current-user feedback writes.
+- Added frontend review API tests for link generation body and token-scoped feedback endpoints.
+- Verification:
+  - `mvn -q "-Dtest=ReviewLinkServiceTest,WorkspaceAuthorizationServiceTest" test` from `api/` ✅
+  - `vp test test/review-link-service.test.ts` from `frontend/` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` from `api/` ✅
+  - `vp run build` from `frontend/` ✅ warnings only: existing runtime-config non-module script and large chunks
+  - `npx react-doctor@latest --verbose` ✅ 99/100; remaining warnings pre-existing infra unused exports and auth hero bold heading
+  - `vp check` ❌ blocked by existing formatting backlog in 494 files, mostly `dist/`
+  - touched file line caps ✅ all touched/new source files <=300 lines
+  - `git diff --check` ✅ CRLF warnings only
+  - `graphify update .` ✅
+- Remaining test gap: no browser route/component tests for the review portal shell.
+
 ## Prediction Export Feedback Columns
 
 ### Goal
@@ -823,3 +1310,138 @@ Run grep audit again for forbidden literals in config paths. Then run targeted c
   - touched source/test line-cap check ✅ no touched file over 300 lines.
   - `git diff --check` ✅ no whitespace errors; existing CRLF warnings only.
   - `graphify update .` ✅
+## External Review Auth + Dark Mode
+
+### Goal
+- [ ] Use main `AuthLandingPage` for unauthenticated `/review/:token` login.
+- [ ] Keep review login local: successful login stays on `/review/:token`.
+- [ ] Add dark mode support to external review shell, detail, tray, and review auth landing.
+- [ ] Verify build, line cap, diff, graph.
+
+### Plan
+- [ ] Add injectable login/register behavior to `AuthLandingPage` without changing normal route behavior.
+- [ ] Replace `ReviewLoginPanel` usage with review-flavored `AuthLandingPage`.
+- [ ] Make auth landing components theme-aware with existing `html.dark` class.
+- [ ] Make review portal components use theme tokens instead of hardcoded light colors.
+- [ ] Run verification.
+
+### Review
+- Status: fixed.
+- `/review/:token` unauthenticated state now renders `AuthLandingPage` directly with login-only mode.
+- Review login uses local mutation and updates `['user']`; no `/workspace` redirect.
+- Removed obsolete `ReviewLoginPanel`.
+- Auth landing and review portal now respect dark theme via existing `themeWithHtmlAtom` + dark variants/theme tokens.
+- Review tray/detail/accordion/read-only feedback sections no longer force light-only surfaces.
+- Visual check: `npx -y playwright screenshot --color-scheme dark http://127.0.0.1:5181/review/fake-token ...` showed dark review login page after auth probe resolved.
+- Verification:
+  - `vp run build` ✅ warnings only: runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing warnings: unused admin infra exports, AuthHero bold heading.
+  - touched line cap ✅ key files 126 lines or less.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+
+## Share Review Link Modal Cleanup
+
+### Goal
+- [ ] Modal selects predictions by name + creation date only.
+- [ ] Remove feedback status, view action, prediction id, nested cards, heavy radius.
+- [ ] Add select all / deselect all controls.
+- [ ] Existing created links expose copyable review URL.
+- [ ] Keep backend source of truth for link/token access.
+
+### Plan
+- [ ] Store encrypted review token on `ReviewLink` so management list can return copyable links.
+- [ ] Extend summary DTO/API/frontend DTO with token.
+- [ ] Replace modal table with purpose-built simple selection list.
+- [ ] Replace links panel with flat list: URL, created/expires, revoke/copy.
+- [ ] Verify backend/frontend builds, line caps, diff, graph.
+
+### Review
+- Status: fixed.
+- Modal now uses a flat two-column layout: prediction selector + link management.
+- Prediction selector shows only name and creation date; no feedback status, no view action, no prediction id.
+- Added Select all / Deselect all controls.
+- Existing link rows now show copyable URL, created/expires dates, copy, revoke.
+- Backend now persists encrypted review token and returns it in management summaries so URLs remain available after creation.
+- Verification:
+  - `vp run build` ✅ warnings only: runtime-config non-module script and large chunks.
+  - `mvn -q -Dtest=ReviewLinkServiceTest test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` ✅
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing warnings: admin infra unused exports, AuthHero bold heading.
+  - line cap ✅ touched files <=300.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+
+### Review update
+- Removed `New link` block; generate now only refreshes active links and shows toast.
+- Links list now filters revoked and expired links out.
+- Link URL text hidden; active links expose only Copy/Revoke actions plus metadata.
+- Verification:
+  - `vp run build` ✅ warnings only: runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 99; existing warnings only.
+  - line cap ✅ `ReviewLinkDialog.tsx` 166 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+
+## Export Reviews Modal
+
+### Goal
+- [ ] Export button opens modal instead direct CSV.
+- [ ] Modal shows predictions as accordion: closed = prediction name, created date, review count.
+- [ ] Expanded = reviewers + output/explanation feedback detail.
+- [ ] Selection supports: all reviews, remove whole prediction, remove reviewer globally, remove reviewer only for one prediction.
+- [ ] Export CSV honors selected predictions/reviewers/review items.
+- [ ] Keep UI calm: flat rows, no sensory overload, no nested cards.
+
+### Plan
+- [ ] Add export selection model/helpers near export feature.
+- [ ] Extend CSV builder to accept filtered feedback arrays.
+- [ ] Split `ExportButton` into button + modal + rows if line cap needs it.
+- [ ] Verify build, react-doctor, line cap, diff, graph.
+
+### Review
+- Status: fixed.
+- Export button now opens a modal instead of immediate CSV download.
+- Modal is calm/flat: reviewer filter on left, prediction accordion on right.
+- Closed prediction row shows name, creation date, selected/total review count.
+- Expanded row shows each reviewer and their output/explanation feedback values.
+- Selection supports whole prediction exclusion, global reviewer exclusion, and per-prediction reviewer exclusion.
+- CSV export rebuilds from selected feedback only.
+- Added regression test for prediction/global reviewer/per-prediction reviewer filtering.
+- Verification:
+  - `vp run build` ✅ warnings only: runtime-config non-module script and large chunks.
+  - `vp test test/export-csv.test.ts` ✅ 2 tests.
+  - `npx react-doctor@latest --verbose` ✅ score 99; warnings: existing admin infra exports/AuthHero bold heading plus helper export warning for new selection helper.
+  - touched line cap ✅ all touched source files <=300.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+
+## External Reviewer Access Bugs
+
+### Goal
+- [x] Shared review URL from wrong/non-member user must not return 500.
+- [x] Inviting user as `External Reviewer` must work.
+- [x] Changing existing member to `External Reviewer` must work.
+
+### Plan
+- [x] Guard review-link preview/external checks from membership-denied exceptions.
+- [x] Map locked `EXTERNAL_REVIEWER` role definition to legacy `VIEWER`.
+- [x] Add regression tests for invite + role change + review-link access checks.
+- [x] Verify backend tests/package, line caps, diff, graph.
+
+### Review
+- Status: fixed.
+- Review link auth checks now return false for users outside token org instead of bubbling access exceptions.
+- Invitation and member-role update now preserve `roleDefinition.systemKey=EXTERNAL_REVIEWER` while storing legacy `OrganizationRole.VIEWER`.
+- Verification:
+  - `mvn -q "-Dtest=InvitationManagementServiceTest,OrganizationManagementServiceTest,WorkspaceAuthorizationServiceTest,ReviewLinkServiceTest" test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` ✅
+  - touched line cap ✅ all touched Java files <=300.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+
+### Review update
+- Removed duplicated hardcoded external-reviewer metadata from seed/auth/invite/change-role/test paths.
+- Added `OrganizationSystemRole` as single source for system key, label, slug, and legacy role mapping.
+- Invite and member-role update now call same legacy-role resolver instead of duplicating switch/string logic.
+- Verification:
+  - `mvn -q "-Dtest=InvitationManagementServiceTest,OrganizationManagementServiceTest,WorkspaceAuthorizationServiceTest,ReviewLinkServiceTest" test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` ✅
+  - touched line cap ✅ all touched Java files <=300.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.

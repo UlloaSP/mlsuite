@@ -22,15 +22,21 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
+import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationManagementService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
+import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
+import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
+import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
+import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -131,6 +137,27 @@ class OrganizationManagementServiceTest {
                 () -> service.transferOwnership(7L, 41L, new TransferOrganizationOwnershipRequest(2L)));
     }
 
+    @Test
+    void updateMemberRole_AllowsExternalReviewerAsLegacyViewer() {
+        OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
+        RoleDefinition reviewerRole = externalReviewerRole();
+        when(membershipRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(workspaceAuthorizationService.organizationMemberActions(7L, 41L, target))
+                .thenReturn(new MembershipActionsDto(
+                        true,
+                        true,
+                        List.of(RoleSummaryDto.from(reviewerRole))));
+        when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L))
+                .thenReturn(Optional.of(reviewerRole));
+        when(membershipRepository.save(target)).thenReturn(target);
+
+        var result = service.updateMemberRole(7L, 41L, 2L, new UpdateOrganizationMembershipRoleRequest(5L));
+
+        assertEquals(OrganizationRole.VIEWER, target.getRole());
+        assertEquals(5L, target.getRoleDefinition().getId());
+        assertEquals("VIEWER", result.role());
+    }
+
     private OrganizationMembership membership(Long id, OrganizationRole role, MembershipStatus status) {
         OrganizationMembership membership = new OrganizationMembership();
         membership.setId(id);
@@ -147,6 +174,19 @@ class OrganizationManagementServiceTest {
         organization.setName("Org");
         organization.setSlug("org");
         return organization;
+    }
+
+    private RoleDefinition externalReviewerRole() {
+        OrganizationSystemRole systemRole = OrganizationSystemRole.EXTERNAL_REVIEWER;
+        RoleDefinition role = new RoleDefinition(
+                organization(),
+                null,
+                RoleScope.ORGANIZATION,
+                systemRole.label(),
+                systemRole.slug(),
+                systemRole.systemKey());
+        role.setId(5L);
+        return role;
     }
 
     private User user(Long id) {

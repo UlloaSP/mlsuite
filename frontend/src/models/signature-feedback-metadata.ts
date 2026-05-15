@@ -17,9 +17,11 @@ export const applyExplanationFeedbackMetadata = (
 	}
 
 	const feedbackKinds = new Set<string>();
+	const feedbackByKind = new Map<string, unknown>();
 	for (const definition of customExplanationDefinitions) {
 		if (definition.definition.feedbackQuestionnaire) {
 			feedbackKinds.add(definition.kind);
+			feedbackByKind.set(definition.kind, definition.definition.feedbackQuestionnaire);
 		}
 	}
 	const explanations = Array.isArray(schema.explanations)
@@ -29,9 +31,11 @@ export const applyExplanationFeedbackMetadata = (
 			}
 
 			const kind = typeof item.kind === "string" ? item.kind : "";
+			const feedbackQuestionnaire = feedbackByKind.get(kind);
 			return {
 				...item,
 				feedbackEnabled: feedbackKinds.has(kind),
+				...(feedbackQuestionnaire ? { feedbackQuestionnaire } : {}),
 			};
 		})
 		: schema.explanations;

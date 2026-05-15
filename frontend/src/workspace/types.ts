@@ -3,8 +3,8 @@ export type TeamRole = "TEAM_ADMIN" | "TEAM_MEMBER" | "TEAM_VIEWER";
 export type MembershipStatus = "ACTIVE" | "PENDING" | "REMOVED";
 export type InvitationStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
 type RoleScope = "SYSTEM" | "ORGANIZATION" | "TEAM";
-export type PermissionKey = "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_TEAMS" | "CREATE_TEAMS" | "EDIT_TEAMS" | "DELETE_TEAMS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG";
-export type WorkspacePermissionKey = "canViewWorkspace" | "canViewOrganization" | "canEditOrganization" | "canDeleteOrganization" | "canTransferOwnership" | "canViewMembers" | "canInviteMembers" | "canManageMemberRoles" | "canRemoveMembers" | "canViewInvitations" | "canManageInvitations" | "canViewTeams" | "canCreateTeams" | "canEditTeams" | "canDeleteTeams" | "canViewModels" | "canCreateModels" | "canEditModels" | "canDeleteModels" | "canRunPredictions" | "canViewPlugins" | "canManagePlugins";
+export type PermissionKey = "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_TEAMS" | "CREATE_TEAMS" | "EDIT_TEAMS" | "DELETE_TEAMS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "MANAGE_REVIEW_LINKS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG";
+export type WorkspacePermissionKey = "canViewWorkspace" | "canViewOrganization" | "canEditOrganization" | "canDeleteOrganization" | "canTransferOwnership" | "canViewMembers" | "canInviteMembers" | "canManageMemberRoles" | "canRemoveMembers" | "canViewInvitations" | "canManageInvitations" | "canViewTeams" | "canCreateTeams" | "canEditTeams" | "canDeleteTeams" | "canViewModels" | "canCreateModels" | "canEditModels" | "canDeleteModels" | "canRunPredictions" | "canManageReviewLinks" | "canViewPlugins" | "canManagePlugins";
 
 interface WorkspacePermissionsDto {
 	canViewWorkspace: boolean;
@@ -27,6 +27,7 @@ interface WorkspacePermissionsDto {
 	canEditModels: boolean;
 	canDeleteModels: boolean;
 	canRunPredictions: boolean;
+	canManageReviewLinks: boolean;
 	canViewPlugins: boolean;
 	canManagePlugins: boolean;
 }

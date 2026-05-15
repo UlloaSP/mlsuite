@@ -18,6 +18,7 @@ import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
+import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
@@ -233,10 +234,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     }
 
     private OrganizationRole legacyRole(RoleDefinition roleDefinition) {
-        if (roleDefinition.getSystemKey() == null) {
-            return OrganizationRole.MEMBER;
-        }
-        return OrganizationRole.valueOf(roleDefinition.getSystemKey());
+        return OrganizationSystemRole.legacyRole(roleDefinition, OrganizationRole.MEMBER);
     }
 
     private Invitation requireOrganizationInvitation(Long organizationId, Long invitationId) {
