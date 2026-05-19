@@ -5,10 +5,12 @@ Read root first, then this file for work inside `frontend/`.
 If this file conflicts with root, this file wins for `frontend/`.
 
 ## Scope
+
 - Applies to all files under `frontend/`.
 - Covers React UI, MLForm integration, plugin catalog, and prediction flows.
 
 ## Frontend Rules
+
 - Use `npx react-doctor@latest --verbose` to find bugs, error and dead code.
 - For any visual frontend change, always use the `frontend-design` skill and review `../DESIGN.md` before editing.
 - UI must reflect backend contract, not historical assumptions.
@@ -19,6 +21,7 @@ If this file conflicts with root, this file wins for `frontend/`.
 - Keep pages and components composable; split before crossing line limit.
 
 ## Frontend Architecture Rules
+
 - Max 1 component per file.
 - Do not hardcode design decisions into feature components.
 - Reusable visual primitives, tokens, variants, and interaction states must live in a design-system layer.
@@ -28,6 +31,7 @@ If this file conflicts with root, this file wins for `frontend/`.
 - Separate feature logic, design-system primitives, page wiring, and shared infrastructure clearly.
 
 ## Frontend Testing Rules
+
 - Prefer frontend tests for visible behavior over implementation details.
 
 <!--VITE PLUS START-->

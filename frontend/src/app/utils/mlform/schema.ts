@@ -8,255 +8,295 @@ import type { CatalogFieldDefinition } from "./custom-field";
 import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";
 import { getBuiltinRegistry } from "./builtin-registry";
-import { getAllowedFieldKeys, getAllowedReportKeys, mlformJsonSchema, SUPPORTED_TOP_LEVEL_KEYS } from "./builtin-json-schema";
 import {
-	createCustomExplanationDefinitionMap,
-	createCustomFieldDefinitionMap,
-	createCustomReportDefinitionMap,
-	validateExplanationConfig,
-	validateFieldConfig,
-	validateReportConfig,
+  getAllowedFieldKeys,
+  getAllowedReportKeys,
+  mlformJsonSchema,
+  SUPPORTED_TOP_LEVEL_KEYS,
+} from "./builtin-json-schema";
+import {
+  createCustomExplanationDefinitionMap,
+  createCustomFieldDefinitionMap,
+  createCustomReportDefinitionMap,
+  validateExplanationConfig,
+  validateFieldConfig,
+  validateReportConfig,
 } from "./schema-definition-validation";
 import type { CompatIssue, CompatValidationResult, JsonRecord } from "./shared";
 import { getString, hasBlockingIssues, isRecord, toUniqueId } from "./shared";
 
 export type ValidateMlformSchemaOptions = {
-	customFieldDefinitions?: readonly CatalogFieldDefinition[];
-	customReportDefinitions?: readonly CatalogReportDefinition[];
-	customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
+  customFieldDefinitions?: readonly CatalogFieldDefinition[];
+  customReportDefinitions?: readonly CatalogReportDefinition[];
+  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
 };
 
 const hasOwn = (value: JsonRecord, key: string): boolean =>
-	Object.prototype.hasOwnProperty.call(value, key);
+  Object.prototype.hasOwnProperty.call(value, key);
 
 const pushIssue = (
-	issues: CompatIssue[],
-	path: Array<string | number>,
-	message: string,
-	severity: CompatIssue["severity"] = "error",
+  issues: CompatIssue[],
+  path: Array<string | number>,
+  message: string,
+  severity: CompatIssue["severity"] = "error",
 ): void => {
-	issues.push({ path, message, severity });
+  issues.push({ path, message, severity });
 };
 
 const pushUnsupportedKeys = (
-	value: JsonRecord,
-	allowedKeys: readonly string[],
-	path: Array<string | number>,
-	issues: CompatIssue[],
+  value: JsonRecord,
+  allowedKeys: readonly string[],
+  path: Array<string | number>,
+  issues: CompatIssue[],
 ): void => {
-	const allowed = new Set(allowedKeys);
+  const allowed = new Set(allowedKeys);
 
-	for (const key of Object.keys(value)) {
-		if (!allowed.has(key)) {
-			pushIssue(issues, [...path, key], `Property "${key}" is not supported by current mlform.`);
-		}
-	}
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) {
+      pushIssue(issues, [...path, key], `Property "${key}" is not supported by current mlform.`);
+    }
+  }
 };
 
 const createSchemaId = (
-	explicitId: string | undefined,
-	fallbackLabel: string,
-	fallbackPrefix: string,
-	usedIds: Set<string>,
-	duplicatePath: Array<string | number>,
-	issues: CompatIssue[],
+  explicitId: string | undefined,
+  fallbackLabel: string,
+  fallbackPrefix: string,
+  usedIds: Set<string>,
+  duplicatePath: Array<string | number>,
+  issues: CompatIssue[],
 ): string => {
-	if (!explicitId) {
-		return toUniqueId(fallbackLabel, fallbackPrefix, usedIds);
-	}
+  if (!explicitId) {
+    return toUniqueId(fallbackLabel, fallbackPrefix, usedIds);
+  }
 
-	const normalized = explicitId.trim();
-	if (usedIds.has(normalized)) {
-		pushIssue(issues, duplicatePath, `Duplicate explicit id "${normalized}" in schema.`);
-		return toUniqueId(fallbackLabel, fallbackPrefix, usedIds);
-	}
+  const normalized = explicitId.trim();
+  if (usedIds.has(normalized)) {
+    pushIssue(issues, duplicatePath, `Duplicate explicit id "${normalized}" in schema.`);
+    return toUniqueId(fallbackLabel, fallbackPrefix, usedIds);
+  }
 
-	usedIds.add(normalized);
-	return normalized;
+  usedIds.add(normalized);
+  return normalized;
 };
 
 const ensureTopLevelArrays = (
-	schema: unknown,
-	issues: CompatIssue[],
+  schema: unknown,
+  issues: CompatIssue[],
 ): { fields: unknown[] | null; reports: unknown[] | null; explanations: unknown[] | null } => {
-	if (!isRecord(schema)) {
-		pushIssue(issues, [], "Schema must be a JSON object.");
-		return { fields: null, reports: null, explanations: null };
-	}
+  if (!isRecord(schema)) {
+    pushIssue(issues, [], "Schema must be a JSON object.");
+    return { fields: null, reports: null, explanations: null };
+  }
 
-	pushUnsupportedKeys(schema, SUPPORTED_TOP_LEVEL_KEYS, [], issues);
+  pushUnsupportedKeys(schema, SUPPORTED_TOP_LEVEL_KEYS, [], issues);
 
-	if (!hasOwn(schema, "fields")) {
-		pushIssue(issues, [], 'Schema must define "fields".');
-		return { fields: null, reports: null, explanations: null };
-	}
+  if (!hasOwn(schema, "fields")) {
+    pushIssue(issues, [], 'Schema must define "fields".');
+    return { fields: null, reports: null, explanations: null };
+  }
 
-	if (!Array.isArray(schema.fields)) {
-		pushIssue(issues, ["fields"], "fields must be an array.");
-	}
+  if (!Array.isArray(schema.fields)) {
+    pushIssue(issues, ["fields"], "fields must be an array.");
+  }
 
-	if (schema.reports !== undefined && !Array.isArray(schema.reports)) {
-		pushIssue(issues, ["reports"], "reports must be an array when provided.");
-	}
+  if (schema.reports !== undefined && !Array.isArray(schema.reports)) {
+    pushIssue(issues, ["reports"], "reports must be an array when provided.");
+  }
 
-	if (schema.explanations !== undefined && !Array.isArray(schema.explanations)) {
-		pushIssue(issues, ["explanations"], "explanations must be an array when provided.");
-	}
+  if (schema.explanations !== undefined && !Array.isArray(schema.explanations)) {
+    pushIssue(issues, ["explanations"], "explanations must be an array when provided.");
+  }
 
-	return {
-		fields: Array.isArray(schema.fields) ? schema.fields : null,
-		reports: Array.isArray(schema.reports) ? schema.reports : [],
-		explanations: Array.isArray(schema.explanations) ? schema.explanations : [],
-	};
+  return {
+    fields: Array.isArray(schema.fields) ? schema.fields : null,
+    reports: Array.isArray(schema.reports) ? schema.reports : [],
+    explanations: Array.isArray(schema.explanations) ? schema.explanations : [],
+  };
 };
 
 export const validateMlformSchema = (
-	schema: unknown,
-	options: ValidateMlformSchemaOptions = {},
+  schema: unknown,
+  options: ValidateMlformSchemaOptions = {},
 ): CompatValidationResult => {
-	const issues: CompatIssue[] = [];
-	const engineRegistry = getBuiltinRegistry();
-	const fieldDefinitions = createCustomFieldDefinitionMap(options.customFieldDefinitions ?? []);
-	const reportDefinitions = createCustomReportDefinitionMap(options.customReportDefinitions ?? []);
-	const explanationDefinitions = createCustomExplanationDefinitionMap(
-		options.customExplanationDefinitions ?? [],
-	);
-	const { fields, reports, explanations } = ensureTopLevelArrays(schema, issues);
+  const issues: CompatIssue[] = [];
+  const engineRegistry = getBuiltinRegistry();
+  const fieldDefinitions = createCustomFieldDefinitionMap(options.customFieldDefinitions ?? []);
+  const reportDefinitions = createCustomReportDefinitionMap(options.customReportDefinitions ?? []);
+  const explanationDefinitions = createCustomExplanationDefinitionMap(
+    options.customExplanationDefinitions ?? [],
+  );
+  const { fields, reports, explanations } = ensureTopLevelArrays(schema, issues);
 
-	if (!fields || !reports || !explanations || hasBlockingIssues(issues)) {
-		return { success: false, issues };
-	}
+  if (!fields || !reports || !explanations || hasBlockingIssues(issues)) {
+    return { success: false, issues };
+  }
 
-	const usedFieldIds = new Set<string>();
-	const usedReportIds = new Set<string>();
-	const usedExplanationIds = new Set<string>();
-	const nextFields: FieldConfig[] = [];
-	const nextReports: ReportConfig[] = [];
-	const nextExplanations: ExplanationConfig[] = [];
+  const usedFieldIds = new Set<string>();
+  const usedReportIds = new Set<string>();
+  const usedExplanationIds = new Set<string>();
+  const nextFields: FieldConfig[] = [];
+  const nextReports: ReportConfig[] = [];
+  const nextExplanations: ExplanationConfig[] = [];
 
-	fields.forEach((field, index) => {
-		if (!isRecord(field)) {
-			pushIssue(issues, ["fields", index], "Field definition must be an object.");
-			return;
-		}
+  fields.forEach((field, index) => {
+    if (!isRecord(field)) {
+      pushIssue(issues, ["fields", index], "Field definition must be an object.");
+      return;
+    }
 
-		const kind = typeof field.kind === "string" ? field.kind : null;
-		if (!kind || !fieldDefinitions.has(kind)) {
-			pushUnsupportedKeys(field, getAllowedFieldKeys(kind), ["fields", index], issues);
-		}
+    const kind = typeof field.kind === "string" ? field.kind : null;
+    if (!kind || !fieldDefinitions.has(kind)) {
+      pushUnsupportedKeys(field, getAllowedFieldKeys(kind), ["fields", index], issues);
+    }
 
-		const label = getString(field.label) ?? `Field ${index + 1}`;
-		const id = createSchemaId(getString(field.id), label, `field-${index + 1}`, usedFieldIds, ["fields", index, "id"], issues);
-		const nextField: FieldConfig = {
-			...field,
-			id,
-			kind: String(field.kind),
-			label,
-			ui: {
-				...(isRecord(field.ui) ? field.ui : {}),
-				backendKey:
-					(isRecord(field.ui) && typeof field.ui.backendKey === "string" ? field.ui.backendKey : undefined) ??
-					getString(field.label) ??
-					getString(field.id) ??
-					id,
-			},
-		};
+    const label = getString(field.label) ?? `Field ${index + 1}`;
+    const id = createSchemaId(
+      getString(field.id),
+      label,
+      `field-${index + 1}`,
+      usedFieldIds,
+      ["fields", index, "id"],
+      issues,
+    );
+    const nextField: FieldConfig = {
+      ...field,
+      id,
+      kind: String(field.kind),
+      label,
+      ui: {
+        ...(isRecord(field.ui) ? field.ui : {}),
+        backendKey:
+          (isRecord(field.ui) && typeof field.ui.backendKey === "string"
+            ? field.ui.backendKey
+            : undefined) ??
+          getString(field.label) ??
+          getString(field.id) ??
+          id,
+      },
+    };
 
-		validateFieldConfig(nextField, index, issues, engineRegistry, fieldDefinitions);
-		nextFields.push(nextField);
-	});
+    validateFieldConfig(nextField, index, issues, engineRegistry, fieldDefinitions);
+    nextFields.push(nextField);
+  });
 
-	reports.forEach((report, index) => {
-		if (!isRecord(report)) {
-			pushIssue(issues, ["reports", index], "Report definition must be an object.");
-			return;
-		}
+  reports.forEach((report, index) => {
+    if (!isRecord(report)) {
+      pushIssue(issues, ["reports", index], "Report definition must be an object.");
+      return;
+    }
 
-		const kind = typeof report.kind === "string" ? report.kind : null;
-		if (!kind || !reportDefinitions.has(kind)) {
-			pushUnsupportedKeys(report, getAllowedReportKeys(kind), ["reports", index], issues);
-		}
+    const kind = typeof report.kind === "string" ? report.kind : null;
+    if (!kind || !reportDefinitions.has(kind)) {
+      pushUnsupportedKeys(report, getAllowedReportKeys(kind), ["reports", index], issues);
+    }
 
-		const label = getString(report.label) ?? `Report ${index + 1}`;
-		const id = createSchemaId(getString(report.id), label, `report-${index + 1}`, usedReportIds, ["reports", index, "id"], issues);
-		const nextReport: ReportConfig = {
-			...report,
-			id,
-			kind: String(report.kind),
-			label,
-			source: getString(report.source) ?? id,
-		};
+    const label = getString(report.label) ?? `Report ${index + 1}`;
+    const id = createSchemaId(
+      getString(report.id),
+      label,
+      `report-${index + 1}`,
+      usedReportIds,
+      ["reports", index, "id"],
+      issues,
+    );
+    const nextReport: ReportConfig = {
+      ...report,
+      id,
+      kind: String(report.kind),
+      label,
+      source: getString(report.source) ?? id,
+    };
 
-		validateReportConfig(nextReport, index, issues, engineRegistry, reportDefinitions);
-		nextReports.push(nextReport);
-	});
+    validateReportConfig(nextReport, index, issues, engineRegistry, reportDefinitions);
+    nextReports.push(nextReport);
+  });
 
-	explanations.forEach((explanation, index) => {
-		if (!isRecord(explanation)) {
-			pushIssue(issues, ["explanations", index], "Explanation definition must be an object.");
-			return;
-		}
+  explanations.forEach((explanation, index) => {
+    if (!isRecord(explanation)) {
+      pushIssue(issues, ["explanations", index], "Explanation definition must be an object.");
+      return;
+    }
 
-		const kind = typeof explanation.kind === "string" ? explanation.kind : null;
-		if (!kind) {
-			pushIssue(issues, ["explanations", index, "kind"], 'Explanation definition must define string "kind".');
-			return;
-		}
+    const kind = typeof explanation.kind === "string" ? explanation.kind : null;
+    if (!kind) {
+      pushIssue(
+        issues,
+        ["explanations", index, "kind"],
+        'Explanation definition must define string "kind".',
+      );
+      return;
+    }
 
-		const label = getString(explanation.label) ?? kind;
-		const id = createSchemaId(getString(explanation.id), label, `explanation-${index + 1}`, usedExplanationIds, ["explanations", index, "id"], issues);
-		const nextExplanation: ExplanationConfig = {
-			...explanation,
-			id,
-			kind,
-			label: getString(explanation.label),
-			description: getString(explanation.description),
-		};
+    const label = getString(explanation.label) ?? kind;
+    const id = createSchemaId(
+      getString(explanation.id),
+      label,
+      `explanation-${index + 1}`,
+      usedExplanationIds,
+      ["explanations", index, "id"],
+      issues,
+    );
+    const nextExplanation: ExplanationConfig = {
+      ...explanation,
+      id,
+      kind,
+      label: getString(explanation.label),
+      description: getString(explanation.description),
+    };
 
-		validateExplanationConfig({ ...nextExplanation, id }, index, issues, engineRegistry, explanationDefinitions);
-		nextExplanations.push(nextExplanation);
-	});
+    validateExplanationConfig(
+      { ...nextExplanation, id },
+      index,
+      issues,
+      engineRegistry,
+      explanationDefinitions,
+    );
+    nextExplanations.push(nextExplanation);
+  });
 
-	if (hasBlockingIssues(issues)) {
-		return { success: false, issues };
-	}
+  if (hasBlockingIssues(issues)) {
+    return { success: false, issues };
+  }
 
-	return {
-		success: true,
-		data: {
-			fields: nextFields,
-			reports: nextReports,
-			explanations: nextExplanations,
-		},
-		issues: issues.filter((issue) => issue.severity === "warning"),
-	};
+  return {
+    success: true,
+    data: {
+      fields: nextFields,
+      reports: nextReports,
+      explanations: nextExplanations,
+    },
+    issues: issues.filter((issue) => issue.severity === "warning"),
+  };
 };
 
 export const applyPredictionInputsToSchema = (
-	schema: unknown,
-	inputs: Record<string, unknown>,
+  schema: unknown,
+  inputs: Record<string, unknown>,
 ): unknown => {
-	if (!isRecord(schema) || !Array.isArray(schema.fields)) {
-		return schema;
-	}
+  if (!isRecord(schema) || !Array.isArray(schema.fields)) {
+    return schema;
+  }
 
-	return {
-		...schema,
-		fields: schema.fields.map((field) => {
-			if (!isRecord(field)) {
-				return field;
-			}
+  return {
+    ...schema,
+    fields: schema.fields.map((field) => {
+      if (!isRecord(field)) {
+        return field;
+      }
 
-			const backendKey =
-				(isRecord(field.ui) && typeof field.ui.backendKey === "string" ? field.ui.backendKey : undefined) ??
-				getString(field.label) ??
-				getString(field.id);
+      const backendKey =
+        (isRecord(field.ui) && typeof field.ui.backendKey === "string"
+          ? field.ui.backendKey
+          : undefined) ??
+        getString(field.label) ??
+        getString(field.id);
 
-			return !backendKey || !(backendKey in inputs)
-				? field
-				: { ...field, defaultValue: inputs[backendKey] };
-		}),
-	};
+      return !backendKey || !(backendKey in inputs)
+        ? field
+        : { ...field, defaultValue: inputs[backendKey] };
+    }),
+  };
 };
 
 export { mlformJsonSchema };

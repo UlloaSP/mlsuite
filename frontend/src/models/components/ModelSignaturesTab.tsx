@@ -9,40 +9,37 @@ import { sortSignaturesByVersionDesc } from "../utils";
 import { SignatureListItem } from "./SignatureListItem";
 
 type ModelSignaturesTabProps = {
-	signatures: SignatureDto[];
-	onOpenSignature: (signatureId: string) => void;
+  signatures: SignatureDto[];
+  onOpenSignature: (signatureId: string) => void;
 };
 
-export function ModelSignaturesTab({
-	signatures,
-	onOpenSignature,
-}: ModelSignaturesTabProps) {
-	const sorted = sortSignaturesByVersionDesc(signatures);
+export function ModelSignaturesTab({ signatures, onOpenSignature }: ModelSignaturesTabProps) {
+  const sorted = sortSignaturesByVersionDesc(signatures);
 
-	return (
-		<div className="space-y-4">
-			<div>
-				<div>
-					<AppSectionTitle>Schemas</AppSectionTitle>
-					<AppCopy>Browse the version lineage attached to this model.</AppCopy>
-				</div>
-			</div>
+  return (
+    <div className="space-y-4">
+      <div>
+        <div>
+          <AppSectionTitle>Schemas</AppSectionTitle>
+          <AppCopy>Browse the version lineage attached to this model.</AppCopy>
+        </div>
+      </div>
 
-			{sorted.length === 0 ? (
-				<AppPanel className="text-center">
-					<AppCopy>No schemas available for this model yet.</AppCopy>
-				</AppPanel>
-			) : (
-				<div className="space-y-3">
-					{sorted.map((signature) => (
-						<SignatureListItem
-							key={signature.id}
-							item={signature}
-							onOpen={() => onOpenSignature(signature.id)}
-						/>
-					))}
-				</div>
-			)}
-		</div>
-	);
+      {sorted.length === 0 ? (
+        <AppPanel className="text-center">
+          <AppCopy>No schemas available for this model yet.</AppCopy>
+        </AppPanel>
+      ) : (
+        <div className="space-y-3">
+          {sorted.map((signature) => (
+            <SignatureListItem
+              key={signature.id}
+              item={signature}
+              onOpen={() => onOpenSignature(signature.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

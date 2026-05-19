@@ -6,28 +6,28 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { EYEBROW, HERO_DESCRIPTION, HERO_LINES } from "./authLandingCopy";
 
 export function AuthHero() {
-	return (
-		<div className="pb-8 lg:flex-[0_0_58%] lg:pb-0 lg:pr-[44px]">
-			<p className="mb-2.5 text-[10px] uppercase tracking-[0.12em] text-[#ff385c] [font-family:'DM_Mono',monospace] lg:mt-7">
-				{EYEBROW}
-			</p>
+  return (
+    <div className="pb-8 lg:flex-[0_0_58%] lg:pb-0 lg:pr-[44px]">
+      <p className="mb-2.5 text-[10px] uppercase tracking-[0.12em] text-[#ff385c] [font-family:'DM_Mono',monospace] lg:mt-7">
+        {EYEBROW}
+      </p>
 
-			<h1
-				id="auth-title"
-				className="mb-[18px] text-[42px] font-bold leading-[0.95] tracking-[-1.8px] sm:text-[52px] md:text-[60px] lg:tracking-[-2.5px] xl:text-[76px] 2xl:text-[88px]"
-			>
-				{HERO_LINES[0]}
-				<br />
-				{HERO_LINES[1]}
-				<br />
-				<span className="text-transparent [-webkit-text-stroke:1.25px_#111] dark:[-webkit-text-stroke:1.25px_#f5f5f5] sm:[-webkit-text-stroke:1.5px_#111] sm:dark:[-webkit-text-stroke:1.5px_#f5f5f5] lg:[-webkit-text-stroke:2px_#111] lg:dark:[-webkit-text-stroke:2px_#f5f5f5]">
-					{HERO_LINES[2]}
-				</span>
-			</h1>
+      <h1
+        id="auth-title"
+        className="mb-[18px] text-[42px] font-bold leading-[0.95] tracking-[-1.8px] sm:text-[52px] md:text-[60px] lg:tracking-[-2.5px] xl:text-[76px] 2xl:text-[88px]"
+      >
+        {HERO_LINES[0]}
+        <br />
+        {HERO_LINES[1]}
+        <br />
+        <span className="text-transparent [-webkit-text-stroke:1.25px_#111] dark:[-webkit-text-stroke:1.25px_#f5f5f5] sm:[-webkit-text-stroke:1.5px_#111] sm:dark:[-webkit-text-stroke:1.5px_#f5f5f5] lg:[-webkit-text-stroke:2px_#111] lg:dark:[-webkit-text-stroke:2px_#f5f5f5]">
+          {HERO_LINES[2]}
+        </span>
+      </h1>
 
-			<p className="max-w-[520px] text-[13px] leading-[1.75] text-[#777] dark:text-[#c1c1c1] sm:max-w-[560px] xl:text-base 2xl:text-lg">
-				{HERO_DESCRIPTION}
-			</p>
-		</div>
-	);
+      <p className="max-w-[520px] text-[13px] leading-[1.75] text-[#777] dark:text-[#c1c1c1] sm:max-w-[560px] xl:text-base 2xl:text-lg">
+        {HERO_DESCRIPTION}
+      </p>
+    </div>
+  );
 }

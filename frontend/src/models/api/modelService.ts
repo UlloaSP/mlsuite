@@ -7,255 +7,271 @@ import { appFetch } from "../../app/api/appFetch";
 
 /** ---------- DTOs ---------- */
 export interface CreateModelRequest {
-	name: string;
-	modelFile: File;
-	dataframeFile?: File;
+  name: string;
+  modelFile: File;
+  dataframeFile?: File;
 }
 
 export interface CreateSignatureRequest {
-	modelId: string;
-	name: string;
-	inputSignature: Record<string, unknown>;
-	major: number;
-	minor: number;
-	patch: number;
-	origin?: string;
+  modelId: string;
+  name: string;
+  inputSignature: Record<string, unknown>;
+  major: number;
+  minor: number;
+  patch: number;
+  origin?: string;
 }
 
 export interface CreatePredictionRequest {
-	signatureId: string;
-	name: string;
-	overwrite?: boolean;
-	inputs: Record<string, unknown>;
-	prediction: Record<string, unknown>;
+  signatureId: string;
+  name: string;
+  overwrite?: boolean;
+  inputs: Record<string, unknown>;
+  prediction: Record<string, unknown>;
 }
 
 export interface CreateTargetRequest {
-	predictionId: string;
-	order: number;
-	value: unknown;
+  predictionId: string;
+  order: number;
+  value: unknown;
 }
 
 export interface UpdateTargetRequest {
-	targetId: string;
-	realValue?: unknown | null;
+  targetId: string;
+  realValue?: unknown | null;
 }
 
 export interface CreateOutputFeedbackRequest {
-	predictionId: string;
-	order: number;
-	value: unknown;
+  predictionId: string;
+  order: number;
+  value: unknown;
 }
 
 export interface UpdateOutputFeedbackRequest {
-	outputFeedbackId: string;
-	value: unknown;
+  outputFeedbackId: string;
+  value: unknown;
 }
 
 export interface CreateExplanationFeedbackRequest {
-	predictionId: string;
-	order: number;
-	value: unknown;
+  predictionId: string;
+  order: number;
+  value: unknown;
 }
 
 export interface UpdateExplanationFeedbackRequest {
-	explanationFeedbackId: string;
-	realValue: unknown;
+  explanationFeedbackId: string;
+  realValue: unknown;
 }
 
-export interface GetAllSignaturesRequest { modelId: string; }
-export interface GetPredictionsRequest { signatureId: string; }
-export interface GetTargetsRequest { predictionId: string; }
-export interface GetOutputFeedbackRequest { predictionId: string; }
-export interface GetExplanationFeedbackRequest { predictionId: string; }
-export interface GetSignatureRequest { signatureId: string; }
+export interface GetAllSignaturesRequest {
+  modelId: string;
+}
+export interface GetPredictionsRequest {
+  signatureId: string;
+}
+export interface GetTargetsRequest {
+  predictionId: string;
+}
+export interface GetOutputFeedbackRequest {
+  predictionId: string;
+}
+export interface GetExplanationFeedbackRequest {
+  predictionId: string;
+}
+export interface GetSignatureRequest {
+  signatureId: string;
+}
 
 export interface ModelDto {
-	id: string;
-	name: string;
-	type: string;
-	specificType: string;
-	fileName: string;
-	createdAt: string;
+  id: string;
+  name: string;
+  type: string;
+  specificType: string;
+  fileName: string;
+  createdAt: string;
 }
 
 export interface SignatureDto {
-	id: string;
-	modelId: string;
-	name: string;
-	inputSignature: Record<string, unknown>;
-	major: number;
-	minor: number;
-	patch: number;
-	origin?: SignatureDto;
-	createdAt: string;
+  id: string;
+  modelId: string;
+  name: string;
+  inputSignature: Record<string, unknown>;
+  major: number;
+  minor: number;
+  patch: number;
+  origin?: SignatureDto;
+  createdAt: string;
 }
 
 export interface PredictionDto {
-	id: string;
-	signatureId: string;
-	modelId: string;
-	name: string;
-	inputs: Record<string, unknown>;
-	prediction: Record<string, unknown>;
-	status: "PENDING" | "COMPLETED" | "SUCCESS" | "FAILED" | unknown;
-	createdAt: string;
-	updatedAt?: string;
+  id: string;
+  signatureId: string;
+  modelId: string;
+  name: string;
+  inputs: Record<string, unknown>;
+  prediction: Record<string, unknown>;
+  status: "PENDING" | "COMPLETED" | "SUCCESS" | "FAILED" | unknown;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface TargetDto {
-	id: string;
-	predictionId: string;
-	order: number;
-	value: unknown;
-	realValue?: unknown;
-	createdAt: string;
-	updatedAt?: string;
+  id: string;
+  predictionId: string;
+  order: number;
+  value: unknown;
+  realValue?: unknown;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface OutputFeedbackDto {
-	id: string;
-	predictionId: string;
-	userId: number;
-	userName: string;
-	userEmail: string;
-	order: number;
-	value: unknown;
-	createdAt: string;
-	updatedAt?: string;
+  id: string;
+  predictionId: string;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  order: number;
+  value: unknown;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ExplanationFeedbackDto {
-	id: string;
-	predictionId: string;
-	userId: number;
-	userName: string;
-	userEmail: string;
-	order: number;
-	value: unknown;
-	realValue?: unknown;
-	createdAt: string;
-	updatedAt?: string;
+  id: string;
+  predictionId: string;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  order: number;
+  value: unknown;
+  realValue?: unknown;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CreateModelDto {
-	model: ModelDto;
-	signatureFromModel: SignatureDto;
-	signatureFromDataframe: SignatureDto;
+  model: ModelDto;
+  signatureFromModel: SignatureDto;
+  signatureFromDataframe: SignatureDto;
 }
 
 /** ---------- helpers ---------- */
 const json = (method: "POST" | "PUT" | "PATCH", body: unknown): RequestInit => ({
-	method,
-	headers: { "Content-Type": "application/json" },
-	body: JSON.stringify(body),
+  method,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
 });
 
 /** ---------- services ---------- */
 export const createModel = async ({
-	name,
-	modelFile,
-	dataframeFile,
+  name,
+  modelFile,
+  dataframeFile,
 }: CreateModelRequest): Promise<CreateModelDto> => {
-	const formData = new FormData();
-	formData.append("name", name);
-	formData.append("modelFile", modelFile);
-	if (dataframeFile) formData.append("dataframeFile", dataframeFile);
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("modelFile", modelFile);
+  if (dataframeFile) formData.append("dataframeFile", dataframeFile);
 
-	// Browser sets multipart boundary; do not set Content-Type manually
-	return appFetch<CreateModelDto>("/api/models", { method: "POST", body: formData });
+  // Browser sets multipart boundary; do not set Content-Type manually
+  return appFetch<CreateModelDto>("/api/models", { method: "POST", body: formData });
 };
 
 export const createSignature = async (req: CreateSignatureRequest): Promise<SignatureDto> => {
-	const payload = {
-		...req,
-		inputSignature: req.inputSignature,
-	};
-	return appFetch<SignatureDto>("/api/signatures", json("POST", payload as Record<string, any>));
+  const payload = {
+    ...req,
+    inputSignature: req.inputSignature,
+  };
+  return appFetch<SignatureDto>("/api/signatures", json("POST", payload as Record<string, any>));
 };
 
 export const createPrediction = async (req: CreatePredictionRequest): Promise<PredictionDto> => {
-	const payload = {
-		...req,
-		inputs: req.inputs,
-		prediction: req.prediction,
-	};
-	return appFetch<PredictionDto>("/api/predictions", json("POST", payload as Record<string, any>));
+  const payload = {
+    ...req,
+    inputs: req.inputs,
+    prediction: req.prediction,
+  };
+  return appFetch<PredictionDto>("/api/predictions", json("POST", payload as Record<string, any>));
 };
 
 export const getLastPredictionId = async (): Promise<number> => {
-	const dto = await appFetch<{ lastId: number }>("/api/predictions/last-id");
-	return Number(dto.lastId ?? 0);
+  const dto = await appFetch<{ lastId: number }>("/api/predictions/last-id");
+  return Number(dto.lastId ?? 0);
 };
 
 export const createTarget = async (req: CreateTargetRequest): Promise<TargetDto> => {
-	return appFetch<TargetDto>("/api/targets", json("POST", req as Record<string, any>));
+  return appFetch<TargetDto>("/api/targets", json("POST", req as Record<string, any>));
 };
 
 export const updateTarget = async (req: UpdateTargetRequest): Promise<TargetDto> => {
-	return appFetch<TargetDto>("/api/targets", json("PATCH", req as Record<string, any>));
+  return appFetch<TargetDto>("/api/targets", json("PATCH", req as Record<string, any>));
 };
 
 export const createOutputFeedback = async (
-	req: CreateOutputFeedbackRequest,
+  req: CreateOutputFeedbackRequest,
 ): Promise<OutputFeedbackDto> =>
-	appFetch<OutputFeedbackDto>("/api/output-feedback", json("POST", req as Record<string, any>));
+  appFetch<OutputFeedbackDto>("/api/output-feedback", json("POST", req as Record<string, any>));
 
 export const updateOutputFeedback = async (
-	req: UpdateOutputFeedbackRequest,
+  req: UpdateOutputFeedbackRequest,
 ): Promise<OutputFeedbackDto> =>
-	appFetch<OutputFeedbackDto>("/api/output-feedback", json("PATCH", req as Record<string, any>));
+  appFetch<OutputFeedbackDto>("/api/output-feedback", json("PATCH", req as Record<string, any>));
 
 export const createExplanationFeedback = async (
-	req: CreateExplanationFeedbackRequest,
+  req: CreateExplanationFeedbackRequest,
 ): Promise<ExplanationFeedbackDto> =>
-	appFetch<ExplanationFeedbackDto>(
-		"/api/explanation-feedback",
-		json("POST", req as Record<string, any>),
-	);
+  appFetch<ExplanationFeedbackDto>(
+    "/api/explanation-feedback",
+    json("POST", req as Record<string, any>),
+  );
 
 export const updateExplanationFeedback = async (
-	req: UpdateExplanationFeedbackRequest,
+  req: UpdateExplanationFeedbackRequest,
 ): Promise<ExplanationFeedbackDto> =>
-	appFetch<ExplanationFeedbackDto>(
-		"/api/explanation-feedback",
-		json("PATCH", req as Record<string, any>),
-	);
+  appFetch<ExplanationFeedbackDto>(
+    "/api/explanation-feedback",
+    json("PATCH", req as Record<string, any>),
+  );
 
 export const getModels = async (): Promise<ModelDto[]> => {
-	return appFetch<ModelDto[]>("/api/models");
+  return appFetch<ModelDto[]>("/api/models");
 };
 
-export const getSignatures = async ({ modelId }: GetAllSignaturesRequest): Promise<SignatureDto[]> => {
-	const url = `/api/signatures?modelId=${encodeURIComponent(modelId)}`;
-	return appFetch<SignatureDto[]>(url);
+export const getSignatures = async ({
+  modelId,
+}: GetAllSignaturesRequest): Promise<SignatureDto[]> => {
+  const url = `/api/signatures?modelId=${encodeURIComponent(modelId)}`;
+  return appFetch<SignatureDto[]>(url);
 };
 
-export const getPredictions = async ({ signatureId }: GetPredictionsRequest): Promise<PredictionDto[]> => {
-	const url = `/api/predictions?signatureId=${encodeURIComponent(signatureId)}`;
-	return appFetch<PredictionDto[]>(url);
+export const getPredictions = async ({
+  signatureId,
+}: GetPredictionsRequest): Promise<PredictionDto[]> => {
+  const url = `/api/predictions?signatureId=${encodeURIComponent(signatureId)}`;
+  return appFetch<PredictionDto[]>(url);
 };
 
 export const getTargets = async ({ predictionId }: GetTargetsRequest): Promise<TargetDto[]> => {
-	const url = `/api/targets?predictionId=${encodeURIComponent(predictionId)}`;
-	return appFetch<TargetDto[]>(url);
+  const url = `/api/targets?predictionId=${encodeURIComponent(predictionId)}`;
+  return appFetch<TargetDto[]>(url);
 };
 
 export const getOutputFeedback = async ({
-	predictionId,
+  predictionId,
 }: GetOutputFeedbackRequest): Promise<OutputFeedbackDto[]> => {
-	const url = `/api/output-feedback?predictionId=${encodeURIComponent(predictionId)}`;
-	return appFetch<OutputFeedbackDto[]>(url);
+  const url = `/api/output-feedback?predictionId=${encodeURIComponent(predictionId)}`;
+  return appFetch<OutputFeedbackDto[]>(url);
 };
 
 export const getExplanationFeedback = async ({
-	predictionId,
+  predictionId,
 }: GetExplanationFeedbackRequest): Promise<ExplanationFeedbackDto[]> => {
-	const url = `/api/explanation-feedback?predictionId=${encodeURIComponent(predictionId)}`;
-	return appFetch<ExplanationFeedbackDto[]>(url);
+  const url = `/api/explanation-feedback?predictionId=${encodeURIComponent(predictionId)}`;
+  return appFetch<ExplanationFeedbackDto[]>(url);
 };
 
 export const getSignature = async ({ signatureId }: GetSignatureRequest): Promise<SignatureDto> => {
-	const url = `/api/signatures/${encodeURIComponent(signatureId)}`;
-	return appFetch<SignatureDto>(url);
+  const url = `/api/signatures/${encodeURIComponent(signatureId)}`;
+  return appFetch<SignatureDto>(url);
 };

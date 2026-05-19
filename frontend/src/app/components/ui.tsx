@@ -7,27 +7,20 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import { Link } from "react-router";
 
-export const cx = (
-  ...values: Array<string | false | null | undefined>
-): string => values.filter(Boolean).join(" ");
+export const cx = (...values: Array<string | false | null | undefined>): string =>
+  values.filter(Boolean).join(" ");
 
 export const FOCUS_RING =
   "focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:outline-none";
 
-export function AppPage({
-  children,
-  className,
-}: HTMLAttributes<HTMLDivElement>) {
+export function AppPage({ children, className }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div className={cx("flex size-full overflow-hidden", className)}>
       <div className="flex min-h-0 flex-1">{children}</div>
     </div>
   );
 }
-export function AppSurface({
-  children,
-  className,
-}: HTMLAttributes<HTMLDivElement>) {
+export function AppSurface({ children, className }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cx(
@@ -39,10 +32,7 @@ export function AppSurface({
     </div>
   );
 }
-export function AppPanel({
-  children,
-  className,
-}: HTMLAttributes<HTMLDivElement>) {
+export function AppPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cx(
@@ -56,10 +46,7 @@ export function AppPanel({
     </div>
   );
 }
-export function AppEyebrow({
-  children,
-  className,
-}: HTMLAttributes<HTMLParagraphElement>) {
+export function AppEyebrow({ children, className }: HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
       className={cx(
@@ -72,10 +59,7 @@ export function AppEyebrow({
   );
 }
 
-export function AppTitle({
-  children,
-  className,
-}: HTMLAttributes<HTMLHeadingElement>) {
+export function AppTitle({ children, className }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h1
       className={cx(
@@ -88,10 +72,7 @@ export function AppTitle({
   );
 }
 
-export function AppSectionTitle({
-  children,
-  className,
-}: HTMLAttributes<HTMLHeadingElement>) {
+export function AppSectionTitle({ children, className }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
       className={cx(
@@ -104,19 +85,9 @@ export function AppSectionTitle({
   );
 }
 
-export function AppCopy({
-  children,
-  className,
-}: HTMLAttributes<HTMLParagraphElement>) {
+export function AppCopy({ children, className }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p
-      className={cx(
-        "text-sm leading-7 text-[var(--text-secondary)]",
-        className,
-      )}
-    >
-      {children}
-    </p>
+    <p className={cx("text-sm leading-7 text-[var(--text-secondary)]", className)}>{children}</p>
   );
 }
 
@@ -137,12 +108,7 @@ export function AppPageHeader({
   aside?: ReactNode;
 }) {
   return (
-    <div
-      className={cx(
-        "flex flex-wrap items-start justify-between gap-6",
-        className,
-      )}
-    >
+    <div className={cx("flex flex-wrap items-start justify-between gap-6", className)}>
       <div className="max-w-3xl space-y-3">
         {backHref ? (
           <Link
@@ -155,21 +121,14 @@ export function AppPageHeader({
         ) : null}
         {eyebrow ? <AppEyebrow>{eyebrow}</AppEyebrow> : null}
         <AppTitle>{title}</AppTitle>
-        {description ? (
-          <AppCopy className="max-w-2xl">{description}</AppCopy>
-        ) : null}
+        {description ? <AppCopy className="max-w-2xl">{description}</AppCopy> : null}
       </div>
-      {aside ? (
-        <div className="flex flex-wrap items-center gap-3">{aside}</div>
-      ) : null}
+      {aside ? <div className="flex flex-wrap items-center gap-3">{aside}</div> : null}
     </div>
   );
 }
 
-export function AppToolbar({
-  children,
-  className,
-}: HTMLAttributes<HTMLDivElement>) {
+export function AppToolbar({ children, className }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cx(
@@ -210,17 +169,13 @@ export function AppBreadcrumbs({
             ) : (
               <span
                 className={
-                  isLast
-                    ? "font-medium text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)]"
+                  isLast ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
                 }
               >
                 {item.label}
               </span>
             )}
-            {!isLast ? (
-              <ChevronRight size={14} className="text-[var(--text-muted)]" />
-            ) : null}
+            {!isLast ? <ChevronRight size={14} className="text-[var(--text-muted)]" /> : null}
           </div>
         );
       })}

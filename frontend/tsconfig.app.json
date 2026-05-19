@@ -1,37 +1,37 @@
 {
-	"compilerOptions": {
-		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-		"target": "ES2022",
-		"useDefineForClassFields": true,
-		"lib": ["ES2022", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
-		"skipLibCheck": true,
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
 
-		/* Bundler mode */
-		"moduleResolution": "bundler",
-		"ignoreDeprecations": "6.0",
-		"baseUrl": ".",
-		"paths": {
-			"mlform": ["./node_modules/mlform/dist/types/index.d.ts"],
-			"mlform/builtins-ml": ["./node_modules/mlform/dist/types/builtins-ml/index.d.ts"],
-			"mlform/kit": ["./node_modules/mlform/dist/types/kit/index.d.ts"],
-			"mlform/presentation": ["./node_modules/mlform/dist/types/presentation/index.d.ts"],
-			"mlform/primitives": ["./node_modules/mlform/dist/types/primitives/index.d.ts"],
-			"mlform/runtime": ["./node_modules/mlform/dist/types/runtime/index.d.ts"]
-		},
-		"allowImportingTsExtensions": true,
-		"verbatimModuleSyntax": true,
-		"moduleDetection": "force",
-		"noEmit": true,
-		"jsx": "react-jsx",
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "mlform": ["./node_modules/mlform/dist/types/index.d.ts"],
+      "mlform/builtins-ml": ["./node_modules/mlform/dist/types/builtins-ml/index.d.ts"],
+      "mlform/kit": ["./node_modules/mlform/dist/types/kit/index.d.ts"],
+      "mlform/presentation": ["./node_modules/mlform/dist/types/presentation/index.d.ts"],
+      "mlform/primitives": ["./node_modules/mlform/dist/types/primitives/index.d.ts"],
+      "mlform/runtime": ["./node_modules/mlform/dist/types/runtime/index.d.ts"]
+    },
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
 
-		/* Linting */
-		"strict": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"erasableSyntaxOnly": true,
-		"noFallthroughCasesInSwitch": true,
-		"noUncheckedSideEffectImports": true
-	},
-	"include": ["src"]
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
 }

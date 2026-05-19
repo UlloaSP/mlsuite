@@ -12,7 +12,7 @@ export type ResolvedTheme = "light" | "dark";
 const systemTheme = (): ResolvedTheme =>
   window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
 
-const resolveTheme = (mode: ThemeMode): ResolvedTheme => mode === "system" ? systemTheme() : mode;
+const resolveTheme = (mode: ThemeMode): ResolvedTheme => (mode === "system" ? systemTheme() : mode);
 
 const syncThemeChrome = (mode: ThemeMode) => {
   const theme = resolveTheme(mode);
@@ -27,10 +27,7 @@ const syncThemeChrome = (mode: ThemeMode) => {
 };
 
 /* 2. Átomo persistente                                          */
-export const themeAtom = atomWithStorage<ThemeMode>(
-  "ui/theme",
-  "system",
-);
+export const themeAtom = atomWithStorage<ThemeMode>("ui/theme", "system");
 
 /* 3. Efecto inmediato al primer montaje                         */
 themeAtom.onMount = (set) => {

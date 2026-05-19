@@ -7,15 +7,11 @@ import { AppBadge } from "../../app/components";
 import { getPredictionStatusLabel, getPredictionStatusTone } from "../utils";
 
 type PredictionStatusPillProps = {
-	status: unknown;
+  status: unknown;
 };
 
-export function PredictionStatusPill({
-	status,
-}: PredictionStatusPillProps) {
-	return (
-		<AppBadge tone={getPredictionStatusTone(status)}>
-			{getPredictionStatusLabel(status)}
-		</AppBadge>
-	);
+export function PredictionStatusPill({ status }: PredictionStatusPillProps) {
+  return (
+    <AppBadge tone={getPredictionStatusTone(status)}>{getPredictionStatusLabel(status)}</AppBadge>
+  );
 }
