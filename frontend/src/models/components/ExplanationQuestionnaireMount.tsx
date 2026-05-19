@@ -67,6 +67,7 @@ export function ExplanationQuestionnaireMount({
   const initialValuesRef = useRef(initialValues);
   const onValuesChangeRef = useRef(onValuesChange);
   const onStepChangeRef = useRef(onStepChange);
+  const currentStepIdRef = useRef<string | null>(null);
   const [mountError, setMountError] = useState<string | null>(null);
   const effectiveSchema = useMemo(
     () => toQuestionnaireSchema(schema, editable),
@@ -133,15 +134,21 @@ export function ExplanationQuestionnaireMount({
             ? snapshot.form.values
             : {},
         );
-        onStepChangeRef.current?.(snapshot.wizard?.currentStepId ?? null);
+        const nextStepId = snapshot.wizard?.currentStepId ?? null;
+        if (currentStepIdRef.current !== nextStepId) {
+          currentStepIdRef.current = nextStepId;
+          onStepChangeRef.current?.(nextStepId);
+        }
       });
 
       mountedRef.current = mounted;
       onValuesChangeRef.current?.(getQuestionnaireValues(mounted));
-      onStepChangeRef.current?.(mounted.view.getSnapshot().wizard?.currentStepId ?? null);
+      currentStepIdRef.current = mounted.view.getSnapshot().wizard?.currentStepId ?? null;
+      onStepChangeRef.current?.(currentStepIdRef.current);
 
       return () => {
         unsubscribe();
+        currentStepIdRef.current = null;
         mountedRef.current = null;
         mounted.unmount();
       };

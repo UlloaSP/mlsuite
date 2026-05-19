@@ -118,8 +118,16 @@
 - Correction: review logout still hit protected context and surfaced 401 on the review page.
 - Rule: protected portal routes need a dedicated public login route; logout should land on that public route, not on a protected content route.
 - Correction: review selection URLs exposed raw prediction ids.
+- Correction: reviewed external review detail showed current output even though questionnaire had no active step until Edit.
+- Rule: side context panels must reflect active workflow state; when form is idle/read-only, reserve layout space with empty shell instead of showing stale first-step context.
 - Rule: externally shared or portal URLs must use opaque selection tokens and resolve ids server-side after token validation.
 - Correction: review prediction selection looked like full page reload because global route view transitions animated the whole route.
 - Rule: local record switching inside a portal/workspace must opt out of page-level transitions when only detail content changes.
 - Correction: feedback questionnaire lacked nearby context for the active output/explanation step.
 - Rule: multi-step review forms must keep the artifact under review visible beside the active step, not only in accordions below.
+- Correction: publishing active review step on every form value snapshot caused questionnaire rerenders/remount symptoms.
+- Rule: external form mounts must publish navigation state only when navigation changes; never mirror every value snapshot into page-level state.
+- Correction: page-level active-step state still rerendered the form subtree.
+- Rule: sidecar UI for embedded third-party forms should subscribe out-of-band or in a sibling boundary so sidecar updates cannot remount the form.
+- Correction: external review draft feedback was treated as completed public feedback before reviewer submitted revision.
+- Rule: review draft persistence and public feedback publication are separate states; history/export/status must use submitted review records, while review detail may load draft feedback for resume/edit.

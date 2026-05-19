@@ -84,7 +84,7 @@ public class OutputFeedbackServiceImpl implements OutputFeedbackService {
             throw new PredictionDoesNotExistsException(predictionId, user.getUsername());
         }
 
-        return outputFeedbackRepository.findByPredictionIdAndOrganizationId(predictionId, organizationId);
+        return outputFeedbackRepository.findPublishedByPredictionIdAndOrganizationId(predictionId, organizationId);
     }
 }
 

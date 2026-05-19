@@ -1,5 +1,91 @@
 # Config Hardcode Removal Plan
 
+## External Review Draft Visibility
+
+### Goal
+- [x] Keep external review draft feedback saved for reviewer resume/edit.
+- [x] Do not mark prediction history as feedback completed until reviewer submits revision.
+- [x] Do not expose unsubmitted external review feedback in normal feedback/export endpoints.
+- [x] Verify backend/frontend tests/build/graph.
+
+### Plan
+- [x] Stop external draft create/update from recalculating public prediction status.
+- [x] Recalculate public prediction status when reviewer submits revision.
+- [x] Add repository queries that return only published feedback: normal feedback or submitted review feedback.
+- [x] Use published-feedback queries in normal app services; keep review detail using reviewer draft queries.
+- [x] Update tests for draft vs submitted behavior.
+
+### Review
+- Status: fixed.
+- External review draft create/update stores feedback but leaves prediction status unchanged.
+- Submit revision records submission and then recalculates prediction status.
+- Normal output/explanation feedback endpoints now use published-feedback queries, so export modal sees only committed review feedback.
+- Review detail still uses reviewer-scoped feedback queries, so draft resume/edit still works inside external review.
+- Verification:
+  - `mvn -q "-Dtest=ReviewLinkServiceTest,OutputFeedbackServiceTest,ExplanationFeedbackServiceTest" test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` ✅
+  - `vp test test/export-csv.test.ts` ✅
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - touched source/test line cap ✅ no touched file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+  - `mvn -q test` ❌ existing unrelated failures: ArchUnit `ReviewLinkController` depends on service and legacy package-mismatch tests under prediction entities/exceptions.
+
+## External Review Idle Aside
+
+### Goal
+- [x] Hide current output/explanation when reviewed prediction is not being edited.
+- [x] Preserve left aside column width in idle reviewed state.
+- [x] Show first step context again when user clicks Edit.
+- [x] Verify frontend tests/build/doctor/graph.
+
+### Plan
+- [x] Keep page grid and empty aside placeholder unchanged.
+- [x] Clear published review step context while questionnaire is complete and not editing.
+- [x] Let edit mode publish first available step context again.
+
+### Review
+- Status: fixed.
+- Reviewed/non-editing predictions now publish no active step, so left aside renders empty while keeping its column.
+- Edit mode republishes first step through existing effect, so context returns when questionnaire becomes active.
+- Verification:
+  - `vp test test/explanation-feedback.test.ts test/review-link-service.test.ts` ✅
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 98; existing warnings only.
+  - touched frontend line cap ✅ no touched TS/TSX file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+
+## External Review Aside Remount Fix
+
+### Goal
+- [x] Keep context panel as page-level left aside.
+- [x] Do not shrink central questionnaire width.
+- [x] Do not remount/reset questionnaire when selecting values.
+- [x] Verify frontend tests/build/doctor/graph.
+
+### Plan
+- [x] Preserve page-level active step aside.
+- [x] Remove empty inner two-column grid from questionnaire form.
+- [x] Stop propagating step state on every MLForm value snapshot.
+- [x] Keep only local active step id in form; publish active step object to page aside.
+
+### Review
+- Status: fixed.
+- Step context stays as left aside in review workspace grid.
+- Central questionnaire no longer has empty internal grid column.
+- `ExplanationQuestionnaireMount` now emits `onStepChange` only when wizard step id changes, not on every value change.
+- Form keeps active step id in a ref and only publishes active step object, avoiding parent rerender/remount loops while answering.
+- Follow-up fix: removed page-level atom propagation entirely; form emits a DOM event and aside listens locally, so changing steps/answers does not rerender the questionnaire subtree.
+- Edit reviewed prediction now publishes first step context even before the wizard mounts, so the left aside is populated immediately.
+- Verification:
+  - `vp test test/explanation-feedback.test.ts test/review-link-service.test.ts` ✅
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 98; existing warnings only.
+  - touched frontend line cap ✅ no touched TS/TSX file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+
 ## External Review Step Context Panel
 
 ### Goal

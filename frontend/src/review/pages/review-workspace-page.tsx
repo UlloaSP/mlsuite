@@ -12,6 +12,7 @@ import { ReviewShell } from "../components/ReviewShell";
 import { ReviewUnavailable } from "../components/ReviewUnavailable";
 import { useReviewContext, useSubmitReviewPredictionsMutation } from "../hooks";
 import { firstReviewPredictionToken, hasReviewPredictionToken } from "../reviewPredictionSelection";
+import { ReviewStepContextPanel } from "../components/ReviewStepContextPanel";
 
 export function ReviewWorkspacePage() {
   const { token = "", predictionToken } = useParams<{ token: string; predictionToken?: string }>();
@@ -90,7 +91,8 @@ export function ReviewWorkspacePage() {
           description="No selected predictions are available for review."
         />
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="grid items-start gap-6 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
+          <ReviewStepContextPanel />
           <section className="min-w-0">
             {selectedPredictionToken ? (
               <ReviewPredictionDetailPanel

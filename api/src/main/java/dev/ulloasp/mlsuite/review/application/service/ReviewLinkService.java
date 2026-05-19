@@ -162,7 +162,6 @@ public class ReviewLinkService {
         requireNotSubmitted(userId, selected);
         Prediction prediction = selected.getPrediction();
         OutputFeedback saved = outputFeedbackRepository.save(new OutputFeedback(prediction, userLookupService.requireById(userId), params.order(), params.value()));
-        updateStatus(userId, prediction);
         return OutputFeedbackDto.toDto(saved);
     }
     public OutputFeedbackDto updateOutputFeedback(Long userId, String token, UpdateOutputFeedbackParams params) {
@@ -171,7 +170,6 @@ public class ReviewLinkService {
         requireOwnSelectedFeedback(userId, link, feedback.getUser().getId(), feedback.getPrediction().getId());
         requireNotSubmitted(userId, requireSelectedLinkPrediction(link, feedback.getPrediction().getId()));
         feedback.setValue(params.value());
-        updateStatus(userId, feedback.getPrediction());
         return OutputFeedbackDto.toDto(outputFeedbackRepository.save(feedback));
     }
     public ExplanationFeedbackDto createExplanationFeedback(Long userId, String token, CreateExplanationFeedbackParams params) {
@@ -180,7 +178,6 @@ public class ReviewLinkService {
         requireNotSubmitted(userId, selected);
         Prediction prediction = selected.getPrediction();
         ExplanationFeedback saved = explanationFeedbackRepository.save(new ExplanationFeedback(prediction, userLookupService.requireById(userId), params.order(), params.value()));
-        updateStatus(userId, prediction);
         return ExplanationFeedbackDto.toDto(saved);
     }
     public ExplanationFeedbackDto updateExplanationFeedback(Long userId, String token, UpdateExplanationFeedbackParams params) {
@@ -189,7 +186,6 @@ public class ReviewLinkService {
         requireOwnSelectedFeedback(userId, link, feedback.getUser().getId(), feedback.getPrediction().getId());
         requireNotSubmitted(userId, requireSelectedLinkPrediction(link, feedback.getPrediction().getId()));
         feedback.setRealValue(params.realValue());
-        updateStatus(userId, feedback.getPrediction());
         return ExplanationFeedbackDto.toDto(explanationFeedbackRepository.save(feedback));
     }
     public void submit(Long userId, String token, List<String> predictionTokens) {
@@ -202,6 +198,7 @@ public class ReviewLinkService {
                             selected,
                             user,
                             OffsetDateTime.now(ZoneOffset.UTC))));
+            updateStatus(userId, selected.getPrediction());
         });
     }
 

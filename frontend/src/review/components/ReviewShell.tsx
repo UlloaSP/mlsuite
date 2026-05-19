@@ -33,7 +33,7 @@ export function ReviewShell({
       className={`min-h-screen bg-[var(--page-bg)] text-[var(--text-primary)] ${theme === "dark" ? "dark" : ""}`}
     >
       <header className="sticky top-0 z-20 border-b border-[var(--border-soft)] bg-[var(--surface-primary)]/95 px-6 py-4 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+        <div className="mx-auto flex max-w-5/6 items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
               External Review
@@ -58,7 +58,7 @@ export function ReviewShell({
           ) : null}
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-5/6 px-6 py-8">{children}</main>
     </div>
   );
 }

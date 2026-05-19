@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { AppCopy } from "../../app/components";
 import { AppButton } from "../../app/components/ui-controls";
@@ -18,7 +18,6 @@ import {
   createReviewQuestionnaireTransport,
   valuesForStep,
 } from "./reviewCombinedQuestionnaire";
-import { ReviewStepContextPanel } from "./ReviewStepContextPanel";
 
 type ReviewCombinedFeedbackFormProps = {
   token: string;
@@ -33,6 +32,8 @@ type ReviewCombinedFeedbackFormProps = {
   theme: "light" | "dark";
   onSaved: () => Promise<void> | void;
 };
+
+export const REVIEW_STEP_CONTEXT_EVENT = "mlsuite-review-step-context";
 
 const displayValue = (value: unknown): string => {
   if (value === null || value === undefined || value === "") return "Not answered";
@@ -77,12 +78,20 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
   const combined = useMemo(() => buildCombinedReviewQuestionnaire(steps), [steps]);
   const complete = steps.length > 0 && steps.every((step) => step.feedback);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
-  const [activeStepId, setActiveStepId] = useState<string | undefined>(steps[0]?.id);
+  const activeStepIdRef = useRef<string | undefined>(undefined);
   const labels = useMemo(() => ({ submit: "Save review", submitting: "Saving review..." }), []);
-  const activeStep = useMemo(
-    () => steps.find((step) => step.id === activeStepId) ?? steps[0],
-    [activeStepId, steps],
-  );
+
+  useEffect(() => {
+    const firstStep = complete && !editing ? undefined : steps[0];
+    activeStepIdRef.current = firstStep?.id;
+    window.dispatchEvent(new CustomEvent(REVIEW_STEP_CONTEXT_EVENT, { detail: firstStep }));
+
+    return () => {
+      activeStepIdRef.current = undefined;
+      window.dispatchEvent(new CustomEvent(REVIEW_STEP_CONTEXT_EVENT, { detail: undefined }));
+    };
+  }, [complete, editing, steps]);
+
   const transport = useMemo(
     () =>
       createReviewQuestionnaireTransport(async (values) => {
@@ -125,12 +134,6 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
     [onSaved, predictionId, steps, token],
   );
 
-  useEffect(() => {
-    if (!steps.some((step) => step.id === activeStepId)) {
-      setActiveStepId(steps[0]?.id);
-    }
-  }, [activeStepId, steps]);
-
   if (steps.length === 0) {
     return <AppCopy>No feedback questionnaire configured for this prediction.</AppCopy>;
   }
@@ -170,21 +173,25 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
-      <div className="grid gap-5 lg:grid-cols-[minmax(13rem,18rem)_minmax(0,1fr)] lg:items-start">
-        <ReviewStepContextPanel step={activeStep} />
-        <ExplanationQuestionnaireMount
-          title="Prediction Review"
-          schema={combined.schema}
-          initialValues={combined.initialValues}
-          editable
-          theme={theme}
-          mode="standalone"
-          transport={transport}
-          labels={labels}
-          square
-          onStepChange={(stepId) => setActiveStepId(stepId ?? undefined)}
-        />
-      </div>
+      <ExplanationQuestionnaireMount
+        title="Prediction Review"
+        schema={combined.schema}
+        initialValues={combined.initialValues}
+        editable
+        theme={theme}
+        mode="standalone"
+        transport={transport}
+        labels={labels}
+        square
+        onStepChange={(stepId) => {
+          const nextId = stepId ?? steps[0]?.id;
+          if (activeStepIdRef.current === nextId) return;
+          activeStepIdRef.current = nextId;
+          window.dispatchEvent(new CustomEvent(REVIEW_STEP_CONTEXT_EVENT, {
+            detail: steps.find((step) => step.id === nextId) ?? steps[0],
+          }));
+        }}
+      />
     </section>
   );
 }

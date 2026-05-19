@@ -1,8 +1,6 @@
+import { useEffect, useState } from "react";
 import type { ReviewFeedbackStep } from "./reviewCombinedQuestionnaire";
-
-type ReviewStepContextPanelProps = {
-  step?: ReviewFeedbackStep;
-};
+import { REVIEW_STEP_CONTEXT_EVENT } from "./ReviewCombinedFeedbackForm";
 
 const lines = (value: string) => {
   const seen = new Map<string, number>();
@@ -15,12 +13,22 @@ const lines = (value: string) => {
   });
 };
 
-export function ReviewStepContextPanel({ step }: ReviewStepContextPanelProps) {
-  if (!step) {
-    return null;
+export function ReviewStepContextPanel() {
+  const [activeStep, setActiveStep] = useState<ReviewFeedbackStep | undefined>();
+
+  useEffect(() => {
+    const onStepContext = (event: Event) => {
+      setActiveStep((event as CustomEvent<ReviewFeedbackStep | undefined>).detail);
+    };
+    window.addEventListener(REVIEW_STEP_CONTEXT_EVENT, onStepContext);
+    return () => window.removeEventListener(REVIEW_STEP_CONTEXT_EVENT, onStepContext);
+  }, []);
+
+  if (!activeStep) {
+    return <aside className="lg:sticky lg:top-28" />;
   }
-  const title = step.kind === "output" ? "Current output" : "Current explanation";
-  const content = lines(step.description.replace(/^Prediction (result|explanation):\s*/i, ""));
+  const title = activeStep.kind === "output" ? "Current output" : "Current explanation";
+  const content = lines(activeStep.description.replace(/^Prediction (result|explanation):\s*/i, ""));
   return (
     <aside className="lg:sticky lg:top-28">
       <div className="border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 shadow-[var(--shadow-card)]">
@@ -28,12 +36,12 @@ export function ReviewStepContextPanel({ step }: ReviewStepContextPanelProps) {
           {title}
         </p>
         <h3 className="mt-2 text-base font-semibold leading-5 text-[var(--text-primary)]">
-          {step.title}
+          {activeStep.title}
         </h3>
         <div className="mt-4 space-y-2 text-sm leading-6 text-[var(--text-secondary)]">
           {content.length > 0 ? (
             content.map((item) => (
-              <p key={`${step.id}-${item.key}`} className="break-words">
+              <p key={`${activeStep.id}-${item.key}`} className="break-words">
                 {item.text}
               </p>
             ))

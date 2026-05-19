@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.review;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +47,7 @@ import dev.ulloasp.mlsuite.review.application.service.ReviewLinkUnavailableExcep
 import dev.ulloasp.mlsuite.review.application.service.ReviewPredictionTokenPayload;
 import dev.ulloasp.mlsuite.review.domain.model.ReviewLink;
 import dev.ulloasp.mlsuite.review.domain.model.ReviewLinkPrediction;
+import dev.ulloasp.mlsuite.review.domain.model.ReviewLinkPredictionSubmission;
 import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.SignatureRepository;
 import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
@@ -195,7 +197,7 @@ class ReviewLinkServiceTest {
     }
 
     @Test
-    void createOutputFeedback_SavesCurrentUserFeedbackForSelectedPrediction() {
+    void createOutputFeedback_SavesDraftWithoutCompletingPrediction() {
         ReviewLink link = activeLink();
         Prediction prediction = prediction();
         stubAccessiblePreview(link, "token");
@@ -206,8 +208,6 @@ class ReviewLinkServiceTest {
         when(submissionRepository.existsByReviewLinkPredictionIdAndUserId(700L, 3L)).thenReturn(false);
         when(userLookupService.requireById(3L)).thenReturn(user(3L));
         when(outputFeedbackRepository.save(any(OutputFeedback.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(feedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
-        when(predictionRepository.save(prediction)).thenReturn(prediction);
 
         var result = service.createOutputFeedback(3L, "token", new CreateOutputFeedbackParams(
                 101L,
@@ -215,7 +215,30 @@ class ReviewLinkServiceTest {
                 mapper.valueToTree(Map.of("assessment", "correct"))));
 
         assertEquals(101L, result.predictionId());
+        assertEquals(PredictionStatus.PENDING, prediction.getStatus());
+        verify(predictionRepository, never()).save(prediction);
+    }
+
+    @Test
+    void submit_CompletesPredictionAfterReviewerCommit() {
+        ReviewLink link = activeLink();
+        Prediction prediction = prediction();
+        stubAccessiblePreview(link, "token");
+        when(tokenService.decryptPrediction("selection-token")).thenReturn(predictionPayload(101L));
+        ReviewLinkPrediction selected = new ReviewLinkPrediction(link, prediction);
+        selected.setId(700L);
+        when(linkPredictionRepository.findByReviewLinkIdAndPredictionId(123L, 101L)).thenReturn(Optional.of(selected));
+        when(predictionRepository.findByIdAndOrganizationId(101L, 41L)).thenReturn(Optional.of(prediction));
+        when(userLookupService.requireById(3L)).thenReturn(user(3L));
+        when(submissionRepository.findByReviewLinkPredictionIdAndUserId(700L, 3L)).thenReturn(Optional.empty());
+        when(submissionRepository.save(any(ReviewLinkPredictionSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(feedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
+        when(predictionRepository.save(prediction)).thenReturn(prediction);
+
+        service.submit(3L, "token", List.of("selection-token"));
+
         assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
+        verify(predictionRepository).save(prediction);
     }
 
     private void stubManagerCreate() {

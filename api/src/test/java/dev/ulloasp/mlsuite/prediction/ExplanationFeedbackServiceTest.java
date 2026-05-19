@@ -121,7 +121,7 @@ class ExplanationFeedbackServiceTest {
     void getExplanationFeedbackByPredictionId_ReturnsOrderedList() {
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction()));
-        when(explanationFeedbackRepository.findByPredictionIdAndOrganizationId(11L, 41L))
+        when(explanationFeedbackRepository.findPublishedByPredictionIdAndOrganizationId(11L, 41L))
                 .thenReturn(List.of(explanationFeedback(prediction())));
 
         assertEquals(1, service.getExplanationFeedbackByPredictionId(3L, 11L).size());
