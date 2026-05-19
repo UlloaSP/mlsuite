@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ReportConfig, ReportDefinition } from "mlform/runtime";
+import { defineReportKind, type DefinedReportKind } from "mlform/presentation";
+import type { ReportConfig } from "mlform/runtime";
 
 type TypeScriptModule = typeof import("typescript");
 type ZodModule = typeof import("zod");
@@ -16,7 +17,9 @@ declare global {
 
 export const CUSTOM_REPORT_COMPONENT = "mlsuite-custom-report";
 
-const definitionCache = new Map<string, Promise<ReportDefinition<ReportConfig>>>();
+type CustomReportKind = DefinedReportKind<ReportConfig, unknown>;
+
+const definitionCache = new Map<string, Promise<CustomReportKind>>();
 let typescriptPromise: Promise<TypeScriptModule> | null = null;
 let zodPromise: Promise<ZodModule> | null = null;
 const zodGlobalPrefix = "__MLSUITE_CUSTOM_REPORT_ZOD__";
@@ -62,13 +65,16 @@ const formatDiagnostics = (
 				})
 				.join("\n");
 
-const prependRuntimeShims = (source: string, zodGlobalKey: string): string => `const defineReportDefinition = (value) => value;
+const getDefineReportKindGlobalKey = (source: string): string =>
+	`__MLSUITE_DEFINE_REPORT_KIND__${hashString(source)}`;
+
+const prependRuntimeShims = (source: string, zodGlobalKey: string, defineGlobalKey: string): string => `const defineReportKind = (value) => globalThis[${JSON.stringify(defineGlobalKey)}](value);
 const z = globalThis[${JSON.stringify(zodGlobalKey)}];
 ${source}`;
 
 const transpileSource = async (source: string): Promise<string> => {
 	const ts = await loadTypeScript();
-	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source)), {
+	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source), getDefineReportKindGlobalKey(source)), {
 		compilerOptions: {
 			target: ts.ScriptTarget.ES2022,
 			module: ts.ModuleKind.ESNext,
@@ -85,7 +91,7 @@ const transpileSource = async (source: string): Promise<string> => {
 	return result.outputText;
 };
 
-function assertReportDefinition(value: unknown): asserts value is ReportDefinition<ReportConfig> {
+function assertReportDefinition(value: unknown): asserts value is CustomReportKind {
 	if (!isRecord(value)) {
 		throw new Error("Custom report module must export a default report definition.");
 	}
@@ -95,18 +101,23 @@ function assertReportDefinition(value: unknown): asserts value is ReportDefiniti
 	if (!isRecord(value.schema) || typeof value.schema.safeParse !== "function") {
 		throw new Error('Custom report definition must expose Zod schema as "schema".');
 	}
+	if (!isRecord(value.definition) || !isRecord(value.presenter)) {
+		throw new Error('Custom report module must export MLForm defineReportKind(...).');
+	}
 	if (typeof value.describe !== "function") {
 		throw new Error('Custom report definition must expose "describe(config, ctx)".');
 	}
 }
 
-const importDefinitionFromSource = async (source: string): Promise<ReportDefinition<ReportConfig>> => {
+const importDefinitionFromSource = async (source: string): Promise<CustomReportKind> => {
 	const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
 	const blob = new Blob([outputText], { type: "text/javascript" });
 	const url = URL.createObjectURL(blob);
 	const zodGlobalKey = getZodGlobalKey(source);
+	const defineGlobalKey = getDefineReportKindGlobalKey(source);
 	try {
 		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
+		(globalThis as Record<string, unknown>)[defineGlobalKey] = defineReportKind;
 		// react-doctor-disable-next-line react-doctor/no-dynamic-import-path -- Runtime plugin modules are compiled to Blob URLs; no static chunk path exists.
 		const moduleValue = await import(/* @vite-ignore */ url);
 		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
@@ -117,13 +128,14 @@ const importDefinitionFromSource = async (source: string): Promise<ReportDefinit
 		return definition;
 	} finally {
 		delete (globalThis as Record<string, unknown>)[zodGlobalKey];
+		delete (globalThis as Record<string, unknown>)[defineGlobalKey];
 		URL.revokeObjectURL(url);
 	}
 };
 
 export const resolveCustomReportDefinition = async (
 	source: string,
-): Promise<ReportDefinition<ReportConfig>> => {
+): Promise<CustomReportKind> => {
 	const cacheKey = hashString(source);
 	let cachedModule = definitionCache.get(cacheKey);
 	if (!cachedModule) {
@@ -135,11 +147,11 @@ export const resolveCustomReportDefinition = async (
 
 export const validateCustomReportSource = async (
 	source: string,
-): Promise<ReportDefinition<ReportConfig>> => {
+): Promise<CustomReportKind> => {
 	const definition = await resolveCustomReportDefinition(source);
 	const probe = definition.schema.safeParse({ kind: definition.kind, label: "Preview report" });
-	if (probe.success) {
-		const descriptor = definition.describe(probe.data, {
+	if (probe.success && definition.describe) {
+		definition.describe({ ...probe.data, id: "preview-report", source: "preview-report" }, {
 			reportId: "preview-report",
 			state: {
 				payload: undefined,
@@ -152,13 +164,12 @@ export const validateCustomReportSource = async (
 				reports: {},
 				meta: {},
 				raw: {},
+				values: {},
+				fieldValues: {},
+				serializedValues: {},
+				serializedFieldValues: {},
 			},
 		});
-		if (descriptor !== null && descriptor.component !== CUSTOM_REPORT_COMPONENT) {
-			throw new Error(
-				`Custom report kind "${definition.kind}" must use shared renderer "${CUSTOM_REPORT_COMPONENT}".`,
-			);
-		}
 	}
 	return definition;
 };

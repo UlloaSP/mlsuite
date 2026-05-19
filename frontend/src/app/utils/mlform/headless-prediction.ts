@@ -3,97 +3,47 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { createMlRegistryPack } from "mlform/builtins-ml";
+import { registerDefinedExplanationKind, registerDefinedFieldKind, registerDefinedReportKind, type PresentationRegistry } from "mlform/presentation";
 import {
 	createForm,
-	defineFieldDefinition,
-	defineReportDefinition,
-	type FieldConfig,
-	type FieldDefinition,
-	type FieldStateSnapshot,
-	type FormSchema,
 	type FormController,
-	type NormalizedFieldConfig,
-	type NormalizedReportConfig,
+	type FormSchema,
 	type Registry,
-	type ReportConfig,
-	type ReportDefinition,
-	type ReportStateSnapshot,
 	type Transport,
 } from "mlform/runtime";
-import {
-	CUSTOM_FIELD_COMPONENT,
-	type CatalogFieldDefinition,
-} from "./custom-field";
 import type { CatalogExplanationDefinition } from "./custom-explanation";
-import {
-	CUSTOM_REPORT_COMPONENT,
-	type CatalogReportDefinition,
-} from "./custom-report";
+import type { CatalogFieldDefinition } from "./custom-field";
+import type { CatalogReportDefinition } from "./custom-report";
 import { toMlformSchema } from "./schema-validation";
 import {
 	type PredictionPayloadField,
 	type PredictionTheme,
 } from "./shared";
 import { createPredictionTransport } from "./transport";
-import { createMlSuiteBuiltinRegistry } from "./builtin-registry";
-
-const wrapCustomFieldDefinition = (
-	definition: CatalogFieldDefinition,
-): FieldDefinition<FieldConfig, unknown> =>
-	defineFieldDefinition({
-		...definition.definition,
-		describe(config: NormalizedFieldConfig<FieldConfig>, context: { fieldId: string; state: FieldStateSnapshot }) {
-			const descriptor = definition.definition.describe(config, context);
-			if (descriptor.component !== CUSTOM_FIELD_COMPONENT) {
-				throw new Error(
-					`Custom field kind "${definition.kind}" must use shared renderer "${CUSTOM_FIELD_COMPONENT}".`,
-				);
-			}
-			return descriptor;
-		},
-	});
-
-const wrapCustomReportDefinition = (
-	definition: CatalogReportDefinition,
-): ReportDefinition<ReportConfig> =>
-	defineReportDefinition({
-		...definition.definition,
-		describe(
-			config: NormalizedReportConfig<ReportConfig>,
-			context: { reportId: string; state: ReportStateSnapshot; payload: unknown; result: unknown },
-		) {
-			const descriptor = definition.definition.describe(config, context);
-			if (descriptor && descriptor.component !== CUSTOM_REPORT_COMPONENT) {
-				throw new Error(
-					`Custom report kind "${definition.kind}" must use shared renderer "${CUSTOM_REPORT_COMPONENT}".`,
-				);
-			}
-			return descriptor;
-		},
-	});
 
 const createPredictionEngineRegistry = (
 	customFieldDefinitions: readonly CatalogFieldDefinition[],
 	customReportDefinitions: readonly CatalogReportDefinition[],
 	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
 ) => {
-	const engineRegistry = createMlSuiteBuiltinRegistry();
+	const pack = createMlRegistryPack();
 	for (const definition of customFieldDefinitions) {
 		if (definition.active) {
-			engineRegistry.registerField(wrapCustomFieldDefinition(definition));
+			registerDefinedFieldKind(pack.registry, pack.presentationRegistry, definition.definition);
 		}
 	}
 	for (const definition of customReportDefinitions) {
 		if (definition.active) {
-			engineRegistry.registerReport(wrapCustomReportDefinition(definition));
+			registerDefinedReportKind(pack.registry, pack.presentationRegistry, definition.definition);
 		}
 	}
 	for (const definition of customExplanationDefinitions) {
 		if (definition.active) {
-			engineRegistry.registerExplanation(definition.definition);
+			registerDefinedExplanationKind(pack.registry, pack.presentationRegistry, definition.definition);
 		}
 	}
-	return engineRegistry;
+	return pack;
 };
 
 type CreateHeadlessPredictionFormOptions = {
@@ -107,6 +57,7 @@ type CreateHeadlessPredictionFormOptions = {
 export type PredictionRuntime = {
 	formSchema: FormSchema;
 	registry: Registry;
+	presentationRegistry: PresentationRegistry;
 	transport: Transport;
 	normalizedFields: readonly PredictionPayloadField[];
 };
@@ -124,18 +75,18 @@ export const createPredictionRuntime = ({
 		customExplanationDefinitions,
 	});
 	const normalizedFields = formSchema.fields as PredictionPayloadField[];
-	const registry = createPredictionEngineRegistry(
+	const pack = createPredictionEngineRegistry(
 		customFieldDefinitions,
 		customReportDefinitions,
 		customExplanationDefinitions,
 	);
 	const transport = createPredictionTransport(modelId, normalizedFields);
-	return { formSchema, registry, transport, normalizedFields };
+	return { formSchema, registry: pack.registry, presentationRegistry: pack.presentationRegistry, transport, normalizedFields };
 };
 
 export const getPredictionDesignSystem = (theme: PredictionTheme) => ({
 	mode: theme,
-	theme: "cobalt" as const,
+	theme: "airbnb" as const,
 	recipe: "default" as const,
 });
 

@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FieldConfig, FieldDefinition } from "mlform/runtime";
+import type { DefinedFieldKind } from "mlform/presentation";
+import type { FieldConfig } from "mlform/runtime";
 import type { PluginDto } from "../../api/pluginService";
 import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "./plugin-catalog";
 import { CUSTOM_FIELD_COMPONENT, resolveCustomFieldDefinition } from "./custom-field-runtime";
@@ -15,7 +16,7 @@ export type CatalogFieldDefinition = Pick<
 	"id" | "fileName" | "source" | "updatedAt" | "createdAt" | "contentType" | "sizeBytes" | "active"
 > & {
 	kind: string;
-	definition: FieldDefinition<FieldConfig, unknown>;
+	definition: DefinedFieldKind<FieldConfig, unknown>;
 };
 
 let catalogDefinitionsPromise: Promise<CatalogFieldDefinition[]> | null = null;

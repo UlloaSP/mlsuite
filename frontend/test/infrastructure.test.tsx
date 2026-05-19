@@ -4,14 +4,14 @@ import {
 	countHealthyServices,
 	countProblemServices,
 	getOverviewTimestamp,
-} from "./dashboardSummary";
+} from "../src/admin/infrastructure/dashboardSummary";
 import {
 	appendLogLine,
 	applyInfrastructureEvent,
 	resolveSelectedService,
-} from "./state";
-import type { InfrastructureOverviewDto } from "./types";
-import { buildWebSocketUrl } from "./ws/infrastructureSocket";
+} from "../src/admin/infrastructure/state";
+import type { InfrastructureOverviewDto } from "../src/admin/infrastructure/types";
+import { buildWebSocketUrl } from "../src/admin/infrastructure/ws/infrastructureSocket";
 
 const overview: InfrastructureOverviewDto = {
 	aggregate: {

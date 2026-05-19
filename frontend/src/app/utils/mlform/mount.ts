@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { mountForm } from "mlform";
+import { mountForm } from "mlform/kit";
 import {
 	type AfterSubmitContext,
 	type SubmitErrorContext,
@@ -41,6 +41,7 @@ export const mountPredictionForm = ({
 	const mounted = mountForm(container, {
 		schema: runtime.formSchema,
 		registry: runtime.registry,
+		presentationRegistry: runtime.presentationRegistry,
 		primitiveRegistry: createPredictionPrimitiveRegistry(),
 		transport: runtime.transport,
 		hooks: {

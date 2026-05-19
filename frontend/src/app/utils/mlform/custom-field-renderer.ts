@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FieldController, FieldDescriptor } from "mlform/runtime";
+import type { FieldController } from "mlform/runtime";
+import type { FieldDescriptor } from "mlform/presentation";
 import type {
 	PrimitiveFieldRenderContext,
 	PrimitiveFieldRendererElement,

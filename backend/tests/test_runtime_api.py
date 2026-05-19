@@ -11,6 +11,7 @@ from tests.helpers import (
     make_no_feature_classifier,
     make_regressor,
     make_tree,
+    make_tree_with_unused_tail_feature,
     serialize_joblib,
 )
 
@@ -136,6 +137,17 @@ def test_explain_success() -> None:
         "/explain",
         files={"model_file": serialize_joblib(make_tree(), "model.joblib")},
         data={"data": json.dumps({"age": 40, "income": 55_000}), "traces": "[]"},
+    )
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["explanations"]
+
+
+def test_explain_success_when_tree_does_not_use_tail_features() -> None:
+    response = client.post(
+        "/explain",
+        files={"model_file": serialize_joblib(make_tree_with_unused_tail_feature(), "model.joblib")},
+        data={"data": json.dumps({"age": 40, "income": 55_000, "unused": 7}), "traces": "[]"},
     )
     payload = response.json()
     assert response.status_code == 200

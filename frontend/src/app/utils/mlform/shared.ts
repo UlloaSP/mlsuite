@@ -49,7 +49,10 @@ export type MountedPredictionForm = {
 	unmount: () => void;
 };
 
-export type PredictionPayloadField = Pick<NormalizedFieldConfig, "id" | "label" | "ui">;
+export type PredictionPayloadField = Pick<
+	NormalizedFieldConfig,
+	"id" | "kind" | "label" | "ui" | "includeInSubmission"
+>;
 
 export const isRecord = (value: unknown): value is JsonRecord =>
 	typeof value === "object" && value !== null && !Array.isArray(value);

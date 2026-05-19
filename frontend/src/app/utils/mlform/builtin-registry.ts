@@ -7,14 +7,11 @@ import { createMlRegistryPack } from "mlform/builtins-ml";
 import type {
 	FieldConfig,
 	FieldDefinition,
-	Registry,
 	ReportConfig,
 	ReportDefinition,
 } from "mlform/runtime";
 
-export const createMlSuiteBuiltinRegistry = (): Registry => createMlRegistryPack().registry;
-
-const builtinRegistry = createMlSuiteBuiltinRegistry();
+const builtinRegistry = createMlRegistryPack().registry;
 
 export const getBuiltinRegistry = () => builtinRegistry;
 

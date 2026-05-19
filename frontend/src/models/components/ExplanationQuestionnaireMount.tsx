@@ -11,6 +11,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { createMlRegistryPack } from "mlform/builtins-ml";
 import { mountWizardForm, type MountedWizardForm } from "mlform/kit";
 import type { Transport } from "mlform/runtime";
 import type { QuestionnaireSchema } from "../questionnaire-schema";
@@ -19,7 +20,6 @@ import {
 	buildQuestionnaireWizardLayout,
 } from "../questionnaire-schema";
 import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
-import { createMlSuiteBuiltinRegistry } from "../../app/utils/mlform/builtin-registry";
 import { createLocalQuestionnaireTransport } from "../local-questionnaire-transport";
 import {
 	getQuestionnaireValues,
@@ -101,7 +101,7 @@ export function ExplanationQuestionnaireMount({
 			const mounted = mountWizardForm(containerRef.current, {
 				schema: buildQuestionnaireFormSchema(effectiveSchema),
 				layout: buildQuestionnaireWizardLayout(effectiveSchema),
-				registry: createMlSuiteBuiltinRegistry(),
+				registry: createMlRegistryPack().registry,
 				transport: transport ?? createLocalQuestionnaireTransport(),
 				initialValues: initialValuesRef.current,
 				designSystem: {

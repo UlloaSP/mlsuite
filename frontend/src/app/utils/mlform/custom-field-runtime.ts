@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FieldConfig, FieldDefinition } from "mlform/runtime";
+import { defineFieldKind, type DefinedFieldKind } from "mlform/presentation";
+import type { FieldConfig } from "mlform/runtime";
 
 type TypeScriptModule = typeof import("typescript");
 type ZodModule = typeof import("zod");
@@ -16,7 +17,9 @@ declare global {
 
 export const CUSTOM_FIELD_COMPONENT = "mlsuite-custom-field";
 
-const definitionCache = new Map<string, Promise<FieldDefinition<FieldConfig, unknown>>>();
+type CustomFieldKind = DefinedFieldKind<FieldConfig, unknown>;
+
+const definitionCache = new Map<string, Promise<CustomFieldKind>>();
 let typescriptPromise: Promise<TypeScriptModule> | null = null;
 let zodPromise: Promise<ZodModule> | null = null;
 const zodGlobalPrefix = "__MLSUITE_CUSTOM_FIELD_ZOD__";
@@ -62,13 +65,16 @@ const formatDiagnostics = (
 				})
 				.join("\n");
 
-const prependRuntimeShims = (source: string, zodGlobalKey: string): string => `const defineFieldDefinition = (value) => value;
+const getDefineFieldKindGlobalKey = (source: string): string =>
+	`__MLSUITE_DEFINE_FIELD_KIND__${hashString(source)}`;
+
+const prependRuntimeShims = (source: string, zodGlobalKey: string, defineGlobalKey: string): string => `const defineFieldKind = (value) => globalThis[${JSON.stringify(defineGlobalKey)}](value);
 const z = globalThis[${JSON.stringify(zodGlobalKey)}];
 ${source}`;
 
 const transpileSource = async (source: string): Promise<string> => {
 	const ts = await loadTypeScript();
-	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source)), {
+	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source), getDefineFieldKindGlobalKey(source)), {
 		compilerOptions: {
 			target: ts.ScriptTarget.ES2022,
 			module: ts.ModuleKind.ESNext,
@@ -85,7 +91,7 @@ const transpileSource = async (source: string): Promise<string> => {
 	return result.outputText;
 };
 
-function assertFieldDefinition(value: unknown): asserts value is FieldDefinition<FieldConfig, unknown> {
+function assertFieldDefinition(value: unknown): asserts value is CustomFieldKind {
 	if (!isRecord(value)) {
 		throw new Error("Custom field module must export a default field definition.");
 	}
@@ -95,18 +101,23 @@ function assertFieldDefinition(value: unknown): asserts value is FieldDefinition
 	if (!isRecord(value.schema) || typeof value.schema.safeParse !== "function") {
 		throw new Error('Custom field definition must expose Zod schema as "schema".');
 	}
+	if (!isRecord(value.definition) || !isRecord(value.presenter)) {
+		throw new Error('Custom field module must export MLForm defineFieldKind(...).');
+	}
 	if (typeof value.describe !== "function") {
 		throw new Error('Custom field definition must expose "describe(config, ctx)".');
 	}
 }
 
-const importDefinitionFromSource = async (source: string): Promise<FieldDefinition<FieldConfig, unknown>> => {
+const importDefinitionFromSource = async (source: string): Promise<CustomFieldKind> => {
 	const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
 	const blob = new Blob([outputText], { type: "text/javascript" });
 	const url = URL.createObjectURL(blob);
 	const zodGlobalKey = getZodGlobalKey(source);
+	const defineGlobalKey = getDefineFieldKindGlobalKey(source);
 	try {
 		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
+		(globalThis as Record<string, unknown>)[defineGlobalKey] = defineFieldKind;
 		// react-doctor-disable-next-line react-doctor/no-dynamic-import-path -- Runtime plugin modules are compiled to Blob URLs; no static chunk path exists.
 		const moduleValue = await import(/* @vite-ignore */ url);
 		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
@@ -117,13 +128,14 @@ const importDefinitionFromSource = async (source: string): Promise<FieldDefiniti
 		return definition;
 	} finally {
 		delete (globalThis as Record<string, unknown>)[zodGlobalKey];
+		delete (globalThis as Record<string, unknown>)[defineGlobalKey];
 		URL.revokeObjectURL(url);
 	}
 };
 
 export const resolveCustomFieldDefinition = async (
 	source: string,
-): Promise<FieldDefinition<FieldConfig, unknown>> => {
+): Promise<CustomFieldKind> => {
 	const cacheKey = hashString(source);
 	let cachedModule = definitionCache.get(cacheKey);
 	if (!cachedModule) {
@@ -135,11 +147,11 @@ export const resolveCustomFieldDefinition = async (
 
 export const validateCustomFieldSource = async (
 	source: string,
-): Promise<FieldDefinition<FieldConfig, unknown>> => {
+): Promise<CustomFieldKind> => {
 	const definition = await resolveCustomFieldDefinition(source);
 	const probe = definition.schema.safeParse({ kind: definition.kind, label: "Preview field" });
-	if (probe.success) {
-		const descriptor = definition.describe(probe.data, {
+	if (probe.success && definition.describe) {
+		definition.describe({ ...probe.data, id: "preview-field" }, {
 			fieldId: "preview-field",
 			state: {
 				value: undefined,
@@ -153,12 +165,8 @@ export const validateCustomFieldSource = async (
 				errors: [],
 				status: "idle",
 			},
+			value: undefined,
 		});
-		if (descriptor.component !== CUSTOM_FIELD_COMPONENT) {
-			throw new Error(
-				`Custom field kind "${definition.kind}" must use shared renderer "${CUSTOM_FIELD_COMPONENT}".`,
-			);
-		}
 	}
 	return definition;
 };

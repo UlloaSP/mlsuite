@@ -5,11 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type {
 	ExplanationConfig,
-	ExplanationDescriptorContext,
 	ExplanationDefinition,
 	ExplanationFetchRequest,
 	NormalizedExplanationConfig,
 } from "mlform/runtime";
+import { defineExplanationKind, type DefinedExplanationKind, type ExplanationDescriptorContext } from "mlform/presentation";
 import type { QuestionnaireSchema } from "../../../models/questionnaire-schema";
 import { normalizeExplanationConfig, toBackendPatchedRequest } from "./explanationConfig";
 
@@ -31,19 +31,22 @@ type DeclarativeExplanationModule<TConfig extends ExplanationConfig = Explanatio
 		summary?: (context: {
 			config: NormalizedExplanationConfig<TConfig>;
 			explanationId: string;
-			state: Parameters<ExplanationDefinition<TConfig>["describe"]>[1]["state"];
+			state: ExplanationDescriptorContext["state"];
 			result: unknown;
 		}) => Record<string, unknown> | null | undefined;
 		content: (context: {
 			config: NormalizedExplanationConfig<TConfig>;
 			explanationId: string;
-			state: Parameters<ExplanationDefinition<TConfig>["describe"]>[1]["state"];
+			state: ExplanationDescriptorContext["state"];
 			result: unknown;
 		}) => PresentationContentLike;
 	};
 };
 
 export type ExplanationDefinitionWithFeedback = ExplanationDefinition<ExplanationConfig> & {
+	definition: ExplanationDefinition<ExplanationConfig>;
+	presenter: DefinedExplanationKind<ExplanationConfig, unknown>["presenter"];
+	describe: DefinedExplanationKind<ExplanationConfig, unknown>["describe"];
 	feedbackQuestionnaire?: QuestionnaireSchema;
 };
 
@@ -64,6 +67,8 @@ const hashString = (value: string): string => {
 
 const getZodGlobalKey = (source: string): string =>
 	`__MLSUITE_CUSTOM_EXPLANATION_FB_ZOD__${hashString(source)}`;
+const getDefineExplanationKindGlobalKey = (source: string): string =>
+	`__MLSUITE_DEFINE_EXPLANATION_KIND__${hashString(source)}`;
 
 const loadTypeScript = async (): Promise<TypeScriptModule> => {
 	typescriptPromise ??= import("typescript");
@@ -78,14 +83,14 @@ const loadZod = async (): Promise<ZodModule> => {
 const toPresentationNodes = (value: PresentationContentLike): unknown[] =>
 	value === undefined ? [] : Array.isArray(value) ? [...value] : [value];
 
-const prependRuntimeShims = (source: string, zodGlobalKey: string): string => `const defineExplanationKind = (value) => value;
+const prependRuntimeShims = (source: string, zodGlobalKey: string, defineGlobalKey: string): string => `const defineExplanationKind = (value) => globalThis[${JSON.stringify(defineGlobalKey)}](value);
 const createQuestionnaireSchema = (value) => value;
 const z = globalThis[${JSON.stringify(zodGlobalKey)}];
 ${source}`;
 
 const transpileSource = async (source: string): Promise<string> => {
 	const ts = await loadTypeScript();
-	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source)), {
+	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source), getDefineExplanationKindGlobalKey(source)), {
 		compilerOptions: {
 			target: ts.ScriptTarget.ES2022,
 			module: ts.ModuleKind.ESNext,
@@ -183,16 +188,45 @@ const adaptDeclarativeExplanationModule = (
 			meta: { declarative: true },
 		};
 	},
+	definition: null as never,
+	presenter: null as never,
 });
+
+// knip-ignore
+export const patchDefinedExplanationTransport = (
+	defined: ExplanationDefinitionWithFeedback,
+): ExplanationDefinitionWithFeedback => {
+	const transport = (config: ExplanationConfig) => {
+		const baseTransport = defined.transport(config);
+		return {
+			submit: (request: ExplanationFetchRequest) => baseTransport.submit(toBackendPatchedRequest(request)),
+		};
+	};
+	return {
+		...defined,
+		transport,
+		definition: {
+			...defined.definition,
+			transport,
+		},
+	};
+};
 
 const importDefinition = async (source: string): Promise<ExplanationDefinitionWithFeedback> => {
 	const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
 	const blob = new Blob([outputText], { type: "text/javascript" });
 	const url = URL.createObjectURL(blob);
 	const zodGlobalKey = getZodGlobalKey(source);
+	const defineGlobalKey = getDefineExplanationKindGlobalKey(source);
 
 	try {
 		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
+		(globalThis as Record<string, unknown>)[defineGlobalKey] = (value: DeclarativeExplanationModule) => {
+			const defined = defineExplanationKind(value as never);
+			return Object.assign(defined, {
+				feedbackQuestionnaire: value.feedbackQuestionnaire,
+			});
+		};
 		// react-doctor-disable-next-line react-doctor/no-dynamic-import-path -- Runtime plugin modules are compiled to Blob URLs; no static chunk path exists.
 		const moduleValue = await import(/* @vite-ignore */ url);
 		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
@@ -200,10 +234,24 @@ const importDefinition = async (source: string): Promise<ExplanationDefinitionWi
 		}
 
 		const declarativeValue: unknown = moduleValue.default;
+		if (isRecord(declarativeValue) && isRecord(declarativeValue.definition) && isRecord(declarativeValue.presenter)) {
+			return patchDefinedExplanationTransport(declarativeValue as unknown as ExplanationDefinitionWithFeedback);
+		}
 		assertDeclarativeExplanationModule(declarativeValue);
-		return adaptDeclarativeExplanationModule(declarativeValue);
+		const adapted = adaptDeclarativeExplanationModule(declarativeValue);
+		adapted.definition = {
+			kind: adapted.kind,
+			schema: adapted.schema,
+			transport: adapted.transport,
+		};
+		adapted.presenter = {
+			kind: adapted.kind,
+			describe: adapted.describe!,
+		};
+		return adapted;
 	} finally {
 		delete (globalThis as Record<string, unknown>)[zodGlobalKey];
+		delete (globalThis as Record<string, unknown>)[defineGlobalKey];
 		URL.revokeObjectURL(url);
 	}
 };

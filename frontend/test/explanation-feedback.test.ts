@@ -4,9 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, it } from "vite-plus/test";
+import type { ExplanationFetchRequest } from "mlform/runtime";
 import { extractPredictionExplanationEntries } from "../src/models/explanation-feedback-utils";
 import { applyExplanationFeedbackMetadata } from "../src/models/signature-feedback-metadata";
 import type { CatalogExplanationDefinition } from "../src/app/utils/mlform/custom-explanation";
+import {
+	patchDefinedExplanationTransport,
+	type ExplanationDefinitionWithFeedback,
+} from "../src/app/utils/mlform/custom-explanation-questionnaire";
+import { createPredictionTransport } from "../src/app/utils/mlform/transport";
 import {
 	buildCombinedReviewQuestionnaire,
 	buildReviewFeedbackSteps,
@@ -48,7 +54,100 @@ const predictionValue = {
 	},
 };
 
+const explanationRequest: ExplanationFetchRequest = {
+	explanationId: "crystal-tree",
+	values: { "petal length": 4.9 },
+	fieldValues: { "petal length": 4.9 },
+	serializedValues: { "petal length": 4.9 },
+	serializedFieldValues: { "petal length": 4.9 },
+	reports: {},
+	meta: {
+		backendFieldValues: {
+			petal_length: 4.9,
+			petal_width: 1.5,
+			sepal_length: 6.1,
+			sepal_width: 2.8,
+		},
+	},
+	raw: null,
+};
+
+const parsePostedData = async (body: BodyInit | null | undefined): Promise<Record<string, unknown>> => {
+	expect(body).toBeInstanceOf(FormData);
+	const data = (body as FormData).get("data");
+	expect(data).toBeInstanceOf(File);
+	return JSON.parse(await (data as File).text()) as Record<string, unknown>;
+};
+
 describe("explanation feedback metadata", () => {
+	it("omits mapped-category parent controls from analyzer payload", async () => {
+		let posted: Record<string, unknown> | null = null;
+		const originalFetch = globalThis.fetch;
+		globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+			posted = await parsePostedData(init?.body);
+			return new Response(JSON.stringify({ outputs: [] }), {
+				status: 200,
+				headers: { "content-type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			await createPredictionTransport("demo", [
+				{
+					id: "rec-vhc",
+					kind: "mapped-category",
+					label: "rec_vhc",
+					options: [{ mapping: { "rec-vhc-0-0": "1", "rec-vhc-1-0": "0" } }],
+				},
+				{ id: "rec-vhc-0-0", kind: "text", label: "rec_vhc__0.0" },
+				{ id: "rec-vhc-1-0", kind: "text", label: "rec_vhc__1.0" },
+			]).submit({
+				values: {},
+				fieldValues: {},
+				serializedValues: {
+					"rec-vhc": "0.0",
+					"rec-vhc-0-0": "1",
+					"rec-vhc-1-0": "0",
+				},
+				serializedFieldValues: {},
+				fields: [],
+				reports: [],
+			});
+		} finally {
+			globalThis.fetch = originalFetch;
+		}
+
+		expect(posted).toEqual({
+			"rec_vhc__0.0": "1",
+			"rec_vhc__1.0": "0",
+		});
+	});
+
+	it("sends backend feature keys through MLForm 0.1.9 defined explanation plugins", async () => {
+		let captured: ExplanationFetchRequest | null = null;
+		const plugin = patchDefinedExplanationTransport({
+			kind: "Crystal Tree",
+			schema: { safeParse: (value: unknown) => ({ success: true, data: value }) },
+			transport: () => ({
+				submit: async (request) => {
+					captured = request;
+					return {};
+				},
+			}),
+			describe: () => null,
+			definition: null as never,
+			presenter: null as never,
+		} satisfies ExplanationDefinitionWithFeedback);
+		plugin.definition = {
+			kind: plugin.kind,
+			schema: plugin.schema,
+			transport: plugin.transport,
+		};
+		await plugin.definition.transport({ kind: "Crystal Tree" }).submit(explanationRequest);
+
+		expect(captured?.serializedValues).toEqual(explanationRequest.meta.backendFieldValues);
+	});
+
 	it("persists plugin questionnaire metadata into schema explanations", () => {
 		const schema = applyExplanationFeedbackMetadata({
 			fields: [{ kind: "number", label: "petal_length" }],

@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ReportController, ReportDescriptor } from "mlform/runtime";
+import type { ReportController } from "mlform/runtime";
+import type { ReportDescriptor } from "mlform/presentation";
 import type {
 	PrimitiveReportRenderContext,
 	PrimitiveReportRendererElement,

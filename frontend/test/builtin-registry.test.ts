@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, it } from "vite-plus/test";
-import { createMlSuiteBuiltinRegistry } from "./builtin-registry";
-import { schemaNeedsActivePluginCatalog } from "./schema-needs-plugin-catalog";
-import { validateMlformSchema } from "./schema-validation";
+import { createMlRegistryPack } from "mlform/builtins-ml";
+import { schemaNeedsActivePluginCatalog } from "../src/app/utils/mlform/schema-needs-plugin-catalog";
+import { validateMlformSchema } from "../src/app/utils/mlform/schema-validation";
 
 const builtinSchema = {
 	fields: [
@@ -18,7 +18,7 @@ const builtinSchema = {
 
 describe("MLForm builtin registry", () => {
 	it("registers MLForm field and report builtins by default", () => {
-		const registry = createMlSuiteBuiltinRegistry();
+		const registry = createMlRegistryPack().registry;
 
 		expect(registry.getField("text")).toBeDefined();
 		expect(registry.getField("number")).toBeDefined();

@@ -103,3 +103,7 @@
 - Rule: catch-all exception handlers must explicitly preserve framework/status exceptions before returning generic 500.
 - Correction: prediction feedback completion depended on parsing active plugin source, not persisted schema metadata.
 - Rule: backend status/state transitions must use persisted contract metadata as source of truth; plugin/catalog source can enrich writes, not decide historical saved state.
+
+## 2026-05-17 - Crystal Tree regression loop
+- Correction: frontend payload narrowing did not fix Crystal Tree because backend still produced the same runtime error.
+- Rule: when user reports same error after a fix, build a backend/runtime repro for the exact exception before another frontend-only patch.

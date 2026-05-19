@@ -3,7 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig, ExplanationDefinition } from "mlform/runtime";
 import type { PluginDto } from "../../api/pluginService";
 import {
 	type ExplanationDefinitionWithFeedback,
@@ -50,7 +49,7 @@ const toCatalogDefinition = async (item: PluginDto): Promise<CatalogExplanationD
 		sizeBytes: item.sizeBytes,
 		active: item.active,
 		kind: detected.kind,
-		definition: await resolveCustomExplanationDefinitionWithFeedback(item.source) as ExplanationDefinition<ExplanationConfig> & ExplanationDefinitionWithFeedback,
+		definition: await resolveCustomExplanationDefinitionWithFeedback(item.source),
 	};
 };
 

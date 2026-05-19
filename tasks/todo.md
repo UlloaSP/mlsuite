@@ -1,5 +1,51 @@
 # Config Hardcode Removal Plan
 
+## Crystal Tree Explanation Payload Fix
+
+### Goal
+- [ ] Reproduce `Missing features` on MLForm 0.1.9 explanation submit path.
+- [ ] Send backend feature keys to Crystal Tree explanation runtime.
+- [ ] Avoid legacy adapter branches; keep public MLForm 0.1.9 contract direct.
+- [ ] Verify focused frontend test/build and update graph.
+
+### Plan
+- [ ] Add regression test for `defineExplanationKind` plugin submit payload.
+- [ ] Wrap public defined explanation transport with backend-shaped request data.
+- [ ] Run focused test, build, line cap, stale scan, graph update.
+
+### Review
+- Pending.
+
+## MLForm 0.1.9 Public API Break
+
+### Goal
+- [x] Use MLForm 0.1.9 public API directly in frontend.
+- [x] Remove MLSuite MLForm adapter/facade use where 0.1.9 exposes first-class API.
+- [x] Keep breaking changes clean: no legacy shim, no compatibility branch.
+- [x] Verify build/tests/stale scans/line caps/graph.
+
+### Plan
+- [x] Inspect 0.1.9 public exports and current MLSuite MLForm wrappers.
+- [x] Replace builtin registry and kit/runtime imports with direct public 0.1.9 exports.
+- [x] Delete or narrow adapter modules that only rename upstream API.
+- [x] Run focused frontend verification and update graph.
+
+### Review
+- Status: fixed.
+- Switched custom field/report/explanation plugins to MLForm 0.1.9 `define*Kind` contracts and `registerDefined*Kind`.
+- Prediction runtime now carries MLForm `presentationRegistry` from `createMlRegistryPack`; no local builtin registry adapter in runtime mounts.
+- Plugin detection now treats `defineFieldKind`/`defineReportKind` as active public contracts.
+- Added TS path mapping to the package's real declaration files because 0.1.9 `exports.types` points at missing `dist/types/src/*` paths.
+- Verification:
+  - `vp run build` ✅ warnings only: runtime-config non-module script and large chunks.
+  - `vp test` ✅ 7 files / 30 tests.
+  - `vp test test/builtin-registry.test.ts test/explanation-feedback.test.ts test/export-csv.test.ts` ✅ 10 tests.
+  - `npx react-doctor@latest --verbose` ✅ 99/100, existing warnings only.
+  - stale scan for old MLForm adapters/legacy subpaths ✅ no matches.
+  - frontend source line cap ✅ no `frontend/src` TS/TSX file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+
 ## Backend Lessons Audit
 
 ### Goal
@@ -1435,6 +1481,96 @@ Run grep audit again for forbidden literals in config paths. Then run targeted c
   - `mvn -q "-Dmaven.test.skip=true" package` ✅
   - touched line cap ✅ all touched Java files <=300.
   - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+
+## Admin/Infra Sidebar Animation
+
+### Goal
+- [x] Admin and infra pages use same sidebar navigation entry animation as other app pages.
+- [x] Keep animation behavior in shared app component instead of duplicating route-specific motion.
+- [x] Verify frontend build/tests/line cap/graph.
+
+### Plan
+- [x] Compare app page motion wrappers across workspace/plugins/admin/infra.
+- [x] Add reusable `AppPageTransition` with existing page entrance motion.
+- [x] Wrap admin users and admin infrastructure page content with it.
+- [x] Run focused verification and update graph.
+
+### Review
+- Status: fixed.
+- Cause: admin users and admin infrastructure pages mounted raw `AppSurface` content, while workspace/plugin pages wrapped page content in `motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}`.
+- Fix: added `AppPageTransition` app component and wrapped both admin pages with the same entrance motion.
+- Verification:
+  - `vp test test/theme.test.ts test/infrastructure.test.tsx` passed: 2 files / 7 tests.
+  - `vp test` passed: 8 files / 33 tests.
+  - `vp run build` passed; warnings only: runtime-config non-module script, large chunks.
+  - `npx react-doctor@latest --verbose` passed score 99/100; existing warnings.
+  - line cap passed: `AppPageTransition.tsx` 19, `admin-users-page.tsx` 224, `admin-infrastructure-page.tsx` 175.
+  - `git diff --check` passed; CRLF warnings only.
+
+## CSS View Transitions for Page Routes
+
+### Goal
+- [x] Move page route transitions from per-page Motion wrappers to CSS View Transitions.
+- [x] Enable route navigation transitions centrally, not one link/page at a time.
+- [x] Keep reduced-motion fallback and browser fallback.
+- [x] Verify build/tests/react-doctor/line cap/graph.
+- [x] Soften route animation after visual review.
+
+### Plan
+- [x] Add router-level default `viewTransition: true` for non-history-delta navigation.
+- [x] Add global `::view-transition-*` CSS with `prefers-reduced-motion`.
+- [x] Remove page-level `motion.div` wrappers and temporary `AppPageTransition`.
+- [x] Run focused and full frontend verification, then graph update.
+
+### Review
+- Status: fixed.
+- Added router-level `enableViewTransitions` helper so app navigations default to React Router `viewTransition: true`; history delta navigations stay untouched and explicit opt-out still works.
+- Added CSS View Transition keyframes in `frontend/index.html` for root route fade/slide, with reduced-motion disabled animation.
+- Removed page-level Motion wrappers from workspace, admin, plugin catalog, and model pages. Kept Motion for component/micro UI such as sidebar label and prediction editor padding.
+- Deleted temporary `AppPageTransition`.
+- Added `test/view-transitions.test.ts` for default enable, explicit opt-out, and history delta cases.
+- Verification:
+  - `vp test test/view-transitions.test.ts test/theme.test.ts test/infrastructure.test.tsx` passed: 3 files / 10 tests.
+  - `vp test` passed: 9 files / 36 tests.
+  - `vp run build` passed; warnings only: runtime-config non-module script, large chunks.
+  - `npx react-doctor@latest --verbose` passed score 99/100; existing warnings.
+  - source line cap passed: no `frontend/src` TS/TSX file over 300 lines.
+  - page-level motion scan passed: no `initial={{ opacity` wrappers or `AppPageTransition` references in app pages.
+  - `git diff --check` passed; CRLF warnings only.
+  - `graphify update .` passed; graph.html skipped because graph exceeds viz limit.
+  - `vp check` blocked by existing formatting backlog in 579 files, mostly `dist/`.
+- Dev server running at `http://127.0.0.1:5174`.
+
+### Visual tuning update
+- Reduced route View Transition from 260ms cubic-bezier with outgoing/entering y-shift to 180ms ease-out.
+- Removed outgoing y-shift and limited incoming y-shift to 4px, so shell/content no longer feels like it jumps.
+
+## Admin/Infra Theme Regression
+
+### Goal
+- [x] Keep user-selected dark theme after sidebar navigation to admin/infra.
+- [x] Add regression coverage for stored theme overriding system preference.
+- [x] Verify focused frontend checks and graph update.
+
+### Plan
+- [x] Trace theme atom, sidebar toggle, admin/infra routes.
+- [x] Stop `themeAtom.onMount` from rewriting stored theme with system preference.
+- [x] Add focused theme persistence test.
+- [x] Run frontend tests/build/react-doctor/line cap/diff/graph.
+
+### Review
+- Status: fixed.
+- Cause: `themeAtom.onMount` always synced and returned `prefersDark ? "dark" : "light"`, so remounting theme consumers could overwrite `localStorage` with system theme.
+- Fix: `themeAtom.onMount` now syncs chrome from current atom value and returns that value unchanged.
+- Verification:
+  - `vp test test/theme.test.ts` passed: 1 test.
+  - `vp test` passed: 8 files / 33 tests.
+  - `vp run build` passed; warnings only: runtime-config non-module script, plugin timings, large chunks.
+  - `npx react-doctor@latest --verbose` passed score 99/100; existing warnings.
+  - line cap passed: `frontend/src/app/atoms.ts` 50 lines, `frontend/test/theme.test.ts` 78 lines.
+  - `git diff --check -- frontend/src/app/atoms.ts frontend/test/theme.test.ts tasks/todo.md` passed; CRLF warnings only.
+  - `graphify update .` passed; graph.html skipped because graph exceeds viz limit.
+  - `vp check` blocked by existing formatting backlog in 568 files, mostly `dist/`.
 
 ### Review update
 - Removed duplicated hardcoded external-reviewer metadata from seed/auth/invite/change-role/test paths.

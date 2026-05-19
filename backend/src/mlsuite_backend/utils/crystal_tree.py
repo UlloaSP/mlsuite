@@ -64,6 +64,11 @@ def render_traces(traces: list[Trace]) -> str:
     return "\n".join(trace.to_xclingo_code() for trace in traces)
 
 
+def get_logic_feature_count(model: object) -> int:
+    used_features = [int(index) for index in model.tree_.feature if index >= 0]
+    return max(used_features) + 1 if used_features else 0
+
+
 def parse_trace_definitions(raw_traces: list[object]) -> list[Trace]:
     traces: list[Trace] = []
     for item in raw_traces:
@@ -92,15 +97,20 @@ def explain_with_feature_name_aliases(
     trace_definitions: list[Trace],
 ) -> list[object]:
     crystal_tree = CrystalTree(model)
+    logic_feature_count = get_logic_feature_count(model)
+    if logic_feature_count == 0:
+        return []
+    logic_feature_names = feature_names[:logic_feature_count]
+    logic_instance_df = instance_df.iloc[:, :logic_feature_count]
     for trace in trace_definitions:
         crystal_tree.add_trace(trace)
     factor = crystal_tree.factor
     if factor is None:
-        factor = crystal_tree.max_decimal_places(instance_df)
-    crystal_tree.set_logic_tree(feature_names=feature_names, factor=factor)
+        factor = crystal_tree.max_decimal_places(logic_instance_df)
+    crystal_tree.set_logic_tree(feature_names=logic_feature_names, factor=factor)
     control = XclingoControl(n_solutions=1, n_explanations=1)
-    control.add("base", [], Dafacter(instance_df, feature_names, factor=factor).as_program_string())
-    control.add("base", [], build_feature_value_alias_program(feature_names))
+    control.add("base", [], Dafacter(logic_instance_df, logic_feature_names, factor=factor).as_program_string())
+    control.add("base", [], build_feature_value_alias_program(logic_feature_names))
     control.add("base", [], build_threshold_compatibility_program(crystal_tree._dt, factor))
     control.add("base", [], crystal_tree._logic_tree.get_paths())
     control.add("base", [], crystal_tree._logic_tree.extra)

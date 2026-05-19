@@ -23,10 +23,10 @@ const detectDeclaredPluginType = (source: string): DetectedPluginType | null => 
 	if (source.includes("defineExplanationKind(")) {
 		return "explanation";
 	}
-	if (source.includes("defineFieldDefinition(")) {
+	if (source.includes("defineFieldKind(")) {
 		return "field";
 	}
-	if (source.includes("defineReportDefinition(")) {
+	if (source.includes("defineReportKind(")) {
 		return "report";
 	}
 	return null;

@@ -3,31 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig, FieldConfig, NormalizedFieldConfig, NormalizedReportConfig, Registry, ReportConfig } from "mlform/runtime";
-import { CUSTOM_FIELD_COMPONENT, type CatalogFieldDefinition } from "./custom-field";
+import type { ExplanationConfig, FieldConfig, Registry, ReportConfig } from "mlform/runtime";
+import { type CatalogFieldDefinition } from "./custom-field";
 import { type CatalogExplanationDefinition } from "./custom-explanation";
-import { CUSTOM_REPORT_COMPONENT, type CatalogReportDefinition } from "./custom-report";
+import { type CatalogReportDefinition } from "./custom-report";
 import type { CompatIssue } from "./shared";
 import { normalizeIssuePath } from "./shared";
-
-const idleFieldState = {
-	value: undefined,
-	initialValue: undefined,
-	touched: false,
-	dirty: false,
-	valid: true,
-	visible: true,
-	disabled: false,
-	readOnly: false,
-	errors: [] as string[],
-	status: "idle",
-} as const;
-
-const idleReportState = {
-	payload: undefined,
-	error: null,
-	status: "idle",
-} as const;
 
 const pushIssue = (
 	issues: CompatIssue[],
@@ -62,7 +43,7 @@ export const validateFieldConfig = (
 ): void => {
 	const builtinDefinition = engineRegistry.getField(field.kind);
 	const customDefinition = customDefinitionMap.get(field.kind);
-	const definition = builtinDefinition ?? customDefinition?.definition;
+	const definition = builtinDefinition ?? customDefinition?.definition.definition;
 
 	if (!definition) {
 		pushIssue(issues, ["fields", index, "kind"], `Unknown field kind "${field.kind}".`);
@@ -80,19 +61,6 @@ export const validateFieldConfig = (
 
 	if (!customDefinition) {
 		return;
-	}
-
-	const descriptor = customDefinition.definition.describe(result.data as unknown as NormalizedFieldConfig, {
-		fieldId: field.id ?? `field-${index + 1}`,
-		state: idleFieldState,
-	});
-
-	if (descriptor.component !== CUSTOM_FIELD_COMPONENT) {
-		pushIssue(
-			issues,
-			["fields", index, "kind"],
-			`Custom field kind "${field.kind}" must use shared renderer "${CUSTOM_FIELD_COMPONENT}".`,
-		);
 	}
 
 	if (!customDefinition.active) {
@@ -114,7 +82,7 @@ export const validateReportConfig = (
 ): void => {
 	const builtinDefinition = engineRegistry.getReport(report.kind);
 	const customDefinition = customDefinitionMap.get(report.kind);
-	const definition = builtinDefinition ?? customDefinition?.definition;
+	const definition = builtinDefinition ?? customDefinition?.definition.definition;
 
 	if (!definition) {
 		pushIssue(issues, ["reports", index, "kind"], `Unknown report kind "${report.kind}".`);
@@ -132,21 +100,6 @@ export const validateReportConfig = (
 
 	if (!customDefinition) {
 		return;
-	}
-
-	const descriptor = customDefinition.definition.describe(result.data as unknown as NormalizedReportConfig, {
-		reportId: report.id ?? `report-${index + 1}`,
-		state: idleReportState,
-		payload: undefined,
-		result: null,
-	});
-
-	if (descriptor !== null && descriptor.component !== CUSTOM_REPORT_COMPONENT) {
-		pushIssue(
-			issues,
-			["reports", index, "kind"],
-			`Custom report kind "${report.kind}" must use shared renderer "${CUSTOM_REPORT_COMPONENT}".`,
-		);
 	}
 
 	if (!customDefinition.active) {
@@ -168,7 +121,7 @@ export const validateExplanationConfig = (
 ): void => {
 	const builtinDefinition = engineRegistry.getExplanation(explanation.kind);
 	const customDefinition = customDefinitionMap.get(explanation.kind);
-	const definition = builtinDefinition ?? customDefinition?.definition;
+	const definition = builtinDefinition ?? customDefinition?.definition.definition;
 
 	if (!definition) {
 		pushIssue(issues, ["explanations", index, "kind"], `Unknown explanation kind "${explanation.kind}".`);

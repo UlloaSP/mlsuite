@@ -17,11 +17,21 @@ const toAnalyzerPayload = (
 	fields: readonly PredictionPayloadField[],
 ): Record<string, unknown> =>
 	fields.reduce<Record<string, unknown>>((payload, field) => {
-		if (field.id in serializedValues) {
+		if (shouldIncludeInAnalyzerPayload(field) && field.id in serializedValues) {
 			payload[getBackendKey(field)] = serializedValues[field.id];
 		}
 		return payload;
 	}, {});
+
+const hasMappedOptions = (field: PredictionPayloadField): boolean =>
+	Array.isArray((field as Record<string, unknown>).options)
+	&& ((field as Record<string, unknown>).options as unknown[]).some((option: unknown) =>
+		isRecord(option) && isRecord(option.mapping)
+	);
+
+const shouldIncludeInAnalyzerPayload = (field: PredictionPayloadField): boolean =>
+	field.includeInSubmission !== false &&
+	!(field.kind === "mapped-category" && hasMappedOptions(field));
 
 const parseResponse = async (response: Response): Promise<unknown> => {
 	const contentType = response.headers.get("content-type") ?? "";
