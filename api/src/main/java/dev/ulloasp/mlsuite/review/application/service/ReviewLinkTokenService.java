@@ -32,9 +32,15 @@ public class ReviewLinkTokenService {
     }
 
     public String encrypt(ReviewLinkTokenPayload payload) {
+        return encryptPayload(payload, randomIv());
+    }
+
+    public String encrypt(ReviewPredictionTokenPayload payload) {
+        return encryptPayload(payload, stableIv(payload));
+    }
+
+    private String encryptPayload(Object payload, byte[] iv) {
         try {
-            byte[] iv = new byte[IV_BYTES];
-            random.nextBytes(iv);
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new GCMParameterSpec(TAG_BITS, iv));
             byte[] plaintext = mapper.writeValueAsBytes(payload);
@@ -49,6 +55,14 @@ public class ReviewLinkTokenService {
     }
 
     public ReviewLinkTokenPayload decrypt(String token) {
+        return decryptPayload(token, ReviewLinkTokenPayload.class);
+    }
+
+    public ReviewPredictionTokenPayload decryptPrediction(String token) {
+        return decryptPayload(token, ReviewPredictionTokenPayload.class);
+    }
+
+    private <T> T decryptPayload(String token, Class<T> type) {
         try {
             byte[] packed = Base64.getUrlDecoder().decode(token);
             ByteBuffer buffer = ByteBuffer.wrap(packed);
@@ -58,7 +72,7 @@ public class ReviewLinkTokenService {
             buffer.get(encrypted);
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new GCMParameterSpec(TAG_BITS, iv));
-            return mapper.readValue(cipher.doFinal(encrypted), ReviewLinkTokenPayload.class);
+            return mapper.readValue(cipher.doFinal(encrypted), type);
         } catch (Exception e) {
             throw new ReviewLinkUnavailableException();
         }
@@ -70,6 +84,24 @@ public class ReviewLinkTokenService {
             return HexFormat.of().formatHex(digest);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to hash review token", e);
+        }
+    }
+
+    private byte[] randomIv() {
+        byte[] iv = new byte[IV_BYTES];
+        random.nextBytes(iv);
+        return iv;
+    }
+
+    private byte[] stableIv(ReviewPredictionTokenPayload payload) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(("review-prediction:" + payload.linkId() + ":" + payload.predictionId() + ":" + payload.exp()).getBytes(StandardCharsets.UTF_8));
+            byte[] iv = new byte[IV_BYTES];
+            System.arraycopy(digest, 0, iv, 0, IV_BYTES);
+            return iv;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to derive review prediction token IV", e);
         }
     }
 

@@ -107,3 +107,19 @@
 ## 2026-05-17 - Crystal Tree regression loop
 - Correction: frontend payload narrowing did not fix Crystal Tree because backend still produced the same runtime error.
 - Rule: when user reports same error after a fix, build a backend/runtime repro for the exact exception before another frontend-only patch.
+
+## 2026-05-19 - External review permission model
+- Correction: external review access was modeled as a special role check instead of an assignable permission.
+- Rule: access gates must check effective permissions, not role names/system keys; default roles may carry permissions but must not be the authorization source of truth.
+- Correction: external review logout could fall through to normal app login instead of review login.
+- Rule: portal-local auth flows must preserve their own route on logout/login transitions when the route owns a distinct unauthenticated surface.
+- Correction: explanation feedback steps disappeared when explanation content was missing.
+- Rule: questionnaire availability must derive from persisted schema feedback metadata, not from presence of rendered explanation content.
+- Correction: review logout still hit protected context and surfaced 401 on the review page.
+- Rule: protected portal routes need a dedicated public login route; logout should land on that public route, not on a protected content route.
+- Correction: review selection URLs exposed raw prediction ids.
+- Rule: externally shared or portal URLs must use opaque selection tokens and resolve ids server-side after token validation.
+- Correction: review prediction selection looked like full page reload because global route view transitions animated the whole route.
+- Rule: local record switching inside a portal/workspace must opt out of page-level transitions when only detail content changes.
+- Correction: feedback questionnaire lacked nearby context for the active output/explanation step.
+- Rule: multi-step review forms must keep the artifact under review visible beside the active step, not only in accordions below.

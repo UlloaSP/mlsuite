@@ -41,6 +41,7 @@ type ExplanationQuestionnaireMountProps = {
 	theme: "light" | "dark";
 	mode?: "embedded" | "standalone";
 	onValuesChange?: (values: Record<string, unknown>) => void;
+	onStepChange?: (stepId: string | null) => void;
 	transport?: Transport;
 	labels?: {
 		submit?: string;
@@ -63,6 +64,7 @@ export function ExplanationQuestionnaireMount({
 	theme,
 	mode = "embedded",
 	onValuesChange,
+	onStepChange,
 	transport,
 	labels,
 	square = false,
@@ -71,6 +73,7 @@ export function ExplanationQuestionnaireMount({
 	const mountedRef = useRef<MountedWizardForm | null>(null);
 	const initialValuesRef = useRef(initialValues);
 	const onValuesChangeRef = useRef(onValuesChange);
+	const onStepChangeRef = useRef(onStepChange);
 	const [mountError, setMountError] = useState<string | null>(null);
 	const effectiveSchema = useMemo(
 		() => toQuestionnaireSchema(schema, editable),
@@ -90,6 +93,10 @@ export function ExplanationQuestionnaireMount({
 	useEffect(() => {
 		onValuesChangeRef.current = onValuesChange;
 	}, [onValuesChange]);
+
+	useEffect(() => {
+		onStepChangeRef.current = onStepChange;
+	}, [onStepChange]);
 
 	useEffect(() => {
 		if (!containerRef.current) {
@@ -127,14 +134,16 @@ export function ExplanationQuestionnaireMount({
 				mounted.host.shadowRoot?.append(style);
 			}
 
-			const unsubscribe = mounted.form.subscribe((state: { values: Record<string, unknown> }) => {
+			const unsubscribe = mounted.view.subscribe((snapshot) => {
 				onValuesChangeRef.current?.(
-					typeof state.values === "object" && state.values !== null ? state.values : {},
+					typeof snapshot.form.values === "object" && snapshot.form.values !== null ? snapshot.form.values : {},
 				);
+				onStepChangeRef.current?.(snapshot.wizard?.currentStepId ?? null);
 			});
 
 			mountedRef.current = mounted;
 			onValuesChangeRef.current?.(getQuestionnaireValues(mounted));
+			onStepChangeRef.current?.(mounted.view.getSnapshot().wizard?.currentStepId ?? null);
 
 			return () => {
 				unsubscribe();

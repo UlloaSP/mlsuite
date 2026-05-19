@@ -43,6 +43,7 @@ import dev.ulloasp.mlsuite.review.application.service.ReviewLinkService;
 import dev.ulloasp.mlsuite.review.application.service.ReviewLinkTokenPayload;
 import dev.ulloasp.mlsuite.review.application.service.ReviewLinkTokenService;
 import dev.ulloasp.mlsuite.review.application.service.ReviewLinkUnavailableException;
+import dev.ulloasp.mlsuite.review.application.service.ReviewPredictionTokenPayload;
 import dev.ulloasp.mlsuite.review.domain.model.ReviewLink;
 import dev.ulloasp.mlsuite.review.domain.model.ReviewLinkPrediction;
 import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.SignatureRepository;
@@ -142,11 +143,13 @@ class ReviewLinkServiceTest {
         when(submissionRepository.findByReviewLinkIdAndUserId(123L, 3L)).thenReturn(List.of());
         when(outputFeedbackRepository.findByPredictionIdAndUserId(101L, 3L)).thenReturn(List.of());
         when(explanationFeedbackRepository.findByPredictionIdAndUserId(101L, 3L)).thenReturn(List.of());
+        when(tokenService.encrypt(any(ReviewPredictionTokenPayload.class))).thenReturn("selection-token");
 
         var context = service.context(3L, "token");
 
         assertEquals(41L, context.organization().id());
         assertEquals(1, context.predictions().size());
+        assertEquals("selection-token", context.predictions().get(0).selectionToken());
         assertEquals(101L, context.predictions().get(0).prediction().id());
     }
 
@@ -161,7 +164,6 @@ class ReviewLinkServiceTest {
 
         assertEquals(HttpStatus.FORBIDDEN, thrown.getStatusCode());
     }
-
     @Test
     void context_RejectsHashMismatchExpiredAndRevokedLinks() {
         when(tokenService.decrypt("missing")).thenReturn(payload());
@@ -183,13 +185,13 @@ class ReviewLinkServiceTest {
         when(linkRepository.findByTokenHash("hash")).thenReturn(Optional.of(revoked));
         assertThrows(ReviewLinkUnavailableException.class, () -> service.context(3L, "revoked"));
     }
-
     @Test
     void detail_RejectsPredictionOutsideSelectedSet() {
         stubAccessiblePreview(activeLink(), "token");
+        when(tokenService.decryptPrediction("selection-token")).thenReturn(predictionPayload(999L));
         when(linkPredictionRepository.findByReviewLinkIdAndPredictionId(123L, 999L)).thenReturn(Optional.empty());
 
-        assertThrows(ReviewLinkUnavailableException.class, () -> service.detail(3L, "token", 999L));
+        assertThrows(ReviewLinkUnavailableException.class, () -> service.detail(3L, "token", "selection-token"));
     }
 
     @Test
@@ -239,6 +241,10 @@ class ReviewLinkServiceTest {
 
     private ReviewLinkTokenPayload payload() {
         return new ReviewLinkTokenPayload(1, 123L, 41L, 7L, 11L, OffsetDateTime.now(ZoneOffset.UTC).plusDays(1), "nonce");
+    }
+
+    private ReviewPredictionTokenPayload predictionPayload(Long predictionId) {
+        return new ReviewPredictionTokenPayload(1, 123L, predictionId, OffsetDateTime.now(ZoneOffset.UTC).plusDays(1));
     }
 
     private Prediction prediction() {

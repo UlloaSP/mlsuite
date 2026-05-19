@@ -182,8 +182,12 @@ const getRawSchemaExplanationEntries = (
 				: `explanation-${index + 1}`;
 		const content = getExplanationContent(reports[explanationId]);
 		const nextError = explainErrors[explanationId];
+		const feedbackQuestionnaire =
+			getEmbeddedFeedbackQuestionnaire(item as ExplanationConfig) ??
+			definitionMap.get(item.kind)?.definition.feedbackQuestionnaire ??
+			getMetadataFeedbackQuestionnaire(item);
 
-		if (content.length === 0 && typeof nextError !== "string") {
+		if (content.length === 0 && typeof nextError !== "string" && !feedbackQuestionnaire) {
 			return [];
 		}
 
@@ -193,10 +197,7 @@ const getRawSchemaExplanationEntries = (
 			label: typeof item.label === "string" ? item.label : explanationId,
 			content: content.map((value) => normalizeDisplayedExplanation(value)),
 			error: typeof nextError === "string" ? nextError : null,
-			feedbackQuestionnaire:
-				getEmbeddedFeedbackQuestionnaire(item as ExplanationConfig) ??
-				definitionMap.get(item.kind)?.definition.feedbackQuestionnaire ??
-				getMetadataFeedbackQuestionnaire(item),
+			feedbackQuestionnaire,
 		}];
 	});
 	return entries.length > 0 ? entries : getFallbackExplanationEntries(predictionValue);
@@ -224,8 +225,12 @@ export const extractPredictionExplanationEntries = (
 			const explanationId = explanation.id ?? `explanation-${index + 1}`;
 			const content = getExplanationContent(reports[explanationId]);
 			const nextError = explainErrors[explanationId];
+			const feedbackQuestionnaire =
+				getEmbeddedFeedbackQuestionnaire(explanation) ??
+				definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire ??
+				getMetadataFeedbackQuestionnaire(explanation as Record<string, unknown>);
 
-			if (content.length === 0 && typeof nextError !== "string") {
+			if (content.length === 0 && typeof nextError !== "string" && !feedbackQuestionnaire) {
 				return [];
 			}
 
@@ -235,10 +240,7 @@ export const extractPredictionExplanationEntries = (
 				label: explanation.label ?? explanationId,
 				content: content.map((item) => normalizeDisplayedExplanation(item)),
 				error: typeof nextError === "string" ? nextError : null,
-				feedbackQuestionnaire:
-					getEmbeddedFeedbackQuestionnaire(explanation) ??
-					definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire ??
-					getMetadataFeedbackQuestionnaire(explanation as Record<string, unknown>),
+				feedbackQuestionnaire,
 			}];
 		});
 	} catch {

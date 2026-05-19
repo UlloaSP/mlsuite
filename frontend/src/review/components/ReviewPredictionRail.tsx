@@ -2,21 +2,20 @@ import { Send } from "lucide-react";
 import { useRef, useState } from "react";
 import type { ReviewPredictionListItemDto } from "../api/reviewLinkService";
 import { useReviewTrayLayout } from "../hooks/useReviewTrayLayout";
-import { normalizeReviewPredictionId } from "../reviewPredictionSelection";
 import { ReviewPredictionTrayGroup } from "./ReviewPredictionTrayGroup";
 import { ReviewPredictionTrayRow } from "./ReviewPredictionTrayRow";
 
 type ReviewPredictionRailProps = {
 	items: ReviewPredictionListItemDto[];
-	selectedPredictionId?: string;
+	selectedPredictionToken?: string;
 	submitting?: boolean;
-	onSelect: (predictionId: string) => void;
-	onSubmitRevision: (predictionIds: string[]) => void;
+	onSelect: (predictionToken: string) => void;
+	onSubmitRevision: (predictionTokens: string[]) => void;
 };
 
 export function ReviewPredictionRail({
 	items,
-	selectedPredictionId,
+	selectedPredictionToken,
 	submitting = false,
 	onSelect,
 	onSubmitRevision,
@@ -32,7 +31,7 @@ export function ReviewPredictionRail({
 	const pendingListRef = useRef<HTMLDivElement>(null);
 	const revision = items.filter((item) => item.reviewState === "REVISION");
 	const pending = items.filter((item) => item.reviewState === "PENDING");
-	const revisionIds = revision.map((item) => normalizeReviewPredictionId(item.prediction.id));
+	const revisionTokens = revision.map((item) => item.selectionToken);
 	const listHeights = useReviewTrayLayout({
 		bodyRef,
 		revision: {
@@ -65,12 +64,12 @@ export function ReviewPredictionRail({
 				</div>
 				<button
 					type="button"
-					disabled={revisionIds.length === 0 || submitting}
-					onClick={() => onSubmitRevision(revisionIds)}
+					disabled={revisionTokens.length === 0 || submitting}
+					onClick={() => onSubmitRevision(revisionTokens)}
 					className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-primary-strong)] disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					<Send size={15} />
-					Send revision ({revisionIds.length})
+					Send revision ({revisionTokens.length})
 				</button>
 			</div>
 			<div ref={bodyRef} className="mt-5 flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
@@ -88,9 +87,9 @@ export function ReviewPredictionRail({
 				>
 					{revision.map((item) => (
 						<ReviewPredictionTrayRow
-							key={item.prediction.id}
+							key={item.selectionToken}
 							item={item}
-							active={normalizeReviewPredictionId(item.prediction.id) === selectedPredictionId}
+							active={item.selectionToken === selectedPredictionToken}
 							tone="revision"
 							stateLabel="revision"
 							onSelect={onSelect}
@@ -111,9 +110,9 @@ export function ReviewPredictionRail({
 				>
 					{pending.map((item) => (
 						<ReviewPredictionTrayRow
-							key={item.prediction.id}
+							key={item.selectionToken}
 							item={item}
-							active={normalizeReviewPredictionId(item.prediction.id) === selectedPredictionId}
+							active={item.selectionToken === selectedPredictionToken}
 							tone="pending"
 							stateLabel="pending"
 							onSelect={onSelect}

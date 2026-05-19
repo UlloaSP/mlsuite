@@ -1,5 +1,124 @@
 # Config Hardcode Removal Plan
 
+## External Review Step Context Panel
+
+### Goal
+- [x] Show current output/explanation beside feedback form.
+- [x] Update preview as questionnaire step changes.
+- [x] Keep mobile usable and desktop using left empty space.
+- [x] Verify frontend build/tests/doctor/graph.
+
+### Plan
+- [x] Add step-change callback from MLForm wizard mount.
+- [x] Add review step context panel bound to active step.
+- [x] Lay out questionnaire as context panel + form on desktop.
+- [x] Run focused frontend verification and graph update.
+
+### Review
+- Status: fixed.
+- `ExplanationQuestionnaireMount` now emits active wizard step id from MLForm view snapshots.
+- Review questionnaire tracks active step and renders a contextual panel beside the form on desktop.
+- Panel shows current output result or explanation content; on mobile it stacks above the form.
+- Verification:
+  - `vp test test/explanation-feedback.test.ts test/review-link-service.test.ts` ✅
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 98; existing warnings only.
+  - touched frontend line cap ✅ no touched TS/TSX file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+
+## External Review Smooth Selection + Header
+
+### Goal
+- [x] Selecting review prediction updates only detail area visually.
+- [x] External review header shows only red "External Review" + model name.
+- [x] Header has theme mode control before logout.
+- [x] Theme default mode is system.
+
+### Plan
+- [x] Disable app-wide route view transition for review prediction selection nav.
+- [x] Simplify review header props/copy.
+- [x] Add system/light/dark theme mode support and header cycle button.
+- [x] Verify focused frontend tests/build/doctor/graph.
+
+### Review
+- Status: fixed.
+- Review prediction navigation opts out of global page view transitions, so rail/header stay visually stable while detail changes.
+- External review header now shows only red `External Review` + model name.
+- Added header theme mode cycle: System -> Light -> Dark -> System, before logout.
+- Theme default mode is now `system`; resolved light/dark still drives existing UI classes.
+- Verification:
+  - `vp test test/theme.test.ts test/review-link-service.test.ts` ✅
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 98; existing warnings.
+  - touched frontend line cap ✅ no touched TS/TSX file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+
+## External Review Login Route + Opaque Selection URL
+
+### Goal
+- [x] Add `/review/:token/login` for external review auth.
+- [x] Logout from review routes lands on `/review/:token/login`.
+- [x] Review prediction selection URL no longer exposes raw prediction id.
+- [x] Backend resolves selected prediction from opaque/encrypted URL token.
+
+### Plan
+- [x] Inspect current review token service, DTOs, routes, selection helpers.
+- [x] Add encrypted review prediction selection token to context DTO.
+- [x] Change detail endpoint + frontend route to use selection token.
+- [x] Add dedicated review login route and redirect logic.
+- [x] Update tests, verify backend/frontend, graph.
+
+### Review
+- Status: fixed.
+- Added dedicated `/review/:token/login` route. Protected review routes redirect there when unauthenticated.
+- Review logout now redirects to `/review/:token/login`, avoiding context fetch/401 on the protected review page.
+- Review context returns `selectionToken`; rail/default selection/detail route/submit use that opaque token instead of raw prediction id.
+- Backend detail/submit endpoints decrypt the selection token, validate link id and expiry, then resolve the selected prediction.
+- Verification:
+  - `mvn -q "-Dtest=ReviewLinkServiceTest,WorkspaceAuthorizationServiceTest" test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` ✅
+  - `vp test test/review-link-service.test.ts test/explanation-feedback.test.ts` ✅
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 98; existing warnings.
+  - touched line cap ✅ no touched source/test file over 300 lines.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+
+## External Review Permission + Questionnaire Fix
+
+### Goal
+- [ ] Add external review as assignable permission, not role check.
+- [ ] Keep default External Reviewer role as deletable/assignable role with that permission.
+- [ ] Make review logout consistently stay on review login.
+- [ ] Restore Explanation 1..n questionnaire steps in external review.
+
+### Plan
+- [x] Inspect RBAC permission catalog, role seed, review access checks.
+- [x] Replace direct external-reviewer role checks with permission lookup.
+- [x] Fix review logout redirect target.
+- [x] Fix external review questionnaire builder/explanation metadata path.
+- [x] Add focused tests and verify backend/frontend.
+
+### Review
+- Status: fixed.
+- Added `EXTERNAL_REVIEW` as assignable permission in backend catalog and frontend permission type.
+- External review token access now checks effective role permissions, not `EXTERNAL_REVIEWER` role/system key.
+- Default External Reviewer role is created with only `EXTERNAL_REVIEW` and is not locked; new org creation/bootstrap seeds it once.
+- Review logout redirect later superseded by dedicated `/review/:token/login` route.
+- Explanation review steps now remain in combined questionnaire even when explanation result content is absent.
+- Verification:
+  - `mvn -q "-Dtest=WorkspaceAuthorizationServiceTest,ReviewLinkServiceTest" test` ✅
+  - `mvn -q "-Dmaven.test.skip=true" package` ✅
+  - `vp test test/explanation-feedback.test.ts test/review-link-service.test.ts` ✅
+  - `vp run build` ✅ warnings only: existing runtime-config non-module script and large chunks.
+  - `npx react-doctor@latest --verbose` ✅ score 98; existing warnings, including existing barrel imports/giant component.
+  - touched line cap ✅ no touched source/test file over 300 lines.
+  - global line cap ❌ existing violations: `frontend/src/app/pages/plugin-catalog-page.tsx` 394, `frontend/src/workspace/pages/roles-page.tsx` 404.
+  - `git diff --check` ✅ no whitespace errors; CRLF warnings only.
+  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+
 ## Crystal Tree Explanation Payload Fix
 
 ### Goal

@@ -45,6 +45,7 @@ export interface ReviewLinkSummaryDto {
 }
 
 export interface ReviewPredictionListItemDto {
+	selectionToken: string;
 	prediction: PredictionDto;
 	reviewState: "PENDING" | "REVISION" | "SUBMITTED";
 	stateEnteredAt?: string | null;
@@ -79,9 +80,9 @@ export const revokeReviewLink = (id: number) =>
 export const getReviewContext = (token: string) =>
 	appFetch<ReviewLinkContextDto>(`/api/review-links/token/${encodeURIComponent(token)}/context`);
 
-export const getReviewPredictionDetail = (token: string, predictionId: string) =>
+export const getReviewPredictionDetail = (token: string, predictionToken: string) =>
 	appFetch<ReviewPredictionDetailDto>(
-		`/api/review-links/token/${encodeURIComponent(token)}/predictions/${encodeURIComponent(predictionId)}`,
+		`/api/review-links/token/${encodeURIComponent(token)}/predictions/${encodeURIComponent(predictionToken)}`,
 	);
 
 export const createReviewOutputFeedback = (token: string, request: CreateOutputFeedbackRequest) =>
@@ -108,8 +109,8 @@ export const updateReviewExplanationFeedback = (token: string, request: UpdateEx
 		json("PATCH", request),
 	);
 
-export const submitReviewPredictions = (token: string, predictionIds: string[]) =>
+export const submitReviewPredictions = (token: string, predictionTokens: string[]) =>
 	appFetch<void>(
 		`/api/review-links/token/${encodeURIComponent(token)}/submit`,
-		json("POST", { predictionIds }),
+		json("POST", { predictionTokens }),
 	);

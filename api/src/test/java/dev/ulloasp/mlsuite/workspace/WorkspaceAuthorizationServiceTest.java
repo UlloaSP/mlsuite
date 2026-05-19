@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.LegacyRolePermissionMapper;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
@@ -148,6 +150,20 @@ class WorkspaceAuthorizationServiceTest {
 
         assertFalse(service.canPreviewReviewLink(17L, 41L));
         assertFalse(service.isExternalReviewer(17L, 41L));
+    }
+
+    @Test
+    void externalReviewCheck_UsesRolePermissionsNotSystemRole() {
+        RoleDefinition role = roleDefinition(21L, "Custom Reviewer", null);
+        role.setPermissions(Set.of(PermissionKey.EXTERNAL_REVIEW));
+        OrganizationMembership membership = organizationMembership(OrganizationRole.VIEWER, 18L);
+        membership.setRoleDefinition(role);
+        when(workspaceAccessService.requireUser(18L)).thenReturn(user(18L));
+        when(workspaceAccessService.isSuperadmin(18L)).thenReturn(false);
+        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 18L))
+                .thenReturn(Optional.of(membership));
+
+        assertTrue(service.isExternalReviewer(18L, 41L));
     }
 
     @Test

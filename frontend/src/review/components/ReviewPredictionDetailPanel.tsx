@@ -13,7 +13,7 @@ import { ReviewOutputsSection } from "./ReviewOutputsSection";
 
 type ReviewPredictionDetailPanelProps = {
 	token: string;
-	predictionId: string;
+	predictionToken: string;
 	signatureSchema: Record<string, unknown>;
 	customExplanationDefinitions: readonly CatalogExplanationDefinition[];
 	onReviewChanged: () => Promise<unknown> | unknown;
@@ -21,7 +21,7 @@ type ReviewPredictionDetailPanelProps = {
 
 export function ReviewPredictionDetailPanel({
 	token,
-	predictionId,
+	predictionToken,
 	signatureSchema,
 	customExplanationDefinitions,
 	onReviewChanged,
@@ -30,7 +30,7 @@ export function ReviewPredictionDetailPanel({
 	const [inputsOpen, setInputsOpen] = useState(false);
 	const [outputsOpen, setOutputsOpen] = useState(false);
 	const [explanationsOpen, setExplanationsOpen] = useState(false);
-	const detail = useReviewPredictionDetail(token, predictionId);
+	const detail = useReviewPredictionDetail(token, predictionToken);
 	const reports = useMemo(() => {
 		const raw = signatureSchema.reports;
 		return Array.isArray(raw) ? raw as Record<string, unknown>[] : [];

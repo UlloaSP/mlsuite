@@ -117,7 +117,6 @@ public class ReviewLinkService {
                 .map(link -> ReviewLinkSummaryDto.from(link, (int) linkPredictionRepository.countByReviewLinkId(link.getId())))
                 .toList();
     }
-
     public void revoke(Long userId, Long id) {
         Long orgId = workspaceAccessService.requireCurrentOrganization(userId).getId();
         authorizationService.requireReviewLinkManagement(userId, orgId);
@@ -145,8 +144,9 @@ public class ReviewLinkService {
                 predictions);
     }
     @Transactional(readOnly = true)
-    public ReviewPredictionDetailDto detail(Long userId, String token, Long predictionId) {
+    public ReviewPredictionDetailDto detail(Long userId, String token, String predictionToken) {
         ReviewLink link = requireAccessible(userId, token);
+        Long predictionId = resolvePredictionId(link, predictionToken);
         ReviewLinkPrediction selected = requireSelectedLinkPrediction(link, predictionId);
         requireNotSubmitted(userId, selected);
         Prediction prediction = selected.getPrediction();
@@ -183,7 +183,6 @@ public class ReviewLinkService {
         updateStatus(userId, prediction);
         return ExplanationFeedbackDto.toDto(saved);
     }
-
     public ExplanationFeedbackDto updateExplanationFeedback(Long userId, String token, UpdateExplanationFeedbackParams params) {
         ReviewLink link = requireAccessible(userId, token);
         ExplanationFeedback feedback = explanationFeedbackRepository.findById(params.explanationFeedbackId()).orElseThrow(ReviewLinkUnavailableException::new);
@@ -193,11 +192,10 @@ public class ReviewLinkService {
         updateStatus(userId, feedback.getPrediction());
         return ExplanationFeedbackDto.toDto(explanationFeedbackRepository.save(feedback));
     }
-
-    public void submit(Long userId, String token, List<Long> predictionIds) {
+    public void submit(Long userId, String token, List<String> predictionTokens) {
         ReviewLink link = requireAccessible(userId, token);
         User user = userLookupService.requireById(userId);
-        predictionIds.stream().distinct().forEach(predictionId -> {
+        predictionTokens.stream().map(value -> resolvePredictionId(link, value)).distinct().forEach(predictionId -> {
             ReviewLinkPrediction selected = requireSelectedLinkPrediction(link, predictionId);
             submissionRepository.findByReviewLinkPredictionIdAndUserId(selected.getId(), userId)
                     .orElseGet(() -> submissionRepository.save(new ReviewLinkPredictionSubmission(
@@ -233,11 +231,6 @@ public class ReviewLinkService {
         }
         return predictions;
     }
-
-    private Prediction requireSelectedPrediction(ReviewLink link, Long predictionId) {
-        return requireSelectedLinkPrediction(link, predictionId).getPrediction();
-    }
-
     private ReviewLinkPrediction requireSelectedLinkPrediction(ReviewLink link, Long predictionId) {
         ReviewLinkPrediction selected = linkPredictionRepository.findByReviewLinkIdAndPredictionId(link.getId(), predictionId)
                 .orElseThrow(ReviewLinkUnavailableException::new);
@@ -247,13 +240,20 @@ public class ReviewLinkService {
         return selected;
     }
 
+    private Long resolvePredictionId(ReviewLink link, String predictionToken) {
+        ReviewPredictionTokenPayload payload = tokenService.decryptPrediction(predictionToken);
+        if (!link.getId().equals(payload.linkId()) || payload.exp().isBefore(OffsetDateTime.now(ZoneOffset.UTC))) {
+            throw new ReviewLinkUnavailableException();
+        }
+        return payload.predictionId();
+    }
+
     private void requireOwnSelectedFeedback(Long userId, ReviewLink link, Long feedbackUserId, Long predictionId) {
         if (!userId.equals(feedbackUserId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
-        requireSelectedPrediction(link, predictionId);
+        requireSelectedLinkPrediction(link, predictionId);
     }
-
     private void updateStatus(Long userId, Prediction prediction) {
         prediction.setStatus(feedbackStatusResolver.resolve(userId, prediction));
         predictionRepository.save(prediction);
@@ -272,6 +272,7 @@ public class ReviewLinkService {
                 ? submission.getSubmittedAt()
                 : revisionEnteredAt != null ? revisionEnteredAt : item.getPrediction().getCreatedAt();
         return new ReviewPredictionListItemDto(
+                tokenService.encrypt(new ReviewPredictionTokenPayload(1, item.getReviewLink().getId(), predictionId, item.getReviewLink().getExpiresAt())),
                 PredictionDto.toDto(item.getPrediction()),
                 state,
                 stateEnteredAt,
@@ -287,13 +288,11 @@ public class ReviewLinkService {
     private ResponseStatusException badRequest(String message) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
     }
-
     private String nonce() {
         byte[] bytes = new byte[16];
         random.nextBytes(bytes);
         return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
-
     private String baseUrl(String origin) {
         return origin == null || origin.isBlank() ? "" : origin.replaceAll("/+$", "");
     }

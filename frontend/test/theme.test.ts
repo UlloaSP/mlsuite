@@ -75,4 +75,19 @@ describe("theme persistence", () => {
 
 		unsubscribe();
 	});
+
+	it("defaults to system theme and resolves from media preference", async () => {
+		const environment = setSystemTheme(true);
+
+		const { themeAtom, themeWithHtmlAtom } = await import("../src/app/atoms");
+		const store = createStore();
+		const unsubscribe = store.sub(themeAtom, () => undefined);
+
+		expect(store.get(themeAtom)).toBe("system");
+		expect(store.get(themeWithHtmlAtom)).toBe("dark");
+		expect(environment.document.documentElement.classList.contains("dark")).toBe(true);
+		expect(environment.document.documentElement.dataset.themeMode).toBe("system");
+
+		unsubscribe();
+	});
 });

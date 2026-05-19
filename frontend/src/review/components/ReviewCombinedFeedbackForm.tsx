@@ -1,4 +1,4 @@
-import { useMemo, useReducer } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
 import { AppCopy } from "../../app/components";
 import { AppButton } from "../../app/components/ui-controls";
@@ -14,6 +14,7 @@ import {
 	createReviewQuestionnaireTransport,
 	valuesForStep,
 } from "./reviewCombinedQuestionnaire";
+import { ReviewStepContextPanel } from "./ReviewStepContextPanel";
 
 type ReviewCombinedFeedbackFormProps = {
 	token: string;
@@ -60,7 +61,12 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
 	const combined = useMemo(() => buildCombinedReviewQuestionnaire(steps), [steps]);
 	const complete = steps.length > 0 && steps.every((step) => step.feedback);
 	const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
+	const [activeStepId, setActiveStepId] = useState<string | undefined>(steps[0]?.id);
 	const labels = useMemo(() => ({ submit: "Save review", submitting: "Saving review..." }), []);
+	const activeStep = useMemo(
+		() => steps.find((step) => step.id === activeStepId) ?? steps[0],
+		[activeStepId, steps],
+	);
 	const transport = useMemo(() => createReviewQuestionnaireTransport(async (values) => {
 		await Promise.all(steps.map(async (step) => {
 			const stepValues = valuesForStep(values, step);
@@ -97,6 +103,12 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
 		toast.success("Review feedback saved");
 	}), [onSaved, predictionId, steps, token]);
 
+	useEffect(() => {
+		if (!steps.some((step) => step.id === activeStepId)) {
+			setActiveStepId(steps[0]?.id);
+		}
+	}, [activeStepId, steps]);
+
 	if (steps.length === 0) {
 		return <AppCopy>No feedback questionnaire configured for this prediction.</AppCopy>;
 	}
@@ -130,17 +142,21 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
 	return (
 		<section className="space-y-4">
 			<h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
-			<ExplanationQuestionnaireMount
-				title="Prediction Review"
-				schema={combined.schema}
-				initialValues={combined.initialValues}
-				editable
-				theme={theme}
-				mode="standalone"
-				transport={transport}
-				labels={labels}
-				square
-			/>
+			<div className="grid gap-5 lg:grid-cols-[minmax(13rem,18rem)_minmax(0,1fr)] lg:items-start">
+				<ReviewStepContextPanel step={activeStep} />
+				<ExplanationQuestionnaireMount
+					title="Prediction Review"
+					schema={combined.schema}
+					initialValues={combined.initialValues}
+					editable
+					theme={theme}
+					mode="standalone"
+					transport={transport}
+					labels={labels}
+					square
+					onStepChange={(stepId) => setActiveStepId(stepId ?? undefined)}
+				/>
+			</div>
 		</section>
 	);
 }

@@ -1,20 +1,10 @@
-import { Outlet } from "react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AuthLandingPage } from "../../app/pages/AuthLandingPage";
-import * as userApi from "../../user/api/userService";
+import { Navigate, Outlet, useParams } from "react-router";
 import { useUser } from "../../user/hooks";
 import { ReviewShell } from "./ReviewShell";
 
 export function ReviewProtectedRoute() {
+	const { token = "" } = useParams<{ token: string }>();
 	const { data: user, isLoading } = useUser();
-	const qc = useQueryClient();
-	const login = useMutation({
-		mutationFn: userApi.login,
-		onSuccess: (nextUser) => {
-			qc.setQueryData(["user"], nextUser);
-			void qc.invalidateQueries({ queryKey: ["user"] });
-		},
-	});
 
 	if (isLoading) {
 		return (
@@ -24,15 +14,7 @@ export function ReviewProtectedRoute() {
 		);
 	}
 	if (!user) {
-		return (
-			<AuthLandingPage
-				defaultMode="login"
-				availableModes={["login"]}
-				onLogin={(request) => login.mutate(request)}
-				loginBusy={login.isPending}
-				loginError={login.error}
-			/>
-		);
+		return <Navigate to={`/review/${token}/login`} replace />;
 	}
 	return <Outlet />;
 }

@@ -17,6 +17,7 @@ import { ModelDetailPage } from "../models/pages/model-detail-page";
 import { ModelsPage } from "../models/pages/models-page";
 import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
 import { ReviewProtectedRoute } from "../review/components/ReviewProtectedRoute";
+import { ReviewLoginRoute } from "../review/components/ReviewLoginRoute";
 import { ReviewWorkspacePage } from "../review/pages/review-workspace-page";
 import { SignatureDetailPage } from "../models/pages/signature-detail-page";
 import { useUser } from "../user/hooks";
@@ -224,6 +225,10 @@ const routes: RouteObject[] = [
         ],
       },
       {
+        path: "review/:token/login",
+        element: <ReviewLoginRoute />,
+      },
+      {
         element: <ReviewProtectedRoute />,
         children: [
           {
@@ -231,7 +236,7 @@ const routes: RouteObject[] = [
             element: <ReviewWorkspacePage />,
           },
           {
-            path: "review/:token/predictions/:predictionId",
+            path: "review/:token/predictions/:predictionToken",
             element: <ReviewWorkspacePage />,
           },
         ],

@@ -71,12 +71,12 @@ public class ReviewLinkController {
         return ResponseEntity.ok(reviewLinkService.context(userId(authentication), token));
     }
 
-    @GetMapping("/token/{token}/predictions/{predictionId}")
+    @GetMapping("/token/{token}/predictions/{predictionToken}")
     public ResponseEntity<ReviewPredictionDetailDto> detail(
             Authentication authentication,
             @PathVariable String token,
-            @PathVariable Long predictionId) {
-        return ResponseEntity.ok(reviewLinkService.detail(userId(authentication), token, predictionId));
+            @PathVariable String predictionToken) {
+        return ResponseEntity.ok(reviewLinkService.detail(userId(authentication), token, predictionToken));
     }
 
     @PostMapping("/token/{token}/output-feedback")
@@ -118,7 +118,7 @@ public class ReviewLinkController {
             Authentication authentication,
             @PathVariable String token,
             @Valid @RequestBody SubmitReviewPredictionsRequest request) {
-        reviewLinkService.submit(userId(authentication), token, request.predictionIds());
+        reviewLinkService.submit(userId(authentication), token, request.predictionTokens());
         return ResponseEntity.noContent().build();
     }
 

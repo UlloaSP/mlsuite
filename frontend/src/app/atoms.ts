@@ -6,13 +6,20 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
-/* 1. Preferencia inicial – continuidad con el estándar         */
-const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false;
+export type ThemeMode = "system" | "light" | "dark";
+export type ResolvedTheme = "light" | "dark";
 
-const syncThemeChrome = (theme: "light" | "dark") => {
+const systemTheme = (): ResolvedTheme =>
+  window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ? "dark" : "light";
+
+const resolveTheme = (mode: ThemeMode): ResolvedTheme => mode === "system" ? systemTheme() : mode;
+
+const syncThemeChrome = (mode: ThemeMode) => {
+  const theme = resolveTheme(mode);
   const root = document.documentElement;
   root.classList.toggle("dark", theme === "dark");
   root.dataset.theme = theme;
+  root.dataset.themeMode = mode;
   const meta = document.querySelector('meta[name="theme-color"][media*="color-scheme"]');
   if (meta) {
     meta.setAttribute("content", theme === "dark" ? "#101418" : "#f7f7f7");
@@ -20,9 +27,9 @@ const syncThemeChrome = (theme: "light" | "dark") => {
 };
 
 /* 2. Átomo persistente                                          */
-export const themeAtom = atomWithStorage<"light" | "dark">(
+export const themeAtom = atomWithStorage<ThemeMode>(
   "ui/theme",
-  prefersDark ? "dark" : "light",
+  "system",
 );
 
 /* 3. Efecto inmediato al primer montaje                         */
@@ -35,8 +42,8 @@ themeAtom.onMount = (set) => {
 
 /* 4. Átomo de orquestación para UI                              */
 export const themeWithHtmlAtom = atom(
-  (get) => get(themeAtom),
-  (_, set, newTheme: "light" | "dark") => {
+  (get) => resolveTheme(get(themeAtom)),
+  (_, set, newTheme: ThemeMode) => {
     syncThemeChrome(newTheme);
     set(themeAtom, newTheme); // persiste en localStorage
   },

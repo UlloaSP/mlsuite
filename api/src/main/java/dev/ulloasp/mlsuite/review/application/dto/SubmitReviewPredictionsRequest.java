@@ -5,5 +5,5 @@ import java.util.List;
 import jakarta.validation.constraints.NotEmpty;
 
 public record SubmitReviewPredictionsRequest(
-        @NotEmpty List<Long> predictionIds) {
+        @NotEmpty List<String> predictionTokens) {
 }

@@ -74,19 +74,18 @@ describe("review link service", () => {
 		expect(appFetch).toHaveBeenNthCalledWith(3, "/api/review-links/token/secret-token/submit", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ predictionIds: ["101", "102"] }),
+			body: JSON.stringify({ predictionTokens: ["101", "102"] }),
 		});
 	});
 
-	it("keeps URL string ids valid when review context returns numeric ids", async () => {
+	it("uses opaque selection tokens for review navigation", async () => {
 		const selection = await import("../src/review/reviewPredictionSelection");
 		const items = [
-			{ prediction: { id: 101 } },
-			{ prediction: { id: 202 } },
+			{ selectionToken: "opaque-101", prediction: { id: 101 } },
+			{ selectionToken: "opaque-202", prediction: { id: 202 } },
 		] as never;
 
-		expect(selection.hasReviewPredictionId(items, "202")).toBe(true);
-		expect(selection.firstReviewPredictionId(items)).toBe("101");
-		expect(selection.normalizeReviewPredictionId(202)).toBe("202");
+		expect(selection.hasReviewPredictionToken(items, "opaque-202")).toBe(true);
+		expect(selection.firstReviewPredictionToken(items)).toBe("opaque-101");
 	});
 });

@@ -6,20 +6,18 @@ import {
 	getActiveCustomExplanationDefinitions,
 	type CatalogExplanationDefinition,
 } from "../../app/utils/mlform/custom-explanation";
-import { getSignatureVersionLabel } from "../../models/utils";
 import { ReviewPredictionDetailPanel } from "../components/ReviewPredictionDetailPanel";
 import { ReviewPredictionRail } from "../components/ReviewPredictionRail";
 import { ReviewShell } from "../components/ReviewShell";
 import { ReviewUnavailable } from "../components/ReviewUnavailable";
 import { useReviewContext, useSubmitReviewPredictionsMutation } from "../hooks";
 import {
-	firstReviewPredictionId,
-	hasReviewPredictionId,
-	normalizeReviewPredictionId,
+	firstReviewPredictionToken,
+	hasReviewPredictionToken,
 } from "../reviewPredictionSelection";
 
 export function ReviewWorkspacePage() {
-	const { token = "", predictionId } = useParams<{ token: string; predictionId?: string }>();
+	const { token = "", predictionToken } = useParams<{ token: string; predictionToken?: string }>();
 	const navigate = useNavigate();
 	const reviewContext = useReviewContext(token);
 	const { data, error, isLoading } = reviewContext;
@@ -40,21 +38,21 @@ export function ReviewWorkspacePage() {
 		};
 	}, []);
 
-	const selectedPredictionId = useMemo(
-		() => predictionId ?? (data ? firstReviewPredictionId(data.predictions) : undefined),
-		[data?.predictions, predictionId],
+	const selectedPredictionToken = useMemo(
+		() => predictionToken ?? (data ? firstReviewPredictionToken(data.predictions) : undefined),
+		[data?.predictions, predictionToken],
 	);
 
 	useEffect(() => {
-		if (!token || predictionId || !selectedPredictionId) return;
-		navigate(`/review/${token}/predictions/${selectedPredictionId}`, { replace: true });
-	}, [navigate, predictionId, selectedPredictionId, token]);
+		if (!token || predictionToken || !selectedPredictionToken) return;
+		navigate(`/review/${token}/predictions/${selectedPredictionToken}`, { replace: true, viewTransition: false });
+	}, [navigate, predictionToken, selectedPredictionToken, token]);
 
 	useEffect(() => {
-		if (!token || !predictionId || !data || hasReviewPredictionId(data.predictions, predictionId)) return;
-		const nextId = firstReviewPredictionId(data.predictions);
-		navigate(nextId ? `/review/${token}/predictions/${nextId}` : `/review/${token}`, { replace: true });
-	}, [data?.predictions, navigate, predictionId, token]);
+		if (!token || !predictionToken || !data || hasReviewPredictionToken(data.predictions, predictionToken)) return;
+		const nextToken = firstReviewPredictionToken(data.predictions);
+		navigate(nextToken ? `/review/${token}/predictions/${nextToken}` : `/review/${token}`, { replace: true, viewTransition: false });
+	}, [data?.predictions, navigate, predictionToken, token]);
 
 	if (isLoading) {
 		return <ReviewShell><p className="text-sm text-[var(--text-secondary)]">Loading review</p></ReviewShell>;
@@ -67,19 +65,16 @@ export function ReviewWorkspacePage() {
 	}
 
 	return (
-		<ReviewShell
-			title={`${data.model.name} · Schema ${getSignatureVersionLabel(data.signature)}`}
-			subtitle={data.organization.name}
-		>
+		<ReviewShell title={data.model.name}>
 			{data.predictions.length === 0 ? (
 				<AppEmptyState title="No predictions available" description="No selected predictions are available for review." />
 			) : (
 				<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
 					<section className="min-w-0">
-						{selectedPredictionId ? (
+						{selectedPredictionToken ? (
 							<ReviewPredictionDetailPanel
 								token={token}
-								predictionId={selectedPredictionId}
+								predictionToken={selectedPredictionToken}
 								signatureSchema={data.signature.inputSignature}
 								customExplanationDefinitions={definitions}
 								onReviewChanged={() => reviewContext.refetch()}
@@ -88,10 +83,10 @@ export function ReviewWorkspacePage() {
 					</section>
 					<ReviewPredictionRail
 						items={data.predictions}
-						selectedPredictionId={selectedPredictionId}
-						onSelect={(id) => navigate(`/review/${token}/predictions/${normalizeReviewPredictionId(id)}`)}
+						selectedPredictionToken={selectedPredictionToken}
+						onSelect={(selectedToken) => navigate(`/review/${token}/predictions/${selectedToken}`, { viewTransition: false })}
 						submitting={submitMutation.isPending}
-						onSubmitRevision={(ids) => submitMutation.mutate(ids)}
+						onSubmitRevision={(selectedTokens) => submitMutation.mutate(selectedTokens)}
 					/>
 				</div>
 			)}

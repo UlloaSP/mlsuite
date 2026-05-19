@@ -1,13 +1,12 @@
 import type { ReviewPredictionListItemDto } from "../api/reviewLinkService";
 import { formatTimestamp } from "../../models/utils";
-import { normalizeReviewPredictionId } from "../reviewPredictionSelection";
 
 type ReviewPredictionTrayRowProps = {
 	item: ReviewPredictionListItemDto;
 	active: boolean;
 	tone: "revision" | "pending";
 	stateLabel: string;
-	onSelect: (predictionId: string) => void;
+	onSelect: (predictionToken: string) => void;
 };
 
 export function ReviewPredictionTrayRow({
@@ -24,7 +23,7 @@ export function ReviewPredictionTrayRow({
 	return (
 		<button
 			type="button"
-			onClick={() => onSelect(normalizeReviewPredictionId(item.prediction.id))}
+			onClick={() => onSelect(item.selectionToken)}
 			className={`relative w-full border-b border-[var(--border-soft)] px-3 py-3 text-left transition last:border-b-0 ${
 				active ? activeBackground : "bg-[var(--surface-primary)] hover:bg-[var(--surface-muted)]"
 			}`}

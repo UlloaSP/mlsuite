@@ -1,13 +1,12 @@
 import type { ReviewPredictionListItemDto } from "./api/reviewLinkService";
 
-export const normalizeReviewPredictionId = (id: unknown): string => String(id);
+export const reviewSelectionToken = (item: ReviewPredictionListItemDto): string => item.selectionToken;
 
-export const firstReviewPredictionId = (items: readonly ReviewPredictionListItemDto[]): string | undefined => {
-	const id = items[0]?.prediction.id;
-	return id == null ? undefined : normalizeReviewPredictionId(id);
+export const firstReviewPredictionToken = (items: readonly ReviewPredictionListItemDto[]): string | undefined => {
+	return items[0]?.selectionToken;
 };
 
-export const hasReviewPredictionId = (
+export const hasReviewPredictionToken = (
 	items: readonly ReviewPredictionListItemDto[],
-	predictionId: string,
-): boolean => items.some((item) => normalizeReviewPredictionId(item.prediction.id) === predictionId);
+	predictionToken: string,
+): boolean => items.some((item) => item.selectionToken === predictionToken);

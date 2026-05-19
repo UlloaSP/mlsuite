@@ -13,6 +13,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
+import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
@@ -24,16 +25,19 @@ public class WorkspaceBootstrapService {
     private final OrganizationMembershipRepository membershipRepository;
     private final UserRepository userRepository;
     private final ModelRepository modelRepository;
+    private final RoleSeedService roleSeedService;
 
     public WorkspaceBootstrapService(
             OrganizationRepository organizationRepository,
             OrganizationMembershipRepository membershipRepository,
             UserRepository userRepository,
-            ModelRepository modelRepository) {
+            ModelRepository modelRepository,
+            RoleSeedService roleSeedService) {
         this.organizationRepository = organizationRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.modelRepository = modelRepository;
+        this.roleSeedService = roleSeedService;
     }
 
     public Organization ensureCurrentOrganization(User user) {
@@ -57,6 +61,8 @@ public class WorkspaceBootstrapService {
                 "Personal workspace",
                 user.getAvatarUrl(),
                 user));
+        roleSeedService.ensureOrganizationRoles(organization);
+        roleSeedService.externalReviewerRole(organization);
         membershipRepository.save(new OrganizationMembership(
                 organization,
                 user,

@@ -15,7 +15,6 @@ import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitio
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
 import dev.ulloasp.mlsuite.role.application.service.LegacyRolePermissionMapper;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
-import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
@@ -221,9 +220,7 @@ public class WorkspaceAuthorizationService {
 
     public boolean isExternalReviewer(Long userId, Long organizationId) {
         try {
-            User user = workspaceAccessService.requireUser(userId);
-            OrganizationMembership membership = requireOrganizationMembership(user, organizationId);
-            return OrganizationSystemRole.EXTERNAL_REVIEWER.matches(membership.getRoleDefinition());
+            return has(effectiveOrganizationPermissions(userId, organizationId), PermissionKey.EXTERNAL_REVIEW);
         } catch (OrganizationAccessDeniedException ex) {
             return false;
         }

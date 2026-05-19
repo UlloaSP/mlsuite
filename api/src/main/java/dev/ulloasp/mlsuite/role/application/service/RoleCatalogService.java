@@ -71,6 +71,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
                 group("Invitations", "VIEW_INVITATIONS", "MANAGE_INVITATIONS"),
                 group("Teams", "VIEW_TEAMS", "CREATE_TEAMS", "EDIT_TEAMS", "DELETE_TEAMS"),
                 group("Models", "VIEW_MODELS", "CREATE_MODELS", "EDIT_MODELS", "DELETE_MODELS", "RUN_PREDICTIONS", "MANAGE_REVIEW_LINKS"),
+                group("Reviews", "EXTERNAL_REVIEW"),
                 group("Plugins", "VIEW_PLUGINS", "MANAGE_PLUGINS"),
                 group("Audit", "VIEW_AUDIT_LOG"));
     }

@@ -102,6 +102,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 user.getAvatarUrl(),
                 user));
         roleSeedService.ensureOrganizationRoles(organization);
+        roleSeedService.externalReviewerRole(organization);
         OrganizationMembership membership = new OrganizationMembership(organization, user, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
         membership.setRoleDefinition(roleSeedService.orgRole(organization, OrganizationRole.OWNER));
         membershipRepository.save(membership);

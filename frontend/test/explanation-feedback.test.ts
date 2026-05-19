@@ -178,6 +178,36 @@ describe("explanation feedback metadata", () => {
 		expect(entries[0].feedbackQuestionnaire).toEqual(questionnaire);
 	});
 
+	it("keeps explanation review steps when result content is missing", () => {
+		const entries = extractPredictionExplanationEntries(
+			{ reports: {} },
+			{
+				fields: [{ kind: "number", label: "petal_length" }],
+				explanations: [{
+					kind: "Crystal Tree",
+					id: "crystal-tree",
+					label: "Crystal Tree",
+					feedbackQuestionnaire: questionnaire,
+				}],
+			},
+			[],
+		);
+		const steps = buildReviewFeedbackSteps({
+			targets: [{ order: 0, value: "setosa" }],
+			outputFeedbackByOrder: new Map(),
+			explanationFeedbackByOrder: new Map(),
+			reports: [{ kind: "classifier", labels: ["setosa"], label: "species" }],
+			signatureSchema: { reports: [{ kind: "classifier", labels: ["setosa"], label: "species" }] },
+			predictionValue: { outputs: ["setosa"] },
+			explanations: entries,
+		});
+
+		expect(steps.map((step) => step.title)).toEqual([
+			"Output 1: species",
+			"Explanation 1: Crystal Tree",
+		]);
+	});
+
 	it("uses default editable questionnaire for old feedback-enabled schemas", () => {
 		const entries = extractPredictionExplanationEntries(
 			predictionValue,

@@ -23,14 +23,14 @@ export const useUser = () =>
 		},
 	});
 
-export const useLogout = () => {
+export const useLogout = (redirectTo = "/") => {
 	const qc = useQueryClient();
 	const navigate = useNavigate();
 	return useMutation({
 		mutationFn: userApi.logout,
 		onSuccess: () => {
 			qc.clear();
-			navigate("/", { replace: true });
+			navigate(redirectTo, { replace: true });
 		},
 	});
 };
