@@ -131,3 +131,11 @@
 - Rule: sidecar UI for embedded third-party forms should subscribe out-of-band or in a sibling boundary so sidecar updates cannot remount the form.
 - Correction: external review draft feedback was treated as completed public feedback before reviewer submitted revision.
 - Rule: review draft persistence and public feedback publication are separate states; history/export/status must use submitted review records, while review detail may load draft feedback for resume/edit.
+
+## 2026-05-20 - Invitation create surface correction
+- Correction: invite modal felt too small, too rounded, and boxed unnecessarily.
+- Rule: for workspace admin CRUD flows, prefer inline page sections over modals when form scope is small and page context helps; avoid nested/framed boxes unless they add real grouping.
+
+## 2026-05-20 - Role form modal correction
+- Correction: role form modal made actions depend on page scroll and displayed permissions as a long ungrouped list of cards.
+- Rule: permission-heavy modals need fixed header/footer, one internal scroll region, backend-catalog grouping, and flat rows instead of card-per-permission decoration.

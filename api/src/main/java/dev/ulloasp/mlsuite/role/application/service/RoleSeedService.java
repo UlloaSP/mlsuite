@@ -87,7 +87,16 @@ public class RoleSeedService implements ApplicationRunner {
 
     public RoleDefinition orgRole(Organization org, OrganizationRole role) {
         return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.name())
+                .map(definition -> ensureSystemRolePermissions(definition, mapper.organization(role)))
                 .orElseGet(() -> saveRole(new RoleDefinition(org, null, RoleScope.ORGANIZATION, label(role.name()), role.name().toLowerCase(), role.name()), mapper.organization(role)));
+    }
+
+    private RoleDefinition ensureSystemRolePermissions(RoleDefinition role, Set<PermissionKey> permissions) {
+        if (!role.getPermissions().containsAll(permissions)) {
+            role.getPermissions().addAll(permissions);
+            return roleDefinitionRepository.save(role);
+        }
+        return role;
     }
 
     public RoleDefinition externalReviewerRole(Organization org) {

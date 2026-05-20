@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 export { AppHeader } from "./AppHeader";
+export { AppCombobox, type AppComboboxItem } from "./AppCombobox";
 export { Sidebar } from "./Sidebar";
 export {
   AppBreadcrumbs,

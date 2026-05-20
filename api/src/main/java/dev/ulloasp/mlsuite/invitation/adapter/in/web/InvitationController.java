@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
 import dev.ulloasp.mlsuite.invitation.application.dto.BulkInvitationRequest;
+import dev.ulloasp.mlsuite.invitation.application.dto.InvitationCandidateDto;
 import dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto;
 import jakarta.validation.Valid;
 
@@ -19,6 +20,11 @@ public interface InvitationController {
 
     @GetMapping("/api/organizations/{organizationId}/invitations")
     ResponseEntity<List<InvitationDto>> listInvitations(Authentication authentication, @PathVariable Long organizationId);
+
+    @GetMapping("/api/organizations/{organizationId}/invitation-candidates")
+    ResponseEntity<List<InvitationCandidateDto>> listInvitationCandidates(
+            Authentication authentication,
+            @PathVariable Long organizationId);
 
     @PostMapping("/api/organizations/{organizationId}/invitations")
     ResponseEntity<InvitationDto> createInvitation(

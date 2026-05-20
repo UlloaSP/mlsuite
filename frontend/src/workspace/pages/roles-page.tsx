@@ -1,17 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, KeyRound, Lock, Plus, Shield } from "lucide-react";
+import { Copy, KeyRound, Lock, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import {
-  AppBadge,
-  AppButton,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-  AppTabs,
-  AppTextArea,
-  AppTextField,
-} from "../../app/components";
+import { AppBadge, AppButton } from "../../app/components/ui-controls";
+import { AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components/ui";
 import { NotFoundError } from "../../app/pages/error-page";
 import {
   createRole,
@@ -22,6 +14,8 @@ import {
   updateRole,
 } from "../api/roleAdminService";
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
+import { RoleDrawer } from "../components/RoleDrawer";
+import { RoleForm } from "../components/RoleForm";
 import { useWorkspaceContext } from "../hooks";
 import type { PermissionKey, RoleDefinitionDto, RoleTemplateDto } from "../types";
 
@@ -180,7 +174,7 @@ export function RolesPage() {
         {editing ? (
           <RoleForm
             role={editing.id ? editing : null}
-            permissions={data?.permissionCatalog.flatMap((group) => group.permissions) ?? []}
+            permissionGroups={data?.permissionCatalog ?? []}
             onClose={() => setEditing(null)}
             onSave={(payload) => {
               const op = editing.id ? updateRole(id, editing.id, payload) : createRole(id, payload);
@@ -199,7 +193,7 @@ export function RolesPage() {
               description: template.description,
               permissionKeys: template.permissionKeys as PermissionKey[],
             }}
-            permissions={data?.permissionCatalog.flatMap((group) => group.permissions) ?? []}
+            permissionGroups={data?.permissionCatalog ?? []}
             onClose={() => setTemplate(null)}
             onSave={(payload) => {
               void createRoleFromTemplate(id, {
@@ -246,166 +240,5 @@ function RoleRow({ role, onOpen }: { role: RoleDefinitionDto; onOpen: () => void
         </div>
       </div>
     </button>
-  );
-}
-
-function RoleDrawer({
-  role,
-  onClose,
-  onEdit,
-  onDuplicate,
-  onDelete,
-}: {
-  role: RoleDefinitionDto;
-  onClose: () => void;
-  onEdit: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/35">
-      <aside className="h-full w-full max-w-[520px] overflow-auto bg-white p-6 shadow-[var(--shadow-card)]">
-        <div className="flex justify-between">
-          <div>
-            <Shield size={28} />
-            <h2 className="mt-3 text-xl font-semibold">{role.name}</h2>
-            <p className="text-sm text-[var(--text-secondary)]">{role.description}</p>
-          </div>
-          <button onClick={onClose}>x</button>
-        </div>
-        <div className="mt-5 flex gap-2">
-          {role.actions.canEdit ? <AppButton onClick={onEdit}>Edit</AppButton> : null}
-          {role.actions.canDuplicate ? (
-            <AppButton variant="secondary" onClick={onDuplicate}>
-              Duplicate
-            </AppButton>
-          ) : null}
-          {role.actions.canDelete ? (
-            <AppButton variant="danger" onClick={onDelete}>
-              Delete
-            </AppButton>
-          ) : null}
-        </div>
-        <div className="mt-8 rounded-[16px] border border-[var(--border-soft)] p-4">
-          <p className="font-semibold">Role Information</p>
-          <p className="mt-4 text-sm text-[var(--text-secondary)]">
-            Users with this role{" "}
-            <span className="float-right text-[var(--text-primary)]">{role.userCount}</span>
-          </p>
-          <p className="mt-4 text-sm text-[var(--text-secondary)]">
-            Type <span className="float-right text-[var(--text-primary)]">{role.scope}</span>
-          </p>
-        </div>
-        <div className="mt-6 rounded-[16px] border border-[var(--border-soft)] p-4">
-          <p className="mb-4 font-semibold">Permissions ({role.permissions.length})</p>
-          <div className="space-y-2">
-            {role.permissions.map((perm) => (
-              <div
-                key={perm.key}
-                className="rounded-[12px] bg-[var(--surface-tertiary)] p-3 text-sm"
-              >
-                {perm.label}
-              </div>
-            ))}
-          </div>
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function RoleForm({
-  role,
-  initial,
-  permissions,
-  onClose,
-  onSave,
-}: {
-  role: RoleDefinitionDto | null;
-  initial?: { name: string; description?: string; permissionKeys: PermissionKey[] };
-  permissions: Array<{
-    key: PermissionKey;
-    label: string;
-    description: string;
-    dangerous: boolean;
-  }>;
-  onClose: () => void;
-  onSave: (payload: {
-    name: string;
-    description?: string;
-    permissionKeys: PermissionKey[];
-  }) => void;
-}) {
-  const [name, setName] = useState(initial?.name ?? role?.name ?? "");
-  const [description, setDescription] = useState(initial?.description ?? role?.description ?? "");
-  const [selected, setSelected] = useState<PermissionKey[]>(
-    initial?.permissionKeys ?? role?.permissions.map((p) => p.key) ?? [],
-  );
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
-      <div className="max-h-[88vh] w-full max-w-[620px] overflow-auto rounded-[20px] bg-white p-6 shadow-[var(--shadow-card)]">
-        <div className="mb-5 flex justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">{role ? "Edit Role" : "Create New Role"}</h2>
-            <p className="text-sm text-[var(--text-secondary)]">
-              {selected.length} permissions selected
-            </p>
-          </div>
-          <button onClick={onClose}>x</button>
-        </div>
-        <div className="grid gap-4">
-          <AppTextField
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Role name"
-          />
-          <AppTextArea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description"
-          />
-          <div className="grid gap-2">
-            {permissions.map((permission) => {
-              const checked = selected.includes(permission.key);
-              return (
-                <label
-                  key={permission.key}
-                  className="flex gap-3 rounded-[14px] border border-[var(--border-soft)] p-3 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    aria-label={permission.label}
-                    checked={checked}
-                    onChange={(e) =>
-                      setSelected((current) =>
-                        e.target.checked
-                          ? [...current, permission.key]
-                          : current.filter((key) => key !== permission.key),
-                      )
-                    }
-                  />
-                  <span>
-                    <b>{permission.label}</b>
-                    <br />
-                    <span className="text-[var(--text-secondary)]">{permission.description}</span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-          <div className="flex justify-end gap-3">
-            <AppButton variant="secondary" onClick={onClose}>
-              Cancel
-            </AppButton>
-            <AppButton
-              disabled={!name.trim() || selected.length === 0}
-              onClick={() => onSave({ name, description, permissionKeys: selected })}
-            >
-              Save Role
-            </AppButton>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

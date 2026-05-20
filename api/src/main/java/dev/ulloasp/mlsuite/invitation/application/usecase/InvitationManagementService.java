@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
+import dev.ulloasp.mlsuite.invitation.application.dto.InvitationCandidateDto;
 import dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto;
 import dev.ulloasp.mlsuite.invitation.application.port.in.InvitationManagementUseCase;
 import dev.ulloasp.mlsuite.invitation.domain.exception.InvitationNotFoundException;
@@ -30,6 +31,7 @@ import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepositor
 import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.team.domain.model.TeamMembership;
 import dev.ulloasp.mlsuite.team.domain.model.TeamRole;
+import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -49,6 +51,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     private final AuditLogService auditLogService;
     private final RoleSeedService roleSeedService;
     private final RoleDefinitionRepository roleDefinitionRepository;
+    private final UserRepository userRepository;
 
     public InvitationManagementService(
             WorkspaceAccessService workspaceAccessService,
@@ -60,7 +63,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
             WorkspaceAuthorizationService workspaceAuthorizationService,
             AuditLogService auditLogService,
             RoleSeedService roleSeedService,
-            RoleDefinitionRepository roleDefinitionRepository) {
+            RoleDefinitionRepository roleDefinitionRepository,
+            UserRepository userRepository) {
         this.workspaceAccessService = workspaceAccessService;
         this.invitationRepository = invitationRepository;
         this.teamRepository = teamRepository;
@@ -71,6 +75,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         this.auditLogService = auditLogService;
         this.roleSeedService = roleSeedService;
         this.roleDefinitionRepository = roleDefinitionRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -78,6 +83,15 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
         return invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
                 .map(InvitationDto::from)
+                .toList();
+    }
+
+    @Override
+    public List<InvitationCandidateDto> listInvitationCandidates(Long userId, Long organizationId) {
+        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
+        return userRepository.findEnabledUsersOutsideOrganization(organizationId, MembershipStatus.ACTIVE)
+                .stream()
+                .map(InvitationCandidateDto::from)
                 .toList();
     }
 

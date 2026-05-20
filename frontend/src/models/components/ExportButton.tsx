@@ -12,6 +12,7 @@ import {
   getActiveCustomExplanationDefinitions,
   type CatalogExplanationDefinition,
 } from "../../app/utils/mlform/custom-explanation";
+import { useWorkspaceContext } from "../../workspace/hooks";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService";
 import { buildPredictionExportData } from "../buildPredictionExport";
@@ -28,6 +29,8 @@ export type ExportButtonProps = {
 };
 
 export function ExportButton({ predictions, delimiter = ",", signatureSchema }: ExportButtonProps) {
+  const { data: workspace } = useWorkspaceContext();
+  const canExportPredictions = Boolean(workspace?.permissions.canExportPredictions);
   const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
     readonly CatalogExplanationDefinition[]
   >([]);
@@ -69,7 +72,7 @@ export function ExportButton({ predictions, delimiter = ",", signatureSchema }: 
         const data = await modelApi.getTargets({ predictionId: prediction.id || "" });
         return Array.isArray(data) ? data : [];
       },
-      enabled: Boolean(prediction?.id),
+      enabled: canExportPredictions && Boolean(prediction?.id),
       placeholderData: [] as TargetDto[],
       staleTime: 5 * 60_000,
       gcTime: 10 * 60_000,
@@ -82,7 +85,7 @@ export function ExportButton({ predictions, delimiter = ",", signatureSchema }: 
         const data = await modelApi.getExplanationFeedback({ predictionId: prediction.id || "" });
         return Array.isArray(data) ? data : [];
       },
-      enabled: Boolean(prediction?.id),
+      enabled: canExportPredictions && Boolean(prediction?.id),
       placeholderData: [] as modelApi.ExplanationFeedbackDto[],
       staleTime: 5 * 60_000,
       gcTime: 10 * 60_000,
@@ -95,7 +98,7 @@ export function ExportButton({ predictions, delimiter = ",", signatureSchema }: 
         const data = await modelApi.getOutputFeedback({ predictionId: prediction.id || "" });
         return Array.isArray(data) ? data : [];
       },
-      enabled: Boolean(prediction?.id),
+      enabled: canExportPredictions && Boolean(prediction?.id),
       placeholderData: [] as OutputFeedbackDto[],
       staleTime: 5 * 60_000,
       gcTime: 10 * 60_000,
@@ -128,6 +131,10 @@ export function ExportButton({ predictions, delimiter = ",", signatureSchema }: 
   ]);
 
   const hasData = rows.length > 0 && headers.length > 0;
+
+  if (!canExportPredictions) {
+    return null;
+  }
 
   const downloadCsv = (exportHeaders: string[], exportRows: string[][]) => {
     if (exportRows.length === 0 || exportHeaders.length === 0) {

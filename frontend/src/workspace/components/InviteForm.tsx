@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { AppButton, AppSelect, AppTextField } from "../../app/components";
+import { AppCombobox } from "../../app/components/AppCombobox";
+import { AppButton, AppSelect } from "../../app/components/ui-controls";
+import type { InvitationCandidateDto } from "../invitations/types";
 import type { RoleDefinitionDto, TeamDto } from "../types";
 
 const defaultRoleId = (roles: RoleDefinitionDto[]) =>
@@ -7,10 +9,12 @@ const defaultRoleId = (roles: RoleDefinitionDto[]) =>
 
 export function InviteForm({
   teams,
+  candidates,
   onSubmit,
   roleOptions,
 }: {
   teams: TeamDto[];
+  candidates: InvitationCandidateDto[];
   onSubmit: (payload: {
     email: string;
     roleDefinitionId: number;
@@ -18,19 +22,25 @@ export function InviteForm({
   }) => Promise<void>;
   roleOptions: RoleDefinitionDto[];
 }) {
-  const [email, setEmail] = useState("");
+  const [candidate, setCandidate] = useState<InvitationCandidateDto | null>(null);
   const [roleDefinitionId, setRoleDefinitionId] = useState<string>("");
   const [teamId, setTeamId] = useState<string>("");
   const selectedRoleId = roleDefinitionId ? Number(roleDefinitionId) : defaultRoleId(roleOptions);
-  const canSubmit = Boolean(email.trim() && selectedRoleId);
+  const canSubmit = Boolean(candidate && selectedRoleId);
+  const candidateItems = candidates.map((item) => ({
+    id: item.id,
+    label: item.fullName,
+    description: item.email,
+    avatarUrl: item.avatarUrl,
+  }));
   const submit = () => {
-    if (!canSubmit || !selectedRoleId) return;
+    if (!canSubmit || !selectedRoleId || !candidate) return;
     void onSubmit({
-      email,
+      email: candidate.email,
       roleDefinitionId: selectedRoleId,
       teamId: teamId ? Number(teamId) : undefined,
     }).then(() => {
-      setEmail("");
+      setCandidate(null);
       setRoleDefinitionId(String(defaultRoleId(roleOptions) ?? ""));
       setTeamId("");
     });
@@ -44,37 +54,43 @@ export function InviteForm({
   }, [roleDefinitionId, roleOptions]);
 
   return (
-    <div className="grid gap-4">
-      <AppTextField
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-        placeholder="teammate@company.com"
-        type="email"
+    <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.4fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto] lg:items-start">
+      <AppCombobox
+        value={candidate?.id ?? null}
+        items={candidateItems}
+        placeholder="Search user"
+        emptyLabel="No users outside this organization"
+        onChange={(item) =>
+          setCandidate(candidates.find((candidate) => candidate.id === item?.id) ?? null)
+        }
       />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <AppSelect
-          value={selectedRoleId ? String(selectedRoleId) : ""}
-          onChange={(event) => setRoleDefinitionId(event.target.value)}
-          disabled={roleOptions.length === 0}
-        >
-          {roleOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.name}
-            </option>
-          ))}
-        </AppSelect>
-        <AppSelect value={teamId} onChange={(event) => setTeamId(event.target.value)}>
-          <option value="">No team</option>
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </AppSelect>
-      </div>
+      <AppSelect
+        className="rounded-xl shadow-none"
+        value={selectedRoleId ? String(selectedRoleId) : ""}
+        onChange={(event) => setRoleDefinitionId(event.target.value)}
+        disabled={roleOptions.length === 0}
+      >
+        {roleOptions.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.name}
+          </option>
+        ))}
+      </AppSelect>
+      <AppSelect
+        className="rounded-xl shadow-none"
+        value={teamId}
+        onChange={(event) => setTeamId(event.target.value)}
+      >
+        <option value="">No team</option>
+        {teams.map((team) => (
+          <option key={team.id} value={team.id}>
+            {team.name}
+          </option>
+        ))}
+      </AppSelect>
       <AppButton
         type="button"
-        className="w-full sm:w-auto sm:justify-self-end"
+        className="w-full rounded-xl px-5 lg:w-auto"
         disabled={!canSubmit}
         onClick={submit}
       >

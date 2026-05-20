@@ -15,6 +15,7 @@ import type {
   UpdateTeamRequest,
   WorkspaceContextDto,
 } from "../types";
+import type { InvitationCandidateDto } from "../invitations/types";
 
 const json = (method: "POST" | "PATCH", body: unknown): RequestInit => ({
   method,
@@ -110,6 +111,11 @@ export const removeTeamMember = (teamId: number, membershipId: number): Promise<
 
 export const getInvitations = (organizationId: number): Promise<InvitationDto[]> =>
   appFetch<InvitationDto[]>(`/api/organizations/${organizationId}/invitations`);
+
+export const getInvitationCandidates = (
+  organizationId: number,
+): Promise<InvitationCandidateDto[]> =>
+  appFetch<InvitationCandidateDto[]>(`/api/organizations/${organizationId}/invitation-candidates`);
 
 export const createInvitation = (
   organizationId: number,

@@ -1,13 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mail, Plus, RotateCcw, X } from "lucide-react";
+import { Mail, RotateCcw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { AppButton, AppPage, AppPageHeader, AppSelect, AppSurface } from "../../app/components";
+import { AppButton, AppSelect } from "../../app/components/ui-controls";
+import { AppCopy, AppPage, AppPageHeader, AppSectionTitle, AppSurface } from "../../app/components/ui";
 import { NotFoundError } from "../../app/pages/error-page";
 import { getRoles } from "../api/roleAdminService";
 import {
   bulkRevokeInvitations,
   createInvitation,
+  getInvitationCandidates,
   getInvitations,
   getTeams,
   resendInvitation,
@@ -16,7 +18,7 @@ import {
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
 import { AdminStatCard } from "../components/admin/AdminStatCard";
 import { StatusBadge } from "../components/admin/StatusBadge";
-import { InviteDialog } from "../components/InviteDialog";
+import { InviteForm } from "../components/InviteForm";
 import { RoleBadge } from "../components/RoleBadge";
 import { useWorkspaceContext } from "../hooks";
 import { invitationRoleOptions } from "../permissions/invitationRoleOptions";
@@ -38,7 +40,6 @@ export function InvitationsPage() {
   const { data: workspace } = useWorkspaceContext();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<InvitationStatus | "ALL">("PENDING");
-  const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
   const { data: invitations = [] } = useQuery({
     queryKey: ["invitations", id],
@@ -53,6 +54,11 @@ export function InvitationsPage() {
   const { data: roles } = useQuery({
     queryKey: ["roles", id],
     queryFn: () => getRoles(id),
+    enabled: Boolean(id && workspace?.permissions.canManageInvitations),
+  });
+  const { data: candidates = [] } = useQuery({
+    queryKey: ["invitation-candidates", id],
+    queryFn: () => getInvitationCandidates(id),
     enabled: Boolean(id && workspace?.permissions.canManageInvitations),
   });
   const filtered = useMemo(
@@ -77,15 +83,36 @@ export function InvitationsPage() {
           title="Invitations"
           description="Invite users, assign starting role, and revoke pending access."
           backHref={`/workspace/organizations/${id}`}
-          aside={
-            workspace?.permissions.canManageInvitations ? (
-              <AppButton onClick={() => setOpen(true)}>
-                <Plus size={16} />
-                Invite Member
-              </AppButton>
-            ) : null
-          }
         />
+        {workspace?.permissions.canManageInvitations ? (
+          <section className="border-y border-[var(--border-soft)] py-5">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <AppSectionTitle>Invite member</AppSectionTitle>
+                <AppCopy className="mt-1">
+                  Search existing users outside this organization and assign their starting access.
+                </AppCopy>
+              </div>
+              <AppCopy>{candidates.length} available users</AppCopy>
+            </div>
+            {roleOptions.length > 0 ? (
+              <InviteForm
+                teams={teams}
+                candidates={candidates}
+                roleOptions={roleOptions}
+                onSubmit={async (payload) => {
+                  await createInvitation(id, payload);
+                  await Promise.all([
+                    qc.invalidateQueries({ queryKey: ["invitations", id] }),
+                    qc.invalidateQueries({ queryKey: ["invitation-candidates", id] }),
+                  ]);
+                }}
+              />
+            ) : (
+              <AppCopy>No assignable roles available.</AppCopy>
+            )}
+          </section>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-4">
           {statuses.slice(1).map((item) => (
             <AdminStatCard
@@ -207,18 +234,6 @@ export function InvitationsPage() {
             </tbody>
           </table>
         </AdminDataPanel>
-        {open ? (
-          <InviteDialog
-            teams={teams}
-            roleOptions={roleOptions}
-            onClose={() => setOpen(false)}
-            onSubmit={async (payload) => {
-              await createInvitation(id, payload);
-              setOpen(false);
-              await qc.invalidateQueries({ queryKey: ["invitations", id] });
-            }}
-          />
-        ) : null}
       </AppSurface>
     </AppPage>
   );

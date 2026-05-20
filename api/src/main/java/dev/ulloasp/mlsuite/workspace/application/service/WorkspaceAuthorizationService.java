@@ -55,7 +55,7 @@ public class WorkspaceAuthorizationService {
 
     public WorkspacePermissionsDto workspacePermissions(Long userId, Long organizationId) {
         if (workspaceAccessService.isSuperadmin(userId)) {
-            return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
+            return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
         }
         Set<PermissionKey> permissions = effectiveOrganizationPermissions(userId, organizationId);
         return new WorkspacePermissionsDto(
@@ -79,6 +79,7 @@ public class WorkspaceAuthorizationService {
                 has(permissions, PermissionKey.EDIT_MODELS),
                 has(permissions, PermissionKey.DELETE_MODELS),
                 has(permissions, PermissionKey.RUN_PREDICTIONS),
+                has(permissions, PermissionKey.EXPORT_PREDICTIONS),
                 has(permissions, PermissionKey.MANAGE_REVIEW_LINKS),
                 has(permissions, PermissionKey.VIEW_PLUGINS),
                 has(permissions, PermissionKey.MANAGE_PLUGINS));

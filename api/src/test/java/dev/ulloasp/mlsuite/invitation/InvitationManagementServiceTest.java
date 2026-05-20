@@ -1,9 +1,14 @@
 package dev.ulloasp.mlsuite.invitation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +34,7 @@ import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
+import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
@@ -68,6 +74,9 @@ class InvitationManagementServiceTest {
     @Mock
     private RoleDefinitionRepository roleDefinitionRepository;
 
+    @Mock
+    private UserRepository userRepository;
+
     private InvitationManagementService service;
 
     @BeforeEach
@@ -82,7 +91,8 @@ class InvitationManagementServiceTest {
                 workspaceAuthorizationService,
                 auditLogService,
                 roleSeedService,
-                roleDefinitionRepository);
+                roleDefinitionRepository,
+                userRepository);
     }
 
     @Test
@@ -109,6 +119,34 @@ class InvitationManagementServiceTest {
 
         assertEquals(OrganizationRole.VIEWER.name(), result.role());
         assertEquals(5L, result.roleDefinition().id());
+    }
+
+    @Test
+    void listInvitationCandidates_ReturnsEnabledUsersOutsideOrganization() {
+        User candidate = user(8L);
+        candidate.setEmail("user@example.com");
+        candidate.setFullName("User Example");
+        when(userRepository.findEnabledUsersOutsideOrganization(41L, MembershipStatus.ACTIVE))
+                .thenReturn(List.of(candidate));
+
+        var result = service.listInvitationCandidates(7L, 41L);
+
+        assertEquals(1, result.size());
+        assertEquals(8L, result.get(0).id());
+        assertEquals("User Example", result.get(0).fullName());
+        assertEquals("user@example.com", result.get(0).email());
+        verify(workspaceAuthorizationService).requireInvitationManagement(7L, 41L);
+    }
+
+    @Test
+    void listInvitationCandidates_StopsWhenUserCannotManageInvitations() {
+        doThrow(new IllegalArgumentException("Denied"))
+                .when(workspaceAuthorizationService)
+                .requireInvitationManagement(7L, 41L);
+
+        assertThrows(IllegalArgumentException.class, () -> service.listInvitationCandidates(7L, 41L));
+
+        verifyNoInteractions(userRepository);
     }
 
     private OrganizationMembership membership(Organization org, User user, OrganizationRole role) {
@@ -149,6 +187,6 @@ class InvitationManagementServiceTest {
     private WorkspacePermissionsDto permissions() {
         return new WorkspacePermissionsDto(
                 true, true, true, false, false, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true);
+                true, true, true, true, true, true, true, true, true, true, true, true, true);
     }
 }

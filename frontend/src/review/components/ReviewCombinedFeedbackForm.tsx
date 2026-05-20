@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
-import { AppCopy } from "../../app/components";
+import { AppCopy } from "../../app/components/ui";
 import { AppButton } from "../../app/components/ui-controls";
 import type { FieldConfig } from "mlform/runtime";
 import type {
@@ -187,9 +187,11 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
           const nextId = stepId ?? steps[0]?.id;
           if (activeStepIdRef.current === nextId) return;
           activeStepIdRef.current = nextId;
-          window.dispatchEvent(new CustomEvent(REVIEW_STEP_CONTEXT_EVENT, {
-            detail: steps.find((step) => step.id === nextId) ?? steps[0],
-          }));
+          window.dispatchEvent(
+            new CustomEvent(REVIEW_STEP_CONTEXT_EVENT, {
+              detail: steps.find((step) => step.id === nextId) ?? steps[0],
+            }),
+          );
         }}
       />
     </section>

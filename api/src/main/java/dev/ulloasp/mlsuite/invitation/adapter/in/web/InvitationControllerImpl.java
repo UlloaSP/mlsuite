@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
 import dev.ulloasp.mlsuite.invitation.application.dto.BulkInvitationRequest;
+import dev.ulloasp.mlsuite.invitation.application.dto.InvitationCandidateDto;
 import dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto;
 import dev.ulloasp.mlsuite.invitation.application.port.in.InvitationManagementUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
@@ -29,6 +30,13 @@ public class InvitationControllerImpl implements InvitationController {
     @Override
     public ResponseEntity<List<InvitationDto>> listInvitations(Authentication authentication, Long organizationId) {
         return ResponseEntity.ok(invitationManagementUseCase.listInvitations(currentUserResolver.resolve(authentication).userId(), organizationId));
+    }
+
+    @Override
+    public ResponseEntity<List<InvitationCandidateDto>> listInvitationCandidates(Authentication authentication, Long organizationId) {
+        return ResponseEntity.ok(invitationManagementUseCase.listInvitationCandidates(
+                currentUserResolver.resolve(authentication).userId(),
+                organizationId));
     }
 
     @Override

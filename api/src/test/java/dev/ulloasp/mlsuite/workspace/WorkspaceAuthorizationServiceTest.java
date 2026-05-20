@@ -75,6 +75,7 @@ class WorkspaceAuthorizationServiceTest {
 
         assertTrue(permissions.canDeleteOrganization());
         assertTrue(permissions.canManageInvitations());
+        assertTrue(permissions.canExportPredictions());
         assertTrue(permissions.canManagePlugins());
     }
 
@@ -89,6 +90,7 @@ class WorkspaceAuthorizationServiceTest {
 
         assertTrue(permissions.canViewModels());
         assertTrue(permissions.canCreateModels());
+        assertFalse(permissions.canExportPredictions());
         assertFalse(permissions.canViewMembers());
         assertFalse(permissions.canManageInvitations());
         assertFalse(permissions.canManagePlugins());
@@ -105,6 +107,7 @@ class WorkspaceAuthorizationServiceTest {
 
         assertTrue(permissions.canDeleteOrganization());
         assertTrue(permissions.canTransferOwnership());
+        assertTrue(permissions.canExportPredictions());
         assertTrue(permissions.canManageReviewLinks());
         assertTrue(permissions.canManagePlugins());
     }
@@ -119,6 +122,7 @@ class WorkspaceAuthorizationServiceTest {
         var permissions = service.workspacePermissions(4L, 41L);
 
         assertTrue(permissions.canManageMemberRoles());
+        assertTrue(permissions.canExportPredictions());
         assertTrue(permissions.canManageReviewLinks());
         assertTrue(permissions.canManagePlugins());
         assertFalse(permissions.canDeleteOrganization());
@@ -137,6 +141,7 @@ class WorkspaceAuthorizationServiceTest {
         assertTrue(permissions.canViewModels());
         assertTrue(permissions.canViewPlugins());
         assertFalse(permissions.canCreateModels());
+        assertFalse(permissions.canExportPredictions());
         assertFalse(permissions.canManageReviewLinks());
         assertFalse(permissions.canManagePlugins());
     }
