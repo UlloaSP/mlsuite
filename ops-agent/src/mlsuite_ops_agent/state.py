@@ -36,16 +36,14 @@ class AgentState:
         self.service_task: asyncio.Task[None] | None = None
         self.cleanup_task: asyncio.Task[None] | None = None
         self._latest_services: list[dict[str, Any]] = []
-        self._latest_vram_supported = False
 
     async def start(self) -> None:
-        first = collect_metrics()
-        self.metrics.append(first)
-        self._latest_vram_supported = first.vram_supported
         try:
             self._latest_services = await self.compose.service_snapshot()
         except ComposeError:
             self._latest_services = []
+        first = collect_metrics(self._latest_services)
+        self.metrics.append(first)
         self.sampler_task = asyncio.create_task(self._sample_loop())
         self.service_task = asyncio.create_task(self._service_loop())
         self.cleanup_task = asyncio.create_task(self._cleanup_loop())
@@ -64,17 +62,18 @@ class AgentState:
             self._latest_services = await self.compose.service_snapshot()
         latest = self.metrics.points[-1]
         return {
-            "host": {
+            "aggregate": {
                 "cpu": {"percent": latest.cpu_percent, "supported": True},
                 "ram": {"percent": latest.ram_percent, "supported": True},
-                "disk": {"percent": latest.disk_percent, "supported": True},
-                "vram": {"percent": latest.vram_percent, "supported": latest.vram_supported},
+                "diskRead": {"bytes": latest.disk_read_bytes, "supported": True},
+                "diskWrite": {"bytes": latest.disk_write_bytes, "supported": True},
+                "networkRx": {"bytes": latest.network_rx_bytes, "supported": True},
+                "networkTx": {"bytes": latest.network_tx_bytes, "supported": True},
             },
             "services": self._latest_services,
             "history": {
                 "sampleIntervalSeconds": self.settings.sample_interval_seconds,
                 "retentionMinutes": self.settings.retention_minutes,
-                "supported": self._latest_vram_supported,
                 "points": self.metrics.as_points(),
             },
         }
@@ -98,20 +97,32 @@ class AgentState:
 
     async def _sample_loop(self) -> None:
         while True:
-            snapshot = collect_metrics()
+            snapshot = collect_metrics(self._latest_services)
             self.metrics.append(snapshot)
-            self._latest_vram_supported = snapshot.vram_supported
             await self.broadcast(
                 {
                     "type": "overview.delta",
                     "payload": {
-                        "host": {
+                        "aggregate": {
                             "timestamp": snapshot.timestamp,
                             "cpuPercent": snapshot.cpu_percent,
                             "ramPercent": snapshot.ram_percent,
-                            "diskPercent": snapshot.disk_percent,
-                            "vramPercent": snapshot.vram_percent,
-                            "vramSupported": snapshot.vram_supported,
+                            "diskReadBytes": snapshot.disk_read_bytes,
+                            "diskWriteBytes": snapshot.disk_write_bytes,
+                            "networkRxBytes": snapshot.network_rx_bytes,
+                            "networkTxBytes": snapshot.network_tx_bytes,
+                            "services": [
+                                {
+                                    "name": service.name,
+                                    "cpuPercent": service.cpu_percent,
+                                    "ramPercent": service.ram_percent,
+                                    "diskReadBytes": service.disk_read_bytes,
+                                    "diskWriteBytes": service.disk_write_bytes,
+                                    "networkRxBytes": service.network_rx_bytes,
+                                    "networkTxBytes": service.network_tx_bytes,
+                                }
+                                for service in snapshot.services
+                            ],
                         },
                         "services": self._latest_services,
                     },

@@ -1,60 +1,101 @@
-import { useState } from "react";
-import { AppButton, AppPanel, AppSelect, AppTextField } from "../../app/components";
-import type { OrganizationRole, TeamDto } from "../types";
+import { useEffect, useState } from "react";
+import { AppCombobox } from "../../app/components/AppCombobox";
+import { AppButton, AppSelect } from "../../app/components/ui-controls";
+import type { InvitationCandidateDto } from "../invitations/types";
+import type { RoleDefinitionDto, TeamDto } from "../types";
 
-const defaultRole: OrganizationRole = "MEMBER";
+const defaultRoleId = (roles: RoleDefinitionDto[]) =>
+  roles.find((role) => role.systemKey === "MEMBER")?.id ?? roles[0]?.id ?? null;
 
 export function InviteForm({
-	teams,
-	onSubmit,
-	roleOptions = ["ADMIN", "MEMBER", "VIEWER"],
+  teams,
+  candidates,
+  onSubmit,
+  roleOptions,
 }: {
-	teams: TeamDto[];
-	onSubmit: (payload: { email: string; role: OrganizationRole; teamId?: number }) => Promise<void>;
-	roleOptions?: OrganizationRole[];
+  teams: TeamDto[];
+  candidates: InvitationCandidateDto[];
+  onSubmit: (payload: {
+    email: string;
+    roleDefinitionId: number;
+    teamId?: number;
+  }) => Promise<void>;
+  roleOptions: RoleDefinitionDto[];
 }) {
-	const [email, setEmail] = useState("");
-	const [role, setRole] = useState<OrganizationRole>(defaultRole);
-	const [teamId, setTeamId] = useState<string>("");
+  const [candidate, setCandidate] = useState<InvitationCandidateDto | null>(null);
+  const [roleDefinitionId, setRoleDefinitionId] = useState<string>("");
+  const [teamId, setTeamId] = useState<string>("");
+  const selectedRoleId = roleDefinitionId ? Number(roleDefinitionId) : defaultRoleId(roleOptions);
+  const canSubmit = Boolean(candidate && selectedRoleId);
+  const candidateItems = candidates.map((item) => ({
+    id: item.id,
+    label: item.fullName,
+    description: item.email,
+    avatarUrl: item.avatarUrl,
+  }));
+  const submit = () => {
+    if (!canSubmit || !selectedRoleId || !candidate) return;
+    void onSubmit({
+      email: candidate.email,
+      roleDefinitionId: selectedRoleId,
+      teamId: teamId ? Number(teamId) : undefined,
+    }).then(() => {
+      setCandidate(null);
+      setRoleDefinitionId(String(defaultRoleId(roleOptions) ?? ""));
+      setTeamId("");
+    });
+  };
 
-	return (
-		<AppPanel className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px_180px_auto]">
-			<AppTextField
-				value={email}
-				onChange={(event) => setEmail(event.target.value)}
-				placeholder="teammate@company.com"
-			/>
-			<AppSelect value={role} onChange={(event) => setRole(event.target.value as OrganizationRole)}>
-				{roleOptions.map((option) => (
-					<option key={option} value={option}>
-						{option}
-					</option>
-				))}
-			</AppSelect>
-			<AppSelect value={teamId} onChange={(event) => setTeamId(event.target.value)}>
-				<option value="">No team</option>
-				{teams.map((team) => (
-					<option key={team.id} value={team.id}>
-						{team.name}
-					</option>
-				))}
-			</AppSelect>
-			<AppButton
-				type="button"
-				onClick={async () => {
-					await onSubmit({
-						email,
-						role,
-						teamId: teamId ? Number(teamId) : undefined,
-					});
-					setEmail("");
-					setRole(defaultRole);
-					setTeamId("");
-				}}
-				disabled={!email.trim()}
-			>
-				Send Invite
-			</AppButton>
-		</AppPanel>
-	);
+  useEffect(() => {
+    const nextDefault = defaultRoleId(roleOptions);
+    if (nextDefault && !roleOptions.some((role) => String(role.id) === roleDefinitionId)) {
+      setRoleDefinitionId(String(nextDefault));
+    }
+  }, [roleDefinitionId, roleOptions]);
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.4fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto] lg:items-start">
+      <AppCombobox
+        value={candidate?.id ?? null}
+        items={candidateItems}
+        placeholder="Search user"
+        emptyLabel="No users outside this organization"
+        onChange={(item) =>
+          setCandidate(candidates.find((candidate) => candidate.id === item?.id) ?? null)
+        }
+      />
+      <AppSelect
+        className="rounded-xl shadow-none"
+        value={selectedRoleId ? String(selectedRoleId) : ""}
+        onChange={(event) => setRoleDefinitionId(event.target.value)}
+        disabled={roleOptions.length === 0}
+      >
+        {roleOptions.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.name}
+          </option>
+        ))}
+      </AppSelect>
+      <AppSelect
+        className="rounded-xl shadow-none"
+        value={teamId}
+        onChange={(event) => setTeamId(event.target.value)}
+      >
+        <option value="">No team</option>
+        {teams.map((team) => (
+          <option key={team.id} value={team.id}>
+            {team.name}
+          </option>
+        ))}
+      </AppSelect>
+      <AppButton
+        type="button"
+        className="w-full rounded-xl px-5 lg:w-auto"
+        disabled={!canSubmit}
+        onClick={submit}
+      >
+        Send Invite
+      </AppButton>
+    </div>
+  );
 }

@@ -132,7 +132,7 @@ class OutputFeedbackServiceTest {
     void getOutputFeedbackByPredictionId_ReturnsOrderedList() {
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction()));
-        when(outputFeedbackRepository.findByPredictionIdAndOrganizationId(11L, 41L))
+        when(outputFeedbackRepository.findPublishedByPredictionIdAndOrganizationId(11L, 41L))
                 .thenReturn(List.of(outputFeedback(prediction())));
 
         assertEquals(1, service.getOutputFeedbackByPredictionId(3L, 11L).size());

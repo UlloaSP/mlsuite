@@ -4,12 +4,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type {
-	ExplanationConfig,
-	ExplanationDefinition,
-	ExplanationFetchRequest,
-	NormalizedExplanationConfig,
-} from "mlform/engine";
-import type { QuestionnaireSchema } from "mlform/questionnaire";
+  ExplanationConfig,
+  ExplanationDefinition,
+  ExplanationFetchRequest,
+  NormalizedExplanationConfig,
+} from "mlform/runtime";
+import {
+  defineExplanationKind,
+  type DefinedExplanationKind,
+  type ExplanationDescriptorContext,
+} from "mlform/presentation";
+import type { QuestionnaireSchema } from "../../../models/questionnaire-schema";
 import { normalizeExplanationConfig, toBackendPatchedRequest } from "./explanationConfig";
 
 type TypeScriptModule = typeof import("typescript");
@@ -17,33 +22,33 @@ type ZodModule = typeof import("zod");
 type PresentationContentLike = unknown | readonly unknown[];
 
 type DeclarativeExplanationModule<TConfig extends ExplanationConfig = ExplanationConfig> = {
-	kind: string;
-	schema: ExplanationDefinition<TConfig>["schema"];
-	feedbackQuestionnaire?: QuestionnaireSchema;
-	fetch: (context: {
-		config: NormalizedExplanationConfig<TConfig>;
-		explanationId: string;
-	}) => {
-		submit: (request: ExplanationFetchRequest) => Promise<unknown>;
-	};
-	render: {
-		summary?: (context: {
-			config: NormalizedExplanationConfig<TConfig>;
-			explanationId: string;
-			state: Parameters<ExplanationDefinition<TConfig>["describe"]>[1]["state"];
-			result: unknown;
-		}) => Record<string, unknown> | null | undefined;
-		content: (context: {
-			config: NormalizedExplanationConfig<TConfig>;
-			explanationId: string;
-			state: Parameters<ExplanationDefinition<TConfig>["describe"]>[1]["state"];
-			result: unknown;
-		}) => PresentationContentLike;
-	};
+  kind: string;
+  schema: ExplanationDefinition<TConfig>["schema"];
+  feedbackQuestionnaire?: QuestionnaireSchema;
+  fetch: (context: { config: NormalizedExplanationConfig<TConfig>; explanationId: string }) => {
+    submit: (request: ExplanationFetchRequest) => Promise<unknown>;
+  };
+  render: {
+    summary?: (context: {
+      config: NormalizedExplanationConfig<TConfig>;
+      explanationId: string;
+      state: ExplanationDescriptorContext["state"];
+      result: unknown;
+    }) => Record<string, unknown> | null | undefined;
+    content: (context: {
+      config: NormalizedExplanationConfig<TConfig>;
+      explanationId: string;
+      state: ExplanationDescriptorContext["state"];
+      result: unknown;
+    }) => PresentationContentLike;
+  };
 };
 
 export type ExplanationDefinitionWithFeedback = ExplanationDefinition<ExplanationConfig> & {
-	feedbackQuestionnaire?: QuestionnaireSchema;
+  definition: ExplanationDefinition<ExplanationConfig>;
+  presenter: DefinedExplanationKind<ExplanationConfig, unknown>["presenter"];
+  describe: DefinedExplanationKind<ExplanationConfig, unknown>["describe"];
+  feedbackQuestionnaire?: QuestionnaireSchema;
 };
 
 let typescriptPromise: Promise<TypeScriptModule> | null = null;
@@ -51,174 +56,243 @@ let zodPromise: Promise<ZodModule> | null = null;
 const definitionCache = new Map<string, Promise<ExplanationDefinitionWithFeedback>>();
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null && !Array.isArray(value);
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const hashString = (value: string): string => {
-	let hash = 0;
-	for (let index = 0; index < value.length; index += 1) {
-		hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
-	}
-	return hash.toString(36);
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash.toString(36);
 };
 
 const getZodGlobalKey = (source: string): string =>
-	`__MLSUITE_CUSTOM_EXPLANATION_FB_ZOD__${hashString(source)}`;
+  `__MLSUITE_CUSTOM_EXPLANATION_FB_ZOD__${hashString(source)}`;
+const getDefineExplanationKindGlobalKey = (source: string): string =>
+  `__MLSUITE_DEFINE_EXPLANATION_KIND__${hashString(source)}`;
 
 const loadTypeScript = async (): Promise<TypeScriptModule> => {
-	typescriptPromise ??= import("typescript");
-	return typescriptPromise;
+  typescriptPromise ??= import("typescript");
+  return typescriptPromise;
 };
 
 const loadZod = async (): Promise<ZodModule> => {
-	zodPromise ??= import("zod");
-	return zodPromise;
+  zodPromise ??= import("zod");
+  return zodPromise;
 };
 
 const toPresentationNodes = (value: PresentationContentLike): unknown[] =>
-	value === undefined ? [] : Array.isArray(value) ? [...value] : [value];
+  value === undefined ? [] : Array.isArray(value) ? [...value] : [value];
 
-const prependRuntimeShims = (source: string, zodGlobalKey: string): string => `const defineExplanationKind = (value) => value;
+const prependRuntimeShims = (
+  source: string,
+  zodGlobalKey: string,
+  defineGlobalKey: string,
+): string => `const defineExplanationKind = (value) => globalThis[${JSON.stringify(defineGlobalKey)}](value);
 const createQuestionnaireSchema = (value) => value;
 const z = globalThis[${JSON.stringify(zodGlobalKey)}];
 ${source}`;
 
 const transpileSource = async (source: string): Promise<string> => {
-	const ts = await loadTypeScript();
-	const result = ts.transpileModule(prependRuntimeShims(source, getZodGlobalKey(source)), {
-		compilerOptions: {
-			target: ts.ScriptTarget.ES2022,
-			module: ts.ModuleKind.ESNext,
-			moduleResolution: ts.ModuleResolutionKind.Bundler,
-			strict: true,
-			isolatedModules: true,
-			useDefineForClassFields: true,
-		},
-		reportDiagnostics: true,
-	});
+  const ts = await loadTypeScript();
+  const result = ts.transpileModule(
+    prependRuntimeShims(source, getZodGlobalKey(source), getDefineExplanationKindGlobalKey(source)),
+    {
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2022,
+        module: ts.ModuleKind.ESNext,
+        moduleResolution: ts.ModuleResolutionKind.Bundler,
+        strict: true,
+        isolatedModules: true,
+        useDefineForClassFields: true,
+      },
+      reportDiagnostics: true,
+    },
+  );
 
-	if ((result.diagnostics?.length ?? 0) > 0) {
-		throw new Error("Custom explanation plugin could not be transpiled.");
-	}
+  if ((result.diagnostics?.length ?? 0) > 0) {
+    throw new Error("Custom explanation plugin could not be transpiled.");
+  }
 
-	return result.outputText;
+  return result.outputText;
 };
 
 const assertQuestionnaireSchema = (value: unknown): QuestionnaireSchema | undefined => {
-	if (value === undefined) {
-		return undefined;
-	}
-	if (!isRecord(value) || !Array.isArray(value.steps) || value.steps.length === 0) {
-		throw new Error('Custom explanation "feedbackQuestionnaire" must define non-empty "steps".');
-	}
-	return value as unknown as QuestionnaireSchema;
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!isRecord(value) || !Array.isArray(value.steps) || value.steps.length === 0) {
+    throw new Error('Custom explanation "feedbackQuestionnaire" must define non-empty "steps".');
+  }
+  return value as unknown as QuestionnaireSchema;
 };
 
 const assertDeclarativeExplanationModule: (
-	value: unknown,
+  value: unknown,
 ) => asserts value is DeclarativeExplanationModule = (value) => {
-	if (!isRecord(value)) throw new Error("Custom explanation module must export a default explanation kind.");
-	if (typeof value.kind !== "string" || value.kind.trim().length === 0) {
-		throw new Error('Custom explanation kind must define non-empty string "kind".');
-	}
-	if (!isRecord(value.schema) || typeof value.schema.safeParse !== "function") {
-		throw new Error('Custom explanation kind must expose Zod schema as "schema".');
-	}
-	if (typeof value.fetch !== "function") {
-		throw new Error('Custom explanation kind must expose "fetch({ config, explanationId })".');
-	}
-	if (!isRecord(value.render) || typeof value.render.content !== "function") {
-		throw new Error('Custom explanation kind must expose "render.content(ctx)".');
-	}
-	assertQuestionnaireSchema(value.feedbackQuestionnaire);
+  if (!isRecord(value))
+    throw new Error("Custom explanation module must export a default explanation kind.");
+  if (typeof value.kind !== "string" || value.kind.trim().length === 0) {
+    throw new Error('Custom explanation kind must define non-empty string "kind".');
+  }
+  if (!isRecord(value.schema) || typeof value.schema.safeParse !== "function") {
+    throw new Error('Custom explanation kind must expose Zod schema as "schema".');
+  }
+  if (typeof value.fetch !== "function") {
+    throw new Error('Custom explanation kind must expose "fetch({ config, explanationId })".');
+  }
+  if (!isRecord(value.render) || typeof value.render.content !== "function") {
+    throw new Error('Custom explanation kind must expose "render.content(ctx)".');
+  }
+  assertQuestionnaireSchema(value.feedbackQuestionnaire);
 };
 
 const adaptDeclarativeExplanationModule = (
-	moduleValue: DeclarativeExplanationModule,
+  moduleValue: DeclarativeExplanationModule,
 ): ExplanationDefinitionWithFeedback => ({
-	kind: moduleValue.kind,
-	schema: moduleValue.schema,
-	feedbackQuestionnaire: moduleValue.feedbackQuestionnaire,
-	transport: (config) => {
-		const normalizedConfig = normalizeExplanationConfig(
-			config as NormalizedExplanationConfig<ExplanationConfig>,
-		);
-		const transport = moduleValue.fetch({
-			config: normalizedConfig,
-			explanationId: normalizedConfig.id,
-		});
-		return {
-			submit: (request) => transport.submit(toBackendPatchedRequest(request)),
-		};
-	},
-	describe: (config, context) => {
-		const normalizedConfig = normalizeExplanationConfig(
-			config as NormalizedExplanationConfig<ExplanationConfig>,
-		);
-		const renderContext = {
-			config: normalizedConfig,
-			explanationId: normalizedConfig.id,
-			state: context.state,
-			result: context.state.result,
-		};
-		return {
-			component: "declarative-explanation",
-			props: {
-				id: normalizedConfig.id,
-				kind: normalizedConfig.kind,
-				label: normalizedConfig.label ?? normalizedConfig.id,
-				description: normalizedConfig.description ?? "",
-				chromeless:
-					(isRecord(normalizedConfig) && normalizedConfig.chromeless === true) ||
-					normalizedConfig.kind === "mimosa",
-				result: context.state.result,
-				error: context.state.error,
-				state: context.state.status,
-				summary: moduleValue.render.summary?.(renderContext) ?? null,
-				content:
-					context.state.result === undefined && context.state.error === null
-						? []
-						: toPresentationNodes(moduleValue.render.content(renderContext)),
-			},
-			meta: { declarative: true },
-		};
-	},
+  kind: moduleValue.kind,
+  schema: moduleValue.schema,
+  feedbackQuestionnaire: moduleValue.feedbackQuestionnaire,
+  transport: (config: ExplanationConfig) => {
+    const normalizedConfig = normalizeExplanationConfig(
+      config as NormalizedExplanationConfig<ExplanationConfig>,
+    );
+    const transport = moduleValue.fetch({
+      config: normalizedConfig,
+      explanationId: normalizedConfig.id,
+    });
+    return {
+      submit: (request: ExplanationFetchRequest) =>
+        transport.submit(toBackendPatchedRequest(request)),
+    };
+  },
+  describe: (
+    config: NormalizedExplanationConfig<ExplanationConfig>,
+    context: ExplanationDescriptorContext,
+  ) => {
+    const normalizedConfig = normalizeExplanationConfig(
+      config as NormalizedExplanationConfig<ExplanationConfig>,
+    );
+    const renderContext = {
+      config: normalizedConfig,
+      explanationId: normalizedConfig.id,
+      state: context.state,
+      result: context.state.result,
+    };
+    return {
+      component: "declarative-explanation",
+      props: {
+        id: normalizedConfig.id,
+        kind: normalizedConfig.kind,
+        label: normalizedConfig.label ?? normalizedConfig.id,
+        description: normalizedConfig.description ?? "",
+        chromeless:
+          (isRecord(normalizedConfig) && normalizedConfig.chromeless === true) ||
+          normalizedConfig.kind === "mimosa",
+        result: context.state.result,
+        error: context.state.error,
+        state: context.state.status,
+        summary: moduleValue.render.summary?.(renderContext) ?? null,
+        content:
+          context.state.result === undefined && context.state.error === null
+            ? []
+            : toPresentationNodes(moduleValue.render.content(renderContext)),
+      },
+      meta: { declarative: true },
+    };
+  },
+  definition: null as never,
+  presenter: null as never,
 });
 
+// knip-ignore
+export const patchDefinedExplanationTransport = (
+  defined: ExplanationDefinitionWithFeedback,
+): ExplanationDefinitionWithFeedback => {
+  const transport = (config: ExplanationConfig) => {
+    const baseTransport = defined.transport(config);
+    return {
+      submit: (request: ExplanationFetchRequest) =>
+        baseTransport.submit(toBackendPatchedRequest(request)),
+    };
+  };
+  return {
+    ...defined,
+    transport,
+    definition: {
+      ...defined.definition,
+      transport,
+    },
+  };
+};
+
 const importDefinition = async (source: string): Promise<ExplanationDefinitionWithFeedback> => {
-	const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
-	const blob = new Blob([outputText], { type: "text/javascript" });
-	const url = URL.createObjectURL(blob);
-	const zodGlobalKey = getZodGlobalKey(source);
+  const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
+  const blob = new Blob([outputText], { type: "text/javascript" });
+  const url = URL.createObjectURL(blob);
+  const zodGlobalKey = getZodGlobalKey(source);
+  const defineGlobalKey = getDefineExplanationKindGlobalKey(source);
 
-	try {
-		(globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
-		const moduleValue = await import(/* @vite-ignore */ url);
-		if (!isRecord(moduleValue) || !("default" in moduleValue)) {
-			throw new Error("Custom explanation module must export exactly one default explanation kind.");
-		}
+  try {
+    (globalThis as Record<string, unknown>)[zodGlobalKey] = zod;
+    (globalThis as Record<string, unknown>)[defineGlobalKey] = (
+      value: DeclarativeExplanationModule,
+    ) => {
+      const defined = defineExplanationKind(value as never);
+      return Object.assign(defined, {
+        feedbackQuestionnaire: value.feedbackQuestionnaire,
+      });
+    };
+    // react-doctor-disable-next-line react-doctor/no-dynamic-import-path -- Runtime plugin modules are compiled to Blob URLs; no static chunk path exists.
+    const moduleValue = await import(/* @vite-ignore */ url);
+    if (!isRecord(moduleValue) || !("default" in moduleValue)) {
+      throw new Error(
+        "Custom explanation module must export exactly one default explanation kind.",
+      );
+    }
 
-		const declarativeValue: unknown = moduleValue.default;
-		assertDeclarativeExplanationModule(declarativeValue);
-		return adaptDeclarativeExplanationModule(declarativeValue);
-	} finally {
-		delete (globalThis as Record<string, unknown>)[zodGlobalKey];
-		URL.revokeObjectURL(url);
-	}
+    const declarativeValue: unknown = moduleValue.default;
+    if (
+      isRecord(declarativeValue) &&
+      isRecord(declarativeValue.definition) &&
+      isRecord(declarativeValue.presenter)
+    ) {
+      return patchDefinedExplanationTransport(
+        declarativeValue as unknown as ExplanationDefinitionWithFeedback,
+      );
+    }
+    assertDeclarativeExplanationModule(declarativeValue);
+    const adapted = adaptDeclarativeExplanationModule(declarativeValue);
+    adapted.definition = {
+      kind: adapted.kind,
+      schema: adapted.schema,
+      transport: adapted.transport,
+    };
+    adapted.presenter = {
+      kind: adapted.kind,
+      describe: adapted.describe!,
+    };
+    return adapted;
+  } finally {
+    delete (globalThis as Record<string, unknown>)[zodGlobalKey];
+    delete (globalThis as Record<string, unknown>)[defineGlobalKey];
+    URL.revokeObjectURL(url);
+  }
 };
 
 export const resolveCustomExplanationDefinitionWithFeedback = async (
-	source: string,
+  source: string,
 ): Promise<ExplanationDefinitionWithFeedback> => {
-	const cacheKey = hashString(source);
-	let cached = definitionCache.get(cacheKey);
-	if (!cached) {
-		cached = importDefinition(source);
-		definitionCache.set(cacheKey, cached);
-	}
-	return cached;
+  const cacheKey = hashString(source);
+  let cached = definitionCache.get(cacheKey);
+  if (!cached) {
+    cached = importDefinition(source);
+    definitionCache.set(cacheKey, cached);
+  }
+  return cached;
 };
 
 export const validateCustomExplanationSourceWithFeedback = async (
-	source: string,
+  source: string,
 ): Promise<ExplanationDefinitionWithFeedback> =>
-	resolveCustomExplanationDefinitionWithFeedback(source);
+  resolveCustomExplanationDefinitionWithFeedback(source);

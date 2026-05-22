@@ -28,6 +28,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
+import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
@@ -101,6 +102,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 user.getAvatarUrl(),
                 user));
         roleSeedService.ensureOrganizationRoles(organization);
+        roleSeedService.externalReviewerRole(organization);
         OrganizationMembership membership = new OrganizationMembership(organization, user, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
         membership.setRoleDefinition(roleSeedService.orgRole(organization, OrganizationRole.OWNER));
         membershipRepository.save(membership);
@@ -198,9 +200,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         RoleDefinition nextRole = roleDefinitionRepository.findByIdAndOrganizationId(nextRoleId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Role does not exist."));
         membership.setRoleDefinition(nextRole);
-        if (nextRole.getSystemKey() != null) {
-            membership.setRole(OrganizationRole.valueOf(nextRole.getSystemKey()));
-        }
+        membership.setRole(legacyRole(nextRole));
         return OrganizationMembershipDto.from(membershipRepository.save(membership));
     }
 
@@ -255,5 +255,9 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("(^-|-$)", "");
         return base.isBlank() ? "workspace" : base;
+    }
+
+    private OrganizationRole legacyRole(RoleDefinition roleDefinition) {
+        return OrganizationSystemRole.legacyRole(roleDefinition, OrganizationRole.MEMBER);
     }
 }

@@ -44,7 +44,7 @@ def _build_schema_reports(model: object) -> list[dict[str, object]]:
             "kind": "classifier",
             "label": "Predicted class",
             "labels": [str(item) for item in model.classes_],
-            "details": False,
+            "showClassProbabilities": True,
         }]
     if isinstance(model, RegressorMixin):
         return [{"kind": "regressor", "label": "Predicted value"}]

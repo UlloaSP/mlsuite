@@ -27,7 +27,7 @@ async def predict(model_upload: UploadFile, data: str) -> dict[str, object]:
                 "title": "Predicted class",
                 "mapping": [str(item) for item in model.classes_],
                 "probabilities": probabilities.tolist(),
-                "details": False,
+                "showClassProbabilities": True,
             }]
         }
 

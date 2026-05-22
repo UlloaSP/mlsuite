@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,12 @@ import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
+import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
+import dev.ulloasp.mlsuite.role.application.service.LegacyRolePermissionMapper;
+import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
+import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
 import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.team.domain.model.TeamMembership;
@@ -41,6 +48,12 @@ class WorkspaceAuthorizationServiceTest {
     @Mock
     private TeamMembershipRepository teamMembershipRepository;
 
+    @Mock
+    private RoleDefinitionRepository roleDefinitionRepository;
+
+    @Mock
+    private RoleSeedService roleSeedService;
+
     private WorkspaceAuthorizationService service;
 
     @BeforeEach
@@ -48,18 +61,21 @@ class WorkspaceAuthorizationServiceTest {
         service = new WorkspaceAuthorizationService(
                 workspaceAccessService,
                 organizationMembershipRepository,
-                teamMembershipRepository);
+                teamMembershipRepository,
+                roleDefinitionRepository,
+                roleSeedService,
+                new LegacyRolePermissionMapper());
     }
 
     @Test
     void workspacePermissions_GiveSuperadminFullAccess() {
-        when(workspaceAccessService.requireUser(7L)).thenReturn(user(7L));
         when(workspaceAccessService.isSuperadmin(7L)).thenReturn(true);
 
         var permissions = service.workspacePermissions(7L, 41L);
 
         assertTrue(permissions.canDeleteOrganization());
         assertTrue(permissions.canManageInvitations());
+        assertTrue(permissions.canExportPredictions());
         assertTrue(permissions.canManagePlugins());
     }
 
@@ -74,6 +90,7 @@ class WorkspaceAuthorizationServiceTest {
 
         assertTrue(permissions.canViewModels());
         assertTrue(permissions.canCreateModels());
+        assertFalse(permissions.canExportPredictions());
         assertFalse(permissions.canViewMembers());
         assertFalse(permissions.canManageInvitations());
         assertFalse(permissions.canManagePlugins());
@@ -90,6 +107,8 @@ class WorkspaceAuthorizationServiceTest {
 
         assertTrue(permissions.canDeleteOrganization());
         assertTrue(permissions.canTransferOwnership());
+        assertTrue(permissions.canExportPredictions());
+        assertTrue(permissions.canManageReviewLinks());
         assertTrue(permissions.canManagePlugins());
     }
 
@@ -103,6 +122,8 @@ class WorkspaceAuthorizationServiceTest {
         var permissions = service.workspacePermissions(4L, 41L);
 
         assertTrue(permissions.canManageMemberRoles());
+        assertTrue(permissions.canExportPredictions());
+        assertTrue(permissions.canManageReviewLinks());
         assertTrue(permissions.canManagePlugins());
         assertFalse(permissions.canDeleteOrganization());
         assertFalse(permissions.canTransferOwnership());
@@ -120,7 +141,34 @@ class WorkspaceAuthorizationServiceTest {
         assertTrue(permissions.canViewModels());
         assertTrue(permissions.canViewPlugins());
         assertFalse(permissions.canCreateModels());
+        assertFalse(permissions.canExportPredictions());
+        assertFalse(permissions.canManageReviewLinks());
         assertFalse(permissions.canManagePlugins());
+    }
+
+    @Test
+    void reviewLinkChecks_ReturnFalseForUsersOutsideOrganization() {
+        when(workspaceAccessService.requireUser(17L)).thenReturn(user(17L));
+        when(workspaceAccessService.isSuperadmin(17L)).thenReturn(false);
+        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 17L))
+                .thenReturn(Optional.empty());
+
+        assertFalse(service.canPreviewReviewLink(17L, 41L));
+        assertFalse(service.isExternalReviewer(17L, 41L));
+    }
+
+    @Test
+    void externalReviewCheck_UsesRolePermissionsNotSystemRole() {
+        RoleDefinition role = roleDefinition(21L, "Custom Reviewer", null);
+        role.setPermissions(Set.of(PermissionKey.EXTERNAL_REVIEW));
+        OrganizationMembership membership = organizationMembership(OrganizationRole.VIEWER, 18L);
+        membership.setRoleDefinition(role);
+        when(workspaceAccessService.requireUser(18L)).thenReturn(user(18L));
+        when(workspaceAccessService.isSuperadmin(18L)).thenReturn(false);
+        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 18L))
+                .thenReturn(Optional.of(membership));
+
+        assertTrue(service.isExternalReviewer(18L, 41L));
     }
 
     @Test
@@ -139,6 +187,11 @@ class WorkspaceAuthorizationServiceTest {
         when(workspaceAccessService.isSuperadmin(9L)).thenReturn(false);
         when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 9L))
                 .thenReturn(Optional.of(organizationMembership(OrganizationRole.ADMIN, 9L)));
+        when(roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(41L, RoleScope.ORGANIZATION))
+                .thenReturn(java.util.List.of(
+                        roleDefinition(1L, "Admin", "ADMIN"),
+                        roleDefinition(2L, "Member", "MEMBER"),
+                        roleDefinition(3L, "Viewer", "VIEWER")));
 
         MembershipActionsDto ownerActions = service.organizationMemberActions(9L, 41L, organizationMembership(OrganizationRole.OWNER, 10L));
         MembershipActionsDto memberActions = service.organizationMemberActions(9L, 41L, organizationMembership(OrganizationRole.MEMBER, 11L));
@@ -224,5 +277,11 @@ class WorkspaceAuthorizationServiceTest {
         membership.setRole(role);
         membership.setStatus(MembershipStatus.ACTIVE);
         return membership;
+    }
+
+    private RoleDefinition roleDefinition(Long id, String name, String systemKey) {
+        RoleDefinition role = new RoleDefinition(organization(), null, RoleScope.ORGANIZATION, name, name.toLowerCase(), systemKey);
+        role.setId(id);
+        return role;
     }
 }

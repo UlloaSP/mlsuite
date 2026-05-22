@@ -33,6 +33,10 @@ jobs:
             dockerfile: ./backend/Dockerfile
             context: ./backend
             image-name: mlsuite-sklearn-backend
+          - service: ops-agent
+            dockerfile: ./ops-agent/Dockerfile
+            context: ./ops-agent
+            image-name: mlsuite-ops-agent
 
     steps:
       - name: Checkout repository

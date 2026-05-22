@@ -59,5 +59,17 @@ def make_tree() -> DecisionTreeClassifier:
     return DecisionTreeClassifier(random_state=0, max_depth=3).fit(features, labels)
 
 
+def make_tree_with_unused_tail_feature() -> DecisionTreeClassifier:
+    features = pd.DataFrame(
+        {
+            "age": [22, 35, 47, 52, 46, 56],
+            "income": [20_000, 45_000, 80_000, 90_000, 70_000, 120_000],
+            "unused": [7, 7, 7, 7, 7, 7],
+        }
+    )
+    labels = [0, 0, 1, 1, 1, 1]
+    return DecisionTreeClassifier(random_state=0, max_depth=1).fit(features, labels)
+
+
 def make_no_feature_classifier() -> NoFeatureClassifier:
     return NoFeatureClassifier().fit()

@@ -17,6 +17,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
@@ -132,6 +133,15 @@ public class DomainExceptionHandler {
         HttpStatus status = ex.getStatus() > 0 ? HttpStatus.valueOf(ex.getStatus()) : HttpStatus.BAD_GATEWAY;
         return ResponseEntity.status(status)
                 .body(new ErrorDto(Instant.now(), status.value(), ex.getMessage(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorDto> handleResponseStatus(ResponseStatusException ex, HttpServletRequest req) {
+        String message = ex.getReason() == null || ex.getReason().isBlank()
+                ? ex.getStatusCode().toString()
+                : ex.getReason();
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(ErrorDto.of(ex.getStatusCode().value(), message, req.getRequestURI()));
     }
 
     // ---- Validation (@Valid) ----

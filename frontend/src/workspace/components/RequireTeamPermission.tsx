@@ -5,15 +5,15 @@ import type { TeamPermissionsDto } from "../types";
 import { useTeamPermissions } from "../permissions/useWorkspacePermissions";
 
 export function RequireTeamPermission({
-	permission,
-	children,
+  permission,
+  children,
 }: PropsWithChildren<{ permission: keyof TeamPermissionsDto }>) {
-	const { teamId = "" } = useParams();
-	const permissions = useTeamPermissions(Number(teamId));
+  const { teamId = "" } = useParams();
+  const permissions = useTeamPermissions(Number(teamId));
 
-	if (!permissions) {
-		return null;
-	}
+  if (!permissions) {
+    return null;
+  }
 
-	return permissions[permission] ? <>{children}</> : <NotFoundError />;
+  return permissions[permission] ? <>{children}</> : <NotFoundError />;
 }

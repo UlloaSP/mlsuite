@@ -7,15 +7,9 @@ package dev.ulloasp.mlsuite.prediction.application.service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
-import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
-import dev.ulloasp.mlsuite.plugin.application.service.PluginService;
 import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
 import dev.ulloasp.mlsuite.prediction.domain.model.PredictionStatus;
 import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.ExplanationFeedbackRepository;
@@ -24,19 +18,14 @@ import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.OutputF
 @Service
 public class PredictionFeedbackStatusResolver {
 
-    private static final Pattern KIND_PATTERN = Pattern.compile("\\bkind\\s*:\\s*[\"']([^\"']+)[\"']");
-
     private final OutputFeedbackRepository outputFeedbackRepository;
     private final ExplanationFeedbackRepository explanationFeedbackRepository;
-    private final PluginService pluginService;
 
     public PredictionFeedbackStatusResolver(
             OutputFeedbackRepository outputFeedbackRepository,
-            ExplanationFeedbackRepository explanationFeedbackRepository,
-            PluginService pluginService) {
+            ExplanationFeedbackRepository explanationFeedbackRepository) {
         this.outputFeedbackRepository = outputFeedbackRepository;
         this.explanationFeedbackRepository = explanationFeedbackRepository;
-        this.pluginService = pluginService;
     }
 
     public PredictionStatus resolve(Long userId, Prediction prediction) {
@@ -61,36 +50,18 @@ public class PredictionFeedbackStatusResolver {
             return 0;
         }
 
-        Set<String> pluginKindsWithFeedback = pluginService.list(userId).stream()
-                .map(this::detectFeedbackExplanationKind)
-                .flatMap(Optional::stream)
-                .collect(java.util.stream.Collectors.toSet());
-
         return (int) items.stream()
                 .filter((item) -> item instanceof Map<?, ?>)
                 .map((item) -> (Map<?, ?>) item)
-                .filter((item) -> isFeedbackEnabled(item, pluginKindsWithFeedback))
+                .filter(this::isFeedbackEnabled)
                 .count();
     }
 
-    private boolean isFeedbackEnabled(Map<?, ?> explanation, Set<String> feedbackKinds) {
+    private boolean isFeedbackEnabled(Map<?, ?> explanation) {
         Object explicit = explanation.get("feedbackEnabled");
         if (explicit instanceof Boolean enabled) {
             return enabled;
         }
-
-        Object rawKind = explanation.get("kind");
-        return rawKind instanceof String kind && feedbackKinds.contains(kind);
-    }
-
-    private Optional<String> detectFeedbackExplanationKind(PluginDto plugin) {
-        String source = plugin.source();
-        if (!source.contains("defineExplanationKind(") || !source.contains("feedbackQuestionnaire")) {
-            return Optional.empty();
-        }
-
-        Matcher matcher = KIND_PATTERN.matcher(source);
-        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
+        return explanation.get("feedbackQuestionnaire") != null;
     }
 }
-

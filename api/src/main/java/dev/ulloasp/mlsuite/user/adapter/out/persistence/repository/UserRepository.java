@@ -5,11 +5,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.user.adapter.out.persistence.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
@@ -21,5 +25,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmailIgnoreCase(String email);
 
     long countBySystemRoleAndEnabledTrue(SystemRole systemRole);
-}
 
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.enabled = true
+            AND NOT EXISTS (
+                SELECT 1 FROM OrganizationMembership m
+                WHERE m.organization.id = :organizationId
+                AND m.user.id = u.id
+                AND m.status = :status
+            )
+            ORDER BY LOWER(u.fullName) ASC, LOWER(u.email) ASC
+            """)
+    List<User> findEnabledUsersOutsideOrganization(
+            @Param("organizationId") Long organizationId,
+            @Param("status") MembershipStatus status);
+}

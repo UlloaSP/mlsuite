@@ -11,41 +11,43 @@ import { ExplanationQuestionnaireMount } from "./ExplanationQuestionnaireMount";
 import { PredictionExplanationReport } from "./PredictionExplanationReport";
 
 type PredictionExplanationReviewCardProps = {
-	explanation: PredictionExplanationDescriptor;
-	theme: "light" | "dark";
-	draftValues?: Record<string, unknown>;
-	questionnaireRef?: Ref<ExplanationQuestionnaireMountHandle>;
-	onValuesChange?: (values: Record<string, unknown>) => void;
+  explanation: PredictionExplanationDescriptor;
+  theme: "light" | "dark";
+  draftValues?: Record<string, unknown>;
+  questionnaireRef?: Ref<ExplanationQuestionnaireMountHandle>;
+  onValuesChange?: (values: Record<string, unknown>) => void;
 };
 
+const EMPTY_DRAFT_VALUES: Record<string, unknown> = {};
+
 export function PredictionExplanationReviewCard({
-	explanation,
-	theme,
-	draftValues = {},
-	questionnaireRef,
-	onValuesChange,
+  explanation,
+  theme,
+  draftValues = EMPTY_DRAFT_VALUES,
+  questionnaireRef,
+  onValuesChange,
 }: PredictionExplanationReviewCardProps) {
-	return (
-		<AppPanel className="space-y-4">
-			<PredictionExplanationReport
-				label={explanation.label}
-				explanations={explanation.content}
-				error={explanation.error}
-			/>
-			{explanation.feedbackQuestionnaire ? (
-				<ExplanationQuestionnaireMount
-					ref={questionnaireRef}
-					title="Explanation Feedback"
-					schema={explanation.feedbackQuestionnaire}
-					initialValues={draftValues}
-					editable
-					theme={theme}
-					mode="embedded"
-					onValuesChange={onValuesChange}
-				/>
-			) : (
-				<AppCopy>No feedback questionnaire configured for this explanation.</AppCopy>
-			)}
-		</AppPanel>
-	);
+  return (
+    <AppPanel className="space-y-4">
+      <PredictionExplanationReport
+        label={explanation.label}
+        explanations={explanation.content}
+        error={explanation.error}
+      />
+      {explanation.feedbackQuestionnaire ? (
+        <ExplanationQuestionnaireMount
+          ref={questionnaireRef}
+          title="Explanation Feedback"
+          schema={explanation.feedbackQuestionnaire}
+          initialValues={draftValues}
+          editable
+          theme={theme}
+          mode="embedded"
+          onValuesChange={onValuesChange}
+        />
+      ) : (
+        <AppCopy>No feedback questionnaire configured for this explanation.</AppCopy>
+      )}
+    </AppPanel>
+  );
 }

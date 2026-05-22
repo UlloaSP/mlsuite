@@ -4,12 +4,12 @@ import type { WorkspacePermissionKey } from "../types";
 import { useCan, useCurrentUserIsSuperadmin } from "../permissions/useWorkspacePermissions";
 
 export function RequireWorkspacePermission({
-	permission,
-	children,
+  permission,
+  children,
 }: PropsWithChildren<{ permission: WorkspacePermissionKey }>) {
-	return useCan(permission) ? <>{children}</> : <NotFoundError />;
+  return useCan(permission) ? <>{children}</> : <NotFoundError />;
 }
 
 export function RequireSuperadmin({ children }: PropsWithChildren) {
-	return useCurrentUserIsSuperadmin() ? <>{children}</> : <NotFoundError />;
+  return useCurrentUserIsSuperadmin() ? <>{children}</> : <NotFoundError />;
 }

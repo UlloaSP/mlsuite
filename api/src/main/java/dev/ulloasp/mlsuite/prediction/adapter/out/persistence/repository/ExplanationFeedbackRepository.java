@@ -22,10 +22,31 @@ public interface ExplanationFeedbackRepository extends JpaRepository<Explanation
     @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.prediction.id = :predictionId AND ef.prediction.signature.model.organization.id = :organizationId ORDER BY ef.order ASC")
     List<ExplanationFeedback> findByPredictionIdAndOrganizationId(Long predictionId, Long organizationId);
 
+    @Query("""
+            SELECT ef FROM ExplanationFeedback ef
+            WHERE ef.prediction.id = :predictionId
+            AND ef.prediction.signature.model.organization.id = :organizationId
+            AND (
+                NOT EXISTS (
+                    SELECT rlp.id FROM ReviewLinkPrediction rlp
+                    WHERE rlp.prediction.id = ef.prediction.id
+                )
+                OR EXISTS (
+                    SELECT submission.id FROM ReviewLinkPredictionSubmission submission
+                    WHERE submission.reviewLinkPrediction.prediction.id = ef.prediction.id
+                    AND submission.user.id = ef.user.id
+                )
+            )
+            ORDER BY ef.order ASC
+            """)
+    List<ExplanationFeedback> findPublishedByPredictionIdAndOrganizationId(Long predictionId, Long organizationId);
+
     List<ExplanationFeedback> findByPredictionId(Long predictionId);
 
     @Query("SELECT ef FROM ExplanationFeedback ef WHERE ef.prediction.id = :predictionId AND ef.user.id = :userId ORDER BY ef.order ASC")
     List<ExplanationFeedback> findByPredictionIdAndUserId(Long predictionId, Long userId);
+
+    boolean existsByPredictionIdAndUserId(Long predictionId, Long userId);
 
     void deleteByPredictionId(Long predictionId);
 }

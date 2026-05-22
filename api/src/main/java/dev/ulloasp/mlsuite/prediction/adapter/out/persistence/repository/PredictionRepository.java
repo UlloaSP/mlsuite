@@ -24,6 +24,9 @@ public interface PredictionRepository extends JpaRepository<Prediction, Long> {
     @Query("SELECT p FROM Prediction p WHERE p.signature.id = :signatureId AND p.signature.model.organization.id = :organizationId")
     List<Prediction> findBySignatureIdAndOrganizationId(Long signatureId, Long organizationId);
 
+    @Query("SELECT COALESCE(MAX(p.id), 0) FROM Prediction p")
+    Long findLastPredictionId();
+
     Optional<Prediction> findBySignatureIdAndName(Long signatureId, String name);
 
     boolean existsBySignatureIdAndName(Long signatureId, String name);

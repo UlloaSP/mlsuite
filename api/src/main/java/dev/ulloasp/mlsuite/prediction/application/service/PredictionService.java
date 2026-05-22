@@ -23,5 +23,7 @@ public interface PredictionService extends PredictionCatalogUseCase {
         public Prediction getPrediction(Long userId, Long predictionId);
 
         public List<Prediction> getPredictionsBySignatureId(Long userId, Long signatureId);
+
+        public Long getLastPredictionId(Long userId);
 }
 

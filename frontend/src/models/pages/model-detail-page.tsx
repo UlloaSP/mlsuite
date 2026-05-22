@@ -3,17 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { motion } from "motion/react";
 import { useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import {
-	AppBreadcrumbs,
-	AppButton,
-	AppEmptyState,
-	AppPage,
-	AppPageHeader,
-	AppSurface,
-	AppTabs,
+  AppBreadcrumbs,
+  AppButton,
+  AppEmptyState,
+  AppPage,
+  AppPageHeader,
+  AppSurface,
+  AppTabs,
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
@@ -21,111 +20,103 @@ import { useWorkspaceContext } from "../../workspace/hooks";
 import { ModelSignaturesTab } from "../components/ModelSignaturesTab";
 import { ModelSummaryTab } from "../components/ModelSummaryTab";
 import { useGetModels, useGetSignatures } from "../hooks";
-import { findModelById, getModelAlgorithmLabel } from "../utils";
+import { findModelById, formatTimestamp, getModelAlgorithmLabel } from "../utils";
 
 type ModelDetailTab = "summary" | "signatures";
 
 const MODEL_DETAIL_TABS: ModelDetailTab[] = ["summary", "signatures"];
 
 export function ModelDetailPage() {
-	const navigate = useNavigate();
-	const { modelId } = useParams<{ modelId: string }>();
-	const [searchParams, setSearchParams] = useSearchParams();
-	const { data: user, error } = useUser();
-	const { data: workspace } = useWorkspaceContext();
-	const { data: models = [], isLoading } = useGetModels();
-	const model = useMemo(() => findModelById(models, modelId), [models, modelId]);
-	const { data: signatures = [] } = useGetSignatures({ modelId: modelId ?? "" });
+  const navigate = useNavigate();
+  const { modelId } = useParams<{ modelId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: user, error } = useUser();
+  const { data: workspace } = useWorkspaceContext();
+  const { data: models = [], isLoading } = useGetModels();
+  const model = useMemo(() => findModelById(models, modelId), [models, modelId]);
+  const { data: signatures = [] } = useGetSignatures({ modelId: modelId ?? "" });
 
-	const tabParam = searchParams.get("tab");
-	const activeTab: ModelDetailTab = MODEL_DETAIL_TABS.includes(tabParam as ModelDetailTab)
-		? (tabParam as ModelDetailTab)
-		: "signatures";
+  const tabParam = searchParams.get("tab");
+  const activeTab: ModelDetailTab = MODEL_DETAIL_TABS.includes(tabParam as ModelDetailTab)
+    ? (tabParam as ModelDetailTab)
+    : "signatures";
 
-	const setTab = (tab: ModelDetailTab) => {
-		const next = new URLSearchParams(searchParams);
-		next.set("tab", tab);
-		setSearchParams(next, { replace: true });
-	};
+  const setTab = (tab: ModelDetailTab) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tab);
+    setSearchParams(next, { replace: true });
+  };
 
-	if (!user || error) {
-		return <NotFoundError />;
-	}
-	const canEditModels = workspace?.permissions.canEditModels ?? false;
+  if (!user || error) {
+    return <NotFoundError />;
+  }
+  const canEditModels = workspace?.permissions.canEditModels ?? false;
 
-	return (
-		<AppPage>
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.45 }}
-				className="flex flex-1"
-			>
-				<AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
-					<AppBreadcrumbs
-						items={[
-							{ label: "Models", to: "/models" },
-							{ label: model?.name ?? "Model" },
-						]}
-					/>
+  return (
+    <AppPage>
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
+        <AppBreadcrumbs
+          items={[{ label: "Models", to: "/models" }, { label: model?.name ?? "Model" }]}
+        />
 
-					{!model && !isLoading ? (
-						<AppEmptyState
-							title="Model not found"
-							description="The selected model could not be resolved from the current dataset."
-							action={
-								<AppButton type="button" variant="secondary" onClick={() => navigate("/models")}>
-									Back to Models
-								</AppButton>
-							}
-						/>
-					) : model ? (
-						<>
-							<AppPageHeader
-								eyebrow="Model Detail"
-								title={model.name}
-								description={`${getModelAlgorithmLabel(model)} · Created ${new Date(model.createdAt).toLocaleString()}`}
-								aside={canEditModels ? (
-									<AppButton
-										type="button"
-										onClick={() => navigate(`/models/${model.id}/signatures/create`)}
-									>
-										+ New Signature
-									</AppButton>
-								) : null}
-							/>
+        {!model && !isLoading ? (
+          <AppEmptyState
+            title="Model not found"
+            description="The selected model could not be resolved from the current dataset."
+            action={
+              <AppButton type="button" variant="secondary" onClick={() => navigate("/models")}>
+                Back to Models
+              </AppButton>
+            }
+          />
+        ) : model ? (
+          <>
+            <AppPageHeader
+              eyebrow="Model Detail"
+              title={model.name}
+              description={`${getModelAlgorithmLabel(model)} · Created ${formatTimestamp(model.createdAt)}`}
+              aside={
+                canEditModels ? (
+                  <AppButton
+                    type="button"
+                    onClick={() => navigate(`/models/${model.id}/signatures/create`)}
+                  >
+                    + New Schema
+                  </AppButton>
+                ) : null
+              }
+            />
 
-							<AppTabs<ModelDetailTab>
-								items={[
-									{ value: "summary", label: "Resumen" },
-									{ value: "signatures", label: "Signatures" },
-								]}
-								value={activeTab}
-								onChange={setTab}
-							/>
+            <AppTabs<ModelDetailTab>
+              items={[
+                { value: "summary", label: "Resumen" },
+                { value: "signatures", label: "Schemas" },
+              ]}
+              value={activeTab}
+              onChange={setTab}
+            />
 
-							{activeTab === "summary" ? (
-								<ModelSummaryTab
-									model={model}
-									signatures={signatures}
-									onOpenLatestSignature={(signatureId) =>
-										navigate(`/models/${model.id}/signatures/${signatureId}?tab=history`)
-									}
-								/>
-							) : null}
+            {activeTab === "summary" ? (
+              <ModelSummaryTab
+                model={model}
+                signatures={signatures}
+                onOpenLatestSignature={(signatureId) =>
+                  navigate(`/models/${model.id}/signatures/${signatureId}?tab=history`)
+                }
+              />
+            ) : null}
 
-							{activeTab === "signatures" ? (
-								<ModelSignaturesTab
-									signatures={signatures}
-									onOpenSignature={(signatureId) =>
-										navigate(`/models/${model.id}/signatures/${signatureId}?tab=history`)
-									}
-								/>
-							) : null}
-						</>
-					) : null}
-				</AppSurface>
-			</motion.div>
-		</AppPage>
-	);
+            {activeTab === "signatures" ? (
+              <ModelSignaturesTab
+                signatures={signatures}
+                onOpenSignature={(signatureId) =>
+                  navigate(`/models/${model.id}/signatures/${signatureId}?tab=history`)
+                }
+              />
+            ) : null}
+          </>
+        ) : null}
+      </AppSurface>
+    </AppPage>
+  );
 }

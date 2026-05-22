@@ -5,18 +5,19 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { X } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, m as motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
-import {
-	AppCopy,
-	AppIconButton,
-	AppSectionTitle,
-} from "../../app/components";
+import { AppCopy, AppIconButton, AppSectionTitle } from "../../app/components";
 import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { showModalAtom } from "../atoms";
-import { useCreateExplanationFeedbackMutation, useCreatePredictionMutation, useCreateTargetMutation, useGetPredictions } from "../hooks";
+import {
+  useCreateExplanationFeedbackMutation,
+  useCreatePredictionMutation,
+  useCreateTargetMutation,
+  useGetPredictions,
+} from "../hooks";
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
 import type { PredictionExplanationDescriptor } from "../questionnaire-feedback";
 import { hasFeedbackValues } from "../questionnaire-feedback";
@@ -27,213 +28,223 @@ import { PredictionExplanationReviewCard } from "./PredictionExplanationReviewCa
 import { PredictionOverwriteDialog } from "./PredictionOverwriteDialog";
 
 export type CreatePredictionModalProps = {
-	prediction: Record<string, unknown>;
-	inputs: Record<string, unknown>;
-	signatureSchema: unknown;
-	explanationsPending: boolean;
-	customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
-	theme: "light" | "dark";
+  prediction: Record<string, unknown>;
+  inputs: Record<string, unknown>;
+  signatureSchema: unknown;
+  explanationsPending: boolean;
+  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
+  theme: "light" | "dark";
 };
 
 type PredictionOutput = { type?: string; execution_time?: number | string };
+const EMPTY_CUSTOM_EXPLANATION_DEFINITIONS: readonly CatalogExplanationDefinition[] = [];
 
 const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
-	const outputs = value.outputs;
-	if (!Array.isArray(outputs) || outputs.length === 0) {
-		return null;
-	}
+  const outputs = value.outputs;
+  if (!Array.isArray(outputs) || outputs.length === 0) {
+    return null;
+  }
 
-	const first = outputs[0];
-	return typeof first === "object" && first !== null ? (first as PredictionOutput) : null;
+  const first = outputs[0];
+  return typeof first === "object" && first !== null ? (first as PredictionOutput) : null;
 };
 
 export function CreatePredictionModal({
-	prediction,
-	inputs,
-	signatureSchema,
-	explanationsPending,
-	customExplanationDefinitions = [],
-	theme,
+  prediction,
+  inputs,
+  signatureSchema,
+  explanationsPending,
+  customExplanationDefinitions = EMPTY_CUSTOM_EXPLANATION_DEFINITIONS,
+  theme,
 }: CreatePredictionModalProps) {
-	const { signatureId } = useParams<{ signatureId: string }>();
-	const [, setShowModal] = useAtom(showModalAtom);
-	const mutation = useCreatePredictionMutation();
-	const mutationTarget = useCreateTargetMutation();
-	const explanationFeedbackMutation = useCreateExplanationFeedbackMutation();
-	const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
+  const { signatureId } = useParams<{ signatureId: string }>();
+  const [, setShowModal] = useAtom(showModalAtom);
+  const mutation = useCreatePredictionMutation();
+  const mutationTarget = useCreateTargetMutation();
+  const explanationFeedbackMutation = useCreateExplanationFeedbackMutation();
+  const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
 
-	const [predictionName, setPredictionName] = useState("");
-	const [targets, setTargets] = useState<Record<number, unknown>>({});
-	const [draftExplanationValues, setDraftExplanationValues] = useState<Record<string, Record<string, unknown>>>({});
-	const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
-	const questionnaireRefs = useRef<Record<string, ExplanationQuestionnaireMountHandle | null>>({});
-	const explanationEntries = useMemo<PredictionExplanationDescriptor[]>(
-		() =>
-			extractPredictionExplanationEntries(
-				prediction,
-				signatureSchema,
-				customExplanationDefinitions,
-			),
-		[prediction, signatureSchema, customExplanationDefinitions],
-	);
-	const output = asOutput(prediction);
+  const [predictionName, setPredictionName] = useState("");
+  const [targets, setTargets] = useState<Record<number, unknown>>({});
+  const [draftExplanationValues, setDraftExplanationValues] = useState<
+    Record<string, Record<string, unknown>>
+  >({});
+  const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
+  const questionnaireRefs = useRef<Record<string, ExplanationQuestionnaireMountHandle | null>>({});
+  const explanationEntries = useMemo<PredictionExplanationDescriptor[]>(
+    () =>
+      extractPredictionExplanationEntries(
+        prediction,
+        signatureSchema,
+        customExplanationDefinitions,
+      ),
+    [prediction, signatureSchema, customExplanationDefinitions],
+  );
+  const output = asOutput(prediction);
 
-	useEffect(() => {
-		setTargets(
-			Object.fromEntries(
-				derivePredictionTargets(prediction, signatureSchema).map((target) => [target.order, target.value]),
-			),
-		);
-	}, [prediction, signatureSchema]);
+  useEffect(() => {
+    setTargets(
+      Object.fromEntries(
+        derivePredictionTargets(prediction, signatureSchema).map((target) => [
+          target.order,
+          target.value,
+        ]),
+      ),
+    );
+  }, [prediction, signatureSchema]);
 
-	const collectQuestionnaireValues = async () => {
-		const results: Array<{ order: number; value: Record<string, unknown> }> = [];
+  const collectQuestionnaireValues = async () => {
+    const submitted = await Promise.all(
+      explanationEntries.map(async (explanation) => {
+        if (!explanation.feedbackQuestionnaire) {
+          return null;
+        }
+        const value = await questionnaireRefs.current[explanation.explanationId]?.submit();
+        return value && hasFeedbackValues(value) ? { order: explanation.order, value } : null;
+      }),
+    );
+    return submitted.filter(
+      (item): item is { order: number; value: Record<string, unknown> } => item !== null,
+    );
+  };
 
-		for (const explanation of explanationEntries) {
-			if (!explanation.feedbackQuestionnaire) {
-				continue;
-			}
+  const savePrediction = async (overwrite: boolean) => {
+    // react-doctor-disable-next-line react-doctor/async-parallel -- Create must finish before dependent target and feedback writes can use the prediction id.
+    const created = await mutation.mutateAsync({
+      signatureId: signatureId!,
+      name: predictionName.trim(),
+      overwrite,
+      inputs,
+      prediction,
+    });
 
-			const handle = questionnaireRefs.current[explanation.explanationId];
-			const value = await handle?.submit();
-			if (value && hasFeedbackValues(value)) {
-				results.push({ order: explanation.order, value });
-			}
-		}
+    await Promise.all(
+      Object.entries(targets).map(([key, value]) =>
+        mutationTarget.mutateAsync({
+          predictionId: created.id,
+          order: Number(key),
+          value,
+        }),
+      ),
+    );
 
-		return results;
-	};
+    const feedbackValues = await collectQuestionnaireValues();
+    await Promise.all(
+      feedbackValues.map((item) =>
+        explanationFeedbackMutation.mutateAsync({
+          predictionId: created.id,
+          order: item.order,
+          value: item.value,
+        }),
+      ),
+    );
 
-	const savePrediction = async (overwrite: boolean) => {
-		const created = await mutation.mutateAsync({
-			signatureId: signatureId!,
-			name: predictionName.trim(),
-			overwrite,
-			inputs,
-			prediction,
-		});
+    setShowModal(false);
+    toast.success("Prediction saved");
+  };
 
-		await Promise.all(
-			Object.entries(targets).map(([key, value]) =>
-				mutationTarget.mutateAsync({
-					predictionId: created.id,
-					order: Number(key),
-					value,
-				}),
-			),
-		);
+  const handleSave = async () => {
+    try {
+      const normalizedName = predictionName.trim();
+      if (predictions.some((item) => item.name === normalizedName)) {
+        setShowOverwriteDialog(true);
+        return;
+      }
 
-		const feedbackValues = await collectQuestionnaireValues();
-		await Promise.all(
-			feedbackValues.map((item) =>
-				explanationFeedbackMutation.mutateAsync({
-					predictionId: created.id,
-					order: item.order,
-					value: item.value,
-				}),
-			),
-		);
+      await savePrediction(false);
+    } catch (error: unknown) {
+      toast.error("Prediction could not be saved", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
 
-		setShowModal(false);
-		toast.success("Prediction saved");
-	};
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-x-0 bottom-0 top-[88px] z-40 flex bg-black/40 backdrop-blur-sm"
+        onClick={() => setShowModal(false)}
+      >
+        <motion.div
+          initial={{ x: "100%", opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: "100%", opacity: 0 }}
+          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+          className="relative z-50 m-6 flex max-h-[calc(100dvh-136px)] flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">
+            <div className="space-y-2">
+              <AppCopy className="text-xs uppercase tracking-[0.22em]">Prediction Review</AppCopy>
+              <AppSectionTitle className="text-4xl">Create New Prediction</AppSectionTitle>
+            </div>
+            <AppIconButton
+              type="button"
+              aria-label="Close modal"
+              onClick={() => setShowModal(false)}
+            >
+              <X size={24} />
+            </AppIconButton>
+          </div>
 
-	const handleSave = async () => {
-		try {
-			const normalizedName = predictionName.trim();
-			if (predictions.some((item) => item.name === normalizedName)) {
-				setShowOverwriteDialog(true);
-				return;
-			}
+          <div className="grid flex-1 gap-8 overflow-auto p-8 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(28rem,1.2fr)]">
+            <CreatePredictionModalSummary
+              outputType={output?.type}
+              executionTime={output?.execution_time}
+              inputs={inputs}
+              targets={targets}
+              signatureSchema={signatureSchema}
+              predictionName={predictionName}
+              onPredictionNameChange={setPredictionName}
+              onCancel={() => setShowModal(false)}
+              onSave={() => void handleSave()}
+              isSaveDisabled={
+                !predictionName.trim() ||
+                explanationsPending ||
+                mutation.isPending ||
+                mutationTarget.isPending ||
+                explanationFeedbackMutation.isPending
+              }
+            />
 
-			await savePrediction(false);
-		} catch (error: unknown) {
-			toast.error("Prediction could not be saved", {
-				description: error instanceof Error ? error.message : String(error),
-			});
-		}
-	};
+            <div className="space-y-6">
+              {explanationsPending ? (
+                <AppCopy>Waiting for explanation plugin result…</AppCopy>
+              ) : null}
+              {explanationEntries.map((explanation) => (
+                <PredictionExplanationReviewCard
+                  key={explanation.explanationId}
+                  explanation={explanation}
+                  theme={theme}
+                  draftValues={draftExplanationValues[explanation.explanationId] ?? {}}
+                  questionnaireRef={(handle) => {
+                    questionnaireRefs.current[explanation.explanationId] = handle;
+                  }}
+                  onValuesChange={(values) =>
+                    setDraftExplanationValues((prev) => ({
+                      ...prev,
+                      [explanation.explanationId]: { ...values },
+                    }))
+                  }
+                />
+              ))}
+            </div>
+          </div>
 
-	return (
-		<AnimatePresence>
-			<motion.div
-				initial={{ opacity: 0 }}
-				animate={{ opacity: 1 }}
-				exit={{ opacity: 0 }}
-				className="fixed inset-0 z-40 flex bg-black/40 backdrop-blur-sm"
-				onClick={() => setShowModal(false)}
-			>
-				<motion.div
-					initial={{ x: "100%", opacity: 0 }}
-					animate={{ x: 0, opacity: 1 }}
-					exit={{ x: "100%", opacity: 0 }}
-					transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-					className="relative z-50 m-8 flex flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
-					onClick={(event) => event.stopPropagation()}
-				>
-					<div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">
-						<div className="space-y-2">
-							<AppCopy className="text-xs uppercase tracking-[0.22em]">Prediction Review</AppCopy>
-							<AppSectionTitle className="text-4xl">Create New Prediction</AppSectionTitle>
-						</div>
-						<AppIconButton type="button" aria-label="Close modal" onClick={() => setShowModal(false)}>
-							<X size={24} />
-						</AppIconButton>
-					</div>
-
-					<div className="grid flex-1 gap-8 overflow-auto p-8 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(28rem,1.2fr)]">
-						<CreatePredictionModalSummary
-							outputType={output?.type}
-							executionTime={output?.execution_time}
-							inputs={inputs}
-							targets={targets}
-							signatureSchema={signatureSchema}
-							predictionName={predictionName}
-							onPredictionNameChange={setPredictionName}
-							onCancel={() => setShowModal(false)}
-							onSave={() => void handleSave()}
-							isSaveDisabled={
-								!predictionName.trim() ||
-								explanationsPending ||
-								mutation.isPending ||
-								mutationTarget.isPending ||
-								explanationFeedbackMutation.isPending
-							}
-						/>
-
-						<div className="space-y-6">
-							{explanationsPending ? <AppCopy>Waiting for explanation plugin result...</AppCopy> : null}
-							{explanationEntries.map((explanation) => (
-								<PredictionExplanationReviewCard
-									key={explanation.explanationId}
-									explanation={explanation}
-									theme={theme}
-									draftValues={draftExplanationValues[explanation.explanationId] ?? {}}
-									questionnaireRef={(handle) => {
-										questionnaireRefs.current[explanation.explanationId] = handle;
-									}}
-									onValuesChange={(values) =>
-										setDraftExplanationValues((prev) => ({
-											...prev,
-											[explanation.explanationId]: { ...values },
-										}))
-									}
-								/>
-							))}
-						</div>
-					</div>
-
-					<PredictionOverwriteDialog
-						open={showOverwriteDialog}
-						predictionName={predictionName.trim()}
-						onCancel={() => setShowOverwriteDialog(false)}
-						onConfirm={async () => {
-							setShowOverwriteDialog(false);
-							await savePrediction(true);
-						}}
-					/>
-				</motion.div>
-			</motion.div>
-		</AnimatePresence>
-	);
+          <PredictionOverwriteDialog
+            open={showOverwriteDialog}
+            predictionName={predictionName.trim()}
+            onCancel={() => setShowOverwriteDialog(false)}
+            onConfirm={async () => {
+              setShowOverwriteDialog(false);
+              await savePrediction(true);
+            }}
+          />
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
 }

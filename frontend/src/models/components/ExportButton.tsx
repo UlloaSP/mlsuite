@@ -5,327 +5,206 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQueries } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
-import { motion } from "motion/react";
+import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../app/components";
-import { toMlformSchema, validateMlformSchema } from "../../app/utils/mlform";
-import { getActiveCustomExplanationDefinitions, type CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
+import {
+  getActiveCustomExplanationDefinitions,
+  type CatalogExplanationDefinition,
+} from "../../app/utils/mlform/custom-explanation";
+import { useWorkspaceContext } from "../../workspace/hooks";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService";
-import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import { buildPredictionExportData } from "../buildPredictionExport";
 import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, GET_TARGETS_QUERY_KEY } from "../hooks";
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
-import { getOutputFeedbackFieldIds } from "../output-feedback-questionnaire";
-import { getEffectiveFeedbackValues, getQuestionnaireFieldIds } from "../questionnaire-feedback";
-import { buildTargetFeedbackValue, getSchemaAwareTargetValue, getTargetReportKey } from "../target-utils";
+import { ExportReviewModal } from "./ExportReviewModal";
+import { csvEscape } from "./export-csv-utils";
+import { selectedExportData, type ExportReviewSelection } from "./export-review-selection";
 
 export type ExportButtonProps = {
-	predictions: PredictionDto[];
-	delimiter?: string;
-	signatureSchema?: unknown;
+  predictions: PredictionDto[];
+  delimiter?: string;
+  signatureSchema?: unknown;
 };
 
-const isPlainObject = (value: unknown) =>
-	value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
+export function ExportButton({ predictions, delimiter = ",", signatureSchema }: ExportButtonProps) {
+  const { data: workspace } = useWorkspaceContext();
+  const canExportPredictions = Boolean(workspace?.permissions.canExportPredictions);
+  const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
+    readonly CatalogExplanationDefinition[]
+  >([]);
+  const [modalOpen, setModalOpen] = useState(false);
 
-const toRecord = (value: Record<string, unknown>): Record<string, unknown> =>
-	value instanceof Map ? Object.fromEntries(value.entries()) : (value ?? {});
+  useEffect(() => {
+    let active = true;
+    void getActiveCustomExplanationDefinitions()
+      .then((definitions) => {
+        if (active) setCustomExplanationDefinitions(definitions);
+      })
+      .catch(() => {
+        if (active) setCustomExplanationDefinitions([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-const flatten = (obj: unknown, prefix = ""): Record<string, unknown> => {
-	const out: Record<string, unknown> = {};
-	if (Array.isArray(obj)) {
-		obj.forEach((value, index) =>
-			Object.assign(out, flatten(value, prefix ? `${prefix}.${index}` : String(index))));
-	} else if (isPlainObject(obj)) {
-		Object.entries(obj as Record<string, unknown>).forEach(([key, value]) =>
-			Object.assign(out, flatten(value, prefix ? `${prefix}.${key}` : key)));
-	} else {
-		out[prefix || "value"] = obj;
-	}
-	return out;
-};
+  const meta = useMemo(() => {
+    const uuid =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const ts = new Date().toISOString();
+    const firstName = predictions?.[0]?.name ?? "predictions";
+    return { requestId: uuid, timestamp: ts, modelName: firstName };
+  }, [predictions]);
 
-const toCell = (value: unknown): string => {
-	if (value === null || value === undefined) return "";
-	if (value instanceof Date) return value.toISOString();
-	if (typeof value === "object") return JSON.stringify(value);
-	return String(value);
-};
+  const file = `${(meta.modelName || "predictions")
+    .replace(/[^a-z0-9\-_.]+/gi, "_")
+    .replace(/_{2,}/g, "_")
+    .slice(0, 80)}_${meta.timestamp.slice(0, 10)}.csv`;
 
-const csvEscape = (value: string, separator: string) => {
-	let next = value;
-	if (next.includes('"')) next = next.replace(/"/g, '""');
-	if (next.includes(separator) || next.includes("\n") || next.includes("\r")) next = `"${next}"`;
-	return next;
-};
+  const targetsQueries = useQueries({
+    queries: (predictions ?? []).map((prediction) => ({
+      queryKey: GET_TARGETS_QUERY_KEY({ predictionId: prediction.id }),
+      queryFn: async () => {
+        const data = await modelApi.getTargets({ predictionId: prediction.id || "" });
+        return Array.isArray(data) ? data : [];
+      },
+      enabled: canExportPredictions && Boolean(prediction?.id),
+      placeholderData: [] as TargetDto[],
+      staleTime: 5 * 60_000,
+      gcTime: 10 * 60_000,
+    })),
+  });
+  const explanationFeedbackQueries = useQueries({
+    queries: (predictions ?? []).map((prediction) => ({
+      queryKey: GET_EXPLANATION_FEEDBACK_QUERY_KEY({ predictionId: prediction.id }),
+      queryFn: async () => {
+        const data = await modelApi.getExplanationFeedback({ predictionId: prediction.id || "" });
+        return Array.isArray(data) ? data : [];
+      },
+      enabled: canExportPredictions && Boolean(prediction?.id),
+      placeholderData: [] as modelApi.ExplanationFeedbackDto[],
+      staleTime: 5 * 60_000,
+      gcTime: 10 * 60_000,
+    })),
+  });
+  const outputFeedbackQueries = useQueries({
+    queries: (predictions ?? []).map((prediction) => ({
+      queryKey: GET_OUTPUT_FEEDBACK_QUERY_KEY({ predictionId: prediction.id }),
+      queryFn: async () => {
+        const data = await modelApi.getOutputFeedback({ predictionId: prediction.id || "" });
+        return Array.isArray(data) ? data : [];
+      },
+      enabled: canExportPredictions && Boolean(prediction?.id),
+      placeholderData: [] as OutputFeedbackDto[],
+      staleTime: 5 * 60_000,
+      gcTime: 10 * 60_000,
+    })),
+  });
 
-const getExplanationHeaders = (
-	signatureSchema: unknown,
-	customExplanationDefinitions: readonly CatalogExplanationDefinition[],
-): string[] => {
-	try {
-		const schema = toMlformSchema(signatureSchema, {
-			customExplanationDefinitions,
-		});
-		const definitionMap = new Map(
-			customExplanationDefinitions.map((definition) => [definition.kind, definition]),
-		);
+  const targetsByPrediction = targetsQueries.map((query) => (query.data ?? []) as TargetDto[]);
+  const outputFeedbackByPrediction = outputFeedbackQueries.map(
+    (query) => (query.data ?? []) as OutputFeedbackDto[],
+  );
+  const explanationFeedbackByPrediction = explanationFeedbackQueries.map(
+    (query) => (query.data ?? []) as modelApi.ExplanationFeedbackDto[],
+  );
+  const { headers, rows } = useMemo(() => {
+    return buildPredictionExportData({
+      predictions,
+      targetsByPrediction,
+      outputFeedbackByPrediction,
+      explanationFeedbackByPrediction,
+      signatureSchema,
+      customExplanationDefinitions,
+    });
+  }, [
+    customExplanationDefinitions,
+    explanationFeedbackByPrediction,
+    outputFeedbackByPrediction,
+    predictions,
+    signatureSchema,
+    targetsByPrediction,
+  ]);
 
-		return (schema.explanations ?? []).flatMap((explanation) => {
-			const questionnaire = definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire;
-			return [
-				`explanation.${explanation.id}.content`,
-				...(questionnaire
-					? getQuestionnaireFieldIds(questionnaire).map(
-						(fieldId) => `explanation.${explanation.id}.${fieldId}`,
-					)
-					: []),
-			];
-		});
-	} catch {
-		return [];
-	}
-};
+  const hasData = rows.length > 0 && headers.length > 0;
 
-export function ExportButton({
-	predictions,
-	delimiter = ",",
-	signatureSchema,
-}: ExportButtonProps) {
-	const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
-		readonly CatalogExplanationDefinition[]
-	>([]);
+  if (!canExportPredictions) {
+    return null;
+  }
 
-	useEffect(() => {
-		let active = true;
-		void getActiveCustomExplanationDefinitions()
-			.then((definitions) => {
-				if (active) setCustomExplanationDefinitions(definitions);
-			})
-			.catch(() => {
-				if (active) setCustomExplanationDefinitions([]);
-			});
-		return () => {
-			active = false;
-		};
-	}, []);
+  const downloadCsv = (exportHeaders: string[], exportRows: string[][]) => {
+    if (exportRows.length === 0 || exportHeaders.length === 0) {
+      return;
+    }
 
-	const meta = useMemo(() => {
-		const uuid =
-			typeof crypto !== "undefined" && "randomUUID" in crypto
-				? crypto.randomUUID()
-				: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-		const ts = new Date().toISOString();
-		const firstName = predictions?.[0]?.name ?? "predictions";
-		return { requestId: uuid, timestamp: ts, modelName: firstName };
-	}, [predictions]);
+    const content = `\uFEFF${exportHeaders.map((header) => csvEscape(header, delimiter)).join(delimiter)}\n${exportRows
+      .map((row) => row.map((cell) => csvEscape(cell, delimiter)).join(delimiter))
+      .join("\n")}`;
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
 
-	const file = `${(meta.modelName || "predictions")
-		.replace(/[^a-z0-9\-_.]+/gi, "_")
-		.replace(/_{2,}/g, "_")
-		.slice(0, 80)}_${meta.timestamp.slice(0, 10)}.csv`;
+  const handleExport = (selection: ExportReviewSelection) => {
+    const selected = selectedExportData(
+      selection,
+      predictions,
+      targetsByPrediction,
+      outputFeedbackByPrediction,
+      explanationFeedbackByPrediction,
+    );
+    const next = buildPredictionExportData({
+      predictions: selected.predictions,
+      targetsByPrediction: selected.targetsByPrediction as TargetDto[][],
+      outputFeedbackByPrediction: selected.outputFeedbackByPrediction,
+      explanationFeedbackByPrediction: selected.explanationFeedbackByPrediction,
+      signatureSchema,
+      customExplanationDefinitions,
+    });
+    downloadCsv(next.headers, next.rows);
+    setModalOpen(false);
+  };
 
-	const targetsQueries = useQueries({
-		queries: (predictions ?? []).map((prediction) => ({
-			queryKey: GET_TARGETS_QUERY_KEY({ predictionId: prediction.id }),
-			queryFn: async () => {
-				const data = await modelApi.getTargets({ predictionId: prediction.id || "" });
-				return Array.isArray(data) ? data : [];
-			},
-			enabled: Boolean(prediction?.id),
-			placeholderData: [] as TargetDto[],
-			staleTime: 5 * 60_000,
-			gcTime: 10 * 60_000,
-		})),
-	});
-	const explanationFeedbackQueries = useQueries({
-		queries: (predictions ?? []).map((prediction) => ({
-			queryKey: GET_EXPLANATION_FEEDBACK_QUERY_KEY({ predictionId: prediction.id }),
-			queryFn: async () => {
-				const data = await modelApi.getExplanationFeedback({ predictionId: prediction.id || "" });
-				return Array.isArray(data) ? data : [];
-			},
-			enabled: Boolean(prediction?.id),
-			placeholderData: [] as modelApi.ExplanationFeedbackDto[],
-			staleTime: 5 * 60_000,
-			gcTime: 10 * 60_000,
-		})),
-	});
-	const outputFeedbackQueries = useQueries({
-		queries: (predictions ?? []).map((prediction) => ({
-			queryKey: GET_OUTPUT_FEEDBACK_QUERY_KEY({ predictionId: prediction.id }),
-			queryFn: async () => {
-				const data = await modelApi.getOutputFeedback({ predictionId: prediction.id || "" });
-				return Array.isArray(data) ? data : [];
-			},
-			enabled: Boolean(prediction?.id),
-			placeholderData: [] as OutputFeedbackDto[],
-			staleTime: 5 * 60_000,
-			gcTime: 10 * 60_000,
-		})),
-	});
-
-	const { headers, rows } = useMemo(() => {
-		if (!predictions.length) {
-			return { headers: [] as string[], rows: [] as string[][] };
-		}
-
-		const inputKeys = Object.keys(flatten(toRecord(predictions[0].inputs))).sort();
-		const schemaResult = signatureSchema
-			? validateMlformSchema(signatureSchema, { customExplanationDefinitions })
-			: null;
-		const schema = schemaResult?.success ? schemaResult.data : null;
-		const targetHeaders = (schema?.reports ?? []).flatMap((_, index) => {
-			const targetKey = getTargetReportKey(signatureSchema, index);
-			return [
-				`output.${targetKey}.predicted`,
-				`output.${targetKey}.feedback`,
-			];
-		});
-		const explanationHeaders = signatureSchema
-			? getExplanationHeaders(signatureSchema, customExplanationDefinitions)
-			: [];
-		const nextHeaders = ["prediction_id", "reviewer", ...inputKeys, ...targetHeaders, ...explanationHeaders];
-
-		const nextRows = predictions.flatMap((prediction, index) => {
-			const targets = ((targetsQueries[index]?.data ?? []) as TargetDto[]).sort(
-				(left, right) => Number(left.order) - Number(right.order),
-			);
-			const inputs = flatten(toRecord(prediction.inputs));
-			const targetMap = new Map(targets.map((target) => [target.order, target]));
-			const allOutputFeedback = (outputFeedbackQueries[index]?.data ?? []) as OutputFeedbackDto[];
-			const allExplanationFeedback = (explanationFeedbackQueries[index]?.data ?? []) as modelApi.ExplanationFeedbackDto[];
-
-			const reviewerIds = new Set<number>();
-			const reviewerEmails = new Map<number, string>();
-			for (const fb of allOutputFeedback) {
-				reviewerIds.add(fb.userId);
-				reviewerEmails.set(fb.userId, fb.userEmail);
-			}
-			for (const fb of allExplanationFeedback) {
-				reviewerIds.add(fb.userId);
-				reviewerEmails.set(fb.userId, fb.userEmail);
-			}
-
-			const buildRow = (reviewerEmail: string, outputFeedbackForUser: OutputFeedbackDto[], explanationFeedbackForUser: modelApi.ExplanationFeedbackDto[]) => {
-				const outputFeedbackByOrder = new Map(outputFeedbackForUser.map((item) => [item.order, item]));
-				const targetValues = (schema?.reports ?? []).flatMap((_, order) => {
-					const target = targetMap.get(order);
-					const reportConfig = schema?.reports?.[order];
-					const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;
-					const fieldIds = getOutputFeedbackFieldIds(kind);
-					const outputFeedback = outputFeedbackByOrder.get(order);
-					const feedbackRecord =
-						outputFeedback?.value &&
-							typeof outputFeedback.value === "object" &&
-							!Array.isArray(outputFeedback.value)
-							? outputFeedback.value as Record<string, unknown>
-							: null;
-					const assessmentRaw = feedbackRecord?.[fieldIds.assessment] ?? "";
-					const userRealValue = assessmentRaw !== ""
-						? buildTargetFeedbackValue(String(assessmentRaw), signatureSchema, order)
-						: "";
-					return [
-						toCell(target ? getSchemaAwareTargetValue(target.value, signatureSchema, order, prediction.prediction) : ""),
-						toCell(userRealValue !== "" ? getSchemaAwareTargetValue(userRealValue, signatureSchema, order, prediction.prediction) : ""),
-					];
-				});
-
-				const explanationEntries = extractPredictionExplanationEntries(
-					prediction.prediction,
-					signatureSchema,
-					customExplanationDefinitions,
-				);
-				const feedbackByOrder = new Map(explanationFeedbackForUser.map((item) => [item.order, item]));
-				const explanationValues = explanationEntries.flatMap((explanation) => {
-					const cells = [toCell(explanation.content.join("\n\n"))];
-					if (!explanation.feedbackQuestionnaire) {
-						return cells;
-					}
-					const feedbackValues = getEffectiveFeedbackValues(
-						feedbackByOrder.get(explanation.order),
-						explanation.feedbackQuestionnaire,
-					);
-					return [
-						...cells,
-						...getQuestionnaireFieldIds(explanation.feedbackQuestionnaire).map((fieldId) =>
-							toCell(feedbackValues[fieldId])),
-					];
-				});
-
-				return [
-					toCell(prediction.id),
-					reviewerEmail,
-					...inputKeys.map((key) => toCell(inputs[key])),
-					...targetValues,
-					...explanationValues,
-				];
-			};
-
-			if (reviewerIds.size === 0) {
-				return [buildRow("", [], [])];
-			}
-
-			return [...reviewerIds].map((userId) =>
-				buildRow(
-					reviewerEmails.get(userId) ?? "",
-					allOutputFeedback.filter((fb) => fb.userId === userId),
-					allExplanationFeedback.filter((fb) => fb.userId === userId),
-				),
-			);
-		});
-
-		return { headers: nextHeaders, rows: nextRows };
-	}, [
-		customExplanationDefinitions,
-		explanationFeedbackQueries,
-		outputFeedbackQueries,
-		predictions,
-		signatureSchema,
-		targetsQueries,
-	]);
-
-	const hasData = rows.length > 0 && headers.length > 0;
-
-	const handleExport = () => {
-		if (!hasData) {
-			return;
-		}
-
-		const content = `\uFEFF${headers.map((header) => csvEscape(header, delimiter)).join(delimiter)}\n${rows
-			.map((row) => row.map((cell) => csvEscape(cell, delimiter)).join(delimiter))
-			.join("\n")}`;
-		const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = file;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		setTimeout(() => URL.revokeObjectURL(url), 0);
-	};
-
-	return (
-		<motion.button
-			type="button"
-			aria-label="Export predictions to CSV"
-			onClick={handleExport}
-			disabled={!hasData}
-			initial={false}
-			whileHover={{ scale: hasData ? 1.015 : 1, y: hasData ? -1 : 0 }}
-			whileTap={{ scale: hasData ? 0.985 : 1, y: 0 }}
-			transition={{ type: "spring", stiffness: 420, damping: 32 }}
-			className={cx(
-				"group inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3",
-				"text-sm font-medium outline-none transition-shadow",
-				"border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-card)]",
-				"hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)] hover:shadow-[var(--shadow-hover)]",
-				!hasData && "cursor-not-allowed opacity-60 hover:shadow-none",
-			)}
-		>
-			<FileDown size={18} className="opacity-90 group-hover:opacity-100" />
-			<span>Export to CSV</span>
-		</motion.button>
-	);
+  return (
+    <>
+      <motion.button
+        type="button"
+        aria-label="Export predictions to CSV"
+        onClick={() => setModalOpen(true)}
+        disabled={!hasData}
+        initial={false}
+        whileHover={{ scale: hasData ? 1.015 : 1, y: hasData ? -1 : 0 }}
+        whileTap={{ scale: hasData ? 0.985 : 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 420, damping: 32 }}
+        className={cx(
+          "group inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3",
+          "text-sm font-medium outline-none transition-shadow",
+          "border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-card)]",
+          "hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)] hover:shadow-[var(--shadow-hover)]",
+          !hasData && "cursor-not-allowed opacity-60 hover:shadow-none",
+        )}
+      >
+        <FileDown size={18} className="opacity-90 group-hover:opacity-100" />
+        <span>Export to CSV</span>
+      </motion.button>
+      <ExportReviewModal
+        open={modalOpen}
+        predictions={predictions}
+        outputFeedbackByPrediction={outputFeedbackByPrediction}
+        explanationFeedbackByPrediction={explanationFeedbackByPrediction}
+        onClose={() => setModalOpen(false)}
+        onExport={handleExport}
+      />
+    </>
+  );
 }

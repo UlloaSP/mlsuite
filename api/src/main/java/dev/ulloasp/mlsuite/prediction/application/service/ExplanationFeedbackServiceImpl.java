@@ -93,7 +93,7 @@ public class ExplanationFeedbackServiceImpl implements ExplanationFeedbackServic
             throw new PredictionDoesNotExistsException(predictionId, user.getUsername());
         }
 
-        return explanationFeedbackRepository.findByPredictionIdAndOrganizationId(predictionId, organizationId);
+        return explanationFeedbackRepository.findPublishedByPredictionIdAndOrganizationId(predictionId, organizationId);
     }
 }
 

@@ -4,32 +4,28 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 export { AppHeader } from "./AppHeader";
-export { MLSuiteMark } from "./MLSuiteMark";
-export { PageTransition } from "./PageTransition";
+export { AppCombobox, type AppComboboxItem } from "./AppCombobox";
 export { Sidebar } from "./Sidebar";
-export { SidebarNavigation } from "./SidebarNavigation";
-export { SidebarSection } from "./SidebarSection";
-export { SidebarTile } from "./SidebarTile";
 export {
-	AppBadge,
-	AppBreadcrumbs,
-	AppButton,
-	AppCopy,
-	AppEmptyState,
-	AppEyebrow,
-	AppIconButton,
-	AppPage,
-	AppPageHeader,
-	AppPanel,
-	AppSectionTitle,
-	AppSelect,
-	AppSurface,
-	AppTabs,
-	AppTextArea,
-	AppTextField,
-	AppTitle,
-	AppToolbar,
-	cx,
-	FOCUS_RING,
+  AppBreadcrumbs,
+  AppCopy,
+  AppEmptyState,
+  AppEyebrow,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSectionTitle,
+  AppSurface,
+  AppTabs,
+  AppTitle,
+  AppToolbar,
+  cx,
 } from "./ui";
-
+export {
+  AppBadge,
+  AppButton,
+  AppIconButton,
+  AppSelect,
+  AppTextArea,
+  AppTextField,
+} from "./ui-controls";

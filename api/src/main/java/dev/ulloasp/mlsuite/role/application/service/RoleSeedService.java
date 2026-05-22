@@ -16,6 +16,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
+import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
@@ -86,7 +87,42 @@ public class RoleSeedService implements ApplicationRunner {
 
     public RoleDefinition orgRole(Organization org, OrganizationRole role) {
         return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.name())
+                .map(definition -> ensureSystemRolePermissions(definition, mapper.organization(role)))
                 .orElseGet(() -> saveRole(new RoleDefinition(org, null, RoleScope.ORGANIZATION, label(role.name()), role.name().toLowerCase(), role.name()), mapper.organization(role)));
+    }
+
+    private RoleDefinition ensureSystemRolePermissions(RoleDefinition role, Set<PermissionKey> permissions) {
+        if (!role.getPermissions().containsAll(permissions)) {
+            role.getPermissions().addAll(permissions);
+            return roleDefinitionRepository.save(role);
+        }
+        return role;
+    }
+
+    public RoleDefinition externalReviewerRole(Organization org) {
+        OrganizationSystemRole role = OrganizationSystemRole.EXTERNAL_REVIEWER;
+        return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.systemKey())
+                .map(this::ensureExternalReviewPermission)
+                .orElseGet(() -> {
+                    RoleDefinition definition = new RoleDefinition(
+                        org,
+                        null,
+                        RoleScope.ORGANIZATION,
+                        role.label(),
+                        role.slug(),
+                        role.systemKey());
+                    definition.setLocked(false);
+                    return saveRole(definition, Set.of(PermissionKey.EXTERNAL_REVIEW));
+                });
+    }
+
+    private RoleDefinition ensureExternalReviewPermission(RoleDefinition role) {
+        role.setLocked(false);
+        if (!role.getPermissions().contains(PermissionKey.EXTERNAL_REVIEW)) {
+            role.getPermissions().add(PermissionKey.EXTERNAL_REVIEW);
+            return roleDefinitionRepository.save(role);
+        }
+        return role;
     }
 
     public RoleDefinition teamRole(Team team, TeamRole role) {
@@ -104,6 +140,7 @@ public class RoleSeedService implements ApplicationRunner {
         template("full-engineer", "Full Access Engineer", "Engineering", mapper.organization(OrganizationRole.MEMBER));
         template("read-only", "Read-Only Analyst", "Analytics", mapper.organization(OrganizationRole.VIEWER));
         template("inference", "Inference Operator", "Operations", Set.of(PermissionKey.VIEW_MODELS, PermissionKey.RUN_PREDICTIONS));
+        template("external-reviewer", "External Reviewer", "Review", Set.of(PermissionKey.EXTERNAL_REVIEW));
         template("team-manager", "Team Manager", "Management", mapper.organization(OrganizationRole.ADMIN));
         template("data-scientist", "Data Scientist", "ML", mapper.organization(OrganizationRole.MEMBER));
     }
