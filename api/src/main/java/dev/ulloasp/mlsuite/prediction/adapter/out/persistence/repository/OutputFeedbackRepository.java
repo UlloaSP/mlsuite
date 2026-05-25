@@ -46,6 +46,9 @@ public interface OutputFeedbackRepository extends JpaRepository<OutputFeedback, 
     @Query("SELECT of FROM OutputFeedback of WHERE of.prediction.id = :predictionId AND of.user.id = :userId ORDER BY of.order ASC")
     List<OutputFeedback> findByPredictionIdAndUserId(Long predictionId, Long userId);
 
+    @Query("SELECT of FROM OutputFeedback of WHERE of.prediction.id = :predictionId AND of.user.id = :userId AND of.order = :order")
+    Optional<OutputFeedback> findByPredictionIdAndUserIdAndOrder(Long predictionId, Long userId, int order);
+
     boolean existsByPredictionIdAndUserId(Long predictionId, Long userId);
 
     void deleteByPredictionId(Long predictionId);

@@ -89,7 +89,7 @@ export function ExportReviewPredictionRow({
                     </p>
                     <p className="text-xs text-[var(--text-secondary)]">
                       {reviewer.outputFeedback.length} output ·{" "}
-                      {reviewer.explanationFeedback.length} explanation
+                      {reviewer.explanationFeedback.length} report
                     </p>
                   </div>
                   <div className="mt-2 space-y-1 pl-8 text-xs text-[var(--text-secondary)]">
@@ -100,7 +100,7 @@ export function ExportReviewPredictionRow({
                     ))}
                     {reviewer.explanationFeedback.map((item) => (
                       <p key={`e-${item.id}`}>
-                        Explanation {item.order + 1}: {valueText(item.realValue ?? item.value)}
+                        Report {item.order + 1}: {valueText(item.realValue ?? item.value)}
                       </p>
                     ))}
                   </div>

@@ -12,10 +12,10 @@ import { schemaAtom } from "../../editor/atoms";
 import { showModalAtom } from "../atoms";
 import {
   buildPersistedPredictionPayload,
-  type PersistedExplanationState,
+  type PersistedReportState,
 } from "../buildPersistedPredictionPayload";
 import { loadPredictionCatalogDefinitions } from "../loadPredictionCatalogDefinitions";
-import { isExplanationReportConfig } from "../report-contract";
+import { isFeedbackReportConfig } from "../report-contract";
 import { CreatePredictionModal } from "./CreatePredictionModal";
 import type { PredictionCatalogDefinitions } from "../loadPredictionCatalogDefinitions";
 
@@ -48,7 +48,7 @@ const initialCatalogLoadState: CatalogLoadState = {
 type PredictionState = {
   response: Record<string, unknown>;
   inputs: Record<string, unknown>;
-  explanationsPending: boolean;
+  reportsPending: boolean;
 };
 
 type PredictionStateAction =
@@ -56,9 +56,9 @@ type PredictionStateAction =
       type: "submitted";
       inputs: Record<string, unknown>;
       response: Record<string, unknown>;
-      explanationsPending: boolean;
+      reportsPending: boolean;
     }
-  | { type: "response"; response: Record<string, unknown>; explanationsPending: boolean };
+  | { type: "response"; response: Record<string, unknown>; reportsPending: boolean };
 
 const predictionStateReducer = (
   state: PredictionState,
@@ -69,13 +69,13 @@ const predictionStateReducer = (
       return {
         inputs: action.inputs,
         response: action.response,
-        explanationsPending: action.explanationsPending,
+        reportsPending: action.reportsPending,
       };
     case "response":
       return {
         ...state,
         response: action.response,
-        explanationsPending: action.explanationsPending,
+        reportsPending: action.reportsPending,
       };
   }
 };
@@ -83,23 +83,23 @@ const predictionStateReducer = (
 const initialPredictionState: PredictionState = {
   response: {},
   inputs: {},
-  explanationsPending: false,
+  reportsPending: false,
 };
 
-const getPersistedExplanations = (
+const getPersistedFeedbackReports = (
   form: NonNullable<ReturnType<typeof mountPredictionForm>>["form"],
-): PersistedExplanationState[] =>
-  form.reports.reduce<PersistedExplanationState[]>((items, explanation) => {
-    if (!isExplanationReportConfig(explanation)) {
+): PersistedReportState[] =>
+  form.reports.reduce<PersistedReportState[]>((items, report) => {
+    if (!isFeedbackReportConfig(report)) {
       return items;
     }
-    const explanationState = form.state.reportStates[explanation.id] ?? explanation.state;
-    const status = explanationState.status === "ready" ? "done" : explanationState.status;
+    const reportState = form.state.reportStates[report.id] ?? report.state;
+    const status = reportState.status === "ready" ? "done" : reportState.status;
     items.push({
-      id: explanation.id,
+      id: report.id,
       status,
-      result: explanationState.payload,
-      error: explanationState.error,
+      result: reportState.payload,
+      error: reportState.error,
     });
     return items;
   }, []);
@@ -114,7 +114,7 @@ export function CreatePredictionBodyForm() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<ReturnType<typeof mountPredictionForm> | null>(null);
 
-  const [{ response, inputs, explanationsPending }, dispatchPredictionState] = useReducer(
+  const [{ response, inputs, reportsPending }, dispatchPredictionState] = useReducer(
     predictionStateReducer,
     initialPredictionState,
   );
@@ -128,7 +128,7 @@ export function CreatePredictionBodyForm() {
         type: "submitted",
         inputs: nextInputs,
         response: nextResponse,
-        explanationsPending: false,
+        reportsPending: false,
       });
       setShowModal(true);
     },
@@ -208,14 +208,14 @@ export function CreatePredictionBodyForm() {
           type: "response",
           response: buildPersistedPredictionPayload(
             state.lastResult.raw,
-            getPersistedExplanations(mounted.form),
+            getPersistedFeedbackReports(mounted.form),
           ),
-          explanationsPending: mounted.form.reports.some((explanation) => {
-            if (!isExplanationReportConfig(explanation)) {
+          reportsPending: mounted.form.reports.some((report) => {
+            if (!isFeedbackReportConfig(report)) {
               return false;
             }
-            const explanationState = state.reportStates[explanation.id] ?? explanation.state;
-            return explanationState.status === "idle" || explanationState.status === "loading";
+            const reportState = state.reportStates[report.id] ?? report.state;
+            return reportState.status === "idle" || reportState.status === "loading";
           }),
         });
       });
@@ -263,8 +263,8 @@ export function CreatePredictionBodyForm() {
           <AppPanel className="space-y-4">
             <h2 className="text-lg font-semibold text-[var(--text-primary)]">
               {catalogState.status === "loading"
-                ? "Loading explanation catalog"
-                : "Explanation catalog unavailable"}
+                ? "Loading report catalog"
+                : "Report catalog unavailable"}
             </h2>
             <AppCopy>
               {catalogState.status === "loading"
@@ -286,7 +286,7 @@ export function CreatePredictionBodyForm() {
           prediction={response}
           inputs={inputs}
           signatureSchema={schema}
-          explanationsPending={explanationsPending}
+          reportsPending={reportsPending}
           theme={theme}
         />
       ) : null}

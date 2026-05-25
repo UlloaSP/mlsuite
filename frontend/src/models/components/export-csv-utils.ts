@@ -47,24 +47,24 @@ export const csvEscape = (value: string, separator: string) => {
   return next;
 };
 
-export const getExplanationHeaders = (
+export const getReportFeedbackHeaders = (
   signatureSchema: unknown,
   reviewerLabels: readonly string[] = [],
 ): string[] => {
   try {
     const schema = toMlformSchema(signatureSchema);
 
-    return (schema.reports ?? []).flatMap((explanation: ReportConfig) => {
-      const questionnaire = (explanation as Record<string, unknown>).feedbackQuestionnaire;
+    return (schema.reports ?? []).flatMap((report: ReportConfig) => {
+      const questionnaire = (report as Record<string, unknown>).feedbackQuestionnaire;
       if (!isQuestionnaireSchema(questionnaire)) {
         return [];
       }
       return [
-        `explanation.${explanation.id}.content`,
+        `report.${report.id}.content`,
         ...(questionnaire
           ? getQuestionnaireFieldIds(questionnaire).flatMap((fieldId) =>
               reviewerLabels.map(
-                (reviewer) => `explanation.${explanation.id}.${fieldId}.${reviewer}`,
+                (reviewer) => `report.${report.id}.${fieldId}.${reviewer}`,
               ),
             )
           : []),

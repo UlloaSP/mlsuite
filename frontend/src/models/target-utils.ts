@@ -81,13 +81,28 @@ export const buildTargetFeedbackValue = (
   rawValue: string,
   signatureSchema: unknown,
   order: number,
+  predictionValue?: unknown,
 ): unknown => {
   const kind = getTargetKind(signatureSchema, order);
   if (kind === "regressor") {
     return Number(rawValue);
   }
   if (kind === "classifier") {
-    const classIndex = Number(rawValue);
+    const output = getPredictionOutputs(predictionValue).find((item) => item.type === "classifier");
+    const mapping = Array.isArray(output?.mapping) ? output.mapping : [];
+    const labelIndex = getOutputReports(signatureSchema)[order]?.labels;
+    const labels = Array.isArray(labelIndex) ? labelIndex : [];
+    const mappedIndex = mapping.findIndex((item) => String(item) === rawValue);
+    const namedIndex = labels.findIndex((item) => String(item) === rawValue);
+    const numericIndex = Number(rawValue);
+    const classIndex =
+      mappedIndex >= 0
+        ? mappedIndex
+        : namedIndex >= 0
+          ? namedIndex
+          : Number.isFinite(numericIndex)
+            ? numericIndex
+            : -1;
     return {
       value: getTargetClassLabel(signatureSchema, order, classIndex) ?? rawValue,
       classIndex,

@@ -8,9 +8,9 @@ import type {
   OutputFeedbackDto,
   TargetDto,
 } from "../../models/api/modelService";
-import { ExplanationQuestionnaireMount } from "../../models/components/ExplanationQuestionnaireMount";
+import { ReportQuestionnaireMount } from "../../models/components/ReportQuestionnaireMount";
 import { buildQuestionnaireFormSchema } from "../../models/questionnaire-schema";
-import type { PredictionExplanationDescriptor } from "../../models/questionnaire-feedback";
+import type { PredictionReportDescriptor } from "../../models/questionnaire-feedback";
 import * as reviewApi from "../api/reviewLinkService";
 import {
   buildCombinedReviewQuestionnaire,
@@ -28,7 +28,7 @@ type ReviewCombinedFeedbackFormProps = {
   reports: Record<string, unknown>[];
   signatureSchema: unknown;
   predictionValue: unknown;
-  explanations: PredictionExplanationDescriptor[];
+  feedbackReports: PredictionReportDescriptor[];
   theme: "light" | "dark";
   onSaved: () => Promise<void> | void;
 };
@@ -50,7 +50,7 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
     reports,
     signatureSchema,
     predictionValue,
-    explanations,
+    feedbackReports,
     theme,
     onSaved,
   } = props;
@@ -63,11 +63,11 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
         reports,
         signatureSchema,
         predictionValue,
-        explanations,
+        feedbackReports,
       }),
     [
       explanationFeedbackByOrder,
-      explanations,
+      feedbackReports,
       outputFeedbackByOrder,
       predictionValue,
       reports,
@@ -173,7 +173,7 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
-      <ExplanationQuestionnaireMount
+      <ReportQuestionnaireMount
         title="Prediction Review"
         schema={combined.schema}
         initialValues={combined.initialValues}

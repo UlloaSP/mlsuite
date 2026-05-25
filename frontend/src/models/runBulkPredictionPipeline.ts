@@ -10,9 +10,9 @@ import type { CatalogReportDefinition } from "../app/utils/mlform/custom-report"
 import { type PredictionPayloadField, getBackendKey } from "../app/utils/mlform/shared";
 import {
   buildPersistedPredictionPayload,
-  type PersistedExplanationState,
+  type PersistedReportState,
 } from "./buildPersistedPredictionPayload";
-import { isExplanationReportConfig } from "./report-contract";
+import { isFeedbackReportConfig } from "./report-contract";
 
 const mapInputsToFieldValues = (
   inputs: Record<string, unknown>,
@@ -57,27 +57,27 @@ export async function runBulkPredictionPipeline({
     reportFetchMode: "all",
     artifactAdapter: {
       derive({ submitResult, reportFetchResults, reportFetchErrors }) {
-        const explanations = form.reports.reduce<PersistedExplanationState[]>(
-          (items, explanation) => {
-            if (!isExplanationReportConfig(explanation)) {
+        const feedbackReports = form.reports.reduce<PersistedReportState[]>(
+          (items, report) => {
+            if (!isFeedbackReportConfig(report)) {
               return items;
             }
             items.push({
-              id: explanation.id,
+              id: report.id,
               status:
-                explanation.id in reportFetchResults
+                report.id in reportFetchResults
                   ? "done"
-                  : explanation.id in reportFetchErrors
+                  : report.id in reportFetchErrors
                     ? "error"
                     : "idle",
-              result: reportFetchResults[explanation.id],
-              error: reportFetchErrors[explanation.id] ?? null,
+              result: reportFetchResults[report.id],
+              error: reportFetchErrors[report.id] ?? null,
             });
             return items;
           },
           [],
         );
-        return buildPersistedPredictionPayload(submitResult.raw, explanations);
+        return buildPersistedPredictionPayload(submitResult.raw, feedbackReports);
       },
     },
   });

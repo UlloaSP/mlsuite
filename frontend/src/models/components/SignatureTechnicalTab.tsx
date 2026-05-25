@@ -51,10 +51,10 @@ export function SignatureTechnicalTab({ signature }: SignatureTechnicalTabProps)
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Explanations
+              Feedback reports
             </p>
             <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">
-              {stats.explanationsEnabled ? "Enabled" : "Disabled"}
+              {stats.feedbackReportsEnabled ? "Enabled" : "Disabled"}
             </p>
           </div>
         </div>

@@ -149,3 +149,13 @@
 - Rule: analyzer-bound explanation plugins must send backend-shaped feature keys from `request.meta.backendFieldValues`; MLForm serialized field ids are UI/runtime ids, not model feature names.
 - Correction: Crystal Tree plugin returned `null` from `resolve` when no report payload existed, so MLForm marked the report ready and skipped fetch.
 - Rule: MLForm async report plugins must return `undefined` from `resolve` for absent payload; `null` is a real ready payload and prevents `fetch.submit`.
+- Correction: MLForm 0.1.11 migration left MLSuite frontend naming around `explanation` even though MLForm now models all such artifacts as reports.
+- Rule: after migrating a domain concept into a broader upstream abstraction, rename active files/types/functions/UI copy to the new abstraction in the same patch; keep old terms only at persisted/public compatibility boundaries and mark that boundary explicitly.
+- Correction: prediction detail output feedback saved classifier choices as index-like values and showed fragmented feedback cards before context.
+- Rule: classifier feedback controls must serialize the backend/prediction mapping value and normalize target updates through that same mapping; prediction detail feedback should mirror external review order with one combined questionnaire first, then outputs, then inputs.
+- Correction: saved classifier feedback showed only the stored mapping value, and the Reports context panel still rendered only output targets.
+- Rule: display-only questionnaire summaries must resolve option labels from the same schema that collected the answer, and prediction detail report context must include both output reports and generated MLForm report entries.
+- Correction: prediction feedback create hit 500 when hidden/draft feedback already existed, and Crystal Tree feedback used the answer payload as report value.
+- Rule: create feedback endpoints must be idempotent by prediction/user/order, and report feedback storage must keep generated report content in `value` while human answers live in `realValue`.
+- Correction: Crystal Tree text was saved but Reports panel still showed empty because it only read prediction report payload.
+- Rule: report display must fall back to saved report feedback `value` when runtime report content is missing; use one shared formatter for runtime and saved report text.

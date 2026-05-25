@@ -3,20 +3,20 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-type PredictionExplanationReportProps = {
+type PredictionReportContentProps = {
   label: string;
-  explanations?: string[];
+  content?: string[];
   error?: string | null;
 };
 
-const EMPTY_EXPLANATIONS: string[] = [];
+const EMPTY_CONTENT: string[] = [];
 
-export function PredictionExplanationReport({
+export function PredictionReportContent({
   label,
-  explanations = EMPTY_EXPLANATIONS,
+  content = EMPTY_CONTENT,
   error = null,
-}: PredictionExplanationReportProps) {
-  if (!error && explanations.length === 0) {
+}: PredictionReportContentProps) {
+  if (!error && content.length === 0) {
     return null;
   }
 
@@ -30,12 +30,12 @@ export function PredictionExplanationReport({
         </div>
       ) : (
         <div className="space-y-3">
-          {explanations.map((tree, index) => (
+          {content.map((item, index) => (
             <pre
               key={`${label}-${index + 1}`}
               className="overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-50 p-4 font-mono text-xs leading-6 text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
             >
-              {tree}
+              {item}
             </pre>
           ))}
         </div>

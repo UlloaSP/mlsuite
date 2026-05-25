@@ -2,12 +2,12 @@ import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import { AppEmptyState } from "../../app/components/ui";
-import { extractPredictionExplanationEntries } from "../../models/explanation-feedback-utils";
+import { extractPredictionReportEntries } from "../../models/report-feedback-utils";
 import { getOutputReports } from "../../models/report-contract";
 import { useReviewPredictionDetail } from "../hooks";
 import { ReviewAccordionSection } from "./ReviewAccordionSection";
 import { ReviewCombinedFeedbackForm } from "./ReviewCombinedFeedbackForm";
-import { ReviewExplanationsSection } from "./ReviewExplanationsSection";
+import { ReviewReportsSection } from "./ReviewReportsSection";
 import { ReviewInputsSection } from "./ReviewInputsSection";
 import { ReviewOutputsSection } from "./ReviewOutputsSection";
 
@@ -27,14 +27,14 @@ export function ReviewPredictionDetailPanel({
   const [theme] = useAtom(themeWithHtmlAtom);
   const [inputsOpen, setInputsOpen] = useState(false);
   const [outputsOpen, setOutputsOpen] = useState(false);
-  const [explanationsOpen, setExplanationsOpen] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
   const detail = useReviewPredictionDetail(token, predictionToken);
   const reports = useMemo(() => {
     return getOutputReports(signatureSchema);
   }, [signatureSchema]);
-  const explanationEntries = useMemo(
+  const feedbackReports = useMemo(
     () =>
-      extractPredictionExplanationEntries(
+      extractPredictionReportEntries(
         detail.data?.prediction.prediction,
         signatureSchema,
       ),
@@ -44,7 +44,7 @@ export function ReviewPredictionDetailPanel({
     () => new Map((detail.data?.outputFeedback ?? []).map((item) => [item.order, item])),
     [detail.data?.outputFeedback],
   );
-  const explanationByOrder = useMemo(
+  const reportFeedbackByOrder = useMemo(
     () => new Map((detail.data?.explanationFeedback ?? []).map((item) => [item.order, item])),
     [detail.data?.explanationFeedback],
   );
@@ -73,7 +73,7 @@ export function ReviewPredictionDetailPanel({
           {prediction.name}
         </h2>
       </div>
-      {targets.length === 0 && explanationEntries.length === 0 ? (
+      {targets.length === 0 && feedbackReports.length === 0 ? (
         <AppEmptyState
           title="Nothing to review"
           description="This prediction has no configured feedback forms."
@@ -85,11 +85,11 @@ export function ReviewPredictionDetailPanel({
             predictionId={prediction.id}
             targets={targets}
             outputFeedbackByOrder={outputByOrder}
-            explanationFeedbackByOrder={explanationByOrder}
+            explanationFeedbackByOrder={reportFeedbackByOrder}
             reports={reports}
             signatureSchema={signatureSchema}
             predictionValue={prediction.prediction}
-            explanations={explanationEntries}
+            feedbackReports={feedbackReports}
             theme={theme}
             onSaved={async () => {
               await detail.refetch();
@@ -108,11 +108,11 @@ export function ReviewPredictionDetailPanel({
             />
           </ReviewAccordionSection>
           <ReviewAccordionSection
-            title="Explanations"
-            open={explanationsOpen}
-            onToggle={() => setExplanationsOpen((v) => !v)}
+            title="Reports"
+            open={reportsOpen}
+            onToggle={() => setReportsOpen((v) => !v)}
           >
-            <ReviewExplanationsSection explanations={explanationEntries} />
+            <ReviewReportsSection reports={feedbackReports} />
           </ReviewAccordionSection>
           <ReviewAccordionSection
             title="Inputs"

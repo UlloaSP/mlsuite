@@ -70,6 +70,8 @@ class OutputFeedbackServiceTest {
         Prediction prediction = prediction();
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction));
+        when(outputFeedbackRepository.findByPredictionIdAndUserIdAndOrder(11L, 3L, 1))
+                .thenReturn(Optional.empty());
         when(outputFeedbackRepository.save(any(OutputFeedback.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
         when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -82,6 +84,28 @@ class OutputFeedbackServiceTest {
 
         assertEquals(1, result.getOrder());
         assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
+    }
+
+    @Test
+    void createOutputFeedback_UpdatesExistingUserOrderInsteadOfDuplicating() throws Exception {
+        Prediction prediction = prediction();
+        OutputFeedback existing = outputFeedback(prediction);
+        when(userLookupService.requireById(3L)).thenReturn(user());
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction));
+        when(outputFeedbackRepository.findByPredictionIdAndUserIdAndOrder(11L, 3L, 1))
+                .thenReturn(Optional.of(existing));
+        when(outputFeedbackRepository.save(any(OutputFeedback.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
+        when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OutputFeedback result = service.createOutputFeedback(
+                3L,
+                11L,
+                1,
+                objectMapper.valueToTree(Map.of("assessment", "updated")));
+
+        assertEquals(12L, result.getId());
+        assertEquals("updated", result.getValue().get("assessment").asText());
     }
 
     @Test

@@ -13,7 +13,7 @@ type PredictionFeedbackStatus = "PENDING" | "COMPLETED";
 export type SignatureSummaryStats = {
   fieldCount: number;
   reportCount: number;
-  explanationsEnabled: boolean;
+  feedbackReportsEnabled: boolean;
   fieldKinds: Record<string, number>;
   reportKinds: Record<string, number>;
   classifierLabelsCount: number;
@@ -162,7 +162,7 @@ export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSumm
     return {
       fieldCount: 0,
       reportCount: 0,
-      explanationsEnabled: false,
+      feedbackReportsEnabled: false,
       fieldKinds: {},
       reportKinds: {},
       classifierLabelsCount: 0,
@@ -195,7 +195,7 @@ export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSumm
   return {
     fieldCount: fields.length,
     reportCount: reports.length,
-    explanationsEnabled:
+    feedbackReportsEnabled:
       Array.isArray(inputSignature.reports) &&
       inputSignature.reports.filter(isRecord).length > reports.length,
     fieldKinds,

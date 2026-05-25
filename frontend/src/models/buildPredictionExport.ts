@@ -11,7 +11,7 @@ import type {
   PredictionDto,
   TargetDto,
 } from "./api/modelService";
-import { extractPredictionExplanationEntries } from "./explanation-feedback-utils";
+import { extractPredictionReportEntries } from "./report-feedback-utils";
 import { getOutputFeedbackFieldIds } from "./output-feedback-questionnaire";
 import { getEffectiveFeedbackValues, getQuestionnaireFieldIds } from "./questionnaire-feedback";
 import {
@@ -19,7 +19,7 @@ import {
   getSchemaAwareTargetValue,
   getTargetReportKey,
 } from "./target-utils";
-import { flatten, getExplanationHeaders, toCell, toRecord } from "./components/export-csv-utils";
+import { flatten, getReportFeedbackHeaders, toCell, toRecord } from "./components/export-csv-utils";
 import { getOutputReports } from "./report-contract";
 
 export type PredictionExportData = {
@@ -83,10 +83,10 @@ export function buildPredictionExportData({
       ...reviewerLabels.map((reviewer) => `output.${targetKey}.feedback.${reviewer}`),
     ];
   });
-  const explanationHeaders = signatureSchema
-    ? getExplanationHeaders(signatureSchema, reviewerLabels)
+  const reportFeedbackHeaders = signatureSchema
+    ? getReportFeedbackHeaders(signatureSchema, reviewerLabels)
     : [];
-  const headers = ["prediction_name", ...inputKeys, ...targetHeaders, ...explanationHeaders];
+  const headers = ["prediction_name", ...inputKeys, ...targetHeaders, ...reportFeedbackHeaders];
 
   const rows = predictions.map((prediction, index) => {
     const targets = Array.from(targetsByPrediction[index] ?? []);
@@ -112,7 +112,12 @@ export function buildPredictionExportData({
         const assessmentRaw = feedbackRecord?.[fieldIds.assessment] ?? "";
         const userRealValue =
           assessmentRaw !== ""
-            ? buildTargetFeedbackValue(String(assessmentRaw), signatureSchema, order)
+            ? buildTargetFeedbackValue(
+                String(assessmentRaw),
+                signatureSchema,
+                order,
+                prediction.prediction,
+              )
             : "";
         return toCell(
           userRealValue !== ""
@@ -128,25 +133,25 @@ export function buildPredictionExportData({
       return [toCell(predicted), ...feedbackValues];
     });
 
-    const explanationEntries =
-      explanationHeaders.length > 0
-        ? extractPredictionExplanationEntries(
+    const reportEntries =
+      reportFeedbackHeaders.length > 0
+        ? extractPredictionReportEntries(
             prediction.prediction,
             signatureSchema,
           )
         : [];
-    const explanationValues = explanationEntries.flatMap((explanation) => {
-      const cells = [toCell(explanation.content.join("\n\n"))];
-      if (!explanation.feedbackQuestionnaire) return cells;
-      const fieldIds = getQuestionnaireFieldIds(explanation.feedbackQuestionnaire);
+    const reportFeedbackValues = reportEntries.flatMap((report) => {
+      const cells = [toCell(report.content.join("\n\n"))];
+      if (!report.feedbackQuestionnaire) return cells;
+      const fieldIds = getQuestionnaireFieldIds(report.feedbackQuestionnaire);
       return [
         ...cells,
         ...fieldIds.flatMap((fieldId) =>
           reviewerLabels.map((reviewer) => {
             const feedback = explanationFeedback.find(
-              (item) => item.order === explanation.order && reviewerLabel(item) === reviewer,
+              (item) => item.order === report.order && reviewerLabel(item) === reviewer,
             );
-            const values = getEffectiveFeedbackValues(feedback, explanation.feedbackQuestionnaire);
+            const values = getEffectiveFeedbackValues(feedback, report.feedbackQuestionnaire);
             return toCell(values[fieldId]);
           }),
         ),
@@ -157,7 +162,7 @@ export function buildPredictionExportData({
       toCell(prediction.name),
       ...inputKeys.map((key) => toCell(inputs[key])),
       ...targetValues,
-      ...explanationValues,
+      ...reportFeedbackValues,
     ];
   });
 

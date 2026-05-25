@@ -15,7 +15,7 @@ import type {
 import { ReviewLinkButton } from "../components/ReviewLinkButton";
 import { SignatureHistorySection } from "../components/SignatureHistorySection";
 import { SignatureTechnicalTab } from "../components/SignatureTechnicalTab";
-import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import { extractPredictionReportEntries } from "../report-feedback-utils";
 import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, useGetModels, useGetPredictions, useGetSignature } from "../hooks";
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
 import { findModelById, formatTimestamp, getPredictionTimestamp, getSignatureVersionLabel, toTimestampMillis } from "../utils";
@@ -108,26 +108,26 @@ export function SignatureDetailPage() {
     predictions.forEach((prediction, index) => {
       const outputFeedback = (outputFeedbackQueries[index]?.data ??
         []) as modelApi.OutputFeedbackDto[];
-      const explanationFeedback = (explanationFeedbackQueries[index]?.data ??
+      const reportFeedback = (explanationFeedbackQueries[index]?.data ??
         []) as modelApi.ExplanationFeedbackDto[];
       const myOutputFeedback =
         currentUserId === null ? [] : outputFeedback.filter((fb) => fb.userId === currentUserId);
-      const myExplanationFeedback =
+      const myReportFeedback =
         currentUserId === null
           ? []
-          : explanationFeedback.filter((fb) => fb.userId === currentUserId);
+          : reportFeedback.filter((fb) => fb.userId === currentUserId);
       const predictionReports = getOutputReports(signature?.inputSignature);
-      const explanationEntries = extractPredictionExplanationEntries(
+      const feedbackReports = extractPredictionReportEntries(
         prediction.prediction,
         signature?.inputSignature,
       );
       const requiredOutputs = predictionReports.length;
-      const requiredExplanations = explanationEntries.filter(
+      const requiredFeedbackReports = feedbackReports.filter(
         (entry) => entry.feedbackQuestionnaire,
       ).length;
       const status =
         myOutputFeedback.length >= requiredOutputs &&
-        myExplanationFeedback.length >= requiredExplanations
+        myReportFeedback.length >= requiredFeedbackReports
           ? ("COMPLETED" as const)
           : ("PENDING" as const);
       map.set(prediction.id, status);

@@ -6,13 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { type FieldConfig } from "mlform/runtime";
 import { buildQuestionnaireFormSchema, type QuestionnaireSchema } from "./questionnaire-schema";
 import type { MountedForm } from "mlform/kit";
-import type { ExplanationFeedbackDto } from "./api/modelService";
+import type { ExplanationFeedbackDto as ReportFeedbackDto } from "./api/modelService";
 
 type JsonRecord = Record<string, unknown>;
 
-export type PredictionExplanationDescriptor = {
+export type PredictionReportDescriptor = {
   order: number;
-  explanationId: string;
+  reportId: string;
   label: string;
   content: string[];
   error: string | null;
@@ -23,6 +23,7 @@ export type QuestionnaireFieldDescriptor = {
   id: string;
   label: string;
   kind: string;
+  options?: Array<{ label: string; value: unknown }>;
 };
 
 const isRecord = (value: unknown): value is JsonRecord =>
@@ -60,6 +61,17 @@ export const getQuestionnaireFieldDescriptors = (
     id: String(field.id),
     label: sourceFields[index]?.label ?? field.id,
     kind: typeof field.kind === "string" ? field.kind : "unknown",
+    options: Array.isArray(sourceFields[index]?.options)
+      ? sourceFields[index].options
+          .filter((option): option is { label: string; value: unknown } =>
+            typeof option === "object" &&
+            option !== null &&
+            "label" in option &&
+            typeof option.label === "string" &&
+            "value" in option,
+          )
+          .map((option) => ({ label: option.label, value: option.value }))
+      : undefined,
   }));
 };
 
@@ -76,7 +88,7 @@ export const normalizeFeedbackValues = (
 };
 
 export const getEffectiveFeedbackValues = (
-  feedback: Partial<Pick<ExplanationFeedbackDto, "value" | "realValue">> | undefined,
+  feedback: Partial<Pick<ReportFeedbackDto, "value" | "realValue">> | undefined,
   schema?: QuestionnaireSchema,
 ): Record<string, unknown> =>
   normalizeFeedbackValues(feedback?.realValue ?? feedback?.value, schema);
@@ -84,7 +96,15 @@ export const getEffectiveFeedbackValues = (
 export const hasFeedbackValues = (value: Record<string, unknown>): boolean =>
   Object.keys(value).length > 0;
 
-export const formatFeedbackValue = (value: unknown): string => {
+export const formatFeedbackValue = (
+  value: unknown,
+  field?: Pick<QuestionnaireFieldDescriptor, "options">,
+): string => {
+  const matchingOption = field?.options?.find((option) => String(option.value) === String(value));
+  if (matchingOption) {
+    const rawValue = formatFeedbackValue(value);
+    return matchingOption.label === rawValue ? rawValue : `${matchingOption.label} (${rawValue})`;
+  }
   if (typeof value === "boolean") {
     return value ? "Yes" : "No";
   }

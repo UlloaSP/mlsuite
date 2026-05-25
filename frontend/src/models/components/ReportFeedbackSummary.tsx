@@ -11,19 +11,21 @@ import {
 } from "../questionnaire-feedback";
 import type { QuestionnaireSchema } from "../questionnaire-schema";
 
-type ExplanationFeedbackSummaryProps = {
+type ReportFeedbackSummaryProps = {
   schema?: QuestionnaireSchema;
+  title?: string;
   values?: Record<string, unknown>;
 };
 
 const EMPTY_VALUES: Record<string, unknown> = {};
 
-export function ExplanationFeedbackSummary({
+export function ReportFeedbackSummary({
   schema,
+  title = "Saved Feedback",
   values = EMPTY_VALUES,
-}: ExplanationFeedbackSummaryProps) {
+}: ReportFeedbackSummaryProps) {
   if (!schema) {
-    return <AppCopy>No feedback questionnaire configured for this explanation.</AppCopy>;
+    return <AppCopy>No feedback questionnaire configured for this report.</AppCopy>;
   }
 
   const fields = getQuestionnaireFieldDescriptors(schema).filter(
@@ -32,7 +34,7 @@ export function ExplanationFeedbackSummary({
 
   return (
     <AppPanel className="space-y-4">
-      <AppSectionTitle>Saved Feedback</AppSectionTitle>
+      <AppSectionTitle>{title}</AppSectionTitle>
       {fields.length > 0 ? (
         <div className="space-y-3">
           {fields.map((field) => (
@@ -44,7 +46,7 @@ export function ExplanationFeedbackSummary({
                 {field.label}
               </span>
               <span className="font-mono text-sm text-[var(--text-primary)]">
-                {formatFeedbackValue(values[field.id])}
+                {formatFeedbackValue(values[field.id], field)}
               </span>
             </div>
           ))}

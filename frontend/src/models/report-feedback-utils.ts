@@ -6,12 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { normalizeCustomReportResult } from "../app/utils/mlform/custom-report-result";
 import { toMlformSchema } from "../app/utils/mlform/schema-validation";
 import type { ReportConfig } from "mlform/runtime";
-import type { PredictionExplanationDescriptor } from "./questionnaire-feedback";
+import type { PredictionReportDescriptor } from "./questionnaire-feedback";
 import type { QuestionnaireSchema } from "./questionnaire-schema";
 
 type JsonRecord = Record<string, unknown>;
 
-type ExplanationPayload = {
+type LegacyExplanationPayload = {
   explanations?: unknown;
 };
 
@@ -25,7 +25,7 @@ const stripTreeToken = (value: string): string =>
     .replace(/^[|_\\/\->:\s]+/, "")
     .trim();
 
-const formatExplanationTree = (value: string): string => {
+const formatReportTree = (value: string): string => {
   const parts = value.split(/(?:\s*\|\s*){2,}/).reduce<string[]>((items, part) => {
     const stripped = stripTreeToken(part);
     if (stripped.length > 0) {
@@ -54,71 +54,80 @@ const formatExplanationTree = (value: string): string => {
     .join("\n");
 };
 
-const normalizeDisplayedExplanation = (value: string): string => {
+const normalizeDisplayedReportContent = (value: string): string => {
   const trimmed = value.trim();
   if (!trimmed) {
     return "";
   }
 
   if (trimmed.includes("|__") || trimmed.includes("||") || trimmed.startsWith("*")) {
-    return formatExplanationTree(trimmed);
+    return formatReportTree(trimmed);
   }
 
   return trimmed;
 };
 
-const getExplanationContent = (payload: unknown): string[] => {
-  const explanationPayload = isRecord(payload) ? (payload as ExplanationPayload) : null;
-  const explanationsFromLegacyPayload =
-    explanationPayload && Array.isArray(explanationPayload.explanations)
-      ? explanationPayload.explanations.filter(
+const getReportContent = (payload: unknown): string[] => {
+  if (typeof payload === "string" && payload.trim().length > 0) {
+    return [payload];
+  }
+  if (Array.isArray(payload)) {
+    return payload.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  }
+  const reportPayload = isRecord(payload) ? (payload as LegacyExplanationPayload) : null;
+  const contentFromLegacyPayload =
+    reportPayload && Array.isArray(reportPayload.explanations)
+      ? reportPayload.explanations.filter(
           (item): item is string => typeof item === "string" && item.trim().length > 0,
         )
       : [];
-  const normalizedExplanation = explanationPayload
-    ? normalizeCustomReportResult(explanationPayload)
+  const normalizedReport = reportPayload
+    ? normalizeCustomReportResult(reportPayload)
     : null;
 
-  return explanationsFromLegacyPayload.length > 0
-    ? explanationsFromLegacyPayload
-    : normalizedExplanation
+  return contentFromLegacyPayload.length > 0
+    ? contentFromLegacyPayload
+    : normalizedReport
       ? [
-          ...normalizedExplanation.blocks,
-          ...(normalizedExplanation.html ? [normalizedExplanation.html] : []),
-          ...(normalizedExplanation.jsonFallback ? [normalizedExplanation.jsonFallback] : []),
+          ...normalizedReport.blocks,
+          ...(normalizedReport.html ? [normalizedReport.html] : []),
+          ...(normalizedReport.jsonFallback ? [normalizedReport.jsonFallback] : []),
         ].filter((item) => item.trim().length > 0)
       : [];
 };
 
-const DEFAULT_EXPLANATION_FEEDBACK_QUESTIONNAIRE: QuestionnaireSchema = {
+export const getFormattedReportContent = (payload: unknown): string[] =>
+  getReportContent(payload).map((item) => normalizeDisplayedReportContent(item));
+
+const DEFAULT_REPORT_FEEDBACK_QUESTIONNAIRE: QuestionnaireSchema = {
   steps: [
     {
-      id: "explanation-feedback",
-      title: "Explanation Feedback",
+      id: "report-feedback",
+      title: "Report Feedback",
       fields: [
-        { kind: "rating", id: "explanation-feedback-clarity", label: "Clarity", max: 5 },
-        { kind: "rating", id: "explanation-feedback-usefulness", label: "Usefulness", max: 5 },
-        { kind: "rating", id: "explanation-feedback-trust", label: "Trust", max: 5 },
+        { kind: "rating", id: "report-feedback-clarity", label: "Clarity", max: 5 },
+        { kind: "rating", id: "report-feedback-usefulness", label: "Usefulness", max: 5 },
+        { kind: "rating", id: "report-feedback-trust", label: "Trust", max: 5 },
       ],
     },
   ],
 };
 
 const getMetadataFeedbackQuestionnaire = (
-  explanation: Record<string, unknown>,
+  report: Record<string, unknown>,
 ): QuestionnaireSchema | undefined =>
-  explanation.feedbackEnabled === true ? DEFAULT_EXPLANATION_FEEDBACK_QUESTIONNAIRE : undefined;
+  report.feedbackEnabled === true ? DEFAULT_REPORT_FEEDBACK_QUESTIONNAIRE : undefined;
 
 const getEmbeddedFeedbackQuestionnaire = (
-  explanation: ReportConfig,
+  report: ReportConfig,
 ): QuestionnaireSchema | undefined => {
-  const value = (explanation as Record<string, unknown>).feedbackQuestionnaire;
+  const value = (report as Record<string, unknown>).feedbackQuestionnaire;
   return isRecord(value) && Array.isArray(value.steps) ? (value as QuestionnaireSchema) : undefined;
 };
 
-const getFallbackExplanationEntries = (
+const getFallbackReportEntries = (
   predictionValue: unknown,
-): PredictionExplanationDescriptor[] => {
+): PredictionReportDescriptor[] => {
   if (!isRecord(predictionValue)) {
     return [];
   }
@@ -130,11 +139,11 @@ const getFallbackExplanationEntries = (
           return false;
         }
         const normalized = normalizeCustomReportResult(value);
-        const hasLegacyExplanations =
+        const hasLegacyReportBlocks =
           Array.isArray(value.explanations) &&
           value.explanations.some((item) => typeof item === "string" && item.trim().length > 0);
         return (
-          hasLegacyExplanations ||
+          hasLegacyReportBlocks ||
           normalized.blocks.length > 0 ||
           normalized.html !== null ||
           normalized.jsonFallback !== null
@@ -142,7 +151,7 @@ const getFallbackExplanationEntries = (
       })
     : [];
   return fallbackReportEntries.flatMap(([reportId, value], index) => {
-    const content = getExplanationContent(value);
+    const content = getReportContent(value);
     if (content.length === 0) {
       return [];
     }
@@ -150,19 +159,19 @@ const getFallbackExplanationEntries = (
     return [
       {
         order: index,
-        explanationId: reportId,
+        reportId,
         label: reportId,
-        content: content.map((item) => normalizeDisplayedExplanation(item)),
+        content: content.map((item) => normalizeDisplayedReportContent(item)),
         error: null,
       },
     ];
   });
 };
 
-const getEmbeddedSchemaExplanationEntries = (
+const getEmbeddedSchemaReportEntries = (
   predictionValue: unknown,
   signatureSchema: unknown,
-): PredictionExplanationDescriptor[] => {
+): PredictionReportDescriptor[] => {
   if (!isRecord(predictionValue) || !isRecord(signatureSchema) || !Array.isArray(signatureSchema.reports)) {
     return [];
   }
@@ -181,21 +190,21 @@ const getEmbeddedSchemaExplanationEntries = (
       return [];
     }
 
-    const explanationId =
+    const reportId =
       typeof item.id === "string" && item.id.trim().length > 0
         ? item.id
-        : `explanation-${index + 1}`;
-    const content = getExplanationContent(reports[explanationId]);
-    const nextError = explainErrors[explanationId];
+        : `report-${index + 1}`;
+    const content = getReportContent(reports[reportId]);
+    const nextError = explainErrors[reportId];
     if (content.length === 0 && typeof nextError !== "string" && !feedbackQuestionnaire) {
       return [];
     }
     return [
       {
         order: index,
-        explanationId,
-        label: typeof item.label === "string" ? item.label : explanationId,
-        content: content.map((value) => normalizeDisplayedExplanation(value)),
+        reportId,
+        label: typeof item.label === "string" ? item.label : reportId,
+        content: content.map((value) => normalizeDisplayedReportContent(value)),
         error: typeof nextError === "string" ? nextError : null,
         feedbackQuestionnaire,
       },
@@ -203,35 +212,35 @@ const getEmbeddedSchemaExplanationEntries = (
   });
 };
 
-export const extractPredictionExplanationEntries = (
+export const extractPredictionReportEntries = (
   predictionValue: unknown,
   signatureSchema?: unknown,
-): PredictionExplanationDescriptor[] => {
+): PredictionReportDescriptor[] => {
   if (!isRecord(predictionValue)) {
     return [];
   }
 
   try {
     const schema = toMlformSchema(signatureSchema);
-    const explanationReports = (schema.reports ?? []).filter(
+    const feedbackReports = (schema.reports ?? []).filter(
       (report: ReportConfig) =>
         getEmbeddedFeedbackQuestionnaire(report) !== undefined ||
         (report as Record<string, unknown>).feedbackEnabled === true,
     );
-    if (explanationReports.length === 0) {
-      return getFallbackExplanationEntries(predictionValue);
+    if (feedbackReports.length === 0) {
+      return getFallbackReportEntries(predictionValue);
     }
     const reports = isRecord(predictionValue.reports) ? predictionValue.reports : {};
     const meta = isRecord(predictionValue.meta) ? predictionValue.meta : {};
     const explainErrors = isRecord(meta.explainErrors) ? meta.explainErrors : {};
 
-    return explanationReports.flatMap((explanation: ReportConfig, index: number) => {
-      const explanationId = explanation.id ?? `explanation-${index + 1}`;
-      const content = getExplanationContent(reports[explanationId]);
-      const nextError = explainErrors[explanationId];
+    return feedbackReports.flatMap((report: ReportConfig, index: number) => {
+      const reportId = report.id ?? `report-${index + 1}`;
+      const content = getReportContent(reports[reportId]);
+      const nextError = explainErrors[reportId];
       const feedbackQuestionnaire =
-        getEmbeddedFeedbackQuestionnaire(explanation) ??
-        getMetadataFeedbackQuestionnaire(explanation as Record<string, unknown>);
+        getEmbeddedFeedbackQuestionnaire(report) ??
+        getMetadataFeedbackQuestionnaire(report as Record<string, unknown>);
 
       if (content.length === 0 && typeof nextError !== "string" && !feedbackQuestionnaire) {
         return [];
@@ -240,16 +249,16 @@ export const extractPredictionExplanationEntries = (
       return [
         {
           order: index,
-          explanationId,
-          label: explanation.label ?? explanationId,
-          content: content.map((item) => normalizeDisplayedExplanation(item)),
+          reportId,
+          label: report.label ?? reportId,
+          content: content.map((item) => normalizeDisplayedReportContent(item)),
           error: typeof nextError === "string" ? nextError : null,
           feedbackQuestionnaire,
         },
       ];
     });
   } catch {
-    const embeddedEntries = getEmbeddedSchemaExplanationEntries(predictionValue, signatureSchema);
-    return embeddedEntries.length > 0 ? embeddedEntries : getFallbackExplanationEntries(predictionValue);
+    const embeddedEntries = getEmbeddedSchemaReportEntries(predictionValue, signatureSchema);
+    return embeddedEntries.length > 0 ? embeddedEntries : getFallbackReportEntries(predictionValue);
   }
 };

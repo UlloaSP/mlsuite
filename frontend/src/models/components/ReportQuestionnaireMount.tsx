@@ -20,13 +20,13 @@ import {
   toQuestionnaireSchema,
 } from "../questionnaire-feedback";
 
-export type ExplanationQuestionnaireMountHandle = {
+export type ReportQuestionnaireMountHandle = {
   submit(): Promise<Record<string, unknown>>;
   getValues(): Record<string, unknown>;
 };
 
-type ExplanationQuestionnaireMountProps = {
-  ref?: Ref<ExplanationQuestionnaireMountHandle>;
+type ReportQuestionnaireMountProps = {
+  ref?: Ref<ReportQuestionnaireMountHandle>;
   title: string;
   schema: QuestionnaireSchema;
   initialValues: Record<string, unknown>;
@@ -48,7 +48,7 @@ const buildEmbeddedStyles = (singleStep: boolean): string => `
 	${singleStep ? "mlf-step-indicator { display: none !important; } .pane-header { gap: 0 !important; }" : ""}
 `;
 
-export function ExplanationQuestionnaireMount({
+export function ReportQuestionnaireMount({
   ref,
   title,
   schema,
@@ -61,7 +61,7 @@ export function ExplanationQuestionnaireMount({
   transport,
   labels,
   square = false,
-}: ExplanationQuestionnaireMountProps) {
+}: ReportQuestionnaireMountProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedForm | null>(null);
   const initialValuesRef = useRef(initialValues);
@@ -84,7 +84,6 @@ export function ExplanationQuestionnaireMount({
     },
   }));
 
-  // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- MLForm mount errors are external runtime state for the embedded questionnaire host.
   useEffect(() => {
     onValuesChangeRef.current = onValuesChange;
   }, [onValuesChange]);
@@ -99,7 +98,6 @@ export function ExplanationQuestionnaireMount({
     }
 
     try {
-      // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- MLForm mount errors are external runtime state for the embedded questionnaire host.
       setMountError(null);
       const mounted = mountForm(containerRef.current, {
         schema: buildQuestionnaireFormSchema(effectiveSchema),
@@ -114,7 +112,7 @@ export function ExplanationQuestionnaireMount({
         },
         labels: {
           submit: labels?.submit ?? (editable ? "Check answers" : "Reviewed"),
-          submitting: labels?.submitting ?? "Checking answers…",
+          submitting: labels?.submitting ?? "Checking answers...",
         },
         reportPane: "hidden",
       });
@@ -155,7 +153,6 @@ export function ExplanationQuestionnaireMount({
         mounted.unmount();
       };
     } catch (error: unknown) {
-      // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- MLForm mount errors are external runtime state for the embedded questionnaire host.
       setMountError(error instanceof Error ? error.message : String(error));
       return;
     }

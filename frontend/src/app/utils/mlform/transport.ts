@@ -157,14 +157,14 @@ export const createPredictionTransport = (
     const normalizedReports =
       isRecord(parsed) && isRecord(parsed.reports) ? { ...parsed.reports } : {};
     const normalizedMeta = isRecord(parsed) && isRecord(parsed.meta) ? { ...parsed.meta } : {};
-    // Inestable: custom explanations like Mimosa currently depend on `meta.modelId`
+    // Inestable: custom reports like Mimosa currently depend on `meta.modelId`
     // even though prediction transport already carries modelId out-of-band in request URL.
     normalizedMeta.modelId ??= modelId;
-    // Inestable y temporal: custom explanations still need backend base URL through `meta`
+    // Inestable y temporal: custom reports still need backend base URL through `meta`
     // because some plugins resolve relative endpoints against frontend origin instead of API origin.
     normalizedMeta.backendUrl ??= getBackendBaseUrl();
-    // Inestable y temporal: custom explanations may read form field ids instead of backend keys.
-    // Keep backend-shaped inputs in meta so explanation runtime can patch old plugins.
+    // Inestable y temporal: custom reports may read form field ids instead of backend keys.
+    // Keep backend-shaped inputs in meta so report runtime can patch old plugins.
     normalizedMeta.backendFieldValues ??= payload;
     const normalizedRaw = isRecord(parsed) ? parsed : { raw: parsed };
 

@@ -70,6 +70,8 @@ class ExplanationFeedbackServiceTest {
         Prediction prediction = prediction();
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction));
+        when(explanationFeedbackRepository.findByPredictionIdAndUserIdAndOrder(11L, 3L, 1))
+                .thenReturn(Optional.empty());
         when(explanationFeedbackRepository.save(any(ExplanationFeedback.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
@@ -80,6 +82,29 @@ class ExplanationFeedbackServiceTest {
         assertEquals(1, result.getOrder());
         assertEquals("tree", result.getValue().asText());
         assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
+    }
+
+    @Test
+    void createExplanationFeedback_UpdatesExistingUserOrderInsteadOfDuplicating() throws Exception {
+        Prediction prediction = prediction();
+        ExplanationFeedback existing = explanationFeedback(prediction);
+        when(userLookupService.requireById(3L)).thenReturn(user());
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction));
+        when(explanationFeedbackRepository.findByPredictionIdAndUserIdAndOrder(11L, 3L, 1))
+                .thenReturn(Optional.of(existing));
+        when(explanationFeedbackRepository.save(any(ExplanationFeedback.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
+        when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ExplanationFeedback result = service.createExplanationFeedback(
+                3L,
+                11L,
+                1,
+                objectMapper.readTree("\"formatted tree\""));
+
+        assertEquals(12L, result.getId());
+        assertEquals("formatted tree", result.getValue().asText());
     }
 
     @Test
