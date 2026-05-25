@@ -6,13 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { executeFormPipeline } from "mlform/runtime";
 import { createHeadlessPredictionForm } from "../app/utils/mlform/headless-prediction";
 import type { CatalogFieldDefinition } from "../app/utils/mlform/custom-field";
-import type { CatalogExplanationDefinition } from "../app/utils/mlform/custom-explanation";
 import type { CatalogReportDefinition } from "../app/utils/mlform/custom-report";
 import { type PredictionPayloadField, getBackendKey } from "../app/utils/mlform/shared";
 import {
   buildPersistedPredictionPayload,
   type PersistedExplanationState,
 } from "./buildPersistedPredictionPayload";
+import { isExplanationReportConfig } from "./report-contract";
 
 const mapInputsToFieldValues = (
   inputs: Record<string, unknown>,
@@ -31,7 +31,6 @@ type RunBulkPredictionPipelineOptions = {
   inputs: Record<string, unknown>;
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
   customReportDefinitions?: readonly CatalogReportDefinition[];
-  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
   signal?: AbortSignal;
 };
 
@@ -41,7 +40,6 @@ export async function runBulkPredictionPipeline({
   inputs,
   customFieldDefinitions = [],
   customReportDefinitions = [],
-  customExplanationDefinitions = [],
   signal,
 }: RunBulkPredictionPipelineOptions): Promise<Record<string, unknown>> {
   const { form, normalizedFields } = createHeadlessPredictionForm({
@@ -49,7 +47,6 @@ export async function runBulkPredictionPipeline({
     modelId,
     customFieldDefinitions,
     customReportDefinitions,
-    customExplanationDefinitions,
   });
 
   form.setValues(mapInputsToFieldValues(inputs, normalizedFields));
@@ -57,20 +54,29 @@ export async function runBulkPredictionPipeline({
   const result = await executeFormPipeline({
     form,
     submit: { signal },
-    explanationMode: "all",
+    reportFetchMode: "all",
     artifactAdapter: {
-      derive({ submitResult, explanationResults, explanationErrors }) {
-        const explanations: PersistedExplanationState[] = form.explanations.map((explanation) => ({
-          id: explanation.id,
-          status:
-            explanation.id in explanationResults
-              ? "done"
-              : explanation.id in explanationErrors
-                ? "error"
-                : "idle",
-          result: explanationResults[explanation.id],
-          error: explanationErrors[explanation.id] ?? null,
-        }));
+      derive({ submitResult, reportFetchResults, reportFetchErrors }) {
+        const explanations = form.reports.reduce<PersistedExplanationState[]>(
+          (items, explanation) => {
+            if (!isExplanationReportConfig(explanation)) {
+              return items;
+            }
+            items.push({
+              id: explanation.id,
+              status:
+                explanation.id in reportFetchResults
+                  ? "done"
+                  : explanation.id in reportFetchErrors
+                    ? "error"
+                    : "idle",
+              result: reportFetchResults[explanation.id],
+              error: reportFetchErrors[explanation.id] ?? null,
+            });
+            return items;
+          },
+          [],
+        );
         return buildPersistedPredictionPayload(submitResult.raw, explanations);
       },
     },

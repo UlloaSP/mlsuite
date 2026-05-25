@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { SquareTerminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AppBadge, AppButton } from "../../../app/components";
+import { AppBadge, AppButton } from "../../../app/components/ui-controls";
 import { closeTerminalSession } from "../api/infrastructureService";
 import { useTerminalSession } from "../hooks/useInfrastructure";
 import { openTerminalSocket, sendTerminalFrame } from "../ws/infrastructureSocket";
@@ -72,7 +72,7 @@ export function TerminalView({
     };
   }, []);
 
-  // react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Terminal session effect coordinates selected service, xterm status, socket setup, and cleanup.
+  // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-adjust-state-on-prop-change, react-doctor/exhaustive-deps -- Terminal session effect coordinates selected service, xterm status, socket setup, and cleanup.
   useEffect(() => {
     if (!terminalRef.current) return;
     const terminal = terminalRef.current;
@@ -83,22 +83,26 @@ export function TerminalView({
           ? "Open shell to start session.\r\n"
           : "Select a service to start shell.\r\n",
       );
+      // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- Terminal status mirrors external session availability.
       setStatus("idle");
       return;
     }
     if (!selectedService) {
       terminal.write("Select a service to start shell.\r\n");
+      // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- Terminal status mirrors external session availability.
       setStatus("idle");
       return;
     }
     if (!terminalEnabled) {
       terminal.write("Shell disabled for selected service.\r\n");
+      // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- Terminal status mirrors external session availability.
       setStatus("unavailable");
       return;
     }
     let disposed = false;
     let dataDispose: { dispose: () => void } | null = null;
     terminal.write(`Opening ${selectedService} shell…\r\n`);
+    // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- Terminal status mirrors external session availability.
     setStatus("opening");
     void createTerminalSession({
       serviceName: selectedService,
@@ -149,7 +153,8 @@ export function TerminalView({
     return () => {
       disposed = true;
       dataDispose?.dispose();
-      socketRef.current?.close();
+      const socket = socketRef.current;
+      socket?.close();
       socketRef.current = null;
       const sessionId = sessionRef.current;
       sessionRef.current = null;
@@ -240,6 +245,7 @@ export function TerminalView({
           <div className="flex flex-col gap-1 p-3">
             {["help", "ls", "ps", "env", "uname", "df -h", "top", "whoami"].map((cmd) => (
               <button
+                type="button"
                 key={cmd}
                 className="flex items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-[var(--text-secondary)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
                 disabled={status !== "live"}

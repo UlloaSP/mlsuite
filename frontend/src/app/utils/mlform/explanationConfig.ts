@@ -4,16 +4,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type {
-  ExplanationConfig,
-  ExplanationFetchRequest,
-  NormalizedExplanationConfig,
+  NormalizedReportConfig,
+  ReportConfig,
+  ReportFetchRequest,
 } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../config/runtimeConfig";
 import { isRecord } from "./shared";
 
 export const toBackendPatchedRequest = (
-  request: ExplanationFetchRequest,
-): ExplanationFetchRequest => {
+  request: ReportFetchRequest,
+): ReportFetchRequest => {
   const backendFieldValues = isRecord(request.meta.backendFieldValues)
     ? request.meta.backendFieldValues
     : null;
@@ -31,9 +31,9 @@ export const toBackendPatchedRequest = (
   };
 };
 
-export const normalizeExplanationConfig = <TConfig extends ExplanationConfig>(
-  config: NormalizedExplanationConfig<TConfig>,
-): NormalizedExplanationConfig<TConfig> => {
+export const normalizeExplanationConfig = <TConfig extends ReportConfig>(
+  config: NormalizedReportConfig<TConfig>,
+): NormalizedReportConfig<TConfig> => {
   const endpoint = (config as Record<string, unknown>).endpoint;
   const backendUrl = getBackendBaseUrl();
 

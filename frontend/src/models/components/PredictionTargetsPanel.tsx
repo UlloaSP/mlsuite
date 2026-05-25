@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
+import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
 import type { TargetDto } from "../api/modelService";
 import {
   formatProbability,

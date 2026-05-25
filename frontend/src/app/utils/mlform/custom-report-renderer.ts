@@ -4,13 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportController } from "mlform/runtime";
-import type { ReportDescriptor } from "mlform/presentation";
+import type { ReportDescriptor } from "mlform/primitives";
 import type {
   PrimitiveReportRenderContext,
   PrimitiveReportRendererElement,
   PrimitiveText,
 } from "mlform/primitives";
-import { normalizeCustomExplanationResult } from "./custom-explanation";
+import { normalizeCustomReportResult } from "./custom-report-result";
 
 export const CUSTOM_REPORT_RENDERER_TAG = "mlsuite-custom-report-renderer";
 
@@ -57,7 +57,7 @@ export class PredictionCustomReportRendererElement
 
     const state = this.#controller?.state;
     const props = this.#descriptor?.props ?? {};
-    const normalized = normalizeCustomExplanationResult(
+    const normalized = normalizeCustomReportResult(
       isRenderableResult(props.result) ? props.result : props.payload,
     );
     const title =

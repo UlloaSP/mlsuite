@@ -1,17 +1,5 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 import { describe, expect, it } from "vite-plus/test";
-import type { ExplanationFetchRequest } from "mlform/runtime";
 import { extractPredictionExplanationEntries } from "../src/models/explanation-feedback-utils";
-import { applyExplanationFeedbackMetadata } from "../src/models/signature-feedback-metadata";
-import type { CatalogExplanationDefinition } from "../src/app/utils/mlform/custom-explanation";
-import {
-  patchDefinedExplanationTransport,
-  type ExplanationDefinitionWithFeedback,
-} from "../src/app/utils/mlform/custom-explanation-questionnaire";
 import { createPredictionTransport } from "../src/app/utils/mlform/transport";
 import {
   buildCombinedReviewQuestionnaire,
@@ -29,49 +17,12 @@ const questionnaire = {
   ],
 };
 
-const definition: CatalogExplanationDefinition = {
-  id: "plugin-1",
-  fileName: "crystal-tree.ts",
-  source: "",
-  updatedAt: "2026-01-01T00:00:00Z",
-  createdAt: "2026-01-01T00:00:00Z",
-  contentType: "text/typescript",
-  sizeBytes: 100,
-  active: true,
-  kind: "Crystal Tree",
-  definition: {
-    kind: "Crystal Tree",
-    feedbackQuestionnaire: questionnaire,
-    schema: { safeParse: (value: unknown) => ({ success: true, data: value }) },
-    transport: () => ({ submit: async () => ({}) }),
-    describe: () => null,
-  },
-};
-
 const predictionValue = {
   reports: {
     "crystal-tree": {
       explanations: ["Predicted class 2 || petal_length > 4.8"],
     },
   },
-};
-
-const explanationRequest: ExplanationFetchRequest = {
-  explanationId: "crystal-tree",
-  values: { "petal length": 4.9 },
-  fieldValues: { "petal length": 4.9 },
-  serializedValues: { "petal length": 4.9 },
-  serializedFieldValues: { "petal length": 4.9 },
-  reports: {},
-  meta: {
-    backendFieldValues: {
-      petal_length: 4.9,
-      petal_width: 1.5,
-      sepal_length: 6.1,
-      sepal_width: 2.8,
-    },
-  },
-  raw: null,
 };
 
 const parsePostedData = async (
@@ -127,52 +78,12 @@ describe("explanation feedback metadata", () => {
     });
   });
 
-  it("sends backend feature keys through MLForm 0.1.9 defined explanation plugins", async () => {
-    let captured: ExplanationFetchRequest | null = null;
-    const plugin = patchDefinedExplanationTransport({
-      kind: "Crystal Tree",
-      schema: { safeParse: (value: unknown) => ({ success: true, data: value }) },
-      transport: () => ({
-        submit: async (request) => {
-          captured = request;
-          return {};
-        },
-      }),
-      describe: () => null,
-      definition: null as never,
-      presenter: null as never,
-    } satisfies ExplanationDefinitionWithFeedback);
-    plugin.definition = {
-      kind: plugin.kind,
-      schema: plugin.schema,
-      transport: plugin.transport,
-    };
-    await plugin.definition.transport({ kind: "Crystal Tree" }).submit(explanationRequest);
-
-    expect(captured?.serializedValues).toEqual(explanationRequest.meta.backendFieldValues);
-  });
-
-  it("persists plugin questionnaire metadata into schema explanations", () => {
-    const schema = applyExplanationFeedbackMetadata(
-      {
-        fields: [{ kind: "number", label: "petal_length" }],
-        explanations: [{ kind: "Crystal Tree", id: "crystal-tree" }],
-      },
-      [definition],
-    );
-
-    const explanation = (schema.explanations as Record<string, unknown>[])[0];
-
-    expect(explanation.feedbackEnabled).toBe(true);
-    expect(explanation.feedbackQuestionnaire).toEqual(questionnaire);
-  });
-
   it("detects embedded questionnaire without loading plugin catalog", () => {
     const entries = extractPredictionExplanationEntries(
       predictionValue,
       {
         fields: [{ kind: "number", label: "petal_length" }],
-        explanations: [
+        reports: [
           {
             kind: "Crystal Tree",
             id: "crystal-tree",
@@ -192,7 +103,7 @@ describe("explanation feedback metadata", () => {
       { reports: {} },
       {
         fields: [{ kind: "number", label: "petal_length" }],
-        explanations: [
+        reports: [
           {
             kind: "Crystal Tree",
             id: "crystal-tree",
@@ -213,10 +124,7 @@ describe("explanation feedback metadata", () => {
       explanations: entries,
     });
 
-    expect(steps.map((step) => step.title)).toEqual([
-      "Output 1: species",
-      "Explanation 1: Crystal Tree",
-    ]);
+    expect(steps.map((step) => step.title)).toEqual(["Output 1: species", "Explanation 1: Crystal Tree"]);
   });
 
   it("uses default editable questionnaire for old feedback-enabled schemas", () => {
@@ -224,7 +132,7 @@ describe("explanation feedback metadata", () => {
       predictionValue,
       {
         fields: [{ kind: "number", label: "petal_length" }],
-        explanations: [
+        reports: [
           {
             kind: "Crystal Tree",
             id: "crystal-tree",
@@ -237,9 +145,7 @@ describe("explanation feedback metadata", () => {
 
     expect(entries).toHaveLength(1);
     expect(entries[0].feedbackQuestionnaire?.steps[0].fields.map((field) => field.label)).toEqual([
-      "Clarity",
-      "Usefulness",
-      "Trust",
+      "Clarity", "Usefulness", "Trust",
     ]);
   });
 
@@ -264,10 +170,7 @@ describe("explanation feedback metadata", () => {
     const combined = buildCombinedReviewQuestionnaire(steps);
 
     expect(steps.map((step) => step.kind)).toEqual(["output", "explanation"]);
-    expect(combined.schema.steps.map((step) => step.title)).toEqual([
-      "Output 1: species",
-      "Explanation 1: Crystal Tree",
-    ]);
+    expect(combined.schema.steps.map((step) => step.title)).toEqual(["Output 1: species", "Explanation 1: Crystal Tree"]);
     expect(combined.schema.steps[0].description).toContain("setosa");
     expect(combined.schema.steps[1].description).toContain("petal_length > 4.8");
   });

@@ -3,13 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createMlRegistryPack } from "mlform/builtins-ml";
+import { createMlRegistryPack } from "mlform/builtins";
 import {
-  registerDefinedExplanationKind,
   registerDefinedFieldKind,
   registerDefinedReportKind,
-  type PresentationRegistry,
-} from "mlform/presentation";
+} from "mlform/kit";
+import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import {
   createForm,
   type FormController,
@@ -17,7 +16,6 @@ import {
   type Registry,
   type Transport,
 } from "mlform/runtime";
-import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogFieldDefinition } from "./custom-field";
 import type { CatalogReportDefinition } from "./custom-report";
 import { toMlformSchema } from "./schema-validation";
@@ -27,26 +25,16 @@ import { createPredictionTransport } from "./transport";
 const createPredictionEngineRegistry = (
   customFieldDefinitions: readonly CatalogFieldDefinition[],
   customReportDefinitions: readonly CatalogReportDefinition[],
-  customExplanationDefinitions: readonly CatalogExplanationDefinition[],
 ) => {
   const pack = createMlRegistryPack();
   for (const definition of customFieldDefinitions) {
     if (definition.active) {
-      registerDefinedFieldKind(pack.registry, pack.presentationRegistry, definition.definition);
+      registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition);
     }
   }
   for (const definition of customReportDefinitions) {
     if (definition.active) {
-      registerDefinedReportKind(pack.registry, pack.presentationRegistry, definition.definition);
-    }
-  }
-  for (const definition of customExplanationDefinitions) {
-    if (definition.active) {
-      registerDefinedExplanationKind(
-        pack.registry,
-        pack.presentationRegistry,
-        definition.definition,
-      );
+      registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition);
     }
   }
   return pack;
@@ -57,13 +45,12 @@ type CreateHeadlessPredictionFormOptions = {
   modelId: string;
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
   customReportDefinitions?: readonly CatalogReportDefinition[];
-  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
 };
 
 export type PredictionRuntime = {
   formSchema: FormSchema;
   registry: Registry;
-  presentationRegistry: PresentationRegistry;
+  descriptorRegistry: PrimitiveDescriptorRegistry;
   transport: Transport;
   normalizedFields: readonly PredictionPayloadField[];
 };
@@ -73,24 +60,18 @@ export const createPredictionRuntime = ({
   modelId,
   customFieldDefinitions = [],
   customReportDefinitions = [],
-  customExplanationDefinitions = [],
 }: CreateHeadlessPredictionFormOptions): PredictionRuntime => {
   const formSchema = toMlformSchema(schema, {
     customFieldDefinitions,
     customReportDefinitions,
-    customExplanationDefinitions,
   });
   const normalizedFields = formSchema.fields as PredictionPayloadField[];
-  const pack = createPredictionEngineRegistry(
-    customFieldDefinitions,
-    customReportDefinitions,
-    customExplanationDefinitions,
-  );
+  const pack = createPredictionEngineRegistry(customFieldDefinitions, customReportDefinitions);
   const transport = createPredictionTransport(modelId, normalizedFields);
   return {
     formSchema,
     registry: pack.registry,
-    presentationRegistry: pack.presentationRegistry,
+    descriptorRegistry: pack.descriptorRegistry,
     transport,
     normalizedFields,
   };

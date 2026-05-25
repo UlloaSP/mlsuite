@@ -12,7 +12,7 @@ import {
 
 type JsonSchema = Record<string, unknown>;
 
-const SUPPORTED_TOP_LEVEL_KEYS = ["fields", "reports", "explanations"] as const;
+const SUPPORTED_TOP_LEVEL_KEYS = ["fields", "reports"] as const;
 
 const sharedSchemaOverrides: Record<string, JsonSchema> = {
   asyncValidationDebounceMs: { type: "integer", minimum: 0 },
@@ -168,18 +168,6 @@ const reportSchema = {
   ],
 } as const;
 
-const explanationSchema = {
-  type: "object",
-  required: ["kind"],
-  additionalProperties: true,
-  properties: {
-    id: { type: "string" },
-    kind: { type: "string", minLength: 1 },
-    label: { type: "string", minLength: 1 },
-    description: { type: "string" },
-  },
-} as const;
-
 const fieldKeysByKind = Object.fromEntries(
   BUILTIN_FIELD_DEFINITIONS.map((definition) => [
     definition.kind,
@@ -210,7 +198,6 @@ export const mlformJsonSchema = {
   properties: {
     fields: { type: "array", items: fieldSchema },
     reports: { type: "array", items: reportSchema },
-    explanations: { type: "array", default: [], items: explanationSchema },
   },
 } as const;
 

@@ -1,11 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { HttpError } from "../../app/api/appFetch";
-import { AppEmptyState } from "../../app/components";
-import {
-  getActiveCustomExplanationDefinitions,
-  type CatalogExplanationDefinition,
-} from "../../app/utils/mlform/custom-explanation";
+import { AppEmptyState } from "../../app/components/ui";
 import { ReviewPredictionDetailPanel } from "../components/ReviewPredictionDetailPanel";
 import { ReviewPredictionRail } from "../components/ReviewPredictionRail";
 import { ReviewShell } from "../components/ReviewShell";
@@ -20,25 +16,9 @@ export function ReviewWorkspacePage() {
   const reviewContext = useReviewContext(token);
   const { data, error, isLoading } = reviewContext;
   const submitMutation = useSubmitReviewPredictionsMutation(token);
-  const [definitions, setDefinitions] = useState<readonly CatalogExplanationDefinition[]>([]);
-
-  useEffect(() => {
-    let active = true;
-    void getActiveCustomExplanationDefinitions()
-      .then((items) => {
-        if (active) setDefinitions(items);
-      })
-      .catch(() => {
-        if (active) setDefinitions([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
   const selectedPredictionToken = useMemo(
     () => predictionToken ?? (data ? firstReviewPredictionToken(data.predictions) : undefined),
-    [data?.predictions, predictionToken],
+    [data, predictionToken],
   );
 
   useEffect(() => {
@@ -62,7 +42,7 @@ export function ReviewWorkspacePage() {
       replace: true,
       viewTransition: false,
     });
-  }, [data?.predictions, navigate, predictionToken, token]);
+  }, [data, navigate, predictionToken, token]);
 
   if (isLoading) {
     return (
@@ -99,7 +79,6 @@ export function ReviewWorkspacePage() {
                 token={token}
                 predictionToken={selectedPredictionToken}
                 signatureSchema={data.signature.inputSignature}
-                customExplanationDefinitions={definitions}
                 onReviewChanged={() => reviewContext.refetch()}
               />
             ) : null}

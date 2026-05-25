@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { cx } from "./ui";
+import { cx } from "./ui-utils";
 
 export function SidebarSection({
   children,

@@ -41,12 +41,19 @@ public class PredictionFeedbackStatusResolver {
 
     private int countReports(Map<String, Object> inputSignature) {
         Object reports = inputSignature.get("reports");
-        return reports instanceof List<?> items ? items.size() : 0;
+        if (!(reports instanceof List<?> items)) {
+            return 0;
+        }
+        return (int) items.stream()
+                .filter((item) -> item instanceof Map<?, ?>)
+                .map((item) -> (Map<?, ?>) item)
+                .filter((item) -> !isExplanationReport(item))
+                .count();
     }
 
     private int countFeedbackEnabledExplanations(Long userId, Map<String, Object> inputSignature) {
-        Object rawExplanations = inputSignature.get("explanations");
-        if (!(rawExplanations instanceof List<?> items)) {
+        Object reports = inputSignature.get("reports");
+        if (!(reports instanceof List<?> items)) {
             return 0;
         }
 
@@ -55,6 +62,10 @@ public class PredictionFeedbackStatusResolver {
                 .map((item) -> (Map<?, ?>) item)
                 .filter(this::isFeedbackEnabled)
                 .count();
+    }
+
+    private boolean isExplanationReport(Map<?, ?> report) {
+        return report.get("feedbackEnabled") instanceof Boolean || report.get("feedbackQuestionnaire") != null;
     }
 
     private boolean isFeedbackEnabled(Map<?, ?> explanation) {

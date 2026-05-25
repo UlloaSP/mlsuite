@@ -2,7 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Shield, UserCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { AppPage, AppPageHeader, AppSelect, AppSurface } from "../../app/components";
+import { AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
+import { AppSelect } from "../../app/components/ui-controls";
 import { NotFoundError } from "../../app/pages/error-page";
 import {
   getOrganizationMembers,

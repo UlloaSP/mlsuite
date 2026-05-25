@@ -24,22 +24,23 @@ const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
   return typeof first === "object" && first !== null ? (first as PredictionOutput) : null;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
 const getTargetClassLabel = (
   signatureSchema: unknown,
   order: number,
   classIndex: number,
 ): string | null => {
-  if (!isRecord(signatureSchema) || !Array.isArray(signatureSchema.reports)) {
+  if (
+    typeof signatureSchema !== "object" ||
+    signatureSchema === null ||
+    !Array.isArray((signatureSchema as { reports?: unknown }).reports)
+  ) {
     return null;
   }
-  const report = signatureSchema.reports[order];
-  if (!isRecord(report) || !Array.isArray(report.labels)) {
+  const report = (signatureSchema as { reports: unknown[] }).reports[order];
+  if (typeof report !== "object" || report === null || !Array.isArray((report as { labels?: unknown }).labels)) {
     return null;
   }
-  const label = report.labels[classIndex];
+  const label = (report as { labels: unknown[] }).labels[classIndex];
   return typeof label === "string" ? label : null;
 };
 

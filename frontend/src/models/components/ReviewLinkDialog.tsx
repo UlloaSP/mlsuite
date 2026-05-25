@@ -1,7 +1,7 @@
 import { Copy, Link2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AppButton, AppIconButton, AppTextField } from "../../app/components";
+import { AppButton, AppIconButton, AppTextField } from "../../app/components/ui-controls";
 import {
   useCreateReviewLinkMutation,
   useReviewLinks,
@@ -50,10 +50,12 @@ export function ReviewLinkDialog({
     [predictions, selectedIds],
   );
 
-  // react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Opening dialog resets selection, expiry, and generated link as one modal initialization.
+  // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-derived-state, react-doctor/no-adjust-state-on-prop-change -- Opening dialog resets selection and expiry as one modal initialization.
   useEffect(() => {
     if (!open) return;
+    // react-doctor-disable-next-line react-doctor/no-derived-state, react-doctor/no-adjust-state-on-prop-change -- Modal selection is editable local draft initialized from visible predictions.
     setSelectedIds(new Set(predictions.map((prediction) => prediction.id)));
+    // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- Modal expiry resets when opening a fresh share dialog.
     setExpiresAt(defaultExpiryDate());
   }, [open, predictions]);
 

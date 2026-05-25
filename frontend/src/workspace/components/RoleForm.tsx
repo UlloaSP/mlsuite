@@ -16,13 +16,13 @@ type RolePermissionGroup = {
 };
 
 export function RoleForm({
-  role,
+  roleDefinition,
   initial,
   permissionGroups,
   onClose,
   onSave,
 }: {
-  role: RoleDefinitionDto | null;
+  roleDefinition: RoleDefinitionDto | null;
   initial?: { name: string; description?: string; permissionKeys: PermissionKey[] };
   permissionGroups: RolePermissionGroup[];
   onClose: () => void;
@@ -32,10 +32,12 @@ export function RoleForm({
     permissionKeys: PermissionKey[];
   }) => void;
 }) {
-  const [name, setName] = useState(initial?.name ?? role?.name ?? "");
-  const [description, setDescription] = useState(initial?.description ?? role?.description ?? "");
+  const [name, setName] = useState(initial?.name ?? roleDefinition?.name ?? "");
+  const [description, setDescription] = useState(
+    initial?.description ?? roleDefinition?.description ?? "",
+  );
   const [selected, setSelected] = useState<PermissionKey[]>(
-    initial?.permissionKeys ?? role?.permissions.map((p) => p.key) ?? [],
+    initial?.permissionKeys ?? roleDefinition?.permissions.map((p) => p.key) ?? [],
   );
   const canSave = Boolean(name.trim() && selected.length > 0);
   const toggle = (permission: PermissionKey, checked: boolean) => {
@@ -49,7 +51,9 @@ export function RoleForm({
       <div className="flex h-[min(86vh,760px)] w-full max-w-[840px] flex-col overflow-hidden rounded-xl bg-[var(--surface-primary)] shadow-[var(--shadow-card)]">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-soft)] px-6 py-5">
           <div>
-            <h2 className="text-xl font-semibold">{role ? "Edit Role" : "Create New Role"}</h2>
+            <h2 className="text-xl font-semibold">
+              {roleDefinition ? "Edit Role" : "Create New Role"}
+            </h2>
             <p className="text-sm text-[var(--text-secondary)]">
               {selected.length} permissions selected
             </p>
@@ -133,7 +137,7 @@ export function RoleForm({
             disabled={!canSave}
             onClick={() => onSave({ name, description, permissionKeys: selected })}
           >
-            {role ? "Save Role" : "Create Role"}
+            {roleDefinition ? "Save Role" : "Create Role"}
           </AppButton>
         </footer>
       </div>

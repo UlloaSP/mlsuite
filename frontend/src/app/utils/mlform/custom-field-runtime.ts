@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { defineFieldKind, type DefinedFieldKind } from "mlform/presentation";
+import { defineFieldKind, type DefinedFieldKind } from "mlform/kit";
 import type { FieldConfig } from "mlform/runtime";
 
 type TypeScriptModule = typeof import("typescript");
@@ -159,13 +159,6 @@ export const validateCustomFieldSource = async (source: string): Promise<CustomF
         fieldId: "preview-field",
         state: {
           value: undefined,
-          initialValue: undefined,
-          touched: false,
-          dirty: false,
-          valid: true,
-          visible: true,
-          disabled: false,
-          readOnly: false,
           errors: [],
           status: "idle",
         },

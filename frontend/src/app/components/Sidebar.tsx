@@ -30,7 +30,7 @@ import { useWorkspaceContext } from "../../workspace/hooks";
 import { fullscreenAtom, sidebarCollapsedAtom, themeWithHtmlAtom } from "../atoms";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarTile } from "./SidebarTile";
-import { cx, FOCUS_RING } from "./ui";
+import { cx, FOCUS_RING } from "./ui-utils";
 
 type NavigationItem = {
   to: string;

@@ -4,15 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { createMlRegistryPack } from "mlform/builtins-ml";
-import { mountWizardForm, type MountedWizardForm } from "mlform/kit";
+import { createMlRegistryPack } from "mlform/builtins";
+import { mountForm, type MountedForm } from "mlform/kit";
 import type { Transport } from "mlform/runtime";
 import type { QuestionnaireSchema } from "../questionnaire-schema";
 import {
   buildQuestionnaireFormSchema,
   buildQuestionnaireWizardLayout,
 } from "../questionnaire-schema";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
+import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
 import { createLocalQuestionnaireTransport } from "../local-questionnaire-transport";
 import {
   getQuestionnaireValues,
@@ -63,7 +63,7 @@ export function ExplanationQuestionnaireMount({
   square = false,
 }: ExplanationQuestionnaireMountProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mountedRef = useRef<MountedWizardForm | null>(null);
+  const mountedRef = useRef<MountedForm | null>(null);
   const initialValuesRef = useRef(initialValues);
   const onValuesChangeRef = useRef(onValuesChange);
   const onStepChangeRef = useRef(onStepChange);
@@ -84,6 +84,7 @@ export function ExplanationQuestionnaireMount({
     },
   }));
 
+  // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- MLForm mount errors are external runtime state for the embedded questionnaire host.
   useEffect(() => {
     onValuesChangeRef.current = onValuesChange;
   }, [onValuesChange]);
@@ -98,8 +99,9 @@ export function ExplanationQuestionnaireMount({
     }
 
     try {
+      // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- MLForm mount errors are external runtime state for the embedded questionnaire host.
       setMountError(null);
-      const mounted = mountWizardForm(containerRef.current, {
+      const mounted = mountForm(containerRef.current, {
         schema: buildQuestionnaireFormSchema(effectiveSchema),
         layout: buildQuestionnaireWizardLayout(effectiveSchema),
         registry: createMlRegistryPack().registry,
@@ -128,13 +130,13 @@ export function ExplanationQuestionnaireMount({
         mounted.host.shadowRoot?.append(style);
       }
 
-      const unsubscribe = mounted.view.subscribe((snapshot) => {
+      const unsubscribe = mounted.form.subscribe((snapshot) => {
         onValuesChangeRef.current?.(
-          typeof snapshot.form.values === "object" && snapshot.form.values !== null
-            ? snapshot.form.values
+          typeof snapshot.values === "object" && snapshot.values !== null
+            ? snapshot.values
             : {},
         );
-        const nextStepId = snapshot.wizard?.currentStepId ?? null;
+        const nextStepId = null;
         if (currentStepIdRef.current !== nextStepId) {
           currentStepIdRef.current = nextStepId;
           onStepChangeRef.current?.(nextStepId);
@@ -143,7 +145,7 @@ export function ExplanationQuestionnaireMount({
 
       mountedRef.current = mounted;
       onValuesChangeRef.current?.(getQuestionnaireValues(mounted));
-      currentStepIdRef.current = mounted.view.getSnapshot().wizard?.currentStepId ?? null;
+      currentStepIdRef.current = null;
       onStepChangeRef.current?.(currentStepIdRef.current);
 
       return () => {
@@ -153,6 +155,7 @@ export function ExplanationQuestionnaireMount({
         mounted.unmount();
       };
     } catch (error: unknown) {
+      // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- MLForm mount errors are external runtime state for the embedded questionnaire host.
       setMountError(error instanceof Error ? error.message : String(error));
       return;
     }

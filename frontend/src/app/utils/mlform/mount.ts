@@ -21,7 +21,6 @@ export const mountPredictionForm = ({
   theme,
   customFieldDefinitions = [],
   customReportDefinitions = [],
-  customExplanationDefinitions = [],
   onSubmit,
   onSubmitError,
 }: MountPredictionFormOptions): MountedPredictionForm => {
@@ -30,12 +29,11 @@ export const mountPredictionForm = ({
     modelId,
     customFieldDefinitions,
     customReportDefinitions,
-    customExplanationDefinitions,
   });
   const mounted = mountForm(container, {
     schema: runtime.formSchema,
     registry: runtime.registry,
-    presentationRegistry: runtime.presentationRegistry,
+    descriptorRegistry: runtime.descriptorRegistry,
     primitiveRegistry: createPredictionPrimitiveRegistry(),
     transport: runtime.transport,
     hooks: {
@@ -54,7 +52,7 @@ export const mountPredictionForm = ({
         onSubmitError?.(error);
       },
     },
-    layout: "split",
+    layout: { kind: "split" },
     reportPane: "always",
     labels: {
       form: "Schema Inputs",

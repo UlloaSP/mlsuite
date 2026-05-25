@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { Ref } from "react";
-import { AppCopy, AppPanel } from "../../app/components";
+import { AppCopy, AppPanel } from "../../app/components/ui";
 import type { PredictionExplanationDescriptor } from "../questionnaire-feedback";
 import type { ExplanationQuestionnaireMountHandle } from "./ExplanationQuestionnaireMount";
 import { ExplanationQuestionnaireMount } from "./ExplanationQuestionnaireMount";

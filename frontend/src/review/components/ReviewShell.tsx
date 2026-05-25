@@ -3,7 +3,7 @@ import { useAtom } from "jotai";
 import type { ReactNode } from "react";
 import { useParams } from "react-router";
 import { themeAtom, themeWithHtmlAtom, type ThemeMode } from "../../app/atoms";
-import { AppButton } from "../../app/components";
+import { AppButton } from "../../app/components/ui-controls";
 import { useLogout } from "../../user/hooks";
 
 type ReviewShellProps = {

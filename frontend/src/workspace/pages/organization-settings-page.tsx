@@ -1,16 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
-import {
-  AppButton,
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSelect,
-  AppSurface,
-  AppTextArea,
-  AppTextField,
-} from "../../app/components";
+import { AppButton, AppSelect, AppTextArea, AppTextField } from "../../app/components/ui-controls";
+import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
 import { NotFoundError } from "../../app/pages/error-page";
 import {
   getOrganization,

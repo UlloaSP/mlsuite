@@ -4,18 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import {
-  getActiveCustomExplanationDefinitions,
-  type CatalogExplanationDefinition,
-} from "../../app/utils/mlform/custom-explanation";
 import type { PredictionDto, SignatureDto } from "../api/modelService";
 import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
 import { useGetExplanationFeedback, useGetTargets } from "../hooks";
 import { useGetOutputFeedback } from "../output-feedback-hooks";
 import { useUser } from "../../user/hooks";
 import { formatTimestamp, getPredictionExecutionTime, getPredictionTimestamp } from "../utils";
+import { getOutputReports } from "../report-contract";
 import { PredictionDetailMetrics } from "./PredictionDetailMetrics";
 import { PredictionExplanationCard } from "./PredictionExplanationCard";
 import { PredictionInputsPanel } from "./PredictionInputsPanel";
@@ -35,41 +32,19 @@ export function PredictionDetailPageContent({
   const { data: user } = useUser();
   const [inputsOpen, setInputsOpen] = useState(true);
   const [targetsOpen, setTargetsOpen] = useState(true);
-  const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
-    readonly CatalogExplanationDefinition[]
-  >([]);
   const { data: targets = [] } = useGetTargets({ predictionId: prediction.id || "" });
   const { data: outputFeedback = [] } = useGetOutputFeedback({ predictionId: prediction.id || "" });
   const { data: explanationFeedback = [] } = useGetExplanationFeedback({
     predictionId: prediction.id || "",
   });
 
-  useEffect(() => {
-    let active = true;
-    void getActiveCustomExplanationDefinitions()
-      .then((definitions) => {
-        if (active) {
-          setCustomExplanationDefinitions(definitions);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setCustomExplanationDefinitions([]);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
   const explanationEntries = useMemo(
     () =>
       extractPredictionExplanationEntries(
         prediction.prediction,
         signature?.inputSignature,
-        customExplanationDefinitions,
       ),
-    [prediction.prediction, signature?.inputSignature, customExplanationDefinitions],
+    [prediction.prediction, signature?.inputSignature],
   );
   const currentUserId = user?.id ? Number(user.id) : null;
   const otherExplanationFeedbackByOrder = useMemo(() => {
@@ -115,16 +90,7 @@ export function PredictionDetailPageContent({
     return map;
   }, [outputFeedback, currentUserId]);
   const reports = useMemo(
-    () =>
-      signature?.inputSignature &&
-      typeof signature.inputSignature === "object" &&
-      signature.inputSignature !== null &&
-      Array.isArray((signature.inputSignature as { reports?: unknown[] }).reports)
-        ? ((signature.inputSignature as { reports: unknown[] }).reports as Record<
-            string,
-            unknown
-          >[])
-        : [],
+    () => getOutputReports(signature?.inputSignature),
     [signature?.inputSignature],
   );
 

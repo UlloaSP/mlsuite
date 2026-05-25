@@ -1,14 +1,10 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 import { useAtom } from "jotai";
 import { m as motion } from "motion/react";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
-import { AppButton, AppCopy, AppPanel } from "../../app/components";
+import { AppButton } from "../../app/components/ui-controls";
+import { AppCopy, AppPanel } from "../../app/components/ui";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import { mountPredictionForm } from "../../app/utils/mlform/mount";
 import { schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/schema-needs-plugin-catalog";
@@ -19,6 +15,7 @@ import {
   type PersistedExplanationState,
 } from "../buildPersistedPredictionPayload";
 import { loadPredictionCatalogDefinitions } from "../loadPredictionCatalogDefinitions";
+import { isExplanationReportConfig } from "../report-contract";
 import { CreatePredictionModal } from "./CreatePredictionModal";
 import type { PredictionCatalogDefinitions } from "../loadPredictionCatalogDefinitions";
 
@@ -44,7 +41,6 @@ const initialCatalogLoadState: CatalogLoadState = {
   data: {
     fieldDefinitions: [],
     reportDefinitions: [],
-    explanationDefinitions: [],
   },
   error: null,
 };
@@ -93,15 +89,20 @@ const initialPredictionState: PredictionState = {
 const getPersistedExplanations = (
   form: NonNullable<ReturnType<typeof mountPredictionForm>>["form"],
 ): PersistedExplanationState[] =>
-  form.explanations.map((explanation) => {
-    const explanationState = form.state.explanationStates[explanation.id] ?? explanation.state;
-    return {
+  form.reports.reduce<PersistedExplanationState[]>((items, explanation) => {
+    if (!isExplanationReportConfig(explanation)) {
+      return items;
+    }
+    const explanationState = form.state.reportStates[explanation.id] ?? explanation.state;
+    const status = explanationState.status === "ready" ? "done" : explanationState.status;
+    items.push({
       id: explanation.id,
-      status: explanationState.status,
-      result: explanationState.result,
+      status,
+      result: explanationState.payload,
       error: explanationState.error,
-    };
-  });
+    });
+    return items;
+  }, []);
 
 export function CreatePredictionBodyForm() {
   const { modelId } = useParams<{ modelId: string }>();
@@ -127,7 +128,7 @@ export function CreatePredictionBodyForm() {
         type: "submitted",
         inputs: nextInputs,
         response: nextResponse,
-        explanationsPending: Boolean(mountedRef.current?.form.explanations.length),
+        explanationsPending: false,
       });
       setShowModal(true);
     },
@@ -190,7 +191,6 @@ export function CreatePredictionBodyForm() {
         theme,
         customFieldDefinitions: catalogState.data.fieldDefinitions,
         customReportDefinitions: catalogState.data.reportDefinitions,
-        customExplanationDefinitions: catalogState.data.explanationDefinitions,
         onSubmit: handleSubmit,
         onSubmitError(error) {
           toast.error("Prediction request failed", {
@@ -210,8 +210,11 @@ export function CreatePredictionBodyForm() {
             state.lastResult.raw,
             getPersistedExplanations(mounted.form),
           ),
-          explanationsPending: mounted.form.explanations.some((explanation) => {
-            const explanationState = state.explanationStates[explanation.id] ?? explanation.state;
+          explanationsPending: mounted.form.reports.some((explanation) => {
+            if (!isExplanationReportConfig(explanation)) {
+              return false;
+            }
+            const explanationState = state.reportStates[explanation.id] ?? explanation.state;
             return explanationState.status === "idle" || explanationState.status === "loading";
           }),
         });
@@ -265,7 +268,7 @@ export function CreatePredictionBodyForm() {
             </h2>
             <AppCopy>
               {catalogState.status === "loading"
-                ? "Prediction form waits for MLForm plugin definitions before mount so custom field, report, and explanation kinds validate and render correctly."
+                ? "Prediction form waits for MLForm plugin definitions before mount so custom field and report kinds validate and render correctly."
                 : catalogState.error}
             </AppCopy>
             {catalogState.status === "loading" ? (
@@ -284,7 +287,6 @@ export function CreatePredictionBodyForm() {
           inputs={inputs}
           signatureSchema={schema}
           explanationsPending={explanationsPending}
-          customExplanationDefinitions={catalogState.data.explanationDefinitions}
           theme={theme}
         />
       ) : null}

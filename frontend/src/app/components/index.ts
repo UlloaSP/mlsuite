@@ -19,8 +19,8 @@ export {
   AppTabs,
   AppTitle,
   AppToolbar,
-  cx,
 } from "./ui";
+export { cx, FOCUS_RING } from "./ui-utils";
 export {
   AppBadge,
   AppButton,

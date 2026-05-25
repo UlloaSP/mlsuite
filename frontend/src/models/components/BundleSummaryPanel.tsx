@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { RefreshCcw, Save } from "lucide-react";
-import { cx } from "../../app/components";
+import { cx } from "../../app/components/ui-utils";
 
 type Props = {
   total: number;

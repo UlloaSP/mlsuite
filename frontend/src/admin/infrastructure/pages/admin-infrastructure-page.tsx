@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
-import { AppEmptyState, AppPage, AppSurface } from "../../../app/components";
+import { AppEmptyState, AppPage, AppSurface } from "../../../app/components/ui";
 import { useUser } from "../../../user/hooks";
 import { AlertsView } from "../components/AlertsView";
 import { LogsView } from "../components/LogsView";
@@ -51,10 +51,11 @@ export function AdminInfrastructurePage() {
     setSelectedService((current) => resolveSelectedService(current, data));
   }, [data]);
 
-  // react-doctor-disable-next-line react-doctor/no-effect-chain -- Log snapshot is keyed by selected service and must reset only after that query resolves.
+  // react-doctor-disable-next-line react-doctor/no-effect-chain, react-doctor/no-derived-state -- Log snapshot is keyed by selected service and must reset only after that query resolves.
   useEffect(() => {
     if (!selectedServiceLogs.data || selectedServiceLogs.data.serviceName !== selectedService)
       return;
+    // react-doctor-disable-next-line react-doctor/no-derived-state -- Live log buffer merges snapshots with websocket append events.
     setLogLines(selectedServiceLogs.data.lines);
   }, [selectedService, selectedServiceLogs.data]);
 

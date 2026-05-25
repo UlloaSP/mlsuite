@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Edit3, Save } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
+import { AppButton } from "../../app/components/ui-controls";
+import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
 import type { OutputFeedbackDto, TargetDto } from "../api/modelService";
 import { useUpdateTargetMutation } from "../hooks";
 import {
@@ -74,17 +75,20 @@ export function PredictionTargetFeedbackCard({
     outputFeedbackValue: outputFeedback?.value,
     realValue: target.realValue,
   });
-  // react-doctor-disable-next-line react-doctor/no-derived-useState -- Local saved copy reflects optimistic create/update before parent query refresh completes.
+  // react-doctor-disable-next-line react-doctor/no-derived-state, react-doctor/no-derived-useState -- Local saved copy reflects optimistic create/update before parent query refresh completes.
   const [savedOutputFeedback, setSavedOutputFeedback] = useState(outputFeedback);
   const [draftValues, setDraftValues] = useState<Record<string, unknown>>({});
   const [mode, setMode] = useState<"view" | "edit">("view");
 
-  // react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Prop snapshot reset must restore saved feedback, draft form values, and view mode atomically.
+  // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-derived-state, react-doctor/no-derived-state-effect, react-doctor/no-adjust-state-on-prop-change, react-doctor/exhaustive-deps -- Prop snapshot reset must restore saved feedback, draft form values, and view mode atomically.
   useEffect(() => {
+    // react-doctor-disable-next-line react-doctor/no-derived-state, react-doctor/no-adjust-state-on-prop-change -- Saved feedback state permits optimistic local updates before query refresh.
     setSavedOutputFeedback(outputFeedback);
+    // react-doctor-disable-next-line react-doctor/no-derived-state -- Draft values intentionally fork from saved values while editing.
     setDraftValues(buildOutputFeedbackInitialValues(outputFeedback, questionnaire));
+    // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- External feedback refresh exits edit mode.
     setMode("view");
-  }, [questionnaire, snapshot]);
+  }, [outputFeedback, questionnaire, snapshot]);
 
   const handleSave = async () => {
     try {

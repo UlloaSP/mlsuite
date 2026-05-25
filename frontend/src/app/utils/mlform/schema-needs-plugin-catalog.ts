@@ -13,12 +13,7 @@ export const schemaNeedsActivePluginCatalog = (schema: unknown): boolean => {
   const raw = schema as {
     fields?: unknown;
     reports?: unknown;
-    explanations?: unknown;
   };
-
-  if (Array.isArray(raw.explanations) && raw.explanations.length > 0) {
-    return true;
-  }
 
   if (
     Array.isArray(raw.fields) &&

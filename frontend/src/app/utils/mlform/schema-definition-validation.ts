@@ -3,9 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig, FieldConfig, Registry, ReportConfig } from "mlform/runtime";
+import type { FieldConfig, Registry, ReportConfig } from "mlform/runtime";
 import { type CatalogFieldDefinition } from "./custom-field";
-import { type CatalogExplanationDefinition } from "./custom-explanation";
 import { type CatalogReportDefinition } from "./custom-report";
 import type { CompatIssue } from "./shared";
 import { normalizeIssuePath } from "./shared";
@@ -18,11 +17,6 @@ const pushIssue = (
 ): void => {
   issues.push({ path, message, severity });
 };
-
-export const createCustomExplanationDefinitionMap = (
-  definitions: readonly CatalogExplanationDefinition[],
-): Map<string, CatalogExplanationDefinition> =>
-  new Map(definitions.map((definition) => [definition.kind, definition]));
 
 export const createCustomFieldDefinitionMap = (
   definitions: readonly CatalogFieldDefinition[],
@@ -109,45 +103,5 @@ export const validateReportConfig = (
       `Custom report kind "${report.kind}" is inactive and will be skipped at runtime.`,
       "warning",
     );
-  }
-};
-
-export const validateExplanationConfig = (
-  explanation: ExplanationConfig & { id: string },
-  index: number,
-  issues: CompatIssue[],
-  engineRegistry: Registry,
-  customDefinitionMap: Map<string, CatalogExplanationDefinition>,
-): void => {
-  const builtinDefinition = engineRegistry.getExplanation(explanation.kind);
-  const customDefinition = customDefinitionMap.get(explanation.kind);
-  const definition = builtinDefinition ?? customDefinition?.definition.definition;
-
-  if (!definition) {
-    pushIssue(
-      issues,
-      ["explanations", index, "kind"],
-      `Unknown explanation kind "${explanation.kind}".`,
-    );
-    return;
-  }
-
-  const result = definition.schema.safeParse(explanation);
-  if (!result.success) {
-    for (const issue of result.error.issues) {
-      pushIssue(issues, ["explanations", index, ...normalizeIssuePath(issue.path)], issue.message);
-    }
-    return;
-  }
-
-  if (!customDefinition?.active) {
-    if (customDefinition) {
-      pushIssue(
-        issues,
-        ["explanations", index, "kind"],
-        `Custom explanation kind "${explanation.kind}" is inactive and will be skipped at runtime.`,
-        "warning",
-      );
-    }
   }
 };

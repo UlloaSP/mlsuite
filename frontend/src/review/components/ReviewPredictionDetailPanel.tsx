@@ -1,9 +1,9 @@
 import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppEmptyState } from "../../app/components";
-import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
+import { AppEmptyState } from "../../app/components/ui";
 import { extractPredictionExplanationEntries } from "../../models/explanation-feedback-utils";
+import { getOutputReports } from "../../models/report-contract";
 import { useReviewPredictionDetail } from "../hooks";
 import { ReviewAccordionSection } from "./ReviewAccordionSection";
 import { ReviewCombinedFeedbackForm } from "./ReviewCombinedFeedbackForm";
@@ -15,7 +15,6 @@ type ReviewPredictionDetailPanelProps = {
   token: string;
   predictionToken: string;
   signatureSchema: Record<string, unknown>;
-  customExplanationDefinitions: readonly CatalogExplanationDefinition[];
   onReviewChanged: () => Promise<unknown> | unknown;
 };
 
@@ -23,7 +22,6 @@ export function ReviewPredictionDetailPanel({
   token,
   predictionToken,
   signatureSchema,
-  customExplanationDefinitions,
   onReviewChanged,
 }: ReviewPredictionDetailPanelProps) {
   const [theme] = useAtom(themeWithHtmlAtom);
@@ -32,17 +30,15 @@ export function ReviewPredictionDetailPanel({
   const [explanationsOpen, setExplanationsOpen] = useState(false);
   const detail = useReviewPredictionDetail(token, predictionToken);
   const reports = useMemo(() => {
-    const raw = signatureSchema.reports;
-    return Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+    return getOutputReports(signatureSchema);
   }, [signatureSchema]);
   const explanationEntries = useMemo(
     () =>
       extractPredictionExplanationEntries(
         detail.data?.prediction.prediction,
         signatureSchema,
-        customExplanationDefinitions,
       ),
-    [customExplanationDefinitions, detail.data?.prediction.prediction, signatureSchema],
+    [detail.data?.prediction.prediction, signatureSchema],
   );
   const outputByOrder = useMemo(
     () => new Map((detail.data?.outputFeedback ?? []).map((item) => [item.order, item])),

@@ -97,11 +97,11 @@ class PredictionServiceTest {
     void createPrediction_ThrowsWhenSchemaCompatibilityFails() {
         User user = user(3L);
         Signature signature = signature(user);
-        signature.setInputSignature(Map.of("explanations", List.of(Map.of("kind", "old-kind"))));
+        signature.setInputSignature(Map.of("reports", List.of(Map.of("kind", "old-kind"))));
         when(userLookupService.requireById(3L)).thenReturn(user);
         when(signatureRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(signature));
         doThrow(new InvalidSignatureSchemaException(
-                "Custom explanation kind \"old-kind\" does not exist in active plugin catalog."))
+                "Custom report kind \"old-kind\" does not exist in active plugin catalog."))
                 .when(signatureSchemaCompatibilityService).validate(3L, signature.getInputSignature());
 
         assertThrows(InvalidSignatureSchemaException.class,

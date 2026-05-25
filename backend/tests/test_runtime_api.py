@@ -55,7 +55,7 @@ def test_build_schema_success_with_optional_dataframe() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert isinstance(payload["explanations"], list)
+    assert "explanations" not in payload
     assert payload["reports"][0]["kind"] == "classifier"
 
 

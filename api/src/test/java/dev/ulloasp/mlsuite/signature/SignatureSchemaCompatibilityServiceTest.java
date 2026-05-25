@@ -37,12 +37,14 @@ class SignatureSchemaCompatibilityServiceTest {
         when(pluginService.list(7L)).thenReturn(List.of(
                 plugin("field-kind", true, "export default defineFieldDefinition({ kind: \"field-kind\" });"),
                 plugin("report-kind", true, "export default defineReportDefinition({ kind: \"report-kind\" });"),
-                plugin("explanation-kind", true, "export default defineExplanationKind({ kind: \"explanation-kind\" });")));
+                plugin("explanation-kind", true, "export default defineReportKind({ kind: \"explanation-kind\" });")));
 
         assertDoesNotThrow(() -> service.validate(7L, Map.of(
                 "fields", List.of(Map.of("kind", "text"), Map.of("kind", "field-kind")),
-                "reports", List.of(Map.of("kind", "classifier"), Map.of("kind", "report-kind")),
-                "explanations", List.of(Map.of("kind", "explanation-kind")))));
+                "reports", List.of(
+                        Map.of("kind", "classifier"),
+                        Map.of("kind", "report-kind"),
+                        Map.of("kind", "explanation-kind")))));
     }
 
     @Test
@@ -60,20 +62,20 @@ class SignatureSchemaCompatibilityServiceTest {
     }
 
     @Test
-    void validate_ThrowsWhenExplanationKindMissing() {
+    void validate_ThrowsWhenExplanationReportKindMissing() {
         when(pluginService.list(7L)).thenReturn(List.of());
 
         assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
-                Map.of("explanations", List.of(Map.of("kind", "old-kind")))));
+                Map.of("reports", List.of(Map.of("kind", "old-kind")))));
     }
 
     @Test
-    void validate_ThrowsWhenExplanationKindInactive() {
+    void validate_ThrowsWhenExplanationReportKindInactive() {
         when(pluginService.list(7L)).thenReturn(List.of(
-                plugin("old-kind", false, "export default defineExplanationKind({ kind: \"old-kind\" });")));
+                plugin("old-kind", false, "export default defineReportKind({ kind: \"old-kind\" });")));
 
         assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
-                Map.of("explanations", List.of(Map.of("kind", "old-kind")))));
+                Map.of("reports", List.of(Map.of("kind", "old-kind")))));
     }
 
     @Test

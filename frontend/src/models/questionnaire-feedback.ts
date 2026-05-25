@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { type FieldConfig } from "mlform/runtime";
 import { buildQuestionnaireFormSchema, type QuestionnaireSchema } from "./questionnaire-schema";
-import type { MountedWizardForm } from "mlform/kit";
+import type { MountedForm } from "mlform/kit";
 import type { ExplanationFeedbackDto } from "./api/modelService";
 
 type JsonRecord = Record<string, unknown>;
@@ -101,7 +101,7 @@ export const formatFeedbackValue = (value: unknown): string => {
 };
 
 export const submitQuestionnaire = async (
-  mounted: MountedWizardForm | null | undefined,
+  mounted: MountedForm | null | undefined,
 ): Promise<Record<string, unknown>> => {
   if (!mounted) {
     return {};
@@ -112,7 +112,7 @@ export const submitQuestionnaire = async (
 };
 
 export const getQuestionnaireValues = (
-  mounted: MountedWizardForm | null | undefined,
+  mounted: MountedForm | null | undefined,
 ): Record<string, unknown> => {
   if (!mounted || !isRecord(mounted.form.state.values)) {
     return {};

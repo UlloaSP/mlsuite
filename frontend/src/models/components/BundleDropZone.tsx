@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useRef, useState } from "react";
-import { cx } from "../../app/components";
+import { cx } from "../../app/components/ui-utils";
 import { ALL_EXTS } from "../bundle-utils";
 
 type Props = {
@@ -23,9 +23,8 @@ export function BundleDropZone({ onFiles }: Props) {
 
   return (
     <div className="flex-shrink-0 px-4 pt-4">
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         aria-label="Drop model and dataframe files here"
         onDragOver={(e) => {
           e.preventDefault();
@@ -38,14 +37,8 @@ export function BundleDropZone({ onFiles }: Props) {
           handle(e.dataTransfer.files);
         }}
         onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            inputRef.current?.click();
-          }
-        }}
         className={cx(
-          "group flex cursor-pointer select-none items-center gap-4 rounded-[10px] border-[1.5px] border-dashed px-4 py-[18px]",
+          "group flex w-full cursor-pointer select-none items-center gap-4 rounded-[10px] border-[1.5px] border-dashed px-4 py-[18px]",
           "bg-[var(--surface-secondary)]",
           "transition-all duration-150",
           active
@@ -92,19 +85,15 @@ export function BundleDropZone({ onFiles }: Props) {
         </div>
 
         {/* Browse button — stops propagation so it doesn't double-trigger */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            inputRef.current?.click();
-          }}
+        <span
           className="flex-shrink-0 rounded-lg border border-[var(--border-strong)] bg-[var(--surface-primary)] px-3.5 py-2 text-[12px] font-bold text-[var(--text-secondary)] shadow-none transition-all duration-150 hover:-translate-y-px hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] hover:shadow-[var(--shadow-hover)]"
         >
           Add files
-        </button>
-      </div>
+        </span>
+      </button>
 
       <input
+        aria-label="Upload bundle files"
         ref={inputRef}
         type="file"
         multiple

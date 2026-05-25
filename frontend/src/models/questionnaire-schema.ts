@@ -35,7 +35,6 @@ export const buildQuestionnaireFormSchema = (schema: QuestionnaireSchema): FormS
     step.fields.map((field, index) => fieldWithId(step, field, index)),
   ),
   reports: [],
-  explanations: [],
 });
 
 export const buildQuestionnaireWizardLayout = (

@@ -6,7 +6,8 @@ import {
   usePendingInvitations,
 } from "../../workspace/hooks";
 import type { InvitationDto } from "../../workspace/types";
-import { AppPanel, cx, FOCUS_RING } from "./ui";
+import { AppPanel } from "./ui";
+import { cx, FOCUS_RING } from "./ui-utils";
 
 function InvitationItem({ invitation }: { invitation: InvitationDto }) {
   const accept = useAcceptInvitation();

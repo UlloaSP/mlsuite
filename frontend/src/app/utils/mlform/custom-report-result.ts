@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export type NormalizedCustomExplanationResult = {
+export type NormalizedCustomReportResult = {
   title: string | null;
   html: string | null;
   blocks: string[];
@@ -23,9 +23,7 @@ const normalizeTextBlocks = (value: unknown): string[] => {
   return typeof value === "string" && value.trim().length > 0 ? [value] : [];
 };
 
-export const normalizeCustomExplanationResult = (
-  value: unknown,
-): NormalizedCustomExplanationResult => {
+export const normalizeCustomReportResult = (value: unknown): NormalizedCustomReportResult => {
   if (typeof value === "string" || Array.isArray(value)) {
     return {
       title: null,

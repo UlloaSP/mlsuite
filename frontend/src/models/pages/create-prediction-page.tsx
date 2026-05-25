@@ -7,7 +7,7 @@ import { useAtom } from "jotai";
 import { m as motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
-import { AppPage, AppSurface } from "../../app/components";
+import { AppPage, AppSurface } from "../../app/components/ui";
 import { NotFoundError } from "../../app/pages/error-page";
 import { applyPredictionInputsToSchema } from "../../app/utils/mlform/schema";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
@@ -59,7 +59,7 @@ export function CreatePredictionPage() {
 
     setSchema(next);
     setSchemaText(JSON.stringify(next, null, 2));
-  }, [inputs, signature]);
+  }, [inputs, setSchema, setSchemaErrors, setSchemaText, signature]);
 
   if (!user || error) return <NotFoundError />;
 

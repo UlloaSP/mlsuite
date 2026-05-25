@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { m as motion } from "motion/react";
 import { useParams } from "react-router";
-import { AppBreadcrumbs, AppCopy, AppEyebrow, AppTitle } from "../../app/components";
+import { AppBreadcrumbs, AppCopy, AppEyebrow, AppTitle } from "../../app/components/ui";
 import { useGetModels } from "../hooks";
 
 const CREATE_SIGNATURE_HEADER = "Create New Schema";

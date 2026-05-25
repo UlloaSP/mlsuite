@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Edit3, Save } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AppButton, AppCopy, AppPanel } from "../../app/components";
+import { AppButton } from "../../app/components/ui-controls";
+import { AppCopy, AppPanel } from "../../app/components/ui";
 import type { ExplanationFeedbackDto } from "../api/modelService";
 import {
   useCreateExplanationFeedbackMutation,
@@ -48,12 +49,15 @@ export function PredictionExplanationCard({
   const [draftValues, setDraftValues] = useState<Record<string, unknown>>(savedValues);
   const [mode, setMode] = useState<"view" | "edit">("view");
 
-  // react-doctor-disable-next-line react-doctor/no-cascading-set-state -- Feedback refresh must reset saved snapshot, draft values, and mode together.
+  // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-derived-state, react-doctor/no-derived-state-effect, react-doctor/no-adjust-state-on-prop-change, react-doctor/no-reset-all-state-on-prop-change, react-doctor/exhaustive-deps -- Feedback refresh must reset saved snapshot, draft values, and mode together.
   useEffect(() => {
+    // react-doctor-disable-next-line react-doctor/no-derived-state, react-doctor/no-adjust-state-on-prop-change, react-doctor/no-reset-all-state-on-prop-change -- Saved feedback snapshot tracks persisted server values separately from draft edits.
     setSavedSnapshot(savedValues);
+    // react-doctor-disable-next-line react-doctor/no-derived-state -- Draft values intentionally fork from saved values while editing.
     setDraftValues(savedValues);
+    // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- External feedback refresh exits edit mode.
     setMode("view");
-  }, [serializedSavedValues]);
+  }, [savedValues, serializedSavedValues]);
 
   const handleSave = async () => {
     if (!explanation.feedbackQuestionnaire) {

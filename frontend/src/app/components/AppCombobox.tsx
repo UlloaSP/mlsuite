@@ -1,6 +1,6 @@
 import { Check, ChevronDown } from "lucide-react";
 import { useId, useMemo, useState } from "react";
-import { cx } from "./ui";
+import { cx } from "./ui-utils";
 
 export interface AppComboboxItem {
   id: number;
@@ -57,8 +57,8 @@ export function AppCombobox({
           value={open ? query : selected?.label ?? query}
           disabled={disabled}
           placeholder={placeholder}
+          aria-label={placeholder}
           aria-controls={listboxId}
-          aria-expanded={open}
           aria-autocomplete="list"
           onFocus={() => {
             setOpen(true);
@@ -96,7 +96,6 @@ export function AppCombobox({
       {open && !disabled ? (
         <div
           id={listboxId}
-          role="listbox"
           className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-card)]"
         >
           {filtered.length ? (
@@ -104,8 +103,7 @@ export function AppCombobox({
               <button
                 key={item.id}
                 type="button"
-                role="option"
-                aria-selected={selected?.id === item.id}
+                aria-current={selected?.id === item.id}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   choose(item);

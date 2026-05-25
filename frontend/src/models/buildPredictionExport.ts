@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig } from "mlform/runtime";
 import { validateMlformSchema } from "../app/utils/mlform/schema-validation";
-import type { CatalogExplanationDefinition } from "../app/utils/mlform/custom-explanation";
 import type {
   ExplanationFeedbackDto,
   OutputFeedbackDto,
@@ -21,6 +20,7 @@ import {
   getTargetReportKey,
 } from "./target-utils";
 import { flatten, getExplanationHeaders, toCell, toRecord } from "./components/export-csv-utils";
+import { getOutputReports } from "./report-contract";
 
 export type PredictionExportData = {
   headers: string[];
@@ -33,7 +33,6 @@ export type BuildPredictionExportOptions = {
   outputFeedbackByPrediction: readonly OutputFeedbackDto[][];
   explanationFeedbackByPrediction: readonly ExplanationFeedbackDto[][];
   signatureSchema?: unknown;
-  customExplanationDefinitions: readonly CatalogExplanationDefinition[];
 };
 
 const reviewerLabel = (feedback: { userId: number; userEmail: string }): string =>
@@ -64,20 +63,20 @@ export function buildPredictionExportData({
   outputFeedbackByPrediction,
   explanationFeedbackByPrediction,
   signatureSchema,
-  customExplanationDefinitions,
 }: BuildPredictionExportOptions): PredictionExportData {
   if (!predictions.length) return { headers: [], rows: [] };
 
   const inputKeys = Object.keys(flatten(toRecord(predictions[0].inputs))).sort();
   const schemaResult = signatureSchema
-    ? validateMlformSchema(signatureSchema, { customExplanationDefinitions })
+    ? validateMlformSchema(signatureSchema)
     : null;
   const schema = schemaResult?.success ? schemaResult.data : null;
+  const outputReports = getOutputReports(schema) as ReportConfig[];
   const reviewerLabels = collectReviewerLabels(
     outputFeedbackByPrediction,
     explanationFeedbackByPrediction,
   );
-  const targetHeaders = (schema?.reports ?? []).flatMap((_report: ReportConfig, index: number) => {
+  const targetHeaders = outputReports.flatMap((_report: ReportConfig, index: number) => {
     const targetKey = getTargetReportKey(signatureSchema, index);
     return [
       `output.${targetKey}.predicted`,
@@ -85,7 +84,7 @@ export function buildPredictionExportData({
     ];
   });
   const explanationHeaders = signatureSchema
-    ? getExplanationHeaders(signatureSchema, customExplanationDefinitions, reviewerLabels)
+    ? getExplanationHeaders(signatureSchema, reviewerLabels)
     : [];
   const headers = ["prediction_name", ...inputKeys, ...targetHeaders, ...explanationHeaders];
 
@@ -97,9 +96,9 @@ export function buildPredictionExportData({
     const outputFeedback = outputFeedbackByPrediction[index] ?? [];
     const explanationFeedback = explanationFeedbackByPrediction[index] ?? [];
 
-    const targetValues = (schema?.reports ?? []).flatMap((_report: ReportConfig, order: number) => {
+    const targetValues = outputReports.flatMap((_report: ReportConfig, order: number) => {
       const target = targetMap.get(order);
-      const reportConfig = schema?.reports?.[order];
+      const reportConfig = outputReports[order];
       const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;
       const fieldIds = getOutputFeedbackFieldIds(kind);
       const predicted = target
@@ -134,7 +133,6 @@ export function buildPredictionExportData({
         ? extractPredictionExplanationEntries(
             prediction.prediction,
             signatureSchema,
-            customExplanationDefinitions,
           )
         : [];
     const explanationValues = explanationEntries.flatMap((explanation) => {

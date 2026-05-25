@@ -76,10 +76,6 @@ async def build_schema(
         data_frame = _load_candidate_dataframe(candidate, features)
 
     schema = _create_schema_builder().build(data_frame)
-    schema["explanations"] = (
-        schema["explanations"]
-        if isinstance(schema.get("explanations"), list)
-        else []
-    )
+    schema.pop("explanations", None)
     schema["reports"] = _build_schema_reports(model)
     return schema

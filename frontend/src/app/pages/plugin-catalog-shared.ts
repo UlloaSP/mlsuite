@@ -33,13 +33,24 @@ export const SORT_LABELS: Record<SortMode, string> = {
 export const TYPE_META: Record<PluginViewType, TypeMeta> = {
   field: { label: "Field", shortLabel: "field", tone: "accent", plural: "fields" },
   report: { label: "Report", shortLabel: "report", tone: "warning", plural: "reports" },
-  explanation: {
-    label: "Explanation",
-    shortLabel: "explanation",
-    tone: "success",
-    plural: "explanations",
-  },
   invalid: { label: "Invalid", shortLabel: "invalid", tone: "danger", plural: "invalid plugins" },
+};
+
+export const getPluginSummary = (
+  filter: FilterMode,
+  typeFilter: TypeFilter,
+  selectedTypeCount: number,
+  selectedTypeActiveCount: number,
+): string => {
+  const typeSuffix = typeFilter === "all" ? "" : ` (${TYPE_META[typeFilter].plural})`;
+  if (filter === "active") {
+    return `Showing ${selectedTypeActiveCount} active plugin${selectedTypeActiveCount !== 1 ? "s" : ""}${typeSuffix}.`;
+  }
+  if (filter === "inactive") {
+    const inactiveCount = selectedTypeCount - selectedTypeActiveCount;
+    return `Showing ${inactiveCount} inactive plugin${inactiveCount !== 1 ? "s" : ""}${typeSuffix}.`;
+  }
+  return `Showing ${selectedTypeCount} plugin${selectedTypeCount !== 1 ? "s" : ""}${typeSuffix}.`;
 };
 
 export const readFileText = (file: File): Promise<string> =>

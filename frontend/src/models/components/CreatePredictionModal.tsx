@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { X } from "lucide-react";
 import { AnimatePresence, m as motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
-import { AppCopy, AppIconButton, AppSectionTitle } from "../../app/components";
-import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
+import { AppCopy, AppSectionTitle } from "../../app/components/ui";
+import { AppIconButton } from "../../app/components/ui-controls";
 import { showModalAtom } from "../atoms";
 import {
   useCreateExplanationFeedbackMutation,
@@ -32,12 +32,10 @@ export type CreatePredictionModalProps = {
   inputs: Record<string, unknown>;
   signatureSchema: unknown;
   explanationsPending: boolean;
-  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
   theme: "light" | "dark";
 };
 
 type PredictionOutput = { type?: string; execution_time?: number | string };
-const EMPTY_CUSTOM_EXPLANATION_DEFINITIONS: readonly CatalogExplanationDefinition[] = [];
 
 const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
   const outputs = value.outputs;
@@ -54,7 +52,6 @@ export function CreatePredictionModal({
   inputs,
   signatureSchema,
   explanationsPending,
-  customExplanationDefinitions = EMPTY_CUSTOM_EXPLANATION_DEFINITIONS,
   theme,
 }: CreatePredictionModalProps) {
   const { signatureId } = useParams<{ signatureId: string }>();
@@ -65,33 +62,26 @@ export function CreatePredictionModal({
   const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
 
   const [predictionName, setPredictionName] = useState("");
-  const [targets, setTargets] = useState<Record<number, unknown>>({});
   const [draftExplanationValues, setDraftExplanationValues] = useState<
     Record<string, Record<string, unknown>>
   >({});
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   const questionnaireRefs = useRef<Record<string, ExplanationQuestionnaireMountHandle | null>>({});
   const explanationEntries = useMemo<PredictionExplanationDescriptor[]>(
-    () =>
-      extractPredictionExplanationEntries(
-        prediction,
-        signatureSchema,
-        customExplanationDefinitions,
-      ),
-    [prediction, signatureSchema, customExplanationDefinitions],
+    () => extractPredictionExplanationEntries(prediction, signatureSchema),
+    [prediction, signatureSchema],
   );
   const output = asOutput(prediction);
-
-  useEffect(() => {
-    setTargets(
+  const targets = useMemo(
+    () =>
       Object.fromEntries(
         derivePredictionTargets(prediction, signatureSchema).map((target) => [
           target.order,
           target.value,
         ]),
       ),
-    );
-  }, [prediction, signatureSchema]);
+    [prediction, signatureSchema],
+  );
 
   const collectQuestionnaireValues = async () => {
     const submitted = await Promise.all(

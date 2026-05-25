@@ -7,7 +7,8 @@ import { useAtom } from "jotai";
 import { m as motion } from "motion/react";
 import type { PropsWithChildren } from "react";
 import { sidebarCollapsedAtom } from "../app/atoms";
-import { AppHeader, Sidebar } from "../app/components";
+import { AppHeader } from "../app/components/AppHeader";
+import { Sidebar } from "../app/components/Sidebar";
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed] = useAtom(sidebarCollapsedAtom);

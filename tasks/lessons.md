@@ -139,3 +139,13 @@
 ## 2026-05-20 - Role form modal correction
 - Correction: role form modal made actions depend on page scroll and displayed permissions as a long ungrouped list of cards.
 - Rule: permission-heavy modals need fixed header/footer, one internal scroll region, backend-catalog grouping, and flat rows instead of card-per-permission decoration.
+
+## 2026-05-22 - MLForm package type correction
+- Correction: `mlform@0.1.10` ships its declarations under nested type folders even when root/public exports do not expose every type cleanly.
+- Rule: before adding local `.d.ts` shims for a dependency, inspect the package's full `dist/types` tree and prefer direct existing declaration imports or `tsconfig` paths over redeclaring external module APIs.
+
+## 2026-05-22 - Crystal Tree analyzer payload correction
+- Correction: Crystal Tree plugin sent MLForm field ids in `serializedFieldValues`, causing analyzer 400 `Missing features`.
+- Rule: analyzer-bound explanation plugins must send backend-shaped feature keys from `request.meta.backendFieldValues`; MLForm serialized field ids are UI/runtime ids, not model feature names.
+- Correction: Crystal Tree plugin returned `null` from `resolve` when no report payload existed, so MLForm marked the report ready and skipped fetch.
+- Rule: MLForm async report plugins must return `undefined` from `resolve` for absent payload; `null` is a real ready payload and prevents `fetch.submit`.
