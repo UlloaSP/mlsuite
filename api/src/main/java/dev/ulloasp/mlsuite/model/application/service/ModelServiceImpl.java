@@ -90,8 +90,7 @@ public class ModelServiceImpl implements ModelService {
 
             response = (Map<String, Object>) responseObj;
         } catch (RestClientResponseException ex) {
-            // FastAPI returned 4xx/5xx (e.g., HTTPException(400, "Not a sklearn
-            // estimator."))
+            // FastAPI returned 4xx/5xx (e.g., unsupported model artifact).
             throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/metadata");
         } catch (ResourceAccessException ex) {
             // Network/unavailable
