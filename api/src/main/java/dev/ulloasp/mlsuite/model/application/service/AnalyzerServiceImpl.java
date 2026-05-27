@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.model.application.service;
 
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -84,6 +85,55 @@ public class AnalyzerServiceImpl implements AnalyzerService {
             throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/build_schema");
         } catch (ResourceAccessException ex) {
             throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/build_schema");
+        }
+
+        return (Map<String, Object>) response;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact) {
+        userLookupService.requireById(userId);
+        LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("artifact_file", artifact.getResource());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        String endpoint = analyzerUrl + "/inspect_artifact";
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        Object response;
+        try {
+            response = restTemplate.postForObject(endpoint, requestEntity, Map.class);
+        } catch (RestClientResponseException ex) {
+            throw AnalyzerServiceException.fromRestClient(ex, endpoint);
+        } catch (ResourceAccessException ex) {
+            throw AnalyzerServiceException.fromNetwork(ex, endpoint);
+        }
+
+        return (Map<String, Object>) response;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Map<String, Object> matchArtifacts(Long userId, List<MultipartFile> models, List<MultipartFile> dataframes) {
+        userLookupService.requireById(userId);
+        LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        models.forEach(model -> body.add("model_files", model.getResource()));
+        dataframes.forEach(dataframe -> body.add("dataframe_files", dataframe.getResource()));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        String endpoint = analyzerUrl + "/match_artifacts";
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        Object response;
+        try {
+            response = restTemplate.postForObject(endpoint, requestEntity, Map.class);
+        } catch (RestClientResponseException ex) {
+            throw AnalyzerServiceException.fromRestClient(ex, endpoint);
+        } catch (ResourceAccessException ex) {
+            throw AnalyzerServiceException.fromNetwork(ex, endpoint);
         }
 
         return (Map<String, Object>) response;

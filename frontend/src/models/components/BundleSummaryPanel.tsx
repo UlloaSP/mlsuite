@@ -98,7 +98,7 @@ export function BundleSummaryPanel({
           className={cx(
             "flex w-full items-center justify-center gap-[7px] rounded-[9px] border-none px-3 py-[11px] text-[13px] font-bold text-white transition-all duration-150",
             canSave
-              ? "bg-[var(--accent-primary)] hover:-translate-y-px hover:bg-[var(--accent-primary-strong)]"
+              ? "cursor-pointer bg-[var(--accent-primary)] hover:-translate-y-px hover:bg-[var(--accent-primary-strong)]"
               : "cursor-not-allowed bg-[var(--accent-primary)] opacity-40",
           )}
         >
@@ -109,7 +109,7 @@ export function BundleSummaryPanel({
         <button
           type="button"
           onClick={onClear}
-          className="flex w-full items-center justify-center rounded-[9px] border border-[var(--border-soft)] bg-transparent px-3 py-[11px] text-[13px] font-bold text-[var(--text-secondary)] transition-all duration-150 hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+          className="flex w-full cursor-pointer items-center justify-center rounded-[9px] border border-[var(--border-soft)] bg-transparent px-3 py-[11px] text-[13px] font-bold text-[var(--text-secondary)] transition-all duration-150 hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
         >
           Clear
         </button>

@@ -3,9 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-const MODEL_EXTS = [".onnx", ".joblib", ".pkl", ".h5", ".pt", ".pth", ".mlmodel", ".tflite"];
-export const DF_EXTS = [".csv", ".parquet", ".feather", ".xlsx"];
-export const ALL_EXTS = [...MODEL_EXTS, ...DF_EXTS];
+export const JOBLIB_EXT = ".joblib";
+const MODEL_EXTS = [JOBLIB_EXT];
+export const DF_EXTS = [JOBLIB_EXT];
+export const ALL_EXTS = [...new Set([...MODEL_EXTS, ...DF_EXTS])];
+export const MODEL_EXT_LABEL = ".joblib";
+export const DF_EXT_LABEL = ".joblib";
 
 function getExt(name: string): string {
   const dot = name.lastIndexOf(".");
@@ -22,6 +25,10 @@ export function isModelFile(name: string): boolean {
 
 export function isDfFile(name: string): boolean {
   return DF_EXTS.includes(getExt(name));
+}
+
+export function isJoblibFile(name: string): boolean {
+  return getExt(name) === JOBLIB_EXT;
 }
 
 export function slugToTitle(stem: string): string {

@@ -1,28 +1,19 @@
-# Export Predictions Permission Plan
+# Tile Drop Targets
 
 ## Goal
-- [x] Add `EXPORT_PREDICTIONS` permission.
-- [x] Grant it by default to owner/admin roles.
-- [x] Expose it in workspace permission DTO and role catalog.
-- [x] Hide export CSV button when missing.
-- [x] Verify backend/frontend build and graph.
+- [x] Allow dragging a model file onto an empty tile model selector.
+- [x] Allow dragging a dataframe file onto an empty tile dataframe selector.
+- [x] Reuse backend artifact inspection so model/dataframe validation stays consistent.
+- [x] Verify targeted frontend tests, line cap, graph update.
 
 ## Plan
-- [x] Update backend permission enum, catalog, seed sync, workspace permissions.
-- [x] Update focused backend tests for owner/admin/member/viewer behavior.
-- [x] Gate frontend export button from workspace context.
-- [x] Run narrow tests, frontend build, line cap, graph update.
+- [x] Inspect tile selector component and create-model page callbacks.
+- [x] Add drop handlers to tile selectors.
+- [x] Wire dropped files through existing inspection/attach logic.
+- [x] Run focused verification and document results.
 
 ## Review
-- Status: fixed.
-- Backend adds `EXPORT_PREDICTIONS`, exposes `canExportPredictions`, and includes permission in Models catalog.
-- Owner/admin get permission from system role mapper; existing system roles sync missing permissions during seed/ensure.
-- Frontend export button now renders only with `canExportPredictions`; related export data queries stay disabled without it.
-- Split frontend permission DTO/types from `workspace/types.ts`; file now under 300 lines.
-- Verification:
-  - `mvn -q "-Dtest=WorkspaceAuthorizationServiceTest,InvitationManagementServiceTest" test` ✅
-  - `vp run build` ✅ warnings only: existing `runtime-config.js` and chunk size warnings.
-  - `npx react-doctor@latest --verbose` ✅ score 98; existing warnings only.
-  - touched source line cap ✅ no touched file over 300 lines.
-  - `git diff --check` ✅ CRLF warnings only.
-  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+- Tile selectors now accept dropped files and call the same attach/inspect path as click browse.
+- Frontend: `vp test model-bundle-files.test.ts artifact-inspection-service.test.ts` -> passed.
+- `vp check --fix` formatted touched files; command still exits nonzero because existing `tsconfig.app.json` has removed `baseUrl` option.
+- Line cap checked; touched source files remain under 300 lines. `git diff --check` passed with line-ending warnings only.

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,6 +60,31 @@ class AnalyzerControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(analyzerUseCase).generateInputSignature(5L, modelFile, null);
+    }
+
+    @Test
+    void inspectArtifact_UsesInternalUserId() {
+        when(analyzerUseCase.inspectArtifact(5L, modelFile)).thenReturn(Map.of("kind", "model"));
+
+        ResponseEntity<Map<String, Object>> response = controller.inspectArtifact(authentication, modelFile);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("model", response.getBody().get("kind"));
+        verify(analyzerUseCase).inspectArtifact(5L, modelFile);
+    }
+
+    @Test
+    void matchArtifacts_UsesInternalUserId() {
+        when(analyzerUseCase.matchArtifacts(5L, List.of(modelFile), List.of(modelFile)))
+                .thenReturn(Map.of("models", List.of()));
+
+        ResponseEntity<Map<String, Object>> response = controller.matchArtifacts(
+                authentication,
+                List.of(modelFile),
+                List.of(modelFile));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(analyzerUseCase).matchArtifacts(5L, List.of(modelFile), List.of(modelFile));
     }
 
     @Test

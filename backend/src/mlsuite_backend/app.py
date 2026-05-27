@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import CORS_ALLOW_ORIGINS
+from .routers.artifact import router as artifact_router
 from .routers.explain import router as explain_router
 from .routers.health import router as health_router
 from .routers.metadata import router as metadata_router
@@ -21,6 +22,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(health_router)
+    app.include_router(artifact_router)
     app.include_router(metadata_router)
     app.include_router(schema_router)
     app.include_router(predict_router)
