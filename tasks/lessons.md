@@ -147,3 +147,11 @@
 - Rule: frontend API calls from React surfaces must go through feature hooks (`useQuery`/`useMutation`) so request state, retries, and error handling follow app conventions.
 - Correction: upload empty state looked passive and dataframe type copy still listed stale non-runtime formats.
 - Rule: upload surfaces must accept input wherever the UI invites dropping, and displayed accepted types must match the actual backend-inspected contract.
+- Correction: upload bundle actions used clickable text/icons without pointer cursor and a remove tile action labeled only by `X`.
+- Rule: visible click targets must expose pointer affordance across nested text/icon children, and destructive/clearing tile actions need explicit text labels when space allows.
+- Correction: save-all model upload only saved first model because multipart files were reused across analyzer/storage/signature paths.
+- Rule: when a multipart upload is consumed by more than one backend path, buffer it once and pass reusable fresh-stream wrappers; batch UI saves should avoid unnecessary concurrent multipart uploads.
+- Correction: saving last unsaved model tile should exit like Save All instead of leaving user on completed upload page.
+- Rule: per-item save actions in batch creation flows should follow batch-complete navigation when they complete the remaining work.
+- Correction: tile-level model/dataframe selectors also need drag-and-drop, not only click browse.
+- Rule: if an upload UI exposes both global and per-item targets, support the same drag/drop affordance at each target and route files through the same validation path.

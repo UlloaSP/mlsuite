@@ -1,33 +1,19 @@
-# Model Upload Pending Dataframe UX
+# Tile Drop Targets
 
 ## Goal
-- [x] Empty state accepts drag/drop and browse.
-- [x] Accepted dataframe type shown as `.joblib` only.
-- [x] Dropping/selecting dataframe first creates a pending bundle.
-- [x] Later model upload fills pending bundle when possible.
-- [x] Save remains disabled until model exists.
-- [x] Verify focused frontend tests, line cap, graph update.
+- [x] Allow dragging a model file onto an empty tile model selector.
+- [x] Allow dragging a dataframe file onto an empty tile dataframe selector.
+- [x] Reuse backend artifact inspection so model/dataframe validation stays consistent.
+- [x] Verify targeted frontend tests, line cap, graph update.
 
 ## Plan
-- [x] Update bundle type/card to support pending model.
-- [x] Make empty state a drop/browse surface.
-- [x] Update create-model pairing logic for df-first flow.
-- [x] Update tests and lessons.
-- [x] Run focused verification.
+- [x] Inspect tile selector component and create-model page callbacks.
+- [x] Add drop handlers to tile selectors.
+- [x] Wire dropped files through existing inspection/attach logic.
+- [x] Run focused verification and document results.
 
 ## Review
-- Status: fixed.
-- Empty state now accepts drag/drop and browse.
-- Accepted model/dataframe labels and file picker accept list are `.joblib` only.
-- Dataframe-first upload creates a pending bundle with a “Select model” action.
-- Later model upload fills matching pending dataframe bundle by filename stem.
-- Save / Save All ignore pending bundles until model exists.
-- Pairing logic moved to `bundle-planner.ts` and tests cover dataframe-first + later model fill.
-- Tests:
-  - `vp test model-bundle-files.test.ts artifact-inspection-service.test.ts` passed: 6 tests.
-  - `git diff --check` passed; CRLF warnings only.
-  - touched file line cap passed.
-  - `graphify update .` passed; graph.html skipped because graph exceeds viz limit.
-- Blocked broader checks:
-  - `vp exec tsc -p tsconfig.app.json --noEmit` still fails on existing MLForm type/export errors.
-  - `npx react-doctor@latest --verbose` timed out after 120s.
+- Tile selectors now accept dropped files and call the same attach/inspect path as click browse.
+- Frontend: `vp test model-bundle-files.test.ts artifact-inspection-service.test.ts` -> passed.
+- `vp check --fix` formatted touched files; command still exits nonzero because existing `tsconfig.app.json` has removed `baseUrl` option.
+- Line cap checked; touched source files remain under 300 lines. `git diff --check` passed with line-ending warnings only.

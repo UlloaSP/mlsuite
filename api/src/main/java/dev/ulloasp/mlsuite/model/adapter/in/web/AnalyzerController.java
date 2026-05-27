@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.model.adapter.in.web;
 
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -33,6 +34,12 @@ public interface AnalyzerController {
         public ResponseEntity<Map<String, Object>> inspectArtifact(
                         Authentication authentication,
                         @RequestPart("artifact") MultipartFile artifact);
+
+        @PostMapping("/artifacts/match")
+        public ResponseEntity<Map<String, Object>> matchArtifacts(
+                        Authentication authentication,
+                        @RequestPart("models") List<MultipartFile> models,
+                        @RequestPart("dataframes") List<MultipartFile> dataframes);
 
         @PostMapping("/predictions")
         public ResponseEntity<Map<String, Object>> predict(

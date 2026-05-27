@@ -48,4 +48,54 @@ describe("model bundle file handling", () => {
     expect(result.bundles[0].modelFile?.name).toBe("risk.joblib");
     expect(result.bundles[0].dfFile?.name).toBe("risk.joblib");
   });
+
+  it("assigns one matched dataframe to multiple models", () => {
+    const modelA = file("classifier.joblib");
+    const modelB = file("regressor.joblib");
+    const dataframe = file("shared.joblib");
+    const result = applyInspectedBundleFiles(
+      [],
+      [
+        { file: modelA, kind: "model" },
+        { file: modelB, kind: "model" },
+        { file: dataframe, kind: "dataframe" },
+      ],
+      1,
+      {
+        matchModels: [modelA, modelB],
+        matchDataframes: [dataframe],
+        match: {
+          dataframes: [{ index: 0, fileName: "shared.joblib", columns: [], rows: 2 }],
+          models: [
+            {
+              index: 0,
+              fileName: "classifier.joblib",
+              type: "classifier",
+              specificType: "LogisticRegression",
+              library: "sklearn",
+              features: ["age"],
+              matches: [],
+              autoDataframeIndex: 0,
+            },
+            {
+              index: 1,
+              fileName: "regressor.joblib",
+              type: "regressor",
+              specificType: "LinearRegression",
+              library: "sklearn",
+              features: ["area"],
+              matches: [],
+              autoDataframeIndex: 0,
+            },
+          ],
+        },
+      },
+    );
+
+    expect(result.bundles).toHaveLength(2);
+    expect(result.bundles.map((bundle) => bundle.dfFile?.name)).toEqual([
+      "shared.joblib",
+      "shared.joblib",
+    ]);
+  });
 });

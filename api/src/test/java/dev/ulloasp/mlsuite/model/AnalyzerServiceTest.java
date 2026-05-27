@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -114,6 +115,49 @@ class AnalyzerServiceTest {
         AnalyzerServiceException ex = assertThrows(
                 AnalyzerServiceException.class,
                 () -> service.inspectArtifact(3L, artifactFile));
+
+        assertEquals(0, ex.getStatus());
+        assertEquals("Analyzer service unreachable", ex.getDetail());
+    }
+
+    @Test
+    void matchArtifacts_ForwardsUploadsToAnalyzer() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(restTemplate.postForObject(eq("https://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
+                .thenReturn(Map.of("models", List.of()));
+
+        Map<String, Object> result = service.matchArtifacts(3L, List.of(artifactFile), List.of(artifactFile));
+
+        assertEquals(List.of(), result.get("models"));
+        verify(restTemplate).postForObject(eq("https://py-analyzer:8000/match_artifacts"), any(), eq(Map.class));
+    }
+
+    @Test
+    void matchArtifacts_PropagatesAnalyzerValidationError() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(restTemplate.postForObject(eq("https://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
+                .thenThrow(restError(400, "{\"detail\":\"Dataframe files must contain pandas DataFrame objects.\"}"));
+
+        AnalyzerServiceException ex = assertThrows(
+                AnalyzerServiceException.class,
+                () -> service.matchArtifacts(3L, List.of(artifactFile), List.of(artifactFile)));
+
+        assertEquals(400, ex.getStatus());
+        assertEquals("Dataframe files must contain pandas DataFrame objects.", ex.getDetail());
+    }
+
+    @Test
+    void matchArtifacts_PropagatesAnalyzerNetworkError() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(restTemplate.postForObject(eq("https://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
+                .thenThrow(new ResourceAccessException("down"));
+
+        AnalyzerServiceException ex = assertThrows(
+                AnalyzerServiceException.class,
+                () -> service.matchArtifacts(3L, List.of(artifactFile), List.of(artifactFile)));
 
         assertEquals(0, ex.getStatus());
         assertEquals("Analyzer service unreachable", ex.getDetail());

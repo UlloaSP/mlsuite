@@ -19,6 +19,7 @@ import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
+import dev.ulloasp.mlsuite.model.application.upload.BufferedMultipartFile;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
@@ -52,8 +53,12 @@ public class ModelControllerImpl implements ModelController {
             @RequestParam MultipartFile modelFile,
             @RequestParam @Nullable MultipartFile dataframeFile) {
         CurrentUser currentUser = currentUserResolver.resolve(authentication);
-        Model model = modelCatalogUseCase.createModel(currentUser.userId(), name, modelFile);
-        Map<String, Object> schemaFromModel = analyzerUseCase.generateInputSignature(currentUser.userId(), modelFile, null);
+        MultipartFile reusableModelFile = BufferedMultipartFile.from(modelFile);
+        MultipartFile reusableDataframeFile = dataframeFile != null
+                ? BufferedMultipartFile.from(dataframeFile)
+                : null;
+        Model model = modelCatalogUseCase.createModel(currentUser.userId(), name, reusableModelFile);
+        Map<String, Object> schemaFromModel = analyzerUseCase.generateInputSignature(currentUser.userId(), reusableModelFile, null);
         Signature signatureFromModel = signatureCatalogUseCase.createSignature(
                 currentUser.userId(),
                 model.getId(),
@@ -68,8 +73,8 @@ public class ModelControllerImpl implements ModelController {
         if (dataframeFile != null) {
             Map<String, Object> schemaFromDataframe = analyzerUseCase.generateInputSignature(
                     currentUser.userId(),
-                    modelFile,
-                    dataframeFile);
+                    reusableModelFile,
+                    reusableDataframeFile);
             signatureFromDataframe = signatureCatalogUseCase.createSignature(
                     currentUser.userId(),
                     model.getId(),

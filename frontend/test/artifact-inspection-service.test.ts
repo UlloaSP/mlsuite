@@ -35,4 +35,19 @@ describe("artifact inspection service", () => {
 
     await expect(inspectArtifact(new File(["x"], "artifact.joblib"))).rejects.toBe(error);
   });
+
+  it("posts model and dataframe files to artifact match endpoint", async () => {
+    const { matchArtifacts } = await import("../src/models/api/artifactService");
+    (appFetch as Mock).mockResolvedValue({ models: [], dataframes: [] });
+
+    await matchArtifacts({
+      models: [new File(["x"], "model.joblib")],
+      dataframes: [new File(["x"], "data.joblib")],
+    });
+
+    expect(appFetch).toHaveBeenCalledWith("/api/analyzer/artifacts/match", {
+      method: "POST",
+      body: expect.any(FormData),
+    });
+  });
 });

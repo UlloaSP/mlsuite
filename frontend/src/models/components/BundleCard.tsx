@@ -3,8 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Check, Plus, RefreshCcw, Save, X } from "lucide-react";
+import { Check, Plus, RefreshCcw, Save } from "lucide-react";
 import { m as motion } from "motion/react";
+import type { DragEvent } from "react";
 import { cx } from "../../app/components";
 import type { Bundle } from "../bundle-types";
 import { BundleFilePill } from "./BundleFilePill";
@@ -17,6 +18,8 @@ type Props = {
   onRename: (value: string) => void;
   onAttachModel: () => void;
   onAttachDf: () => void;
+  onDropModel: (file: File) => void;
+  onDropDf: (file: File) => void;
 };
 
 export function BundleCard({
@@ -27,8 +30,16 @@ export function BundleCard({
   onRename,
   onAttachModel,
   onAttachDf,
+  onDropModel,
+  onDropDf,
 }: Props) {
   const isSaveable = bundle.modelFile && bundle.name.trim() && !bundle.saving;
+  const dropFile = (event: DragEvent<HTMLButtonElement>, handler: (file: File) => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer.files[0];
+    if (file) handler(file);
+  };
 
   return (
     <motion.div
@@ -56,10 +67,13 @@ export function BundleCard({
             <button
               type="button"
               onClick={onAttachModel}
-              className="flex items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--accent-primary)] bg-[var(--accent-quiet)] px-3 py-[7px] text-[12px] font-bold text-[var(--accent-primary)] transition-all duration-150 hover:bg-[var(--surface-secondary)]"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => dropFile(event, onDropModel)}
+              className="flex cursor-pointer items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--accent-primary)] bg-[var(--accent-quiet)] px-3 py-[7px] text-[12px] font-bold text-[var(--accent-primary)] transition-all duration-150 hover:bg-[var(--surface-secondary)]"
             >
               <Plus size={12} />
-              Select model <span className="font-mono text-[10px] opacity-70">(.joblib)</span>
+              Select model{" "}
+              <span className="cursor-pointer font-mono text-[10px] opacity-70">(.joblib)</span>
             </button>
           )}
 
@@ -74,10 +88,13 @@ export function BundleCard({
             <button
               type="button"
               onClick={onAttachDf}
-              className="flex items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--border-soft)] bg-[var(--surface-secondary)] px-3 py-[7px] text-[12px] text-[var(--text-muted)] transition-all duration-150 hover:border-blue-400 hover:bg-blue-500/10 hover:text-blue-500"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => dropFile(event, onDropDf)}
+              className="flex cursor-pointer items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--border-soft)] bg-[var(--surface-secondary)] px-3 py-[7px] text-[12px] text-[var(--text-muted)] transition-all duration-150 hover:border-blue-400 hover:bg-blue-500/10 hover:text-blue-500"
             >
               <Plus size={12} />
-              Attach dataframe <span className="font-mono text-[10px] opacity-60">(optional)</span>
+              Attach dataframe{" "}
+              <span className="cursor-pointer font-mono text-[10px] opacity-60">(optional)</span>
             </button>
           )}
         </div>
@@ -112,7 +129,7 @@ export function BundleCard({
                 className={cx(
                   "inline-flex items-center gap-1.5 rounded-lg border-none px-3.5 py-[7px] text-[12px] font-bold text-white transition-all duration-150",
                   isSaveable
-                    ? "bg-[var(--accent-primary)] hover:-translate-y-px hover:bg-[var(--accent-primary-strong)]"
+                    ? "cursor-pointer bg-[var(--accent-primary)] hover:-translate-y-px hover:bg-[var(--accent-primary-strong)]"
                     : "cursor-not-allowed bg-[var(--accent-primary)] opacity-40",
                 )}
               >
@@ -129,9 +146,9 @@ export function BundleCard({
               type="button"
               onClick={onRemove}
               aria-label="Remove bundle"
-              className="inline-flex size-7 flex-shrink-0 items-center justify-center rounded-[7px] border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-muted)] transition-all duration-150 hover:border-[var(--accent-primary)] hover:bg-[var(--accent-quiet)] hover:text-[var(--accent-primary)]"
+              className="inline-flex flex-shrink-0 cursor-pointer items-center justify-center rounded-[7px] border border-[var(--border-soft)] bg-[var(--surface-primary)] px-2.5 py-[7px] text-[12px] font-bold text-[var(--text-muted)] transition-all duration-150 hover:border-[var(--accent-primary)] hover:bg-[var(--accent-quiet)] hover:text-[var(--accent-primary)]"
             >
-              <X size={12} />
+              Clear
             </button>
           </div>
         </div>

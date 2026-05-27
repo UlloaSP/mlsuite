@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.model.application.service;
 
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +20,8 @@ public interface AnalyzerService extends AnalyzerUseCase {
                         @Nullable MultipartFile dataframe);
 
         Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact);
+
+        Map<String, Object> matchArtifacts(Long userId, List<MultipartFile> models, List<MultipartFile> dataframes);
 
         Map<String, Object> predict(Long userId, Long modelId,
                         Map<String, Object> data);

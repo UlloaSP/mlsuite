@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ArtifactKind } from "./api/artifactService";
+import type { ArtifactMatchDto } from "./api/artifactService";
 import type { Bundle } from "./bundle-types";
 import { getStem, slugToTitle } from "./bundle-utils";
 
@@ -17,46 +18,56 @@ type ApplyResult = {
   nextId: number;
 };
 
+type ApplyOptions = {
+  match?: ArtifactMatchDto;
+  matchModels?: File[];
+  matchDataframes?: File[];
+};
+
 export function applyInspectedBundleFiles(
   previous: Bundle[],
   inspected: InspectedBundleFile[],
   firstId: number,
+  options: ApplyOptions = {},
 ): ApplyResult {
   const next = previous.map((bundle) => ({ ...bundle }));
   let nextId = firstId;
   const dataframes = inspected.filter((item) => item.kind === "dataframe").map((item) => item.file);
-  const pool = [...dataframes];
+  const models = inspected.filter((item) => item.kind === "model").map((item) => item.file);
+  const match = options.match;
+  const matchModels = options.matchModels ?? models;
+  const matchDataframes = options.matchDataframes ?? dataframes;
 
-  inspected
-    .filter((item) => item.kind === "model")
-    .forEach(({ file: modelFile }) => {
+  models
+    .forEach((modelFile) => {
       if (next.some((bundle) => bundle.modelFile?.name === modelFile.name)) return;
       const stem = getStem(modelFile.name);
-      const pending = next.find(
-        (bundle) =>
-          !bundle.modelFile &&
-          bundle.dfFile &&
-          getStem(bundle.dfFile.name).toLowerCase() === stem.toLowerCase(),
-      );
+      const matchedDf = findMatchedDataframe(modelFile, match, matchModels, matchDataframes);
+      const pending =
+        (matchedDf ? next.find((bundle) => !bundle.modelFile && bundle.dfFile === matchedDf) : undefined) ??
+        next.find((bundle) => !bundle.modelFile && bundle.dfFile && getStem(bundle.dfFile.name).toLowerCase() === stem.toLowerCase());
+
       if (pending) {
         pending.modelFile = modelFile;
         pending.name = pending.name.trim() ? pending.name : slugToTitle(stem);
         pending.saved = false;
         return;
       }
-      const index = pool.findIndex((df) => getStem(df.name).toLowerCase() === stem.toLowerCase());
-      const dfFile = index !== -1 ? pool.splice(index, 1)[0] : null;
+
       next.push({
         id: nextId++,
         modelFile,
-        dfFile,
+        dfFile: matchedDf,
         name: slugToTitle(stem),
         saved: false,
         saving: false,
       });
     });
 
-  pool.forEach((dfFile) => {
+  applyMatches(next, match, matchModels, matchDataframes);
+
+  dataframes.forEach((dfFile) => {
+    if (next.some((bundle) => bundle.dfFile === dfFile && bundle.modelFile)) return;
     const stem = getStem(dfFile.name).toLowerCase();
     const target =
       next.find((bundle) => bundle.modelFile && getStem(bundle.modelFile.name).toLowerCase() === stem && !bundle.dfFile) ??
@@ -77,4 +88,45 @@ export function applyInspectedBundleFiles(
   });
 
   return { bundles: next, nextId };
+}
+
+function applyMatches(
+  bundles: Bundle[],
+  match: ArtifactMatchDto | undefined,
+  models: File[],
+  dataframes: File[],
+) {
+  match?.models.forEach((modelMatch) => {
+    if (typeof modelMatch.autoDataframeIndex !== "number") return;
+    const modelFile = models[modelMatch.index];
+    const dfFile = dataframes[modelMatch.autoDataframeIndex];
+    if (!modelFile || !dfFile) return;
+
+    const modelBundle = bundles.find((bundle) => bundle.modelFile === modelFile);
+    if (modelBundle) {
+      modelBundle.dfFile = dfFile;
+      modelBundle.saved = false;
+      return;
+    }
+
+    const pending = bundles.find((bundle) => !bundle.modelFile && bundle.dfFile === dfFile);
+    if (pending) {
+      pending.modelFile = modelFile;
+      pending.name = pending.name.trim() ? pending.name : slugToTitle(getStem(modelFile.name));
+      pending.saved = false;
+    }
+  });
+}
+
+function findMatchedDataframe(
+  modelFile: File,
+  match: ArtifactMatchDto | undefined,
+  models: File[],
+  dataframes: File[],
+) {
+  const modelIndex = models.findIndex((candidate) => candidate === modelFile);
+  if (!match || modelIndex < 0) return null;
+  const modelMatch = match.models.find((candidate) => candidate.index === modelIndex);
+  if (typeof modelMatch?.autoDataframeIndex !== "number") return null;
+  return dataframes[modelMatch.autoDataframeIndex] ?? null;
 }

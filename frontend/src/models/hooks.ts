@@ -117,11 +117,19 @@ export const useGetSignature = ({ signatureId }: modelApi.GetSignatureRequest) =
 
 /** -------------------- Writes -------------------- */
 const INSPECT_ARTIFACT_QUERY_KEY = ["inspectArtifact"] as const;
+const MATCH_ARTIFACTS_QUERY_KEY = ["matchArtifacts"] as const;
 
 export function useInspectArtifactMutation() {
   return useMutation({
     mutationKey: INSPECT_ARTIFACT_QUERY_KEY,
     mutationFn: (artifact: File) => artifactApi.inspectArtifact(artifact),
+  });
+}
+
+export function useMatchArtifactsMutation() {
+  return useMutation({
+    mutationKey: MATCH_ARTIFACTS_QUERY_KEY,
+    mutationFn: (request: artifactApi.MatchArtifactsRequest) => artifactApi.matchArtifacts(request),
   });
 }
 

@@ -27,6 +27,7 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
+import dev.ulloasp.mlsuite.model.application.upload.BufferedMultipartFile;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StoredObject;
@@ -74,8 +75,12 @@ public class ModelServiceImpl implements ModelService {
             throw new ModelAlreadyExistsException(name, organization.getName());
         }
 
+        MultipartFile reusableModelFile = modelFile instanceof BufferedMultipartFile
+                ? modelFile
+                : BufferedMultipartFile.from(modelFile);
+
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("model_file", modelFile.getResource());
+        body.add("model_file", reusableModelFile.getResource());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -100,16 +105,16 @@ public class ModelServiceImpl implements ModelService {
         String specificType = response.get("specificType") != null ? response.get("specificType").toString() : null;
         String fileName = response.get("fileName") != null
                 ? response.get("fileName").toString()
-                : modelFile.getOriginalFilename();
+                : reusableModelFile.getOriginalFilename();
         String objectKey = buildObjectKey(organization.getId(), name, fileName);
         StoredObject storedObject;
         try {
             storedObject = objectStorageService.store(
                     objectKey,
                     fileName,
-                    modelFile.getContentType(),
-                    modelFile.getInputStream(),
-                    modelFile.getSize());
+                    reusableModelFile.getContentType(),
+                    reusableModelFile.getInputStream(),
+                    reusableModelFile.getSize());
         } catch (Exception ex) {
             throw new IllegalArgumentException("Model file is empty or invalid", ex);
         }
