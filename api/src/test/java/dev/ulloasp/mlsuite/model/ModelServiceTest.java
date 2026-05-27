@@ -93,9 +93,9 @@ class ModelServiceTest {
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
                 .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.pkl"));
-        when(modelFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(modelFile.getInputStream()).thenReturn(new java.io.ByteArrayInputStream("x".getBytes()));
-        when(modelFile.getSize()).thenReturn(1L);
+        when(modelFile.getBytes()).thenReturn("x".getBytes());
+        when(modelFile.getName()).thenReturn("modelFile");
+        when(modelFile.getOriginalFilename()).thenReturn("model.pkl");
         when(modelFile.getContentType()).thenReturn("application/octet-stream");
         when(objectStorageService.store(any(), any(), any(), any(), anyLong()))
                 .thenReturn(new StoredObject("bucket", "key", 1L, "etag"));
