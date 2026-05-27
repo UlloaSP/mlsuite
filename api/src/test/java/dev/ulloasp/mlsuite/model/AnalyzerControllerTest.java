@@ -62,6 +62,17 @@ class AnalyzerControllerTest {
     }
 
     @Test
+    void inspectArtifact_UsesInternalUserId() {
+        when(analyzerUseCase.inspectArtifact(5L, modelFile)).thenReturn(Map.of("kind", "model"));
+
+        ResponseEntity<Map<String, Object>> response = controller.inspectArtifact(authentication, modelFile);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("model", response.getBody().get("kind"));
+        verify(analyzerUseCase).inspectArtifact(5L, modelFile);
+    }
+
+    @Test
     void predict_UsesInternalUserId() {
         when(analyzerUseCase.predict(5L, 11L, Map.of("x", 1))).thenReturn(Map.of("prediction", 1));
 

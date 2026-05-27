@@ -45,6 +45,16 @@ public class AnalyzerControllerImpl implements AnalyzerController {
     }
 
     @Override
+    public ResponseEntity<Map<String, Object>> inspectArtifact(
+            Authentication authentication,
+            @RequestPart("artifact") MultipartFile artifact) {
+        Map<String, Object> inspection = analyzerUseCase.inspectArtifact(
+                currentUserResolver.resolve(authentication).userId(),
+                artifact);
+        return ResponseEntity.ok(inspection);
+    }
+
+    @Override
     public ResponseEntity<Map<String, Object>> predict(
             Authentication authentication,
             @RequestParam Long modelId,

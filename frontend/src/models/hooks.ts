@@ -10,6 +10,7 @@ import type {
   PredictionDto,
   SignatureDto,
 } from "./api/modelService";
+import * as artifactApi from "./api/artifactService";
 import * as modelApi from "./api/modelService";
 
 /** -------------------- Query Keys -------------------- */
@@ -115,6 +116,15 @@ export const useGetSignature = ({ signatureId }: modelApi.GetSignatureRequest) =
   });
 
 /** -------------------- Writes -------------------- */
+const INSPECT_ARTIFACT_QUERY_KEY = ["inspectArtifact"] as const;
+
+export function useInspectArtifactMutation() {
+  return useMutation({
+    mutationKey: INSPECT_ARTIFACT_QUERY_KEY,
+    mutationFn: (artifact: File) => artifactApi.inspectArtifact(artifact),
+  });
+}
+
 const CREATE_MODEL_QUERY_KEY = ["createModel"] as const;
 
 export function useCreateModelMutation() {

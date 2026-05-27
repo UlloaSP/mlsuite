@@ -91,6 +91,30 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
     @SuppressWarnings("unchecked")
     @Override
+    public Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact) {
+        userLookupService.requireById(userId);
+        LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("artifact_file", artifact.getResource());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        String endpoint = analyzerUrl + "/inspect_artifact";
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        Object response;
+        try {
+            response = restTemplate.postForObject(endpoint, requestEntity, Map.class);
+        } catch (RestClientResponseException ex) {
+            throw AnalyzerServiceException.fromRestClient(ex, endpoint);
+        } catch (ResourceAccessException ex) {
+            throw AnalyzerServiceException.fromNetwork(ex, endpoint);
+        }
+
+        return (Map<String, Object>) response;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data) {
         Model model = requireModel(userId, modelId);
         byte[] bytes = loadModelBytes(model);

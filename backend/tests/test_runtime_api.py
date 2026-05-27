@@ -57,6 +57,47 @@ def test_metadata_rejects_non_estimator() -> None:
     assert response.json()["detail"] == "Model must be a supported classifier or regressor."
 
 
+def test_inspect_artifact_identifies_model() -> None:
+    response = client.post(
+        "/inspect_artifact",
+        files={"artifact_file": serialize_joblib(make_xgboost_classifier(), "model.joblib")},
+    )
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["kind"] == "model"
+    assert payload["type"] == "classifier"
+    assert payload["specificType"] == "XGBClassifier"
+    assert payload["library"] == "xgboost"
+
+
+def test_inspect_artifact_identifies_dataframe() -> None:
+    frame = pd.DataFrame({"age": [30, 32], "income": [50_000, 51_000]})
+    response = client.post(
+        "/inspect_artifact",
+        files={"artifact_file": serialize_joblib(frame, "features.joblib")},
+    )
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["kind"] == "dataframe"
+    assert payload["rows"] == 2
+    assert payload["columns"] == ["age", "income"]
+
+
+def test_inspect_artifact_rejects_non_joblib() -> None:
+    response = client.post("/inspect_artifact", files={"artifact_file": ("artifact.txt", BytesIO(b"nope"), "text/plain")})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "File must be .joblib"
+
+
+def test_inspect_artifact_rejects_unsupported_joblib() -> None:
+    response = client.post(
+        "/inspect_artifact",
+        files={"artifact_file": serialize_joblib({"bad": "payload"}, "artifact.joblib")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Artifact must be a supported model or pandas DataFrame."
+
+
 def test_build_schema_success_with_optional_dataframe() -> None:
     frame = pd.DataFrame({"age": [30, 32], "income": [50_000, 51_000]})
     response = client.post(

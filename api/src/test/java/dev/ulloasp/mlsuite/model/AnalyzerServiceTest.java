@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 
@@ -16,12 +17,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
@@ -50,6 +56,9 @@ class AnalyzerServiceTest {
     @Mock
     private WorkspaceAccessService workspaceAccessService;
 
+    @Mock
+    private MultipartFile artifactFile;
+
     private ObjectMapper objectMapper;
     private AnalyzerServiceImpl service;
 
@@ -65,6 +74,49 @@ class AnalyzerServiceTest {
                 objectMapper);
         ReflectionTestUtils.setField(service, "analyzerUrl", "https://py-analyzer:8000");
         lenient().when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
+    }
+
+    @Test
+    void inspectArtifact_ForwardsUploadToAnalyzer() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(restTemplate.postForObject(eq("https://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
+                .thenReturn(Map.of("kind", "dataframe"));
+
+        Map<String, Object> result = service.inspectArtifact(3L, artifactFile);
+
+        assertEquals("dataframe", result.get("kind"));
+        verify(restTemplate).postForObject(eq("https://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class));
+    }
+
+    @Test
+    void inspectArtifact_PropagatesAnalyzerValidationError() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(restTemplate.postForObject(eq("https://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
+                .thenThrow(restError(400, "{\"detail\":\"File must be .joblib\"}"));
+
+        AnalyzerServiceException ex = assertThrows(
+                AnalyzerServiceException.class,
+                () -> service.inspectArtifact(3L, artifactFile));
+
+        assertEquals(400, ex.getStatus());
+        assertEquals("File must be .joblib", ex.getDetail());
+    }
+
+    @Test
+    void inspectArtifact_PropagatesAnalyzerNetworkError() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(restTemplate.postForObject(eq("https://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
+                .thenThrow(new ResourceAccessException("down"));
+
+        AnalyzerServiceException ex = assertThrows(
+                AnalyzerServiceException.class,
+                () -> service.inspectArtifact(3L, artifactFile));
+
+        assertEquals(0, ex.getStatus());
+        assertEquals("Analyzer service unreachable", ex.getDetail());
     }
 
     @Test
@@ -125,6 +177,16 @@ class AnalyzerServiceTest {
         Organization organization = new Organization();
         organization.setId(5L);
         return organization;
+    }
+
+    private RestClientResponseException restError(int status, String body) {
+        return new RestClientResponseException(
+                "bad",
+                status,
+                "Bad Request",
+                HttpHeaders.EMPTY,
+                body.getBytes(StandardCharsets.UTF_8),
+                StandardCharsets.UTF_8);
     }
 }
 

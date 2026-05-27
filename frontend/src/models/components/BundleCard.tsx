@@ -15,11 +15,20 @@ type Props = {
   onSave: () => void;
   onRemove: () => void;
   onRename: (value: string) => void;
+  onAttachModel: () => void;
   onAttachDf: () => void;
 };
 
-export function BundleCard({ bundle, index, onSave, onRemove, onRename, onAttachDf }: Props) {
-  const isSaveable = bundle.name.trim() && !bundle.saving;
+export function BundleCard({
+  bundle,
+  index,
+  onSave,
+  onRemove,
+  onRename,
+  onAttachModel,
+  onAttachDf,
+}: Props) {
+  const isSaveable = bundle.modelFile && bundle.name.trim() && !bundle.saving;
 
   return (
     <motion.div
@@ -36,12 +45,23 @@ export function BundleCard({ bundle, index, onSave, onRemove, onRename, onAttach
       <div className="flex items-stretch">
         {/* ── Files section ──────────────────────────────────────── */}
         <div className="flex min-w-0 flex-1 flex-col gap-2 border-r border-[var(--border-soft)] px-4 py-3.5">
-          <BundleFilePill
-            name={bundle.modelFile.name}
-            size={bundle.modelFile.size}
-            kind="model"
-            badge="artifact"
-          />
+          {bundle.modelFile ? (
+            <BundleFilePill
+              name={bundle.modelFile.name}
+              size={bundle.modelFile.size}
+              kind="model"
+              badge="artifact"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={onAttachModel}
+              className="flex items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--accent-primary)] bg-[var(--accent-quiet)] px-3 py-[7px] text-[12px] font-bold text-[var(--accent-primary)] transition-all duration-150 hover:bg-[var(--surface-secondary)]"
+            >
+              <Plus size={12} />
+              Select model <span className="font-mono text-[10px] opacity-70">(.joblib)</span>
+            </button>
+          )}
 
           {bundle.dfFile ? (
             <BundleFilePill

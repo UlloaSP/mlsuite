@@ -18,6 +18,8 @@ public interface AnalyzerService extends AnalyzerUseCase {
         Map<String, Object> generateInputSignature(Long userId, MultipartFile model,
                         @Nullable MultipartFile dataframe);
 
+        Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact);
+
         Map<String, Object> predict(Long userId, Long modelId,
                         Map<String, Object> data);
 

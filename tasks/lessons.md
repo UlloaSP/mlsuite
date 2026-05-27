@@ -139,3 +139,11 @@
 ## 2026-05-20 - Role form modal correction
 - Correction: role form modal made actions depend on page scroll and displayed permissions as a long ungrouped list of cards.
 - Rule: permission-heavy modals need fixed header/footer, one internal scroll region, backend-catalog grouping, and flat rows instead of card-per-permission decoration.
+
+## 2026-05-27 - Runtime artifact ownership
+- Correction: `.joblib` classification cannot be inferred in frontend because model/dataframe share extension and supported model libraries vary.
+- Rule: Python runtime must own uploaded artifact inspection and library-specific model capability detection; frontend/API may route results but must not duplicate model/dataframe business rules.
+- Correction: frontend inspect request was called directly from page code instead of using TanStack Query like app requests.
+- Rule: frontend API calls from React surfaces must go through feature hooks (`useQuery`/`useMutation`) so request state, retries, and error handling follow app conventions.
+- Correction: upload empty state looked passive and dataframe type copy still listed stale non-runtime formats.
+- Rule: upload surfaces must accept input wherever the UI invites dropping, and displayed accepted types must match the actual backend-inspected contract.

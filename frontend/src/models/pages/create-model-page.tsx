@@ -7,65 +7,56 @@ import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
 import { AppBreadcrumbs, AppPage } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
+import { emitErrorFromUnknown } from "../../app/utils/error-sink";
 import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";
+import { applyInspectedBundleFiles, type InspectedBundleFile } from "../bundle-planner";
 import type { Bundle } from "../bundle-types";
-import { DF_EXTS, getStem, isDfFile, isModelFile, slugToTitle } from "../bundle-utils";
+import { DF_EXTS, getStem, isDfFile, isJoblibFile, isModelFile, slugToTitle } from "../bundle-utils";
 import { BundleCard } from "../components/BundleCard";
 import { BundleDropZone } from "../components/BundleDropZone";
 import { BundleEmptyState } from "../components/BundleEmptyState";
 import { BundleSummaryPanel } from "../components/BundleSummaryPanel";
-import { useCreateModelMutation } from "../hooks";
+import { useCreateModelMutation, useInspectArtifactMutation } from "../hooks";
 
 let _nextId = 1;
 
 export function CreateModelPage() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const mutation = useCreateModelMutation();
+  const { mutateAsync: inspectArtifact } = useInspectArtifactMutation();
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
 
   // ── Ingest dropped/selected files ───────────────────────────────────────
 
-  const handleFiles = useCallback((files: File[]) => {
-    const models = files.filter((f) => isModelFile(f.name));
-    const dfs = files.filter((f) => isDfFile(f.name));
-    const pool = [...dfs];
+  const handleFiles = useCallback(async (files: File[]) => {
+    const inspected = await Promise.all(
+      files.map(async (file) => {
+        if (isJoblibFile(file.name)) {
+          try {
+            const inspection = await inspectArtifact(file);
+            return { file, kind: inspection.kind };
+          } catch (error) {
+            emitErrorFromUnknown(error);
+          }
+          return null;
+        }
+        if (isDfFile(file.name)) return { file, kind: "dataframe" as const };
+        if (isModelFile(file.name)) return { file, kind: "model" as const };
+        return null;
+      }),
+    );
+
+    const accepted = inspected.filter((item): item is InspectedBundleFile => item !== null);
 
     setBundles((prev) => {
-      const next = [...prev];
-
-      models.forEach((modelFile) => {
-        if (next.some((b) => b.modelFile.name === modelFile.name)) return;
-        const stem = getStem(modelFile.name);
-        const idx = pool.findIndex((df) => getStem(df.name).toLowerCase() === stem.toLowerCase());
-        const dfFile = idx !== -1 ? pool.splice(idx, 1)[0] : null;
-        next.push({
-          id: _nextId++,
-          modelFile,
-          dfFile,
-          name: slugToTitle(stem),
-          saved: false,
-          saving: false,
-        });
-      });
-
-      // Attach remaining dfs to the first bundle that lacks one
-      pool.forEach((df) => {
-        const stem = getStem(df.name).toLowerCase();
-        const target =
-          next.find((b) => getStem(b.modelFile.name).toLowerCase() === stem && !b.dfFile) ??
-          next.find((b) => !b.dfFile);
-        if (target) {
-          target.dfFile = df;
-          target.saved = false;
-        }
-      });
-
-      return next;
+      const result = applyInspectedBundleFiles(prev, accepted, _nextId);
+      _nextId = result.nextId;
+      return result.bundles;
     });
-  }, []);
+  }, [inspectArtifact]);
 
   // ── Bundle actions ───────────────────────────────────────────────────────
 
@@ -74,15 +65,56 @@ export function CreateModelPage() {
   const setBundleName = (id: number, value: string) =>
     setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, name: value } : b)));
 
+  const attachModel = (bundleId: number) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".joblib";
+    input.onchange = async (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files ?? []);
+      if (!files.length) return;
+      const file = files[0];
+      try {
+        const inspection = await inspectArtifact(file);
+        if (inspection.kind !== "model") return;
+      } catch (error) {
+        emitErrorFromUnknown(error);
+        return;
+      }
+      setBundles((prev) =>
+        prev.map((b) =>
+          b.id === bundleId
+            ? {
+                ...b,
+                modelFile: file,
+                name: b.name.trim() ? b.name : slugToTitle(getStem(file.name)),
+                saved: false,
+              }
+            : b,
+        ),
+      );
+    };
+    input.click();
+  };
+
   const attachDf = (bundleId: number) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = DF_EXTS.join(",");
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const files = Array.from((e.target as HTMLInputElement).files ?? []);
       if (!files.length) return;
+      const file = files[0];
+      if (isJoblibFile(file.name)) {
+        try {
+          const inspection = await inspectArtifact(file);
+          if (inspection.kind !== "dataframe") return;
+        } catch (error) {
+          emitErrorFromUnknown(error);
+          return;
+        }
+      }
       setBundles((prev) =>
-        prev.map((b) => (b.id === bundleId ? { ...b, dfFile: files[0], saved: false } : b)),
+        prev.map((b) => (b.id === bundleId ? { ...b, dfFile: file, saved: false } : b)),
       );
     };
     input.click();
@@ -90,7 +122,7 @@ export function CreateModelPage() {
 
   const saveBundle = async (id: number) => {
     const bundle = bundles.find((b) => b.id === id);
-    if (!bundle || !bundle.name.trim() || bundle.saved || bundle.saving) return;
+    if (!bundle?.modelFile || !bundle.name.trim() || bundle.saved || bundle.saving) return;
 
     setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, saving: true } : b)));
     try {
@@ -108,7 +140,7 @@ export function CreateModelPage() {
   };
 
   const saveAll = async () => {
-    const unsaved = bundles.filter((b) => b.name.trim() && !b.saved && !b.saving);
+    const unsaved = bundles.filter((b) => b.modelFile && b.name.trim() && !b.saved && !b.saving);
     await Promise.all(unsaved.map((bundle) => saveBundle(bundle.id)));
     navigate("/models");
   };
@@ -118,7 +150,7 @@ export function CreateModelPage() {
   const total = bundles.length;
   const withDf = bundles.filter((b) => b.dfFile).length;
   const saved = bundles.filter((b) => b.saved).length;
-  const unsavedReady = bundles.filter((b) => b.name.trim() && !b.saved && !b.saving).length;
+  const unsavedReady = bundles.filter((b) => b.modelFile && b.name.trim() && !b.saved && !b.saving).length;
   const anySaving = bundles.some((b) => b.saving);
 
   if (!user || error) return <NotFoundError />;
@@ -152,7 +184,7 @@ export function CreateModelPage() {
 
             <div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-[var(--border-soft)] px-4 pb-4 pt-3">
               {bundles.length === 0 ? (
-                <BundleEmptyState />
+                <BundleEmptyState onFiles={handleFiles} />
               ) : (
                 bundles.map((bundle, i) => (
                   <BundleCard
@@ -162,6 +194,7 @@ export function CreateModelPage() {
                     onSave={() => saveBundle(bundle.id)}
                     onRemove={() => removeBundle(bundle.id)}
                     onRename={(v) => setBundleName(bundle.id, v)}
+                    onAttachModel={() => attachModel(bundle.id)}
                     onAttachDf={() => attachDf(bundle.id)}
                   />
                 ))

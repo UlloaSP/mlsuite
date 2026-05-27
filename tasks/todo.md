@@ -1,28 +1,33 @@
-# Export Predictions Permission Plan
+# Model Upload Pending Dataframe UX
 
 ## Goal
-- [x] Add `EXPORT_PREDICTIONS` permission.
-- [x] Grant it by default to owner/admin roles.
-- [x] Expose it in workspace permission DTO and role catalog.
-- [x] Hide export CSV button when missing.
-- [x] Verify backend/frontend build and graph.
+- [x] Empty state accepts drag/drop and browse.
+- [x] Accepted dataframe type shown as `.joblib` only.
+- [x] Dropping/selecting dataframe first creates a pending bundle.
+- [x] Later model upload fills pending bundle when possible.
+- [x] Save remains disabled until model exists.
+- [x] Verify focused frontend tests, line cap, graph update.
 
 ## Plan
-- [x] Update backend permission enum, catalog, seed sync, workspace permissions.
-- [x] Update focused backend tests for owner/admin/member/viewer behavior.
-- [x] Gate frontend export button from workspace context.
-- [x] Run narrow tests, frontend build, line cap, graph update.
+- [x] Update bundle type/card to support pending model.
+- [x] Make empty state a drop/browse surface.
+- [x] Update create-model pairing logic for df-first flow.
+- [x] Update tests and lessons.
+- [x] Run focused verification.
 
 ## Review
 - Status: fixed.
-- Backend adds `EXPORT_PREDICTIONS`, exposes `canExportPredictions`, and includes permission in Models catalog.
-- Owner/admin get permission from system role mapper; existing system roles sync missing permissions during seed/ensure.
-- Frontend export button now renders only with `canExportPredictions`; related export data queries stay disabled without it.
-- Split frontend permission DTO/types from `workspace/types.ts`; file now under 300 lines.
-- Verification:
-  - `mvn -q "-Dtest=WorkspaceAuthorizationServiceTest,InvitationManagementServiceTest" test` ✅
-  - `vp run build` ✅ warnings only: existing `runtime-config.js` and chunk size warnings.
-  - `npx react-doctor@latest --verbose` ✅ score 98; existing warnings only.
-  - touched source line cap ✅ no touched file over 300 lines.
-  - `git diff --check` ✅ CRLF warnings only.
-  - `graphify update .` ✅ graph updated; graph.html skipped because graph exceeds viz limit.
+- Empty state now accepts drag/drop and browse.
+- Accepted model/dataframe labels and file picker accept list are `.joblib` only.
+- Dataframe-first upload creates a pending bundle with a “Select model” action.
+- Later model upload fills matching pending dataframe bundle by filename stem.
+- Save / Save All ignore pending bundles until model exists.
+- Pairing logic moved to `bundle-planner.ts` and tests cover dataframe-first + later model fill.
+- Tests:
+  - `vp test model-bundle-files.test.ts artifact-inspection-service.test.ts` passed: 6 tests.
+  - `git diff --check` passed; CRLF warnings only.
+  - touched file line cap passed.
+  - `graphify update .` passed; graph.html skipped because graph exceeds viz limit.
+- Blocked broader checks:
+  - `vp exec tsc -p tsconfig.app.json --noEmit` still fails on existing MLForm type/export errors.
+  - `npx react-doctor@latest --verbose` timed out after 120s.

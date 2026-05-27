@@ -29,6 +29,11 @@ public interface AnalyzerController {
                         @RequestPart("model") MultipartFile model,
                         @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe);
 
+        @PostMapping("/artifacts/inspect")
+        public ResponseEntity<Map<String, Object>> inspectArtifact(
+                        Authentication authentication,
+                        @RequestPart("artifact") MultipartFile artifact);
+
         @PostMapping("/predictions")
         public ResponseEntity<Map<String, Object>> predict(
                         Authentication authentication,
