@@ -5,10 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useRef, useState } from "react";
 import { cx } from "../../app/components/ui-utils";
-import { ALL_EXTS } from "../bundle-utils";
+import { ALL_EXTS, DF_EXT_LABEL, MODEL_EXT_LABEL } from "../bundle-utils";
 
 type Props = {
-  onFiles: (files: File[]) => void;
+  onFiles: (files: File[]) => void | Promise<void>;
 };
 
 export function BundleDropZone({ onFiles }: Props) {
@@ -77,19 +77,23 @@ export function BundleDropZone({ onFiles }: Props) {
             Drop files here or <span className="text-[var(--accent-primary)]">browse</span>
           </p>
           <p className="mt-0.5 truncate font-mono text-[11px] text-[var(--text-muted)]">
-            models: .joblib
+            models: {MODEL_EXT_LABEL}
           </p>
           <p className="truncate font-mono text-[11px] text-[var(--text-muted)]">
-            dataframes: .csv
+            dataframes: {DF_EXT_LABEL}
           </p>
         </div>
 
         {/* Browse button — stops propagation so it doesn't double-trigger */}
-        <span
-          className="flex-shrink-0 rounded-lg border border-[var(--border-strong)] bg-[var(--surface-primary)] px-3.5 py-2 text-[12px] font-bold text-[var(--text-secondary)] shadow-none transition-all duration-150 hover:-translate-y-px hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] hover:shadow-[var(--shadow-hover)]"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            inputRef.current?.click();
+          }}
+          className="flex-shrink-0 cursor-pointer rounded-lg border border-[var(--border-strong)] bg-[var(--surface-primary)] px-3.5 py-2 text-[12px] font-bold text-[var(--text-secondary)] shadow-none transition-all duration-150 hover:-translate-y-px hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] hover:shadow-[var(--shadow-hover)]"
         >
           Add files
-        </span>
       </button>
 
       <input

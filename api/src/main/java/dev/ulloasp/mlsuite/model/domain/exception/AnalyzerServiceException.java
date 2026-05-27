@@ -84,7 +84,7 @@ public class AnalyzerServiceException extends RuntimeException {
 
     /**
      * FastAPI typically returns:
-     * - {"detail": "Not a sklearn estimator."}
+     * - {"detail": "Model must be a supported classifier or regressor."}
      * - {"detail": [{"loc":[...], "msg":"...", "type":"..."}]}
      */
     private static String parseFastApiDetail(String body) {

@@ -3,7 +3,7 @@ import json
 from fastapi import UploadFile
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
-from .model_service import load_estimator_from_upload
+from ..model_adapters import load_runtime_model_from_upload
 from ..utils.crystal_tree import (
     build_tree_path_explanation,
     explain_with_feature_name_aliases,
@@ -14,7 +14,8 @@ from ..utils.errors import bad_request, internal_runtime_error
 
 
 async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str, list[str]]:
-    model = await load_estimator_from_upload(model_upload)
+    runtime = await load_runtime_model_from_upload(model_upload)
+    model = runtime.model
     if not isinstance(model, (DecisionTreeClassifier, DecisionTreeRegressor)):
         message = f"crystal-tree requires a DecisionTree estimator, got {model.__class__.__name__}"
         raise bad_request(message)

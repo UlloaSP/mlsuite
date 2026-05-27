@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
+from xgboost import XGBClassifier, XGBRegressor
 
 
 class NoFeatureClassifier(ClassifierMixin, BaseEstimator):
@@ -73,3 +74,25 @@ def make_tree_with_unused_tail_feature() -> DecisionTreeClassifier:
 
 def make_no_feature_classifier() -> NoFeatureClassifier:
     return NoFeatureClassifier().fit()
+
+
+def make_xgboost_classifier() -> XGBClassifier:
+    features = pd.DataFrame(
+        {
+            "age": [22, 35, 47, 52, 46, 56],
+            "income": [20_000, 45_000, 80_000, 90_000, 70_000, 120_000],
+        }
+    )
+    labels = [0, 0, 1, 1, 1, 1]
+    return XGBClassifier(n_estimators=3, max_depth=2, eval_metric="logloss").fit(features, labels)
+
+
+def make_xgboost_regressor() -> XGBRegressor:
+    features = pd.DataFrame(
+        {
+            "rooms": [1, 2, 3, 4],
+            "area": [30, 45, 60, 90],
+        }
+    )
+    labels = [100_000, 160_000, 220_000, 340_000]
+    return XGBRegressor(n_estimators=3, max_depth=2).fit(features, labels)
