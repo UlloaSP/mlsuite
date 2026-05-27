@@ -1,4 +1,5 @@
 import type { TargetDto } from "../../models/api/modelService";
+import type { PredictionReportDescriptor } from "../../models/questionnaire-feedback";
 import {
   formatProbability,
   getSchemaAwareTargetValue,
@@ -8,12 +9,14 @@ import {
 
 type ReviewOutputsSectionProps = {
   targets: TargetDto[];
+  reports: PredictionReportDescriptor[];
   signatureSchema: unknown;
   predictionValue: unknown;
 };
 
 export function ReviewOutputsSection({
   targets,
+  reports,
   signatureSchema,
   predictionValue,
 }: ReviewOutputsSectionProps) {
@@ -44,6 +47,23 @@ export function ReviewOutputsSection({
           </div>
         );
       })}
+      {reports.map((report, index) => (
+        <div
+          key={report.reportId}
+          className="grid gap-1 py-3 md:grid-cols-[180px_minmax(0,1fr)]"
+        >
+          <p className="text-sm font-semibold text-[var(--text-primary)]">
+            Output {targets.length + index + 1}: {report.label}
+          </p>
+          {report.error ? (
+            <p className="text-sm text-[var(--danger-text)]">{report.error}</p>
+          ) : (
+            <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm leading-6 text-[var(--text-primary)]">
+              {report.content.length > 0 ? report.content.join("\n\n") : "No output content."}
+            </pre>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

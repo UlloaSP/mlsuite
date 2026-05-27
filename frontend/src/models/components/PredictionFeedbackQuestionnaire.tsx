@@ -1,5 +1,5 @@
 import { Edit3 } from "lucide-react";
-import { useMemo, useReducer } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
 import { AppCopy, AppPanel } from "../../app/components/ui";
 import { AppButton } from "../../app/components/ui-controls";
@@ -87,6 +87,7 @@ export function PredictionFeedbackQuestionnaire({
   const createReportFeedback = useCreateExplanationFeedbackMutation();
   const updateReportFeedback = useUpdateExplanationFeedbackMutation();
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
+  const [savedValues, setSavedValues] = useState<Record<string, unknown> | null>(null);
 
   const steps = useMemo<PredictionFeedbackStep[]>(() => {
     const outputSteps = targets.map((target, index): PredictionFeedbackStep => {
@@ -140,6 +141,8 @@ export function PredictionFeedbackQuestionnaire({
 
   const complete = steps.length > 0 && steps.every((step) => step.feedback);
   const combined = useMemo(() => buildCombinedFeedbackQuestionnaire(steps), [steps]);
+  const displayComplete = complete || savedValues !== null;
+  const formInitialValues = savedValues ?? combined.initialValues;
   const labels = useMemo(() => ({ submit: "Save feedback", submitting: "Saving feedback…" }), []);
   const transport = useMemo(
     () =>
@@ -187,6 +190,7 @@ export function PredictionFeedbackQuestionnaire({
             });
           }),
         );
+        setSavedValues(values);
         await onSaved();
         setEditing(false);
         toast.success("Feedback saved");
@@ -209,7 +213,7 @@ export function PredictionFeedbackQuestionnaire({
     return <AppCopy>No feedback questionnaire configured for this prediction.</AppCopy>;
   }
 
-  if (complete && !editing) {
+  if (displayComplete && !editing) {
     return (
       <AppPanel className="space-y-4">
         <div className="flex items-center justify-between gap-3">
@@ -227,7 +231,7 @@ export function PredictionFeedbackQuestionnaire({
               key={step.id}
               schema={step.schema}
               title={step.title}
-              values={step.initialValues}
+              values={savedValues ? valuesForCombinedStep(savedValues, step) : step.initialValues}
             />
           ))}
         </div>
@@ -241,7 +245,7 @@ export function PredictionFeedbackQuestionnaire({
       <ReportQuestionnaireMount
         title="Feedback"
         schema={combined.schema}
-        initialValues={combined.initialValues}
+        initialValues={formInitialValues}
         editable
         theme={theme}
         mode="standalone"

@@ -7,7 +7,6 @@ import { getOutputReports } from "../../models/report-contract";
 import { useReviewPredictionDetail } from "../hooks";
 import { ReviewAccordionSection } from "./ReviewAccordionSection";
 import { ReviewCombinedFeedbackForm } from "./ReviewCombinedFeedbackForm";
-import { ReviewReportsSection } from "./ReviewReportsSection";
 import { ReviewInputsSection } from "./ReviewInputsSection";
 import { ReviewOutputsSection } from "./ReviewOutputsSection";
 
@@ -27,7 +26,6 @@ export function ReviewPredictionDetailPanel({
   const [theme] = useAtom(themeWithHtmlAtom);
   const [inputsOpen, setInputsOpen] = useState(false);
   const [outputsOpen, setOutputsOpen] = useState(false);
-  const [reportsOpen, setReportsOpen] = useState(false);
   const detail = useReviewPredictionDetail(token, predictionToken);
   const reports = useMemo(() => {
     return getOutputReports(signatureSchema);
@@ -103,16 +101,10 @@ export function ReviewPredictionDetailPanel({
           >
             <ReviewOutputsSection
               targets={targets}
+              reports={feedbackReports}
               signatureSchema={signatureSchema}
               predictionValue={prediction.prediction}
             />
-          </ReviewAccordionSection>
-          <ReviewAccordionSection
-            title="Reports"
-            open={reportsOpen}
-            onToggle={() => setReportsOpen((v) => !v)}
-          >
-            <ReviewReportsSection reports={feedbackReports} />
           </ReviewAccordionSection>
           <ReviewAccordionSection
             title="Inputs"

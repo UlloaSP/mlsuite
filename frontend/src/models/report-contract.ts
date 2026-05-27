@@ -8,7 +8,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export const isFeedbackReportConfig = (report: unknown): boolean =>
   isRecord(report) &&
-  (typeof report.feedbackEnabled === "boolean" || report.feedbackQuestionnaire !== undefined);
+  (() => {
+    const config = isRecord(report.config) ? report.config : report;
+    return typeof config.feedbackEnabled === "boolean" || config.feedbackQuestionnaire !== undefined;
+  })();
 
 export const getOutputReports = (signatureSchema: unknown): Record<string, unknown>[] => {
   if (!isRecord(signatureSchema) || !Array.isArray(signatureSchema.reports)) {

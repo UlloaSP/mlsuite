@@ -3,6 +3,8 @@ package dev.ulloasp.mlsuite.prediction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -26,6 +28,7 @@ import dev.ulloasp.mlsuite.prediction.domain.exception.OutputFeedbackDoesNotExis
 import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.OutputFeedbackRepository;
 import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
+import dev.ulloasp.mlsuite.prediction.application.service.DirectFeedbackPublicationService;
 import dev.ulloasp.mlsuite.prediction.application.service.OutputFeedbackServiceImpl;
 import dev.ulloasp.mlsuite.prediction.application.service.PredictionFeedbackStatusResolver;
 import dev.ulloasp.mlsuite.signature.domain.model.Signature;
@@ -49,6 +52,9 @@ class OutputFeedbackServiceTest {
     private PredictionFeedbackStatusResolver predictionFeedbackStatusResolver;
 
     @Mock
+    private DirectFeedbackPublicationService publicationService;
+
+    @Mock
     private WorkspaceAccessService workspaceAccessService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -61,6 +67,7 @@ class OutputFeedbackServiceTest {
                 outputFeedbackRepository,
                 predictionRepository,
                 predictionFeedbackStatusResolver,
+                publicationService,
                 workspaceAccessService);
         when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
@@ -84,6 +91,7 @@ class OutputFeedbackServiceTest {
 
         assertEquals(1, result.getOrder());
         assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
+        verify(publicationService).publish(any(User.class), eq(prediction));
     }
 
     @Test
@@ -106,6 +114,7 @@ class OutputFeedbackServiceTest {
 
         assertEquals(12L, result.getId());
         assertEquals("updated", result.getValue().get("assessment").asText());
+        verify(publicationService).publish(any(User.class), eq(prediction));
     }
 
     @Test
@@ -138,6 +147,7 @@ class OutputFeedbackServiceTest {
 
         assertEquals("incorrect", result.getValue().get("assessment").asText());
         assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
+        verify(publicationService).publish(any(User.class), eq(prediction));
     }
 
     @Test

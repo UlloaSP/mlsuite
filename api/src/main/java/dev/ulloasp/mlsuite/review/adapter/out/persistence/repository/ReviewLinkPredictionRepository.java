@@ -10,6 +10,8 @@ import dev.ulloasp.mlsuite.review.domain.model.ReviewLinkPrediction;
 public interface ReviewLinkPredictionRepository extends JpaRepository<ReviewLinkPrediction, Long> {
     List<ReviewLinkPrediction> findByReviewLinkId(Long reviewLinkId);
 
+    List<ReviewLinkPrediction> findByPredictionId(Long predictionId);
+
     Optional<ReviewLinkPrediction> findByReviewLinkIdAndPredictionId(Long reviewLinkId, Long predictionId);
 
     boolean existsByReviewLinkIdAndPredictionId(Long reviewLinkId, Long predictionId);

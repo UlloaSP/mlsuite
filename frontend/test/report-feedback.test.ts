@@ -5,6 +5,7 @@ import {
 } from "../src/models/report-feedback-utils";
 import { createPredictionTransport } from "../src/app/utils/mlform/transport";
 import { createOutputFeedbackQuestionnaire } from "../src/models/output-feedback-questionnaire";
+import { isFeedbackReportConfig } from "../src/models/report-contract";
 import { buildTargetFeedbackValue } from "../src/models/target-utils";
 import { formatFeedbackValue } from "../src/models/questionnaire-feedback";
 import {
@@ -26,10 +27,16 @@ const questionnaire = {
 const predictionValue = {
   reports: {
     "crystal-tree": {
+      explanation: "Predicted class 2\n└─ petal_length > 4.8",
       explanations: ["Predicted class 2 || petal_length > 4.8"],
+      endpoint: "/api/analyzer/explanations",
+      modelId: "model-1",
     },
   },
 };
+const speciesReport = { kind: "classifier", labels: ["setosa"], label: "species" };
+const speciesSchema = { reports: [speciesReport] };
+const speciesPrediction = { outputs: ["setosa"] };
 
 const parsePostedData = async (
   body: BodyInit | null | undefined,
@@ -79,7 +86,7 @@ describe("report feedback metadata", () => {
       formatFeedbackValue("cab", {
         options: [{ label: "taxi", value: "cab" }],
       }),
-    ).toBe("taxi (cab)");
+    ).toBe("taxi");
   });
 
   it("omits mapped-category parent controls from analyzer payload", async () => {
@@ -125,29 +132,49 @@ describe("report feedback metadata", () => {
     });
   });
 
-  it("detects embedded questionnaire without loading plugin catalog", () => {
-    const entries = extractPredictionReportEntries(
-      predictionValue,
-      {
-        fields: [{ kind: "number", label: "petal_length" }],
-        reports: [
-          {
-            kind: "Crystal Tree",
-            id: "crystal-tree",
-            feedbackQuestionnaire: questionnaire,
-          },
-        ],
-      },
-    );
-
-    expect(entries).toHaveLength(1);
-    expect(entries[0].feedbackQuestionnaire).toEqual(questionnaire);
+  it("detects feedback report controllers by their config", () => {
+    expect(
+      isFeedbackReportConfig({
+        id: "crystal-tree",
+        kind: "Crystal Tree",
+        config: {
+          feedbackQuestionnaire: questionnaire,
+        },
+      }),
+    ).toBe(true);
   });
 
   it("uses formatted report feedback value as displayable report content", () => {
     expect(getFormattedReportContent("Predicted class abc || petal_width <= 2")).toEqual([
       "Predicted class abc\n└─ petal_width <= 2",
     ]);
+  });
+
+  it("prefers Crystal Tree formatted explanation text over raw legacy blocks", () => {
+    const pluginPayload = {
+      explanation: "Predicted class abc\n└─ petal_width <= 2",
+      explanations: ["Predicted class abc || petal_width <= 2"],
+      endpoint: "/api/analyzer/explanations",
+      modelId: "model-1",
+    };
+    const entries = extractPredictionReportEntries(
+      { reports: { "crystal-tree": pluginPayload } },
+      {
+        reports: [
+          {
+            kind: "Crystal Tree",
+            id: "crystal-tree",
+            label: "Crystal Tree",
+            feedbackQuestionnaire: questionnaire,
+          },
+        ],
+      },
+    );
+
+    expect(getFormattedReportContent(pluginPayload)).toEqual([
+      "Predicted class abc\n└─ petal_width <= 2",
+    ]);
+    expect(entries[0].content).toEqual(["Predicted class abc\n└─ petal_width <= 2"]);
   });
 
   it("keeps report review steps when result content is missing", () => {
@@ -169,13 +196,13 @@ describe("report feedback metadata", () => {
       targets: [{ order: 0, value: "setosa" }],
       outputFeedbackByOrder: new Map(),
       explanationFeedbackByOrder: new Map(),
-      reports: [{ kind: "classifier", labels: ["setosa"], label: "species" }],
-      signatureSchema: { reports: [{ kind: "classifier", labels: ["setosa"], label: "species" }] },
-      predictionValue: { outputs: ["setosa"] },
+      reports: [speciesReport],
+      signatureSchema: speciesSchema,
+      predictionValue: speciesPrediction,
       feedbackReports: entries,
     });
 
-    expect(steps.map((step) => step.title)).toEqual(["Output 1: species", "Report 1: Crystal Tree"]);
+    expect(steps.map((step) => step.title)).toEqual(["Output 1: species", "Output 2: Crystal Tree"]);
   });
 
   it("uses default editable questionnaire for old feedback-enabled schemas", () => {
@@ -194,9 +221,7 @@ describe("report feedback metadata", () => {
     );
 
     expect(entries).toHaveLength(1);
-    expect(entries[0].feedbackQuestionnaire?.steps[0].fields.map((field) => field.label)).toEqual([
-      "Clarity", "Usefulness", "Trust",
-    ]);
+    expect(entries[0].feedbackQuestionnaire?.steps[0].fields.map((field) => field.label)).toEqual(["Clarity", "Usefulness", "Trust"]);
   });
 
   it("builds one review wizard with output then report steps", () => {
@@ -204,9 +229,9 @@ describe("report feedback metadata", () => {
       targets: [{ order: 0, value: "setosa" }],
       outputFeedbackByOrder: new Map(),
       explanationFeedbackByOrder: new Map(),
-      reports: [{ kind: "classifier", labels: ["setosa"], label: "species" }],
-      signatureSchema: { reports: [{ kind: "classifier", labels: ["setosa"], label: "species" }] },
-      predictionValue: { outputs: ["setosa"] },
+      reports: [speciesReport],
+      signatureSchema: speciesSchema,
+      predictionValue: speciesPrediction,
       feedbackReports: [
         {
           order: 0,
@@ -220,7 +245,7 @@ describe("report feedback metadata", () => {
     const combined = buildCombinedReviewQuestionnaire(steps);
 
     expect(steps.map((step) => step.kind)).toEqual(["output", "report"]);
-    expect(combined.schema.steps.map((step) => step.title)).toEqual(["Output 1: species", "Report 1: Crystal Tree"]);
+    expect(combined.schema.steps.map((step) => step.title)).toEqual(["Output 1: species", "Output 2: Crystal Tree"]);
     expect(combined.schema.steps[0].description).toContain("setosa");
     expect(combined.schema.steps[1].description).toContain("petal_length > 4.8");
   });

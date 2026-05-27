@@ -27,7 +27,7 @@ export function ReviewStepContextPanel() {
   if (!activeStep) {
     return <aside className="lg:sticky lg:top-28" />;
   }
-  const title = activeStep.kind === "output" ? "Current output" : "Current report";
+  const title = "Current output";
   const content = lines(activeStep.description.replace(/^Prediction (result|report):\s*/i, ""));
   return (
     <aside className="lg:sticky lg:top-28">

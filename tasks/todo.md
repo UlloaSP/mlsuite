@@ -201,3 +201,76 @@
   - `vp test run --run test/report-feedback.test.ts` passed: 8 tests.
   - `git diff --check` passed with CRLF warnings only.
   - touched source line cap passed.
+
+# Crystal Tree Explanation Text Priority
+
+## Goal
+- [x] Crystal Tree runtime payload uses plugin `explanation` string as canonical display/save text.
+- [x] Legacy `explanations[]` stays fallback only.
+- [x] Saved/displayed Crystal Tree report never shows raw object/json when `explanation` exists.
+- [x] Prediction modal/history persist Crystal Tree report payload after MLForm fetch.
+
+## Plan
+- [x] Add regression test with real plugin payload shape: `explanation`, `explanations`, `endpoint`, `modelId`.
+- [x] Patch report content normalization to prefer `explanation` before legacy arrays/custom JSON fallback.
+- [x] Patch feedback-report detection to recognize MLForm report controllers via `report.config`.
+- [x] Verify focused frontend tests, typecheck/build, line cap, graphify.
+
+## Review
+- Root cause 1: Crystal Tree plugin returns canonical formatted text in `explanation`, but MLSuite preferred legacy raw `explanations[]`.
+- Root cause 2: create-prediction flow checked `isFeedbackReportConfig(report)` on MLForm `ReportController`; metadata lives in `report.config`, so reports were not tracked as pending or persisted.
+- Fixed normalization so `explanation` is canonical and `explanations[]` fallback only.
+- Fixed report detection for both raw schema reports and MLForm report controllers.
+- Verification:
+  - `vp test run --run test/report-feedback.test.ts` passed: 10 tests.
+  - `vp exec tsc -b --pretty false` passed.
+  - `vp run build` passed; existing `runtime-config.js` and chunk-size warnings remain.
+  - `npx react-doctor@latest --verbose` passed with score 98; existing `dist` unused-file noise, pnpm hardening, and `ReportQuestionnaireMount` effect warnings remain.
+  - `git diff --check` passed with CRLF warnings only.
+  - touched source line cap passed.
+  - `graphify update .` passed; graph.html skipped due graph size limit.
+
+# External Review Outputs Context Fix
+
+## Goal
+- [x] External review shows one context section named Outputs.
+- [x] Generated reports appear inside Outputs, not separate Reports section.
+- [x] Current output side card follows questionnaire step changes, including report steps.
+- [x] Saved external review classifier feedback shows mapping only, not numeric raw value.
+- [x] Prediction history feedback closes to saved summary after successful save.
+- [x] Prediction history saved classifier summary shows only mapping label, without raw value suffix.
+
+## Plan
+- [x] Inspect review combined questionnaire step state wiring and context sections.
+- [x] Reuse existing output/report descriptors but present both as output artifacts in review UI.
+- [x] Fix active-step publication so MLForm wizard navigation updates side context.
+- [x] Resolve saved classifier summary through questionnaire options before display.
+- [x] Keep last submitted prediction-history feedback values locally so UI closes immediately after save.
+- [x] Make option-based feedback summaries render the selected option label only.
+- [x] Verify focused tests/typecheck/build/react-doctor/line cap/graphify.
+
+## Review
+- External review detail now has one Outputs section; generated reports are rendered there as output artifacts.
+- Combined review questionnaire report steps are titled as outputs, while persistence still routes report answers through report feedback.
+- Current output side card subscribes to MLForm view wizard state, so it changes when the wizard step changes.
+- Saved classifier feedback summary resolves numeric legacy/raw values through the field options and displays only the mapping.
+- Prediction history feedback stores submitted values locally after save, so the questionnaire closes even if refetch data is not visible in the same render.
+- Shared feedback summary formatter now omits raw option values, so `b (1)` becomes `b`.
+
+# Prediction History Direct Feedback Completion
+
+## Goal
+- [x] Feedback saved from prediction history updates prediction feedback status directly.
+- [x] External review keeps PENDING -> REVISION -> SUBMITTED workflow.
+
+## Plan
+- [x] Trace app feedback save services and review-link feedback services separately.
+- [x] Patch app feedback create/update path to publish direct app feedback.
+- [x] Keep review-link draft save path unchanged.
+- [x] Add focused backend regression tests for app direct completion.
+- [x] Verify backend tests, compile, line cap, graphify.
+
+## Review
+- App feedback endpoints now create review submission markers for any selected review link predictions owned by the same user/prediction. That makes history feedback published immediately.
+- Review portal endpoints still only save draft feedback; they do not create submission markers until `submit`.
+- Prediction status still recomputes after app output/report feedback save.

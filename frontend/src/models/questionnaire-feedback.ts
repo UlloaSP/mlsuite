@@ -102,8 +102,7 @@ export const formatFeedbackValue = (
 ): string => {
   const matchingOption = field?.options?.find((option) => String(option.value) === String(value));
   if (matchingOption) {
-    const rawValue = formatFeedbackValue(value);
-    return matchingOption.label === rawValue ? rawValue : `${matchingOption.label} (${rawValue})`;
+    return matchingOption.label;
   }
   if (typeof value === "boolean") {
     return value ? "Yes" : "No";

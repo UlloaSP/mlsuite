@@ -159,3 +159,17 @@
 - Rule: create feedback endpoints must be idempotent by prediction/user/order, and report feedback storage must keep generated report content in `value` while human answers live in `realValue`.
 - Correction: Crystal Tree text was saved but Reports panel still showed empty because it only read prediction report payload.
 - Rule: report display must fall back to saved report feedback `value` when runtime report content is missing; use one shared formatter for runtime and saved report text.
+- Correction: Crystal Tree report rendered in MLForm but was absent from saved prediction history/modal because MLSuite detected feedback metadata on raw report configs only, not MLForm report controllers.
+- Rule: code that receives MLForm runtime controllers must read app metadata from `controller.config`; raw schema helpers may inspect the object directly, but shared predicates must support both shapes.
+- Correction: Crystal Tree plugin exposes formatted canonical text as `explanation`; legacy `explanations[]` is raw backend material.
+- Rule: for Crystal Tree payloads, persist/display `explanation` first and use `explanations[]` only as compatibility fallback.
+- Correction: external review split generated reports away from outputs and kept stale side context while the wizard step changed.
+- Rule: when a review workflow language says outputs, present generated reports as output artifacts in that surface; side context must subscribe to wizard navigation state, not value snapshots.
+- Correction: external review saved classifier summary showed numeric raw value instead of backend mapping.
+- Rule: saved review summaries for classifier feedback must resolve raw/numeric values through the same questionnaire options used during collection and display mapping-only when requested.
+- Correction: prediction-history feedback showed a success toast but stayed on the questionnaire while refetch state lagged behind.
+- Rule: after successful questionnaire persistence, close from the confirmed submitted payload; use refetch to reconcile server state, not as the only UI completion trigger.
+- Correction: prediction feedback summary displayed `mapping (raw)` when the user expected only the mapping.
+- Rule: user-facing classifier feedback summaries must show the selected option label only; raw stored values are persistence detail.
+- Correction: prediction-history feedback was treated like review draft feedback when a prediction belonged to a review link.
+- Rule: app-owned feedback endpoints must publish immediately; only review portal endpoints should create draft/revision state that requires explicit submit.

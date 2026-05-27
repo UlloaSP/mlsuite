@@ -31,17 +31,20 @@ public class ExplanationFeedbackServiceImpl implements ExplanationFeedbackServic
     private final ExplanationFeedbackRepository explanationFeedbackRepository;
     private final PredictionRepository predictionRepository;
     private final PredictionFeedbackStatusResolver predictionFeedbackStatusResolver;
+    private final DirectFeedbackPublicationService publicationService;
     private final WorkspaceAccessService workspaceAccessService;
 
     public ExplanationFeedbackServiceImpl(UserLookupService userLookupService,
             ExplanationFeedbackRepository explanationFeedbackRepository,
             PredictionRepository predictionRepository,
             PredictionFeedbackStatusResolver predictionFeedbackStatusResolver,
+            DirectFeedbackPublicationService publicationService,
             WorkspaceAccessService workspaceAccessService) {
         this.userLookupService = userLookupService;
         this.explanationFeedbackRepository = explanationFeedbackRepository;
         this.predictionRepository = predictionRepository;
         this.predictionFeedbackStatusResolver = predictionFeedbackStatusResolver;
+        this.publicationService = publicationService;
         this.workspaceAccessService = workspaceAccessService;
     }
 
@@ -61,6 +64,7 @@ public class ExplanationFeedbackServiceImpl implements ExplanationFeedbackServic
         explanationFeedback.setValue(value);
         ExplanationFeedback saved = explanationFeedbackRepository.save(explanationFeedback);
         Prediction prediction = saved.getPrediction();
+        publicationService.publish(user, prediction);
         prediction.setStatus(predictionFeedbackStatusResolver.resolve(userId, prediction));
         predictionRepository.save(prediction);
         return saved;
@@ -81,6 +85,7 @@ public class ExplanationFeedbackServiceImpl implements ExplanationFeedbackServic
         explanationFeedback.setRealValue(realValue);
         ExplanationFeedback saved = explanationFeedbackRepository.save(explanationFeedback);
         Prediction prediction = saved.getPrediction();
+        publicationService.publish(user, prediction);
         prediction.setStatus(predictionFeedbackStatusResolver.resolve(userId, prediction));
         predictionRepository.save(prediction);
         return saved;

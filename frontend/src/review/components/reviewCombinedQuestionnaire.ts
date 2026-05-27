@@ -93,13 +93,14 @@ export const buildReviewFeedbackSteps = ({
   }),
   ...feedbackReports.flatMap((report, index) => {
     if (!report.feedbackQuestionnaire) return [];
+    const outputIndex = targets.length + index + 1;
     return [
       {
         id: `report-${report.order}`,
         kind: "report" as const,
         order: report.order,
-        title: `Report ${index + 1}: ${report.label}`,
-        description: `Prediction report:\n${report.content.join("\n\n")}`,
+        title: `Output ${outputIndex}: ${report.label}`,
+        description: `Prediction result:\n${report.content.join("\n\n")}`,
         schema: report.feedbackQuestionnaire,
         initialValues: getEffectiveFeedbackValues(
           explanationFeedbackByOrder.get(report.order),

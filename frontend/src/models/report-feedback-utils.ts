@@ -12,6 +12,7 @@ import type { QuestionnaireSchema } from "./questionnaire-schema";
 type JsonRecord = Record<string, unknown>;
 
 type LegacyExplanationPayload = {
+  explanation?: unknown;
   explanations?: unknown;
 };
 
@@ -75,6 +76,10 @@ const getReportContent = (payload: unknown): string[] => {
     return payload.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
   }
   const reportPayload = isRecord(payload) ? (payload as LegacyExplanationPayload) : null;
+  const contentFromFormattedPayload =
+    typeof reportPayload?.explanation === "string" && reportPayload.explanation.trim().length > 0
+      ? [reportPayload.explanation]
+      : [];
   const contentFromLegacyPayload =
     reportPayload && Array.isArray(reportPayload.explanations)
       ? reportPayload.explanations.filter(
@@ -85,15 +90,21 @@ const getReportContent = (payload: unknown): string[] => {
     ? normalizeCustomReportResult(reportPayload)
     : null;
 
-  return contentFromLegacyPayload.length > 0
-    ? contentFromLegacyPayload
-    : normalizedReport
-      ? [
-          ...normalizedReport.blocks,
-          ...(normalizedReport.html ? [normalizedReport.html] : []),
-          ...(normalizedReport.jsonFallback ? [normalizedReport.jsonFallback] : []),
-        ].filter((item) => item.trim().length > 0)
-      : [];
+  if (contentFromFormattedPayload.length > 0) {
+    return contentFromFormattedPayload;
+  }
+
+  if (contentFromLegacyPayload.length > 0) {
+    return contentFromLegacyPayload;
+  }
+
+  return normalizedReport
+    ? [
+        ...normalizedReport.blocks,
+        ...(normalizedReport.html ? [normalizedReport.html] : []),
+        ...(normalizedReport.jsonFallback ? [normalizedReport.jsonFallback] : []),
+      ].filter((item) => item.trim().length > 0)
+    : [];
 };
 
 export const getFormattedReportContent = (payload: unknown): string[] =>

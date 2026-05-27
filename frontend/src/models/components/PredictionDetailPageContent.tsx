@@ -112,6 +112,7 @@ export function PredictionDetailPageContent({
       />
 
       <PredictionFeedbackQuestionnaire
+        key={prediction.id}
         predictionId={prediction.id}
         targets={targets}
         outputFeedbackByOrder={myOutputFeedbackByOrder}

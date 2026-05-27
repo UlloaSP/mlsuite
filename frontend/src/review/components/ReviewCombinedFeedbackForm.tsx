@@ -35,8 +35,24 @@ type ReviewCombinedFeedbackFormProps = {
 
 export const REVIEW_STEP_CONTEXT_EVENT = "mlsuite-review-step-context";
 
-const displayValue = (value: unknown): string => {
+const displayValue = (value: unknown, field?: FieldConfig, stepKind?: string): string => {
   if (value === null || value === undefined || value === "") return "Not answered";
+  if (stepKind === "output" && Array.isArray(field?.options)) {
+    const options = field.options.filter(
+      (option): option is { label: string; value: unknown } =>
+        typeof option === "object" &&
+        option !== null &&
+        "value" in option &&
+        "label" in option &&
+        typeof option.label === "string",
+    );
+    const matchingOption =
+      options.find((option) => String(option.value) === String(value)) ??
+      options[Number(value)];
+    if (matchingOption) {
+      return matchingOption.label;
+    }
+  }
   return typeof value === "object" ? JSON.stringify(value) : String(value);
 };
 
@@ -160,7 +176,7 @@ export function ReviewCombinedFeedbackForm(props: ReviewCombinedFeedbackFormProp
                   <span className="font-medium text-[var(--text-primary)]">
                     {String(field.label ?? field.id)}:
                   </span>{" "}
-                  {displayValue(step.initialValues[String(field.id)])}
+                  {displayValue(step.initialValues[String(field.id)], field, step.kind)}
                 </p>
               ))}
             </div>
