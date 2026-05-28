@@ -19,7 +19,7 @@ def parse_record_json(payload: str, error_prefix: str) -> dict[str, object]:
 def get_expected_columns(model: object, record: dict[str, object]) -> list[str]:
     if hasattr(model, "feature_names_in_"):
         return list(model.feature_names_in_)
-    return sorted(record.keys())
+    return list(record.keys())
 
 
 def build_prediction_dataframe(

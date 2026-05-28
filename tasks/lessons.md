@@ -189,3 +189,7 @@
 - Rule: user-facing classifier feedback summaries must show the selected option label only; raw stored values are persistence detail.
 - Correction: prediction-history feedback was treated like review draft feedback when a prediction belonged to a review link.
 - Rule: app-owned feedback endpoints must publish immediately; only review portal endpoints should create draft/revision state that requires explicit submit.
+
+## 2026-05-28 - Auto-assignment smoke check correction
+- Correction: using model `.predict` as a hard dataframe-match gate broke auto-assignment for count/name-compatible uploads when the sampled row failed due value/type quirks.
+- Rule: upload auto-assignment compatibility must be based on stable structural checks first; runtime smoke predictions may annotate diagnostics, but must not veto a structurally compatible single match unless product explicitly requires type-level rejection.

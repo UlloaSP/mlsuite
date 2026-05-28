@@ -9,6 +9,8 @@ from mlsuite_backend.main import app
 from tests.helpers import (
     make_classifier,
     make_no_feature_classifier,
+    make_positional_classifier,
+    make_positional_regressor,
     make_regressor,
     make_tree,
     make_tree_with_unused_tail_feature,
@@ -70,6 +72,47 @@ def test_build_schema_success_with_optional_dataframe() -> None:
     assert response.status_code == 200
     assert "explanations" not in payload
     assert payload["reports"][0]["kind"] == "classifier"
+
+
+def test_build_schema_generates_features_from_model_width() -> None:
+    response = client.post(
+        "/build_schema",
+        files={"model_file": serialize_joblib(make_positional_classifier(), "model.joblib")},
+    )
+    payload = response.json()
+    assert response.status_code == 200
+    labels = [field["label"] for field in payload["fields"]]
+    assert labels == ["feature_1", "feature_2"]
+
+
+def test_build_schema_adopts_dataframe_columns_for_positional_model() -> None:
+    frame = pd.DataFrame({"height": [1.7, 1.8], "weight": [70, 80]})
+    response = client.post(
+        "/build_schema",
+        files={
+            "model_file": serialize_joblib(make_positional_regressor(), "model.joblib"),
+            "df_file": serialize_joblib(frame, "data.joblib"),
+        },
+    )
+    payload = response.json()
+    assert response.status_code == 200
+    labels = [field["label"] for field in payload["fields"]]
+    assert labels == ["height", "weight"]
+
+
+def test_build_schema_rejects_dataframe_width_mismatch_for_positional_model() -> None:
+    frame = pd.DataFrame({"only_one": [1, 2]})
+    response = client.post(
+        "/build_schema",
+        files={
+            "model_file": serialize_joblib(make_positional_classifier(), "model.joblib"),
+            "df_file": serialize_joblib(frame, "data.joblib"),
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "DataFrame feature count mismatch: model expects 2 columns, dataframe has 1."
+    )
 
 
 def test_build_schema_supports_xgboost_regressor() -> None:

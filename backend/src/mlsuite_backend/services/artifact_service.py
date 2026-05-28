@@ -41,6 +41,8 @@ async def inspect_artifact(upload: UploadFile) -> dict[str, Any]:
         "type": runtime.kind,
         "specificType": runtime.specific_type,
         "library": runtime.adapter.library,
+        "features": runtime.feature_names(),
+        "featureSource": runtime.feature_metadata().source,
     }
 
 
@@ -54,13 +56,16 @@ async def match_artifacts(
     for index, upload in enumerate(model_uploads):
         artifact = await load_uploaded_object(upload, allowed_suffix=JOBLIB_SUFFIX)
         runtime = resolve_runtime_model(artifact)
+        features = runtime.feature_metadata()
         models.append({
             "index": index,
             "fileName": upload.filename or "",
             "type": runtime.kind,
             "specificType": runtime.specific_type,
             "library": runtime.adapter.library,
-            "features": runtime.feature_names(),
+            "features": features.names,
+            "featureSource": features.source,
+            "runtime": runtime,
         })
 
     for index, upload in enumerate(dataframe_uploads):
@@ -89,21 +94,59 @@ def _match_model(
 
     for _upload, dataframe, summary in dataframes:
         columns = {str(column) for column in dataframe.columns}
-        missing = sorted(required - columns)
-        extra = sorted(columns - required)
-        compatible = not missing
+        if model["featureSource"] == "generated":
+            compatible = len(dataframe.columns) == len(features)
+            missing = []
+            extra = []
+            mode = "count"
+            reason = None if compatible else (
+                f"model expects {len(features)} columns, dataframe has {len(dataframe.columns)}"
+            )
+        else:
+            missing = sorted(required - columns)
+            extra = sorted(columns - required)
+            compatible = not missing
+            mode = "columns"
+            reason = None if compatible else "missing required columns"
+        smoke_passed = None
+        smoke_reason = None
+        if compatible:
+            smoke_passed, smoke_reason = _predict_smoke(model, dataframe)
         matches.append({
             "dataframeIndex": summary["index"],
             "compatible": compatible,
             "missing": missing,
             "extra": extra,
+            "mode": mode,
+            "reason": reason,
+            "smokePassed": smoke_passed,
+            "smokeReason": smoke_reason,
             "score": 1.0 if compatible else 0.0,
         })
 
     compatible_matches = [match for match in matches if match["compatible"]]
     auto_index = compatible_matches[0]["dataframeIndex"] if len(compatible_matches) == 1 else None
+    public_model = {key: value for key, value in model.items() if key != "runtime"}
     return {
-        **model,
+        **public_model,
         "matches": matches,
         "autoDataframeIndex": auto_index,
     }
+
+
+def _predict_smoke(
+    model: dict[str, Any],
+    dataframe: pd.DataFrame,
+) -> tuple[bool, str | None]:
+    runtime = model["runtime"]
+    try:
+        frame = dataframe.head(min(3, len(dataframe)))
+        if model["featureSource"] == "model":
+            frame = frame[[str(feature) for feature in model["features"]]]
+        if runtime.kind == "classifier":
+            runtime.predict_classifier(frame)
+        elif runtime.kind == "regressor":
+            runtime.predict_regressor(frame)
+        return True, None
+    except Exception as exc:
+        return False, f"predict smoke failed: {exc}"
