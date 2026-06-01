@@ -1,13 +1,6 @@
 import pandas as pd
 from fastapi import UploadFile
-from mlschema import MLSchema
-from mlschema.strategies import (
-    BooleanStrategy,
-    CategoryStrategy,
-    DateStrategy,
-    NumberStrategy,
-    TextStrategy,
-)
+from mlschema import infer_schema
 
 from ..model_adapters import load_runtime_model_from_upload
 from ..model_adapters.features import FeatureMetadata
@@ -16,7 +9,7 @@ from ..utils.uploads import load_uploaded_object
 
 
 def _build_base_dataframe(features: list[str]) -> pd.DataFrame:
-    return pd.DataFrame([[1] * len(features)], columns=features, dtype=object)
+    return pd.DataFrame([[1] * len(features)], columns=features)
 
 
 def _load_candidate_dataframe(candidate: object, features: FeatureMetadata) -> pd.DataFrame:
@@ -50,16 +43,6 @@ def _build_schema_reports(runtime) -> list[dict[str, object]]:
     return []
 
 
-def _create_schema_builder() -> MLSchema:
-    builder = MLSchema()
-    builder.register(TextStrategy())
-    builder.register(NumberStrategy())
-    builder.register(CategoryStrategy())
-    builder.register(BooleanStrategy())
-    builder.register(DateStrategy())
-    return builder
-
-
 async def build_schema(
     model_upload: UploadFile,
     df_upload: UploadFile | None,
@@ -71,7 +54,7 @@ async def build_schema(
         candidate = await load_uploaded_object(df_upload)
         data_frame = _load_candidate_dataframe(candidate, features)
 
-    schema = _create_schema_builder().build(data_frame)
-    schema.pop("explanations", None)
-    schema["reports"] = _build_schema_reports(runtime)
-    return schema
+    return {
+        "fields": infer_schema(data_frame),
+        "reports": _build_schema_reports(runtime),
+    }

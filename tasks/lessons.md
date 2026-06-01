@@ -193,3 +193,7 @@
 ## 2026-05-28 - Auto-assignment smoke check correction
 - Correction: using model `.predict` as a hard dataframe-match gate broke auto-assignment for count/name-compatible uploads when the sampled row failed due value/type quirks.
 - Rule: upload auto-assignment compatibility must be based on stable structural checks first; runtime smoke predictions may annotate diagnostics, but must not veto a structurally compatible single match unless product explicitly requires type-level rejection.
+
+## 2026-06-01 - MLSchema runtime contract correction
+- Correction: migrating backend internals to `mlschema` 0.2.0 removed the runtime API wrapper expected by API/frontend and dropped backend-created prediction reports.
+- Rule: when upgrading an internal schema library, preserve the service contract consumed by neighboring modules unless the user explicitly requests cross-layer contract migration; use the new library for its owned data and keep locally-owned metadata generation where the app still owns it.

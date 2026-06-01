@@ -1,21 +1,28 @@
-# Create Model Rollback
+# MLSchema 0.2.0 Backend Contract Fix
 
 ## Goal
-- [x] Make create-model all-or-nothing across model row and generated signatures.
-- [x] Delete object-storage model artifact when any later schema/signature step fails.
-- [x] Keep controller thin; orchestration belongs in API service layer.
-- [x] Preserve existing upload buffering/reuse behavior.
-- [x] Verify rollback tests, line cap, graph update.
+- [x] Keep `mlschema==0.2.0` in backend.
+- [x] Use `infer_schema(df)` for field generation.
+- [x] Return runtime API shape `{ fields, reports }`.
+- [x] Recreate classifier/regressor reports from runtime model metadata.
+- [x] Verify backend tests, line cap, graph update.
 
 ## Plan
-- [x] Add `ModelCreationService` with one `@Transactional` create flow.
-- [x] Move controller orchestration into service.
-- [x] In service catch failures after model creation, delete stored object, rethrow for DB rollback.
-- [x] Test failure during signature creation rolls back model/signatures and deletes stored object.
-- [x] Run focused API tests and graph update.
+- [x] Restore backend-owned report builder.
+- [x] Wrap inferred fields into `{ fields, reports }`.
+- [x] Update router annotation and tests.
+- [x] Run focused and full backend tests.
+- [x] Update graph and review notes.
 
 ## Review
-- Focused API tests passed: `mvn "-Dtest=ModelControllerTest,ModelServiceTest,ModelCreationServiceTest" test` (10 tests).
-- Line cap passed for `api/src/main/java` and `api/src/test/java`.
-- `git diff --check` passed with CRLF warnings only.
-- `graphify update .` passed; `graph.html` skipped because graph has 7362 nodes over viz limit.
+- `mlschema==0.2.0` remains locked; old `MLSchema()` facade and strategy registration removed.
+- `/build_schema` again returns `{ fields, reports }`.
+- `fields` comes from `infer_schema(data_frame)`.
+- `reports` is backend-created from runtime model metadata: classifier labels/probabilities or regressor value.
+- Generated fallback dataframe no longer forces `dtype=object`, so inferred positional fields stay `number`.
+- Verification passed:
+  - `uv run pytest tests/test_runtime_api.py` -> 25 passed.
+  - `uv run pytest` -> 35 passed, 2 existing sklearn warnings.
+  - backend Python line cap -> no files over 300 lines.
+  - `git diff --check` -> passed with CRLF warnings only.
+  - `graphify update .` -> 7365 nodes, 14362 edges, 362 communities.

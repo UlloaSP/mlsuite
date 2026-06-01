@@ -70,7 +70,7 @@ def test_build_schema_success_with_optional_dataframe() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert "explanations" not in payload
+    assert [field["kind"] for field in payload["fields"]] == ["number", "number"]
     assert payload["reports"][0]["kind"] == "classifier"
 
 
@@ -82,7 +82,9 @@ def test_build_schema_generates_features_from_model_width() -> None:
     payload = response.json()
     assert response.status_code == 200
     labels = [field["label"] for field in payload["fields"]]
+    kinds = [field["kind"] for field in payload["fields"]]
     assert labels == ["feature_1", "feature_2"]
+    assert kinds == ["number", "number"]
 
 
 def test_build_schema_adopts_dataframe_columns_for_positional_model() -> None:
@@ -126,6 +128,7 @@ def test_build_schema_supports_xgboost_regressor() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
+    assert [field["kind"] for field in payload["fields"]] == ["number", "number"]
     assert payload["reports"][0]["kind"] == "regressor"
 
 
