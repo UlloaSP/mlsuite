@@ -1,0 +1,165 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import type { ReportConfig } from "mlform/runtime";
+import { type JsonRecord, getString, isRecord } from "../app/utils/mlform/shared";
+import { toLegacyReportPayload } from "../app/utils/mlform/report-normalization";
+import { isSkippedSchemaReportPayload } from "../app/utils/mlform/schema-report-plugin-context";
+import type { PredictionResultDto, SchemaVersionDto } from "./types";
+
+type DisplayInput = { key: string; label: string; value: unknown };
+export type SchemaDisplayReport = {
+  id: string;
+  order: number;
+  label: string;
+  kind: string;
+  payload?: JsonRecord;
+  labels?: string[];
+};
+
+const fieldsOf = (schema: unknown): JsonRecord[] =>
+  isRecord(schema) && Array.isArray(schema.fields) ? schema.fields.filter(isRecord) : [];
+
+const reportsOf = (schema: unknown): ReportConfig[] =>
+  isRecord(schema) && Array.isArray(schema.reports)
+    ? (schema.reports.filter(isRecord) as ReportConfig[])
+    : [];
+
+const fieldKey = (field: JsonRecord): string => getString(field.label) ?? getString(field.id) ?? "";
+
+const mappedCategoryValue = (
+  field: JsonRecord,
+  inputData: JsonRecord,
+  keyById: Map<string, string>,
+): unknown => {
+  const direct = inputData[fieldKey(field)];
+  if (direct !== undefined) return direct;
+  const options = Array.isArray(field.options) ? field.options.filter(isRecord) : [];
+  for (const option of options) {
+    const mapping = isRecord(option.mapping) ? option.mapping : {};
+    const entries = Object.entries(mapping);
+    if (
+      entries.length > 0 &&
+      entries.every(([targetId, expected]) => inputData[keyById.get(targetId) ?? targetId] === expected)
+    ) {
+      return option.value ?? option.label;
+    }
+  }
+  return inputData[fieldKey(field)];
+};
+
+export const getVisibleSchemaInputs = (
+  schema: unknown,
+  inputData: JsonRecord,
+): DisplayInput[] => {
+  const fields = fieldsOf(schema);
+  const keyById = fields.reduce<Map<string, string>>((map, field) => {
+    const id = getString(field.id);
+    if (id) map.set(id, fieldKey(field));
+    return map;
+  }, new Map());
+  return fields.reduce<DisplayInput[]>((items, field) => {
+    if (field.hidden === true) return items;
+    const key = fieldKey(field);
+    if (!key) return items;
+    const value = getString(field.kind) === "mapped-category"
+      ? mappedCategoryValue(field, inputData, keyById)
+      : inputData[key];
+    items.push({ key, label: getString(field.label) ?? key, value });
+    return items;
+  }, []);
+};
+
+export const getSchemaRunPrefillInputs = (
+  schema: unknown,
+  inputData: JsonRecord,
+): JsonRecord =>
+  Object.fromEntries(
+    getVisibleSchemaInputs(schema, inputData).map((input) => [input.key, input.value]),
+  );
+
+const reportId = (report: ReportConfig): string | undefined =>
+  typeof report.id === "string" ? report.id : undefined;
+
+const reportLabel = (report: ReportConfig): string =>
+  typeof report.label === "string" ? report.label : reportId(report) ?? "Report";
+
+const payloadFor = (
+  report: ReportConfig,
+  source: string,
+  output: JsonRecord,
+): JsonRecord | undefined => {
+  if (isRecord(output.reports) && isRecord(output.reports[source])) return output.reports[source];
+  const id = reportId(report);
+  if (id && isRecord(output.reports) && isRecord(output.reports[id])) {
+    return output.reports[id];
+  }
+  return toLegacyReportPayload(report, output);
+};
+
+const reportLabels = (report: ReportConfig): string[] =>
+  Array.isArray((report as JsonRecord).labels)
+    ? ((report as JsonRecord).labels as unknown[]).filter((item): item is string => typeof item === "string")
+    : [];
+
+const normalizeReportPayload = (report: ReportConfig, payload?: JsonRecord): JsonRecord | undefined => {
+  if (!payload) return undefined;
+  const labels = reportLabels(report);
+  if (labels.length === 0) return payload;
+  const prediction = payload.prediction;
+  const index =
+    typeof prediction === "number"
+      ? prediction
+      : typeof prediction === "string" && /^\d+$/.test(prediction)
+        ? Number(prediction)
+        : -1;
+  return {
+    ...payload,
+    labels,
+    prediction: labels[index] ?? prediction,
+  };
+};
+
+export const getSchemaResultReports = (
+  version: SchemaVersionDto,
+  result: Pick<PredictionResultDto, "modelId" | "signatureId" | "output">,
+): SchemaDisplayReport[] => {
+  const binding = version.bindings.find(
+    (item) => item.modelId === result.modelId && item.signatureId === result.signatureId,
+  );
+  const mapping = isRecord(binding?.outputMapping) ? binding.outputMapping : {};
+  const reports = reportsOf(version.formSchema);
+  return reports.reduce<SchemaDisplayReport[]>((items, report, order) => {
+    const id = reportId(report);
+    if (!id || typeof mapping[id] !== "string") return items;
+    const payload = normalizeReportPayload(report, payloadFor(report, mapping[id], result.output));
+    if (isSkippedSchemaReportPayload(payload)) return items;
+    items.push({
+      id,
+      order,
+      label: reportLabel(report),
+      kind: typeof report.kind === "string" ? report.kind : "report",
+      labels: reportLabels(report),
+      payload,
+    });
+    return items;
+  }, []);
+};
+
+export const mergeSchemaRunInputs = (
+  inputData: JsonRecord,
+  results: readonly Pick<PredictionResultDto, "modelInput">[],
+): JsonRecord =>
+  results.reduce<JsonRecord>(
+    (payload, result) => ({ ...payload, ...result.modelInput }),
+    { ...inputData },
+  );
+
+export const formatDisplayValue = (value: unknown): string => {
+  if (typeof value === "number") return value.toLocaleString();
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (value === null || value === undefined) return "N/A";
+  return String(value);
+};

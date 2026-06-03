@@ -11,6 +11,7 @@ import {
   Blocks,
   BrainCircuit,
   Building2,
+  ClipboardList,
   LayoutGrid,
   List,
   Maximize,
@@ -63,6 +64,9 @@ export function Sidebar() {
       : []),
     ...(permissions?.canViewModels
       ? [{ to: "/models", icon: BrainCircuit, label: "Catalog" }]
+      : []),
+    ...(permissions?.canViewModels
+      ? [{ to: "/schemas", icon: ClipboardList, label: "Schemas" }]
       : []),
     ...(permissions?.canViewPlugins ? [{ to: "/plugins", icon: Blocks, label: "Plugins" }] : []),
     ...(user?.systemRole === "SUPERADMIN"

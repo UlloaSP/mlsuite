@@ -2,6 +2,7 @@ import { Laptop, LogOut, Moon, Sun } from "lucide-react";
 import { useAtom } from "jotai";
 import type { ReactNode } from "react";
 import { useParams } from "react-router";
+import { useLocation } from "react-router";
 import { themeAtom, themeWithHtmlAtom, type ThemeMode } from "../../app/atoms";
 import { AppButton } from "../../app/components/ui-controls";
 import { useLogout } from "../../user/hooks";
@@ -26,7 +27,9 @@ export function ReviewShell({
   const [theme, setThemeMode] = useAtom(themeWithHtmlAtom);
   const [themeMode] = useAtom(themeAtom);
   const { token = "" } = useParams<{ token: string }>();
-  const logout = useLogout(token ? `/review/${token}/login` : "/");
+  const location = useLocation();
+  const reviewBase = location.pathname.startsWith("/schema-review") ? "schema-review" : "review";
+  const logout = useLogout(token ? `/${reviewBase}/${token}/login` : "/");
   const ThemeIcon = themeIcon(themeMode);
   return (
     <div
