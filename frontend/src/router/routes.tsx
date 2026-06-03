@@ -19,6 +19,16 @@ import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
 import { ReviewProtectedRoute } from "../review/components/ReviewProtectedRoute";
 import { ReviewLoginRoute } from "../review/components/ReviewLoginRoute";
 import { ReviewWorkspacePage } from "../review/pages/review-workspace-page";
+import { SchemaReviewLoginRoute } from "../schema-review/components/SchemaReviewLoginRoute";
+import { SchemaReviewProtectedRoute } from "../schema-review/components/SchemaReviewProtectedRoute";
+import { SchemaReviewWorkspacePage } from "../schema-review/pages/schema-review-workspace-page";
+import { CreateSchemaPage } from "../schemas/pages/create-schema-page";
+import { CreateSchemaRunPage } from "../schemas/pages/create-schema-run-page";
+import { CreateSchemaVersionPage } from "../schemas/pages/create-schema-version-page";
+import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-page";
+import { SchemaRunHistoryPage } from "../schemas/pages/schema-run-history-page";
+import { SchemaDetailPage } from "../schemas/pages/schema-detail-page";
+import { SchemasPage } from "../schemas/pages/schemas-page";
 import { SignatureDetailPage } from "../models/pages/signature-detail-page";
 import { ProfilePage } from "../user/pages/profilePage";
 import { CreateOrganizationPage } from "../workspace/pages/create-organization-page";
@@ -191,11 +201,43 @@ const routes: RouteObject[] = [
               </Suspense>,
             ),
           },
+          {
+            path: "schemas",
+            element: workspace("canViewModels", <SchemasPage />),
+          },
+          {
+            path: "schemas/create",
+            element: workspace("canEditModels", <CreateSchemaPage />),
+          },
+          {
+            path: "schemas/:schemaId",
+            element: workspace("canViewModels", <SchemaDetailPage />),
+          },
+          {
+            path: "schemas/:schemaId/versions/create",
+            element: workspace("canEditModels", <CreateSchemaVersionPage />),
+          },
+          {
+            path: "schemas/:schemaId/versions/:versionId/runs/create",
+            element: workspace("canRunPredictions", <CreateSchemaRunPage />),
+          },
+          {
+            path: "schemas/:schemaId/versions/:versionId/runs",
+            element: workspace("canViewModels", <SchemaRunHistoryPage />),
+          },
+          {
+            path: "schemas/:schemaId/versions/:versionId/runs/:runId",
+            element: workspace("canViewModels", <PredictionRunDetailPage />),
+          },
         ],
       },
       {
         path: "review/:token/login",
         element: <ReviewLoginRoute />,
+      },
+      {
+        path: "schema-review/:token/login",
+        element: <SchemaReviewLoginRoute />,
       },
       {
         element: <ReviewProtectedRoute />,
@@ -207,6 +249,19 @@ const routes: RouteObject[] = [
           {
             path: "review/:token/predictions/:predictionToken",
             element: <ReviewWorkspacePage />,
+          },
+        ],
+      },
+      {
+        element: <SchemaReviewProtectedRoute />,
+        children: [
+          {
+            path: "schema-review/:token",
+            element: <SchemaReviewWorkspacePage />,
+          },
+          {
+            path: "schema-review/:token/runs/:runToken",
+            element: <SchemaReviewWorkspacePage />,
           },
         ],
       },

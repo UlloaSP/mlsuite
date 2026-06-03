@@ -34,30 +34,18 @@ export const validateFieldConfig = (
   issues: CompatIssue[],
   engineRegistry: Registry,
   customDefinitionMap: Map<string, CatalogFieldDefinition>,
-): void => {
+): FieldConfig | null => {
   const builtinDefinition = engineRegistry.getField(field.kind);
   const customDefinition = customDefinitionMap.get(field.kind);
   const definition = builtinDefinition ?? customDefinition?.definition.definition;
 
   if (!definition) {
     pushIssue(issues, ["fields", index, "kind"], `Unknown field kind "${field.kind}".`);
-    return;
+    return null;
   }
 
   const result = definition.schema.safeParse(field);
-  if (result.success) {
-    return;
-  }
-
-  for (const issue of result.error.issues) {
-    pushIssue(issues, ["fields", index, ...normalizeIssuePath(issue.path)], issue.message);
-  }
-
-  if (!customDefinition) {
-    return;
-  }
-
-  if (!customDefinition.active) {
+  if (customDefinition && !customDefinition.active) {
     pushIssue(
       issues,
       ["fields", index, "kind"],
@@ -65,6 +53,15 @@ export const validateFieldConfig = (
       "warning",
     );
   }
+
+  if (result.success) {
+    return { ...field, ...result.data, id: field.id, label: field.label };
+  }
+
+  for (const issue of result.error.issues) {
+    pushIssue(issues, ["fields", index, ...normalizeIssuePath(issue.path)], issue.message);
+  }
+  return null;
 };
 
 export const validateReportConfig = (
@@ -73,30 +70,18 @@ export const validateReportConfig = (
   issues: CompatIssue[],
   engineRegistry: Registry,
   customDefinitionMap: Map<string, CatalogReportDefinition>,
-): void => {
+): ReportConfig | null => {
   const builtinDefinition = engineRegistry.getReport(report.kind);
   const customDefinition = customDefinitionMap.get(report.kind);
   const definition = builtinDefinition ?? customDefinition?.definition.definition;
 
   if (!definition) {
     pushIssue(issues, ["reports", index, "kind"], `Unknown report kind "${report.kind}".`);
-    return;
+    return null;
   }
 
   const result = definition.schema.safeParse(report);
-  if (result.success) {
-    return;
-  }
-
-  for (const issue of result.error.issues) {
-    pushIssue(issues, ["reports", index, ...normalizeIssuePath(issue.path)], issue.message);
-  }
-
-  if (!customDefinition) {
-    return;
-  }
-
-  if (!customDefinition.active) {
+  if (customDefinition && !customDefinition.active) {
     pushIssue(
       issues,
       ["reports", index, "kind"],
@@ -104,4 +89,13 @@ export const validateReportConfig = (
       "warning",
     );
   }
+
+  if (result.success) {
+    return { ...report, ...result.data, id: report.id, label: report.label, source: report.source };
+  }
+
+  for (const issue of result.error.issues) {
+    pushIssue(issues, ["reports", index, ...normalizeIssuePath(issue.path)], issue.message);
+  }
+  return null;
 };

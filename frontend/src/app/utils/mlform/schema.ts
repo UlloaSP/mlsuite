@@ -157,8 +157,9 @@ export const validateMlformSchema = (
       },
     };
 
-    validateFieldConfig(nextField, index, issues, engineRegistry, fieldDefinitions);
-    nextFields.push(nextField);
+    nextFields.push(
+      validateFieldConfig(nextField, index, issues, engineRegistry, fieldDefinitions) ?? nextField,
+    );
   });
 
   reports.forEach((report, index) => {
@@ -189,8 +190,10 @@ export const validateMlformSchema = (
       source: getString(report.source) ?? id,
     };
 
-    validateReportConfig(nextReport, index, issues, engineRegistry, reportDefinitions);
-    nextReports.push(nextReport);
+    nextReports.push(
+      validateReportConfig(nextReport, index, issues, engineRegistry, reportDefinitions) ??
+        nextReport,
+    );
   });
 
   if (hasBlockingIssues(issues)) {

@@ -197,3 +197,80 @@
 ## 2026-06-01 - MLSchema runtime contract correction
 - Correction: migrating backend internals to `mlschema` 0.2.0 removed the runtime API wrapper expected by API/frontend and dropped backend-created prediction reports.
 - Rule: when upgrading an internal schema library, preserve the service contract consumed by neighboring modules unless the user explicitly requests cross-layer contract migration; use the new library for its owned data and keep locally-owned metadata generation where the app still owns it.
+
+## 2026-06-01 - Schema creation UX correction
+- Correction: initial schema create flow exposed raw `formSchema` and binding JSON, but product intent is user selects models and MLSuite derives canonical schema/mappings.
+- Rule: organization-level schema UX must hide technical mappings; create/edit surfaces should collect product choices and derive `formSchema`, `inputMapping`, and `outputMapping` internally.
+- Correction: after selecting models, schema editor must appear immediately; composed schema is draft user edits, not hidden final artifact.
+- Rule: when selections derive a user-editable artifact, seed the editor immediately and persist edited artifact while rebasing hidden technical mappings by stable ids.
+- Correction: schema creation should not ask for description, generated schema must include reports, and version creation should reuse create flow instead of raw JSON forms.
+- Rule: schema UX has two explicit paths only: create schema with first version, or create new version for an existing schema; never expose binding/schema JSON editors when model selection can derive them.
+- Correction: new schema version must not allow changing bound models; model choice and schema editing are separate workflow steps.
+- Rule: schema creation should treat model selection as a structural step before editing; version creation must reuse previous version bindings and expose only schema editing.
+- Correction: one-hot encoded model fields should collapse into a user-facing `mapped-category` when safe.
+- Rule: schema composition should count visible/user-editable fields separately from hidden technical fields, and preserve hidden subordinate mappings for model payload compatibility.
+- Correction: schema run form page must fit inside available viewport height.
+- Rule: MLForm run/editor pages should use flex `min-h-0` shells with overflow only on the form host, not page-level auto overflow plus fixed min-height.
+- Correction: `/schemas/create` exposed new-version controls even when user clicked create new schema, and model selection wasted horizontal/vertical space.
+- Rule: create routes should default to the user's explicit intent; alternate flows belong behind explicit entry URLs/actions, while long selection steps need top command bars plus internal scroll and responsive grids.
+- Correction: mapped-category one-hot composition sent bad blood-group payloads because visible masters were not explicitly excluded and lossy slug ids could collide for `+`/`-` categories.
+- Rule: generated technical field ids must preserve category uniqueness after slugging; visible derivation controls must set `includeInSubmission: false` and only hidden target fields should map to model inputs.
+- Correction: schema save failed because composer regenerated canonical ids after one-hot mapping already wrote option mappings.
+- Rule: when one generated field references another by id, later canonicalization must preserve those ids or rewrite all references in the same step.
+- Correction: `backendKey` was used in new schema flow even though feature labels are exact model feature names.
+- Rule: org-level schema flow should treat `id` as internal UI/form identity and `label` as exact model feature key; avoid storing technical key duplicates in `ui`.
+- Correction: one-hot conversion ran before merging model schemas, so cross-model one-hot groups could not be detected.
+- Rule: schema derivations that depend on combined canonical field set must run after merge; per-model transforms should only handle model-local facts.
+- Correction: schema-run report pane missed model outputs because run transport returned `reports: {}` and composer merged reports like fields.
+- Rule: org-level schema fields may merge for one user input, but reports are per model binding; schema-run transport must hydrate MLForm `reports` by schema report id before persistence.
+- Correction: schema-run save persisted immediately after MLForm submit instead of staging like prediction modal.
+- Rule: prediction/run submit and persistence are separate UX states; run MLForm first, review result in modal, then persist on explicit save.
+- Correction: schema run modal/history exposed raw JSON and technical one-hot fields instead of user-facing form values.
+- Rule: schema-run display must derive visible inputs from the schema snapshot and map technical one-hot values back to the visible control; raw model payload belongs in `PredictionResult.modelInput`, not primary UI.
+- Rule: MLForm-rendered report snapshots are not persisted today; history/detail should render report DTOs from saved schema+payload, and exact HTML snapshots require an explicit persisted snapshot contract later.
+- Correction: schema-run report cards used analyzer `mapping` labels (`0`/`1`) instead of schema report labels and wrapped each result in redundant Model/Status boxes.
+- Rule: report display labels come from persisted schema report config; analyzer output is numeric payload only. Grouping by model is metadata, not primary visual framing unless user asks for it.
+# Schema Run Parity
+- When adding a parallel schema-run path, audit legacy prediction-history affordances explicitly. Search/export/bulk/share/predict-again are UI/runtime features; review/feedback are backend domain features tied to `Prediction` and need their own schema-run contract before UI parity.
+- Predict-again prefill for schema-runs must use schema-aware visible inputs, not raw saved inputs. Mapped-category defaults may need reconstruction from hidden one-hot fields.
+- If schema inferences are conceptually parallel to legacy predictions, reuse the legacy page/action layout first. Only diverge when schema-specific domain rules require it.
+- Mapped-category predict-again must initialize both visible default and hidden mapped values. MLForm may show selected default without firing option mapping change events.
+- Legacy prediction action components cannot be reused blindly for schema runs when their handlers call `predictionId` APIs. Reuse interaction structure; keep schema-specific API adapters.
+- Correction: schema bulk/export were simplified like user-facing history/detail, but product intent is model-facing import/export.
+- Rule: schema history/detail/modal/review show visible canonical inputs; schema bulk upload and CSV export use exact technical model inputs from `PredictionResult.modelInput`, including one-hot columns.
+- Correction: schema plugin reports validated but did not render like signatures because schema transport lacked per-model `meta.modelId/backendUrl/backendFieldValues`.
+- Rule: schema-run plugin execution must preserve signature plugin contract per report id; multi-model context belongs in `reportContextById`, not in one global run meta.
+- Correction: schema plugin reports still failed because context was created only after payload existed and only descriptor rendering was patched.
+- Rule: async MLForm report plugins need per-report context before `fetch.submit`; wrap schema custom report fetch requests as well as descriptor contexts, and create `reportContextById` even when report payload is absent.
+- Correction: opening schema save modal remounted MLForm and flushed entered values because effect dependencies used unstable catalog object identity.
+- Rule: MLForm host effects must depend on stable catalog fields/status, not composite hook return objects; submit modal state must not unmount the form.
+- Correction: schema custom report fetch wrapper tested fake `{ report: { id } }` args, but MLForm uses `{ reportId, config }`, so Crystal Tree still missed `modelId`.
+- Rule: custom MLForm wrapper tests must use upstream runtime type shape; patch both `DefinedReportKind.fetch` and inner `definition.fetch`, because registration uses inner report definition.
+- Correction: schema form remount could still be triggered by callback identity changes from modal/result state.
+- Rule: long-lived MLForm mounts should call latest callbacks through refs; modal/result state handlers must not be effect dependencies.
+- Correction: schema predict-again still flushed because prefill inputs were rebuilt from `sourceRun` on render/refetch, changing `formSchema` and remounting MLForm.
+- Rule: predict-again prefill is an initial snapshot; freeze it after first source run load and never let query refetch or modal state update remount the form.
+- Correction: schema Crystal Tree failures showed report error cards even when only some bound models support explanations.
+- Rule: schema multi-model custom report fetch is best-effort per result; unsupported model/report fetch failures should become skipped schema report payloads, not user-facing report errors or save blockers.
+- Correction: plugin tests mocked wrapper internals but not the full MLForm `createReportFetchRequest` path.
+- Rule: plugin regression tests must exercise `createSchemaRunRuntime -> transport.submit -> createReportFetchRequest -> registry.getReport(kind).fetch(...).submit(...)` with model-specific assertions.
+- Correction: schema-level plugin reports added in editor were not bound to schema model bindings, so multi-model runtime had no `reportContextById` and Crystal Tree never called explanations.
+- Rule: any schema report not already mapped by `SchemaModelBinding.outputMapping` must be expanded per binding before save/use; plugin policy and output mapping must be updated together.
+- Correction: schema save modal reused generic custom-report `describe` and skipped plugin questionnaire persistence.
+- Rule: custom report rendering must prefer plugin presenter output, and schema save modal must collect questionnaire feedback before persistence then write it after real `PredictionResult` ids exist.
+- Correction: plugin reports generated redundant OUTPUT feedback steps.
+- Rule: plugin reports use `feedbackQuestionnaire` as their feedback contract; do not synthesize generic output feedback for custom report kinds.
+- Correction: schema custom report execution depended on MLForm report-pane lazy fetch, so multi-model plugin reports could remain unfetched even when model predictions succeeded.
+- Rule: schema multi-model custom reports are part of run transport; fetch them best-effort after model fan-out using per-report context and persist only successful payloads.
+- Correction: schema plugin tests called transport directly and missed MLForm id normalization (`_` -> `-`), so report contexts were keyed differently from report controllers.
+- Rule: plugin/report regression tests must exercise the real MLForm lifecycle (`createForm`, report controllers, `createReportFetchRequest`) and normalize report-id matching against MLForm ids.
+- Correction: schema custom report wrapper swallowed all plugin fetch errors, hiding missing model-context bugs as invisible skipped reports.
+- Rule: only model-level unsupported report fetches may become skipped payloads; missing schema binding/context is an application bug and must surface as an error.
+- Correction: missing custom report context was treated as unbound even when the report was mapped but its model prediction failed first.
+- Rule: distinguish absent binding mapping from absent successful result context; unbound is error, mapped-but-no-success-context is skipped report.
+- Correction: schema plugin reports still existed but did not render because schema validation discarded parsed custom report config, losing Zod defaults like Crystal Tree `endpoint`.
+- Rule: when validating MLForm custom field/report configs, use the parsed schema result as runtime config; `safeParse` is normalization, not only validation.
+- Correction: mapped schema plugin reports stayed invisible when stale `pluginPolicy.reportKinds` lacked the plugin kind even though `outputMapping` bound the report to a model.
+- Rule: schema report execution must use `SchemaModelBinding.outputMapping` as source of truth; plugin policy metadata must not be a second runtime blocker for already-mapped reports.
+- Correction: schema custom report prefetch could depend on wrapper-injected meta and miss calls when context was absent from `built.reportContextById`.
+- Rule: schema transport prefetch must derive per-report context from `outputMapping + successful result` and send `modelId/backendFieldValues` directly to plugin fetch requests.
