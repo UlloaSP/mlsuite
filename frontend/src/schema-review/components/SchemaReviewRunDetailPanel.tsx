@@ -6,7 +6,11 @@ import { ReviewAccordionSection } from "../../review/components/ReviewAccordionS
 import { ReviewInputsSection } from "../../review/components/ReviewInputsSection";
 import { ReviewOutputsSection } from "../../review/components/ReviewOutputsSection";
 import { getFormattedReportContent } from "../../models/report-feedback-utils";
-import { getSchemaResultReports, mergeSchemaRunInputs } from "../../schemas/schema-run-display";
+import {
+  getSchemaResultReports,
+  getVisibleSchemaInputRecord,
+  mergeSchemaRunInputs,
+} from "../../schemas/schema-run-display";
 import type { SchemaVersionDto } from "../../schemas/types";
 import { useSchemaReviewRun } from "../hooks";
 import { SchemaReviewCombinedFeedbackForm } from "./SchemaReviewCombinedFeedbackForm";
@@ -38,8 +42,13 @@ export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewC
   const [inputsOpen, setInputsOpen] = useState(false);
   const visibleInputs = useMemo(
     () =>
-      detail.data ? mergeSchemaRunInputs(detail.data.run.inputData, detail.data.run.results) : {},
-    [detail.data],
+      detail.data
+        ? getVisibleSchemaInputRecord(
+            version.formSchema,
+            mergeSchemaRunInputs(detail.data.run.inputData, detail.data.run.results),
+          )
+        : {},
+    [detail.data, version.formSchema],
   );
   const feedbackReports = useMemo(
     () =>

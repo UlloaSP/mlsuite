@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test } from "vite-plus/test";
 import { buildSchemaFeedbackSteps } from "../src/schemas/schema-feedback-steps";
+import { getVisibleSchemaInputRecord } from "../src/schemas/schema-run-display";
 
 describe("schema review output context", () => {
   test("describes classifier feedback with prediction and probability", () => {
@@ -61,5 +62,40 @@ describe("schema review output context", () => {
     );
 
     expect(steps[0]?.description).toBe("Prediction result: High · 80.00%");
+  });
+
+  test("builds review input record from visible schema fields", () => {
+    const schema = {
+      fields: [
+        {
+          id: "blood_group",
+          label: "Blood Group",
+          kind: "mapped-category",
+          options: [
+            {
+              label: "A",
+              value: "A",
+              mapping: { blood_group_a: 1, blood_group_b: 0 },
+            },
+            {
+              label: "B",
+              value: "B",
+              mapping: { blood_group_a: 0, blood_group_b: 1 },
+            },
+          ],
+        },
+        { id: "blood_group_a", label: "blood_group__A", kind: "number", hidden: true },
+        { id: "blood_group_b", label: "blood_group__B", kind: "number", hidden: true },
+        { id: "age", label: "age", kind: "number" },
+      ],
+    };
+
+    expect(
+      getVisibleSchemaInputRecord(schema, {
+        blood_group__A: 0,
+        blood_group__B: 1,
+        age: 52,
+      }),
+    ).toEqual({ "Blood Group": "B", age: 52 });
   });
 });

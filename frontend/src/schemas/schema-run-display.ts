@@ -43,7 +43,9 @@ const mappedCategoryValue = (
     const entries = Object.entries(mapping);
     if (
       entries.length > 0 &&
-      entries.every(([targetId, expected]) => inputData[keyById.get(targetId) ?? targetId] === expected)
+      entries.every(
+        ([targetId, expected]) => inputData[keyById.get(targetId) ?? targetId] === expected,
+      )
     ) {
       return option.value ?? option.label;
     }
@@ -51,10 +53,7 @@ const mappedCategoryValue = (
   return inputData[fieldKey(field)];
 };
 
-export const getVisibleSchemaInputs = (
-  schema: unknown,
-  inputData: JsonRecord,
-): DisplayInput[] => {
+export const getVisibleSchemaInputs = (schema: unknown, inputData: JsonRecord): DisplayInput[] => {
   const fields = fieldsOf(schema);
   const keyById = fields.reduce<Map<string, string>>((map, field) => {
     const id = getString(field.id);
@@ -65,27 +64,30 @@ export const getVisibleSchemaInputs = (
     if (field.hidden === true) return items;
     const key = fieldKey(field);
     if (!key) return items;
-    const value = getString(field.kind) === "mapped-category"
-      ? mappedCategoryValue(field, inputData, keyById)
-      : inputData[key];
+    const value =
+      getString(field.kind) === "mapped-category"
+        ? mappedCategoryValue(field, inputData, keyById)
+        : inputData[key];
     items.push({ key, label: getString(field.label) ?? key, value });
     return items;
   }, []);
 };
 
-export const getSchemaRunPrefillInputs = (
-  schema: unknown,
-  inputData: JsonRecord,
-): JsonRecord =>
+export const getSchemaRunPrefillInputs = (schema: unknown, inputData: JsonRecord): JsonRecord =>
   Object.fromEntries(
     getVisibleSchemaInputs(schema, inputData).map((input) => [input.key, input.value]),
+  );
+
+export const getVisibleSchemaInputRecord = (schema: unknown, inputData: JsonRecord): JsonRecord =>
+  Object.fromEntries(
+    getVisibleSchemaInputs(schema, inputData).map((input) => [input.label, input.value]),
   );
 
 const reportId = (report: ReportConfig): string | undefined =>
   typeof report.id === "string" ? report.id : undefined;
 
 const reportLabel = (report: ReportConfig): string =>
-  typeof report.label === "string" ? report.label : reportId(report) ?? "Report";
+  typeof report.label === "string" ? report.label : (reportId(report) ?? "Report");
 
 const payloadFor = (
   report: ReportConfig,
@@ -102,10 +104,15 @@ const payloadFor = (
 
 const reportLabels = (report: ReportConfig): string[] =>
   Array.isArray((report as JsonRecord).labels)
-    ? ((report as JsonRecord).labels as unknown[]).filter((item): item is string => typeof item === "string")
+    ? ((report as JsonRecord).labels as unknown[]).filter(
+        (item): item is string => typeof item === "string",
+      )
     : [];
 
-const normalizeReportPayload = (report: ReportConfig, payload?: JsonRecord): JsonRecord | undefined => {
+const normalizeReportPayload = (
+  report: ReportConfig,
+  payload?: JsonRecord,
+): JsonRecord | undefined => {
   if (!payload) return undefined;
   const labels = reportLabels(report);
   if (labels.length === 0) return payload;
@@ -123,13 +130,7 @@ const normalizeReportPayload = (report: ReportConfig, payload?: JsonRecord): Jso
   };
 };
 
-const METADATA_KEYS = new Set([
-  "endpoint",
-  "modelId",
-  "signatureId",
-  "backendUrl",
-  "status",
-]);
+const METADATA_KEYS = new Set(["endpoint", "modelId", "signatureId", "backendUrl", "status"]);
 
 const hasMeaningfulValue = (value: unknown): boolean => {
   if (value === null || value === undefined) return false;
@@ -137,15 +138,12 @@ const hasMeaningfulValue = (value: unknown): boolean => {
   if (typeof value === "number" || typeof value === "boolean") return true;
   if (Array.isArray(value)) return value.some(hasMeaningfulValue);
   if (!isRecord(value)) return false;
-  return Object.entries(value).some(([key, nested]) =>
-    !METADATA_KEYS.has(key) && hasMeaningfulValue(nested)
+  return Object.entries(value).some(
+    ([key, nested]) => !METADATA_KEYS.has(key) && hasMeaningfulValue(nested),
   );
 };
 
-const isRenderablePayload = (
-  report: ReportConfig,
-  payload: JsonRecord | undefined,
-): boolean => {
+const isRenderablePayload = (report: ReportConfig, payload: JsonRecord | undefined): boolean => {
   if (payload === undefined || isSkippedSchemaReportPayload(payload)) return false;
   const kind = typeof report.kind === "string" ? report.kind : "report";
   return isBuiltinReportKind(kind) || hasMeaningfulValue(payload);
@@ -181,10 +179,9 @@ export const mergeSchemaRunInputs = (
   inputData: JsonRecord,
   results: readonly Pick<PredictionResultDto, "modelInput">[],
 ): JsonRecord =>
-  results.reduce<JsonRecord>(
-    (payload, result) => ({ ...payload, ...result.modelInput }),
-    { ...inputData },
-  );
+  results.reduce<JsonRecord>((payload, result) => ({ ...payload, ...result.modelInput }), {
+    ...inputData,
+  });
 
 export const formatDisplayValue = (value: unknown): string => {
   if (typeof value === "number") return value.toLocaleString();

@@ -294,3 +294,5 @@
 - Rule: review side context and output accordions must derive from normalized runtime payload, preserving prediction labels plus flat or nested probability arrays.
 - Correction: long schema input names overlapped values in external review.
 - Rule: review input rows must be min-width-safe and wrap technical field names; fixed label columns are unsafe for schema/model feature keys.
+- Correction: schema external review showed technical one-hot model inputs instead of user-visible schema inputs.
+- Rule: schema review/history/detail input displays must use schema visible-input reconstruction, including mapped-category one-hot reverse mapping, never raw `PredictionResult.modelInput`.

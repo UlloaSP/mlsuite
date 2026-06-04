@@ -1390,3 +1390,32 @@
   - `npx react-doctor@latest --verbose` completed: score 91, 55 warnings, no errors.
   - `graphify update .` passed: 8710 nodes, 18781 edges, 453 communities.
   - `vp check` blocked by existing repo-wide formatting issues in `dist/` and 552 files.
+
+# Schema External Review Visible Inputs Fix
+
+## Goal
+- [x] Show external schema review inputs as user-visible fields.
+- [x] Respect mapped-category/one-hot reconstruction.
+- [x] Hide technical one-hot model input keys from review input accordion.
+- [x] Verify focused frontend checks and graph update.
+
+## Plan
+- [x] Reuse schema visible-input display helper as source of truth.
+- [x] Add record helper for shared review input accordion.
+- [x] Switch schema review detail from merged technical input record to visible input record.
+- [x] Add regression for one-hot external-review input display.
+- [x] Run focused tests, typecheck, line cap, react-doctor, graph update.
+
+## Review
+- Added `getVisibleSchemaInputRecord()` in schema display helper.
+- Schema external review inputs now render user-visible schema fields from `version.formSchema` over merged run/model inputs.
+- Mapped-category one-hot values reconstruct to user value, e.g. `blood_group__A/B` -> `Blood Group: B`.
+- Split schema display test to keep 300-line cap.
+- Verification:
+  - `vp fmt src/schemas/schema-run-display.ts src/schema-review/components/SchemaReviewRunDetailPanel.tsx test/schema-review-output-context.test.ts test/schema-composer.test.ts test/schema-run-display.test.ts --check` passed.
+  - `vp test schema-review-output-context schema-run-display schema-composer schema-feedback-steps schema-run-history` passed: 26 tests.
+  - `vp exec tsc -b` passed.
+  - touched file line cap passed; largest touched file is `schema-composer.test.ts` at 296 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 91, 55 warnings, no errors.
+  - `graphify update .` passed: 8718 nodes, 18801 edges, 393 communities.

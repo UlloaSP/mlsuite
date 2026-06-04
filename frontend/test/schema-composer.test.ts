@@ -1,14 +1,9 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 import { describe, expect, test, vi } from "vite-plus/test";
 import { composeSchemaVersion } from "../src/schemas/schema-composer";
 import { countVisibleSchemaFields } from "../src/schemas/one-hot-schema";
 import type { SignatureDto } from "../src/models/api/modelService";
 import { createSchemaRunTransport } from "../src/app/utils/mlform/schema-run-transport";
-import { getSchemaResultReports, getVisibleSchemaInputs, mergeSchemaRunInputs } from "../src/schemas/schema-run-display";
+import { getSchemaResultReports, getVisibleSchemaInputs } from "../src/schemas/schema-run-display";
 
 const signature = (fields: unknown[], reports: unknown[] = []): SignatureDto => ({
   id: "signature-1",
@@ -21,7 +16,12 @@ const signature = (fields: unknown[], reports: unknown[] = []): SignatureDto => 
   createdAt: "2026-06-02T00:00:00Z",
 });
 
-const signatureFor = (id: string, modelId: string, fields: unknown[], reports: unknown[] = []): SignatureDto => ({
+const signatureFor = (
+  id: string,
+  modelId: string,
+  fields: unknown[],
+  reports: unknown[] = [],
+): SignatureDto => ({
   ...signature(fields, reports),
   id,
   modelId,
@@ -48,11 +48,13 @@ describe("composeSchemaVersion one-hot mapping", () => {
     expect(fields.filter((field) => field.hidden === true)).toHaveLength(2);
     expect(countVisibleSchemaFields(result.formSchema)).toBe(2);
     expect(result.bindings[0]?.inputMapping).toEqual({
-      "blood_group__A": "blood_group__A",
-      "blood_group__B": "blood_group__B",
+      blood_group__A: "blood_group__A",
+      blood_group__B: "blood_group__B",
       age: "age",
     });
-    expect(fields.every((field) => !((field.ui as Record<string, unknown> | undefined)?.backendKey))).toBe(true);
+    expect(
+      fields.every((field) => !(field.ui as Record<string, unknown> | undefined)?.backendKey),
+    ).toBe(true);
   });
 
   test("keeps plus and minus one-hot categories as unique hidden numeric targets", () => {
@@ -71,8 +73,10 @@ describe("composeSchemaVersion one-hot mapping", () => {
     const master = fields.find((field) => field.kind === "mapped-category");
     const ids = fields.map((field) => String(field.id));
     const mappedIds = Object.keys(
-      ((master?.options as Array<Record<string, unknown>> | undefined)?.[0]?.mapping as Record<string, unknown>) ??
-        {},
+      ((master?.options as Array<Record<string, unknown>> | undefined)?.[0]?.mapping as Record<
+        string,
+        unknown
+      >) ?? {},
     );
     expect(new Set(ids).size).toBe(ids.length);
     expect(master).toMatchObject({ includeInSubmission: false });
@@ -106,15 +110,17 @@ describe("composeSchemaVersion one-hot mapping", () => {
       label: "Blood Group",
     });
     expect(fields.filter((field) => field.hidden === true)).toHaveLength(2);
-    expect(result.bindings[0]?.inputMapping).toEqual({ "blood_group__A": "blood_group__A" });
-    expect(result.bindings[1]?.inputMapping).toEqual({ "blood_group__B": "blood_group__B" });
+    expect(result.bindings[0]?.inputMapping).toEqual({ blood_group__A: "blood_group__A" });
+    expect(result.bindings[1]?.inputMapping).toEqual({ blood_group__B: "blood_group__B" });
   });
 
   test("does not convert singleton encoded fields", () => {
-    const result = composeSchemaVersion("v1", [{
-      modelId: "model-1",
-      signature: signature([{ kind: "number", id: "blood_group__A", label: "blood_group__A" }]),
-    }]);
+    const result = composeSchemaVersion("v1", [
+      {
+        modelId: "model-1",
+        signature: signature([{ kind: "number", id: "blood_group__A", label: "blood_group__A" }]),
+      },
+    ]);
 
     const fields = result.formSchema.fields as Array<Record<string, unknown>>;
     expect(fields.some((field) => field.kind === "mapped-category")).toBe(false);
@@ -157,14 +163,18 @@ describe("composeSchemaVersion one-hot mapping", () => {
     const second = { prediction: "high", probabilities: [0.3, 0.7] };
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify({ reports: { risk: first } }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ reports: { risk: first } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            outputs: [{ type: "classifier", mapping: ["low", "high"], probabilities: [[0.3, 0.7]] }],
+            outputs: [
+              { type: "classifier", mapping: ["low", "high"], probabilities: [[0.3, 0.7]] },
+            ],
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
@@ -173,8 +183,18 @@ describe("composeSchemaVersion one-hot mapping", () => {
 
     const transport = createSchemaRunTransport(
       [
-        { modelId: "model-1", signatureId: "signature-1", inputMapping: { age: "age" }, outputMapping: { "model-1-risk": "risk" } },
-        { modelId: "model-2", signatureId: "signature-2", inputMapping: { age: "age" }, outputMapping: { "model-2-risk": "risk" } },
+        {
+          modelId: "model-1",
+          signatureId: "signature-1",
+          inputMapping: { age: "age" },
+          outputMapping: { "model-1-risk": "risk" },
+        },
+        {
+          modelId: "model-2",
+          signatureId: "signature-2",
+          inputMapping: { age: "age" },
+          outputMapping: { "model-2-risk": "risk" },
+        },
       ],
       [{ kind: "number", id: "age", label: "age" }],
     );
@@ -239,8 +259,12 @@ describe("composeSchemaVersion one-hot mapping", () => {
           name: "v1",
           formSchema: result.formSchema,
           bindings: result.bindings.map((binding) => ({
-            id: "binding-1", schemaVersionId: "version-1", inputMapping: {},
-            outputMapping: binding.outputMapping ?? {}, modelId: binding.modelId, signatureId: binding.signatureId,
+            id: "binding-1",
+            schemaVersionId: "version-1",
+            inputMapping: {},
+            outputMapping: binding.outputMapping ?? {},
+            modelId: binding.modelId,
+            signatureId: binding.signatureId,
           })),
           createdAt: "2026-06-02T00:00:00Z",
         },
@@ -253,6 +277,7 @@ describe("composeSchemaVersion one-hot mapping", () => {
     ).toEqual([
       {
         id: reportId,
+        order: 0,
         label: "Risk · model-1",
         kind: "classifier",
         labels: ["Moricion", "Vivicion"],
@@ -262,30 +287,6 @@ describe("composeSchemaVersion one-hot mapping", () => {
           probabilities: [0.25, 0.75],
         },
       },
-    ]);
-  });
-
-  test("schema run display fills visible fields from model input fallback", () => {
-    const result = composeSchemaVersion("v1", [
-      {
-        modelId: "model-1",
-        signature: signature([
-          { kind: "number", id: "blood_group__A", label: "blood_group__A" },
-          { kind: "number", id: "blood_group__B", label: "blood_group__B" },
-          { kind: "number", id: "age", label: "age" },
-          { kind: "number", id: "score", label: "score" },
-        ]),
-      },
-    ]);
-
-    const inputData = mergeSchemaRunInputs({ age: 42 }, [
-      { modelInput: { blood_group__A: 1, blood_group__B: 0, score: 7 } },
-    ]);
-
-    expect(getVisibleSchemaInputs(result.formSchema, inputData)).toEqual([
-      { key: "Blood Group", label: "Blood Group", value: "A" },
-      { key: "age", label: "age", value: 42 },
-      { key: "score", label: "score", value: 7 },
     ]);
   });
 });
