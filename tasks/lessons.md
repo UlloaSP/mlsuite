@@ -296,3 +296,5 @@
 - Rule: review input rows must be min-width-safe and wrap technical field names; fixed label columns are unsafe for schema/model feature keys.
 - Correction: schema external review showed technical one-hot model inputs instead of user-visible schema inputs.
 - Rule: schema review/history/detail input displays must use schema visible-input reconstruction, including mapped-category one-hot reverse mapping, never raw `PredictionResult.modelInput`.
+- Correction: schema creation implied model selection but product needed signature selection per model.
+- Rule: schema creation binds model + signature, not model alone; default may be latest semver, but UI must expose the exact signature because reports/plugins live on signatures.

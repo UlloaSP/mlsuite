@@ -1419,3 +1419,36 @@
   - `git diff --check` passed with CRLF warnings only.
   - `npx react-doctor@latest --verbose` completed: score 91, 55 warnings, no errors.
   - `graphify update .` passed: 8718 nodes, 18801 edges, 393 communities.
+
+# Schema Create Model Signature Selection
+
+## Goal
+- [x] Let schema creator select both model and signature.
+- [x] Default each model to latest semantic signature version.
+- [x] Use selected signature reports/plugins in composed schema bindings.
+- [x] Keep no-signature models disabled.
+- [x] Verify focused frontend checks and graph update.
+
+## Plan
+- [x] Sort model signatures by semantic version desc at selector boundary.
+- [x] Add per-model signature `<select>` inside model card.
+- [x] Update selected item when chosen signature changes.
+- [x] Preserve model card toggle behavior and selected count.
+- [x] Add focused tests for latest default and explicit signature override.
+- [x] Run format, tests, typecheck, line cap, react-doctor, graph update.
+
+## Review
+- Schema model cards now include a signature selector.
+- Default signature is highest semantic version via `chooseSchemaSignature()`.
+- Changing signature on a selected model updates the bound `signatureId` and schema composition input.
+- Selected signature reports/plugins flow into existing `composeSchemaVersion()`, so model-specific Crystal Tree report stays bound to that model/signature.
+- No-signature models remain disabled.
+- Verification:
+  - `vp fmt src/schemas/components/SchemaModelSelector.tsx src/schemas/schema-signature-selection.ts test/schema-signature-selection.test.ts --check` passed.
+  - `vp test schema-signature-selection schema-composer schema-plugin-policy` passed: 20 tests.
+  - `vp exec tsc -b` passed.
+  - touched file line cap passed; largest touched file is `SchemaModelSelector.tsx` at 156 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 91, 55 warnings, no errors.
+  - `graphify update .` passed: 8725 nodes, 18820 edges, 415 communities.
+  - `vp check` blocked by existing repo-wide formatting issues in `dist/` and 549 files.
