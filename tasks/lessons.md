@@ -278,3 +278,7 @@
 - Rule: when a plugin bug persists after contract tests pass, add temporary end-to-end browser-path instrumentation with one stable prefix before adding more bypasses.
 - Correction: schema plugin context used numeric model ids from real DTOs while custom-report fetch required string ids, causing mapped reports to skip despite valid context.
 - Rule: frontend boundaries that consume backend DTO ids must normalize ids at comparison/plugin-call boundaries; tests need numeric-id cases when production DTOs use numbers.
+- Correction: plugin reports that fail on unsupported model types should disappear with their questionnaire, not show error/empty review.
+- Rule: schema plugin reports are best-effort per model binding; skipped payloads are internal control state and must not produce UI reports, feedback steps, exports, or save blockers.
+- Correction: modal/history can persist plugin placeholder payloads that are not explicit skipped sentinels.
+- Rule: schema custom reports need a display-level renderability guard; empty payloads must be hidden before reports/feedback/export consume them.

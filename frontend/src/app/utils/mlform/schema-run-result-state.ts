@@ -26,12 +26,17 @@ type Binding = {
 
 const statusOf = (state: ReportState | undefined): string => state?.status ?? "idle";
 
+const contextId = (value: unknown): string | undefined =>
+  typeof value === "string" || typeof value === "number" ? String(value) : undefined;
+
 const hasPendingReports = (
   reports: readonly ReportController[],
   reportStates: Record<string, ReportState>,
 ): boolean =>
   reports.some((report) => {
     const status = statusOf(reportStates[report.id] ?? report.state);
+    const payload = (reportStates[report.id] ?? report.state)?.payload;
+    if (isSkippedSchemaReportPayload(payload)) return false;
     return status === "idle" || status === "loading";
   });
 
@@ -40,10 +45,10 @@ const sourceForReport = (
   bindings: readonly Binding[],
   context: JsonRecord,
 ): string => {
-  const modelId = typeof context.modelId === "string" ? context.modelId : undefined;
-  const signatureId = typeof context.signatureId === "string" ? context.signatureId : undefined;
+  const modelId = contextId(context.modelId);
+  const signatureId = contextId(context.signatureId);
   const binding = bindings.find(
-    (item) => item.modelId === modelId && item.signatureId === signatureId,
+    (item) => contextId(item.modelId) === modelId && contextId(item.signatureId) === signatureId,
   );
   return mappingSourceForReport(binding?.outputMapping, reportId) ?? reportId;
 };
@@ -89,8 +94,8 @@ export const buildSchemaRunRawFromSubmitResult = (
     reports[reportContextKey(report.id)] = state.payload;
     results = results.map((result) => {
       if (!isRecord(result)) return result;
-      const sameModel = result.modelId === context.modelId;
-      const sameSignature = result.signatureId === context.signatureId;
+      const sameModel = contextId(result.modelId) === contextId(context.modelId);
+      const sameSignature = contextId(result.signatureId) === contextId(context.signatureId);
       return sameModel && sameSignature
         ? patchResultOutput(result, report.id, source, state.payload)
         : result;

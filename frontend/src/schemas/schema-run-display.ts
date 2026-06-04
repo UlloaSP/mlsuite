@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig } from "mlform/runtime";
+import { isBuiltinReportKind } from "../app/utils/mlform/builtin-registry";
 import { type JsonRecord, getString, isRecord } from "../app/utils/mlform/shared";
 import { toLegacyReportPayload } from "../app/utils/mlform/report-normalization";
 import { isSkippedSchemaReportPayload } from "../app/utils/mlform/schema-report-plugin-context";
@@ -122,6 +123,34 @@ const normalizeReportPayload = (report: ReportConfig, payload?: JsonRecord): Jso
   };
 };
 
+const METADATA_KEYS = new Set([
+  "endpoint",
+  "modelId",
+  "signatureId",
+  "backendUrl",
+  "status",
+]);
+
+const hasMeaningfulValue = (value: unknown): boolean => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (typeof value === "number" || typeof value === "boolean") return true;
+  if (Array.isArray(value)) return value.some(hasMeaningfulValue);
+  if (!isRecord(value)) return false;
+  return Object.entries(value).some(([key, nested]) =>
+    !METADATA_KEYS.has(key) && hasMeaningfulValue(nested)
+  );
+};
+
+const isRenderablePayload = (
+  report: ReportConfig,
+  payload: JsonRecord | undefined,
+): boolean => {
+  if (payload === undefined || isSkippedSchemaReportPayload(payload)) return false;
+  const kind = typeof report.kind === "string" ? report.kind : "report";
+  return isBuiltinReportKind(kind) || hasMeaningfulValue(payload);
+};
+
 export const getSchemaResultReports = (
   version: SchemaVersionDto,
   result: Pick<PredictionResultDto, "modelId" | "signatureId" | "output">,
@@ -135,7 +164,7 @@ export const getSchemaResultReports = (
     const id = reportId(report);
     if (!id || typeof mapping[id] !== "string") return items;
     const payload = normalizeReportPayload(report, payloadFor(report, mapping[id], result.output));
-    if (isSkippedSchemaReportPayload(payload)) return items;
+    if (!isRenderablePayload(report, payload)) return items;
     items.push({
       id,
       order,

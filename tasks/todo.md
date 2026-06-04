@@ -143,12 +143,39 @@
   - `git diff --check` passed with CRLF warnings only.
   - `npx react-doctor@latest --verbose` completed: score 88, 45 warnings, non-fatal dead-code scan failure.
   - `graphify update .` passed: 8313 nodes, 17117 edges, 452 communities.
-  - `npx react-doctor@latest --verbose` completed: score 88, 45 warnings, non-fatal dead-code scan failure.
-  - `graphify update .` passed: 8284 nodes, 16976 edges, 404 communities.
-  - `npx react-doctor@latest --verbose` completed: score 88, 45 warnings, non-fatal dead-code scan failure.
-  - `graphify update .` passed: 8271 nodes, 16954 edges, 456 communities.
-  - `npx react-doctor@latest --verbose` passed with score 88/100, 46 warnings, non-fatal dead-code scan failure.
-  - `graphify update .` passed: 8130 nodes, 16455 edges, 426 communities.
+
+# Schema Plugin Best Effort Per Model
+
+## Goal
+- [x] Hide plugin reports for model results where plugin fetch fails.
+- [x] Hide feedback questionnaire for those skipped plugin reports.
+- [x] Keep successful plugin model reports and questionnaires visible.
+- [x] Verify focused frontend tests and graph update.
+- [x] Hide empty/placeholder plugin payloads in modal/history/detail, not only explicit skipped sentinel.
+
+## Plan
+- [x] Treat skipped report payload as internal only in result-state/display/feedback.
+- [x] Normalize numeric ids in raw report-state patching.
+- [x] Add regression tests for skipped custom report display and feedback.
+- [x] Run focused tests, typecheck, line cap, diff, graph.
+- [x] Add renderability guard for custom report payloads.
+- [x] Add regression for Crystal Tree empty explanation payload.
+- [x] Re-run focused tests/typecheck/graph.
+
+## Review
+- `buildSchemaRunRawFromSubmitResult()` now treats skipped plugin payloads as non-pending and keeps them out of persisted raw report payloads.
+- Result-state patching now normalizes numeric/string model and signature ids before matching owning result.
+- `getSchemaResultReports()` already hides skipped payloads; `buildSchemaFeedbackSteps()` inherits that, so no questionnaire is created for skipped plugin reports.
+- Added regression proving successful Crystal Tree report gets feedback while skipped model report gets no report/no questionnaire.
+- Added custom-report renderability guard: empty placeholder payloads like `explanation: ""` and `explanations: []` are hidden with their questionnaire.
+- Verification:
+  - `vp test schema-feedback-steps schema-plugin-readiness schema-plugin-transport schema-plugin-lifecycle schema-plugin-defaults schema-plugin-policy schema-report-renderer schema-binding-rebase schema-run-history one-hot-schema` passed: 41 tests.
+  - `vp test schema-feedback-steps schema-report-renderer schema-plugin-readiness schema-plugin-transport schema-plugin-lifecycle schema-plugin-defaults schema-plugin-policy schema-run-history` passed: 37 tests.
+  - `vp exec tsc -b` passed.
+  - frontend line cap passed.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` timed out after 124030 ms.
+  - `graphify update .` passed: 8390 nodes, 17451 edges, 465 communities.
 
 # Schema Plugin Fetch Regression Fix
 
