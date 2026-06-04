@@ -97,7 +97,7 @@ export function SchemaRunHistoryPage() {
             executableVersion ? (
               <>
                 <SchemaRunShareButton runs={runs} version={executableVersion} />
-                <SchemaRunBulkUploadButton version={executableVersion} />
+                <SchemaRunBulkUploadButton version={executableVersion} versionId={versionId} />
                 <Link to={`/schemas/${schemaId}/versions/${versionId}/runs/create`}>
                   <AppButton>
                     <Play size={16} />

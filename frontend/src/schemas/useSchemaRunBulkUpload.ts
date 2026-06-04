@@ -11,20 +11,29 @@ import { createSchemaRunRuntime } from "../app/utils/mlform/schema-run-runtime";
 import { isRecord } from "../app/utils/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "../models/loadPredictionCatalogDefinitions";
 import { parseSpreadsheetPredictionFile } from "../models/parseSpreadsheetPredictionFile";
-import { createPredictionRun } from "./api/schemaService";
+import { createPredictionRun, getLastPredictionRunId } from "./api/schemaService";
 import { PREDICTION_RUNS_QUERY_KEY } from "./hooks";
+import { prependMissingPredictionRuns } from "./schema-run-cache";
 import { getModelInputBulkSchema, toSchemaRunSerializedValues } from "./schema-run-bulk-inputs";
-import type { CreatePredictionRunRequest, SchemaVersionDto } from "./types";
+import type { CreatePredictionRunRequest, PredictionRunDto, SchemaVersionDto } from "./types";
 
 type Status = "idle" | "parsing" | "processing" | "done";
 
-const INITIAL = { status: "idle" as Status, processed: 0, total: 0, saved: 0, failed: 0, skipped: 0 };
+const INITIAL = {
+  status: "idle" as Status,
+  processed: 0,
+  total: 0,
+  saved: 0,
+  failed: 0,
+  skipped: 0,
+};
 const MAX_RECORDS = 10000;
 
-export function useSchemaRunBulkUpload(version: SchemaVersionDto) {
+export function useSchemaRunBulkUpload(version: SchemaVersionDto, historyVersionId = version.id) {
   const [state, setState] = useState(INITIAL);
   const abortRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
+  const runsQueryKey = PREDICTION_RUNS_QUERY_KEY(historyVersionId);
 
   const cancel = () => abortRef.current?.abort();
   const reset = () => setState(INITIAL);
@@ -32,15 +41,18 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto) {
   const start = async (file: File) => {
     try {
       setState({ ...INITIAL, status: "parsing" });
+      const lastPredictionRunId = await getLastPredictionRunId();
       const parsed = await parseSpreadsheetPredictionFile(
         file,
         getModelInputBulkSchema(version.formSchema),
         MAX_RECORDS,
-        0,
+        lastPredictionRunId,
       );
-      parsed.skipped.slice(0, 5).forEach((entry) =>
-        toast.error(`Skipped line ${entry.line}`, { description: entry.reason }),
-      );
+      parsed.skipped
+        .slice(0, 5)
+        .forEach((entry) =>
+          toast.error(`Skipped line ${entry.line}`, { description: entry.reason }),
+        );
       if (parsed.records.length === 0) {
         setState({ ...INITIAL, status: "done", skipped: parsed.skipped.length });
         return;
@@ -67,10 +79,12 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto) {
 
       let saved = 0;
       let failed = 0;
+      const savedRuns: PredictionRunDto[] = [];
       for (let index = 0; index < parsed.records.length; index += 1) {
         if (controller.signal.aborted) break;
         const record = parsed.records[index];
         try {
+          // react-doctor-disable-next-line react-doctor/async-await-in-loop -- Bulk upload is intentionally sequential for progress, cancellation, and backend load control.
           const result = await runtime.transport.submit({
             serializedValues: toSchemaRunSerializedValues(version, record.inputs),
             reports: runtime.formSchema.reports,
@@ -81,7 +95,8 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto) {
             inputData: record.inputs,
             results: Array.isArray(raw.results) ? raw.results : [],
           };
-          await createPredictionRun(version.id, request);
+          const savedRun = await createPredictionRun(version.id, request);
+          savedRuns.push(savedRun);
           saved += 1;
         } catch (error) {
           failed += 1;
@@ -94,7 +109,12 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto) {
 
       setState((current) => ({ ...current, status: "done", saved, failed }));
       toast.success(`Bulk upload complete: ${saved} saved, ${failed} failed`);
-      queryClient.invalidateQueries({ queryKey: PREDICTION_RUNS_QUERY_KEY(version.id) });
+      if (savedRuns.length > 0) {
+        queryClient.setQueryData<PredictionRunDto[]>(runsQueryKey, (current) =>
+          prependMissingPredictionRuns(current, savedRuns),
+        );
+      }
+      queryClient.invalidateQueries({ queryKey: runsQueryKey });
     } catch (error) {
       setState(INITIAL);
       toast.error("Bulk upload could not start", {

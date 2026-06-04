@@ -20,5 +20,8 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
             """)
     List<PredictionRun> findBySchemaVersionIdAndOrganizationId(Long schemaVersionId, Long organizationId);
 
+    @Query("SELECT COALESCE(MAX(r.id), 0) FROM PredictionRun r")
+    Long findLastPredictionRunId();
+
     boolean existsBySchemaVersionIdAndName(Long schemaVersionId, String name);
 }

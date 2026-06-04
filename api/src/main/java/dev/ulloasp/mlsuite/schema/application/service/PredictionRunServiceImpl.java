@@ -90,6 +90,12 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Prediction run not found"));
     }
 
+    @Override
+    public Long getLastPredictionRunId(Long userId) {
+        requireOperate(userId);
+        return runRepository.findLastPredictionRunId();
+    }
+
     private Long requireRead(Long userId) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();

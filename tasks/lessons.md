@@ -298,3 +298,15 @@
 - Rule: schema review/history/detail input displays must use schema visible-input reconstruction, including mapped-category one-hot reverse mapping, never raw `PredictionResult.modelInput`.
 - Correction: schema creation implied model selection but product needed signature selection per model.
 - Rule: schema creation binds model + signature, not model alone; default may be latest semver, but UI must expose the exact signature because reports/plugins live on signatures.
+- Correction: one-hot mapped-category select values regressed because labels and submit values were treated as the same thing.
+- Rule: mapped-category display may use option labels, but runtime submit/predict-again prefill must normalize through option value; expansion must accept both label and value.
+- Correction: schema bulk upload saved rows but history did not refresh until full browser reload.
+- Rule: bulk creation flows must update the exact visible list query cache with returned records, then invalidate for reconciliation; route id and DTO id shapes must be normalized before query-key use.
+- Correction: schema one-hot mapped-category still showed `N/A`/`undefined` and predict-again stayed unselected when saved model inputs stored one-hot values as string `0`/`1`.
+- Rule: mapped-category reconstruction from hidden one-hot fields must compare backend scalar values by normalized value, not strict JS type identity; display, external review, and predict-again must share that comparator.
+- Correction: previous one-hot fix still failed because empty saved visible master values (`null`/`""`) masked valid hidden one-hot model inputs.
+- Rule: mapped-category display/prefill must treat empty direct master values as absent and reconstruct from hidden mapping values before showing `N/A`/`undefined`.
+- Correction: schema bulk upload used `0` as auto-name base and generated names unrelated to persisted inference ids.
+- Rule: every bulk upload path that omits `name` must fetch the authoritative persisted sequence/max id for that same domain before parsing rows; never hardcode `0` as a base.
+- Correction: mapped-category reconstruction still missed real one-hot payloads because saved inputs may be boolean or sparse active-only values.
+- Rule: one-hot reverse mapping must accept numeric, string, boolean, and sparse active target shapes; tests need all real shapes before declaring display/prefill fixed.

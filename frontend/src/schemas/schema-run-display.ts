@@ -8,6 +8,13 @@ import { isBuiltinReportKind } from "../app/utils/mlform/builtin-registry";
 import { type JsonRecord, getString, isRecord } from "../app/utils/mlform/shared";
 import { toLegacyReportPayload } from "../app/utils/mlform/report-normalization";
 import { isSkippedSchemaReportPayload } from "../app/utils/mlform/schema-report-plugin-context";
+import {
+  findMappedOptionByMapping,
+  findMappedOptionByValue,
+  mappedCategoryOptions,
+  mappedOptionDisplayValue,
+  mappedOptionSubmitValue,
+} from "../app/utils/mlform/mapped-category-options";
 import type { PredictionResultDto, SchemaVersionDto } from "./types";
 
 type DisplayInput = { key: string; label: string; value: unknown };
@@ -30,30 +37,44 @@ const reportsOf = (schema: unknown): ReportConfig[] =>
 
 const fieldKey = (field: JsonRecord): string => getString(field.label) ?? getString(field.id) ?? "";
 
+const hasMappedDirectValue = (value: unknown): boolean =>
+  value !== null && value !== undefined && !(typeof value === "string" && value.trim() === "");
+
 const mappedCategoryValue = (
   field: JsonRecord,
   inputData: JsonRecord,
   keyById: Map<string, string>,
+  mode: "display" | "submit",
 ): unknown => {
   const direct = inputData[fieldKey(field)];
-  if (direct !== undefined) return direct;
-  const options = Array.isArray(field.options) ? field.options.filter(isRecord) : [];
-  for (const option of options) {
-    const mapping = isRecord(option.mapping) ? option.mapping : {};
-    const entries = Object.entries(mapping);
-    if (
-      entries.length > 0 &&
-      entries.every(
-        ([targetId, expected]) => inputData[keyById.get(targetId) ?? targetId] === expected,
-      )
-    ) {
-      return option.value ?? option.label;
+  const options = mappedCategoryOptions(field);
+  if (hasMappedDirectValue(direct)) {
+    const directOption = findMappedOptionByValue(options, direct);
+    if (directOption) {
+      return mode === "display"
+        ? mappedOptionDisplayValue(directOption)
+        : mappedOptionSubmitValue(directOption);
     }
+    return direct;
+  }
+  const mappedOption = findMappedOptionByMapping(
+    options,
+    inputData,
+    (targetId) => keyById.get(targetId) ?? targetId,
+  );
+  if (mappedOption) {
+    return mode === "display"
+      ? mappedOptionDisplayValue(mappedOption)
+      : mappedOptionSubmitValue(mappedOption);
   }
   return inputData[fieldKey(field)];
 };
 
-export const getVisibleSchemaInputs = (schema: unknown, inputData: JsonRecord): DisplayInput[] => {
+const schemaInputs = (
+  schema: unknown,
+  inputData: JsonRecord,
+  mode: "display" | "submit",
+): DisplayInput[] => {
   const fields = fieldsOf(schema);
   const keyById = fields.reduce<Map<string, string>>((map, field) => {
     const id = getString(field.id);
@@ -66,16 +87,19 @@ export const getVisibleSchemaInputs = (schema: unknown, inputData: JsonRecord): 
     if (!key) return items;
     const value =
       getString(field.kind) === "mapped-category"
-        ? mappedCategoryValue(field, inputData, keyById)
+        ? mappedCategoryValue(field, inputData, keyById, mode)
         : inputData[key];
     items.push({ key, label: getString(field.label) ?? key, value });
     return items;
   }, []);
 };
 
+export const getVisibleSchemaInputs = (schema: unknown, inputData: JsonRecord): DisplayInput[] =>
+  schemaInputs(schema, inputData, "display");
+
 export const getSchemaRunPrefillInputs = (schema: unknown, inputData: JsonRecord): JsonRecord =>
   Object.fromEntries(
-    getVisibleSchemaInputs(schema, inputData).map((input) => [input.key, input.value]),
+    schemaInputs(schema, inputData, "submit").map((input) => [input.key, input.value]),
   );
 
 export const getVisibleSchemaInputRecord = (schema: unknown, inputData: JsonRecord): JsonRecord =>

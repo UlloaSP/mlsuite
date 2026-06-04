@@ -60,6 +60,11 @@ export const getPredictionRun = (runId: string): Promise<PredictionRunDto> =>
 export const getPredictionRuns = (versionId: string): Promise<PredictionRunDto[]> =>
   appFetch<PredictionRunDto[]>(`/api/schema-versions/${encodeURIComponent(versionId)}/runs`);
 
+export const getLastPredictionRunId = async (): Promise<number> => {
+  const dto = await appFetch<{ lastId: number }>("/api/prediction-runs/last-id");
+  return Number(dto.lastId ?? 0);
+};
+
 export const createPredictionResultFeedback = (
   req: CreatePredictionResultFeedbackRequest,
 ): Promise<PredictionResultFeedbackDto> =>

@@ -176,6 +176,14 @@ class SchemaFlowServiceTest {
     }
 
     @Test
+    void getLastPredictionRunId_ReturnsRepositoryMaxAfterOperateCheck() {
+        when(runRepository.findLastPredictionRunId()).thenReturn(41L);
+
+        assertEquals(41L, runService.getLastPredictionRunId(7L));
+        verify(authorizationService).requireOrganizationOperate(7L, 41L);
+    }
+
+    @Test
     void createFeedback_UpsertsResultFeedback() {
         PredictionResult result = predictionResult();
         when(resultRepository.findByIdAndOrganizationId(77L, 41L)).thenReturn(Optional.of(result));

@@ -5,13 +5,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig, SubmitRequest, Transport } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../config/runtimeConfig";
-import { type JsonRecord, type PredictionPayloadField, getString, isRecord } from "./shared";
+import { type JsonRecord, type PredictionPayloadField, isRecord } from "./shared";
 import { toLegacyReportPayload } from "./report-normalization";
 import { normalizeAnalyzerPredictionResult } from "./analyzer-result-normalization";
 import type { CatalogReportDefinition } from "./custom-report";
 import { fetchSchemaCustomReports } from "./schema-run-custom-report-fetch";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
 import { mappingSourceForReport, reportContextKey } from "./schema-run-report-mapping";
+import { toCanonicalPayload, toVisiblePayload } from "./schema-run-payload";
 
 type SchemaRunBinding = {
   modelId: string;
@@ -20,68 +21,6 @@ type SchemaRunBinding = {
   outputMapping?: JsonRecord;
   pluginPolicy?: JsonRecord | null;
 };
-
-const hasMappedOptions = (field: PredictionPayloadField): boolean =>
-  Array.isArray((field as Record<string, unknown>).options) &&
-  ((field as Record<string, unknown>).options as unknown[]).some(
-    (option) => isRecord(option) && isRecord(option.mapping),
-  );
-
-const shouldInclude = (field: PredictionPayloadField): boolean =>
-  field.includeInSubmission !== false &&
-  !(field.kind === "mapped-category" && hasMappedOptions(field));
-
-const expandMappedCategoryValues = (
-  serializedValues: Record<string, unknown>,
-  fields: readonly PredictionPayloadField[],
-): Record<string, unknown> => {
-  const values = { ...serializedValues };
-  fields.forEach((field) => {
-    const selectedValue =
-      field.id in serializedValues
-        ? serializedValues[field.id]
-        : (field as Record<string, unknown>).defaultValue;
-    if (field.kind !== "mapped-category" || selectedValue === undefined) return;
-    const options = Array.isArray((field as Record<string, unknown>).options)
-      ? ((field as Record<string, unknown>).options as unknown[]).filter(isRecord)
-      : [];
-    values[field.id] = selectedValue;
-    const selected = options.find((option) => String(option.value) === String(selectedValue));
-    if (!isRecord(selected?.mapping)) return;
-    Object.entries(selected.mapping).forEach(([targetFieldId, mappedValue]) => {
-      values[targetFieldId] = mappedValue;
-    });
-  });
-  return values;
-};
-
-const toCanonicalPayload = (
-  serializedValues: Record<string, unknown>,
-  fields: readonly PredictionPayloadField[],
-): JsonRecord => {
-  const expandedValues = expandMappedCategoryValues(serializedValues, fields);
-  return fields.reduce<JsonRecord>((payload, field) => {
-    if (shouldInclude(field) && field.id in expandedValues) {
-      payload[getString(field.label) ?? field.id] = expandedValues[field.id];
-    }
-    return payload;
-  }, {});
-};
-
-const toVisiblePayload = (
-  serializedValues: Record<string, unknown>,
-  fields: readonly PredictionPayloadField[],
-): JsonRecord =>
-  fields.reduce<JsonRecord>((payload, field) => {
-    const value =
-      field.id in serializedValues
-        ? serializedValues[field.id]
-        : (field as Record<string, unknown>).defaultValue;
-    if ((field as Record<string, unknown>).hidden !== true && value !== undefined) {
-      payload[getString(field.label) ?? field.id] = value;
-    }
-    return payload;
-  }, {});
 
 const applyInputMapping = (canonical: JsonRecord, mapping?: JsonRecord): JsonRecord => {
   if (!mapping || Object.keys(mapping).length === 0) {
@@ -121,9 +60,21 @@ const runBinding = async (
   reports: readonly ReportConfig[],
 ) => {
   const modelInput = applyInputMapping(canonical, binding.inputMapping);
-  schemaRunDebug("transport.model.start", { modelId: binding.modelId, signatureId: binding.signatureId, modelInputKeys: Object.keys(modelInput), requestedReports: reports.map((report) => ({ id: report.id, kind: report.kind, source: report.source })) });
+  schemaRunDebug("transport.model.start", {
+    modelId: binding.modelId,
+    signatureId: binding.signatureId,
+    modelInputKeys: Object.keys(modelInput),
+    requestedReports: reports.map((report) => ({
+      id: report.id,
+      kind: report.kind,
+      source: report.source,
+    })),
+  });
   const formData = new FormData();
-  formData.set("data", new File([JSON.stringify(modelInput)], "data.json", { type: "application/json" }));
+  formData.set(
+    "data",
+    new File([JSON.stringify(modelInput)], "data.json", { type: "application/json" }),
+  );
   try {
     const response = await fetch(
       `${getBackendBaseUrl()}/api/analyzer/predictions?modelId=${binding.modelId}`,
@@ -137,7 +88,11 @@ const runBinding = async (
         modelInput,
         reports,
       });
-      schemaRunDebug("transport.model.success", { modelId: binding.modelId, reportKeys: isRecord(normalized.raw.reports) ? Object.keys(normalized.raw.reports) : [], meta: normalized.meta });
+      schemaRunDebug("transport.model.success", {
+        modelId: binding.modelId,
+        reportKeys: isRecord(normalized.raw.reports) ? Object.keys(normalized.raw.reports) : [],
+        meta: normalized.meta,
+      });
       return {
         modelId: binding.modelId,
         signatureId: binding.signatureId,
@@ -146,18 +101,29 @@ const runBinding = async (
         status: "SUCCESS" as const,
       };
     }
-    schemaRunDebug("transport.model.failed-response", { modelId: binding.modelId, status: response.status, statusText: response.statusText, parsed });
+    schemaRunDebug("transport.model.failed-response", {
+      modelId: binding.modelId,
+      status: response.status,
+      statusText: response.statusText,
+      parsed,
+    });
     return {
       modelId: binding.modelId,
       signatureId: binding.signatureId,
       modelInput,
       output: failureOutput(binding.modelId, modelInput),
       status: "FAILED" as const,
-      errorMessage: isRecord(parsed) && typeof parsed.message === "string" ? parsed.message : response.statusText,
+      errorMessage:
+        isRecord(parsed) && typeof parsed.message === "string"
+          ? parsed.message
+          : response.statusText,
       errorJson: isRecord(parsed) ? parsed : { raw: parsed },
     };
   } catch (error) {
-    schemaRunDebugError("transport.model.exception", error, { modelId: binding.modelId, signatureId: binding.signatureId });
+    schemaRunDebugError("transport.model.exception", error, {
+      modelId: binding.modelId,
+      signatureId: binding.signatureId,
+    });
     return {
       modelId: binding.modelId,
       signatureId: binding.signatureId,
@@ -196,39 +162,56 @@ const buildReports = (
   bindings: readonly SchemaRunBinding[],
   reports: readonly ReportConfig[],
 ): { reports: JsonRecord; reportContextById: JsonRecord } => {
-  return results.reduce<{ reports: JsonRecord; reportContextById: JsonRecord }>((payload, result) => {
-    if (result.status !== "SUCCESS") return payload;
-    const binding = bindings.find(
-      (item) => item.modelId === result.modelId && item.signatureId === result.signatureId,
-    );
-    if (!binding || !isRecord(binding.outputMapping)) {
-      schemaRunDebug("transport.reports.no-binding-or-mapping", { modelId: result.modelId, signatureId: result.signatureId, hasBinding: Boolean(binding) });
+  return results.reduce<{ reports: JsonRecord; reportContextById: JsonRecord }>(
+    (payload, result) => {
+      if (result.status !== "SUCCESS") return payload;
+      const binding = bindings.find(
+        (item) => item.modelId === result.modelId && item.signatureId === result.signatureId,
+      );
+      if (!binding || !isRecord(binding.outputMapping)) {
+        schemaRunDebug("transport.reports.no-binding-or-mapping", {
+          modelId: result.modelId,
+          signatureId: result.signatureId,
+          hasBinding: Boolean(binding),
+        });
+        return payload;
+      }
+      reports.forEach((report) => {
+        const canonicalId = reportKey(report);
+        if (!canonicalId) return;
+        const source = mappingSourceForReport(binding.outputMapping, canonicalId);
+        if (!source) {
+          schemaRunDebug("transport.reports.no-source", {
+            modelId: result.modelId,
+            reportId: canonicalId,
+            mappingKeys: Object.keys(binding.outputMapping ?? {}),
+          });
+          return;
+        }
+        const reportPayload = findReportPayload(report, source, result.output);
+        const meta = isRecord(result.output.meta) ? result.output.meta : {};
+        payload.reportContextById[reportContextKey(canonicalId)] = {
+          modelId: result.modelId,
+          signatureId: result.signatureId,
+          modelInput: result.modelInput,
+          meta,
+          raw: result.output,
+        };
+        if (reportPayload !== undefined) {
+          payload.reports[reportContextKey(canonicalId)] = reportPayload;
+        }
+        schemaRunDebug("transport.reports.mapped", {
+          modelId: result.modelId,
+          reportId: canonicalId,
+          contextKey: reportContextKey(canonicalId),
+          source,
+          hasPayload: reportPayload !== undefined,
+        });
+      });
       return payload;
-    }
-    reports.forEach((report) => {
-      const canonicalId = reportKey(report);
-      if (!canonicalId) return;
-      const source = mappingSourceForReport(binding.outputMapping, canonicalId);
-      if (!source) {
-        schemaRunDebug("transport.reports.no-source", { modelId: result.modelId, reportId: canonicalId, mappingKeys: Object.keys(binding.outputMapping ?? {}) });
-        return;
-      }
-      const reportPayload = findReportPayload(report, source, result.output);
-      const meta = isRecord(result.output.meta) ? result.output.meta : {};
-      payload.reportContextById[reportContextKey(canonicalId)] = {
-        modelId: result.modelId,
-        signatureId: result.signatureId,
-        modelInput: result.modelInput,
-        meta,
-        raw: result.output,
-      };
-      if (reportPayload !== undefined) {
-        payload.reports[reportContextKey(canonicalId)] = reportPayload;
-      }
-      schemaRunDebug("transport.reports.mapped", { modelId: result.modelId, reportId: canonicalId, contextKey: reportContextKey(canonicalId), source, hasPayload: reportPayload !== undefined });
-    });
-    return payload;
-  }, { reports: {}, reportContextById: {} });
+    },
+    { reports: {}, reportContextById: {} },
+  );
 };
 
 export const createSchemaRunTransport = (
@@ -239,12 +222,34 @@ export const createSchemaRunTransport = (
   async submit(request: SubmitRequest) {
     const canonical = toCanonicalPayload(request.serializedValues, fields);
     const inputData = toVisiblePayload(request.serializedValues, fields);
-    schemaRunDebug("transport.submit.start", { serializedKeys: Object.keys(request.serializedValues), canonicalKeys: Object.keys(canonical), visibleKeys: Object.keys(inputData), bindings: bindings.map((binding) => ({ modelId: binding.modelId, signatureId: binding.signatureId, outputMappingKeys: Object.keys(binding.outputMapping ?? {}) })), reports: request.reports.map((report) => ({ id: report.id, kind: report.kind, source: report.source })) });
+    schemaRunDebug("transport.submit.start", {
+      serializedKeys: Object.keys(request.serializedValues),
+      canonicalKeys: Object.keys(canonical),
+      visibleKeys: Object.keys(inputData),
+      bindings: bindings.map((binding) => ({
+        modelId: binding.modelId,
+        signatureId: binding.signatureId,
+        outputMappingKeys: Object.keys(binding.outputMapping ?? {}),
+      })),
+      reports: request.reports.map((report) => ({
+        id: report.id,
+        kind: report.kind,
+        source: report.source,
+      })),
+    });
     const initialResults = await Promise.all(
       bindings.map((binding) => runBinding(binding, canonical, request.reports)),
     );
     const built = buildReports(initialResults, bindings, request.reports);
-    schemaRunDebug("transport.submit.after-models", { statuses: initialResults.map((result) => ({ modelId: result.modelId, signatureId: result.signatureId, status: result.status })), reportKeys: Object.keys(built.reports), contextKeys: Object.keys(built.reportContextById) });
+    schemaRunDebug("transport.submit.after-models", {
+      statuses: initialResults.map((result) => ({
+        modelId: result.modelId,
+        signatureId: result.signatureId,
+        status: result.status,
+      })),
+      reportKeys: Object.keys(built.reports),
+      contextKeys: Object.keys(built.reportContextById),
+    });
     const results = await fetchSchemaCustomReports({
       request,
       reports: request.reports,
@@ -253,7 +258,15 @@ export const createSchemaRunTransport = (
       bindings,
       definitions: customReportDefinitions,
     });
-    schemaRunDebug("transport.submit.after-custom-reports", { reportKeys: Object.keys(built.reports), contextKeys: Object.keys(built.reportContextById), statuses: results.map((result) => ({ modelId: result.modelId, signatureId: result.signatureId, status: result.status })) });
+    schemaRunDebug("transport.submit.after-custom-reports", {
+      reportKeys: Object.keys(built.reports),
+      contextKeys: Object.keys(built.reportContextById),
+      statuses: results.map((result) => ({
+        modelId: result.modelId,
+        signatureId: result.signatureId,
+        status: result.status,
+      })),
+    });
     const meta = {
       backendUrl: getBackendBaseUrl(),
       backendFieldValues: canonical,

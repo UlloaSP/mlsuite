@@ -4,6 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { JsonRecord, SchemaVersionDto } from "./types";
+import {
+  findMappedOptionByValue,
+  mappedCategoryOptions,
+} from "../app/utils/mlform/mapped-category-options";
 
 type FieldRecord = JsonRecord & {
   id?: string;
@@ -64,7 +68,7 @@ export const toSchemaRunSerializedValues = (
     if (!key || !(key in inputs)) return;
     const value = inputs[key];
     if (field.kind === "mapped-category" && Array.isArray(field.options)) {
-      const option = field.options.find((item) => String(item.value) === String(value));
+      const option = findMappedOptionByValue(mappedCategoryOptions(field), value);
       if (option?.mapping && isRecord(option.mapping)) {
         Object.entries(option.mapping).forEach(([targetFieldId, mappedValue]) => {
           if (targetFieldId in values) return;

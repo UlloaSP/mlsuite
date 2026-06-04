@@ -11,4 +11,6 @@ public interface PredictionRunUseCase {
     List<PredictionRun> listRuns(Long userId, Long schemaVersionId);
 
     PredictionRun getRun(Long userId, Long runId);
+
+    Long getLastPredictionRunId(Long userId);
 }

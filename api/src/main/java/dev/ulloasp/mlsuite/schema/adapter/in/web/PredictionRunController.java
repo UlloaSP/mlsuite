@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunSequenceDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
@@ -47,6 +48,12 @@ public class PredictionRunController {
         return ResponseEntity.ok(predictionRunUseCase.listRuns(userId(authentication), versionId).stream()
                 .map(this::toDto)
                 .toList());
+    }
+
+    @GetMapping("/prediction-runs/last-id")
+    public ResponseEntity<PredictionRunSequenceDto> lastId(Authentication authentication) {
+        return ResponseEntity.ok(new PredictionRunSequenceDto(
+                predictionRunUseCase.getLastPredictionRunId(userId(authentication))));
     }
 
     @GetMapping("/prediction-runs/{runId}")
