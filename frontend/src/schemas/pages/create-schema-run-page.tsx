@@ -4,21 +4,21 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
 import { isRecord } from "../../app/utils/mlform/shared";
 import { SchemaRunForm } from "../components/SchemaRunForm";
-import { SchemaRunSaveModal, type PendingFeedback } from "../components/SchemaRunSaveModal";
+import { SchemaRunSaveModal } from "../components/SchemaRunSaveModal";
 import { createPredictionResultFeedback } from "../api/schemaService";
 import { useCreatePredictionRunMutation, usePredictionRun, useSchemaVersion } from "../hooks";
 import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
 import { mergeSchemaRunInputs } from "../schema-run-display";
+import type { PendingFeedback } from "../schema-run-save-feedback";
 import type { CreatePredictionRunRequest, JsonRecord } from "../types";
 
 export function CreateSchemaRunPage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();
   const { data: version, isLoading } = useSchemaVersion(versionId);
@@ -53,9 +53,7 @@ export function CreateSchemaRunPage() {
 
   const handleResultUpdate = useCallback(
     (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => {
-      setPendingRun((current) =>
-        current ? { inputData, raw, reportsPending } : current,
-      );
+      setPendingRun((current) => (current ? { inputData, raw, reportsPending } : current));
     },
     [],
   );
@@ -68,8 +66,7 @@ export function CreateSchemaRunPage() {
           feedback.map((item) => {
             const result = run.results.find(
               (candidate) =>
-                candidate.modelId === item.modelId &&
-                candidate.signatureId === item.signatureId,
+                candidate.modelId === item.modelId && candidate.signatureId === item.signatureId,
             );
             if (!result) return Promise.resolve();
             return createPredictionResultFeedback({
@@ -80,14 +77,15 @@ export function CreateSchemaRunPage() {
             });
           }),
         );
-        navigate(`/schemas/${schemaId}/versions/${versionId}/runs/${run.id}`);
+        setPendingRun(null);
+        toast.success("Run saved");
       } catch (error) {
         toast.error("Run persistence failed", {
           description: error instanceof Error ? error.message : String(error),
         });
       }
     },
-    [createRun, navigate, schemaId, versionId],
+    [createRun],
   );
 
   return (

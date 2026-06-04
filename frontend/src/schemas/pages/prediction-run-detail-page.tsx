@@ -14,6 +14,7 @@ import { SchemaRunFeedbackQuestionnaire } from "../components/SchemaRunFeedbackQ
 import { SchemaRunDetailMetrics } from "../components/SchemaRunDetailMetrics";
 import { SchemaRunReportsPanel } from "../components/SchemaRunReportsPanel";
 import { mergeSchemaRunInputs } from "../schema-run-display";
+import { isSchemaFeedbackComplete } from "../schema-feedback-state";
 import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
@@ -34,7 +35,7 @@ export function PredictionRunDetailPage() {
   const feedbackStatus = useMemo(() => {
     if (!run || !executableVersion) return "PENDING" as const;
     const steps = buildSchemaFeedbackSteps(executableVersion, run.results, runFeedback.data);
-    return steps.length > 0 && steps.every((step) => step.feedback) ? "COMPLETED" : "PENDING";
+    return isSchemaFeedbackComplete(steps) ? "COMPLETED" : "PENDING";
   }, [executableVersion, run, runFeedback.data]);
 
   return (
@@ -45,7 +46,9 @@ export function PredictionRunDetailPage() {
           backHref={`/schemas/${schemaId}/versions/${versionId}/runs`}
           aside={
             <div className="flex flex-wrap gap-3">
-              <Link to={`/schemas/${schemaId}/versions/${versionId}/runs/create?fromRunId=${runId}`}>
+              <Link
+                to={`/schemas/${schemaId}/versions/${versionId}/runs/create?fromRunId=${runId}`}
+              >
                 <AppButton>
                   <RotateCcw size={16} />
                   Predict again

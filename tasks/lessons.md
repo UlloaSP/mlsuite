@@ -282,3 +282,15 @@
 - Rule: schema plugin reports are best-effort per model binding; skipped payloads are internal control state and must not produce UI reports, feedback steps, exports, or save blockers.
 - Correction: modal/history can persist plugin placeholder payloads that are not explicit skipped sentinels.
 - Rule: schema custom reports need a display-level renderability guard; empty payloads must be hidden before reports/feedback/export consume them.
+- Correction: schema detail could allow partial feedback save while history required all fields for completed.
+- Rule: if completion requires every questionnaire field, the completion-context form must mark every field required; optional/partial behavior belongs only to save-modal draft persistence.
+- Correction: schema CSV feedback columns drifted from signature export naming.
+- Rule: schema-run export must reuse signature-style column semantics: `output.<reportId>.predicted`, `output.<reportId>.feedback.<reviewer>`, `report.<reportId>.content`, and `report.<reportId>.<fieldId>.<reviewer>`.
+- Correction: hiding the save-modal questionnaire footer removed wizard navigation.
+- Rule: optional save-modal feedback must keep MLForm wizard navigation visible; disable/ignore questionnaire submit instead of hiding the whole actions footer.
+- Correction: schema external review looked like a separate product from signature review.
+- Rule: schema and signature external review must share the same shell/tray/accordion structure; schema-specific data should adapt into shared review primitives.
+- Correction: schema external review side context showed empty generic content and lost classifier percentages.
+- Rule: review side context and output accordions must derive from normalized runtime payload, preserving prediction labels plus flat or nested probability arrays.
+- Correction: long schema input names overlapped values in external review.
+- Rule: review input rows must be min-width-safe and wrap technical field names; fixed label columns are unsafe for schema/model feature keys.

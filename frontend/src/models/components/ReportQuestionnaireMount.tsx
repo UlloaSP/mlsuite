@@ -32,7 +32,7 @@ type ReportQuestionnaireMountProps = {
   initialValues: Record<string, unknown>;
   editable: boolean;
   theme: "light" | "dark";
-  mode?: "embedded" | "standalone";
+  mode?: "embedded" | "navigation" | "standalone";
   onValuesChange?: (values: Record<string, unknown>) => void;
   onStepChange?: (stepId: string | null) => void;
   transport?: Transport;
@@ -46,6 +46,15 @@ type ReportQuestionnaireMountProps = {
 const buildEmbeddedStyles = (singleStep: boolean): string => `
 	.actions { display: none !important; }
 	${singleStep ? "mlf-step-indicator { display: none !important; } .pane-header { gap: 0 !important; }" : ""}
+`;
+
+const NAVIGATION_ONLY_STYLES = `
+	.actions button[type="submit"],
+	.actions button[data-action="submit"],
+	.actions .submit {
+		opacity: 0.45 !important;
+		pointer-events: none !important;
+	}
 `;
 
 const getMountedView = (mounted: MountedForm): FormViewController | undefined =>
@@ -70,7 +79,7 @@ type MountQuestionnaireHostOptions = {
   editable: boolean;
   initialValues: Record<string, unknown>;
   labels?: ReportQuestionnaireMountProps["labels"];
-  mode: "embedded" | "standalone";
+  mode: "embedded" | "navigation" | "standalone";
   onMounted: (mounted: MountedForm | null) => void;
   onStepChange: (stepId: string | null) => void;
   onValuesChange: (values: Record<string, unknown>) => void;
@@ -115,6 +124,11 @@ const mountQuestionnaireHost = ({
     if (mode === "embedded") {
       const style = document.createElement("style");
       style.textContent = buildEmbeddedStyles(effectiveSchema.steps.length === 1);
+      mounted.host.shadowRoot?.append(style);
+    }
+    if (mode === "navigation") {
+      const style = document.createElement("style");
+      style.textContent = NAVIGATION_ONLY_STYLES;
       mounted.host.shadowRoot?.append(style);
     }
     if (square) {
@@ -222,16 +236,7 @@ export function ReportQuestionnaireMount({
       theme,
       transport,
     });
-  }, [
-    effectiveSchema,
-    editable,
-    labels,
-    mode,
-    serializedSchema,
-    square,
-    theme,
-    transport,
-  ]);
+  }, [effectiveSchema, editable, labels, mode, serializedSchema, square, theme, transport]);
 
   return (
     <div className="space-y-3">

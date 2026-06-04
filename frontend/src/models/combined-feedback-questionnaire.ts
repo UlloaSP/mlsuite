@@ -1,8 +1,5 @@
 import type { FieldConfig, SubmitRequest, Transport } from "mlform/runtime";
-import {
-  buildQuestionnaireFormSchema,
-  type QuestionnaireSchema,
-} from "./questionnaire-schema";
+import { buildQuestionnaireFormSchema, type QuestionnaireSchema } from "./questionnaire-schema";
 
 export type CombinedFeedbackStep<TKind extends string = string, TFeedback = unknown> = {
   id: string;
@@ -15,6 +12,10 @@ export type CombinedFeedbackStep<TKind extends string = string, TFeedback = unkn
   feedback?: TFeedback;
 };
 
+type BuildCombinedFeedbackQuestionnaireOptions = {
+  required?: boolean;
+};
+
 const fieldId = (field: FieldConfig, fallback: string): string =>
   typeof field.id === "string" && field.id.trim().length > 0 ? field.id : fallback;
 
@@ -22,6 +23,7 @@ const prefix = (stepId: string, id: string): string => `${stepId}-${id}`;
 
 export const buildCombinedFeedbackQuestionnaire = (
   steps: readonly CombinedFeedbackStep[],
+  options: BuildCombinedFeedbackQuestionnaireOptions = {},
 ): { schema: QuestionnaireSchema; initialValues: Record<string, unknown> } => {
   const initialValues: Record<string, unknown> = {};
   const schema: QuestionnaireSchema = {
@@ -33,7 +35,7 @@ export const buildCombinedFeedbackQuestionnaire = (
           if (sourceId in step.initialValues) {
             initialValues[nextId] = step.initialValues[sourceId];
           }
-          return { ...field, id: nextId };
+          return { ...field, id: nextId, required: options.required ? true : field.required };
         },
       );
       return {

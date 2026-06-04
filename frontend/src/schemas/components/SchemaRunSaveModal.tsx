@@ -10,13 +10,14 @@ import { useMemo, useRef, useState } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
 import { AppButton, AppIconButton, AppTextField } from "../../app/components/ui-controls";
+import { buildCombinedFeedbackQuestionnaire } from "../../models/combined-feedback-questionnaire";
 import {
-  buildCombinedFeedbackQuestionnaire,
-  valuesForCombinedStep,
-} from "../../models/combined-feedback-questionnaire";
-import { ReportQuestionnaireMount, type ReportQuestionnaireMountHandle } from "../../models/components/ReportQuestionnaireMount";
+  ReportQuestionnaireMount,
+  type ReportQuestionnaireMountHandle,
+} from "../../models/components/ReportQuestionnaireMount";
 import type { CreatePredictionRunRequest, JsonRecord, SchemaVersionDto } from "../types";
 import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
+import { buildPendingSchemaRunFeedback, type PendingFeedback } from "../schema-run-save-feedback";
 import { mergeSchemaRunInputs } from "../schema-run-display";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 import { SchemaRunInputsPanel } from "./SchemaRunInputsPanel";
@@ -40,14 +41,6 @@ type Props = {
 
 const toResults = (raw: JsonRecord): CreatePredictionRunRequest["results"] =>
   Array.isArray(raw.results) ? (raw.results as CreatePredictionRunRequest["results"]) : [];
-
-export type PendingFeedback = {
-  modelId: string;
-  signatureId: string;
-  type: "OUTPUT" | "EXPLANATION";
-  order: number;
-  value: Record<string, unknown>;
-};
 
 export function SchemaRunSaveModal({
   open,
@@ -88,19 +81,8 @@ export function SchemaRunSaveModal({
 
   const handleSave = async () => {
     if (!pendingRun) return;
-    const values = feedbackSteps.length > 0
-      ? await questionnaireRef.current?.submit() ?? {}
-      : {};
-    const feedback = feedbackSteps.map((step): PendingFeedback => {
-      const result = displayResults.find((item) => item.id === step.resultId);
-      return {
-        modelId: result?.modelId ?? "",
-        signatureId: result?.signatureId ?? "",
-        type: step.type,
-        order: step.order,
-        value: valuesForCombinedStep(values, step),
-      };
-    });
+    const values = feedbackSteps.length > 0 ? (questionnaireRef.current?.getValues() ?? {}) : {};
+    const feedback = buildPendingSchemaRunFeedback(feedbackSteps, values, displayResults);
     onSave({ name: name.trim(), inputData: pendingRun.inputData, results }, feedback);
   };
 
@@ -152,11 +134,15 @@ export function SchemaRunSaveModal({
                       className="flex-1"
                     >
                       <Save size={18} />
-                      <span>{pendingRun.reportsPending ? "Waiting reports" : "Save Prediction"}</span>
+                      <span>
+                        {pendingRun.reportsPending ? "Waiting reports" : "Save Prediction"}
+                      </span>
                     </AppButton>
                   </div>
                   {pendingRun.reportsPending ? (
-                    <AppCopy>Plugin reports still running. Save unlocks when reports finish.</AppCopy>
+                    <AppCopy>
+                      Plugin reports still running. Save unlocks when reports finish.
+                    </AppCopy>
                   ) : null}
                 </AppPanel>
 
@@ -174,7 +160,7 @@ export function SchemaRunSaveModal({
                       initialValues={feedbackQuestionnaire.initialValues}
                       editable
                       theme={theme}
-                      mode="standalone"
+                      mode="navigation"
                     />
                   </AppPanel>
                 ) : null}

@@ -7,8 +7,15 @@ import { Play } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { AppButton } from "../../app/components/ui-controls";
-import { AppEmptyState, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
+import {
+  AppEmptyState,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSurface,
+} from "../../app/components/ui";
 import { SchemaRunHistoryTable } from "../components/SchemaRunHistoryTable";
+import { SchemaRunShareButton } from "../components/SchemaRunShareButton";
 import {
   SchemaRunHistoryToolbar,
   type SchemaRunDateRangeFilter,
@@ -17,6 +24,7 @@ import {
 } from "../components/SchemaRunHistoryToolbar";
 import { SchemaRunBulkUploadButton } from "../components/SchemaRunBulkUploadButton";
 import { usePredictionRuns, usePredictionRunsFeedback, useSchemaVersion } from "../hooks";
+import { isSchemaFeedbackComplete } from "../schema-feedback-state";
 import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
 import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
 import type { PredictionRunDto } from "../types";
@@ -56,7 +64,7 @@ export function SchemaRunHistoryPage() {
           run.results.some((result) => result.id === item.resultId),
         );
         const steps = buildSchemaFeedbackSteps(executableVersion, run.results, feedback);
-        const complete = steps.length > 0 && steps.every((step) => step.feedback);
+        const complete = isSchemaFeedbackComplete(steps);
         return [run.id, complete ? "COMPLETED" : "PENDING"] as const;
       }),
     );
@@ -80,10 +88,15 @@ export function SchemaRunHistoryPage() {
         <AppPageHeader
           title="Inference History"
           backHref={`/schemas/${schemaId}`}
-          description={executableVersion ? `${executableVersion.name} · v${executableVersion.version}` : undefined}
+          description={
+            executableVersion
+              ? `${executableVersion.name} · v${executableVersion.version}`
+              : undefined
+          }
           aside={
             executableVersion ? (
               <>
+                <SchemaRunShareButton runs={runs} version={executableVersion} />
                 <SchemaRunBulkUploadButton version={executableVersion} />
                 <Link to={`/schemas/${schemaId}/versions/${versionId}/runs/create`}>
                   <AppButton>

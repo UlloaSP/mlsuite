@@ -1,0 +1,65 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import { describe, expect, test } from "vite-plus/test";
+import { buildSchemaFeedbackSteps } from "../src/schemas/schema-feedback-steps";
+
+describe("schema review output context", () => {
+  test("describes classifier feedback with prediction and probability", () => {
+    const steps = buildSchemaFeedbackSteps(
+      {
+        id: "version-1",
+        schemaId: "schema-1",
+        version: 1,
+        name: "Risk",
+        createdAt: "2026-06-04T00:00:00Z",
+        bindings: [
+          {
+            id: "binding-1",
+            schemaVersionId: "version-1",
+            modelId: "model-1",
+            signatureId: "signature-1",
+            inputMapping: {},
+            outputMapping: { report_1: "predicted_class" },
+          },
+        ],
+        formSchema: {
+          fields: [],
+          reports: [
+            {
+              id: "report_1",
+              label: "Predicted class",
+              kind: "classifier",
+              labels: ["Low", "High"],
+            },
+          ],
+        },
+      },
+      [
+        {
+          id: "result-1",
+          runId: "run-1",
+          modelId: "model-1",
+          signatureId: "signature-1",
+          status: "SUCCESS",
+          createdAt: "2026-06-04T00:00:00Z",
+          modelInput: {},
+          output: {
+            outputs: [
+              {
+                type: "classifier",
+                prediction: 1,
+                probabilities: [0.2, 0.8],
+              },
+            ],
+          },
+        },
+      ],
+      [],
+    );
+
+    expect(steps[0]?.description).toBe("Prediction result: High · 80.00%");
+  });
+});

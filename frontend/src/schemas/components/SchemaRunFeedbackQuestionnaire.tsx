@@ -17,7 +17,14 @@ import {
 } from "../../models/combined-feedback-questionnaire";
 import { ReportFeedbackSummary } from "../../models/components/ReportFeedbackSummary";
 import { ReportQuestionnaireMount } from "../../models/components/ReportQuestionnaireMount";
-import { useCreatePredictionResultFeedbackMutation, useUpdatePredictionResultFeedbackMutation } from "../hooks";
+import {
+  useCreatePredictionResultFeedbackMutation,
+  useUpdatePredictionResultFeedbackMutation,
+} from "../hooks";
+import {
+  isCombinedSchemaFeedbackComplete,
+  isSchemaFeedbackComplete,
+} from "../schema-feedback-state";
 import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
 import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../types";
 
@@ -38,9 +45,14 @@ export function SchemaRunFeedbackQuestionnaire({ run, version, feedback, onSaved
     () => buildSchemaFeedbackSteps(version, run.results, feedback),
     [feedback, run.results, version],
   );
-  const combined = useMemo(() => buildCombinedFeedbackQuestionnaire(steps), [steps]);
-  const complete = steps.length > 0 && steps.every((step) => step.feedback);
-  const displayComplete = complete || savedValues !== null;
+  const combined = useMemo(
+    () => buildCombinedFeedbackQuestionnaire(steps, { required: true }),
+    [steps],
+  );
+  const complete = isSchemaFeedbackComplete(steps);
+  const savedValuesComplete =
+    savedValues !== null && isCombinedSchemaFeedbackComplete(steps, savedValues);
+  const displayComplete = complete || savedValuesComplete;
   const labels = useMemo(() => ({ submit: "Save feedback", submitting: "Saving feedback..." }), []);
   const transport = useMemo(
     () =>

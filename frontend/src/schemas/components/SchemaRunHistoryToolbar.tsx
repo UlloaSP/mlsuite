@@ -8,7 +8,6 @@ import { AppToolbar } from "../../app/components/ui";
 import { AppTextField } from "../../app/components/ui-controls";
 import type { PredictionRunStatus, PredictionRunDto, SchemaVersionDto } from "../types";
 import { SchemaRunExportButton } from "./SchemaRunExportButton";
-import { SchemaRunShareButton } from "./SchemaRunShareButton";
 
 export type SchemaRunStatusFilter = "all" | PredictionRunStatus;
 export type SchemaRunFeedbackStatusFilter = "all" | "COMPLETED" | "PENDING";
@@ -93,7 +92,6 @@ export function SchemaRunHistoryToolbar({
           </select>
         </label>
       </div>
-      <SchemaRunShareButton runs={runs} version={version} />
       <SchemaRunExportButton runs={runs} version={version} />
     </AppToolbar>
   );

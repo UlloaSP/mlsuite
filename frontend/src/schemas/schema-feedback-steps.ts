@@ -8,6 +8,7 @@ import { createOutputFeedbackQuestionnaire } from "../models/output-feedback-que
 import { getEffectiveFeedbackValues } from "../models/questionnaire-feedback";
 import type { QuestionnaireSchema } from "../models/questionnaire-schema";
 import { isBuiltinReportKind } from "../app/utils/mlform/builtin-registry";
+import { getFormattedReportContent } from "../models/report-feedback-utils";
 import { getSchemaResultReports } from "./schema-run-display";
 import type {
   PredictionResultDto,
@@ -18,10 +19,7 @@ import type {
 
 type FeedbackKind = "OUTPUT" | "EXPLANATION";
 
-export type SchemaFeedbackStep = CombinedFeedbackStep<
-  FeedbackKind,
-  PredictionResultFeedbackDto
-> & {
+export type SchemaFeedbackStep = CombinedFeedbackStep<FeedbackKind, PredictionResultFeedbackDto> & {
   resultId: string;
   type: PredictionResultFeedbackType;
 };
@@ -46,6 +44,29 @@ const fakeTarget = (order: number, value: unknown) =>
     order,
     value,
   }) as any;
+
+const displayRecord = (value: unknown): Record<string, unknown> => (isRecord(value) ? value : {});
+
+const formatProbability = (value: unknown): string | null =>
+  typeof value === "number" ? `${(value * 100).toFixed(2)}%` : null;
+
+const outputDescription = (payload: unknown): string => {
+  const record = displayRecord(payload);
+  const probabilities = Array.isArray(record.probabilities) ? record.probabilities : [];
+  const labels = Array.isArray(record.labels) ? record.labels : [];
+  const inferredIndex = probabilities.indexOf(Math.max(...probabilities));
+  const prediction = record.prediction ?? record.value ?? labels[inferredIndex] ?? payload;
+  const index = labels.findIndex((label) => String(label) === String(prediction));
+  const probability = formatProbability(index >= 0 ? probabilities[index] : undefined);
+  return probability
+    ? `Prediction result: ${String(prediction)} · ${probability}`
+    : `Prediction result: ${String(prediction)}`;
+};
+
+const reportDescription = (payload: unknown): string => {
+  const content = getFormattedReportContent(payload).join("\n\n");
+  return content ? `Prediction report:\n${content}` : "Prediction report";
+};
 
 export const feedbackKey = (
   resultId: string,
@@ -75,17 +96,17 @@ export const buildSchemaFeedbackSteps = (
       const isBuiltin = isBuiltinReportKind(display.kind);
       const explanationStep: SchemaFeedbackStep | null = questionnaire
         ? {
-          id: `result-${result.id}-report-${order}`,
-          kind: "EXPLANATION",
-          type: "EXPLANATION",
-          resultId: result.id,
-          order,
-          title: `${display.label} review`,
-          description: "Report feedback",
-          schema: questionnaire,
-          initialValues: getEffectiveFeedbackValues(reportFeedback, questionnaire),
-          feedback: reportFeedback,
-        }
+            id: `result-${result.id}-report-${order}`,
+            kind: "EXPLANATION",
+            type: "EXPLANATION",
+            resultId: result.id,
+            order,
+            title: `${display.label} review`,
+            description: reportDescription(display.payload),
+            schema: questionnaire,
+            initialValues: getEffectiveFeedbackValues(reportFeedback, questionnaire),
+            feedback: reportFeedback,
+          }
         : null;
       if (!isBuiltin) return explanationStep ? [explanationStep] : [];
       const outputSchema = createOutputFeedbackQuestionnaire(
@@ -100,7 +121,7 @@ export const buildSchemaFeedbackSteps = (
         resultId: result.id,
         order,
         title: display.label,
-        description: "Prediction result",
+        description: outputDescription(display.payload),
         schema: outputSchema,
         initialValues: getEffectiveFeedbackValues(outputFeedback, outputSchema),
         feedback: outputFeedback,

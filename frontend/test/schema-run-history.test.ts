@@ -5,14 +5,21 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test, vi } from "vite-plus/test";
 import { buildSchemaRunExport } from "../src/schemas/schema-run-export";
-import { getModelInputBulkSchema, toSchemaRunSerializedValues } from "../src/schemas/schema-run-bulk-inputs";
+import {
+  getModelInputBulkSchema,
+  toSchemaRunSerializedValues,
+} from "../src/schemas/schema-run-bulk-inputs";
 import { getSchemaRunPrefillInputs } from "../src/schemas/schema-run-display";
 import { createSchemaRunTransport } from "../src/app/utils/mlform/schema-run-transport";
 import {
   emptySchemaRunExportSelection,
   selectedSchemaRunExportData,
 } from "../src/schemas/components/schema-run-export-selection";
-import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../src/schemas/types";
+import type {
+  PredictionResultFeedbackDto,
+  PredictionRunDto,
+  SchemaVersionDto,
+} from "../src/schemas/types";
 
 const version: SchemaVersionDto = {
   id: "version-1",
@@ -81,7 +88,9 @@ const run: PredictionRunDto = {
 
 describe("schema run history helpers", () => {
   test("bulk schema exposes technical model inputs and hides mapped-category UI fields", () => {
-    const bulkSchema = getModelInputBulkSchema(version.formSchema) as { fields: Array<{ label: string }> };
+    const bulkSchema = getModelInputBulkSchema(version.formSchema) as {
+      fields: Array<{ label: string }>;
+    };
     expect(bulkSchema.fields.map((field) => field.label)).toEqual([
       "blood_group__A",
       "blood_group__B",
@@ -90,7 +99,9 @@ describe("schema run history helpers", () => {
   });
 
   test("serializes technical one-hot bulk input without mapped-category value", () => {
-    expect(toSchemaRunSerializedValues(version, { blood_group__A: 0, blood_group__B: 1, age: 52 })).toEqual({
+    expect(
+      toSchemaRunSerializedValues(version, { blood_group__A: 0, blood_group__B: 1, age: 52 }),
+    ).toEqual({
       blood_group__A: 0,
       blood_group__B: 1,
       age: 52,
@@ -111,11 +122,11 @@ describe("schema run history helpers", () => {
     expect(exported.content).toContain("input.model-1.blood_group__A");
     expect(exported.content).toContain("input.model-1.blood_group__B");
     expect(exported.content).not.toContain("Blood Group");
-    expect(exported.content).toContain("Predicted class");
+    expect(exported.content).toContain("output.report_1.predicted");
     expect(exported.content).toContain("High");
   });
 
-  test("exports schema feedback with technical one-hot inputs", () => {
+  test("exports schema output feedback with signature-style columns", () => {
     const feedback: PredictionResultFeedbackDto[] = [
       {
         id: "feedback-1",
@@ -129,7 +140,11 @@ describe("schema run history helpers", () => {
       },
     ];
     const exported = buildSchemaRunExport([run], version, feedback);
-    expect(exported.content).toContain("Predicted class.feedback.reviewer@example.com.assessment");
+    expect(exported.content).toContain("output.report_1.predicted");
+    expect(exported.content).toContain("output.report_1.feedback.reviewer@example.com");
+    expect(exported.content).not.toContain(
+      "Predicted class.feedback.reviewer@example.com.assessment",
+    );
     expect(exported.content).toContain("High");
     expect(exported.content).toContain("input.model-1.blood_group__A");
     expect(exported.content).toContain("input.model-1.blood_group__B");
@@ -196,7 +211,9 @@ describe("schema run history helpers", () => {
       reports: [],
     } as never);
 
-    expect((result as { meta: { backendFieldValues: Record<string, unknown> } }).meta.backendFieldValues).toEqual({
+    expect(
+      (result as { meta: { backendFieldValues: Record<string, unknown> } }).meta.backendFieldValues,
+    ).toEqual({
       blood_group__A: 0,
       blood_group__B: 1,
       age: 52,
@@ -221,7 +238,9 @@ describe("schema run history helpers", () => {
       reports: [],
     } as never);
 
-    expect((result as { meta: { backendFieldValues: Record<string, unknown> } }).meta.backendFieldValues).toEqual({
+    expect(
+      (result as { meta: { backendFieldValues: Record<string, unknown> } }).meta.backendFieldValues,
+    ).toEqual({
       blood_group__A: 0,
       blood_group__B: 1,
       age: 52,

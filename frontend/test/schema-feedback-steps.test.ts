@@ -1,8 +1,3 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 import { describe, expect, test } from "vite-plus/test";
 import { skippedSchemaReportPayload } from "../src/app/utils/mlform/schema-report-plugin-context";
 import { buildSchemaFeedbackSteps } from "../src/schemas/schema-feedback-steps";
@@ -118,9 +113,9 @@ describe("schema feedback steps", () => {
       ],
     };
 
-    expect(buildSchemaFeedbackSteps(customVersion, customRun.results, []).map((step) => step.type)).toEqual([
-      "EXPLANATION",
-    ]);
+    expect(
+      buildSchemaFeedbackSteps(customVersion, customRun.results, []).map((step) => step.type),
+    ).toEqual(["EXPLANATION"]);
   });
 
   test("does not create feedback steps for custom reports without questionnaire", () => {
@@ -214,9 +209,13 @@ describe("schema feedback steps", () => {
       ],
     };
 
-    expect(getSchemaResultReports(customVersion, customRun.results[0]!).map((report) => report.id)).toEqual(["tree_1"]);
+    expect(
+      getSchemaResultReports(customVersion, customRun.results[0]!).map((report) => report.id),
+    ).toEqual(["tree_1"]);
     expect(getSchemaResultReports(customVersion, customRun.results[1]!)).toEqual([]);
-    expect(buildSchemaFeedbackSteps(customVersion, customRun.results, []).map((step) => step.resultId)).toEqual(["result-1"]);
+    expect(
+      buildSchemaFeedbackSteps(customVersion, customRun.results, []).map((step) => step.resultId),
+    ).toEqual(["result-1"]);
   });
 
   test("hides empty custom report payload and its feedback questionnaire", () => {
@@ -288,10 +287,12 @@ describe("schema feedback steps", () => {
       ],
     };
 
-    expect(getSchemaResultReports(customVersion, customRun.results[0]!).map((report) => report.id)).toEqual(["tree_1"]);
+    expect(
+      getSchemaResultReports(customVersion, customRun.results[0]!).map((report) => report.id),
+    ).toEqual(["tree_1"]);
     expect(getSchemaResultReports(customVersion, customRun.results[1]!)).toEqual([]);
-    expect(buildSchemaFeedbackSteps(customVersion, customRun.results, []).map((step) => step.title)).toEqual([
-      "Crystal Tree 1 review",
-    ]);
+    expect(
+      buildSchemaFeedbackSteps(customVersion, customRun.results, []).map((step) => step.title),
+    ).toEqual(["Crystal Tree 1 review"]);
   });
 });

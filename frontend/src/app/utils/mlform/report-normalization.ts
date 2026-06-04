@@ -24,9 +24,14 @@ const getClassifierPrediction = (output: JsonRecord): string | undefined => {
   const labels = Array.isArray(output.mapping)
     ? output.mapping.filter((item): item is string => typeof item === "string")
     : [];
-  const rawProbabilities = Array.isArray(output.probabilities) ? output.probabilities[0] : undefined;
+  const rawProbabilities = Array.isArray(output.probabilities)
+    ? Array.isArray(output.probabilities[0])
+      ? output.probabilities[0]
+      : output.probabilities
+    : undefined;
   const probabilities = toNumericArray(rawProbabilities);
-  if (probabilities.length === 0) return typeof output.label === "string" ? output.label : undefined;
+  if (probabilities.length === 0)
+    return typeof output.label === "string" ? output.label : undefined;
   return labels[probabilities.indexOf(Math.max(...probabilities))];
 };
 
@@ -40,7 +45,11 @@ export const toLegacyReportPayload = (
     return {
       ...legacyOutput,
       probabilities: Array.isArray(legacyOutput.probabilities)
-        ? toNumericArray(legacyOutput.probabilities[0])
+        ? toNumericArray(
+            Array.isArray(legacyOutput.probabilities[0])
+              ? legacyOutput.probabilities[0]
+              : legacyOutput.probabilities,
+          )
         : [],
       labels: Array.isArray(legacyOutput.mapping)
         ? legacyOutput.mapping.filter((item): item is string => typeof item === "string")

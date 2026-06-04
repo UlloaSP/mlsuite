@@ -1180,3 +1180,213 @@
   - `vp exec tsc -b` passed.
   - frontend line cap passed.
   - `git diff --check` passed with CRLF warnings only.
+
+# Schema Run Save Feedback Optional
+
+## Goal
+- [x] Make Save Schema Run feedback match Save Prediction behavior.
+- [x] Hide questionnaire footer/actions in save modal.
+- [x] Save only feedback steps with any entered value.
+- [x] Verify frontend types/tests, line cap, graph update.
+
+## Plan
+- [x] Compare schema save modal with prediction save modal feedback path.
+- [x] Change schema save feedback collection to read draft values, filter empty steps.
+- [x] Switch schema save questionnaire to embedded mode.
+- [x] Run focused frontend verification and update review notes.
+
+## Review
+- Save Schema Run now reads questionnaire draft values with `getValues()` instead of submitting MLForm, so empty required feedback no longer blocks save.
+- Pending feedback is built only for steps with any entered value, matching Save Prediction partial feedback behavior.
+- Questionnaire uses embedded mode, hiding MLForm footer/actions in the save modal.
+- Added pure helper and focused test coverage for empty, partial, and multi-step filled feedback.
+- Verification:
+  - `vp test schema-run-save-modal` passed: 3 tests.
+  - `vp exec tsc -b` passed.
+  - `vp fmt src/schemas/components/SchemaRunSaveModal.tsx src/schemas/schema-run-save-feedback.ts src/schemas/pages/create-schema-run-page.tsx test/schema-run-save-modal.test.ts --check` passed.
+  - touched file line cap passed: 179, 42, 122, 93 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 90, 56 existing warnings.
+  - `graphify update .` passed: 8654 nodes, 18644 edges, 394 communities.
+  - `vp check` blocked by existing repo-wide formatting issues in `dist/` and 569 files.
+
+# Schema Run Detail Empty Feedback Opens Questionnaire
+
+## Goal
+- [x] Show schema run detail questionnaire directly when no feedback exists.
+- [x] Keep saved-feedback view for runs that already have feedback.
+- [x] Verify focused frontend behavior, types, line cap, graph update.
+
+## Plan
+- [x] Inspect run detail and schema feedback questionnaire rendering.
+- [x] Change initial view logic to edit mode when feedback list is empty.
+- [x] Add focused test for pending/empty feedback behavior.
+- [x] Run verification and document results.
+
+## Review
+- Run detail feedback completion now requires meaningful questionnaire values, not just a persisted feedback row.
+- Empty saved feedback records no longer show `No feedback saved yet`; detail page shows editable questionnaire directly.
+- Existing saved feedback with values still shows summary/edit mode.
+- Added `schema-feedback-state` helper and tests for no feedback, empty saved feedback, and real saved feedback.
+- Verification:
+  - `vp test schema-feedback-state schema-feedback-steps` passed: 8 tests.
+  - `vp exec tsc -b` passed.
+  - `vp fmt src/schemas/components/SchemaRunFeedbackQuestionnaire.tsx src/schemas/schema-feedback-state.ts test/schema-feedback-state.test.ts --check` passed.
+  - touched file line cap passed: 121, 13, 53 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 90, 56 existing warnings.
+  - `graphify update .` passed: 8664 nodes, 18667 edges, 460 communities.
+
+# Schema Run Save Modal Stay On Page
+
+## Goal
+- [x] Save schema run from modal without redirecting to run detail.
+- [x] Close modal after successful save.
+- [x] Verify focused frontend checks, line cap, graph update.
+
+## Plan
+- [x] Remove detail navigation from schema run save handler.
+- [x] Close pending modal state and show save success.
+- [x] Run focused frontend verification and document result.
+
+## Review
+- Schema run save handler still persists run and optional feedback.
+- Removed navigation to `/schemas/:schemaId/versions/:versionId/runs/:runId`.
+- After successful save, modal closes via `setPendingRun(null)` and shows `Run saved`.
+- Verification:
+  - `vp test schema-run-save-modal schema-feedback-state` passed: 6 tests.
+  - `vp exec tsc -b` passed.
+  - `vp fmt src/schemas/pages/create-schema-run-page.tsx --check` passed.
+  - touched file line cap passed: 122 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 90, 56 existing warnings.
+  - `graphify update .` passed: 8666 nodes, 18671 edges, 405 communities.
+
+# Schema Feedback And Share Match Signatures
+
+## Goal
+- [x] Mark schema run feedback completed only when every questionnaire field is filled.
+- [x] Show schema run detail form prefilled for partial feedback.
+- [x] Move schema share action to signature-equivalent header position.
+- [x] Make schema share modal match signature share modal behavior/layout.
+- [x] Verify focused frontend tests, typecheck, line cap, graph update.
+
+## Plan
+- [x] Compare signature feedback/history/share flows with schema equivalents.
+- [x] Tighten schema feedback completion helper and use it in history/detail.
+- [x] Align schema share button placement and dialog with signature modal.
+- [x] Add/update focused tests for completion states.
+- [x] Run verification and document results.
+
+## Review
+- Schema feedback completion now requires every questionnaire field to be filled.
+- Empty or partial schema feedback keeps detail in editable questionnaire mode with saved values prefilled.
+- Schema history now shows feedback complete only after all fields are filled.
+- Schema share moved from table toolbar to page header action area, matching signature history placement.
+- Schema share dialog now follows signature dialog layout: inference selection, expiry date, generate, copy, revoke.
+- Verification:
+  - `vp test schema-feedback-state schema-feedback-steps schema-run-history` passed: 20 tests.
+  - `vp exec tsc -b` passed.
+  - `vp fmt src/schemas/schema-feedback-state.ts src/schemas/components/SchemaRunFeedbackQuestionnaire.tsx src/schemas/pages/prediction-run-detail-page.tsx src/schemas/pages/schema-run-history-page.tsx src/schemas/components/SchemaRunHistoryToolbar.tsx src/schemas/components/SchemaRunReviewLinkDialog.tsx test/schema-feedback-state.test.ts --check` passed.
+  - touched file line cap passed; largest touched file is `SchemaRunReviewLinkDialog.tsx` at 217 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 91, 55 warnings, no errors.
+  - `graphify update .` passed: 8674 nodes, 18693 edges, 393 communities.
+  - `vp check` blocked by existing repo-wide formatting issues in `dist/` and 561 files.
+
+# Schema Detail Feedback Required And Export Parity
+
+## Goal
+- [x] Make schema detail feedback fields required when completing saved feedback.
+- [x] Keep save modal feedback optional/partial.
+- [x] Align schema CSV feedback columns with signature export rules.
+- [x] Add focused regressions and verify frontend checks.
+
+## Plan
+- [x] Compare signature feedback questionnaire and export column builders.
+- [x] Apply required questionnaire only in history/detail/review completion path.
+- [x] Refactor schema export headers/cells to signature-equivalent naming.
+- [x] Run focused tests, typecheck, line cap, diff, graph update.
+
+## Review
+- Schema detail feedback questionnaire now passes `required: true` through combined MLForm fields.
+- Save Schema Run modal remains optional/partial because it uses combined questionnaire default behavior.
+- Schema export now mirrors signature column semantics:
+  - `output.<reportId>.predicted`
+  - `output.<reportId>.feedback.<reviewer>`
+  - `report.<reportId>.content`
+  - `report.<reportId>.<fieldId>.<reviewer>`
+- Schema export no longer uses display labels in feedback column keys.
+- Added regressions for required detail fields, output feedback columns, and report feedback columns.
+- Verification:
+  - `vp test schema-feedback-state schema-run-history schema-run-export-parity schema-feedback-steps` passed: 22 tests.
+  - `vp test schema-run-save-modal schema-feedback-state schema-run-history schema-run-export-parity` passed: 20 tests.
+  - `vp exec tsc -b` passed.
+  - `vp fmt src/models/combined-feedback-questionnaire.ts src/schemas/components/SchemaRunFeedbackQuestionnaire.tsx src/schemas/schema-run-export.ts test/schema-feedback-state.test.ts test/schema-run-history.test.ts test/schema-run-export-parity.test.ts --check` passed.
+  - touched file line cap passed; largest touched file is `schema-run-history.test.ts` at 249 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 91, 54 warnings, no errors.
+  - `graphify update .` passed: 8692 nodes, 18727 edges, 398 communities.
+  - `vp check` blocked by existing repo-wide formatting issues in `dist/` and 558 files.
+
+# Schema Save Modal Export Review Parity
+
+## Goal
+- [x] Restore questionnaire footer navigation in Save Schema Run without making feedback required.
+- [x] Keep modal-level Save action optional and not blocked by questionnaire submit.
+- [x] Export Crystal Tree content as formatted text, not raw JSON.
+- [x] Make schema external review page match signature external review layout.
+- [x] Add focused regressions and verify frontend checks.
+
+## Plan
+- [x] Inspect MLForm questionnaire mount/footer behavior and signature review layout.
+- [x] Add save-modal questionnaire mode that shows navigation footer but disables questionnaire submit action.
+- [x] Reuse report formatter for schema export report content.
+- [x] Align schema review workspace/panels/rail with signature review components.
+- [x] Run focused tests, typecheck, line cap, react-doctor, graph update.
+
+## Review
+- Save Schema Run questionnaire now uses `mode="navigation"`: MLForm footer navigation stays visible; questionnaire submit action is disabled by shadow-DOM CSS.
+- Modal-level Save still reads draft values with `getValues()`, so empty/partial feedback remains allowed.
+- Schema export report content now uses `getFormattedReportContent()`, so Crystal Tree exports text like `tree path`, not raw `{"explanation":...}` JSON.
+- Schema external review detail now uses the same signature review structure: feedback form, `Outputs` accordion, `Inputs` accordion.
+- Schema external review rail now uses the same sticky tray, grouped Revision/Pending sections, scroll sizing, dots, count pills, and send button behavior as signature review.
+- Verification:
+  - `vp test schema-run-save-modal schema-run-export-parity schema-run-history schema-feedback-state` passed: 20 tests.
+  - `vp exec tsc -b` passed.
+  - `vp fmt src/models/components/ReportQuestionnaireMount.tsx src/schemas/components/SchemaRunSaveModal.tsx src/schemas/schema-run-export.ts src/schema-review/components/SchemaReviewRunDetailPanel.tsx src/schema-review/components/SchemaReviewRunRail.tsx test/schema-run-export-parity.test.ts --check` passed.
+  - touched file line cap passed; largest touched file is `ReportQuestionnaireMount.tsx` at 250 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 91, 55 warnings, no errors.
+  - `graphify update .` passed: 8700 nodes, 18761 edges, 402 communities.
+  - `vp check` blocked by existing repo-wide formatting issues in `dist/` and 556 files.
+
+# Schema External Review Output Context Fix
+
+## Goal
+- [x] Stop long schema input names overlapping values in external review.
+- [x] Show classifier percentages in schema external review outputs.
+- [x] Populate current output side context for schema review steps.
+- [x] Verify focused frontend checks and graph update.
+
+## Plan
+- [x] Inspect schema result payload and review context step descriptions.
+- [x] Make shared review input rows wrap/truncate safely.
+- [x] Preserve schema classifier probability in target adapter.
+- [x] Enrich schema feedback step descriptions with visible output content.
+- [x] Run focused tests, typecheck, line cap, react-doctor, graph update.
+
+## Review
+- External review input rows now use min-width-safe wrapping, so long schema/model feature names do not overlap values.
+- Schema classifier outputs now preserve `{ value, probability }`, including flat probability arrays from saved schema payloads, so percentages render in the shared outputs accordion.
+- Schema feedback step descriptions now include visible prediction/report content, so the current output panel is populated instead of generic/empty.
+- Added focused regression coverage in `schema-review-output-context`.
+- Verification:
+  - `vp fmt src/app/utils/mlform/report-normalization.ts src/review/components/ReviewInputsSection.tsx src/schemas/schema-feedback-steps.ts src/schema-review/components/SchemaReviewRunDetailPanel.tsx test/schema-feedback-steps.test.ts test/schema-review-output-context.test.ts --check` passed.
+  - `vp test schema-feedback-steps schema-review-output-context schema-feedback-state schema-run-history schema-run-export-parity` passed: 23 tests.
+  - `vp exec tsc -b` passed.
+  - touched file line cap passed; largest touched file is `schema-feedback-steps.test.ts` at 298 lines.
+  - `git diff --check` passed with CRLF warnings only.
+  - `npx react-doctor@latest --verbose` completed: score 91, 55 warnings, no errors.
+  - `graphify update .` passed: 8710 nodes, 18781 edges, 453 communities.
+  - `vp check` blocked by existing repo-wide formatting issues in `dist/` and 552 files.
