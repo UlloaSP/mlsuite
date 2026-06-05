@@ -15,15 +15,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 COPY --from=build /app/public/runtime-config.js.template /usr/share/nginx/html/runtime-config.js.template
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Crear directorio para certificados SSL
-RUN mkdir -p /etc/nginx/certs
-
-# Generar certificado self-signed para desarrollo
-RUN apk add --no-cache openssl gettext && \
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/nginx/certs/private.key \
-    -out /etc/nginx/certs/certificate.crt \
-    -subj "/CN=localhost"
+RUN apk add --no-cache gettext
 
 RUN printf '#!/bin/sh\nset -eu\nenvsubst '\''$VITE_BACKEND_URL'\'' < /usr/share/nginx/html/runtime-config.js.template > /usr/share/nginx/html/runtime-config.js\n' > /docker-entrypoint.d/40-runtime-config.sh && chmod +x /docker-entrypoint.d/40-runtime-config.sh
 

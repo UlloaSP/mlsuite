@@ -13,9 +13,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://localhost:8443",
+        target: "http://spring-app:8080",
         changeOrigin: true,
-        secure: false,
         ws: true,
       },
     },

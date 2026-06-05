@@ -1,3 +1,37 @@
+# HTTP-Only Docker Exposure
+
+## Goal
+- [x] Remove SSL/TLS runtime config from local/prod Docker path.
+- [x] Run all app services over HTTP internally.
+- [x] Expose only frontend from compose, plus PostgreSQL on host port 5430.
+- [x] Verify compose/config and focused tests.
+
+## Plan
+- [x] Update env defaults to HTTP URLs and PostgreSQL host port 5430.
+- [x] Remove SSL env wiring and public ports for internal services in compose.
+- [x] Remove certificate generation and HTTPS proxy config.
+- [x] Remove Spring trust-all SSL bootstrap and SSL properties.
+- [x] Update tests/docs references where they encode old HTTPS runtime.
+- [x] Run compose config, focused tests, line caps, graph update.
+
+## Review
+- Removed Spring SSL properties, trust-all TLS bootstrap, Python SSL launcher flags, generated certs, and nginx HTTPS config.
+- Compose dev/prod now publish only frontend `5173:5173` and PostgreSQL `5430:5432`; API, analyzer, MinIO, and ops-agent stay internal.
+- Internal service URLs now use HTTP: frontend nginx proxies `/api/` to `http://spring-app:8080`, analyzer base URL is `http://py-analyzer:8000`, and Vite dev proxy targets `http://localhost:8080`.
+- Split oversized ops-agent test file by moving terminal/stats tests to `test_ops_terminal.py`.
+- Verification:
+  - `docker compose -f docker-compose.dev.yml config` passed.
+  - `docker compose -f docker-compose.prod.yml config` passed.
+  - `mvn "-Dtest=AnalyzerServiceTest" test` passed: 9 tests.
+  - `uv run pytest tests/test_runtime_api.py` passed: 25 tests.
+  - `uv run pytest tests/test_ops_api.py tests/test_ops_terminal.py` passed: 9 tests.
+  - `vp test infrastructure` passed: 6 tests.
+  - `vp run build` passed.
+  - Runtime SSL/TLS reference scan passed.
+  - Touched file line cap passed.
+  - `git diff --check` passed.
+  - `graphify update .` passed: 8780 nodes, 18961 edges, 409 communities.
+
 # Schema One-Hot Reconstruction Empty Master Fallback
 
 ## Goal

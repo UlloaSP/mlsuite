@@ -73,7 +73,7 @@ class AnalyzerServiceTest {
                 userLookupService,
                 workspaceAccessService,
                 objectMapper);
-        ReflectionTestUtils.setField(service, "analyzerUrl", "https://py-analyzer:8000");
+        ReflectionTestUtils.setField(service, "analyzerUrl", "http://py-analyzer:8000");
         lenient().when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
 
@@ -81,20 +81,20 @@ class AnalyzerServiceTest {
     void inspectArtifact_ForwardsUploadToAnalyzer() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("https://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
                 .thenReturn(Map.of("kind", "dataframe"));
 
         Map<String, Object> result = service.inspectArtifact(3L, artifactFile);
 
         assertEquals("dataframe", result.get("kind"));
-        verify(restTemplate).postForObject(eq("https://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class));
+        verify(restTemplate).postForObject(eq("http://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class));
     }
 
     @Test
     void inspectArtifact_PropagatesAnalyzerValidationError() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("https://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
                 .thenThrow(restError(400, "{\"detail\":\"File must be .joblib\"}"));
 
         AnalyzerServiceException ex = assertThrows(
@@ -109,7 +109,7 @@ class AnalyzerServiceTest {
     void inspectArtifact_PropagatesAnalyzerNetworkError() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("https://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/inspect_artifact"), any(), eq(Map.class)))
                 .thenThrow(new ResourceAccessException("down"));
 
         AnalyzerServiceException ex = assertThrows(
@@ -124,20 +124,20 @@ class AnalyzerServiceTest {
     void matchArtifacts_ForwardsUploadsToAnalyzer() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("https://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
                 .thenReturn(Map.of("models", List.of()));
 
         Map<String, Object> result = service.matchArtifacts(3L, List.of(artifactFile), List.of(artifactFile));
 
         assertEquals(List.of(), result.get("models"));
-        verify(restTemplate).postForObject(eq("https://py-analyzer:8000/match_artifacts"), any(), eq(Map.class));
+        verify(restTemplate).postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class));
     }
 
     @Test
     void matchArtifacts_PropagatesAnalyzerValidationError() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("https://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
                 .thenThrow(restError(400, "{\"detail\":\"Dataframe files must contain pandas DataFrame objects.\"}"));
 
         AnalyzerServiceException ex = assertThrows(
@@ -152,7 +152,7 @@ class AnalyzerServiceTest {
     void matchArtifacts_PropagatesAnalyzerNetworkError() {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
-        when(restTemplate.postForObject(eq("https://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class)))
                 .thenThrow(new ResourceAccessException("down"));
 
         AnalyzerServiceException ex = assertThrows(
@@ -170,7 +170,7 @@ class AnalyzerServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user);
         when(modelRepository.findByIdAndOrganizationId(11L, 5L)).thenReturn(Optional.of(model));
         when(objectStorageService.load("bucket", "key")).thenReturn(new byte[] { 1, 2, 3 });
-        when(restTemplate.postForObject(eq("https://py-analyzer:8000/predict"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/predict"), any(), eq(Map.class)))
                 .thenReturn(Map.of("prediction", 1));
 
         Map<String, Object> result = service.predict(3L, 11L, Map.of("x", 1));
@@ -187,7 +187,7 @@ class AnalyzerServiceTest {
         lenient().when(userLookupService.requireById(3L)).thenReturn(user);
         when(modelRepository.findByIdAndOrganizationId(11L, 5L)).thenReturn(Optional.of(model));
         when(objectStorageService.load("bucket", "key")).thenThrow(new ObjectStorageException("down"));
-        when(restTemplate.postForObject(eq("https://py-analyzer:8000/predict"), any(), eq(Map.class)))
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/predict"), any(), eq(Map.class)))
                 .thenReturn(Map.of("prediction", 1));
 
         assertEquals(1, service.predict(3L, 11L, Map.of("x", 1)).get("prediction"));
