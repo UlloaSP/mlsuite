@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { DefinedReportKind } from "mlform/presentation";
 import type { ReportConfig } from "mlform/runtime";
+import type { DefinedReportKind } from "mlform/kit";
 import type { PluginDto } from "../../api/pluginService";
 import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "./plugin-catalog";
 import { CUSTOM_REPORT_COMPONENT, resolveCustomReportDefinition } from "./custom-report-runtime";

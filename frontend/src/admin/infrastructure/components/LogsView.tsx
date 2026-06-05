@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Pause, Play, Search } from "lucide-react";
-import { AppBadge, AppButton, cx } from "../../../app/components";
+import { AppBadge, AppButton } from "../../../app/components/ui-controls";
+import { cx } from "../../../app/components/ui-utils";
 import type { ServiceStatusDto } from "../types";
 
 type Props = {
@@ -90,6 +91,7 @@ export function LogsView({
           <label className="flex items-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5">
             <Search size={14} className="text-[var(--text-muted)]" />
             <input
+              aria-label="Search log message"
               type="text"
               placeholder="Search log message…"
               value={query}
@@ -98,6 +100,7 @@ export function LogsView({
             />
           </label>
           <select
+            aria-label="Select log service"
             className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
             value={selectedService ?? ""}
             onChange={(e) => onSelectService(e.target.value)}
@@ -111,6 +114,7 @@ export function LogsView({
           <div className="flex items-center gap-1.5">
             {(["INFO", "WARN", "ERROR", "DEBUG"] as LogLevel[]).map((lv) => (
               <button
+                type="button"
                 key={lv}
                 className={cx(
                   "rounded-md border px-2 py-0.5 text-[0.65rem] font-medium transition",

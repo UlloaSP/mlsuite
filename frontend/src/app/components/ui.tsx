@@ -6,12 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import { Link } from "react-router";
-
-export const cx = (...values: Array<string | false | null | undefined>): string =>
-  values.filter(Boolean).join(" ");
-
-export const FOCUS_RING =
-  "focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 focus-visible:outline-none";
+import { cx } from "./ui-utils";
 
 export function AppPage({ children, className }: HTMLAttributes<HTMLDivElement>) {
   return (

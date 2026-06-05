@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FieldController } from "mlform/runtime";
-import type { FieldDescriptor } from "mlform/presentation";
+import type { FieldDescriptor } from "mlform/primitives";
 import type {
   PrimitiveFieldRenderContext,
   PrimitiveFieldRendererElement,

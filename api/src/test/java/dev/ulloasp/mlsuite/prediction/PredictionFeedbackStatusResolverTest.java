@@ -41,7 +41,7 @@ class PredictionFeedbackStatusResolverTest {
     void resolve_RequiresPersistedExplanationQuestionnaireMetadata() {
         Prediction prediction = prediction(inputSignature(
                 List.of(Map.of("kind", "output")),
-                List.of(Map.of("kind", "Crystal Tree", "feedbackQuestionnaire", Map.of("steps", List.of())))));
+                Map.of("kind", "Crystal Tree", "feedbackQuestionnaire", Map.of("steps", List.of()))));
         when(outputFeedbackRepository.findByPredictionIdAndUserId(12L, 3L)).thenReturn(List.of(new OutputFeedback()));
         when(explanationFeedbackRepository.findByPredictionIdAndUserId(12L, 3L)).thenReturn(List.of());
 
@@ -52,7 +52,7 @@ class PredictionFeedbackStatusResolverTest {
     void resolve_CompletesWhenPersistedFeedbackRequirementsAreSaved() {
         Prediction prediction = prediction(inputSignature(
                 List.of(Map.of("kind", "output")),
-                List.of(Map.of("kind", "Crystal Tree", "feedbackEnabled", true))));
+                Map.of("kind", "Crystal Tree", "feedbackEnabled", true)));
         when(outputFeedbackRepository.findByPredictionIdAndUserId(12L, 3L)).thenReturn(List.of(new OutputFeedback()));
         when(explanationFeedbackRepository.findByPredictionIdAndUserId(12L, 3L))
                 .thenReturn(List.of(new ExplanationFeedback()));
@@ -69,7 +69,7 @@ class PredictionFeedbackStatusResolverTest {
         return prediction;
     }
 
-    private Map<String, Object> inputSignature(List<Map<String, Object>> reports, List<Map<String, Object>> explanations) {
-        return Map.of("reports", reports, "explanations", explanations);
+    private Map<String, Object> inputSignature(List<Map<String, Object>> reports, Map<String, Object> explanation) {
+        return Map.of("reports", List.of(reports.get(0), explanation));
     }
 }

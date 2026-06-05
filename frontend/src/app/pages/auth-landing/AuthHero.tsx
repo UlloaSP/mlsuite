@@ -14,7 +14,7 @@ export function AuthHero() {
 
       <h1
         id="auth-title"
-        className="mb-[18px] text-[42px] font-bold leading-[0.95] tracking-[-1.8px] sm:text-[52px] md:text-[60px] lg:tracking-[-2.5px] xl:text-[76px] 2xl:text-[88px]"
+        className="mb-[18px] text-[42px] font-semibold leading-[0.95] tracking-[-1.8px] sm:text-[52px] md:text-[60px] lg:tracking-[-2.5px] xl:text-[76px] 2xl:text-[88px]"
       >
         {HERO_LINES[0]}
         <br />

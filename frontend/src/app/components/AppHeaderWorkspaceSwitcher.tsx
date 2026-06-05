@@ -1,7 +1,8 @@
 import { Check, ChevronsUpDown, Building2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { AppCopy, AppPanel, cx, FOCUS_RING } from "./ui";
+import { AppCopy, AppPanel } from "./ui";
+import { cx, FOCUS_RING } from "./ui-utils";
 import { useSelectOrganization, useWorkspaceContext } from "../../workspace/hooks";
 
 export function AppHeaderWorkspaceSwitcher() {

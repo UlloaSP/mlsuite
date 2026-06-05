@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { m as motion } from "motion/react";
 import { useParams } from "react-router";
-import { AppPageHeader } from "../../app/components";
+import { AppPageHeader } from "../../app/components/ui";
 import { schemaErrorsAtom } from "../../editor/atoms";
 import { ToggleButton } from "./ToggleButton";
 

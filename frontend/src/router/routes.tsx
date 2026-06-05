@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { lazy, Suspense, type ReactNode } from "react";
-import { createBrowserRouter, Navigate, Outlet, type RouteObject } from "react-router";
+import { Suspense, type ReactNode } from "react";
+import { createBrowserRouter, type RouteObject } from "react-router";
 import { AdminUsersPage } from "../admin/pages/admin-users-page";
 import { AdminInfrastructurePage } from "../admin/infrastructure/pages/admin-infrastructure-page";
 import { AuthLandingPage } from "../app/pages/AuthLandingPage";
@@ -19,8 +19,17 @@ import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
 import { ReviewProtectedRoute } from "../review/components/ReviewProtectedRoute";
 import { ReviewLoginRoute } from "../review/components/ReviewLoginRoute";
 import { ReviewWorkspacePage } from "../review/pages/review-workspace-page";
+import { SchemaReviewLoginRoute } from "../schema-review/components/SchemaReviewLoginRoute";
+import { SchemaReviewProtectedRoute } from "../schema-review/components/SchemaReviewProtectedRoute";
+import { SchemaReviewWorkspacePage } from "../schema-review/pages/schema-review-workspace-page";
+import { CreateSchemaPage } from "../schemas/pages/create-schema-page";
+import { CreateSchemaRunPage } from "../schemas/pages/create-schema-run-page";
+import { CreateSchemaVersionPage } from "../schemas/pages/create-schema-version-page";
+import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-page";
+import { SchemaRunHistoryPage } from "../schemas/pages/schema-run-history-page";
+import { SchemaDetailPage } from "../schemas/pages/schema-detail-page";
+import { SchemasPage } from "../schemas/pages/schemas-page";
 import { SignatureDetailPage } from "../models/pages/signature-detail-page";
-import { useUser } from "../user/hooks";
 import { ProfilePage } from "../user/pages/profilePage";
 import { CreateOrganizationPage } from "../workspace/pages/create-organization-page";
 import { InvitationAcceptPage } from "../workspace/pages/invitation-accept-page";
@@ -33,49 +42,19 @@ import { RolesPage } from "../workspace/pages/roles-page";
 import { TeamDetailPage } from "../workspace/pages/team-detail-page";
 import { TeamsPage } from "../workspace/pages/teams-page";
 import { WorkspaceHomePage } from "../workspace/pages/workspace-home-page";
-import { useWorkspaceContextSync } from "../workspace/hooks";
 import { RequireTeamPermission } from "../workspace/components/RequireTeamPermission";
 import {
   RequireSuperadmin,
   RequireWorkspacePermission,
 } from "../workspace/components/RequireWorkspacePermission";
 import type { WorkspacePermissionKey } from "../workspace/types";
+import {
+  CreatePredictionPage,
+  CreateSignaturePage,
+  EditorRouteFallback,
+  ProtectedRoute,
+} from "./route-components";
 import { enableViewTransitions } from "./view-transitions";
-
-const CreatePredictionPage = lazy(async () => {
-  const module = await import("../models/pages/create-prediction-page");
-  return { default: module.CreatePredictionPage };
-});
-
-const CreateSignaturePage = lazy(async () => {
-  const module = await import("../models/pages/create-signature-page");
-  return { default: module.CreateSignaturePage };
-});
-
-function EditorRouteFallback() {
-  return (
-    <div className="flex size-full items-center justify-center bg-neutral-100 dark:bg-neutral-900">
-      <div className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-600 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-        Loading editor…
-      </div>
-    </div>
-  );
-}
-
-function ProtectedRoute() {
-  const { data: user, error, isLoading } = useUser();
-  const workspace = useWorkspaceContextSync(Boolean(user) && !error);
-
-  if (isLoading || workspace.isLoading) {
-    return <EditorRouteFallback />;
-  }
-
-  if (!user || error || workspace.error) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <Outlet />;
-}
 
 function app(element: ReactNode) {
   return <AppShellFrame>{element}</AppShellFrame>;
@@ -222,11 +201,43 @@ const routes: RouteObject[] = [
               </Suspense>,
             ),
           },
+          {
+            path: "schemas",
+            element: workspace("canViewModels", <SchemasPage />),
+          },
+          {
+            path: "schemas/create",
+            element: workspace("canEditModels", <CreateSchemaPage />),
+          },
+          {
+            path: "schemas/:schemaId",
+            element: workspace("canViewModels", <SchemaDetailPage />),
+          },
+          {
+            path: "schemas/:schemaId/versions/create",
+            element: workspace("canEditModels", <CreateSchemaVersionPage />),
+          },
+          {
+            path: "schemas/:schemaId/versions/:versionId/runs/create",
+            element: workspace("canRunPredictions", <CreateSchemaRunPage />),
+          },
+          {
+            path: "schemas/:schemaId/versions/:versionId/runs",
+            element: workspace("canViewModels", <SchemaRunHistoryPage />),
+          },
+          {
+            path: "schemas/:schemaId/versions/:versionId/runs/:runId",
+            element: workspace("canViewModels", <PredictionRunDetailPage />),
+          },
         ],
       },
       {
         path: "review/:token/login",
         element: <ReviewLoginRoute />,
+      },
+      {
+        path: "schema-review/:token/login",
+        element: <SchemaReviewLoginRoute />,
       },
       {
         element: <ReviewProtectedRoute />,
@@ -238,6 +249,19 @@ const routes: RouteObject[] = [
           {
             path: "review/:token/predictions/:predictionToken",
             element: <ReviewWorkspacePage />,
+          },
+        ],
+      },
+      {
+        element: <SchemaReviewProtectedRoute />,
+        children: [
+          {
+            path: "schema-review/:token",
+            element: <SchemaReviewWorkspacePage />,
+          },
+          {
+            path: "schema-review/:token/runs/:runToken",
+            element: <SchemaReviewWorkspacePage />,
           },
         ],
       },

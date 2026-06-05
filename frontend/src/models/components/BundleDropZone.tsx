@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useRef, useState } from "react";
-import { cx } from "../../app/components";
+import { cx } from "../../app/components/ui-utils";
 import { ALL_EXTS, DF_EXT_LABEL, MODEL_EXT_LABEL } from "../bundle-utils";
 
 type Props = {
@@ -23,9 +23,8 @@ export function BundleDropZone({ onFiles }: Props) {
 
   return (
     <div className="flex-shrink-0 px-4 pt-4">
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         aria-label="Drop model and dataframe files here"
         onDragOver={(e) => {
           e.preventDefault();
@@ -38,14 +37,8 @@ export function BundleDropZone({ onFiles }: Props) {
           handle(e.dataTransfer.files);
         }}
         onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            inputRef.current?.click();
-          }
-        }}
         className={cx(
-          "group flex cursor-pointer select-none items-center gap-4 rounded-[10px] border-[1.5px] border-dashed px-4 py-[18px]",
+          "group flex w-full cursor-pointer select-none items-center gap-4 rounded-[10px] border-[1.5px] border-dashed px-4 py-[18px]",
           "bg-[var(--surface-secondary)]",
           "transition-all duration-150",
           active
@@ -102,9 +95,10 @@ export function BundleDropZone({ onFiles }: Props) {
         >
           Add files
         </button>
-      </div>
+      </button>
 
       <input
+        aria-label="Upload bundle files"
         ref={inputRef}
         type="file"
         multiple

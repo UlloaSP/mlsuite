@@ -9,7 +9,7 @@ import type {
   ReactNode,
   TextareaHTMLAttributes,
 } from "react";
-import { cx } from "./ui";
+import { cx } from "./ui-utils";
 
 export function AppBadge({
   children,
@@ -42,6 +42,7 @@ export function AppButton({
   children,
   variant = "primary",
   className,
+  type = "button",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost" | "danger";
@@ -59,6 +60,7 @@ export function AppButton({
   return (
     <button
       {...props}
+      type={type}
       className={cx(
         "inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45",
         variants[variant],
@@ -73,11 +75,13 @@ export function AppButton({
 export function AppIconButton({
   children,
   className,
+  type = "button",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       {...props}
+      type={type}
       className={cx(
         "inline-flex size-10 items-center justify-center rounded-full border border-transparent text-[var(--text-muted)] transition hover:border-[var(--border-soft)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-45",
         className,

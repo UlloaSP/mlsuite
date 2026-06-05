@@ -3,6 +3,8 @@ package dev.ulloasp.mlsuite.prediction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -26,6 +28,7 @@ import dev.ulloasp.mlsuite.prediction.domain.exception.ExplanationFeedbackDoesNo
 import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionDoesNotExistsException;
 import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.ExplanationFeedbackRepository;
 import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
+import dev.ulloasp.mlsuite.prediction.application.service.DirectFeedbackPublicationService;
 import dev.ulloasp.mlsuite.prediction.application.service.ExplanationFeedbackServiceImpl;
 import dev.ulloasp.mlsuite.prediction.application.service.PredictionFeedbackStatusResolver;
 import dev.ulloasp.mlsuite.signature.domain.model.Signature;
@@ -49,6 +52,9 @@ class ExplanationFeedbackServiceTest {
     private PredictionFeedbackStatusResolver predictionFeedbackStatusResolver;
 
     @Mock
+    private DirectFeedbackPublicationService publicationService;
+
+    @Mock
     private WorkspaceAccessService workspaceAccessService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -61,6 +67,7 @@ class ExplanationFeedbackServiceTest {
                 explanationFeedbackRepository,
                 predictionRepository,
                 predictionFeedbackStatusResolver,
+                publicationService,
                 workspaceAccessService);
         when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
     }
@@ -70,6 +77,8 @@ class ExplanationFeedbackServiceTest {
         Prediction prediction = prediction();
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction));
+        when(explanationFeedbackRepository.findByPredictionIdAndUserIdAndOrder(11L, 3L, 1))
+                .thenReturn(Optional.empty());
         when(explanationFeedbackRepository.save(any(ExplanationFeedback.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
@@ -80,6 +89,31 @@ class ExplanationFeedbackServiceTest {
         assertEquals(1, result.getOrder());
         assertEquals("tree", result.getValue().asText());
         assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
+        verify(publicationService).publish(any(User.class), eq(prediction));
+    }
+
+    @Test
+    void createExplanationFeedback_UpdatesExistingUserOrderInsteadOfDuplicating() throws Exception {
+        Prediction prediction = prediction();
+        ExplanationFeedback existing = explanationFeedback(prediction);
+        when(userLookupService.requireById(3L)).thenReturn(user());
+        when(predictionRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(prediction));
+        when(explanationFeedbackRepository.findByPredictionIdAndUserIdAndOrder(11L, 3L, 1))
+                .thenReturn(Optional.of(existing));
+        when(explanationFeedbackRepository.save(any(ExplanationFeedback.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(predictionFeedbackStatusResolver.resolve(3L, prediction)).thenReturn(PredictionStatus.COMPLETED);
+        when(predictionRepository.save(any(Prediction.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ExplanationFeedback result = service.createExplanationFeedback(
+                3L,
+                11L,
+                1,
+                objectMapper.readTree("\"formatted tree\""));
+
+        assertEquals(12L, result.getId());
+        assertEquals("formatted tree", result.getValue().asText());
+        verify(publicationService).publish(any(User.class), eq(prediction));
     }
 
     @Test
@@ -106,6 +140,7 @@ class ExplanationFeedbackServiceTest {
 
         assertEquals("fixed", result.getRealValue().asText());
         assertEquals(PredictionStatus.COMPLETED, prediction.getStatus());
+        verify(publicationService).publish(any(User.class), eq(prediction));
     }
 
     @Test

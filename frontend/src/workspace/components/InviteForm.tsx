@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AppCombobox } from "../../app/components/AppCombobox";
 import { AppButton, AppSelect } from "../../app/components/ui-controls";
 import type { InvitationCandidateDto } from "../invitations/types";
@@ -41,17 +41,10 @@ export function InviteForm({
       teamId: teamId ? Number(teamId) : undefined,
     }).then(() => {
       setCandidate(null);
-      setRoleDefinitionId(String(defaultRoleId(roleOptions) ?? ""));
+      setRoleDefinitionId("");
       setTeamId("");
     });
   };
-
-  useEffect(() => {
-    const nextDefault = defaultRoleId(roleOptions);
-    if (nextDefault && !roleOptions.some((role) => String(role.id) === roleDefinitionId)) {
-      setRoleDefinitionId(String(nextDefault));
-    }
-  }, [roleDefinitionId, roleOptions]);
 
   return (
     <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.4fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto] lg:items-start">

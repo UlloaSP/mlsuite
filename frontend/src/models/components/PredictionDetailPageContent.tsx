@@ -4,28 +4,34 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import {
-  getActiveCustomExplanationDefinitions,
-  type CatalogExplanationDefinition,
-} from "../../app/utils/mlform/custom-explanation";
-import type { PredictionDto, SignatureDto } from "../api/modelService";
-import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
+import type {
+  ExplanationFeedbackDto,
+  OutputFeedbackDto,
+  PredictionDto,
+  SignatureDto,
+  TargetDto,
+} from "../api/modelService";
+import { extractPredictionReportEntries } from "../report-feedback-utils";
 import { useGetExplanationFeedback, useGetTargets } from "../hooks";
 import { useGetOutputFeedback } from "../output-feedback-hooks";
 import { useUser } from "../../user/hooks";
 import { formatTimestamp, getPredictionExecutionTime, getPredictionTimestamp } from "../utils";
+import { getOutputReports } from "../report-contract";
 import { PredictionDetailMetrics } from "./PredictionDetailMetrics";
-import { PredictionExplanationCard } from "./PredictionExplanationCard";
+import { PredictionFeedbackQuestionnaire } from "./PredictionFeedbackQuestionnaire";
 import { PredictionInputsPanel } from "./PredictionInputsPanel";
-import { PredictionTargetFeedbackCard } from "./PredictionTargetFeedbackCard";
-import { PredictionTargetsPanel } from "./PredictionTargetsPanel";
+import { PredictionReportsPanel } from "./PredictionReportsPanel";
 
 type PredictionDetailPageContentProps = {
   prediction: PredictionDto;
   signature?: SignatureDto;
 };
+
+const EMPTY_TARGETS: TargetDto[] = [];
+const EMPTY_OUTPUT_FEEDBACK: OutputFeedbackDto[] = [];
+const EMPTY_REPORT_FEEDBACK: ExplanationFeedbackDto[] = [];
 
 export function PredictionDetailPageContent({
   prediction,
@@ -35,64 +41,33 @@ export function PredictionDetailPageContent({
   const { data: user } = useUser();
   const [inputsOpen, setInputsOpen] = useState(true);
   const [targetsOpen, setTargetsOpen] = useState(true);
-  const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
-    readonly CatalogExplanationDefinition[]
-  >([]);
-  const { data: targets = [] } = useGetTargets({ predictionId: prediction.id || "" });
-  const { data: outputFeedback = [] } = useGetOutputFeedback({ predictionId: prediction.id || "" });
-  const { data: explanationFeedback = [] } = useGetExplanationFeedback({
+  const targetsQuery = useGetTargets({ predictionId: prediction.id || "" });
+  const outputFeedbackQuery = useGetOutputFeedback({ predictionId: prediction.id || "" });
+  const reportFeedbackQuery = useGetExplanationFeedback({
     predictionId: prediction.id || "",
   });
+  const targets = targetsQuery.data ?? EMPTY_TARGETS;
+  const outputFeedback = outputFeedbackQuery.data ?? EMPTY_OUTPUT_FEEDBACK;
+  const reportFeedback = reportFeedbackQuery.data ?? EMPTY_REPORT_FEEDBACK;
 
-  useEffect(() => {
-    let active = true;
-    void getActiveCustomExplanationDefinitions()
-      .then((definitions) => {
-        if (active) {
-          setCustomExplanationDefinitions(definitions);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setCustomExplanationDefinitions([]);
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const explanationEntries = useMemo(
+  const reportEntries = useMemo(
     () =>
-      extractPredictionExplanationEntries(
+      extractPredictionReportEntries(
         prediction.prediction,
         signature?.inputSignature,
-        customExplanationDefinitions,
       ),
-    [prediction.prediction, signature?.inputSignature, customExplanationDefinitions],
+    [prediction.prediction, signature?.inputSignature],
   );
   const currentUserId = user?.id ? Number(user.id) : null;
-  const otherExplanationFeedbackByOrder = useMemo(() => {
-    const map = new Map<number, typeof explanationFeedback>();
-    for (const item of explanationFeedback) {
-      if (item.userId === currentUserId) {
-        continue;
-      }
-      const list = map.get(item.order) ?? [];
-      list.push(item);
-      map.set(item.order, list);
-    }
-    return map;
-  }, [explanationFeedback, currentUserId]);
-  const myExplanationFeedbackByOrder = useMemo(() => {
-    const map = new Map<number, (typeof explanationFeedback)[number]>();
-    for (const item of explanationFeedback) {
+  const myReportFeedbackByOrder = useMemo(() => {
+    const map = new Map<number, (typeof reportFeedback)[number]>();
+    for (const item of reportFeedback) {
       if (item.userId === currentUserId) {
         map.set(item.order, item);
       }
     }
     return map;
-  }, [explanationFeedback, currentUserId]);
+  }, [reportFeedback, currentUserId]);
   const myOutputFeedbackByOrder = useMemo(() => {
     const map = new Map<number, (typeof outputFeedback)[number]>();
     for (const item of outputFeedback) {
@@ -102,50 +77,29 @@ export function PredictionDetailPageContent({
     }
     return map;
   }, [outputFeedback, currentUserId]);
-  const otherOutputFeedbackByOrder = useMemo(() => {
-    const map = new Map<number, typeof outputFeedback>();
-    for (const item of outputFeedback) {
-      if (item.userId === currentUserId) {
-        continue;
-      }
-      const list = map.get(item.order) ?? [];
-      list.push(item);
-      map.set(item.order, list);
-    }
-    return map;
-  }, [outputFeedback, currentUserId]);
   const reports = useMemo(
-    () =>
-      signature?.inputSignature &&
-      typeof signature.inputSignature === "object" &&
-      signature.inputSignature !== null &&
-      Array.isArray((signature.inputSignature as { reports?: unknown[] }).reports)
-        ? ((signature.inputSignature as { reports: unknown[] }).reports as Record<
-            string,
-            unknown
-          >[])
-        : [],
+    () => getOutputReports(signature?.inputSignature),
     [signature?.inputSignature],
   );
 
   const myFeedbackStatus = useMemo(() => {
     const requiredOutputs = reports.length;
-    let requiredExplanations = 0;
-    for (const entry of explanationEntries) {
+    let requiredFeedbackReports = 0;
+    for (const entry of reportEntries) {
       if (entry.feedbackQuestionnaire) {
-        requiredExplanations += 1;
+        requiredFeedbackReports += 1;
       }
     }
     const myOutputCount = myOutputFeedbackByOrder.size;
-    const myExplanationCount = myExplanationFeedbackByOrder.size;
-    return myOutputCount >= requiredOutputs && myExplanationCount >= requiredExplanations
+    const myReportCount = myReportFeedbackByOrder.size;
+    return myOutputCount >= requiredOutputs && myReportCount >= requiredFeedbackReports
       ? ("COMPLETED" as const)
       : ("PENDING" as const);
   }, [
     reports.length,
-    explanationEntries,
+    reportEntries,
     myOutputFeedbackByOrder.size,
-    myExplanationFeedbackByOrder.size,
+    myReportFeedbackByOrder.size,
   ]);
 
   return (
@@ -157,44 +111,41 @@ export function PredictionDetailPageContent({
         status={myFeedbackStatus}
       />
 
-      <PredictionTargetsPanel
+      <PredictionFeedbackQuestionnaire
+        key={prediction.id}
+        predictionId={prediction.id}
+        targets={targets}
+        outputFeedbackByOrder={myOutputFeedbackByOrder}
+        reportFeedbackByOrder={myReportFeedbackByOrder}
+        reports={reports}
+        feedbackReports={reportEntries}
+        signatureSchema={signature?.inputSignature}
+        predictionValue={prediction.prediction}
+        theme={theme}
+        onSaved={async () => {
+          await Promise.all([
+            targetsQuery.refetch(),
+            outputFeedbackQuery.refetch(),
+            reportFeedbackQuery.refetch(),
+          ]);
+        }}
+      />
+
+      <PredictionReportsPanel
         open={targetsOpen}
         onToggle={() => setTargetsOpen((current) => !current)}
         targets={targets}
+        reports={reportEntries}
+        reportFeedbackByOrder={myReportFeedbackByOrder}
         signatureSchema={signature?.inputSignature}
         predictionValue={prediction.prediction}
       />
-
-      {targets.map((target) => (
-        <PredictionTargetFeedbackCard
-          key={target.id}
-          predictionId={prediction.id}
-          target={target}
-          outputFeedback={myOutputFeedbackByOrder.get(target.order)}
-          otherFeedback={otherOutputFeedbackByOrder.get(target.order)}
-          reportConfig={reports[target.order]}
-          signatureSchema={signature?.inputSignature}
-          predictionValue={prediction.prediction}
-          theme={theme}
-        />
-      ))}
 
       <PredictionInputsPanel
         open={inputsOpen}
         onToggle={() => setInputsOpen((current) => !current)}
         inputs={prediction.inputs}
       />
-
-      {explanationEntries.map((explanation) => (
-        <PredictionExplanationCard
-          key={explanation.explanationId}
-          predictionId={prediction.id}
-          explanation={explanation}
-          feedback={myExplanationFeedbackByOrder.get(explanation.order)}
-          otherFeedback={otherExplanationFeedbackByOrder.get(explanation.order)}
-          theme={theme}
-        />
-      ))}
     </div>
   );
 }

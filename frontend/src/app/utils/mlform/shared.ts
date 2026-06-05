@@ -10,7 +10,6 @@ import type {
   NormalizedFieldConfig,
 } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "./custom-field";
-import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";
 
 export type JsonRecord = Record<string, unknown>;
@@ -42,7 +41,6 @@ export type MountPredictionFormOptions = {
   theme: PredictionTheme;
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
   customReportDefinitions?: readonly CatalogReportDefinition[];
-  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
   onSubmit?: (inputs: Record<string, unknown>, response: Record<string, unknown>) => void;
   onSubmitError?: (error: unknown) => void;
 };

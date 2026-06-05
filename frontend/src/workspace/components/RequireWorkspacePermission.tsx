@@ -7,9 +7,11 @@ export function RequireWorkspacePermission({
   permission,
   children,
 }: PropsWithChildren<{ permission: WorkspacePermissionKey }>) {
-  return useCan(permission) ? <>{children}</> : <NotFoundError />;
+  const canAccess = useCan(permission);
+  return canAccess ? <>{children}</> : <NotFoundError />;
 }
 
 export function RequireSuperadmin({ children }: PropsWithChildren) {
-  return useCurrentUserIsSuperadmin() ? <>{children}</> : <NotFoundError />;
+  const canAccess = useCurrentUserIsSuperadmin();
+  return canAccess ? <>{children}</> : <NotFoundError />;
 }

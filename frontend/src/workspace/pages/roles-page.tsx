@@ -173,7 +173,7 @@ export function RolesPage() {
         ) : null}
         {editing ? (
           <RoleForm
-            role={editing.id ? editing : null}
+            roleDefinition={editing.id ? editing : null}
             permissionGroups={data?.permissionCatalog ?? []}
             onClose={() => setEditing(null)}
             onSave={(payload) => {
@@ -187,7 +187,7 @@ export function RolesPage() {
         ) : null}
         {template ? (
           <RoleForm
-            role={null}
+            roleDefinition={null}
             initial={{
               name: template.name,
               description: template.description,

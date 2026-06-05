@@ -76,6 +76,25 @@ def make_no_feature_classifier() -> NoFeatureClassifier:
     return NoFeatureClassifier().fit()
 
 
+def make_positional_classifier() -> LogisticRegression:
+    features = [
+        [22, 20_000],
+        [35, 45_000],
+        [47, 80_000],
+        [52, 90_000],
+        [46, 70_000],
+        [56, 120_000],
+    ]
+    labels = [0, 0, 1, 1, 1, 1]
+    return LogisticRegression().fit(features, labels)
+
+
+def make_positional_regressor() -> LinearRegression:
+    features = [[1, 30], [2, 45], [3, 60], [4, 90]]
+    labels = [100_000, 160_000, 220_000, 340_000]
+    return LinearRegression().fit(features, labels)
+
+
 def make_xgboost_classifier() -> XGBClassifier:
     features = pd.DataFrame(
         {

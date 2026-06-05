@@ -2,7 +2,8 @@ import { ChevronDown, LogOut, ShieldCheck, User2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useLogout, useUser } from "../../user/hooks";
-import { AppPanel, cx, FOCUS_RING } from "./ui";
+import { AppPanel } from "./ui";
+import { cx, FOCUS_RING } from "./ui-utils";
 
 export function AppHeaderProfileMenu() {
   const ref = useRef<HTMLDivElement | null>(null);

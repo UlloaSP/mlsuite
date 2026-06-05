@@ -1,6 +1,6 @@
 import { Share2 } from "lucide-react";
 import { useState } from "react";
-import { AppButton } from "../../app/components";
+import { AppButton } from "../../app/components/ui-controls";
 import type { PredictionDto, SignatureDto } from "../api/modelService";
 import { ReviewLinkDialog } from "./ReviewLinkDialog";
 

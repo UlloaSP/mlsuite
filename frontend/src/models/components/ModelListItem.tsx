@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight, Database, TrendingUp } from "lucide-react";
-import { AppBadge, cx } from "../../app/components";
+import { AppBadge } from "../../app/components/ui-controls";
+import { cx } from "../../app/components/ui-utils";
 import type { ModelDto } from "../api/modelService";
 import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
 import { formatTimestamp, getModelAlgorithmLabel } from "../utils";

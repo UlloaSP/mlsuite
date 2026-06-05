@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Filter, RefreshCw, Search } from "lucide-react";
-import { AppBadge, AppButton, cx } from "../../../app/components";
+import { AppBadge, AppButton } from "../../../app/components/ui-controls";
+import { cx } from "../../../app/components/ui-utils";
 import { formatBytes, formatPercent } from "../formatters";
 import { labelForServiceHealth, toneForServiceStatus } from "../status";
 import type { ServiceStatusDto } from "../types";
-import { ActionBtn, SegmentedControl, SortTh } from "./ServicesViewSupport";
-
+import { SegmentedControl } from "./ServicesSegmentedControl";
+import { SortTh } from "./ServicesSortTh";
+import { ActionBtn } from "./ServicesViewSupport";
 type Props = {
   services: ServiceStatusDto[];
   selectedService: string | null;
@@ -13,10 +15,8 @@ type Props = {
   onSelect: (serviceName: string) => void;
   onAction: (serviceName: string, action: "START" | "STOP" | "RESTART") => void;
 };
-
 export type SortKey = "name" | "status" | "uptime" | "cpuPercent" | "memoryBytes";
 export type SortDir = "asc" | "desc";
-
 export function ServicesView({
   services,
   selectedService,
@@ -31,12 +31,10 @@ export function ServicesView({
     key: "name",
     dir: "asc",
   });
-
   const toggleSort = (key: SortKey) =>
     setSort((prev) =>
       prev.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
     );
-
   const filtered = services
     .filter((s) => {
       if (statusFilter !== "all" && s.status !== statusFilter) return false;
@@ -62,23 +60,19 @@ export function ServicesView({
       if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
       return String(va).localeCompare(String(vb)) * dir;
     });
-
   const counts = {
     all: services.length,
     running: services.filter((s) => s.status === "running").length,
     stopped: services.filter((s) => s.status === "exited" || s.status === "dead").length,
     restarting: services.filter((s) => s.status === "restarting").length,
   };
-
   const activeFilters =
     (query ? 1 : 0) + (statusFilter !== "all" ? 1 : 0) + (healthFilter !== "all" ? 1 : 0);
-
   const clearFilters = () => {
     setQuery("");
     setStatusFilter("all");
     setHealthFilter("all");
   };
-
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -100,12 +94,12 @@ export function ServicesView({
           </AppButton>
         </div>
       </div>
-
       <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
         <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-soft)] px-4 py-3">
           <label className="flex items-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5">
             <Search size={14} className="text-[var(--text-muted)]" />
             <input
+              aria-label="Filter services"
               type="text"
               placeholder="Filter by name or container…"
               value={query}
@@ -124,6 +118,7 @@ export function ServicesView({
             onChange={setStatusFilter}
           />
           <select
+            aria-label="Filter by service health"
             className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
             value={healthFilter}
             onChange={(e) => setHealthFilter(e.target.value)}
@@ -140,6 +135,7 @@ export function ServicesView({
           </span>
           {activeFilters > 0 && (
             <button
+              type="button"
               className="text-[0.68rem] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               onClick={clearFilters}
             >
@@ -147,8 +143,6 @@ export function ServicesView({
             </button>
           )}
         </div>
-
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-left text-xs">
             <thead>

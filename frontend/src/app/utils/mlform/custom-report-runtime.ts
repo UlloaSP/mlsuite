@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { defineReportKind, type DefinedReportKind } from "mlform/presentation";
+import { defineReportKind, type DefinedReportKind } from "mlform/kit";
 import type { ReportConfig } from "mlform/runtime";
 
 type TypeScriptModule = typeof import("typescript");

@@ -64,7 +64,6 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         this.objectMapper = objectMapper;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> generateInputSignature(Long userId, MultipartFile model, @Nullable MultipartFile dataframe) {
         userLookupService.requireById(userId);
@@ -78,19 +77,15 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        Object response;
         try {
-            response = restTemplate.postForObject(analyzerUrl + "/build_schema", requestEntity, Map.class);
+            return postForMap(analyzerUrl + "/build_schema", requestEntity);
         } catch (RestClientResponseException ex) {
             throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/build_schema");
         } catch (ResourceAccessException ex) {
             throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/build_schema");
         }
-
-        return (Map<String, Object>) response;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact) {
         userLookupService.requireById(userId);
@@ -157,19 +152,15 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         }
 
         HttpEntity<MultiValueMap<String, HttpEntity<?>>> req = new HttpEntity<>(builder.build());
-        Object response;
         try {
-            response = restTemplate.postForObject(analyzerUrl + "/predict", req, Map.class);
+            return postForMap(analyzerUrl + "/predict", req);
         } catch (RestClientResponseException ex) {
             throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/predict");
         } catch (ResourceAccessException ex) {
             throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/predict");
         }
-
-        return (Map<String, Object>) response;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
         Model model = requireModel(userId, modelId);
@@ -189,16 +180,25 @@ public class AnalyzerServiceImpl implements AnalyzerService {
         }
 
         HttpEntity<MultiValueMap<String, HttpEntity<?>>> req = new HttpEntity<>(builder.build());
-        Object response;
         try {
-            response = restTemplate.postForObject(analyzerUrl + "/explain", req, Map.class);
+            return postForMap(analyzerUrl + "/explain", req);
         } catch (RestClientResponseException ex) {
             throw AnalyzerServiceException.fromRestClient(ex, analyzerUrl + "/explain");
         } catch (ResourceAccessException ex) {
             throw AnalyzerServiceException.fromNetwork(ex, analyzerUrl + "/explain");
         }
+    }
 
-        return (Map<String, Object>) response;
+    private Map<String, Object> postForMap(String url, Object request) {
+        Map<?, ?> response = restTemplate.postForObject(url, request, Map.class);
+        if (response == null) {
+            return Map.of();
+        }
+        return response.entrySet().stream()
+                .filter(entry -> entry.getKey() instanceof String)
+                .collect(java.util.stream.Collectors.toMap(
+                        entry -> (String) entry.getKey(),
+                        Map.Entry::getValue));
     }
 
     private byte[] loadModelBytes(Model model) {

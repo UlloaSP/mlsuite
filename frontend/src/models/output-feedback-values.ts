@@ -28,6 +28,7 @@ export const buildTargetUpdateRequest = (
   assessmentFieldId: string,
   _realValueFieldId: string,
   signatureSchema: unknown,
+  predictionValue?: unknown,
 ): UpdateTargetRequest => {
   const raw = values[assessmentFieldId];
 
@@ -37,6 +38,6 @@ export const buildTargetUpdateRequest = (
 
   return {
     targetId,
-    realValue: buildTargetFeedbackValue(String(raw), signatureSchema, order),
+    realValue: buildTargetFeedbackValue(String(raw), signatureSchema, order, predictionValue),
   };
 };

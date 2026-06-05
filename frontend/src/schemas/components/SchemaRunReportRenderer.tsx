@@ -1,0 +1,174 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import { useMemo } from "react";
+import type { ReportConfig } from "mlform/runtime";
+import type { PrimitiveSubmitResult } from "mlform/primitives";
+import type { CatalogReportDefinition } from "../../app/utils/mlform/custom-report";
+import { AppCopy, AppPanel } from "../../app/components/ui";
+import { getBackendBaseUrl } from "../../app/config/runtimeConfig";
+import { createPredictionPrimitiveRegistry } from "../../app/utils/mlform/primitive-registry";
+import { isBuiltinReportKind } from "../../app/utils/mlform/builtin-registry";
+import { patchSchemaReportContext } from "../../app/utils/mlform/schema-report-plugin-context";
+import type { SchemaDisplayReport } from "../schema-run-display";
+import type { PredictionResultDto, SchemaVersionDto } from "../types";
+import { isRecord } from "../../app/utils/mlform/shared";
+import { describeSchemaCustomReport } from "../schema-report-descriptor";
+import { SchemaPrimitiveReport } from "./SchemaPrimitiveReport";
+import { SchemaRunReportCard } from "./SchemaRunReportCard";
+import { schemaRunDebug } from "../../app/utils/mlform/schema-run-debug";
+
+type Props = {
+  version: SchemaVersionDto;
+  result: PredictionResultDto;
+  report: SchemaDisplayReport;
+  customReportDefinitions?: readonly CatalogReportDefinition[];
+};
+
+const EMPTY_CUSTOM_REPORTS: readonly CatalogReportDefinition[] = [];
+
+const activeCustomReport = (
+  kind: string,
+  definitions: readonly CatalogReportDefinition[] = [],
+): CatalogReportDefinition | undefined =>
+  definitions.find((definition) => definition.active && definition.kind === kind);
+
+const activeCustomReportKinds = (
+  definitions: readonly CatalogReportDefinition[] = [],
+): string[] => {
+  const kinds: string[] = [];
+  definitions.forEach((definition) => {
+    if (definition.active) kinds.push(definition.kind);
+  });
+  return kinds;
+};
+
+const reportsOf = (schema: unknown): ReportConfig[] =>
+  isRecord(schema) && Array.isArray(schema.reports)
+    ? (schema.reports.filter(isRecord) as ReportConfig[])
+    : [];
+
+const resultPayload = (
+  report: SchemaDisplayReport,
+  result: PredictionResultDto,
+): PrimitiveSubmitResult => {
+  const state = { payload: report.payload, error: null, status: "ready" as const };
+  const outputMeta = isRecord(result.output.meta) ? result.output.meta : {};
+  const meta = {
+    backendUrl: getBackendBaseUrl(),
+    backendFieldValues: result.modelInput,
+    schemaRun: true,
+    modelId: result.modelId,
+    signatureId: result.signatureId,
+    ...outputMeta,
+  };
+  const outputContext = isRecord(result.output.reportContextById) ? result.output.reportContextById : {};
+  const reportContextById = {
+    ...outputContext,
+    [report.id]: isRecord(outputContext[report.id])
+      ? outputContext[report.id]
+      : {
+          modelId: result.modelId,
+          signatureId: result.signatureId,
+          modelInput: result.modelInput,
+          meta,
+          raw: result.output,
+        },
+  };
+  return {
+    values: {},
+    fieldValues: {},
+    serializedValues: {},
+    serializedFieldValues: {},
+    reports: { [report.id]: report.payload },
+    reportStates: { [report.id]: state },
+    meta: { ...meta, reportContextById },
+    raw: { ...result.output, reportContextById },
+  };
+};
+
+export function SchemaRunReportRenderer({
+  version,
+  result,
+  report,
+  customReportDefinitions = EMPTY_CUSTOM_REPORTS,
+}: Props) {
+  const registry = useMemo(() => createPredictionPrimitiveRegistry(), []);
+  const customReport = activeCustomReport(report.kind, customReportDefinitions);
+  schemaRunDebug("renderer.start", {
+    reportId: report.id,
+    kind: report.kind,
+    modelId: result.modelId,
+    hasPayload: report.payload !== undefined,
+    customDefinition: Boolean(customReport),
+    activeKinds: activeCustomReportKinds(customReportDefinitions),
+  });
+  if (!customReport) {
+    if (!isBuiltinReportKind(report.kind)) {
+      schemaRunDebug("renderer.custom-unavailable", { reportId: report.id, kind: report.kind });
+      return (
+        <AppPanel>
+          <AppCopy>Custom report kind unavailable.</AppCopy>
+        </AppPanel>
+      );
+    }
+    return (
+      <SchemaRunReportCard
+        label={report.label}
+        kind={report.kind}
+        payload={report.payload}
+        labels={report.labels}
+      />
+    );
+  }
+
+  const config = reportsOf(version.formSchema).find((item) => item.id === report.id);
+  schemaRunDebug("renderer.config", {
+    reportId: report.id,
+    hasConfig: Boolean(config),
+    configIds: reportsOf(version.formSchema).map((item) => item.id),
+  });
+  const normalizedConfig = config
+    ? { ...config, id: report.id, source: typeof config.source === "string" ? config.source : report.id }
+    : null;
+  const lastResult = resultPayload(report, result);
+  const state = { payload: report.payload, error: null, status: "ready" };
+  const context = patchSchemaReportContext({
+    reportId: report.id,
+    state,
+    payload: report.payload,
+    result: lastResult,
+  });
+  const patchedLastResult = isRecord(context.result)
+    ? (context.result as unknown as PrimitiveSubmitResult)
+    : lastResult;
+  const descriptor = normalizedConfig
+    ? describeSchemaCustomReport(customReport, normalizedConfig, context)
+    : null;
+  schemaRunDebug("renderer.descriptor", {
+    reportId: report.id,
+    hasDescriptor: Boolean(descriptor),
+    descriptorType: isRecord(descriptor) ? descriptor.type : typeof descriptor,
+  });
+
+  return (
+    <AppPanel>
+      {descriptor ? (
+        <SchemaPrimitiveReport
+          descriptor={descriptor}
+          registry={registry}
+          reportId={report.id}
+          kind={report.kind}
+          label={report.label}
+          payload={report.payload}
+          lastResult={patchedLastResult}
+          config={normalizedConfig ?? undefined}
+        />
+      ) : (
+        <AppCopy>No renderable report content returned.</AppCopy>
+      )}
+    </AppPanel>
+  );
+}

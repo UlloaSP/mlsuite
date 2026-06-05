@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useEffect, useState } from "react";
-import { AppPage, AppSurface } from "../../app/components";
+import { useEffect } from "react";
+import { AppPage, AppSurface } from "../../app/components/ui";
 import { NotFoundError } from "../../app/pages/error-page.tsx";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog.ts";
 import { EditorWrapper } from "../../editor/components/EditorWrapper.tsx";
@@ -14,11 +14,9 @@ import { CreateSignatureHeader } from "../components/CreateSignatureHeader.tsx";
 
 export function CreateSignaturePage() {
   const { data: user, error } = useUser();
-  const [isCatalogReady, setIsCatalogReady] = useState(false);
 
   useEffect(() => {
     invalidatePluginCatalog();
-    setIsCatalogReady(true);
   }, []);
   if (!user || error) return <NotFoundError />;
   return (
@@ -29,7 +27,7 @@ export function CreateSignaturePage() {
           <CreateSignatureActionSection />
         </div>
         <div className="flex min-h-0 flex-1 overflow-hidden">
-          {isCatalogReady ? <EditorWrapper /> : null}
+          <EditorWrapper />
         </div>
       </AppSurface>
     </AppPage>

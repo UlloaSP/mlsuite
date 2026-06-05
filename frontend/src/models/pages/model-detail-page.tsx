@@ -5,15 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import {
-  AppBreadcrumbs,
-  AppButton,
-  AppEmptyState,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-  AppTabs,
-} from "../../app/components";
+import { AppBreadcrumbs, AppEmptyState, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components/ui";
+import { AppButton } from "../../app/components/ui-controls";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";

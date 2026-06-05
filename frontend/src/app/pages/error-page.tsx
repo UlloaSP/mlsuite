@@ -8,7 +8,7 @@ import { m as motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { useUser } from "../../user/hooks";
 import { MLSuiteMark } from "../components/MLSuiteMark";
-import { AppPage } from "../components";
+import { AppPage } from "../components/ui";
 
 const errorDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",

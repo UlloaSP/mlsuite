@@ -2,15 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box, MoreHorizontal, Plus, Users, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import {
-  AppButton,
-  AppPage,
-  AppPageHeader,
-  AppSelect,
-  AppSurface,
-  AppTextArea,
-  AppTextField,
-} from "../../app/components";
+import { AppButton, AppSelect, AppTextArea, AppTextField } from "../../app/components/ui-controls";
+import { AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
 import { NotFoundError } from "../../app/pages/error-page";
 import { createTeam, getOrganizationMembers, getTeams } from "../api/workspaceService";
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
@@ -124,7 +117,7 @@ export function TeamsPage() {
                 <th>Models</th>
                 <th>Quota</th>
                 <th>Status</th>
-                <th />
+                <th aria-label="Team actions" />
               </tr>
             </thead>
             <tbody>

@@ -1,11 +1,5 @@
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-import type { ExplanationConfig, FieldConfig, ReportConfig } from "mlform/runtime";
+import type { FieldConfig, ReportConfig } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "./custom-field";
-import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";
 import { getBuiltinRegistry } from "./builtin-registry";
 import {
@@ -15,10 +9,8 @@ import {
   SUPPORTED_TOP_LEVEL_KEYS,
 } from "./builtin-json-schema";
 import {
-  createCustomExplanationDefinitionMap,
   createCustomFieldDefinitionMap,
   createCustomReportDefinitionMap,
-  validateExplanationConfig,
   validateFieldConfig,
   validateReportConfig,
 } from "./schema-definition-validation";
@@ -28,7 +20,6 @@ import { getString, hasBlockingIssues, isRecord, toUniqueId } from "./shared";
 export type ValidateMlformSchemaOptions = {
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
   customReportDefinitions?: readonly CatalogReportDefinition[];
-  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
 };
 
 const hasOwn = (value: JsonRecord, key: string): boolean =>
@@ -83,17 +74,17 @@ const createSchemaId = (
 const ensureTopLevelArrays = (
   schema: unknown,
   issues: CompatIssue[],
-): { fields: unknown[] | null; reports: unknown[] | null; explanations: unknown[] | null } => {
+): { fields: unknown[] | null; reports: unknown[] | null } => {
   if (!isRecord(schema)) {
     pushIssue(issues, [], "Schema must be a JSON object.");
-    return { fields: null, reports: null, explanations: null };
+    return { fields: null, reports: null };
   }
 
   pushUnsupportedKeys(schema, SUPPORTED_TOP_LEVEL_KEYS, [], issues);
 
   if (!hasOwn(schema, "fields")) {
     pushIssue(issues, [], 'Schema must define "fields".');
-    return { fields: null, reports: null, explanations: null };
+    return { fields: null, reports: null };
   }
 
   if (!Array.isArray(schema.fields)) {
@@ -104,14 +95,9 @@ const ensureTopLevelArrays = (
     pushIssue(issues, ["reports"], "reports must be an array when provided.");
   }
 
-  if (schema.explanations !== undefined && !Array.isArray(schema.explanations)) {
-    pushIssue(issues, ["explanations"], "explanations must be an array when provided.");
-  }
-
   return {
     fields: Array.isArray(schema.fields) ? schema.fields : null,
     reports: Array.isArray(schema.reports) ? schema.reports : [],
-    explanations: Array.isArray(schema.explanations) ? schema.explanations : [],
   };
 };
 
@@ -123,21 +109,16 @@ export const validateMlformSchema = (
   const engineRegistry = getBuiltinRegistry();
   const fieldDefinitions = createCustomFieldDefinitionMap(options.customFieldDefinitions ?? []);
   const reportDefinitions = createCustomReportDefinitionMap(options.customReportDefinitions ?? []);
-  const explanationDefinitions = createCustomExplanationDefinitionMap(
-    options.customExplanationDefinitions ?? [],
-  );
-  const { fields, reports, explanations } = ensureTopLevelArrays(schema, issues);
+  const { fields, reports } = ensureTopLevelArrays(schema, issues);
 
-  if (!fields || !reports || !explanations || hasBlockingIssues(issues)) {
+  if (!fields || !reports || hasBlockingIssues(issues)) {
     return { success: false, issues };
   }
 
   const usedFieldIds = new Set<string>();
   const usedReportIds = new Set<string>();
-  const usedExplanationIds = new Set<string>();
   const nextFields: FieldConfig[] = [];
   const nextReports: ReportConfig[] = [];
-  const nextExplanations: ExplanationConfig[] = [];
 
   fields.forEach((field, index) => {
     if (!isRecord(field)) {
@@ -176,8 +157,9 @@ export const validateMlformSchema = (
       },
     };
 
-    validateFieldConfig(nextField, index, issues, engineRegistry, fieldDefinitions);
-    nextFields.push(nextField);
+    nextFields.push(
+      validateFieldConfig(nextField, index, issues, engineRegistry, fieldDefinitions) ?? nextField,
+    );
   });
 
   reports.forEach((report, index) => {
@@ -208,51 +190,10 @@ export const validateMlformSchema = (
       source: getString(report.source) ?? id,
     };
 
-    validateReportConfig(nextReport, index, issues, engineRegistry, reportDefinitions);
-    nextReports.push(nextReport);
-  });
-
-  explanations.forEach((explanation, index) => {
-    if (!isRecord(explanation)) {
-      pushIssue(issues, ["explanations", index], "Explanation definition must be an object.");
-      return;
-    }
-
-    const kind = typeof explanation.kind === "string" ? explanation.kind : null;
-    if (!kind) {
-      pushIssue(
-        issues,
-        ["explanations", index, "kind"],
-        'Explanation definition must define string "kind".',
-      );
-      return;
-    }
-
-    const label = getString(explanation.label) ?? kind;
-    const id = createSchemaId(
-      getString(explanation.id),
-      label,
-      `explanation-${index + 1}`,
-      usedExplanationIds,
-      ["explanations", index, "id"],
-      issues,
+    nextReports.push(
+      validateReportConfig(nextReport, index, issues, engineRegistry, reportDefinitions) ??
+        nextReport,
     );
-    const nextExplanation: ExplanationConfig = {
-      ...explanation,
-      id,
-      kind,
-      label: getString(explanation.label),
-      description: getString(explanation.description),
-    };
-
-    validateExplanationConfig(
-      { ...nextExplanation, id },
-      index,
-      issues,
-      engineRegistry,
-      explanationDefinitions,
-    );
-    nextExplanations.push(nextExplanation);
   });
 
   if (hasBlockingIssues(issues)) {
@@ -264,7 +205,6 @@ export const validateMlformSchema = (
     data: {
       fields: nextFields,
       reports: nextReports,
-      explanations: nextExplanations,
     },
     issues: issues.filter((issue) => issue.severity === "warning"),
   };

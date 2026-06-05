@@ -8,11 +8,9 @@ import { RefreshCcw, Save } from "lucide-react";
 import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { AppButton, AppSelect, AppTextField } from "../../app/components";
-import { getActiveCustomExplanationDefinitions } from "../../app/utils/mlform/custom-explanation";
+import { AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { useCreateSignatureMutation, useGetSignatures } from "../hooks";
-import { applyExplanationFeedbackMetadata } from "../signature-feedback-metadata";
 import { sortSignaturesByVersionDesc } from "../utils";
 
 type BumpKind = "patch" | "minor" | "major";
@@ -69,11 +67,10 @@ export function CreateSignatureActionSection() {
     const [major, minor, patch] = version.split(".").map(Number);
     setIsLoading(true);
     try {
-      const customExplanationDefinitions = await getActiveCustomExplanationDefinitions();
       await mutation.mutateAsync({
         modelId: modelId!,
         name: signatureName,
-        inputSignature: applyExplanationFeedbackMetadata(schema, customExplanationDefinitions),
+        inputSignature: schema,
         major: major,
         minor: minor,
         patch: patch,

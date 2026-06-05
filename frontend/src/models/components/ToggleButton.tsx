@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { Braces, Code, RefreshCw } from "lucide-react";
 import { m as motion } from "motion/react";
-import { useEffect, useState } from "react";
 import { schemaErrorsAtom } from "../../editor/atoms";
 
 interface ToggleButtonProps {
@@ -22,22 +21,12 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
   );
   const disabled = hasBlockingErrors || isProcessing;
 
-  // State to track if we're in the middle of a transition
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const isTransitioning = isProcessing;
 
   const handleToggle = () => {
-    if (disabled || isTransitioning) return;
-
-    setIsTransitioning(true);
+    if (disabled) return;
     onToggleMode();
   };
-
-  // Effect to handle the completion of processing
-  useEffect(() => {
-    if (!isProcessing && isTransitioning) {
-      setIsTransitioning(false);
-    }
-  }, [isProcessing, isTransitioning]);
 
   // Calculate the progress bar properties
   const getProgressBarProps = () => {

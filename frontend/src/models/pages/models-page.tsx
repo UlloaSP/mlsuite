@@ -7,17 +7,8 @@ import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import {
-  AppBadge,
-  AppButton,
-  AppEmptyState,
-  AppPage,
-  AppPageHeader,
-  AppSelect,
-  AppSurface,
-  AppTextField,
-  AppToolbar,
-} from "../../app/components";
+import { AppBadge, AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
+import { AppEmptyState, AppPage, AppPageHeader, AppSurface, AppToolbar } from "../../app/components/ui";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";

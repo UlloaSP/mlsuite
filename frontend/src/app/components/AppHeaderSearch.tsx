@@ -82,6 +82,7 @@ export function AppHeaderSearch() {
       <div className="flex items-center gap-3 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 shadow-[var(--shadow-card)]">
         <Search size={16} className="text-[var(--text-muted)]" />
         <input
+          aria-label="Global search"
           ref={inputRef}
           id="global-search"
           value={query}

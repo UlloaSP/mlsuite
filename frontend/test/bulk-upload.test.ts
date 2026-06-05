@@ -146,7 +146,7 @@ describe("bulk upload helpers", () => {
     expect(overflow.skipped[0]?.reason).toContain("maximum");
   });
 
-  it("builds persisted payload with explanation results and errors", () => {
+  it("builds persisted payload with report results and errors", () => {
     const payload = buildPersistedPredictionPayload(
       {
         outputs: [{ type: "classifier" }],

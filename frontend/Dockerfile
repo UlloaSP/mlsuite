@@ -5,7 +5,7 @@ WORKDIR /app
 RUN npm install -g vite-plus@latest
 ARG VITE_BACKEND_URL
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN vp install --ignore-scripts --no-frozen-lockfile
 COPY . .
 RUN vp run build
