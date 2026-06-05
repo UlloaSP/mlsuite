@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 type JsonRecord = Record<string, unknown>;
 
-export type PersistedExplanationState = {
+export type PersistedReportState = {
   id: string;
   status: "idle" | "loading" | "done" | "error";
   result?: unknown;
@@ -17,20 +17,20 @@ const isRecord = (value: unknown): value is JsonRecord =>
 
 export function buildPersistedPredictionPayload(
   raw: unknown,
-  explanations: readonly PersistedExplanationState[],
+  feedbackReports: readonly PersistedReportState[],
 ): Record<string, unknown> {
   const base = isRecord(raw) ? raw : { raw };
   const reports = isRecord(base.reports) ? { ...base.reports } : {};
   const meta = isRecord(base.meta) ? { ...base.meta } : {};
   const explainErrors = isRecord(meta.explainErrors) ? { ...meta.explainErrors } : {};
 
-  for (const explanation of explanations) {
-    if (explanation.status === "done" && explanation.result !== undefined) {
-      reports[explanation.id] = explanation.result;
-      delete explainErrors[explanation.id];
+  for (const report of feedbackReports) {
+    if (report.status === "done" && report.result !== undefined) {
+      reports[report.id] = report.result;
+      delete explainErrors[report.id];
     }
-    if (explanation.status === "error" && explanation.error) {
-      explainErrors[explanation.id] = explanation.error;
+    if (report.status === "error" && report.error) {
+      explainErrors[report.id] = report.error;
     }
   }
 

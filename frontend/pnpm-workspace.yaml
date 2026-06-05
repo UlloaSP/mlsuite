@@ -1,0 +1,4 @@
+allowBuilds:
+  "@swc/core": true
+minimumReleaseAgeExclude:
+  - mlform@0.1.13

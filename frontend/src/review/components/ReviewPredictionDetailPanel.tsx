@@ -1,13 +1,12 @@
 import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppEmptyState } from "../../app/components";
-import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
-import { extractPredictionExplanationEntries } from "../../models/explanation-feedback-utils";
+import { AppEmptyState } from "../../app/components/ui";
+import { extractPredictionReportEntries } from "../../models/report-feedback-utils";
+import { getOutputReports } from "../../models/report-contract";
 import { useReviewPredictionDetail } from "../hooks";
 import { ReviewAccordionSection } from "./ReviewAccordionSection";
 import { ReviewCombinedFeedbackForm } from "./ReviewCombinedFeedbackForm";
-import { ReviewExplanationsSection } from "./ReviewExplanationsSection";
 import { ReviewInputsSection } from "./ReviewInputsSection";
 import { ReviewOutputsSection } from "./ReviewOutputsSection";
 
@@ -15,7 +14,6 @@ type ReviewPredictionDetailPanelProps = {
   token: string;
   predictionToken: string;
   signatureSchema: Record<string, unknown>;
-  customExplanationDefinitions: readonly CatalogExplanationDefinition[];
   onReviewChanged: () => Promise<unknown> | unknown;
 };
 
@@ -23,32 +21,28 @@ export function ReviewPredictionDetailPanel({
   token,
   predictionToken,
   signatureSchema,
-  customExplanationDefinitions,
   onReviewChanged,
 }: ReviewPredictionDetailPanelProps) {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [inputsOpen, setInputsOpen] = useState(false);
   const [outputsOpen, setOutputsOpen] = useState(false);
-  const [explanationsOpen, setExplanationsOpen] = useState(false);
   const detail = useReviewPredictionDetail(token, predictionToken);
   const reports = useMemo(() => {
-    const raw = signatureSchema.reports;
-    return Array.isArray(raw) ? (raw as Record<string, unknown>[]) : [];
+    return getOutputReports(signatureSchema);
   }, [signatureSchema]);
-  const explanationEntries = useMemo(
+  const feedbackReports = useMemo(
     () =>
-      extractPredictionExplanationEntries(
+      extractPredictionReportEntries(
         detail.data?.prediction.prediction,
         signatureSchema,
-        customExplanationDefinitions,
       ),
-    [customExplanationDefinitions, detail.data?.prediction.prediction, signatureSchema],
+    [detail.data?.prediction.prediction, signatureSchema],
   );
   const outputByOrder = useMemo(
     () => new Map((detail.data?.outputFeedback ?? []).map((item) => [item.order, item])),
     [detail.data?.outputFeedback],
   );
-  const explanationByOrder = useMemo(
+  const reportFeedbackByOrder = useMemo(
     () => new Map((detail.data?.explanationFeedback ?? []).map((item) => [item.order, item])),
     [detail.data?.explanationFeedback],
   );
@@ -77,7 +71,7 @@ export function ReviewPredictionDetailPanel({
           {prediction.name}
         </h2>
       </div>
-      {targets.length === 0 && explanationEntries.length === 0 ? (
+      {targets.length === 0 && feedbackReports.length === 0 ? (
         <AppEmptyState
           title="Nothing to review"
           description="This prediction has no configured feedback forms."
@@ -89,11 +83,11 @@ export function ReviewPredictionDetailPanel({
             predictionId={prediction.id}
             targets={targets}
             outputFeedbackByOrder={outputByOrder}
-            explanationFeedbackByOrder={explanationByOrder}
+            explanationFeedbackByOrder={reportFeedbackByOrder}
             reports={reports}
             signatureSchema={signatureSchema}
             predictionValue={prediction.prediction}
-            explanations={explanationEntries}
+            feedbackReports={feedbackReports}
             theme={theme}
             onSaved={async () => {
               await detail.refetch();
@@ -107,16 +101,10 @@ export function ReviewPredictionDetailPanel({
           >
             <ReviewOutputsSection
               targets={targets}
+              reports={feedbackReports}
               signatureSchema={signatureSchema}
               predictionValue={prediction.prediction}
             />
-          </ReviewAccordionSection>
-          <ReviewAccordionSection
-            title="Explanations"
-            open={explanationsOpen}
-            onToggle={() => setExplanationsOpen((v) => !v)}
-          >
-            <ReviewExplanationsSection explanations={explanationEntries} />
           </ReviewAccordionSection>
           <ReviewAccordionSection
             title="Inputs"

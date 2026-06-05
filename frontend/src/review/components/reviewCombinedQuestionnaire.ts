@@ -1,16 +1,18 @@
-import type { FieldConfig, SubmitRequest, Transport } from "mlform/runtime";
 import type {
   ExplanationFeedbackDto,
   OutputFeedbackDto,
   TargetDto,
 } from "../../models/api/modelService";
+import type { QuestionnaireSchema } from "../../models/questionnaire-schema";
 import {
-  buildQuestionnaireFormSchema,
-  type QuestionnaireSchema,
-} from "../../models/questionnaire-schema";
+  buildCombinedFeedbackQuestionnaire,
+  createCombinedQuestionnaireTransport,
+  type CombinedFeedbackStep,
+  valuesForCombinedStep,
+} from "../../models/combined-feedback-questionnaire";
 import {
   getEffectiveFeedbackValues,
-  type PredictionExplanationDescriptor,
+  type PredictionReportDescriptor,
 } from "../../models/questionnaire-feedback";
 import { createOutputFeedbackQuestionnaire } from "../../models/output-feedback-questionnaire";
 import { buildOutputFeedbackInitialValues } from "../../models/output-feedback-values";
@@ -21,18 +23,12 @@ import {
   getTargetProbability,
 } from "../../models/target-utils";
 
-type FeedbackKind = "output" | "explanation";
+export type FeedbackKind = "output" | "report";
 
-export type ReviewFeedbackStep = {
-  id: string;
-  kind: FeedbackKind;
-  order: number;
-  title: string;
-  description: string;
-  schema: QuestionnaireSchema;
-  initialValues: Record<string, unknown>;
-  feedback?: OutputFeedbackDto | ExplanationFeedbackDto;
-};
+export type ReviewFeedbackStep = CombinedFeedbackStep<
+  FeedbackKind,
+  OutputFeedbackDto | ExplanationFeedbackDto
+>;
 
 type BuildReviewFeedbackStepsArgs = {
   targets: TargetDto[];
@@ -41,13 +37,8 @@ type BuildReviewFeedbackStepsArgs = {
   reports: Record<string, unknown>[];
   signatureSchema: unknown;
   predictionValue: unknown;
-  explanations: PredictionExplanationDescriptor[];
+  feedbackReports: PredictionReportDescriptor[];
 };
-
-const fieldId = (field: FieldConfig, fallback: string): string =>
-  typeof field.id === "string" && field.id.trim().length > 0 ? field.id : fallback;
-
-const prefix = (stepId: string, id: string): string => `${stepId}-${id}`;
 
 const text = (value: unknown): string => {
   if (value === null || value === undefined || value === "") return "No value";
@@ -78,7 +69,7 @@ export const buildReviewFeedbackSteps = ({
   reports,
   signatureSchema,
   predictionValue,
-  explanations,
+  feedbackReports,
 }: BuildReviewFeedbackStepsArgs): ReviewFeedbackStep[] => [
   ...targets.map((target, index) => {
     const schema = createOutputFeedbackQuestionnaire(
@@ -100,21 +91,22 @@ export const buildReviewFeedbackSteps = ({
       feedback: outputFeedbackByOrder.get(target.order),
     };
   }),
-  ...explanations.flatMap((explanation, index) => {
-    if (!explanation.feedbackQuestionnaire) return [];
+  ...feedbackReports.flatMap((report, index) => {
+    if (!report.feedbackQuestionnaire) return [];
+    const outputIndex = targets.length + index + 1;
     return [
       {
-        id: `explanation-${explanation.order}`,
-        kind: "explanation" as const,
-        order: explanation.order,
-        title: `Explanation ${index + 1}: ${explanation.label}`,
-        description: `Prediction explanation:\n${explanation.content.join("\n\n")}`,
-        schema: explanation.feedbackQuestionnaire,
+        id: `report-${report.order}`,
+        kind: "report" as const,
+        order: report.order,
+        title: `Output ${outputIndex}: ${report.label}`,
+        description: `Prediction result:\n${report.content.join("\n\n")}`,
+        schema: report.feedbackQuestionnaire,
         initialValues: getEffectiveFeedbackValues(
-          explanationFeedbackByOrder.get(explanation.order),
-          explanation.feedbackQuestionnaire,
+          explanationFeedbackByOrder.get(report.order),
+          report.feedbackQuestionnaire,
         ),
-        feedback: explanationFeedbackByOrder.get(explanation.order),
+        feedback: explanationFeedbackByOrder.get(report.order),
       },
     ];
   }),
@@ -122,53 +114,15 @@ export const buildReviewFeedbackSteps = ({
 
 export const buildCombinedReviewQuestionnaire = (
   steps: readonly ReviewFeedbackStep[],
-): { schema: QuestionnaireSchema; initialValues: Record<string, unknown> } => {
-  const initialValues: Record<string, unknown> = {};
-  const schema: QuestionnaireSchema = {
-    steps: steps.map((step) => {
-      const fields = buildQuestionnaireFormSchema(step.schema).fields.map(
-        (field: FieldConfig, index: number) => {
-          const sourceId = fieldId(field, `field-${index + 1}`);
-          const nextId = prefix(step.id, sourceId);
-          if (sourceId in step.initialValues) {
-            initialValues[nextId] = step.initialValues[sourceId];
-          }
-          return { ...field, id: nextId };
-        },
-      );
-      return {
-        id: step.id,
-        title: step.title,
-        description: step.description,
-        fields,
-      };
-    }),
-  };
-  return { schema, initialValues };
-};
+): { schema: QuestionnaireSchema; initialValues: Record<string, unknown> } =>
+  buildCombinedFeedbackQuestionnaire(steps);
 
 export const valuesForStep = (
   allValues: Record<string, unknown>,
   step: ReviewFeedbackStep,
-): Record<string, unknown> => {
-  const result: Record<string, unknown> = {};
-  buildQuestionnaireFormSchema(step.schema).fields.forEach((field: FieldConfig, index: number) => {
-    const sourceId = fieldId(field, `field-${index + 1}`);
-    const value = allValues[prefix(step.id, sourceId)];
-    if (value !== undefined) result[sourceId] = value;
-  });
-  return result;
-};
+): Record<string, unknown> => valuesForCombinedStep(allValues, step);
 
 export const createReviewQuestionnaireTransport = (
   onSubmit: (values: Record<string, unknown>) => Promise<void>,
-): Transport => ({
-  async submit(request: SubmitRequest) {
-    const values =
-      typeof request.serializedValues === "object" && request.serializedValues !== null
-        ? (request.serializedValues as Record<string, unknown>)
-        : {};
-    await onSubmit(values);
-    return { raw: values, meta: {}, reports: {} };
-  },
-});
+): ReturnType<typeof createCombinedQuestionnaireTransport> =>
+  createCombinedQuestionnaireTransport(onSubmit);

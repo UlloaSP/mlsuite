@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { X } from "lucide-react";
 import { AnimatePresence, m as motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
-import { AppCopy, AppIconButton, AppSectionTitle } from "../../app/components";
-import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
+import { AppCopy, AppSectionTitle } from "../../app/components/ui";
+import { AppIconButton } from "../../app/components/ui-controls";
 import { showModalAtom } from "../atoms";
 import {
   useCreateExplanationFeedbackMutation,
@@ -18,26 +18,24 @@ import {
   useCreateTargetMutation,
   useGetPredictions,
 } from "../hooks";
-import { extractPredictionExplanationEntries } from "../explanation-feedback-utils";
-import type { PredictionExplanationDescriptor } from "../questionnaire-feedback";
+import { extractPredictionReportEntries } from "../report-feedback-utils";
+import type { PredictionReportDescriptor } from "../questionnaire-feedback";
 import { hasFeedbackValues } from "../questionnaire-feedback";
 import { derivePredictionTargets } from "../derivePredictionTargets";
 import { CreatePredictionModalSummary } from "./CreatePredictionModalSummary";
-import type { ExplanationQuestionnaireMountHandle } from "./ExplanationQuestionnaireMount";
-import { PredictionExplanationReviewCard } from "./PredictionExplanationReviewCard";
+import type { ReportQuestionnaireMountHandle } from "./ReportQuestionnaireMount";
+import { PredictionReportReviewCard } from "./PredictionReportReviewCard";
 import { PredictionOverwriteDialog } from "./PredictionOverwriteDialog";
 
 export type CreatePredictionModalProps = {
   prediction: Record<string, unknown>;
   inputs: Record<string, unknown>;
   signatureSchema: unknown;
-  explanationsPending: boolean;
-  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
+  reportsPending: boolean;
   theme: "light" | "dark";
 };
 
 type PredictionOutput = { type?: string; execution_time?: number | string };
-const EMPTY_CUSTOM_EXPLANATION_DEFINITIONS: readonly CatalogExplanationDefinition[] = [];
 
 const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
   const outputs = value.outputs;
@@ -53,54 +51,46 @@ export function CreatePredictionModal({
   prediction,
   inputs,
   signatureSchema,
-  explanationsPending,
-  customExplanationDefinitions = EMPTY_CUSTOM_EXPLANATION_DEFINITIONS,
+  reportsPending,
   theme,
 }: CreatePredictionModalProps) {
   const { signatureId } = useParams<{ signatureId: string }>();
   const [, setShowModal] = useAtom(showModalAtom);
   const mutation = useCreatePredictionMutation();
   const mutationTarget = useCreateTargetMutation();
-  const explanationFeedbackMutation = useCreateExplanationFeedbackMutation();
+  const reportFeedbackMutation = useCreateExplanationFeedbackMutation();
   const { data: predictions = [] } = useGetPredictions({ signatureId: signatureId ?? "" });
 
   const [predictionName, setPredictionName] = useState("");
-  const [targets, setTargets] = useState<Record<number, unknown>>({});
-  const [draftExplanationValues, setDraftExplanationValues] = useState<
+  const [draftReportValues, setDraftReportValues] = useState<
     Record<string, Record<string, unknown>>
   >({});
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
-  const questionnaireRefs = useRef<Record<string, ExplanationQuestionnaireMountHandle | null>>({});
-  const explanationEntries = useMemo<PredictionExplanationDescriptor[]>(
-    () =>
-      extractPredictionExplanationEntries(
-        prediction,
-        signatureSchema,
-        customExplanationDefinitions,
-      ),
-    [prediction, signatureSchema, customExplanationDefinitions],
+  const questionnaireRefs = useRef<Record<string, ReportQuestionnaireMountHandle | null>>({});
+  const reportEntries = useMemo<PredictionReportDescriptor[]>(
+    () => extractPredictionReportEntries(prediction, signatureSchema),
+    [prediction, signatureSchema],
   );
   const output = asOutput(prediction);
-
-  useEffect(() => {
-    setTargets(
+  const targets = useMemo(
+    () =>
       Object.fromEntries(
         derivePredictionTargets(prediction, signatureSchema).map((target) => [
           target.order,
           target.value,
         ]),
       ),
-    );
-  }, [prediction, signatureSchema]);
+    [prediction, signatureSchema],
+  );
 
   const collectQuestionnaireValues = async () => {
     const submitted = await Promise.all(
-      explanationEntries.map(async (explanation) => {
-        if (!explanation.feedbackQuestionnaire) {
+      reportEntries.map(async (report) => {
+        if (!report.feedbackQuestionnaire) {
           return null;
         }
-        const value = await questionnaireRefs.current[explanation.explanationId]?.submit();
-        return value && hasFeedbackValues(value) ? { order: explanation.order, value } : null;
+        const value = await questionnaireRefs.current[report.reportId]?.submit();
+        return value && hasFeedbackValues(value) ? { order: report.order, value } : null;
       }),
     );
     return submitted.filter(
@@ -131,7 +121,7 @@ export function CreatePredictionModal({
     const feedbackValues = await collectQuestionnaireValues();
     await Promise.all(
       feedbackValues.map((item) =>
-        explanationFeedbackMutation.mutateAsync({
+        reportFeedbackMutation.mutateAsync({
           predictionId: created.id,
           order: item.order,
           value: item.value,
@@ -203,30 +193,30 @@ export function CreatePredictionModal({
               onSave={() => void handleSave()}
               isSaveDisabled={
                 !predictionName.trim() ||
-                explanationsPending ||
+                reportsPending ||
                 mutation.isPending ||
                 mutationTarget.isPending ||
-                explanationFeedbackMutation.isPending
+                reportFeedbackMutation.isPending
               }
             />
 
             <div className="space-y-6">
-              {explanationsPending ? (
-                <AppCopy>Waiting for explanation plugin result…</AppCopy>
+              {reportsPending ? (
+                <AppCopy>Waiting for report result…</AppCopy>
               ) : null}
-              {explanationEntries.map((explanation) => (
-                <PredictionExplanationReviewCard
-                  key={explanation.explanationId}
-                  explanation={explanation}
+              {reportEntries.map((report) => (
+                <PredictionReportReviewCard
+                  key={report.reportId}
+                  report={report}
                   theme={theme}
-                  draftValues={draftExplanationValues[explanation.explanationId] ?? {}}
+                  draftValues={draftReportValues[report.reportId] ?? {}}
                   questionnaireRef={(handle) => {
-                    questionnaireRefs.current[explanation.explanationId] = handle;
+                    questionnaireRefs.current[report.reportId] = handle;
                   }}
                   onValuesChange={(values) =>
-                    setDraftExplanationValues((prev) => ({
+                    setDraftReportValues((prev) => ({
                       ...prev,
-                      [explanation.explanationId]: { ...values },
+                      [report.reportId]: { ...values },
                     }))
                   }
                 />

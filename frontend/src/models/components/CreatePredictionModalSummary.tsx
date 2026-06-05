@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Save } from "lucide-react";
-import { AppButton, AppPanel, AppSectionTitle, AppTextField } from "../../app/components";
+import { AppButton, AppTextField } from "../../app/components/ui-controls";
+import { AppPanel, AppSectionTitle } from "../../app/components/ui";
 import {
   formatProbability,
   getSchemaAwareTargetValue,

@@ -27,8 +27,8 @@ export function ReviewStepContextPanel() {
   if (!activeStep) {
     return <aside className="lg:sticky lg:top-28" />;
   }
-  const title = activeStep.kind === "output" ? "Current output" : "Current explanation";
-  const content = lines(activeStep.description.replace(/^Prediction (result|explanation):\s*/i, ""));
+  const title = "Current output";
+  const content = lines(activeStep.description.replace(/^Prediction (result|report):\s*/i, ""));
   return (
     <aside className="lg:sticky lg:top-28">
       <div className="border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 shadow-[var(--shadow-card)]">

@@ -3,9 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig, FieldConfig, Registry, ReportConfig } from "mlform/runtime";
+import type { FieldConfig, Registry, ReportConfig } from "mlform/runtime";
 import { type CatalogFieldDefinition } from "./custom-field";
-import { type CatalogExplanationDefinition } from "./custom-explanation";
 import { type CatalogReportDefinition } from "./custom-report";
 import type { CompatIssue } from "./shared";
 import { normalizeIssuePath } from "./shared";
@@ -18,11 +17,6 @@ const pushIssue = (
 ): void => {
   issues.push({ path, message, severity });
 };
-
-export const createCustomExplanationDefinitionMap = (
-  definitions: readonly CatalogExplanationDefinition[],
-): Map<string, CatalogExplanationDefinition> =>
-  new Map(definitions.map((definition) => [definition.kind, definition]));
 
 export const createCustomFieldDefinitionMap = (
   definitions: readonly CatalogFieldDefinition[],
@@ -40,30 +34,18 @@ export const validateFieldConfig = (
   issues: CompatIssue[],
   engineRegistry: Registry,
   customDefinitionMap: Map<string, CatalogFieldDefinition>,
-): void => {
+): FieldConfig | null => {
   const builtinDefinition = engineRegistry.getField(field.kind);
   const customDefinition = customDefinitionMap.get(field.kind);
   const definition = builtinDefinition ?? customDefinition?.definition.definition;
 
   if (!definition) {
     pushIssue(issues, ["fields", index, "kind"], `Unknown field kind "${field.kind}".`);
-    return;
+    return null;
   }
 
   const result = definition.schema.safeParse(field);
-  if (result.success) {
-    return;
-  }
-
-  for (const issue of result.error.issues) {
-    pushIssue(issues, ["fields", index, ...normalizeIssuePath(issue.path)], issue.message);
-  }
-
-  if (!customDefinition) {
-    return;
-  }
-
-  if (!customDefinition.active) {
+  if (customDefinition && !customDefinition.active) {
     pushIssue(
       issues,
       ["fields", index, "kind"],
@@ -71,6 +53,15 @@ export const validateFieldConfig = (
       "warning",
     );
   }
+
+  if (result.success) {
+    return { ...field, ...result.data, id: field.id, label: field.label };
+  }
+
+  for (const issue of result.error.issues) {
+    pushIssue(issues, ["fields", index, ...normalizeIssuePath(issue.path)], issue.message);
+  }
+  return null;
 };
 
 export const validateReportConfig = (
@@ -79,30 +70,18 @@ export const validateReportConfig = (
   issues: CompatIssue[],
   engineRegistry: Registry,
   customDefinitionMap: Map<string, CatalogReportDefinition>,
-): void => {
+): ReportConfig | null => {
   const builtinDefinition = engineRegistry.getReport(report.kind);
   const customDefinition = customDefinitionMap.get(report.kind);
   const definition = builtinDefinition ?? customDefinition?.definition.definition;
 
   if (!definition) {
     pushIssue(issues, ["reports", index, "kind"], `Unknown report kind "${report.kind}".`);
-    return;
+    return null;
   }
 
   const result = definition.schema.safeParse(report);
-  if (result.success) {
-    return;
-  }
-
-  for (const issue of result.error.issues) {
-    pushIssue(issues, ["reports", index, ...normalizeIssuePath(issue.path)], issue.message);
-  }
-
-  if (!customDefinition) {
-    return;
-  }
-
-  if (!customDefinition.active) {
+  if (customDefinition && !customDefinition.active) {
     pushIssue(
       issues,
       ["reports", index, "kind"],
@@ -110,44 +89,13 @@ export const validateReportConfig = (
       "warning",
     );
   }
-};
 
-export const validateExplanationConfig = (
-  explanation: ExplanationConfig & { id: string },
-  index: number,
-  issues: CompatIssue[],
-  engineRegistry: Registry,
-  customDefinitionMap: Map<string, CatalogExplanationDefinition>,
-): void => {
-  const builtinDefinition = engineRegistry.getExplanation(explanation.kind);
-  const customDefinition = customDefinitionMap.get(explanation.kind);
-  const definition = builtinDefinition ?? customDefinition?.definition.definition;
-
-  if (!definition) {
-    pushIssue(
-      issues,
-      ["explanations", index, "kind"],
-      `Unknown explanation kind "${explanation.kind}".`,
-    );
-    return;
+  if (result.success) {
+    return { ...report, ...result.data, id: report.id, label: report.label, source: report.source };
   }
 
-  const result = definition.schema.safeParse(explanation);
-  if (!result.success) {
-    for (const issue of result.error.issues) {
-      pushIssue(issues, ["explanations", index, ...normalizeIssuePath(issue.path)], issue.message);
-    }
-    return;
+  for (const issue of result.error.issues) {
+    pushIssue(issues, ["reports", index, ...normalizeIssuePath(issue.path)], issue.message);
   }
-
-  if (!customDefinition?.active) {
-    if (customDefinition) {
-      pushIssue(
-        issues,
-        ["explanations", index, "kind"],
-        `Custom explanation kind "${explanation.kind}" is inactive and will be skipped at runtime.`,
-        "warning",
-      );
-    }
-  }
+  return null;
 };

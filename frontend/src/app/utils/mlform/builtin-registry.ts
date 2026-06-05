@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createMlRegistryPack } from "mlform/builtins-ml";
+import { createMlRegistryPack } from "mlform/builtins";
 import type { FieldConfig, FieldDefinition, ReportConfig, ReportDefinition } from "mlform/runtime";
 
 const builtinRegistry = createMlRegistryPack().registry;

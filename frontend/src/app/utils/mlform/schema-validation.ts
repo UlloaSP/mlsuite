@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { FormSchema } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "./custom-field";
-import type { CatalogExplanationDefinition } from "./custom-explanation";
 import type { CatalogReportDefinition } from "./custom-report";
 import { isBuiltinFieldKind, isBuiltinReportKind } from "./builtin-registry";
 import { mlformJsonSchema, validateMlformSchema as validateBaseMlformSchema } from "./schema";
@@ -15,12 +14,11 @@ import { hasBlockingIssues, isRecord } from "./shared";
 type ValidateMlformSchemaOptions = {
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
   customReportDefinitions?: readonly CatalogReportDefinition[];
-  customExplanationDefinitions?: readonly CatalogExplanationDefinition[];
 };
 
 const makeUnknownKindIssue = (
   path: Array<string | number>,
-  type: "field" | "report" | "explanation",
+  type: "field" | "report",
   kind: string,
 ): CompatIssue => ({
   path,
@@ -30,7 +28,7 @@ const makeUnknownKindIssue = (
 
 const makeInactiveKindIssue = (
   path: Array<string | number>,
-  type: "field" | "report" | "explanation",
+  type: "field" | "report",
   kind: string,
 ): CompatIssue => ({
   path,
@@ -84,33 +82,6 @@ const appendReportIssues = (
   });
 };
 
-const appendExplanationIssues = (
-  schema: unknown,
-  allKinds: Set<string>,
-  activeKinds: Set<string>,
-  issues: CompatIssue[],
-) => {
-  if (!isRecord(schema) || !Array.isArray(schema.explanations)) {
-    return;
-  }
-  schema.explanations.forEach((explanation, index) => {
-    if (!isRecord(explanation) || typeof explanation.kind !== "string") {
-      return;
-    }
-    if (!allKinds.has(explanation.kind)) {
-      issues.push(
-        makeUnknownKindIssue(["explanations", index, "kind"], "explanation", explanation.kind),
-      );
-      return;
-    }
-    if (!activeKinds.has(explanation.kind)) {
-      issues.push(
-        makeInactiveKindIssue(["explanations", index, "kind"], "explanation", explanation.kind),
-      );
-    }
-  });
-};
-
 const mergeIssues = (
   schema: unknown,
   baseIssues: readonly CompatIssue[],
@@ -131,10 +102,6 @@ const mergeIssues = (
         !isRecord(report) || typeof report.kind !== "string" || isBuiltinReportKind(report.kind)
       );
     }
-    if (section === "explanations" && Array.isArray(schema.explanations)) {
-      const explanation = schema.explanations[index];
-      return !isRecord(explanation) || typeof explanation.kind !== "string";
-    }
     return true;
   });
   const allFieldKinds = new Set<string>();
@@ -153,18 +120,8 @@ const mergeIssues = (
       activeReportKinds.add(definition.kind);
     }
   }
-  const allExplanationKinds = new Set(
-    (options.customExplanationDefinitions ?? []).map((definition) => definition.kind),
-  );
-  const activeExplanationKinds = new Set<string>();
-  for (const definition of options.customExplanationDefinitions ?? []) {
-    if (definition.active) {
-      activeExplanationKinds.add(definition.kind);
-    }
-  }
   appendFieldIssues(schema, allFieldKinds, activeFieldKinds, filteredIssues);
   appendReportIssues(schema, allReportKinds, activeReportKinds, filteredIssues);
-  appendExplanationIssues(schema, allExplanationKinds, activeExplanationKinds, filteredIssues);
   return filteredIssues;
 };
 

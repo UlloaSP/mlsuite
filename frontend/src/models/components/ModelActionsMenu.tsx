@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Copy, Ellipsis, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AppIconButton, cx } from "../../app/components";
+import { AppIconButton } from "../../app/components/ui-controls";
+import { cx } from "../../app/components/ui-utils";
 
 export type ModelAction = "edit" | "delete" | "duplicate";
 

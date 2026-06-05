@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Check, Plus, RefreshCcw, Save } from "lucide-react";
 import { m as motion } from "motion/react";
 import type { DragEvent } from "react";
-import { cx } from "../../app/components";
+import { cx } from "../../app/components/ui-utils";
 import type { Bundle } from "../bundle-types";
 import { BundleFilePill } from "./BundleFilePill";
 
@@ -102,6 +102,7 @@ export function BundleCard({
         {/* ── Meta section ───────────────────────────────────────── */}
         <div className="flex w-56 flex-shrink-0 flex-col justify-between gap-2.5 px-4 py-3.5">
           <input
+            aria-label={`Rename ${bundle.name}`}
             type="text"
             value={bundle.name}
             onChange={(e) => onRename(e.target.value)}

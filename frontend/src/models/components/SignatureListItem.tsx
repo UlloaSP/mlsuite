@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight, FileCode } from "lucide-react";
-import { AppBadge, cx } from "../../app/components";
+import { AppBadge } from "../../app/components/ui-controls";
+import { cx } from "../../app/components/ui-utils";
 import type { SignatureDto } from "../api/modelService";
 import { formatTimestamp, getSignatureVersionLabel } from "../utils";
 

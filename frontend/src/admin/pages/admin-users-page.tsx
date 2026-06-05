@@ -2,16 +2,8 @@ import { Check, KeyRound, Plus, ShieldCheck } from "lucide-react";
 import type { FormEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router";
-import {
-  AppBadge,
-  AppButton,
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSelect,
-  AppSurface,
-  AppTextField,
-} from "../../app/components";
+import { AppBadge, AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
+import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
 import { useUser } from "../../user/hooks";
 import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
 import {

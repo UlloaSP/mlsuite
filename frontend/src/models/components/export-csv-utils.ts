@@ -3,13 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ExplanationConfig } from "mlform/runtime";
+import type { ReportConfig } from "mlform/runtime";
 import { toMlformSchema } from "../../app/utils/mlform/schema-validation";
-import type { CatalogExplanationDefinition } from "../../app/utils/mlform/custom-explanation";
 import { getQuestionnaireFieldIds } from "../questionnaire-feedback";
+import type { QuestionnaireSchema } from "../questionnaire-schema";
 
 const isPlainObject = (value: unknown) =>
   value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
+
+const isQuestionnaireSchema = (value: unknown): value is QuestionnaireSchema =>
+  isPlainObject(value) && Array.isArray((value as { steps?: unknown }).steps);
 
 export const toRecord = (value: Record<string, unknown>): Record<string, unknown> =>
   value instanceof Map ? Object.fromEntries(value.entries()) : (value ?? {});
@@ -44,27 +47,24 @@ export const csvEscape = (value: string, separator: string) => {
   return next;
 };
 
-export const getExplanationHeaders = (
+export const getReportFeedbackHeaders = (
   signatureSchema: unknown,
-  customExplanationDefinitions: readonly CatalogExplanationDefinition[],
   reviewerLabels: readonly string[] = [],
 ): string[] => {
   try {
-    const schema = toMlformSchema(signatureSchema, {
-      customExplanationDefinitions,
-    });
-    const definitionMap = new Map(
-      customExplanationDefinitions.map((definition) => [definition.kind, definition]),
-    );
+    const schema = toMlformSchema(signatureSchema);
 
-    return (schema.explanations ?? []).flatMap((explanation: ExplanationConfig) => {
-      const questionnaire = definitionMap.get(explanation.kind)?.definition.feedbackQuestionnaire;
+    return (schema.reports ?? []).flatMap((report: ReportConfig) => {
+      const questionnaire = (report as Record<string, unknown>).feedbackQuestionnaire;
+      if (!isQuestionnaireSchema(questionnaire)) {
+        return [];
+      }
       return [
-        `explanation.${explanation.id}.content`,
+        `report.${report.id}.content`,
         ...(questionnaire
           ? getQuestionnaireFieldIds(questionnaire).flatMap((fieldId) =>
               reviewerLabels.map(
-                (reviewer) => `explanation.${explanation.id}.${fieldId}.${reviewer}`,
+                (reviewer) => `report.${report.id}.${fieldId}.${reviewer}`,
               ),
             )
           : []),

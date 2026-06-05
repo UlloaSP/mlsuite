@@ -107,6 +107,25 @@ class ModelServiceTest {
         verify(modelRepository).save(any(Model.class));
     }
 
+    @Test
+    void createModel_DeletesStoredObjectWhenPersistFails() throws Exception {
+        RuntimeException failure = new RuntimeException("persist failed");
+        when(userLookupService.requireById(3L)).thenReturn(user());
+        when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
+        when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
+                .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.pkl"));
+        when(modelFile.getBytes()).thenReturn("x".getBytes());
+        when(modelFile.getName()).thenReturn("modelFile");
+        when(modelFile.getOriginalFilename()).thenReturn("model.pkl");
+        when(modelFile.getContentType()).thenReturn("application/octet-stream");
+        when(objectStorageService.store(any(), any(), any(), any(), anyLong()))
+                .thenReturn(new StoredObject("bucket", "key", 1L, "etag"));
+        when(modelRepository.save(any(Model.class))).thenThrow(failure);
+
+        assertEquals(failure, assertThrows(RuntimeException.class, () -> service.createModel(3L, "demo", modelFile)));
+        verify(objectStorageService).delete("bucket", "key");
+    }
+
     private User user() {
         User user = new User();
         user.setId(3L);

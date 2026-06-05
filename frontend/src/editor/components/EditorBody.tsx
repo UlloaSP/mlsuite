@@ -6,16 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only import; editor component is lazy-loaded below.
 import type * as Monaco from "monaco-editor";
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
   getActiveCustomFieldDefinitions,
   type CatalogFieldDefinition,
 } from "../../app/utils/mlform/custom-field";
-import {
-  getActiveCustomExplanationDefinitions,
-  type CatalogExplanationDefinition,
-} from "../../app/utils/mlform/custom-explanation";
 import {
   getActiveCustomReportDefinitions,
   type CatalogReportDefinition,
@@ -51,17 +47,16 @@ export function EditorBody() {
   const validationSequenceRef = useRef(0);
   const catalogFieldDefinitionsRef = useRef<readonly CatalogFieldDefinition[]>([]);
   const catalogReportDefinitionsRef = useRef<readonly CatalogReportDefinition[]>([]);
-  const catalogDefinitionsRef = useRef<readonly CatalogExplanationDefinition[]>([]);
   const catalogWarningRef = useRef<EditorErrorCard | null>(null);
-  const applyCompatValidation = (
-    text: string,
-    customFieldDefinitions: readonly CatalogFieldDefinition[],
-    customReportDefinitions: readonly CatalogReportDefinition[],
-    customExplanationDefinitions: readonly CatalogExplanationDefinition[],
-  ) => {
-    if (!editorRef.current || !monacoRef.current) {
-      return;
-    }
+  const applyCompatValidation = useCallback(
+    (
+      text: string,
+      customFieldDefinitions: readonly CatalogFieldDefinition[],
+      customReportDefinitions: readonly CatalogReportDefinition[],
+    ) => {
+      if (!editorRef.current || !monacoRef.current) {
+        return;
+      }
 
     const monacoNs = monacoRef.current;
     const model = editorRef.current.getModel();
@@ -77,7 +72,6 @@ export function EditorBody() {
       const result = validateMlformSchema(parsed, {
         customFieldDefinitions,
         customReportDefinitions,
-        customExplanationDefinitions,
       });
 
       if (runId !== validationSequenceRef.current) {
@@ -134,7 +128,9 @@ export function EditorBody() {
       monacoNs.editor.setModelMarkers(model, "mlform-compat", []);
       compatCardsRef.current = catalogWarningRef.current ? [catalogWarningRef.current] : [];
     }
-  };
+    },
+    [setSchema],
+  );
 
   const handleOnMount = (
     editor: Monaco.editor.IStandaloneCodeEditor,
@@ -177,7 +173,6 @@ export function EditorBody() {
       editor.getValue(),
       catalogFieldDefinitionsRef.current,
       catalogReportDefinitionsRef.current,
-      catalogDefinitionsRef.current,
     );
   };
 
@@ -188,11 +183,10 @@ export function EditorBody() {
       text,
       catalogFieldDefinitionsRef.current,
       catalogReportDefinitionsRef.current,
-      catalogDefinitionsRef.current,
     );
   };
 
-  const handleOnValidate = (markers: Monaco.editor.IMarker[]) => {
+  const handleOnValidate = useCallback((markers: Monaco.editor.IMarker[]) => {
     if (!editorRef.current) {
       return;
     }
@@ -219,33 +213,29 @@ export function EditorBody() {
     }, []);
 
     setSchemaErrors([...workerCards, ...compatCardsRef.current]);
-  };
+  }, [setSchemaErrors]);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
       try {
-        const [customFieldDefinitions, customReportDefinitions, customDefinitions] =
-          await Promise.all([
-            getActiveCustomFieldDefinitions(),
-            getActiveCustomReportDefinitions(),
-            getActiveCustomExplanationDefinitions(),
-          ]);
+        const [customFieldDefinitions, customReportDefinitions] = await Promise.all([
+          getActiveCustomFieldDefinitions(),
+          getActiveCustomReportDefinitions(),
+        ]);
         if (cancelled) {
           return;
         }
 
         catalogFieldDefinitionsRef.current = customFieldDefinitions;
         catalogReportDefinitionsRef.current = customReportDefinitions;
-        catalogDefinitionsRef.current = customDefinitions;
         catalogWarningRef.current = null;
         const nextText = editorRef.current?.getValue() ?? schemaText;
         applyCompatValidation(
           nextText,
           customFieldDefinitions,
           customReportDefinitions,
-          customDefinitions,
         );
       } catch (error: unknown) {
         if (cancelled) {
@@ -254,7 +244,6 @@ export function EditorBody() {
 
         catalogFieldDefinitionsRef.current = [];
         catalogReportDefinitionsRef.current = [];
-        catalogDefinitionsRef.current = [];
         catalogWarningRef.current = {
           line: 1,
           column: 1,
@@ -268,14 +257,14 @@ export function EditorBody() {
             : "warning",
         };
         const nextText = editorRef.current?.getValue() ?? schemaText;
-        applyCompatValidation(nextText, [], [], []);
+        applyCompatValidation(nextText, [], []);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [pluginCatalogVersion]);
+  }, [applyCompatValidation, pluginCatalogVersion, schemaText]);
 
   useEffect(() => {
     invalidatePluginCatalog();

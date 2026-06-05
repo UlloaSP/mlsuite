@@ -1,4 +1,4 @@
-import { AppBadge } from "../../app/components";
+import { AppBadge } from "../../app/components/ui-controls";
 import type { InvitationStatus, MembershipStatus, OrganizationRole, TeamRole } from "../types";
 
 type RoleValue = OrganizationRole | TeamRole | MembershipStatus | InvitationStatus;

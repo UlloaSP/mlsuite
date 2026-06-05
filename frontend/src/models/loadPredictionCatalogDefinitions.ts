@@ -8,10 +8,6 @@ import {
   type CatalogFieldDefinition,
 } from "../app/utils/mlform/custom-field";
 import {
-  getActiveCustomExplanationDefinitions,
-  type CatalogExplanationDefinition,
-} from "../app/utils/mlform/custom-explanation";
-import {
   getActiveCustomReportDefinitions,
   type CatalogReportDefinition,
 } from "../app/utils/mlform/custom-report";
@@ -19,18 +15,15 @@ import {
 export type PredictionCatalogDefinitions = {
   fieldDefinitions: readonly CatalogFieldDefinition[];
   reportDefinitions: readonly CatalogReportDefinition[];
-  explanationDefinitions: readonly CatalogExplanationDefinition[];
 };
 
 export const loadPredictionCatalogDefinitions = async (): Promise<PredictionCatalogDefinitions> => {
-  const [fieldDefinitions, reportDefinitions, explanationDefinitions] = await Promise.all([
+  const [fieldDefinitions, reportDefinitions] = await Promise.all([
     getActiveCustomFieldDefinitions(),
     getActiveCustomReportDefinitions(),
-    getActiveCustomExplanationDefinitions(),
   ]);
   return {
     fieldDefinitions,
     reportDefinitions,
-    explanationDefinitions,
   };
 };

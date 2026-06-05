@@ -1,6 +1,6 @@
 import { FileDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AppButton, AppIconButton } from "../../app/components";
+import { AppButton, AppIconButton } from "../../app/components/ui-controls";
 import type { ExplanationFeedbackDto, OutputFeedbackDto, PredictionDto } from "../api/modelService";
 import { ExportReviewPredictionRow } from "./ExportReviewPredictionRow";
 import {

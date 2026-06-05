@@ -172,6 +172,7 @@ export function InvitationsPage() {
                 <tr key={invite.id} className="border-b border-[var(--border-soft)] last:border-0">
                   <td className="p-4 font-semibold">
                     <input
+                      aria-label={`Select invitation ${invite.email}`}
                       className="mr-3"
                       type="checkbox"
                       checked={selected.includes(invite.id)}

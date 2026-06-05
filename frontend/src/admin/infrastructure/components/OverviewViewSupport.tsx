@@ -4,7 +4,7 @@ import {
   LineChart as RechartsLineChart,
   ResponsiveContainer,
 } from "recharts";
-import { cx } from "../../../app/components";
+import { cx } from "../../../app/components/ui-utils";
 import { formatBytes } from "../formatters";
 import type { InfrastructureOverviewDto } from "../types";
 
@@ -125,6 +125,7 @@ export function SegmentedControl({
     <div className="inline-flex gap-0.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] p-0.5">
       {options.map((opt) => (
         <button
+          type="button"
           key={opt}
           className={cx(
             "rounded-md px-2.5 py-1 text-[0.68rem] font-medium transition",
@@ -139,11 +140,4 @@ export function SegmentedControl({
       ))}
     </div>
   );
-}
-
-export function alertTone(tone: "danger" | "warning" | "accent" | "success") {
-  if (tone === "danger") return "bg-[var(--danger-quiet)] text-[var(--danger-text)]";
-  if (tone === "warning") return "bg-[var(--warning-quiet)] text-[var(--warning-text)]";
-  if (tone === "accent") return "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]";
-  return "bg-[var(--success-quiet)] text-[var(--success-text)]";
 }

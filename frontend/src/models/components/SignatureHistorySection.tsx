@@ -1,4 +1,5 @@
-import { AppButton, AppEmptyState } from "../../app/components";
+import { AppButton } from "../../app/components/ui-controls";
+import { AppEmptyState } from "../../app/components/ui";
 import type { PredictionDto, SignatureDto } from "../api/modelService";
 import { PredictionHistoryTable } from "./PredictionHistoryTable";
 import {

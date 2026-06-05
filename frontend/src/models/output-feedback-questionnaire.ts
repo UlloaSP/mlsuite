@@ -34,7 +34,7 @@ const getClassifierOptions = (
 
   return Array.from({ length: size }, (_, index) => ({
     label: labels[index] ?? String(mapping[index] ?? index),
-    value: String(index),
+    value: String(mapping[index] ?? labels[index] ?? index),
   }));
 };
 

@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { LucideIcon } from "lucide-react";
 import { m as motion } from "motion/react";
 import type { ComponentType } from "react";
-import { cx, FOCUS_RING } from "./ui";
+import { cx, FOCUS_RING } from "./ui-utils";
 
 export function SidebarTile({
   icon: Icon,

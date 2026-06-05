@@ -122,7 +122,6 @@ export function useBulkPredictionUpload() {
             inputs: record.inputs,
             customFieldDefinitions: catalog.fieldDefinitions,
             customReportDefinitions: catalog.reportDefinitions,
-            customExplanationDefinitions: catalog.explanationDefinitions,
             signal: controller.signal,
           });
           const created = await createPrediction({

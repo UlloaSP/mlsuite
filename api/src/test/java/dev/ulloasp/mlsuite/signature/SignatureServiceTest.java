@@ -77,7 +77,7 @@ class SignatureServiceTest {
         when(userLookupService.requireById(5L)).thenReturn(user());
         when(modelRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(model()));
         doThrow(new InvalidSignatureSchemaException(
-                "Custom explanation kind \"old-kind\" does not exist in active plugin catalog."))
+                "Custom report kind \"old-kind\" does not exist in active plugin catalog."))
                 .when(signatureSchemaCompatibilityService).validate(5L, Map.of("fields", List.of()));
 
         assertThrows(InvalidSignatureSchemaException.class,

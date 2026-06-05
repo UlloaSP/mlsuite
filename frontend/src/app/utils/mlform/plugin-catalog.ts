@@ -4,11 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { getActivePlugins, getPlugins, type PluginDto } from "../../api/pluginService";
-import { validateCustomExplanationSourceWithFeedback as validateCustomExplanationSource } from "./custom-explanation-questionnaire";
 import { validateCustomFieldSource } from "./custom-field-runtime";
 import { validateCustomReportSource } from "./custom-report-runtime";
 
-export type DetectedPluginType = "field" | "report" | "explanation";
+export type DetectedPluginType = "field" | "report";
 
 type DetectionResult = {
   pluginType: DetectedPluginType;
@@ -20,9 +19,6 @@ let activePluginsPromise: Promise<PluginDto[]> | null = null;
 const detectionCache = new Map<string, Promise<DetectionResult>>();
 
 const detectDeclaredPluginType = (source: string): DetectedPluginType | null => {
-  if (source.includes("defineExplanationKind(")) {
-    return "explanation";
-  }
   if (source.includes("defineFieldKind(")) {
     return "field";
   }
@@ -47,8 +43,7 @@ const validateByType = async (
     const definition = await validateCustomReportSource(source);
     return { pluginType, kind: definition.kind };
   }
-  const definition = await validateCustomExplanationSource(source);
-  return { pluginType, kind: definition.kind };
+  throw new Error(`Unsupported plugin type: ${pluginType satisfies never}`);
 };
 
 export const invalidatePluginCatalog = (): void => {
@@ -86,16 +81,12 @@ export const detectPluginType = async (source: string): Promise<DetectionResult>
       const attempts = await Promise.allSettled([
         validateCustomFieldSource(source),
         validateCustomReportSource(source),
-        validateCustomExplanationSource(source),
       ]);
       if (attempts[0].status === "fulfilled") {
         return { pluginType: "field", kind: attempts[0].value.kind };
       }
       if (attempts[1].status === "fulfilled") {
         return { pluginType: "report", kind: attempts[1].value.kind };
-      }
-      if (attempts[2].status === "fulfilled") {
-        return { pluginType: "explanation", kind: attempts[2].value.kind };
       }
       const reasons = attempts.reduce<string[]>((messages, attempt) => {
         if (attempt.status === "rejected") {
@@ -105,8 +96,8 @@ export const detectPluginType = async (source: string): Promise<DetectionResult>
       }, []);
       throw new Error(
         reasons.length > 0
-          ? `Plugin validation failed for field/report/explanation: ${reasons.join(" | ")}`
-          : "Plugin validation failed. The file is not a valid field, report, or explanation plugin.",
+          ? `Plugin validation failed for field/report: ${reasons.join(" | ")}`
+          : "Plugin validation failed. The file is not a valid field or report plugin.",
       );
     })();
     detectionCache.set(cacheKey, detection);

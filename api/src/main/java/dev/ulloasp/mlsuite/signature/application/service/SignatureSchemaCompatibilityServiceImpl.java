@@ -44,10 +44,7 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
         PluginCatalog catalog = loadCatalog(userId);
         validateKinds(inputSignature.get("fields"), "field", BUILTIN_FIELD_KINDS, catalog.allFieldKinds(),
                 catalog.activeFieldKinds());
-        validateKinds(inputSignature.get("reports"), "report", BUILTIN_REPORT_KINDS, catalog.allReportKinds(),
-                catalog.activeReportKinds());
-        validateKinds(inputSignature.get("explanations"), "explanation", Set.of(), catalog.allExplanationKinds(),
-                catalog.activeExplanationKinds());
+        validateReportKinds(inputSignature.get("reports"), catalog);
     }
 
     private PluginCatalog loadCatalog(Long userId) {
@@ -55,8 +52,6 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
         Set<String> activeFieldKinds = new LinkedHashSet<>();
         Set<String> allReportKinds = new LinkedHashSet<>();
         Set<String> activeReportKinds = new LinkedHashSet<>();
-        Set<String> allExplanationKinds = new LinkedHashSet<>();
-        Set<String> activeExplanationKinds = new LinkedHashSet<>();
         for (PluginDto plugin : pluginService.list(userId)) {
             Optional<PluginDescriptor> descriptor = detect(plugin.source());
             if (descriptor.isEmpty()) {
@@ -75,21 +70,13 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
                         activeReportKinds.add(descriptor.get().kind());
                     }
                 }
-                case EXPLANATION -> {
-                    allExplanationKinds.add(descriptor.get().kind());
-                    if (plugin.active()) {
-                        activeExplanationKinds.add(descriptor.get().kind());
-                    }
-                }
             }
         }
         return new PluginCatalog(
                 Set.copyOf(allFieldKinds),
                 Set.copyOf(activeFieldKinds),
                 Set.copyOf(allReportKinds),
-                Set.copyOf(activeReportKinds),
-                Set.copyOf(allExplanationKinds),
-                Set.copyOf(activeExplanationKinds));
+                Set.copyOf(activeReportKinds));
     }
 
     private void validateKinds(
@@ -120,16 +107,41 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
         }
     }
 
+    private void validateReportKinds(Object rawItems, PluginCatalog catalog) {
+        if (!(rawItems instanceof List<?> items)) {
+            return;
+        }
+        Set<String> allKinds = new LinkedHashSet<>(BUILTIN_REPORT_KINDS);
+        allKinds.addAll(catalog.allReportKinds());
+        Set<String> activeKinds = new LinkedHashSet<>(BUILTIN_REPORT_KINDS);
+        activeKinds.addAll(catalog.activeReportKinds());
+
+        for (Object rawItem : items) {
+            if (!(rawItem instanceof Map<?, ?> item)) {
+                continue;
+            }
+            Object rawKind = item.get("kind");
+            if (!(rawKind instanceof String kind) || kind.isBlank() || BUILTIN_REPORT_KINDS.contains(kind)) {
+                continue;
+            }
+            if (!allKinds.contains(kind)) {
+                throw new InvalidSignatureSchemaException(
+                        "Custom report kind \"" + kind + "\" does not exist in active plugin catalog.");
+            }
+            if (!activeKinds.contains(kind)) {
+                throw new InvalidSignatureSchemaException(
+                        "Custom report kind \"" + kind + "\" exists but is inactive.");
+            }
+        }
+    }
+
     private Optional<PluginDescriptor> detect(String source) {
         PluginType type = null;
         if (source.contains("defineFieldDefinition(")) {
             type = PluginType.FIELD;
         }
-        if (source.contains("defineReportDefinition(")) {
+        if (source.contains("defineReportDefinition(") || source.contains("defineReportKind(")) {
             type = type == null ? PluginType.REPORT : null;
-        }
-        if (source.contains("defineExplanationKind(")) {
-            type = type == null ? PluginType.EXPLANATION : null;
         }
         if (type == null) {
             return Optional.empty();
@@ -145,9 +157,7 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
             Set<String> allFieldKinds,
             Set<String> activeFieldKinds,
             Set<String> allReportKinds,
-            Set<String> activeReportKinds,
-            Set<String> allExplanationKinds,
-            Set<String> activeExplanationKinds) {
+            Set<String> activeReportKinds) {
     }
 
     private record PluginDescriptor(PluginType type, String kind) {
@@ -155,8 +165,7 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
 
     private enum PluginType {
         FIELD,
-        REPORT,
-        EXPLANATION
+        REPORT
     }
 }
 

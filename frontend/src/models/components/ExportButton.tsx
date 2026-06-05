@@ -6,12 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueries } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
 import { m as motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
-import { cx } from "../../app/components";
-import {
-  getActiveCustomExplanationDefinitions,
-  type CatalogExplanationDefinition,
-} from "../../app/utils/mlform/custom-explanation";
+import { useMemo, useState } from "react";
+import { cx } from "../../app/components/ui-utils";
 import { useWorkspaceContext } from "../../workspace/hooks";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService";
@@ -31,24 +27,7 @@ export type ExportButtonProps = {
 export function ExportButton({ predictions, delimiter = ",", signatureSchema }: ExportButtonProps) {
   const { data: workspace } = useWorkspaceContext();
   const canExportPredictions = Boolean(workspace?.permissions.canExportPredictions);
-  const [customExplanationDefinitions, setCustomExplanationDefinitions] = useState<
-    readonly CatalogExplanationDefinition[]
-  >([]);
   const [modalOpen, setModalOpen] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    void getActiveCustomExplanationDefinitions()
-      .then((definitions) => {
-        if (active) setCustomExplanationDefinitions(definitions);
-      })
-      .catch(() => {
-        if (active) setCustomExplanationDefinitions([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const meta = useMemo(() => {
     const uuid =
@@ -119,10 +98,8 @@ export function ExportButton({ predictions, delimiter = ",", signatureSchema }: 
       outputFeedbackByPrediction,
       explanationFeedbackByPrediction,
       signatureSchema,
-      customExplanationDefinitions,
     });
   }, [
-    customExplanationDefinitions,
     explanationFeedbackByPrediction,
     outputFeedbackByPrediction,
     predictions,
@@ -169,7 +146,6 @@ export function ExportButton({ predictions, delimiter = ",", signatureSchema }: 
       outputFeedbackByPrediction: selected.outputFeedbackByPrediction,
       explanationFeedbackByPrediction: selected.explanationFeedbackByPrediction,
       signatureSchema,
-      customExplanationDefinitions,
     });
     downloadCsv(next.headers, next.rows);
     setModalOpen(false);

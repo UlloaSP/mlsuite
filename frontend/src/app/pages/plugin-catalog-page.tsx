@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowUpDown, Check, ChevronDown, Power, Search, Upload } from "lucide-react";
+import { Power, Upload } from "lucide-react";
 import { useSetAtom } from "jotai";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
@@ -17,15 +17,13 @@ import {
 } from "../api/pluginService";
 import {
   AppButton,
+} from "../components/ui-controls";
+import {
   AppPage,
   AppPageHeader,
   AppPanel,
-  AppSelect,
   AppSurface,
-  AppTextField,
-  cx,
-} from "../components";
-import { invalidateActiveCustomExplanationDefinition } from "../utils/mlform/custom-explanation";
+} from "../components/ui";
 import { invalidateActiveCustomFieldDefinition } from "../utils/mlform/custom-field";
 import { invalidateActiveCustomReportDefinition } from "../utils/mlform/custom-report";
 import { detectPluginType, invalidatePluginCatalog } from "../utils/mlform/plugin-catalog";
@@ -34,24 +32,10 @@ import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";
 import { NotFoundError } from "./error-page";
 import { PluginCatalogListItem } from "./PluginCatalogListItem";
-import { SORT_LABELS, TYPE_META, readFileText } from "./plugin-catalog-shared";
+import { PluginCatalogToolbar } from "./PluginCatalogToolbar";
+import { enrichPlugin } from "./plugin-catalog-data";
+import { TYPE_META, readFileText } from "./plugin-catalog-shared";
 import type { FilterMode, PluginPageItem, SortMode, TypeFilter } from "./plugin-catalog-shared";
-
-const enrichPlugin = async (
-  item: PluginPageItem | Awaited<ReturnType<typeof getPlugins>>[number],
-): Promise<PluginPageItem> => {
-  try {
-    const detected = await detectPluginType(item.source);
-    return {
-      ...item,
-      kind: detected.kind,
-      pluginType: detected.pluginType,
-      uniqueKey: `${detected.pluginType}:${item.id}`,
-    };
-  } catch {
-    return { ...item, kind: null, pluginType: "invalid", uniqueKey: `invalid:${item.id}` };
-  }
-};
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- Filters, menu state, upload busy state, and catalog rows are independent UI controls.
 export function PluginCatalogPage() {
@@ -107,7 +91,6 @@ export function PluginCatalogPage() {
     invalidatePluginCatalog();
     invalidateActiveCustomFieldDefinition();
     invalidateActiveCustomReportDefinition();
-    invalidateActiveCustomExplanationDefinition();
     bumpPluginCatalogVersion();
     await refreshItems();
   };
@@ -266,123 +249,26 @@ export function PluginCatalogPage() {
             ) : null
           }
         />
-        <AppPanel className="grid gap-3">
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".ts,text/typescript,application/typescript,text/plain"
-            className="hidden"
-            onChange={(event) => {
-              void handleFileSelection(event);
-            }}
-          />
-          <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_auto_auto]">
-            <AppTextField
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by file or kind"
-              prefix={<Search size={16} className="text-[var(--text-muted)]" />}
-            />
-            <AppSelect
-              value={typeFilter}
-              onChange={(event) => setTypeFilter(event.target.value as TypeFilter)}
-              aria-label="Filter by plugin type"
-            >
-              <option value="all">All types</option>
-              <option value="field">Fields</option>
-              <option value="report">Reports</option>
-              <option value="explanation">Explanations</option>
-            </AppSelect>
-            <div className="flex flex-wrap items-center gap-2">
-              {(
-                [
-                  ["all", "All"],
-                  ["active", "Active"],
-                  ["inactive", "Inactive"],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setFilter(value)}
-                  className={cx(
-                    "rounded-full px-4 py-3 text-sm font-medium transition",
-                    filter === value
-                      ? "bg-[var(--text-primary)] text-[var(--text-inverse)]"
-                      : "border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div ref={sortMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setIsSortOpen((current) => !current)}
-                className="inline-flex min-w-[220px] items-center justify-between gap-3 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-primary)] shadow-[var(--shadow-card)] transition hover:border-[var(--text-primary)]"
-                aria-haspopup="listbox"
-                aria-expanded={isSortOpen}
-              >
-                <span className="inline-flex items-center gap-3">
-                  <ArrowUpDown size={15} className="text-[var(--text-muted)]" />
-                  {SORT_LABELS[sort]}
-                </span>
-                <ChevronDown
-                  size={16}
-                  className={cx(
-                    "text-[var(--text-secondary)] transition",
-                    isSortOpen && "rotate-180",
-                  )}
-                />
-              </button>
-              {isSortOpen ? (
-                <div
-                  role="listbox"
-                  className="absolute right-0 top-[calc(100%+0.75rem)] z-20 min-w-[220px] overflow-hidden rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]"
-                >
-                  {(Object.entries(SORT_LABELS) as Array<[SortMode, string]>).map(
-                    ([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="option"
-                        aria-selected={sort === value}
-                        onClick={() => {
-                          setSort(value);
-                          setIsSortOpen(false);
-                        }}
-                        className={cx(
-                          "flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left text-sm font-medium transition",
-                          sort === value
-                            ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
-                            : "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
-                        )}
-                      >
-                        <span>{label}</span>
-                        {sort === value ? <Check size={15} /> : null}
-                      </button>
-                    ),
-                  )}
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm text-[var(--text-secondary)]">
-            <p className="font-medium text-[var(--text-primary)]">
-              {filter === "active"
-                ? `Showing ${selectedTypeActiveCount} active plugin${selectedTypeActiveCount !== 1 ? "s" : ""}${typeFilter === "all" ? "" : ` (${TYPE_META[typeFilter].plural})`}.`
-                : filter === "inactive"
-                  ? `Showing ${selectedTypeItems.length - selectedTypeActiveCount} inactive plugin${selectedTypeItems.length - selectedTypeActiveCount !== 1 ? "s" : ""}${typeFilter === "all" ? "" : ` (${TYPE_META[typeFilter].plural})`}.`
-                  : `Showing ${selectedTypeItems.length} plugin${selectedTypeItems.length !== 1 ? "s" : ""}${typeFilter === "all" ? "" : ` (${TYPE_META[typeFilter].plural})`}.`}
-            </p>
-            <p>
-              {activeCount === 0
-                ? "No active plugins. Runtime skips inactive custom kinds."
-                : "Active plugins register native kinds before form mount."}
-            </p>
-          </div>
-        </AppPanel>
+        <PluginCatalogToolbar
+          activeCount={activeCount}
+          filter={filter}
+          inputRef={inputRef}
+          isSortOpen={isSortOpen}
+          onFileSelection={(event) => {
+            void handleFileSelection(event);
+          }}
+          query={query}
+          selectedTypeActiveCount={selectedTypeActiveCount}
+          selectedTypeCount={selectedTypeItems.length}
+          setFilter={setFilter}
+          setIsSortOpen={setIsSortOpen}
+          setQuery={setQuery}
+          setSort={setSort}
+          setTypeFilter={setTypeFilter}
+          sort={sort}
+          sortMenuRef={sortMenuRef}
+          typeFilter={typeFilter}
+        />
         <section className="min-h-0 flex-1 overflow-auto">
           <div className="space-y-3">
             {filteredItems.length === 0 ? (

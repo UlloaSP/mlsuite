@@ -1,14 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  AppButton,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-  AppTextArea,
-  AppTextField,
-} from "../../app/components";
+import { AppButton, AppTextArea, AppTextField } from "../../app/components/ui-controls";
+import { AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
 import { createOrganization } from "../api/workspaceService";
 
 export function CreateOrganizationPage() {

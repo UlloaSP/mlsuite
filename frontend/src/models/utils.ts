@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ModelDto, PredictionDto, SignatureDto } from "./api/modelService";
+import { getOutputReports } from "./report-contract";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -12,7 +13,7 @@ type PredictionFeedbackStatus = "PENDING" | "COMPLETED";
 export type SignatureSummaryStats = {
   fieldCount: number;
   reportCount: number;
-  explanationsEnabled: boolean;
+  feedbackReportsEnabled: boolean;
   fieldKinds: Record<string, number>;
   reportKinds: Record<string, number>;
   classifierLabelsCount: number;
@@ -161,7 +162,7 @@ export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSumm
     return {
       fieldCount: 0,
       reportCount: 0,
-      explanationsEnabled: false,
+      feedbackReportsEnabled: false,
       fieldKinds: {},
       reportKinds: {},
       classifierLabelsCount: 0,
@@ -169,12 +170,7 @@ export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSumm
   }
 
   const fields = Array.isArray(inputSignature.fields) ? inputSignature.fields.filter(isRecord) : [];
-  const reports = Array.isArray(inputSignature.reports)
-    ? inputSignature.reports.filter(isRecord)
-    : [];
-  const explanations = Array.isArray(inputSignature.explanations)
-    ? inputSignature.explanations.filter(isRecord)
-    : [];
+  const reports = getOutputReports(inputSignature);
 
   const fieldKinds = fields.reduce<Record<string, number>>((acc, field) => {
     const kind = typeof field.kind === "string" ? field.kind : "unknown";
@@ -199,7 +195,9 @@ export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSumm
   return {
     fieldCount: fields.length,
     reportCount: reports.length,
-    explanationsEnabled: explanations.length > 0,
+    feedbackReportsEnabled:
+      Array.isArray(inputSignature.reports) &&
+      inputSignature.reports.filter(isRecord).length > reports.length,
     fieldKinds,
     reportKinds,
     classifierLabelsCount,

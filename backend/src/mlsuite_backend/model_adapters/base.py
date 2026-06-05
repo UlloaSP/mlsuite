@@ -39,6 +39,11 @@ class RuntimeModel:
     def class_labels(self) -> list[str]:
         return self.adapter.class_labels(self.model)
 
+    def feature_metadata(self):
+        from .features import feature_metadata
+
+        return feature_metadata(self.model)
+
     def predict_classifier(self, frame: pd.DataFrame) -> list[list[float]]:
         return self.adapter.predict_classifier(self.model, frame)
 
