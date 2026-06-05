@@ -22,17 +22,6 @@ COPY src ./src
 # --frozen: no actualiza lock, --no-dev: excluye dependencias de desarrollo
 RUN uv sync --frozen --no-dev
 
-# Crear directorio para certificados SSL
-RUN mkdir -p /etc/ssl/certs
-
-# Instalar openssl para generar certificado self-signed
-RUN apt-get update && apt-get install -y --no-install-recommends openssl && \
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /app/private.key \
-    -out /app/certificate.crt \
-    -subj "/CN=localhost" && \
-    apt-get remove -y openssl && apt-get clean && rm -rf /var/lib/apt/lists/*
-
 # Exponer puerto
 EXPOSE 8000
 

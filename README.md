@@ -29,21 +29,22 @@ This repository contains pre-configured compose files that define all required s
 
 3. Superadmin Setup: MLSuite uses manual email/password authentication with server-side sessions. Configure the initial superadmin account so you can manage users after startup.
 
-4. Configure Environment Variables: Copy `.env.example` to `.env` and edit the values before startup. Keep the env file as the source of truth for ports, URLs, SSL, CORS, storage, and the superadmin seed.
+4. Configure Environment Variables: Copy `.env.example` to `.env` and edit the values before startup. Keep the env file as the source of truth for ports, URLs, CORS, storage, and the superadmin seed.
 
 ```env
-SPRING_PORT=8443
+SPRING_PORT=8080
 PYTHON_PORT=8000
 WEB_PORT=5173
-ANALYZER_BASE_URL=https://py-analyzer:8000
-VITE_BACKEND_URL=https://localhost:8443
-CORS_ALLOW_ORIGINS=https://localhost:5173,https://localhost:8443
+DB_HOST_PORT=5430
+ANALYZER_BASE_URL=http://py-analyzer:8000
+VITE_BACKEND_URL=
+CORS_ALLOW_ORIGINS=http://localhost:5173,http://localhost:8080
 MLSUITE_SUPERADMIN_EMAIL=admin@example.com
 MLSUITE_SUPERADMIN_PASSWORD=change_me_superadmin
 MLSUITE_SUPERADMIN_FULL_NAME=MLSuite Admin
 ```
 
-You can also adjust other settings (database, storage, SSL keystore, registry/image tags) there. Keep `.env` and `.env.example` aligned when adding new config.
+You can also adjust other settings (database, storage, registry/image tags) there. Keep `.env` and `.env.example` aligned when adding new config.
 
 5. Launch the Application: Run one of the following commands to build and start all services:
 
@@ -57,7 +58,7 @@ podman compose -f docker-compose.prod.yml up --build -d
 
 This will spin up all components of MLSuite in separate containers. The first run may take a few minutes to download base images and build the code. Subsequent starts will be faster.
 
-6. Access MLSuite: Once the containers are running, open your web browser and go to https://localhost:5173 (or the appropriate host/port if deploying to a server). You should see the MLSuite web interface. Click “Login” and sign in with an email/password account. You can also create a normal account from the same screen.
+6. Access MLSuite: Once the containers are running, open your web browser and go to http://localhost:5173 (or the appropriate host/port if deploying to a server). You should see the MLSuite web interface. Click “Login” and sign in with an email/password account. You can also create a normal account from the same screen.
 
 7. Use MLSuite: After logging in, you can start uploading models and running predictions (see the Functionality section below for an overview of features). By default, the React frontend will be served on port 5173. If you need to change ports or other settings, adjust the environment variables or compose file accordingly.
 
@@ -103,7 +104,7 @@ MLSuite’s architecture is modular and follows a microservices-inspired design.
 
 - Backend API – Spring Boot (Java): The core of MLSuite is a Spring Boot application that serves as the API Gateway and orchestrator. This backend exposes RESTful endpoints for all operations (model management, signature CRUD, running a prediction, fetching history, etc.). It handles manual authentication with Spring Security sessions and tenant RBAC. The backend contains the business logic to validate inputs against the schema and ensures that each prediction request is routed to the correct model and signature. It also interacts with the database to store/retrieve models, signatures, users, and predictions. In essence, the Spring Boot API coordinates the other parts: it receives requests from the frontend, checks permissions and data validity, calls the ML analyzer service for predictions, and returns results back to the frontend.
 
-- Analyzer Service – FastAPI (Python): The analyzer is a Python microservice (using FastAPI) responsible for the heavy lifting of loading ML models and executing predictions. When a prediction request comes in, the Spring Boot backend forwards the request to this service (over HTTPS). The FastAPI analyzer takes the model,  and runs the model’s predict method on the input data. It uses the MLSchema library to ensure the input conforms to the expected schema (for extra safety) and then returns the prediction result (and any metadata) back to the Java backend. By isolating this functionality in a Python service, MLSuite can leverage Python’s rich ML ecosystem (scikit-learn, pandas, etc.) while keeping the main API in Java. This design also paves the way to support multiple backend frameworks in the future (for example, separate services for R models, TensorFlow/PyTorch models, etc., each with their own runtime). In the current implementation, the analyzer supports scikit-learn models; the architecture is designed to be extensible via a plugin mechanism to add more.
+- Analyzer Service – FastAPI (Python): The analyzer is a Python microservice (using FastAPI) responsible for the heavy lifting of loading ML models and executing predictions. When a prediction request comes in, the Spring Boot backend forwards the request to this service over the internal HTTP network. The FastAPI analyzer takes the model,  and runs the model’s predict method on the input data. It uses the MLSchema library to ensure the input conforms to the expected schema (for extra safety) and then returns the prediction result (and any metadata) back to the Java backend. By isolating this functionality in a Python service, MLSuite can leverage Python’s rich ML ecosystem (scikit-learn, pandas, etc.) while keeping the main API in Java. This design also paves the way to support multiple backend frameworks in the future (for example, separate services for R models, TensorFlow/PyTorch models, etc., each with their own runtime). In the current implementation, the analyzer supports scikit-learn models; the architecture is designed to be extensible via a plugin mechanism to add more.
 
 - Database – PostgreSQL: All persistent data is stored in a PostgreSQL relational database. The data schema includes tables for Users, Models, Signatures, and Predictions (along with related entities). Whenever a user uploads a model, a record is created in the Models table (with metadata like name, owner, file path, etc.). Each signature is stored (likely as a JSON schema or as structured fields) linked to its model and with version info. Predictions are logged with a reference to the model & signature used, a blob of input data, the output result, status (pending/validated), timestamps, and optional feedback annotation. Using a SQL database ensures strong consistency and the ability to write complex queries (for example, to find all predictions of a certain model version that were marked incorrect, etc.). The Spring Boot backend uses an ORM (or JDBC) to interact with PostgreSQL.
 

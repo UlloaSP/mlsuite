@@ -36,7 +36,7 @@ const overview: InfrastructureOverviewDto = {
       diskWriteBytes: 2048,
       networkRxBytes: 4096,
       networkTxBytes: 8192,
-      ports: ["8443:8443/tcp"],
+      ports: [],
       terminalEnabled: true,
     },
   ],

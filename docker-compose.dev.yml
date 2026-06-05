@@ -27,8 +27,6 @@ services:
       OPS_AGENT_TERMINAL_IDLE_MINUTES: ${OPS_AGENT_TERMINAL_IDLE_MINUTES}
       OPS_AGENT_TERMINAL_MAX_SESSIONS: ${OPS_AGENT_TERMINAL_MAX_SESSIONS}
       OPS_AGENT_LOG_TAIL_LINES: ${OPS_AGENT_LOG_TAIL_LINES}
-    ports:
-      - ${OPS_AGENT_PORT}:${OPS_AGENT_PORT}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/workspace:ro
@@ -43,7 +41,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - ${DB_PORT}:${DB_PORT}
+      - ${DB_HOST_PORT}:5432
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -61,12 +59,7 @@ services:
     environment:
       PYTHON_HOST: ${PYTHON_HOST}
       PYTHON_PORT: ${PYTHON_PORT}
-      PYTHON_SSL_ENABLED: ${PYTHON_SSL_ENABLED}
-      PYTHON_SSL_KEYFILE: ${PYTHON_SSL_KEYFILE}
-      PYTHON_SSL_CERTFILE: ${PYTHON_SSL_CERTFILE}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
-    ports:
-      - ${PYTHON_PORT}:${PYTHON_PORT}
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,9 +72,6 @@ services:
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
-    ports:
-      - ${MINIO_API_PORT}:9000
-      - ${MINIO_CONSOLE_PORT}:9001
     volumes:
       - minio_data:/data
     networks: [ appnet ]
@@ -101,11 +91,6 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
-      SERVER_SSL_ENABLED: ${SERVER_SSL_ENABLED}
-      SERVER_SSL_KEY_STORE: ${SERVER_SSL_KEY_STORE}
-      SERVER_SSL_KEY_STORE_PASSWORD: ${SERVER_SSL_KEY_STORE_PASSWORD}
-      SERVER_SSL_KEY_STORE_TYPE: ${SERVER_SSL_KEY_STORE_TYPE}
-      SERVER_SSL_KEY_ALIAS: ${SERVER_SSL_KEY_ALIAS}
       ANALYZER_BASE_URL: ${ANALYZER_BASE_URL}
       REVIEW_LINK_SECRET: ${REVIEW_LINK_SECRET}
       STORAGE_ENABLED: ${STORAGE_ENABLED}
@@ -121,8 +106,6 @@ services:
       MLSUITE_SUPERADMIN_USERNAME: ${MLSUITE_SUPERADMIN_USERNAME}
       OPS_AGENT_BASE_URL: ${OPS_AGENT_BASE_URL}
       OPS_AGENT_SHARED_SECRET: ${OPS_AGENT_SHARED_SECRET}
-    ports:
-      - ${SPRING_PORT}:${SPRING_PORT}
     depends_on:
       ops-agent:
         condition: service_started
