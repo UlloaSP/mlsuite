@@ -88,7 +88,7 @@ const run: PredictionRunDto = {
 
 describe("schema run history helpers", () => {
   test("bulk schema exposes technical model inputs and hides mapped-category UI fields", () => {
-    const bulkSchema = getModelInputBulkSchema(version.formSchema) as {
+    const bulkSchema = getModelInputBulkSchema(version) as {
       fields: Array<{ label: string }>;
     };
     expect(bulkSchema.fields.map((field) => field.label)).toEqual([

@@ -21,10 +21,14 @@ type FieldRecord = JsonRecord & {
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const getFields = (schema: unknown): FieldRecord[] =>
-  isRecord(schema) && Array.isArray(schema.fields)
-    ? schema.fields.filter(isRecord).map((field) => field as FieldRecord)
-    : [];
+const getFields = (schema: unknown): FieldRecord[] => {
+  if (!isRecord(schema) || !Array.isArray(schema.fields)) return [];
+  const fields: FieldRecord[] = [];
+  schema.fields.forEach((field) => {
+    if (isRecord(field)) fields.push(field as FieldRecord);
+  });
+  return fields;
+};
 
 const keyFor = (field: FieldRecord): string | null =>
   typeof field.label === "string" && field.label.trim()
@@ -36,8 +40,45 @@ const keyFor = (field: FieldRecord): string | null =>
 const isUiOnlyMappedCategory = (field: FieldRecord): boolean =>
   field.kind === "mapped-category" && field.includeInSubmission === false;
 
-export const getModelInputBulkSchema = (schema: unknown): unknown => {
+const matchesFieldKey = (field: FieldRecord, key: string): boolean =>
+  field.id === key || field.label === key;
+
+const fieldBySchemaKey = (fields: FieldRecord[], key: string): FieldRecord | undefined =>
+  fields.find((field) => matchesFieldKey(field, key));
+
+const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
+  const fields = getFields(version.formSchema);
+  const byModelKey = new Map<string, FieldRecord>();
+  version.bindings.forEach((binding) => {
+    Object.entries(binding.inputMapping ?? {}).forEach(([schemaKey, modelKey]) => {
+      if (typeof modelKey !== "string" || byModelKey.has(modelKey)) return;
+      const field = fieldBySchemaKey(fields, schemaKey);
+      if (field) byModelKey.set(modelKey, { ...field, id: modelKey, label: modelKey });
+    });
+  });
+  return [...byModelKey.values()];
+};
+
+const modelKeyByFieldId = (
+  version: SchemaVersionDto,
+  fields: FieldRecord[],
+): Map<string, string> => {
+  const mapping = new Map<string, string>();
+  version.bindings.forEach((binding) => {
+    Object.entries(binding.inputMapping ?? {}).forEach(([schemaKey, modelKey]) => {
+      if (typeof modelKey !== "string") return;
+      const field = fieldBySchemaKey(fields, schemaKey);
+      if (field?.id && !mapping.has(field.id)) mapping.set(field.id, modelKey);
+    });
+  });
+  return mapping;
+};
+
+export const getModelInputBulkSchema = (version: SchemaVersionDto): unknown => {
+  const schema = version.formSchema;
   if (!isRecord(schema) || !Array.isArray(schema.fields)) return schema;
+  const fields = modelInputFields(version);
+  if (fields.length > 0) return { ...schema, fields };
   return {
     ...schema,
     fields: schema.fields.flatMap((field) => {
@@ -53,8 +94,14 @@ export const toSchemaRunSerializedValues = (
   inputs: JsonRecord,
 ): Record<string, unknown> => {
   const fields = getFields(version.formSchema);
+  const modelKeys = modelKeyByFieldId(version, fields);
   const values = fields.reduce<Record<string, unknown>>((payload, field) => {
     if (!field.id || isUiOnlyMappedCategory(field)) return payload;
+    const modelKey = modelKeys.get(field.id);
+    if (typeof modelKey === "string" && modelKey in inputs) {
+      payload[field.id] = inputs[modelKey];
+      return payload;
+    }
     const key = keyFor(field);
     if (!key || !(key in inputs)) return payload;
     const value = inputs[key];
