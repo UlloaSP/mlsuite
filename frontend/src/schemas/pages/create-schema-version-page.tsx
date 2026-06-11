@@ -15,6 +15,11 @@ import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
 import { useCreateSchemaVersionMutation, useSchema, useSchemaVersions } from "../hooks";
 import { prepareSchemaVersionForSave } from "../schema-binding-rebase";
+import {
+  schemaVersionId,
+  selectSchemaVersion,
+  sortSchemaVersions,
+} from "../schema-version-selection";
 import type { CreateSchemaVersionRequest } from "../types";
 
 export function CreateSchemaVersionPage() {
@@ -29,12 +34,9 @@ export function CreateSchemaVersionPage() {
   const [baseVersionId, setBaseVersionId] = useState("");
   const [versionName, setVersionName] = useState("");
 
-  const sortedVersions = useMemo(
-    () => [...versions].sort((a, b) => b.version - a.version),
-    [versions],
-  );
-  const effectiveBaseId = baseVersionId || sortedVersions[0]?.id || "";
-  const baseVersion = sortedVersions.find((version) => version.id === effectiveBaseId);
+  const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
+  const effectiveBaseId = baseVersionId || schemaVersionId(sortedVersions[0]);
+  const baseVersion = selectSchemaVersion(sortedVersions, effectiveBaseId);
   const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;
   const canSave = Boolean(schemaId && baseVersion && versionName.trim() && !editorHasErrors);
 
@@ -81,7 +83,10 @@ export function CreateSchemaVersionPage() {
         <AppPanel className="shrink-0">
           <div className="grid gap-4 xl:grid-cols-[minmax(240px,1fr)_minmax(260px,1fr)_auto]">
             <div className="space-y-2">
-              <label htmlFor="base-version" className="text-sm font-semibold text-[var(--text-primary)]">
+              <label
+                htmlFor="base-version"
+                className="text-sm font-semibold text-[var(--text-primary)]"
+              >
                 Base version
               </label>
               <AppSelect
@@ -93,14 +98,17 @@ export function CreateSchemaVersionPage() {
               >
                 {sortedVersions.length ? null : <option value="">No versions available</option>}
                 {sortedVersions.map((version) => (
-                  <option key={version.id} value={version.id}>
+                  <option key={schemaVersionId(version)} value={schemaVersionId(version)}>
                     {version.name} · v{version.version}
                   </option>
                 ))}
               </AppSelect>
             </div>
             <div className="space-y-2">
-              <label htmlFor="version-name" className="text-sm font-semibold text-[var(--text-primary)]">
+              <label
+                htmlFor="version-name"
+                className="text-sm font-semibold text-[var(--text-primary)]"
+              >
                 Version name
               </label>
               <AppTextField
@@ -112,7 +120,11 @@ export function CreateSchemaVersionPage() {
               />
             </div>
             <div className="flex min-w-[180px] items-end">
-              <AppButton onClick={save} disabled={!canSave || mutation.isPending} className="w-full">
+              <AppButton
+                onClick={save}
+                disabled={!canSave || mutation.isPending}
+                className="w-full"
+              >
                 {mutation.isPending ? (
                   <>
                     <span className="animate-spin">

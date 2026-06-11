@@ -1,8 +1,9 @@
-import { Search, Slash } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
 import { SearchResultsPanel } from "../../search/components/SearchResultsPanel";
 import { useDebouncedValue, useSearchResults } from "../../search/hooks";
+import { isGlobalSearchShortcut } from "../../search/shortcut";
 
 const isTypingTarget = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
@@ -55,7 +56,7 @@ export function AppHeaderSearch() {
       }
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "/" && !isTypingTarget(event.target)) {
+      if (isGlobalSearchShortcut(event) && !isTypingTarget(event.target)) {
         event.preventDefault();
         inputRef.current?.focus();
         dispatch({ type: "focus" });
@@ -117,9 +118,8 @@ export function AppHeaderSearch() {
           placeholder="Search models, teams, plugins, schemas…"
           className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
         />
-        <div className="hidden items-center gap-1 rounded-full border border-[var(--border-soft)] px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] md:inline-flex">
-          <Slash size={12} />
-          Search
+        <div className="hidden items-center gap-1 rounded border border-[var(--border-soft)] px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] md:inline-flex">
+          Ctrl+K
         </div>
       </div>
       {showPanel ? (

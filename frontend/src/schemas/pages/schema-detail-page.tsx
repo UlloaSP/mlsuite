@@ -6,29 +6,34 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Code2, History, Play, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
+import {
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSectionTitle,
+  AppSurface,
+} from "../../app/components/ui";
 import { AppButton, AppSelect } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppPanel, AppSectionTitle, AppSurface } from "../../app/components/ui";
 import { useSchema, useSchemaVersions } from "../hooks";
 import { countVisibleSchemaFields } from "../one-hot-schema";
+import {
+  schemaVersionId,
+  selectSchemaVersion,
+  sortSchemaVersions,
+} from "../schema-version-selection";
 
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const { data: schema } = useSchema(schemaId);
   const { data: versions = [] } = useSchemaVersions(schemaId);
   const [selectedVersionId, setSelectedVersionId] = useState("");
-  const sortedVersions = useMemo(
-    () => [...versions].sort((a, b) => b.version - a.version),
-    [versions],
-  );
-  const selectedVersion =
-    sortedVersions.find((version) => version.id === selectedVersionId) ?? sortedVersions[0];
+  const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
+  const selectedVersion = selectSchemaVersion(sortedVersions, selectedVersionId);
   const inputCount = countVisibleSchemaFields(selectedVersion?.formSchema);
   const reportCount = Array.isArray(selectedVersion?.formSchema.reports)
     ? selectedVersion.formSchema.reports.length
     : 0;
-  const schemaCode = selectedVersion
-    ? JSON.stringify(selectedVersion.formSchema, null, 2)
-    : "{}";
+  const schemaCode = selectedVersion ? JSON.stringify(selectedVersion.formSchema, null, 2) : "{}";
 
   return (
     <AppPage>
@@ -57,11 +62,11 @@ export function SchemaDetailPage() {
                 </p>
               </div>
               <AppSelect
-                value={selectedVersion.id}
+                value={schemaVersionId(selectedVersion)}
                 onChange={(event) => setSelectedVersionId(event.target.value)}
               >
                 {sortedVersions.map((version) => (
-                  <option key={version.id} value={version.id}>
+                  <option key={schemaVersionId(version)} value={schemaVersionId(version)}>
                     {version.name} · v{version.version}
                   </option>
                 ))}
@@ -70,17 +75,23 @@ export function SchemaDetailPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-[18px] bg-[var(--surface-muted)] p-4">
                 <p className="text-2xl font-semibold text-[var(--text-primary)]">{inputCount}</p>
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">Inputs</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  Fields
+                </p>
               </div>
               <div className="rounded-[18px] bg-[var(--surface-muted)] p-4">
                 <p className="text-2xl font-semibold text-[var(--text-primary)]">{reportCount}</p>
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">Reports</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  Reports
+                </p>
               </div>
               <div className="rounded-[18px] bg-[var(--surface-muted)] p-4">
                 <p className="text-2xl font-semibold text-[var(--text-primary)]">
                   {selectedVersion.bindings.length}
                 </p>
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">Models</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+                  Models
+                </p>
               </div>
             </div>
             <pre className="max-h-[480px] overflow-auto rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-xs leading-5 text-[var(--text-primary)]">
@@ -105,13 +116,13 @@ export function SchemaDetailPage() {
                     {version.bindings.length} bindings
                   </p>
                 </div>
-                <Link to={`/schemas/${schemaId}/versions/${version.id}/runs/create`}>
+                <Link to={`/schemas/${schemaId}/versions/${schemaVersionId(version)}/runs/create`}>
                   <AppButton>
                     <Play size={16} />
                     Run
                   </AppButton>
                 </Link>
-                <Link to={`/schemas/${schemaId}/versions/${version.id}/runs`}>
+                <Link to={`/schemas/${schemaId}/versions/${schemaVersionId(version)}/runs`}>
                   <AppButton variant="secondary">
                     <History size={16} />
                     Inference history
