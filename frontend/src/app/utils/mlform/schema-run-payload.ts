@@ -53,6 +53,18 @@ export const toCanonicalPayload = (
   }, {});
 };
 
+export const toFieldIdPayload = (
+  serializedValues: Record<string, unknown>,
+  fields: readonly PredictionPayloadField[],
+): JsonRecord => {
+  const expandedValues = expandMappedCategoryValues(serializedValues, fields);
+  return fields.reduce<JsonRecord>((payload, field) => {
+    if (!shouldInclude(field) || !(field.id in expandedValues)) return payload;
+    payload[field.id] = expandedValues[field.id];
+    return payload;
+  }, {});
+};
+
 export const toVisiblePayload = (
   serializedValues: Record<string, unknown>,
   fields: readonly PredictionPayloadField[],

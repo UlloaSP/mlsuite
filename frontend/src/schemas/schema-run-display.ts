@@ -37,6 +37,20 @@ const reportsOf = (schema: unknown): ReportConfig[] =>
 
 const fieldKey = (field: JsonRecord): string => getString(field.label) ?? getString(field.id) ?? "";
 
+const fieldInputKeys = (field: JsonRecord): string[] =>
+  Array.from(
+    new Set(
+      [fieldKey(field), getString(field.id)]
+        .filter((key): key is string => !!key)
+        .filter((key) => key.trim().length > 0),
+    ),
+  );
+
+const fieldInputValue = (field: JsonRecord, inputData: JsonRecord): unknown => {
+  const key = fieldInputKeys(field).find((item) => item in inputData);
+  return key ? inputData[key] : undefined;
+};
+
 const hasMappedDirectValue = (value: unknown): boolean =>
   value !== null && value !== undefined && !(typeof value === "string" && value.trim() === "");
 
@@ -46,7 +60,7 @@ const mappedCategoryValue = (
   keyById: Map<string, string>,
   mode: "display" | "submit",
 ): unknown => {
-  const direct = inputData[fieldKey(field)];
+  const direct = fieldInputValue(field, inputData);
   const options = mappedCategoryOptions(field);
   if (hasMappedDirectValue(direct)) {
     const directOption = findMappedOptionByValue(options, direct);
@@ -67,7 +81,7 @@ const mappedCategoryValue = (
       ? mappedOptionDisplayValue(mappedOption)
       : mappedOptionSubmitValue(mappedOption);
   }
-  return inputData[fieldKey(field)];
+  return fieldInputValue(field, inputData);
 };
 
 const schemaInputs = (
@@ -88,7 +102,7 @@ const schemaInputs = (
     const value =
       getString(field.kind) === "mapped-category"
         ? mappedCategoryValue(field, inputData, keyById, mode)
-        : inputData[key];
+        : fieldInputValue(field, inputData);
     items.push({ key, label: getString(field.label) ?? key, value });
     return items;
   }, []);

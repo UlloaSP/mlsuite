@@ -37,6 +37,15 @@ const keyFor = (field: FieldRecord): string | null =>
       ? field.id
       : null;
 
+const inputKeysFor = (field: FieldRecord): string[] =>
+  Array.from(
+    new Set(
+      [field.id, field.label].filter(
+        (key): key is string => typeof key === "string" && key.trim().length > 0,
+      ),
+    ),
+  );
+
 const isUiOnlyMappedCategory = (field: FieldRecord): boolean =>
   field.kind === "mapped-category" && field.includeInSubmission === false;
 
@@ -46,14 +55,25 @@ const matchesFieldKey = (field: FieldRecord, key: string): boolean =>
 const fieldBySchemaKey = (fields: FieldRecord[], key: string): FieldRecord | undefined =>
   fields.find((field) => matchesFieldKey(field, key));
 
+const fieldForMapping = (
+  fields: FieldRecord[],
+  schemaKey: string,
+  modelKey: string,
+): FieldRecord | undefined =>
+  fieldBySchemaKey(fields, schemaKey) ?? fieldBySchemaKey(fields, modelKey);
+
 const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
   const fields = getFields(version.formSchema);
   const byModelKey = new Map<string, FieldRecord>();
   version.bindings.forEach((binding) => {
     Object.entries(binding.inputMapping ?? {}).forEach(([schemaKey, modelKey]) => {
       if (typeof modelKey !== "string" || byModelKey.has(modelKey)) return;
-      const field = fieldBySchemaKey(fields, schemaKey);
-      if (field) byModelKey.set(modelKey, { ...field, id: modelKey, label: modelKey });
+      const field = fieldForMapping(fields, schemaKey, modelKey);
+      byModelKey.set(modelKey, {
+        ...(field ?? { kind: "text" }),
+        id: modelKey,
+        label: modelKey,
+      });
     });
   });
   return [...byModelKey.values()];
@@ -67,7 +87,7 @@ const modelKeyByFieldId = (
   version.bindings.forEach((binding) => {
     Object.entries(binding.inputMapping ?? {}).forEach(([schemaKey, modelKey]) => {
       if (typeof modelKey !== "string") return;
-      const field = fieldBySchemaKey(fields, schemaKey);
+      const field = fieldForMapping(fields, schemaKey, modelKey);
       if (field?.id && !mapping.has(field.id)) mapping.set(field.id, modelKey);
     });
   });
@@ -84,7 +104,11 @@ export const getModelInputBulkSchema = (version: SchemaVersionDto): unknown => {
     fields: schema.fields.flatMap((field) => {
       if (!isRecord(field)) return [field];
       const record = field as FieldRecord;
-      return isUiOnlyMappedCategory(record) ? [] : [{ ...record, hidden: false }];
+      if (isUiOnlyMappedCategory(record)) return [];
+      const key = inputKeysFor(record)[0] ?? keyFor(record);
+      return key
+        ? [{ ...record, id: key, label: key, hidden: false }]
+        : [{ ...record, hidden: false }];
     }),
   };
 };
@@ -102,17 +126,15 @@ export const toSchemaRunSerializedValues = (
       payload[field.id] = inputs[modelKey];
       return payload;
     }
-    const key = keyFor(field);
-    if (!key || !(key in inputs)) return payload;
-    const value = inputs[key];
-    payload[field.id] = value;
+    const key = inputKeysFor(field).find((candidate) => candidate in inputs);
+    if (key) payload[field.id] = inputs[key];
     return payload;
   }, {});
 
   fields.forEach((field) => {
     if (!field.id || !isUiOnlyMappedCategory(field)) return;
-    const key = keyFor(field);
-    if (!key || !(key in inputs)) return;
+    const key = inputKeysFor(field).find((candidate) => candidate in inputs);
+    if (!key) return;
     const value = inputs[key];
     if (field.kind === "mapped-category" && Array.isArray(field.options)) {
       const option = findMappedOptionByValue(mappedCategoryOptions(field), value);

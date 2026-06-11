@@ -11,8 +11,9 @@ import { normalizeAnalyzerPredictionResult } from "./analyzer-result-normalizati
 import type { CatalogReportDefinition } from "./custom-report";
 import { fetchSchemaCustomReports } from "./schema-run-custom-report-fetch";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
+import { applySchemaRunInputMapping } from "./schema-run-input-mapping";
 import { mappingSourceForReport, reportContextKey } from "./schema-run-report-mapping";
-import { toCanonicalPayload, toVisiblePayload } from "./schema-run-payload";
+import { toCanonicalPayload, toFieldIdPayload, toVisiblePayload } from "./schema-run-payload";
 
 type SchemaRunBinding = {
   modelId: string;
@@ -20,18 +21,6 @@ type SchemaRunBinding = {
   inputMapping?: JsonRecord;
   outputMapping?: JsonRecord;
   pluginPolicy?: JsonRecord | null;
-};
-
-const applyInputMapping = (canonical: JsonRecord, mapping?: JsonRecord): JsonRecord => {
-  if (!mapping || Object.keys(mapping).length === 0) {
-    return { ...canonical };
-  }
-  return Object.entries(mapping).reduce<JsonRecord>((payload, [canonicalKey, modelKey]) => {
-    if (typeof modelKey === "string" && canonicalKey in canonical) {
-      payload[modelKey] = canonical[canonicalKey];
-    }
-    return payload;
-  }, {});
 };
 
 const parseResponse = async (response: Response): Promise<unknown> => {
@@ -56,10 +45,11 @@ const failureOutput = (modelId: string, modelInput: JsonRecord): JsonRecord => (
 
 const runBinding = async (
   binding: SchemaRunBinding,
-  canonical: JsonRecord,
+  fieldValues: JsonRecord,
+  fields: readonly PredictionPayloadField[],
   reports: readonly ReportConfig[],
 ) => {
-  const modelInput = applyInputMapping(canonical, binding.inputMapping);
+  const modelInput = applySchemaRunInputMapping(fieldValues, fields, binding.inputMapping);
   schemaRunDebug("transport.model.start", {
     modelId: binding.modelId,
     signatureId: binding.signatureId,
@@ -221,10 +211,12 @@ export const createSchemaRunTransport = (
 ): Transport => ({
   async submit(request: SubmitRequest) {
     const canonical = toCanonicalPayload(request.serializedValues, fields);
+    const fieldValues = toFieldIdPayload(request.serializedValues, fields);
     const inputData = toVisiblePayload(request.serializedValues, fields);
     schemaRunDebug("transport.submit.start", {
       serializedKeys: Object.keys(request.serializedValues),
       canonicalKeys: Object.keys(canonical),
+      fieldKeys: Object.keys(fieldValues),
       visibleKeys: Object.keys(inputData),
       bindings: bindings.map((binding) => ({
         modelId: binding.modelId,
@@ -238,7 +230,7 @@ export const createSchemaRunTransport = (
       })),
     });
     const initialResults = await Promise.all(
-      bindings.map((binding) => runBinding(binding, canonical, request.reports)),
+      bindings.map((binding) => runBinding(binding, fieldValues, fields, request.reports)),
     );
     const built = buildReports(initialResults, bindings, request.reports);
     schemaRunDebug("transport.submit.after-models", {

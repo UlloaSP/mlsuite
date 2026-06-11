@@ -314,3 +314,15 @@
 - Rule: schema labels are UX copy and may change; bulk/model-facing imports must use signature/dataframe feature keys from `inputMapping`, then map back to stable field ids before MLForm/runtime submission.
 - Correction: schema bulk upload saved technical CSV keys into `PredictionRun.inputData`, so display and predict-again failed after label edits.
 - Rule: bulk upload may parse technical signature columns, but persisted schema-run `inputData` must use the same visible `raw.inputData` shape as manual runs; technical model payload belongs in `PredictionResult.modelInput`.
+- Correction: schema bulk upload still rejected technical headers like `rec_uci_hours` when fallback parser columns used edited/display labels like `REC_UCI_HOURS`.
+- Rule: schema bulk parser columns must come from explicit model mappings or stable technical field ids before editable labels; labels are display copy and cannot be the only accepted upload key.
+- Correction: schema bulk-saved runs with edited labels still displayed `N/A` when the saved/merged payload only had technical model keys.
+- Rule: schema display and predict-again prefill must read visible label first, then stable field id/model key fallback from merged `modelInput`; persisted visible `inputData` is preferred but not guaranteed for older/bulk paths.
+- Correction: schema bulk mapping fixes lacked broad label mutation coverage.
+- Rule: schema bulk tests must cover label case changes, accents, spaces, and symbols across parse, serialization, saved visible input, display, and predict-again prefill in one regression matrix.
+- Correction: schema bulk/display still showed `N/A` for edited labels when saved or merged payloads used technical keys.
+- Rule: schema display and predict-again prefill must prefer visible label, then fall back to stable field id or mapped model key; do not derive fallback keys by transforming labels.
+- Correction: schema bulk transport could run only a subset of mapped reports when edited labels left stale `inputMapping` keys in model bindings.
+- Rule: schema transport must build model input from exact field ids and mapped model keys; multi-model bulk regressions must assert every binding succeeds and every mapped report is hydrated.
+- Correction: normalized label aliases overcomplicated schema bulk mapping and broke lowercase/special-character cases.
+- Rule: schema bulk/model paths must not slug, uppercase, lowercase, or deaccent labels/headers at runtime; CSV uses exact model feature names, MLForm uses exact field ids, labels are display-only.
