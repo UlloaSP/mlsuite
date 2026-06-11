@@ -310,3 +310,7 @@
 - Rule: every bulk upload path that omits `name` must fetch the authoritative persisted sequence/max id for that same domain before parsing rows; never hardcode `0` as a base.
 - Correction: mapped-category reconstruction still missed real one-hot payloads because saved inputs may be boolean or sparse active-only values.
 - Rule: one-hot reverse mapping must accept numeric, string, boolean, and sparse active target shapes; tests need all real shapes before declaring display/prefill fixed.
+- Correction: schema bulk upload broke after editing schema labels because upload columns followed user-facing MLForm labels.
+- Rule: schema labels are UX copy and may change; bulk/model-facing imports must use signature/dataframe feature keys from `inputMapping`, then map back to stable field ids before MLForm/runtime submission.
+- Correction: schema bulk upload saved technical CSV keys into `PredictionRun.inputData`, so display and predict-again failed after label edits.
+- Rule: bulk upload may parse technical signature columns, but persisted schema-run `inputData` must use the same visible `raw.inputData` shape as manual runs; technical model payload belongs in `PredictionResult.modelInput`.

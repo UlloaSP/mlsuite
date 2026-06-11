@@ -44,7 +44,7 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, historyVersion
       const lastPredictionRunId = await getLastPredictionRunId();
       const parsed = await parseSpreadsheetPredictionFile(
         file,
-        getModelInputBulkSchema(version.formSchema),
+        getModelInputBulkSchema(version),
         MAX_RECORDS,
         lastPredictionRunId,
       );
@@ -92,7 +92,7 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, historyVersion
           const raw = isRecord(result) && isRecord(result.raw) ? result.raw : {};
           const request: CreatePredictionRunRequest = {
             name: record.name,
-            inputData: record.inputs,
+            inputData: isRecord(raw.inputData) ? raw.inputData : record.inputs,
             results: Array.isArray(raw.results) ? raw.results : [],
           };
           const savedRun = await createPredictionRun(version.id, request);
