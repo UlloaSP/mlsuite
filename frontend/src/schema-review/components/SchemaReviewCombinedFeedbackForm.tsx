@@ -12,8 +12,12 @@ import {
 } from "../../models/combined-feedback-questionnaire";
 import { ReportQuestionnaireMount } from "../../models/components/ReportQuestionnaireMount";
 import { buildQuestionnaireFormSchema } from "../../models/questionnaire-schema";
-import { buildSchemaFeedbackSteps } from "../../schemas/schema-feedback-steps";
-import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../../schemas/types";
+import { buildSchemaFeedbackSteps, feedbackKey } from "../../schemas/schema-feedback-steps";
+import type {
+  PredictionResultFeedbackDto,
+  PredictionRunDto,
+  SchemaVersionDto,
+} from "../../schemas/types";
 import { REVIEW_STEP_CONTEXT_EVENT } from "../../review/components/ReviewCombinedFeedbackForm";
 import * as api from "../api/schemaReviewLinkService";
 
@@ -37,14 +41,19 @@ const displayValue = (value: unknown, field?: FieldConfig): string => {
         typeof option.label === "string",
     );
     const matchingOption =
-      options.find((option) => String(option.value) === String(value)) ??
-      options[Number(value)];
+      options.find((option) => String(option.value) === String(value)) ?? options[Number(value)];
     if (matchingOption) return matchingOption.label;
   }
   return typeof value === "object" ? JSON.stringify(value) : String(value);
 };
 
-export function SchemaReviewCombinedFeedbackForm({ token, run, version, feedback, onSaved }: Props) {
+export function SchemaReviewCombinedFeedbackForm({
+  token,
+  run,
+  version,
+  feedback,
+  onSaved,
+}: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
   const [savedValues, setSavedValues] = useState<Record<string, unknown> | null>(null);
@@ -53,7 +62,8 @@ export function SchemaReviewCombinedFeedbackForm({ token, run, version, feedback
     [feedback, run.results, version],
   );
   const combined = useMemo(() => buildCombinedFeedbackQuestionnaire(steps), [steps]);
-  const complete = steps.length > 0 && steps.every((step) => step.feedback);
+  const complete =
+    steps.length > 0 && steps.every((step) => step.usages.every((usage) => usage.feedback));
   const activeStepIdRef = useRef<string | undefined>(undefined);
   const labels = useMemo(() => ({ submit: "Save review", submitting: "Saving review..." }), []);
 
@@ -70,22 +80,32 @@ export function SchemaReviewCombinedFeedbackForm({ token, run, version, feedback
   const transport = useMemo(
     () =>
       createCombinedQuestionnaireTransport(async (values) => {
+        const feedbackByKey = new Map(
+          feedback.map((item) => [feedbackKey(item.resultId, item.type, item.order), item]),
+        );
         await Promise.all(
           steps.map(async (step) => {
             const stepValues = valuesForCombinedStep(values, step);
-            if (step.feedback) {
-              await api.updateSchemaReviewFeedback(token, {
-                feedbackId: step.feedback.id,
-                value: stepValues,
-              });
-            } else {
-              await api.createSchemaReviewFeedback(token, {
-                resultId: step.resultId,
-                type: step.type,
-                order: step.order,
-                value: stepValues,
-              });
-            }
+            await Promise.all(
+              step.usages.map(async (usage) => {
+                const existing =
+                  usage.feedback ??
+                  feedbackByKey.get(feedbackKey(usage.resultId, step.type, usage.order));
+                if (existing) {
+                  await api.updateSchemaReviewFeedback(token, {
+                    feedbackId: existing.id,
+                    value: stepValues,
+                  });
+                } else {
+                  await api.createSchemaReviewFeedback(token, {
+                    resultId: usage.resultId,
+                    type: step.type,
+                    order: usage.order,
+                    value: stepValues,
+                  });
+                }
+              }),
+            );
           }),
         );
         setSavedValues(values);
@@ -93,7 +113,7 @@ export function SchemaReviewCombinedFeedbackForm({ token, run, version, feedback
         setEditing(false);
         toast.success("Review feedback saved");
       }),
-    [onSaved, steps, token],
+    [feedback, onSaved, steps, token],
   );
 
   if (steps.length === 0) return <AppCopy>No feedback questionnaire configured.</AppCopy>;
@@ -102,7 +122,11 @@ export function SchemaReviewCombinedFeedbackForm({ token, run, version, feedback
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
-          <AppButton variant="secondary" className="rounded-none px-4 py-2" onClick={() => setEditing(true)}>
+          <AppButton
+            variant="secondary"
+            className="rounded-none px-4 py-2"
+            onClick={() => setEditing(true)}
+          >
             Edit
           </AppButton>
         </div>

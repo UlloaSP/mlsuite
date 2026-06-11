@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { getString, isRecord, toUniqueId } from "../app/utils/mlform/shared";
 import type { SignatureDto } from "../models/api/modelService";
 import { applyOneHotMappedCategories } from "./one-hot-schema";
+import { reportContractFingerprint, reportSource } from "./schema-report-contract";
 import type { CreateSchemaVersionRequest, JsonRecord } from "./types";
 
 export type SelectedSchemaSignature = {
@@ -28,14 +29,6 @@ const itemKey = (item: JsonRecord): string => {
 
 const featureKey = (item: JsonRecord, fallback: string): string =>
   getString(item.label) ?? getString(item.id) ?? fallback;
-
-const canonicalReportSource = (report: JsonRecord, id: string): string =>
-  getString(report.source) ?? getString(report.id) ?? id;
-
-const reportLabel = (report: JsonRecord, modelId: string, index: number): string => {
-  const label = getString(report.label) ?? getString(report.id) ?? `Report ${index + 1}`;
-  return `${label} · ${modelId}`;
-};
 
 const createCanonical = (
   items: unknown,
@@ -89,9 +82,7 @@ const buildInputMapping = (signature: SignatureDto, fieldsByKey: Map<string, Can
 
 const kindsFrom = (items: unknown): string[] =>
   Array.isArray(items)
-    ? Array.from(
-        new Set(items.filter(isRecord).flatMap((item) => getString(item.kind) ?? [])),
-      )
+    ? Array.from(new Set(items.filter(isRecord).flatMap((item) => getString(item.kind) ?? [])))
     : [];
 
 const buildPluginPolicy = (signature: SignatureDto): JsonRecord => {
@@ -106,22 +97,24 @@ const buildBindingReports = (
   selected: readonly SelectedSchemaSignature[],
 ): { reports: JsonRecord[]; mappings: JsonRecord[] } => {
   const usedIds = new Set<string>();
+  const reportByFingerprint = new Map<string, string>();
   const reports: JsonRecord[] = [];
   const mappings: JsonRecord[] = [];
-  selected.forEach(({ modelId, signature }) => {
+  selected.forEach(({ signature }) => {
     const outputMapping: JsonRecord = {};
-    const sourceReports = isRecord(signature.inputSignature) ? signature.inputSignature.reports : [];
+    const sourceReports = isRecord(signature.inputSignature)
+      ? signature.inputSignature.reports
+      : [];
     if (Array.isArray(sourceReports)) {
       sourceReports.filter(isRecord).forEach((report, index) => {
-        const sourceId = canonicalReportSource(report, `report-${index + 1}`);
-        const id = toUniqueId(`${modelId}-${signature.id}-${sourceId}`, "report", usedIds);
+        const sourceId = reportSource(report, `report-${index + 1}`);
+        const fingerprint = reportContractFingerprint(report, sourceId);
+        const existingId = reportByFingerprint.get(fingerprint);
+        const id = existingId ?? toUniqueId(sourceId, "report", usedIds);
         outputMapping[id] = sourceId;
-        reports.push({
-          ...report,
-          id,
-          label: reportLabel(report, modelId, index),
-          source: id,
-        });
+        if (existingId) return;
+        reportByFingerprint.set(fingerprint, id);
+        reports.push({ ...report, id, source: sourceId });
       });
     }
     mappings.push(outputMapping);
@@ -139,7 +132,12 @@ export const composeSchemaVersion = (
 
   selected.slice(1).forEach(({ signature }) => {
     const schema = signature.inputSignature;
-    addMissingCanonical(fieldsState.canonical, fieldsState.byKey, isRecord(schema) ? schema.fields : [], "field");
+    addMissingCanonical(
+      fieldsState.canonical,
+      fieldsState.byKey,
+      isRecord(schema) ? schema.fields : [],
+      "field",
+    );
   });
   const bindingReports = buildBindingReports(selected);
 

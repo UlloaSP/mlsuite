@@ -11,7 +11,12 @@ import {
   skippedSchemaReportPayload,
 } from "./schema-report-plugin-context";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
-import { mappingSourceForReport, readReportContext, reportContextKey } from "./schema-run-report-mapping";
+import {
+  mappingSourceForReport,
+  readReportContext,
+  reportContextKey,
+} from "./schema-run-report-mapping";
+import { runtimeUsageForReport, type SchemaRunReportUsage } from "./schema-run-report-usages";
 import { isRecord, type JsonRecord } from "./shared";
 
 export type SchemaRunBindingForReports = {
@@ -42,7 +47,9 @@ const sourceForReport = (
   reportId: string,
   context: JsonRecord,
   bindings: readonly SchemaRunBindingForReports[],
+  usage?: SchemaRunReportUsage,
 ): string => {
+  if (usage) return usage.source;
   const binding = bindings.find(
     (item) => item.modelId === context.modelId && item.signatureId === context.signatureId,
   );
@@ -55,14 +62,20 @@ const hasBindingForReport = (
 ): boolean =>
   bindings.some((binding) => mappingSourceForReport(binding.outputMapping, reportId) !== undefined);
 
+const isSharedCanonicalReport = (
+  canonicalReportId: string,
+  usages: readonly SchemaRunReportUsage[],
+): boolean => usages.filter((usage) => usage.canonicalReportId === canonicalReportId).length > 1;
+
 const deriveReportContext = <TResult extends SchemaRunModelResult>(
   reportId: string,
   bindings: readonly SchemaRunBindingForReports[],
   results: readonly TResult[],
+  usage?: SchemaRunReportUsage,
 ): JsonRecord | null => {
-  const binding = bindings.find(
-    (item) => mappingSourceForReport(item.outputMapping, reportId) !== undefined,
-  );
+  const binding =
+    usage ??
+    bindings.find((item) => mappingSourceForReport(item.outputMapping, reportId) !== undefined);
   if (!binding) return null;
   const result = results.find(
     (item) =>
@@ -75,6 +88,8 @@ const deriveReportContext = <TResult extends SchemaRunModelResult>(
   return {
     modelId: result.modelId,
     signatureId: result.signatureId,
+    canonicalReportId: usage?.canonicalReportId ?? reportId,
+    source: usage?.source,
     modelInput: isRecord(result.modelInput) ? result.modelInput : {},
     meta,
     raw: result.output,
@@ -86,7 +101,8 @@ const contextId = (value: unknown): string | undefined =>
 
 const patchResultReportPayload = <TResult extends SchemaRunModelResult>(
   result: TResult,
-  reportId: string,
+  runtimeId: string,
+  canonicalReportId: string,
   source: string,
   payload: unknown,
 ): TResult => {
@@ -96,7 +112,12 @@ const patchResultReportPayload = <TResult extends SchemaRunModelResult>(
     ...result,
     output: {
       ...output,
-      reports: { ...reports, [reportId]: payload, [source]: payload },
+      reports: {
+        ...reports,
+        [runtimeId]: payload,
+        [canonicalReportId]: payload,
+        [source]: payload,
+      },
     },
   };
 };
@@ -108,6 +129,7 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
   results,
   bindings,
   definitions,
+  reportUsages = [],
 }: {
   request: SubmitRequest;
   reports: readonly ReportConfig[];
@@ -115,6 +137,7 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
   results: readonly TResult[];
   bindings: readonly SchemaRunBindingForReports[];
   definitions: readonly CatalogReportDefinition[];
+  reportUsages?: readonly SchemaRunReportUsage[];
 }): Promise<readonly TResult[]> => {
   const byKind = customReportByKind(definitions);
   let nextResults = [...results];
@@ -132,6 +155,8 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
         schemaRunDebug("custom-report-fetch.skip-no-id", { report });
         return;
       }
+      const usage = runtimeUsageForReport(report, reportUsages);
+      const canonicalReportId = usage?.canonicalReportId ?? id;
       if (built.reports[key] !== undefined) {
         schemaRunDebug("custom-report-fetch.skip-has-payload", { id, key });
         return;
@@ -145,15 +170,15 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
         });
         return;
       }
-      const fetchFactory =
-        definition?.definition.definition.fetch ?? definition?.definition.fetch;
+      const fetchFactory = definition?.definition.definition.fetch ?? definition?.definition.fetch;
       const fetcher = fetchFactory?.({ config: report as never, reportId: id });
       if (!fetcher) {
         schemaRunDebug("custom-report-fetch.skip-no-fetcher", { id, kind: report.kind });
         return;
       }
-      const context = readReportContext(built.reportContextById, id) ??
-        deriveReportContext(id, bindings, nextResults) ??
+      const context =
+        readReportContext(built.reportContextById, id) ??
+        deriveReportContext(canonicalReportId, bindings, nextResults, usage) ??
         {};
       schemaRunDebug("custom-report-fetch.context", {
         id,
@@ -167,9 +192,12 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
       const modelId = contextId(context.modelId);
       const signatureId = contextId(context.signatureId);
       if (!modelId) {
-        if (hasBindingForReport(id, bindings)) {
+        if (hasBindingForReport(canonicalReportId, bindings)) {
           schemaRunDebug("custom-report-fetch.skip-mapped-no-success-context", { id, key });
           built.reports[key] = skippedSchemaReportPayload;
+          if (!isSharedCanonicalReport(canonicalReportId, reportUsages)) {
+            built.reports[reportContextKey(canonicalReportId)] = skippedSchemaReportPayload;
+          }
           return;
         }
         throw new Error(`Schema report "${id}" is not bound to a model context.`);
@@ -202,7 +230,11 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
             schemaRun: true,
             reportContextById: built.reportContextById,
           },
-          raw: { results: nextResults, reports: built.reports, reportContextById: built.reportContextById },
+          raw: {
+            results: nextResults,
+            reports: built.reports,
+            reportContextById: built.reportContextById,
+          },
           signal: request.signal,
         });
       } catch (error) {
@@ -212,14 +244,20 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
           modelId,
         });
         built.reports[key] = skippedSchemaReportPayload;
+        if (!isSharedCanonicalReport(canonicalReportId, reportUsages)) {
+          built.reports[reportContextKey(canonicalReportId)] = skippedSchemaReportPayload;
+        }
         return;
       }
       if (payload === undefined || isSkippedSchemaReportPayload(payload)) {
         schemaRunDebug("custom-report-fetch.skip-empty-payload", { id, key, payload });
         return;
       }
-      const source = sourceForReport(id, context, bindings);
+      const source = sourceForReport(canonicalReportId, context, bindings, usage);
       built.reports[key] = payload;
+      if (!isSharedCanonicalReport(canonicalReportId, reportUsages)) {
+        built.reports[reportContextKey(canonicalReportId)] = payload;
+      }
       schemaRunDebug("custom-report-fetch.success", {
         id,
         key,
@@ -229,7 +267,7 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
       });
       nextResults = nextResults.map((result) =>
         contextId(result.modelId) === modelId && contextId(result.signatureId) === signatureId
-          ? patchResultReportPayload(result, id, source, payload)
+          ? patchResultReportPayload(result, id, canonicalReportId, source, payload)
           : result,
       );
     }),

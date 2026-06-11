@@ -144,7 +144,7 @@ describe("composeSchemaVersion one-hot mapping", () => {
     expect(countVisibleSchemaFields(result.formSchema)).toBe(3);
   });
 
-  test("keeps reports per selected model instead of merging them like fields", () => {
+  test("deduplicates matching report contracts while mapping each selected model", () => {
     const report = { kind: "classifier", id: "risk", source: "risk", label: "Risk" };
     const result = composeSchemaVersion("v1", [
       { modelId: "model-1", signature: signatureFor("signature-1", "model-1", [], [report]) },
@@ -152,10 +152,9 @@ describe("composeSchemaVersion one-hot mapping", () => {
     ]);
 
     const reports = result.formSchema.reports as Array<Record<string, unknown>>;
-    expect(reports).toHaveLength(2);
-    expect(new Set(reports.map((item) => item.id)).size).toBe(2);
+    expect(reports).toHaveLength(1);
     expect(result.bindings[0]?.outputMapping).toEqual({ [String(reports[0]?.id)]: "risk" });
-    expect(result.bindings[1]?.outputMapping).toEqual({ [String(reports[1]?.id)]: "risk" });
+    expect(result.bindings[1]?.outputMapping).toEqual({ [String(reports[0]?.id)]: "risk" });
   });
 
   test("schema-run transport returns mapped reports for mlform rendering", async () => {
@@ -278,7 +277,7 @@ describe("composeSchemaVersion one-hot mapping", () => {
       {
         id: reportId,
         order: 0,
-        label: "Risk · model-1",
+        label: "Risk",
         kind: "classifier",
         labels: ["Moricion", "Vivicion"],
         payload: {

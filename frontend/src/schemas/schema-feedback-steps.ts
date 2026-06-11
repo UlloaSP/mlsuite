@@ -9,6 +9,7 @@ import { getEffectiveFeedbackValues } from "../models/questionnaire-feedback";
 import type { QuestionnaireSchema } from "../models/questionnaire-schema";
 import { isBuiltinReportKind } from "../app/utils/mlform/builtin-registry";
 import { getFormattedReportContent } from "../models/report-feedback-utils";
+import { stableSchemaFingerprint } from "./schema-report-contract";
 import { getSchemaResultReports } from "./schema-run-display";
 import type {
   PredictionResultDto,
@@ -22,6 +23,19 @@ type FeedbackKind = "OUTPUT" | "EXPLANATION";
 export type SchemaFeedbackStep = CombinedFeedbackStep<FeedbackKind, PredictionResultFeedbackDto> & {
   resultId: string;
   type: PredictionResultFeedbackType;
+  usages: SchemaFeedbackStepUsage[];
+};
+
+export type SchemaFeedbackStepUsage = {
+  resultId: string;
+  modelId: string;
+  signatureId: string;
+  order: number;
+  reportId: string;
+  label: string;
+  content: string[];
+  kind: string;
+  feedback?: PredictionResultFeedbackDto;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -68,6 +82,22 @@ const reportDescription = (payload: unknown): string => {
   return content ? `Prediction report:\n${content}` : "Prediction report";
 };
 
+const firstCompleteFeedback = (
+  usages: readonly SchemaFeedbackStepUsage[],
+  schema: QuestionnaireSchema,
+): PredictionResultFeedbackDto | undefined =>
+  usages.find((usage) => {
+    const values = getEffectiveFeedbackValues(usage.feedback, schema);
+    return Object.keys(values).length > 0;
+  })?.feedback;
+
+const groupedKey = (
+  type: PredictionResultFeedbackType,
+  reportId: string,
+  kind: string,
+  schema: QuestionnaireSchema,
+): string => `${type}:${reportId}:${kind}:${stableSchemaFingerprint(schema)}`;
+
 export const feedbackKey = (
   resultId: string,
   type: PredictionResultFeedbackType,
@@ -83,50 +113,93 @@ export const buildSchemaFeedbackSteps = (
     feedback.map((item) => [feedbackKey(item.resultId, item.type, item.order), item]),
   );
   const sourceReports = reportsOf(version.formSchema);
+  const groups = new Map<
+    string,
+    Omit<SchemaFeedbackStep, "resultId" | "order" | "initialValues" | "feedback"> & {
+      usages: SchemaFeedbackStepUsage[];
+    }
+  >();
 
-  return results.flatMap((result) => {
+  results.forEach((result) => {
     if (result.status !== "SUCCESS") return [];
     const displayReports = getSchemaResultReports(version, result);
-    return displayReports.flatMap((display, index): SchemaFeedbackStep[] => {
+    displayReports.forEach((display, index) => {
       const order = display.order ?? index;
       const config = sourceReports.find((report) => reportId(report) === display.id);
       const outputFeedback = feedbackByKey.get(feedbackKey(result.id, "OUTPUT", order));
       const reportFeedback = feedbackByKey.get(feedbackKey(result.id, "EXPLANATION", order));
       const questionnaire = config ? feedbackQuestionnaire(config) : undefined;
       const isBuiltin = isBuiltinReportKind(display.kind);
-      const explanationStep: SchemaFeedbackStep | null = questionnaire
-        ? {
-            id: `result-${result.id}-report-${order}`,
-            kind: "EXPLANATION",
-            type: "EXPLANATION",
-            resultId: result.id,
-            order,
-            title: `${display.label} review`,
-            description: reportDescription(display.payload),
-            schema: questionnaire,
-            initialValues: getEffectiveFeedbackValues(reportFeedback, questionnaire),
-            feedback: reportFeedback,
-          }
-        : null;
-      if (!isBuiltin) return explanationStep ? [explanationStep] : [];
-      const outputSchema = createOutputFeedbackQuestionnaire(
-        config,
-        fakeTarget(order, display.payload),
-        result.output,
-      );
-      const outputStep: SchemaFeedbackStep = {
-        id: `result-${result.id}-output-${order}`,
-        kind: "OUTPUT",
-        type: "OUTPUT",
-        resultId: result.id,
-        order,
-        title: display.label,
-        description: outputDescription(display.payload),
-        schema: outputSchema,
-        initialValues: getEffectiveFeedbackValues(outputFeedback, outputSchema),
-        feedback: outputFeedback,
+      const addStep = (
+        type: PredictionResultFeedbackType,
+        schema: QuestionnaireSchema,
+        title: string,
+        description: string,
+        usageFeedback?: PredictionResultFeedbackDto,
+      ) => {
+        const key = groupedKey(type, display.id, display.kind, schema);
+        const usage: SchemaFeedbackStepUsage = {
+          resultId: result.id,
+          modelId: result.modelId,
+          signatureId: result.signatureId,
+          order,
+          reportId: display.id,
+          label: display.label,
+          content: getFormattedReportContent(display.payload),
+          kind: display.kind,
+          feedback: usageFeedback,
+        };
+        const existing = groups.get(key);
+        if (existing) {
+          existing.usages.push(usage);
+          return;
+        }
+        groups.set(key, {
+          id: `schema-report-${type.toLowerCase()}-${display.id}`,
+          kind: type,
+          type,
+          title,
+          description,
+          schema,
+          usages: [usage],
+        });
       };
-      return explanationStep ? [outputStep, explanationStep] : [outputStep];
+
+      if (isBuiltin) {
+        const outputSchema = createOutputFeedbackQuestionnaire(
+          config,
+          fakeTarget(order, display.payload),
+          result.output,
+        );
+        addStep(
+          "OUTPUT",
+          outputSchema,
+          display.label,
+          outputDescription(display.payload),
+          outputFeedback,
+        );
+      }
+      if (questionnaire) {
+        addStep(
+          "EXPLANATION",
+          questionnaire,
+          `${display.label} review`,
+          reportDescription(display.payload),
+          reportFeedback,
+        );
+      }
     });
+  });
+
+  return [...groups.values()].map((group) => {
+    const first = group.usages[0]!;
+    const feedback = firstCompleteFeedback(group.usages, group.schema);
+    return {
+      ...group,
+      resultId: first.resultId,
+      order: first.order,
+      initialValues: getEffectiveFeedbackValues(feedback, group.schema),
+      feedback,
+    };
   });
 };

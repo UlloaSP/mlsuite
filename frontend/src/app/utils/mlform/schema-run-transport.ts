@@ -11,7 +11,12 @@ import { normalizeAnalyzerPredictionResult } from "./analyzer-result-normalizati
 import type { CatalogReportDefinition } from "./custom-report";
 import { fetchSchemaCustomReports } from "./schema-run-custom-report-fetch";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
-import { mappingSourceForReport, reportContextKey } from "./schema-run-report-mapping";
+import { reportContextKey } from "./schema-run-report-mapping";
+import {
+  buildSchemaRunReportUsages,
+  runtimeUsageForReport,
+  type SchemaRunReportUsage,
+} from "./schema-run-report-usages";
 import { toCanonicalPayload, toVisiblePayload } from "./schema-run-payload";
 
 type SchemaRunBinding = {
@@ -19,7 +24,6 @@ type SchemaRunBinding = {
   signatureId: string;
   inputMapping?: JsonRecord;
   outputMapping?: JsonRecord;
-  pluginPolicy?: JsonRecord | null;
 };
 
 const applyInputMapping = (canonical: JsonRecord, mapping?: JsonRecord): JsonRecord => {
@@ -159,52 +163,55 @@ const findReportPayload = (
 
 const buildReports = (
   results: readonly Awaited<ReturnType<typeof runBinding>>[],
-  bindings: readonly SchemaRunBinding[],
   reports: readonly ReportConfig[],
+  reportUsages: readonly SchemaRunReportUsage[],
 ): { reports: JsonRecord; reportContextById: JsonRecord } => {
+  const usageCountByCanonicalId = reportUsages.reduce<Map<string, number>>((counts, usage) => {
+    counts.set(usage.canonicalReportId, (counts.get(usage.canonicalReportId) ?? 0) + 1);
+    return counts;
+  }, new Map());
   return results.reduce<{ reports: JsonRecord; reportContextById: JsonRecord }>(
     (payload, result) => {
       if (result.status !== "SUCCESS") return payload;
-      const binding = bindings.find(
-        (item) => item.modelId === result.modelId && item.signatureId === result.signatureId,
-      );
-      if (!binding || !isRecord(binding.outputMapping)) {
-        schemaRunDebug("transport.reports.no-binding-or-mapping", {
-          modelId: result.modelId,
-          signatureId: result.signatureId,
-          hasBinding: Boolean(binding),
-        });
-        return payload;
-      }
       reports.forEach((report) => {
-        const canonicalId = reportKey(report);
-        if (!canonicalId) return;
-        const source = mappingSourceForReport(binding.outputMapping, canonicalId);
-        if (!source) {
+        const usage = runtimeUsageForReport(report, reportUsages);
+        if (!usage) return;
+        if (usage.modelId !== result.modelId || usage.signatureId !== result.signatureId) {
+          return;
+        }
+        const runtimeId = reportKey(report);
+        if (!runtimeId) return;
+        const contextKey = reportContextKey(runtimeId);
+        if (!usage.source) {
           schemaRunDebug("transport.reports.no-source", {
             modelId: result.modelId,
-            reportId: canonicalId,
-            mappingKeys: Object.keys(binding.outputMapping ?? {}),
+            reportId: usage.canonicalReportId,
           });
           return;
         }
-        const reportPayload = findReportPayload(report, source, result.output);
+        const reportPayload = findReportPayload(report, usage.source, result.output);
         const meta = isRecord(result.output.meta) ? result.output.meta : {};
-        payload.reportContextById[reportContextKey(canonicalId)] = {
+        payload.reportContextById[contextKey] = {
           modelId: result.modelId,
           signatureId: result.signatureId,
+          canonicalReportId: usage.canonicalReportId,
+          source: usage.source,
           modelInput: result.modelInput,
           meta,
           raw: result.output,
         };
         if (reportPayload !== undefined) {
-          payload.reports[reportContextKey(canonicalId)] = reportPayload;
+          payload.reports[contextKey] = reportPayload;
+          if ((usageCountByCanonicalId.get(usage.canonicalReportId) ?? 0) === 1) {
+            payload.reports[reportContextKey(usage.canonicalReportId)] = reportPayload;
+          }
         }
         schemaRunDebug("transport.reports.mapped", {
           modelId: result.modelId,
-          reportId: canonicalId,
-          contextKey: reportContextKey(canonicalId),
-          source,
+          reportId: runtimeId,
+          canonicalReportId: usage.canonicalReportId,
+          contextKey,
+          source: usage.source,
           hasPayload: reportPayload !== undefined,
         });
       });
@@ -218,10 +225,15 @@ export const createSchemaRunTransport = (
   bindings: readonly SchemaRunBinding[],
   fields: readonly PredictionPayloadField[],
   customReportDefinitions: readonly CatalogReportDefinition[] = [],
+  reportUsages: readonly SchemaRunReportUsage[] = [],
 ): Transport => ({
   async submit(request: SubmitRequest) {
     const canonical = toCanonicalPayload(request.serializedValues, fields);
     const inputData = toVisiblePayload(request.serializedValues, fields);
+    const activeUsages =
+      reportUsages.length > 0
+        ? reportUsages
+        : buildSchemaRunReportUsages(bindings, request.reports);
     schemaRunDebug("transport.submit.start", {
       serializedKeys: Object.keys(request.serializedValues),
       canonicalKeys: Object.keys(canonical),
@@ -238,9 +250,18 @@ export const createSchemaRunTransport = (
       })),
     });
     const initialResults = await Promise.all(
-      bindings.map((binding) => runBinding(binding, canonical, request.reports)),
+      bindings.map((binding) =>
+        runBinding(
+          binding,
+          canonical,
+          request.reports.filter((report) => {
+            const usage = runtimeUsageForReport(report, activeUsages);
+            return usage?.modelId === binding.modelId && usage.signatureId === binding.signatureId;
+          }),
+        ),
+      ),
     );
-    const built = buildReports(initialResults, bindings, request.reports);
+    const built = buildReports(initialResults, request.reports, activeUsages);
     schemaRunDebug("transport.submit.after-models", {
       statuses: initialResults.map((result) => ({
         modelId: result.modelId,
@@ -257,6 +278,7 @@ export const createSchemaRunTransport = (
       results: initialResults,
       bindings,
       definitions: customReportDefinitions,
+      reportUsages: activeUsages,
     });
     schemaRunDebug("transport.submit.after-custom-reports", {
       reportKeys: Object.keys(built.reports),

@@ -60,19 +60,23 @@ export function SchemaRunFeedbackQuestionnaire({ run, version, feedback, onSaved
         await Promise.all(
           steps.map(async (step) => {
             const stepValues = valuesForCombinedStep(values, step);
-            if (step.feedback) {
-              await updateFeedback.mutateAsync({
-                feedbackId: step.feedback.id,
-                value: stepValues,
-              });
-            } else {
-              await createFeedback.mutateAsync({
-                resultId: step.resultId,
-                type: step.type,
-                order: step.order,
-                value: stepValues,
-              });
-            }
+            await Promise.all(
+              step.usages.map(async (usage) => {
+                if (usage.feedback) {
+                  await updateFeedback.mutateAsync({
+                    feedbackId: usage.feedback.id,
+                    value: stepValues,
+                  });
+                } else {
+                  await createFeedback.mutateAsync({
+                    resultId: usage.resultId,
+                    type: step.type,
+                    order: usage.order,
+                    value: stepValues,
+                  });
+                }
+              }),
+            );
           }),
         );
         setSavedValues(values);

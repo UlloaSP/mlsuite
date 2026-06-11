@@ -15,8 +15,13 @@ const isFilledFeedbackValue = (value: unknown): boolean =>
 
 const hasCompleteSavedSchemaFeedback = (step: SchemaFeedbackStep): boolean => {
   const fieldIds = getQuestionnaireFieldIds(step.schema);
-  const values = getEffectiveFeedbackValues(step.feedback, step.schema);
-  return fieldIds.length > 0 && fieldIds.every((fieldId) => isFilledFeedbackValue(values[fieldId]));
+  return (
+    fieldIds.length > 0 &&
+    step.usages.every((usage) => {
+      const values = getEffectiveFeedbackValues(usage.feedback, step.schema);
+      return fieldIds.every((fieldId) => isFilledFeedbackValue(values[fieldId]));
+    })
+  );
 };
 
 export const isSchemaFeedbackComplete = (steps: readonly SchemaFeedbackStep[]): boolean =>

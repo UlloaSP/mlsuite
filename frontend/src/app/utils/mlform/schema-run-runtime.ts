@@ -10,8 +10,9 @@ import type { FormSchema, Registry, Transport } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "./custom-field";
 import type { CatalogReportDefinition } from "./custom-report";
 import { toMlformSchema } from "./schema-validation";
-import type { PredictionPayloadField } from "./shared";
+import { isRecord, type PredictionPayloadField } from "./shared";
 import { createSchemaRunTransport } from "./schema-run-transport";
+import { buildSchemaRunReportUsages, toRuntimeReports } from "./schema-run-report-usages";
 import { wrapSchemaReportDefinitions } from "./schema-report-plugin-context";
 import { schemaRunDebug } from "./schema-run-debug";
 
@@ -66,14 +67,25 @@ export const createSchemaRunRuntime = ({
 }: Options): SchemaRunRuntime => {
   schemaRunDebug("runtime.create.start", {
     bindings: bindings.length,
-    customFields: customFieldDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
-    customReports: customReportDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
+    customFields: customFieldDefinitions.map(
+      (definition) => `${definition.kind}:${definition.active}`,
+    ),
+    customReports: customReportDefinitions.map(
+      (definition) => `${definition.kind}:${definition.active}`,
+    ),
   });
   const schemaReportDefinitions = wrapSchemaReportDefinitions(customReportDefinitions);
   const formSchema = toMlformSchema(schema, {
     customFieldDefinitions,
     customReportDefinitions: schemaReportDefinitions,
   });
+  const reportUsages = buildSchemaRunReportUsages(bindings, formSchema.reports ?? []);
+  const mappedReportIds = new Set(reportUsages.map((usage) => usage.canonicalReportId));
+  const unmappedReports = (formSchema.reports ?? []).filter(
+    (report) =>
+      isRecord(report) && typeof report.id === "string" && !mappedReportIds.has(report.id),
+  );
+  const runtimeReports = [...toRuntimeReports(reportUsages), ...unmappedReports];
   const normalizedFields = formSchema.fields as PredictionPayloadField[];
   schemaRunDebug("runtime.create.normalized-schema", {
     fields: formSchema.fields.length,
@@ -82,13 +94,23 @@ export const createSchemaRunRuntime = ({
       kind: report.kind,
       source: report.source,
     })),
+    runtimeReports: runtimeReports.map((report) => ({
+      id: report.id,
+      kind: report.kind,
+      source: report.source,
+    })),
   });
   const pack = createRegistry(customFieldDefinitions, schemaReportDefinitions);
   return {
-    formSchema,
+    formSchema: { ...formSchema, reports: runtimeReports },
     registry: pack.registry,
     descriptorRegistry: pack.descriptorRegistry,
-    transport: createSchemaRunTransport(bindings, normalizedFields, schemaReportDefinitions),
+    transport: createSchemaRunTransport(
+      bindings,
+      normalizedFields,
+      schemaReportDefinitions,
+      reportUsages,
+    ),
     normalizedFields,
   };
 };

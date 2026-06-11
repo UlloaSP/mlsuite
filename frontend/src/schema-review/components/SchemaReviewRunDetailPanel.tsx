@@ -38,8 +38,8 @@ const displayTargetValue = (payload: unknown): unknown => {
 
 export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewChanged }: Props) {
   const detail = useSchemaReviewRun(token, runToken);
-  const [outputsOpen, setOutputsOpen] = useState(false);
-  const [inputsOpen, setInputsOpen] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const [fieldsOpen, setFieldsOpen] = useState(true);
   const visibleInputs = useMemo(
     () =>
       detail.data
@@ -121,9 +121,16 @@ export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewC
         }}
       />
       <ReviewAccordionSection
-        title="Outputs"
-        open={outputsOpen}
-        onToggle={() => setOutputsOpen((current) => !current)}
+        title="Fields"
+        open={fieldsOpen}
+        onToggle={() => setFieldsOpen((current) => !current)}
+      >
+        <ReviewInputsSection inputs={visibleInputs} />
+      </ReviewAccordionSection>
+      <ReviewAccordionSection
+        title="Reports"
+        open={reportsOpen}
+        onToggle={() => setReportsOpen((current) => !current)}
       >
         <ReviewOutputsSection
           targets={outputTargets}
@@ -131,13 +138,6 @@ export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewC
           signatureSchema={version.formSchema}
           predictionValue={detail.data.run.results[0]?.output ?? {}}
         />
-      </ReviewAccordionSection>
-      <ReviewAccordionSection
-        title="Inputs"
-        open={inputsOpen}
-        onToggle={() => setInputsOpen((current) => !current)}
-      >
-        <ReviewInputsSection inputs={visibleInputs} />
       </ReviewAccordionSection>
     </div>
   );

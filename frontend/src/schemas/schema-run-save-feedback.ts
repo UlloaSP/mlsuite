@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { valuesForCombinedStep } from "../models/combined-feedback-questionnaire";
 import { hasFeedbackValues } from "../models/questionnaire-feedback";
-import type { SchemaFeedbackStep } from "./schema-feedback-steps";
+import type { SchemaFeedbackStep, SchemaFeedbackStepUsage } from "./schema-feedback-steps";
 
 export type PendingFeedback = {
   modelId: string;
@@ -21,6 +21,22 @@ type PendingFeedbackResult = {
   signatureId: string;
 };
 
+const stepUsages = (step: SchemaFeedbackStep): SchemaFeedbackStepUsage[] =>
+  Array.isArray(step.usages)
+    ? step.usages
+    : [
+        {
+          resultId: step.resultId,
+          modelId: "",
+          signatureId: "",
+          order: step.order,
+          reportId: "",
+          label: step.title,
+          content: [],
+          kind: step.kind,
+        },
+      ];
+
 export const buildPendingSchemaRunFeedback = (
   feedbackSteps: readonly SchemaFeedbackStep[],
   values: Record<string, unknown>,
@@ -29,14 +45,14 @@ export const buildPendingSchemaRunFeedback = (
   feedbackSteps.flatMap((step): PendingFeedback[] => {
     const value = valuesForCombinedStep(values, step);
     if (!hasFeedbackValues(value)) return [];
-    const result = results.find((item) => item.id === step.resultId);
-    return [
-      {
-        modelId: result?.modelId ?? "",
-        signatureId: result?.signatureId ?? "",
+    return stepUsages(step).map((usage) => {
+      const result = results.find((item) => item.id === usage.resultId);
+      return {
+        modelId: result?.modelId ?? usage.modelId,
+        signatureId: result?.signatureId ?? usage.signatureId,
         type: step.type,
-        order: step.order,
+        order: usage.order,
         value,
-      },
-    ];
+      };
+    });
   });

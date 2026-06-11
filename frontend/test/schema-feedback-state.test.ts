@@ -22,6 +22,30 @@ const step = (
   order: 0,
   title: "Result",
   description: "Prediction result",
+  usages: [
+    {
+      resultId: "result-1",
+      modelId: "model-1",
+      signatureId: "signature-1",
+      order: 0,
+      reportId: "report-1",
+      label: "Result",
+      content: ["Prediction result"],
+      kind: "classifier",
+      feedback: value
+        ? {
+            id: "feedback-1",
+            resultId: "result-1",
+            userId: "user-1",
+            userEmail: "reviewer@example.com",
+            type: "OUTPUT",
+            order: 0,
+            value,
+            createdAt: "2026-06-04T00:00:00Z",
+          }
+        : undefined,
+    },
+  ],
   schema: {
     steps: [
       {
