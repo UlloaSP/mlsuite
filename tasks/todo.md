@@ -1,3 +1,24 @@
+# Superadmin Invitation Auto-Accept
+
+## Goal
+- When a superadmin invites an existing user to an organization, accept the invitation immediately.
+- Normal inviters keep current pending invitation flow: invited user logs in and accepts or declines.
+
+## Plan
+- [x] Keep source of truth in API invitation service.
+- [x] Refactor invitation acceptance side effects into shared helper.
+- [x] In create flow, detect `SystemRole.SUPERADMIN`, resolve invited user by email, apply membership/team membership, set invitation `ACCEPTED`.
+- [x] Preserve pending flow for non-superadmin inviters.
+- [x] Add service tests for superadmin auto-accept and normal pending behavior.
+- [x] Run narrow Maven test and line-count check.
+
+## Review
+- `InvitationManagementService` now auto-accepts invites sent by `SUPERADMIN` users after resolving the invitee by email.
+- Normal inviters still produce `PENDING` invitations.
+- Shared helper keeps manual accept and auto-accept membership side effects aligned.
+- Verified with `mvn -Dtest=InvitationManagementServiceTest test`.
+- Line counts: service 272, test 253.
+
 # Plugin Catalog Simplification
 
 ## Goal

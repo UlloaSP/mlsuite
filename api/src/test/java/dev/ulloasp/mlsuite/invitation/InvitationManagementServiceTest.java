@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,7 @@ import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershi
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -119,6 +121,65 @@ class InvitationManagementServiceTest {
 
         assertEquals(OrganizationRole.VIEWER.name(), result.role());
         assertEquals(5L, result.roleDefinition().id());
+    }
+
+    @Test
+    void createInvitation_AcceptsImmediatelyWhenInviterIsSuperadmin() {
+        Organization org = organization();
+        User actor = user(7L);
+        actor.setSystemRole(SystemRole.SUPERADMIN);
+        User invitee = user(8L);
+        invitee.setEmail("target@example.com");
+        RoleDefinition role = externalReviewerRole(org);
+        when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
+        when(workspaceAccessService.requireMembership(7L, 41L))
+                .thenReturn(membership(org, actor, OrganizationRole.ADMIN));
+        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
+        when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(role));
+        when(userRepository.findByEmailIgnoreCase("target@example.com")).thenReturn(Optional.of(invitee));
+        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 8L)).thenReturn(Optional.empty());
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> {
+            Invitation invitation = inv.getArgument(0);
+            invitation.setId(12L);
+            return invitation;
+        });
+
+        var result = service.createInvitation(
+                7L,
+                41L,
+                new CreateInvitationRequest("target@example.com", null, 5L, null));
+
+        assertEquals("ACCEPTED", result.status());
+        assertEquals(org, invitee.getCurrentOrganization());
+        ArgumentCaptor<OrganizationMembership> membership = ArgumentCaptor.forClass(OrganizationMembership.class);
+        verify(organizationMembershipRepository).save(membership.capture());
+        assertEquals(invitee, membership.getValue().getUser());
+        assertEquals(role, membership.getValue().getRoleDefinition());
+    }
+
+    @Test
+    void createInvitation_StaysPendingWhenInviterIsNotSuperadmin() {
+        Organization org = organization();
+        User actor = user(7L);
+        RoleDefinition role = externalReviewerRole(org);
+        when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
+        when(workspaceAccessService.requireMembership(7L, 41L))
+                .thenReturn(membership(org, actor, OrganizationRole.ADMIN));
+        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
+        when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(role));
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> {
+            Invitation invitation = inv.getArgument(0);
+            invitation.setId(12L);
+            return invitation;
+        });
+
+        var result = service.createInvitation(
+                7L,
+                41L,
+                new CreateInvitationRequest("target@example.com", null, 5L, null));
+
+        assertEquals("PENDING", result.status());
+        verifyNoInteractions(organizationMembershipRepository);
     }
 
     @Test
