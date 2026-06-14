@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { executeFormPipeline } from "mlform/runtime";
 import { createHeadlessPredictionForm } from "../app/utils/mlform/headless-prediction";
-import type { CatalogFieldDefinition } from "../app/utils/mlform/custom-field";
-import type { CatalogReportDefinition } from "../app/utils/mlform/custom-report";
+import type { CatalogFieldDefinition } from "../plugin/mlform/custom-field";
+import type { CatalogReportDefinition } from "../plugin/mlform/custom-report";
 import { type PredictionPayloadField, getBackendKey } from "../app/utils/mlform/shared";
 import {
   buildPersistedPredictionPayload,

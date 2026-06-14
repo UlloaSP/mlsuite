@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AppButton, AppCopy, AppPanel } from "../../app/components";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import { mountPredictionForm } from "../../app/utils/mlform/mount";
-import { schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/schema-needs-plugin-catalog";
+import { schemaNeedsPluginCatalog } from "../../plugin/mlform/schema-needs-plugin-catalog";
 import { schemaAtom } from "../../editor/atoms";
 import { showModalAtom } from "../atoms";
 import {
@@ -119,7 +119,7 @@ export function CreatePredictionBodyForm() {
   );
   const [catalogState, setCatalogState] = useState<CatalogLoadState>(initialCatalogLoadState);
   const [mountError, setMountError] = useState<string | null>(null);
-  const schemaNeedsPlugins = schemaNeedsActivePluginCatalog(schema);
+  const schemaNeedsPlugins = schemaNeedsPluginCatalog(schema);
 
   const handleSubmit = useCallback(
     (nextInputs: Record<string, unknown>, nextResponse: Record<string, unknown>) => {

@@ -9,8 +9,8 @@ import { createPredictionPrimitiveRegistry } from "./primitive-registry";
 import { createSchemaRunRuntime } from "./schema-run-runtime";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import { type JsonRecord, type MountedPredictionForm, type PredictionTheme, isRecord } from "./shared";
-import type { CatalogFieldDefinition } from "./custom-field";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
 
 type Options = {
@@ -42,8 +42,8 @@ export const mountSchemaRunForm = ({
 }: Options): MountedPredictionForm => {
   schemaRunDebug("mount.start", {
     bindings: bindings.length,
-    customFields: customFieldDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
-    customReports: customReportDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
+    customFields: customFieldDefinitions.map((definition) => definition.kind),
+    customReports: customReportDefinitions.map((definition) => definition.kind),
   });
   const runtime = createSchemaRunRuntime({
     schema,

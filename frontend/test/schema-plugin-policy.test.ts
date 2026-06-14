@@ -18,7 +18,7 @@ import {
 import { readReportContext } from "../src/app/utils/mlform/schema-run-report-mapping";
 import { composeSchemaVersion } from "../src/schemas/schema-composer";
 import type { SignatureDto } from "../src/models/api/modelService";
-import type { CatalogReportDefinition } from "../src/app/utils/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
 const signature = (inputSignature: unknown): SignatureDto => ({
   id: "signature-1",
@@ -39,7 +39,6 @@ const customReportDefinition = (): CatalogReportDefinition => ({
   createdAt: "",
   contentType: "text/typescript",
   sizeBytes: 1,
-  active: true,
   kind: "plugin-report",
   definition: defineReportKind({
     kind: "plugin-report",

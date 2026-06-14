@@ -1,5 +1,27 @@
 # Lessons
 
+## 2026-06-14 - Plugin Catalog Query Pattern Correction
+
+- Correction: plugin catalog page used custom local feed state and infinite scroll after backend pagination, while app convention expects `appFetch` services plus TanStack Query hooks for fetched pages and mutations.
+- Rule: React pages that fetch/mutate app API data must use feature hooks built on TanStack Query; services own `appFetch`, hooks own request state/cache invalidation, pages own UI state.
+- Rule: when user asks for classic pagination, do not keep sentinel/infinite-scroll code or copy; expose explicit previous/next page controls and remove scroll-loading branches.
+- Correction: type filter should be direct `All` / `Fields` / `Reports` buttons, and pagination controls should stay visible while plugin rows scroll internally.
+- Rule: catalog pages with pagination need one scroll body for rows and a fixed footer outside that scroll body; filters with three options should prefer explicit segmented buttons over selects.
+- Correction: segmented/pill container looked like slider and duplicated count/page info below filters.
+- Rule: when user asks for separate buttons, render independent button affordances with visible gaps; avoid grouped segmented backgrounds, and keep page/count copy in one place only.
+- Correction: plugin search/filter/sort/count logic stayed in frontend even though backend can own it.
+- Rule: plugin catalog frontend should pass query intent only; backend owns catalog row metadata, counts, filtering, search, and ordering whenever data already lives server-side.
+- Correction: plugin catalog search/filter/sort refetch flickered because changing query keys temporarily cleared page data and reset page in a delayed effect.
+- Rule: paginated TanStack Query UIs must keep previous page data during refetch and reset page inside the initiating filter/search/sort handler, not through a later effect that creates intermediate query keys.
+- Correction: plugin page response carried catalog stats and redundant total, coupling list pagination with independent counters.
+- Rule: catalog stats that change on create/delete but not page filters belong in a separate query/endpoint; derive redundant totals client-side and invalidate page + stats query families after mutations.
+- Correction: plugin backend exposed a mixed `PluginService` interface that blurred hexagonal use-case ports with implementation service naming.
+- Rule: controllers and application consumers depend on explicit use-case ports; application service implementations may implement ports, but should not introduce broad service interfaces that duplicate port boundaries.
+- Correction: plugin catalog page subscribed to page/stats query state in the route shell, so refetches rerendered header/toolbar/page layout instead of only data regions.
+- Rule: route pages should own URL/local UI state; TanStack Query subscriptions should live in the smallest component that renders that data, with mutations invalidating query families from dedicated hooks.
+- Correction: plugin frontend files lived under generic `app/api`, `app/pages`, and `app/utils/mlform`, hiding feature ownership.
+- Rule: plugin-owned frontend API, catalog UI, TanStack hooks, and MLForm plugin runtime belong under `src/plugin/...`; app/model/schema/editor code imports plugin module instead of owning plugin files.
+
 ## 2026-06-14 - Page Header Consumer Migration
 
 - Correction: new `AppPageHeader` API existed, but pages still used separate breadcrumbs, generic `Back` links, `aside`, and wrapped action buttons.

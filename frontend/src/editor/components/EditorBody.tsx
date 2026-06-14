@@ -9,16 +9,16 @@ import type * as Monaco from "monaco-editor";
 import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
-  getActiveCustomFieldDefinitions,
+  getCustomFieldDefinitions,
   type CatalogFieldDefinition,
-} from "../../app/utils/mlform/custom-field";
+} from "../../plugin/mlform/custom-field";
 import {
-  getActiveCustomReportDefinitions,
+  getCustomReportDefinitions,
   type CatalogReportDefinition,
-} from "../../app/utils/mlform/custom-report";
-import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
-import { pluginCatalogVersionAtom } from "../../app/utils/mlform/plugin-catalog-state";
-import { schemaNeedsActivePluginCatalog } from "../../app/utils/mlform/schema-needs-plugin-catalog";
+} from "../../plugin/mlform/custom-report";
+import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
+import { pluginCatalogVersionAtom } from "../../plugin/mlform/plugin-catalog-state";
+import { schemaNeedsPluginCatalog } from "../../plugin/mlform/schema-needs-plugin-catalog";
 import { mlformJsonSchema, validateMlformSchema } from "../../app/utils/mlform/schema-validation";
 import {
   type EditorErrorCard,
@@ -221,8 +221,8 @@ export function EditorBody() {
     void (async () => {
       try {
         const [customFieldDefinitions, customReportDefinitions] = await Promise.all([
-          getActiveCustomFieldDefinitions(),
-          getActiveCustomReportDefinitions(),
+          getCustomFieldDefinitions(),
+          getCustomReportDefinitions(),
         ]);
         if (cancelled) {
           return;
@@ -252,7 +252,7 @@ export function EditorBody() {
             error instanceof Error
               ? `Custom plugin catalog could not be loaded: ${error.message}`
               : `Custom plugin catalog could not be loaded: ${String(error)}`,
-          severity: schemaNeedsActivePluginCatalog(editorRef.current?.getValue() ?? schemaText)
+          severity: schemaNeedsPluginCatalog(editorRef.current?.getValue() ?? schemaText)
             ? "error"
             : "warning",
         };

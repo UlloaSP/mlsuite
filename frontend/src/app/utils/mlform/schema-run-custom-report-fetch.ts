@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig, SubmitRequest } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../config/runtimeConfig";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import {
   isSkippedSchemaReportPayload,
   skippedSchemaReportPayload,
@@ -33,7 +33,7 @@ const customReportByKind = (
 ): Map<string, CatalogReportDefinition> => {
   const reports = new Map<string, CatalogReportDefinition>();
   definitions.forEach((definition) => {
-    if (definition.active) reports.set(definition.kind, definition);
+    reports.set(definition.kind, definition);
   });
   return reports;
 };
@@ -119,7 +119,7 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
   const byKind = customReportByKind(definitions);
   let nextResults = [...results];
   schemaRunDebug("custom-report-fetch.start", {
-    activeKinds: Array.from(byKind.keys()),
+    availableKinds: Array.from(byKind.keys()),
     reports: reports.map((report) => ({ id: report.id, kind: report.kind, source: report.source })),
     initialReportKeys: Object.keys(built.reports),
     initialContextKeys: Object.keys(built.reportContextById),
@@ -141,7 +141,7 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
         schemaRunDebug("custom-report-fetch.skip-no-definition", {
           id,
           kind: report.kind,
-          activeKinds: Array.from(byKind.keys()),
+          availableKinds: Array.from(byKind.keys()),
         });
         return;
       }

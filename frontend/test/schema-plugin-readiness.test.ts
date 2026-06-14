@@ -7,7 +7,7 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
-import type { CatalogReportDefinition } from "../src/app/utils/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",
@@ -17,7 +17,6 @@ const crystal = (): CatalogReportDefinition => ({
   createdAt: "",
   contentType: "text/typescript",
   sizeBytes: 1,
-  active: true,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -65,7 +64,7 @@ describe("schema plugin readiness failures", () => {
         bindings: [],
         customReportDefinitions: [],
       }),
-    ).toThrow('Custom report kind "Crystal Tree" does not exist in active plugin catalog.');
+    ).toThrow('Custom report kind "Crystal Tree" does not exist in plugin catalog.');
   });
 
   test("schema without Crystal Tree report never calls explanations", async () => {

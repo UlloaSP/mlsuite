@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig } from "mlform/runtime";
 import type { DefinedReportKind } from "mlform/kit";
-import type { PluginDto } from "../../api/pluginService";
+import type { PluginDto } from "../api/pluginService";
 import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "./plugin-catalog";
 import { CUSTOM_REPORT_COMPONENT, resolveCustomReportDefinition } from "./custom-report-runtime";
 
@@ -13,7 +13,7 @@ export { CUSTOM_REPORT_COMPONENT };
 
 export type CatalogReportDefinition = Pick<
   PluginDto,
-  "id" | "fileName" | "source" | "updatedAt" | "createdAt" | "contentType" | "sizeBytes" | "active"
+  "id" | "fileName" | "source" | "updatedAt" | "createdAt" | "contentType" | "sizeBytes"
 > & {
   kind: string;
   definition: DefinedReportKind<ReportConfig, unknown>;
@@ -47,18 +47,19 @@ const toCatalogDefinition = async (item: PluginDto): Promise<CatalogReportDefini
     createdAt: item.createdAt,
     contentType: item.contentType,
     sizeBytes: item.sizeBytes,
-    active: item.active,
     kind: detected.kind,
     definition: await resolveCustomReportDefinition(item.source),
   };
 };
 
-export const invalidateActiveCustomReportDefinition = (): void => {
+export const invalidateCustomReportDefinitions = (): void => {
   catalogDefinitionsPromise = null;
   invalidatePluginCatalog();
 };
 
-const getCatalogReportDefinitions = async (): Promise<readonly CatalogReportDefinition[]> => {
+export const getCustomReportDefinitions = async (): Promise<
+  readonly CatalogReportDefinition[]
+> => {
   catalogDefinitionsPromise ??= loadPlugins().then(async (items) => {
     const definitions = (await Promise.all(items.map((item) => toCatalogDefinition(item)))).filter(
       (definition): definition is CatalogReportDefinition => definition !== null,
@@ -67,11 +68,4 @@ const getCatalogReportDefinitions = async (): Promise<readonly CatalogReportDefi
     return definitions;
   });
   return catalogDefinitionsPromise;
-};
-
-export const getActiveCustomReportDefinitions = async (): Promise<
-  readonly CatalogReportDefinition[]
-> => {
-  const catalogDefinitions = await getCatalogReportDefinitions();
-  return catalogDefinitions.filter((definition) => definition.active);
 };

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getActivePlugins, getPlugins, type PluginDto } from "../../api/pluginService";
+import { getAllPlugins, type PluginDto } from "../api/pluginService";
 import { validateCustomFieldSource } from "./custom-field-runtime";
 import { validateCustomReportSource } from "./custom-report-runtime";
 
@@ -15,7 +15,6 @@ type DetectionResult = {
 };
 
 let allPluginsPromise: Promise<PluginDto[]> | null = null;
-let activePluginsPromise: Promise<PluginDto[]> | null = null;
 const detectionCache = new Map<string, Promise<DetectionResult>>();
 
 const detectDeclaredPluginType = (source: string): DetectedPluginType | null => {
@@ -48,18 +47,12 @@ const validateByType = async (
 
 export const invalidatePluginCatalog = (): void => {
   allPluginsPromise = null;
-  activePluginsPromise = null;
   detectionCache.clear();
 };
 
 export const loadPlugins = async (): Promise<readonly PluginDto[]> => {
-  allPluginsPromise ??= getPlugins();
+  allPluginsPromise ??= getAllPlugins();
   return allPluginsPromise;
-};
-
-export const loadActivePlugins = async (): Promise<readonly PluginDto[]> => {
-  activePluginsPromise ??= getActivePlugins();
-  return activePluginsPromise;
 };
 
 export const detectPluginType = async (source: string): Promise<DetectionResult> => {

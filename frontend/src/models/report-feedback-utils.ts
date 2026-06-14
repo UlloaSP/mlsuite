@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { normalizeCustomReportResult } from "../app/utils/mlform/custom-report-result";
+import { normalizeCustomReportResult } from "../plugin/mlform/custom-report-result";
 import { toMlformSchema } from "../app/utils/mlform/schema-validation";
 import type { ReportConfig } from "mlform/runtime";
 import type { PredictionReportDescriptor } from "./questionnaire-feedback";

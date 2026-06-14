@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, it } from "vite-plus/test";
 import { createMlRegistryPack } from "mlform/builtins";
-import { schemaNeedsActivePluginCatalog } from "../src/app/utils/mlform/schema-needs-plugin-catalog";
+import { schemaNeedsPluginCatalog } from "../src/plugin/mlform/schema-needs-plugin-catalog";
 import { validateMlformSchema } from "../src/app/utils/mlform/schema-validation";
 
 const builtinSchema = {
@@ -26,11 +26,11 @@ describe("MLForm builtin registry", () => {
     expect(registry.getReport("regressor")).toBeDefined();
   });
 
-  it("validates builtin schema without active plugin catalog", () => {
+  it("validates builtin schema without plugin catalog", () => {
     const result = validateMlformSchema(builtinSchema);
 
     expect(result.success).toBe(true);
-    expect(schemaNeedsActivePluginCatalog(builtinSchema)).toBe(false);
+    expect(schemaNeedsPluginCatalog(builtinSchema)).toBe(false);
   });
 
   it("rejects unknown field kinds without treating them as builtins", () => {
@@ -39,10 +39,10 @@ describe("MLForm builtin registry", () => {
     });
 
     expect(result.success).toBe(false);
-    expect(result.issues.some((issue) => issue.message.includes("active plugin catalog"))).toBe(
+    expect(result.issues.some((issue) => issue.message.includes("plugin catalog"))).toBe(
       true,
     );
-    expect(schemaNeedsActivePluginCatalog({ fields: [{ kind: "missing-custom-field" }] })).toBe(
+    expect(schemaNeedsPluginCatalog({ fields: [{ kind: "missing-custom-field" }] })).toBe(
       true,
     );
   });

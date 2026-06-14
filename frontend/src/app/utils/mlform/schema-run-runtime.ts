@@ -7,8 +7,8 @@ import { createMlRegistryPack } from "mlform/builtins";
 import { registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import type { FormSchema, Registry, Transport } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "./custom-field";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { toMlformSchema } from "./schema-validation";
 import type { PredictionPayloadField } from "./shared";
 import { createSchemaRunTransport } from "./schema-run-transport";
@@ -44,16 +44,12 @@ const createRegistry = (
 ) => {
   const pack = createMlRegistryPack();
   fields.forEach((definition) => {
-    if (definition.active) {
-      schemaRunDebug("runtime.register-field", { kind: definition.kind });
-      registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition);
-    }
+    schemaRunDebug("runtime.register-field", { kind: definition.kind });
+    registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition);
   });
   reports.forEach((definition) => {
-    if (definition.active) {
-      schemaRunDebug("runtime.register-report", { kind: definition.kind });
-      registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition);
-    }
+    schemaRunDebug("runtime.register-report", { kind: definition.kind });
+    registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition);
   });
   return pack;
 };
@@ -66,8 +62,8 @@ export const createSchemaRunRuntime = ({
 }: Options): SchemaRunRuntime => {
   schemaRunDebug("runtime.create.start", {
     bindings: bindings.length,
-    customFields: customFieldDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
-    customReports: customReportDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
+    customFields: customFieldDefinitions.map((definition) => definition.kind),
+    customReports: customReportDefinitions.map((definition) => definition.kind),
   });
   const schemaReportDefinitions = wrapSchemaReportDefinitions(customReportDefinitions);
   const formSchema = toMlformSchema(schema, {

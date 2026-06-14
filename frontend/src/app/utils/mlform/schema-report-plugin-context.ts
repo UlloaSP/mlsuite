@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportDescriptorContext } from "mlform/primitives";
 import type { ReportConfig } from "mlform/runtime";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { readReportContext } from "./schema-run-report-mapping";
 import { isRecord } from "./shared";
 

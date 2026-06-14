@@ -19,14 +19,13 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.Authentication;
 
 import dev.ulloasp.mlsuite.plugin.adapter.in.web.PluginControllerImpl;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ActivatePluginUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.DeactivateAllPluginsUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.DeactivatePluginUseCase;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginStatsDto;
 import dev.ulloasp.mlsuite.plugin.application.port.in.DeletePluginUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListActivePluginsUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.GetPluginStatsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.UploadPluginUseCase;
-import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 
@@ -43,16 +42,7 @@ class PluginControllerTest {
     private ListPluginsUseCase listPluginsUseCase;
 
     @Mock
-    private ListActivePluginsUseCase listActivePluginsUseCase;
-
-    @Mock
-    private ActivatePluginUseCase activatePluginUseCase;
-
-    @Mock
-    private DeactivatePluginUseCase deactivatePluginUseCase;
-
-    @Mock
-    private DeactivateAllPluginsUseCase deactivateAllPluginsUseCase;
+    private GetPluginStatsUseCase getPluginStatsUseCase;
 
     @Mock
     private DeletePluginUseCase deletePluginUseCase;
@@ -69,14 +59,12 @@ class PluginControllerTest {
                 currentUserResolver,
                 uploadPluginUseCase,
                 listPluginsUseCase,
-                listActivePluginsUseCase,
-                activatePluginUseCase,
-                deactivatePluginUseCase,
-                deactivateAllPluginsUseCase,
+                getPluginStatsUseCase,
                 deletePluginUseCase);
         dto = new PluginDto("item-1", "plugin.ts", "application/typescript", 10,
                 OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC),
-                OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC), true, "src");
+                OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC),
+                "src", "field", "custom-field");
     }
 
     @Test
@@ -92,14 +80,29 @@ class PluginControllerTest {
     }
 
     @Test
-    void getAllAndActivate_UseInternalUserId() {
+    void getAll_UsesInternalUserIdAndPagination() {
         when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
-        when(listPluginsUseCase.list(7L)).thenReturn(List.of(dto));
-        when(activatePluginUseCase.activate(7L, "item-1")).thenReturn(dto);
+        when(listPluginsUseCase.list(7L, 2, 5, "field", "custom", "name"))
+                .thenReturn(new PluginPageDto(List.of(dto), 2, 5, 1, false));
 
-        assertEquals(1, controller.getAll(authentication).getBody().size());
-        assertEquals(HttpStatus.OK, controller.activate(authentication, "item-1").getStatusCode());
-        verify(activatePluginUseCase).activate(7L, "item-1");
+        ResponseEntity<PluginPageDto> response = controller.getAll(authentication, 2, 5, "field", "custom", "name");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().items().size());
+        verify(listPluginsUseCase).list(7L, 2, 5, "field", "custom", "name");
+    }
+
+    @Test
+    void stats_UsesInternalUserId() {
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
+        when(getPluginStatsUseCase.stats(7L)).thenReturn(new PluginStatsDto(2, 3));
+
+        ResponseEntity<PluginStatsDto> response = controller.stats(authentication);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(2, response.getBody().fieldPlugins());
+        assertEquals(3, response.getBody().reportPlugins());
+        verify(getPluginStatsUseCase).stats(7L);
     }
 
 }

@@ -4,16 +4,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { createBuiltinPrimitiveRegistry, type PrimitiveRegistry } from "mlform/primitives";
-import { CUSTOM_FIELD_COMPONENT } from "./custom-field";
+import { CUSTOM_FIELD_COMPONENT } from "../../../plugin/mlform/custom-field";
 import {
   CUSTOM_FIELD_RENDERER_TAG,
   PredictionCustomFieldRendererElement,
-} from "./custom-field-renderer";
-import { CUSTOM_REPORT_COMPONENT } from "./custom-report";
+} from "../../../plugin/mlform/custom-field-renderer";
+import { CUSTOM_REPORT_COMPONENT } from "../../../plugin/mlform/custom-report";
 import {
   CUSTOM_REPORT_RENDERER_TAG,
   PredictionCustomReportRendererElement,
-} from "./custom-report-renderer";
+} from "../../../plugin/mlform/custom-report-renderer";
 
 const ensurePredictionFieldRenderer = (): void => {
   if (!customElements.get(CUSTOM_FIELD_RENDERER_TAG)) {

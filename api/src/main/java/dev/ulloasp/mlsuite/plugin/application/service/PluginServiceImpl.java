@@ -7,36 +7,54 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginStatsDto;
+import dev.ulloasp.mlsuite.plugin.application.port.in.DeletePluginUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.GetPluginStatsUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.UploadPluginUseCase;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
-import dev.ulloasp.mlsuite.plugin.domain.model.PluginState;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginStoragePaths;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
-import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @Service
-public class PluginServiceImpl implements PluginService {
+public class PluginServiceImpl implements
+        UploadPluginUseCase,
+        ListPluginsUseCase,
+        GetPluginStatsUseCase,
+        DeletePluginUseCase,
+        PluginCatalogUseCase {
 
     private static final String ROOT_PREFIX = "plugins";
-    private static final String STATE_FILE = "state.json";
+    private static final int DEFAULT_PAGE_SIZE = 24;
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final Pattern FIELD_KIND = Pattern.compile(
+            "defineField(?:Kind|Definition)\\s*\\([^)]*kind\\s*:\\s*['\"]([^'\"]+)['\"]",
+            Pattern.DOTALL);
+    private static final Pattern REPORT_KIND = Pattern.compile(
+            "defineReport(?:Kind|Definition)\\s*\\([^)]*kind\\s*:\\s*['\"]([^'\"]+)['\"]",
+            Pattern.DOTALL);
 
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
@@ -80,63 +98,54 @@ public class PluginServiceImpl implements PluginService {
                     stored.fileName(),
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
-            return toDto(stored, readState(userLookupService.requireById(userId)).activeIds().contains(id));
+            return toDto(stored);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
         }
     }
 
     @Override
-    public List<PluginDto> list(Long userId) {
-        User user = userLookupService.requireById(userId);
+    public PluginPageDto list(Long userId, int page, int size, String type, String search, String sort) {
+        List<PluginDto> allItems = listAll(userId);
+        List<PluginDto> visibleItems = allItems.stream()
+                .filter(item -> matchesType(item, type))
+                .filter(item -> matchesSearch(item, search))
+                .sorted(sortComparator(sort))
+                .toList();
+        int safePage = Math.max(page, 0);
+        int safeSize = normalizePageSize(size);
+        int fromIndex = Math.min(safePage * safeSize, visibleItems.size());
+        int toIndex = Math.min(fromIndex + safeSize, visibleItems.size());
+        return new PluginPageDto(
+                visibleItems.subList(fromIndex, toIndex),
+                safePage,
+                safeSize,
+                visibleItems.size(),
+                toIndex < visibleItems.size());
+    }
+
+    @Override
+    public PluginStatsDto stats(Long userId) {
+        List<PluginDto> allItems = listAll(userId);
+        return new PluginStatsDto(
+                allItems.stream().filter(item -> "field".equals(item.pluginType())).count(),
+                allItems.stream().filter(item -> "report".equals(item.pluginType())).count());
+    }
+
+    @Override
+    public List<PluginDto> listAll(Long userId) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginView(userId, organization.getId());
-        Set<String> activeIds = Set.copyOf(readState(user).activeIds());
         Map<String, StoredPlugin> storedItems = new LinkedHashMap<>();
         Map<String, String> origins = new LinkedHashMap<>();
-        readItems(itemsPrefix(organization.getId())).forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
+        readItems(itemsPrefix(organization.getId()))
+                .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         List<PluginDto> catalog = new ArrayList<>();
-        storedItems.values().forEach(item -> catalog.add(toDto(item, activeIds.contains(item.id()))));
+        storedItems.values().forEach(item -> catalog.add(toDto(item)));
         catalog.sort(Comparator
-                .comparing(PluginDto::active).reversed()
-                .thenComparing(PluginDto::updatedAt, Comparator.reverseOrder())
+                .comparing(PluginDto::updatedAt, Comparator.reverseOrder())
                 .thenComparing(PluginDto::fileName, String.CASE_INSENSITIVE_ORDER));
         return catalog;
-    }
-
-    @Override
-    public List<PluginDto> getActive(Long userId) {
-        return list(userId).stream().filter(PluginDto::active).toList();
-    }
-
-    @Override
-    public PluginDto activate(Long userId, String id) {
-        User user = userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
-        StoredPlugin stored = readStored(user, id);
-        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
-        activeIds.add(id);
-        writeState(organization.getId(), activeIds);
-        return toDto(stored, true);
-    }
-
-    @Override
-    public void deactivate(Long userId, String id) {
-        User user = userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
-        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
-        activeIds.remove(id);
-        writeState(organization.getId(), activeIds);
-    }
-
-    @Override
-    public void deactivateAll(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        workspaceAuthorizationService.requirePluginManage(userId, organizationId);
-        writeState(organizationId, Set.of());
     }
 
     @Override
@@ -145,50 +154,13 @@ public class PluginServiceImpl implements PluginService {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
         readStored(user, id);
-        LinkedHashSet<String> activeIds = new LinkedHashSet<>(readState(user).activeIds());
-        activeIds.remove(id);
         objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(organization.getId(), id));
-        writeState(organization.getId(), activeIds);
-    }
-
-    private PluginState readState(User user) {
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(user.getId()).getId();
-        Optional<byte[]> stateBytes = objectStorageService.loadOptional(storageProperties.getBucket(), stateObjectKey(organizationId));
-        if (stateBytes.isPresent()) {
-            try {
-                return normalizeState(objectMapper.readValue(stateBytes.get(), PluginState.class));
-            } catch (IOException ex) {
-                throw new IllegalStateException("Could not deserialize plugin state.", ex);
-            }
-        }
-        return new PluginState(List.of(), null);
-    }
-
-    private PluginState normalizeState(PluginState state) {
-        List<String> activeIds = state.activeIds() == null ? List.of() : state.activeIds();
-        return new PluginState(List.copyOf(new LinkedHashSet<>(activeIds)), state.updatedAt());
-    }
-
-    private void writeState(Long organizationId, Set<String> activeIds) {
-        if (activeIds.isEmpty()) {
-            objectStorageService.delete(storageProperties.getBucket(), stateObjectKey(organizationId));
-            return;
-        }
-        try {
-            PluginState state = new PluginState(List.copyOf(activeIds), OffsetDateTime.now(ZoneOffset.UTC));
-            objectStorageService.store(
-                    stateObjectKey(organizationId),
-                    STATE_FILE,
-                    "application/json",
-                    objectMapper.writeValueAsBytes(state));
-        } catch (IOException ex) {
-            throw new IllegalStateException("Could not serialize plugin state.", ex);
-        }
     }
 
     private StoredPlugin readStored(User user, String id) {
         Long organizationId = workspaceAccessService.requireCurrentOrganization(user.getId()).getId();
-        Optional<byte[]> bytes = objectStorageService.loadOptional(storageProperties.getBucket(), itemObjectKey(organizationId, id));
+        Optional<byte[]> bytes =
+                objectStorageService.loadOptional(storageProperties.getBucket(), itemObjectKey(organizationId, id));
         if (bytes.isPresent()) {
             return readStored(bytes.get());
         }
@@ -219,12 +191,7 @@ public class PluginServiceImpl implements PluginService {
             String origin,
             boolean replaceExisting) {
         String existingOrigin = origins.get(item.id());
-        if (existingOrigin == null) {
-            storedItems.put(item.id(), item);
-            origins.put(item.id(), origin);
-            return;
-        }
-        if (replaceExisting) {
+        if (existingOrigin == null || replaceExisting) {
             storedItems.put(item.id(), item);
             origins.put(item.id(), origin);
             return;
@@ -234,7 +201,8 @@ public class PluginServiceImpl implements PluginService {
         }
     }
 
-    private PluginDto toDto(StoredPlugin stored, boolean active) {
+    private PluginDto toDto(StoredPlugin stored) {
+        PluginDescriptor descriptor = describe(stored.source());
         return new PluginDto(
                 stored.id(),
                 stored.fileName(),
@@ -242,8 +210,57 @@ public class PluginServiceImpl implements PluginService {
                 stored.sizeBytes(),
                 stored.createdAt(),
                 stored.updatedAt(),
-                active,
-                stored.source());
+                stored.source(),
+                descriptor.type(),
+                descriptor.kind());
+    }
+
+    private PluginDescriptor describe(String source) {
+        PluginDescriptor field = matchDescriptor(source, "field", FIELD_KIND);
+        if (field != null) {
+            return field;
+        }
+        PluginDescriptor report = matchDescriptor(source, "report", REPORT_KIND);
+        if (report != null) {
+            return report;
+        }
+        return new PluginDescriptor("invalid", null);
+    }
+
+    private PluginDescriptor matchDescriptor(String source, String type, Pattern pattern) {
+        Matcher matcher = pattern.matcher(source);
+        return matcher.find() ? new PluginDescriptor(type, matcher.group(1)) : null;
+    }
+
+    private boolean matchesType(PluginDto item, String type) {
+        if ("field".equals(type) || "report".equals(type)) {
+            return type.equals(item.pluginType());
+        }
+        return true;
+    }
+
+    private boolean matchesSearch(PluginDto item, String search) {
+        String needle = search == null ? "" : search.strip().toLowerCase();
+        if (needle.isEmpty()) {
+            return true;
+        }
+        return item.fileName().toLowerCase().contains(needle)
+                || (item.kind() != null && item.kind().toLowerCase().contains(needle));
+    }
+
+    private Comparator<PluginDto> sortComparator(String sort) {
+        if ("name".equals(sort)) {
+            return Comparator
+                    .comparing((PluginDto item) -> displayName(item), String.CASE_INSENSITIVE_ORDER)
+                    .thenComparing(PluginDto::updatedAt, Comparator.reverseOrder());
+        }
+        return Comparator
+                .comparing(PluginDto::updatedAt, Comparator.reverseOrder())
+                .thenComparing(PluginDto::fileName, String.CASE_INSENSITIVE_ORDER);
+    }
+
+    private String displayName(PluginDto item) {
+        return item.kind() == null ? item.fileName() : item.kind();
     }
 
     private String itemsPrefix(Long organizationId) {
@@ -254,8 +271,11 @@ public class PluginServiceImpl implements PluginService {
         return PluginStoragePaths.organizationItemObjectKey(ROOT_PREFIX, organizationId, id);
     }
 
-    private String stateObjectKey(Long organizationId) {
-        return PluginStoragePaths.organizationStateObjectKey(ROOT_PREFIX, organizationId, STATE_FILE);
+    private int normalizePageSize(int size) {
+        if (size <= 0) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(size, MAX_PAGE_SIZE);
     }
 
     private String sanitizeFileName(String value) {
@@ -265,5 +285,7 @@ public class PluginServiceImpl implements PluginService {
     private String normalizeContentType(String value) {
         return value == null || value.isBlank() ? "application/typescript" : value;
     }
-}
 
+    private record PluginDescriptor(String type, String kind) {
+    }
+}

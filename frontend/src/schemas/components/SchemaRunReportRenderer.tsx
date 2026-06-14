@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useMemo } from "react";
 import type { ReportConfig } from "mlform/runtime";
 import type { PrimitiveSubmitResult } from "mlform/primitives";
-import type { CatalogReportDefinition } from "../../app/utils/mlform/custom-report";
+import type { CatalogReportDefinition } from "../../plugin/mlform/custom-report";
 import { AppCopy, AppPanel } from "../../app/components";
 import { getBackendBaseUrl } from "../../app/config/runtimeConfig";
 import { createPredictionPrimitiveRegistry } from "../../app/utils/mlform/primitive-registry";
@@ -29,21 +29,15 @@ type Props = {
 
 const EMPTY_CUSTOM_REPORTS: readonly CatalogReportDefinition[] = [];
 
-const activeCustomReport = (
+const customReportByKind = (
   kind: string,
   definitions: readonly CatalogReportDefinition[] = [],
 ): CatalogReportDefinition | undefined =>
-  definitions.find((definition) => definition.active && definition.kind === kind);
+  definitions.find((definition) => definition.kind === kind);
 
-const activeCustomReportKinds = (
+const customReportKinds = (
   definitions: readonly CatalogReportDefinition[] = [],
-): string[] => {
-  const kinds: string[] = [];
-  definitions.forEach((definition) => {
-    if (definition.active) kinds.push(definition.kind);
-  });
-  return kinds;
-};
+): string[] => definitions.map((definition) => definition.kind);
 
 const reportsOf = (schema: unknown): ReportConfig[] =>
   isRecord(schema) && Array.isArray(schema.reports)
@@ -98,14 +92,14 @@ export function SchemaRunReportRenderer({
   customReportDefinitions = EMPTY_CUSTOM_REPORTS,
 }: Props) {
   const registry = useMemo(() => createPredictionPrimitiveRegistry(), []);
-  const customReport = activeCustomReport(report.kind, customReportDefinitions);
+  const customReport = customReportByKind(report.kind, customReportDefinitions);
   schemaRunDebug("renderer.start", {
     reportId: report.id,
     kind: report.kind,
     modelId: result.modelId,
     hasPayload: report.payload !== undefined,
     customDefinition: Boolean(customReport),
-    activeKinds: activeCustomReportKinds(customReportDefinitions),
+    availableKinds: customReportKinds(customReportDefinitions),
   });
   if (!customReport) {
     if (!isBuiltinReportKind(report.kind)) {

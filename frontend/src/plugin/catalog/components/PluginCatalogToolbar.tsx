@@ -5,25 +5,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowUpDown, Check, ChevronDown, Search } from "lucide-react";
 import type { RefObject } from "react";
-import { AppPanel, cx, AppSelect, AppTextField } from "../components";
-import {
-  getPluginSummary,
-  SORT_LABELS,
-  type FilterMode,
-  type SortMode,
-  type TypeFilter,
-} from "./plugin-catalog-shared";
+import { AppPanel, cx, AppTextField } from "../../../app/components";
+import { SORT_LABELS, type SortMode, type TypeFilter } from "../plugin-catalog-shared";
 
 type PluginCatalogToolbarProps = {
-  activeCount: number;
-  filter: FilterMode;
   inputRef: RefObject<HTMLInputElement | null>;
   isSortOpen: boolean;
   onFileSelection: (event: React.ChangeEvent<HTMLInputElement>) => void;
   query: string;
-  selectedTypeActiveCount: number;
-  selectedTypeCount: number;
-  setFilter: (value: FilterMode) => void;
   setIsSortOpen: (value: boolean | ((current: boolean) => boolean)) => void;
   setQuery: (value: string) => void;
   setSort: (value: SortMode) => void;
@@ -33,16 +22,17 @@ type PluginCatalogToolbarProps = {
   typeFilter: TypeFilter;
 };
 
+const TYPE_FILTERS: Array<{ value: TypeFilter; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "field", label: "Fields" },
+  { value: "report", label: "Reports" },
+];
+
 export function PluginCatalogToolbar({
-  activeCount,
-  filter,
   inputRef,
   isSortOpen,
   onFileSelection,
   query,
-  selectedTypeActiveCount,
-  selectedTypeCount,
-  setFilter,
   setIsSortOpen,
   setQuery,
   setSort,
@@ -61,42 +51,28 @@ export function PluginCatalogToolbar({
         className="hidden"
         onChange={onFileSelection}
       />
-      <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_auto_auto]">
+      <div className="flex flex-1 gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_auto]">
         <AppTextField
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search by file or kind"
           prefix={<Search size={16} className="text-[var(--text-muted)]" />}
         />
-        <AppSelect
-          value={typeFilter}
-          onChange={(event) => setTypeFilter(event.target.value as TypeFilter)}
-          aria-label="Filter by plugin type"
-        >
-          <option value="all">All types</option>
-          <option value="field">Fields</option>
-          <option value="report">Reports</option>
-        </AppSelect>
-        <div className="flex flex-wrap items-center gap-2">
-          {(
-            [
-              ["all", "All"],
-              ["active", "Active"],
-              ["inactive", "Inactive"],
-            ] as const
-          ).map(([value, label]) => (
+        <div className="flex flex-wrap gap-2" aria-label="Filter by plugin type" role="group">
+          {TYPE_FILTERS.map((filter) => (
             <button
-              key={value}
+              key={filter.value}
               type="button"
-              onClick={() => setFilter(value)}
+              aria-pressed={typeFilter === filter.value}
+              onClick={() => setTypeFilter(filter.value)}
               className={cx(
-                "rounded-full px-4 py-3 text-sm font-medium transition",
-                filter === value
-                  ? "bg-[var(--text-primary)] text-[var(--text-inverse)]"
-                  : "border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                "rounded-full border px-4 py-2 text-sm font-semibold shadow-[var(--shadow-card)] transition",
+                typeFilter === filter.value
+                  ? "border-[var(--text-primary)] bg-[var(--surface-primary)] text-[var(--text-primary)]"
+                  : "border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
               )}
             >
-              {label}
+              {filter.label}
             </button>
           ))}
         </div>
@@ -146,16 +122,6 @@ export function PluginCatalogToolbar({
             </div>
           ) : null}
         </div>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm text-[var(--text-secondary)]">
-        <p className="font-medium text-[var(--text-primary)]">
-          {getPluginSummary(filter, typeFilter, selectedTypeCount, selectedTypeActiveCount)}
-        </p>
-        <p>
-          {activeCount === 0
-            ? "No active plugins. Runtime skips inactive custom kinds."
-            : "Active plugins register native kinds before form mount."}
-        </p>
       </div>
     </AppPanel>
   );

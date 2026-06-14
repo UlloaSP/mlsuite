@@ -101,7 +101,7 @@ class PredictionServiceTest {
         when(userLookupService.requireById(3L)).thenReturn(user);
         when(signatureRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(signature));
         doThrow(new InvalidSignatureSchemaException(
-                "Custom report kind \"old-kind\" does not exist in active plugin catalog."))
+                "Custom report kind \"old-kind\" does not exist in plugin catalog."))
                 .when(signatureSchemaCompatibilityService).validate(3L, signature.getInputSignature());
 
         assertThrows(InvalidSignatureSchemaException.class,

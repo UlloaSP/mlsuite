@@ -4,7 +4,7 @@ import java.util.List;
 
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 
-public interface ListActivePluginsUseCase {
+public interface PluginCatalogUseCase {
 
-    List<PluginDto> getActive(Long userId);
+    List<PluginDto> listAll(Long userId);
 }

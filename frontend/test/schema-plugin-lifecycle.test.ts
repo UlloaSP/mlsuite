@@ -9,7 +9,7 @@ import { createReportFetchRequest } from "mlform/schema";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
-import type { CatalogReportDefinition } from "../src/app/utils/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",
@@ -19,7 +19,6 @@ const crystal = (): CatalogReportDefinition => ({
   createdAt: "",
   contentType: "text/typescript",
   sizeBytes: 1,
-  active: true,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",

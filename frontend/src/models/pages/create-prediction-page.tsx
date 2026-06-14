@@ -10,7 +10,7 @@ import { useParams, useSearchParams } from "react-router";
 import { AppPage, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { applyPredictionInputsToSchema } from "../../app/utils/mlform/schema";
-import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
+import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { useUser } from "../../user/hooks";
 import { CreatePredictionBodyForm } from "../components/CreatePredictionBodyForm";

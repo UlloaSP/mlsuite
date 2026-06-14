@@ -9,7 +9,7 @@ import { AdminUsersPage } from "../admin/pages/admin-users-page";
 import { AdminInfrastructurePage } from "../admin/infrastructure/pages/admin-infrastructure-page";
 import { AuthLandingPage } from "../app/pages/AuthLandingPage";
 import { NotFoundError } from "../app/pages/error-page";
-import { PluginCatalogPage } from "../app/pages/plugin-catalog-page";
+import { PluginCatalogPage } from "../plugin/catalog/pages/PluginCatalogPage";
 import { AppShellFrame } from "../layout/AppShellLayout";
 import { PublicLayout } from "../layout/PublicLayout";
 import { CreateModelPage } from "../models/pages/create-model-page";

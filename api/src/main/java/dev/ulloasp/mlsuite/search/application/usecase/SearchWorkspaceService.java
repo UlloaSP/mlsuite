@@ -17,7 +17,7 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
 import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
 import dev.ulloasp.mlsuite.search.application.dto.SearchGroupDto;
@@ -42,7 +42,7 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
     private final ModelRepository modelRepository;
     private final SignatureRepository signatureRepository;
     private final PredictionRepository predictionRepository;
-    private final ListPluginsUseCase listPluginsUseCase;
+    private final PluginCatalogUseCase pluginCatalogUseCase;
 
     public SearchWorkspaceService(
             WorkspaceAccessService workspaceAccessService,
@@ -51,14 +51,14 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
             ModelRepository modelRepository,
             SignatureRepository signatureRepository,
             PredictionRepository predictionRepository,
-            ListPluginsUseCase listPluginsUseCase) {
+            PluginCatalogUseCase pluginCatalogUseCase) {
         this.workspaceAccessService = workspaceAccessService;
         this.membershipRepository = membershipRepository;
         this.teamRepository = teamRepository;
         this.modelRepository = modelRepository;
         this.signatureRepository = signatureRepository;
         this.predictionRepository = predictionRepository;
-        this.listPluginsUseCase = listPluginsUseCase;
+        this.pluginCatalogUseCase = pluginCatalogUseCase;
     }
 
     @Override
@@ -84,7 +84,7 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
         addGroup(groups, "Models", rank(models, needle, this::toModelMatch));
         addGroup(groups, "Signatures", rank(signatures, needle, this::toSignatureMatch));
         addGroup(groups, "Predictions", rank(predictions, needle, this::toPredictionMatch));
-        addGroup(groups, "Plugins", rank(listPluginsUseCase.list(userId), needle, this::toPluginMatch));
+        addGroup(groups, "Plugins", rank(pluginCatalogUseCase.listAll(userId), needle, this::toPluginMatch));
         return new SearchResponseDto(normalizedQuery, groups);
     }
 
@@ -224,7 +224,7 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                         "plugin",
                         plugin.id(),
                         plugin.fileName(),
-                        plugin.active() ? "Active plugin" : "Inactive plugin",
+                        "Plugin",
                         "/plugins",
                         null,
                         null,

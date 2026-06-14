@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { CatalogReportDefinition } from "../../app/utils/mlform/custom-report";
+import type { CatalogReportDefinition } from "../../plugin/mlform/custom-report";
 import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import { getSchemaResultReports } from "../schema-run-display";
 import type { PredictionResultDto, SchemaVersionDto } from "../types";

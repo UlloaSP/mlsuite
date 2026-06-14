@@ -9,7 +9,7 @@ import { z } from "zod";
 import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
 import { fetchSchemaCustomReports } from "../src/app/utils/mlform/schema-run-custom-report-fetch";
 import { isSkippedSchemaReportPayload } from "../src/app/utils/mlform/schema-report-plugin-context";
-import type { CatalogReportDefinition } from "../src/app/utils/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
 const crystalTreeDefinition = (): CatalogReportDefinition => ({
   id: "crystal-plugin",
@@ -19,7 +19,6 @@ const crystalTreeDefinition = (): CatalogReportDefinition => ({
   createdAt: "",
   contentType: "text/typescript",
   sizeBytes: 1,
-  active: true,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",

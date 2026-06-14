@@ -68,12 +68,8 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
     try {
       schemaRunDebug("form.mount.start", {
         versionId: version.id,
-        fieldDefinitions: data.fieldDefinitions.map(
-          (definition) => `${definition.kind}:${definition.active}`,
-        ),
-        reportDefinitions: data.reportDefinitions.map(
-          (definition) => `${definition.kind}:${definition.active}`,
-        ),
+        fieldDefinitions: data.fieldDefinitions.map((definition) => definition.kind),
+        reportDefinitions: data.reportDefinitions.map((definition) => definition.kind),
       });
       const mounted = mountSchemaRunForm({
         container: containerRef.current,
@@ -151,7 +147,7 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
       </h2>
       <AppCopy>
         {status === "loading"
-          ? "Schema form waits for active plugin definitions before rendering custom fields and reports."
+          ? "Schema form waits for plugin definitions before rendering custom fields and reports."
           : catalog.error}
       </AppCopy>
       {status === "error" ? (

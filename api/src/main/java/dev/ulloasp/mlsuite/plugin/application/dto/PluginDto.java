@@ -9,7 +9,8 @@ public record PluginDto(
         long sizeBytes,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        boolean active,
-        String source) {
+        String source,
+        String pluginType,
+        String kind) {
 }
 
