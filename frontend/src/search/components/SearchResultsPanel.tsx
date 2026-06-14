@@ -1,4 +1,4 @@
-import { AppPanel, AppCopy } from "../../app/components/ui";
+import { AppPanel, AppCopy } from "../../app/components";
 import { SearchResultGroup } from "./SearchResultGroup";
 import type { SearchGroupDto } from "../types";
 

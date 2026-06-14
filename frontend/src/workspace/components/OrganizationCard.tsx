@@ -1,6 +1,6 @@
 import { Building2 } from "lucide-react";
 import { Link } from "react-router";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
+import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import { RoleBadge } from "./RoleBadge";
 import type { OrganizationDto, OrganizationMembershipDto } from "../types";
 

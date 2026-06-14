@@ -2,8 +2,16 @@ import { Check, KeyRound, Plus, ShieldCheck } from "lucide-react";
 import type { FormEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 import { Link, Navigate } from "react-router";
-import { AppBadge, AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
+import {
+  AppBadge,
+  AppButton,
+  AppSelect,
+  AppTextField,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSurface,
+} from "../../app/components";
 import { useUser } from "../../user/hooks";
 import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
 import {
@@ -117,7 +125,8 @@ export function AdminUsersPage() {
           eyebrow="Admin"
           title="Users"
           description="Create accounts, set global access, and reset passwords."
-          aside={
+          breadcrumbs={[{ label: "Admin" }, { label: "Users" }]}
+          actions={
             <>
               <AppBadge tone="accent">
                 <ShieldCheck size={13} />

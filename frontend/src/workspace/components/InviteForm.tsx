@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { AppCombobox } from "../../app/components/AppCombobox";
-import { AppButton, AppSelect } from "../../app/components/ui-controls";
+import { AppCombobox, AppButton, AppSelect } from "../../app/components";
 import type { InvitationCandidateDto } from "../invitations/types";
 import type { RoleDefinitionDto, TeamDto } from "../types";
 

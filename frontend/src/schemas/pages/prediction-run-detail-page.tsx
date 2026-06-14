@@ -6,9 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { AppButton } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
-import { usePredictionRun, usePredictionRunFeedback, useSchemaVersion } from "../hooks";
+import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
+import { usePredictionRun, usePredictionRunFeedback, useSchema, useSchemaVersion } from "../hooks";
 import { SchemaRunInputsPanel } from "../components/SchemaRunInputsPanel";
 import { SchemaRunFeedbackQuestionnaire } from "../components/SchemaRunFeedbackQuestionnaire";
 import { SchemaRunDetailMetrics } from "../components/SchemaRunDetailMetrics";
@@ -22,6 +21,7 @@ import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
 export function PredictionRunDetailPage() {
   const { schemaId, runId } = useParams<{ schemaId: string; runId: string }>();
   const { versionId } = useParams<{ versionId: string }>();
+  const { data: schema } = useSchema(schemaId);
   const { data: run, isLoading } = usePredictionRun(runId);
   const { data: version } = useSchemaVersion(versionId);
   const executableVersion = useMemo(
@@ -43,18 +43,22 @@ export function PredictionRunDetailPage() {
       <AppSurface className="flex-1 space-y-6 overflow-auto">
         <AppPageHeader
           title={run?.name ?? "Prediction run"}
-          backHref={`/schemas/${schemaId}/versions/${versionId}/runs`}
-          aside={
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to={`/schemas/${schemaId}/versions/${versionId}/runs/create?fromRunId=${runId}`}
-              >
-                <AppButton>
-                  <RotateCcw size={16} />
-                  Predict again
-                </AppButton>
-              </Link>
-            </div>
+          breadcrumbs={[
+            { label: "Schemas", to: "/schemas" },
+            { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
+            {
+              label: "Inference History",
+              to: `/schemas/${schemaId}/versions/${versionId}/runs`,
+            },
+            { label: run?.name ?? "Prediction run" },
+          ]}
+          actions={
+            <Link to={`/schemas/${schemaId}/versions/${versionId}/runs/create?fromRunId=${runId}`}>
+              <AppButton>
+                <RotateCcw size={16} />
+                Predict again
+              </AppButton>
+            </Link>
           }
         />
         {isLoading ? <AppPanel>Loading run...</AppPanel> : null}

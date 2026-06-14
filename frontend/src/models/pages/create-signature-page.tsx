@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useEffect } from "react";
-import { AppPage, AppSurface } from "../../app/components/ui";
+import { AppPage, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page.tsx";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog.ts";
 import { EditorWrapper } from "../../editor/components/EditorWrapper.tsx";

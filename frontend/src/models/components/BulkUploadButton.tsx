@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { LoaderCircle, Square, Upload } from "lucide-react";
 import { useRef, type ChangeEvent } from "react";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppButton } from "../../app/components";
 import { useBulkPredictionUpload } from "../useBulkPredictionUpload";
 
 type BulkUploadButtonProps = {

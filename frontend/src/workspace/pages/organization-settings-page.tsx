@@ -1,8 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
-import { AppButton, AppSelect, AppTextArea, AppTextField } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
+import {
+  AppButton,
+  AppSelect,
+  AppTextArea,
+  AppTextField,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSurface,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import {
   getOrganization,
@@ -77,7 +85,11 @@ export function OrganizationSettingsPage() {
           eyebrow="Workspace Settings"
           title={organization.name}
           description="Edit the identity of this organization. Ownership and member operations live in adjacent workspace views."
-          backHref="/workspace/organizations"
+          breadcrumbs={[
+            { label: "Organizations", to: "/workspace/organizations" },
+            { label: organization.name, to: `/workspace/organizations/${id}` },
+            { label: "Settings" },
+          ]}
         />
         <div className="max-w-3xl rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-6 shadow-[var(--shadow-card)]">
           <div className="grid gap-4">

@@ -6,9 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueries } from "@tanstack/react-query";
 import { useState } from "react";
 import { Check, Database } from "lucide-react";
-import { AppBadge } from "../../app/components/ui-controls";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
-import { cx } from "../../app/components/ui-utils";
+import { AppBadge, AppCopy, AppPanel, AppSectionTitle, cx } from "../../app/components";
 import type { ModelDto, SignatureDto } from "../../models/api/modelService";
 import { getSignatures } from "../../models/api/modelService";
 import { GET_SIGNATURES_QUERY_KEY } from "../../models/hooks";

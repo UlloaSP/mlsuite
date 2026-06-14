@@ -4,8 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { m as motion } from "motion/react";
-import { AppBadge } from "../../app/components/ui-controls";
-import { AppCopy, AppEyebrow } from "../../app/components/ui";
+import { AppBadge, AppCopy, AppEyebrow } from "../../app/components";
 
 export type ProfileHeaderProps = {
   imageUrl: string | null;

@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import type { ReportConfig } from "mlform/runtime";
 import type { PrimitiveSubmitResult } from "mlform/primitives";
 import type { CatalogReportDefinition } from "../../app/utils/mlform/custom-report";
-import { AppCopy, AppPanel } from "../../app/components/ui";
+import { AppCopy, AppPanel } from "../../app/components";
 import { getBackendBaseUrl } from "../../app/config/runtimeConfig";
 import { createPredictionPrimitiveRegistry } from "../../app/utils/mlform/primitive-registry";
 import { isBuiltinReportKind } from "../../app/utils/mlform/builtin-registry";
@@ -64,7 +64,9 @@ const resultPayload = (
     signatureId: result.signatureId,
     ...outputMeta,
   };
-  const outputContext = isRecord(result.output.reportContextById) ? result.output.reportContextById : {};
+  const outputContext = isRecord(result.output.reportContextById)
+    ? result.output.reportContextById
+    : {};
   const reportContextById = {
     ...outputContext,
     [report.id]: isRecord(outputContext[report.id])
@@ -131,7 +133,11 @@ export function SchemaRunReportRenderer({
     configIds: reportsOf(version.formSchema).map((item) => item.id),
   });
   const normalizedConfig = config
-    ? { ...config, id: report.id, source: typeof config.source === "string" ? config.source : report.id }
+    ? {
+        ...config,
+        id: report.id,
+        source: typeof config.source === "string" ? config.source : report.id,
+      }
     : null;
   const lastResult = resultPayload(report, result);
   const state = { payload: report.payload, error: null, status: "ready" };

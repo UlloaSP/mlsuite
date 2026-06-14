@@ -7,7 +7,7 @@ import { useQueries } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
 import { m as motion } from "motion/react";
 import { useMemo, useState } from "react";
-import { cx } from "../../app/components/ui-utils";
+import { cx } from "../../app/components";
 import { useWorkspaceContext } from "../../workspace/hooks";
 import type { OutputFeedbackDto, PredictionDto, TargetDto } from "../api/modelService";
 import * as modelApi from "../api/modelService";

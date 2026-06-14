@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { SquareTerminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AppBadge, AppButton } from "../../../app/components/ui-controls";
+import { AppBadge, AppButton } from "../../../app/components";
 import { closeTerminalSession } from "../api/infrastructureService";
 import { useTerminalSession } from "../hooks/useInfrastructure";
 import { openTerminalSocket, sendTerminalFrame } from "../ws/infrastructureSocket";

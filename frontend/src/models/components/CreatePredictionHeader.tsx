@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { m as motion } from "motion/react";
 import { useParams } from "react-router";
-import { AppPageHeader } from "../../app/components/ui";
+import { AppPageHeader } from "../../app/components";
 import { schemaErrorsAtom } from "../../editor/atoms";
 import { ToggleButton } from "./ToggleButton";
 
@@ -31,15 +31,23 @@ export function CreatePredictionHeader({
   return (
     <motion.div className={`max-h-fit ${!isEditorActive ? "px-4 pt-4" : ""}`}>
       <AppPageHeader
-        backHref={
-          modelId && signatureId
-            ? `/models/${modelId}/signatures/${signatureId}?tab=history`
-            : "/models"
-        }
+        breadcrumbs={[
+          { label: "Models", to: "/models" },
+          ...(modelId ? [{ label: "Model", to: `/models/${modelId}?tab=signatures` }] : []),
+          ...(modelId && signatureId
+            ? [
+                {
+                  label: "Schema",
+                  to: `/models/${modelId}/signatures/${signatureId}?tab=history`,
+                },
+              ]
+            : []),
+          { label: CREATE_PREDICTION_HEADER },
+        ]}
         eyebrow="Prediction Studio"
         title={CREATE_PREDICTION_HEADER}
         description={CREATE_PREDICTION_SUBHEADER}
-        aside={
+        actions={
           <ToggleButton
             isJsonActive={isEditorActive}
             isProcessing={hasErrors}

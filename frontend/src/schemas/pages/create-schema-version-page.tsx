@@ -8,8 +8,15 @@ import { RefreshCcw, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
-import { AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
+import {
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSurface,
+  AppButton,
+  AppSelect,
+  AppTextField,
+} from "../../app/components";
 import { isRecord } from "../../app/utils/mlform/shared";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
@@ -78,7 +85,13 @@ export function CreateSchemaVersionPage() {
         <AppPageHeader
           title="New schema version"
           description={schemaDto ? `${schemaDto.name} lineage` : "Schema lineage"}
-          backHref={schemaId ? `/schemas/${schemaId}` : "/schemas"}
+          breadcrumbs={[
+            { label: "Schemas", to: "/schemas" },
+            ...(schemaId
+              ? [{ label: schemaDto?.name ?? "Schema", to: `/schemas/${schemaId}` }]
+              : []),
+            { label: "New Version" },
+          ]}
         />
         <AppPanel className="shrink-0">
           <div className="grid gap-4 xl:grid-cols-[minmax(240px,1fr)_minmax(260px,1fr)_auto]">

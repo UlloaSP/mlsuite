@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
+import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import { schemaTextAtom } from "../../editor/atoms";
 
 export function PredictionSchemaPreview() {

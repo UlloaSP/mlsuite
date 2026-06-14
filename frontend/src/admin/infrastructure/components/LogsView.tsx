@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Pause, Play, Search } from "lucide-react";
-import { AppBadge, AppButton } from "../../../app/components/ui-controls";
-import { cx } from "../../../app/components/ui-utils";
+import { AppBadge, AppButton, cx } from "../../../app/components";
 import type { ServiceStatusDto } from "../types";
 
 type Props = {

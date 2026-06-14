@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useParams } from "react-router";
 import { useLocation } from "react-router";
 import { themeAtom, themeWithHtmlAtom, type ThemeMode } from "../../app/atoms";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppButton } from "../../app/components";
 import { useLogout } from "../../user/hooks";
 
 type ReviewShellProps = {

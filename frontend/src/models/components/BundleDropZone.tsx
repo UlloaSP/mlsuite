@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useRef, useState } from "react";
-import { cx } from "../../app/components/ui-utils";
+import { cx } from "../../app/components";
 import { ALL_EXTS, DF_EXT_LABEL, MODEL_EXT_LABEL } from "../bundle-utils";
 
 type Props = {

@@ -5,8 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { AppBreadcrumbs, AppEmptyState, AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppEmptyState, AppPage, AppPageHeader, AppSurface, AppButton } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { PredictionDetailPageContent } from "../components/PredictionDetailPageContent";
@@ -49,22 +48,6 @@ export function PredictionDetailPage() {
   return (
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
-        <AppBreadcrumbs
-          items={[
-            { label: "Models", to: "/models" },
-            model
-              ? { label: model.name, to: `/models/${model.id}?tab=signatures` }
-              : { label: "Model", to: "/models" },
-            signature
-              ? {
-                  label: `Schema ${getSignatureVersionLabel(signature)}`,
-                  to: `/models/${modelId}/signatures/${signature.id}?tab=history`,
-                }
-              : { label: "Schema", to: modelId ? `/models/${modelId}` : "/models" },
-            { label: prediction ? getPredictionDetailTitle(prediction) : "Prediction" },
-          ]}
-        />
-
         {!prediction && !isLoading ? (
           <AppEmptyState
             title="Prediction not found"
@@ -88,10 +71,23 @@ export function PredictionDetailPage() {
         ) : prediction ? (
           <>
             <AppPageHeader
+              breadcrumbs={[
+                { label: "Models", to: "/models" },
+                model
+                  ? { label: model.name, to: `/models/${model.id}?tab=signatures` }
+                  : { label: "Model", to: "/models" },
+                signature
+                  ? {
+                      label: `Schema ${getSignatureVersionLabel(signature)}`,
+                      to: `/models/${modelId}/signatures/${signature.id}?tab=history`,
+                    }
+                  : { label: "Schema", to: modelId ? `/models/${modelId}` : "/models" },
+                { label: getPredictionDetailTitle(prediction) },
+              ]}
               eyebrow="Prediction Detail"
               title={getPredictionDetailTitle(prediction)}
               description={`Feedback Status: ${getPredictionStatusLabel(prediction.status)} · ${formatTimestamp(getPredictionTimestamp(prediction))} · ${formatExecutionTime(getPredictionExecutionTime(prediction.prediction))}`}
-              aside={
+              actions={
                 <>
                   <AppButton
                     type="button"

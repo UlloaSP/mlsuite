@@ -12,8 +12,9 @@ import {
   AppPanel,
   AppSectionTitle,
   AppSurface,
-} from "../../app/components/ui";
-import { AppButton, AppSelect } from "../../app/components/ui-controls";
+  AppButton,
+  AppSelect,
+} from "../../app/components";
 import { useSchema, useSchemaVersions } from "../hooks";
 import { countVisibleSchemaFields } from "../one-hot-schema";
 import {
@@ -40,8 +41,8 @@ export function SchemaDetailPage() {
       <AppSurface className="flex-1 space-y-6 overflow-auto">
         <AppPageHeader
           title={schema?.name ?? "Schema"}
-          backHref="/schemas"
-          aside={
+          breadcrumbs={[{ label: "Schemas", to: "/schemas" }, { label: schema?.name ?? "Schema" }]}
+          actions={
             schemaId ? (
               <Link to={`/schemas/${encodeURIComponent(schemaId)}/versions/create`}>
                 <AppButton>

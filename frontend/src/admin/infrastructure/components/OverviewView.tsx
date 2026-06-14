@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download, RefreshCw } from "lucide-react";
-import { AppButton } from "../../../app/components/ui-controls";
+import { AppButton } from "../../../app/components";
 import { countHealthyServices, countProblemServices, toneForMetric } from "../dashboardSummary";
 import { formatBytes, formatPercent } from "../formatters";
 import type { InfrastructureOverviewDto } from "../types";

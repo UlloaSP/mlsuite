@@ -1,7 +1,14 @@
 import { Building2, FolderKanban, Puzzle, Users } from "lucide-react";
 import { Link } from "react-router";
-import { AppBadge } from "../../app/components/ui-controls";
-import { AppCopy, AppPage, AppPageHeader, AppPanel, AppSectionTitle, AppSurface } from "../../app/components/ui";
+import {
+  AppBadge,
+  AppCopy,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSectionTitle,
+  AppSurface,
+} from "../../app/components";
 import { useGetModels } from "../../models/hooks";
 import { useWorkspaceContext } from "../hooks";
 
@@ -40,7 +47,7 @@ export function WorkspaceHomePage() {
           eyebrow="Workspace"
           title={context.currentOrganization.name}
           description="Organization command deck for teams, permissions, plugins, and model operations."
-          aside={<AppBadge tone="accent">{context.currentMembership.role}</AppBadge>}
+          actions={<AppBadge tone="accent">{context.currentMembership.role}</AppBadge>}
         />
         <section className="grid gap-4 md:grid-cols-4">
           {stats.map((stat) => (

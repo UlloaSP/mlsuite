@@ -7,7 +7,7 @@ import { useAtom } from "jotai";
 import { m as motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
-import { AppPage, AppSurface } from "../../app/components/ui";
+import { AppPage, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { applyPredictionInputsToSchema } from "../../app/utils/mlform/schema";
 import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";

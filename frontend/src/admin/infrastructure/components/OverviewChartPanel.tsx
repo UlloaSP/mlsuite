@@ -16,7 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import { Download } from "lucide-react";
-import { AppBadge } from "../../../app/components/ui-controls";
+import { AppBadge } from "../../../app/components";
 import { formatTimestamp } from "../formatters";
 import type { InfrastructureOverviewDto } from "../types";
 import type { ChartLayer, ChartValueKey } from "./OverviewMetrics";
@@ -73,7 +73,10 @@ export function OverviewChartPanel({
               </option>
             ))}
           </select>
-          <AppBadge tone={streamConnected ? "success" : "warning"} className="px-2 py-0.5 text-[0.6rem]">
+          <AppBadge
+            tone={streamConnected ? "success" : "warning"}
+            className="px-2 py-0.5 text-[0.6rem]"
+          >
             {streamConnected ? "live" : "snapshot"}
           </AppBadge>
           <AppBadge className="px-2 py-0.5 text-[0.6rem]">
@@ -95,7 +98,10 @@ export function OverviewChartPanel({
                 onChange={() => toggleLayer(key)}
                 className="accent-[var(--accent-primary)]"
               />
-              <span className="inline-block size-2.5 rounded-sm" style={{ background: cfg.color }} />
+              <span
+                className="inline-block size-2.5 rounded-sm"
+                style={{ background: cfg.color }}
+              />
               {cfg.label}
               <span className="font-mono text-[var(--text-muted)]">
                 {formatChartValue(cfg.unit, curValue(cfg.dataKey) as number | null)}
@@ -127,9 +133,27 @@ export function OverviewChartPanel({
               {(Object.entries(LAYER_CONFIG) as [ChartLayer, typeof LAYER_CONFIG.cpu][]).map(
                 ([key, cfg]) =>
                   layers[key] && cfg.area ? (
-                    <Area key={key} type="monotone" dataKey={cfg.dataKey} name={cfg.label} stroke={cfg.color} fill={cfg.color} fillOpacity={0.08} />
+                    <Area
+                      key={key}
+                      type="monotone"
+                      dataKey={cfg.dataKey}
+                      name={cfg.label}
+                      stroke={cfg.color}
+                      fill={cfg.color}
+                      fillOpacity={0.08}
+                    />
                   ) : (
-                    layers[key] && <Line key={key} type="monotone" dataKey={cfg.dataKey} name={cfg.label} stroke={cfg.color} strokeWidth={2} dot={false} />
+                    layers[key] && (
+                      <Line
+                        key={key}
+                        type="monotone"
+                        dataKey={cfg.dataKey}
+                        name={cfg.label}
+                        stroke={cfg.color}
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    )
                   ),
               )}
             </ComposedChart>
@@ -138,9 +162,13 @@ export function OverviewChartPanel({
       </div>
       <div className="flex items-center justify-between border-t border-[var(--border-soft)] px-5 py-2.5 text-xs text-[var(--text-secondary)]">
         <span>
-          {Object.values(layers).filter(Boolean).length} layers &middot; {overview.history.points.length} samples
+          {Object.values(layers).filter(Boolean).length} layers &middot;{" "}
+          {overview.history.points.length} samples
         </span>
-        <button type="button" className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+        <button
+          type="button"
+          className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        >
           <Download size={12} /> CSV
         </button>
       </div>
@@ -164,7 +192,10 @@ function ChartTooltip({
         {formatTimestamp(String(label ?? ""))}
       </p>
       {payload.map((entry) => (
-        <div key={`${entry.name ?? "metric"}-${entry.color ?? "color"}`} className="flex items-center justify-between gap-4">
+        <div
+          key={`${entry.name ?? "metric"}-${entry.color ?? "color"}`}
+          className="flex items-center justify-between gap-4"
+        >
           <span className="flex items-center gap-1.5">
             <span className="inline-block size-2 rounded-sm" style={{ background: entry.color }} />
             {entry.name}

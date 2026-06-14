@@ -1,5 +1,18 @@
 # Lessons
 
+## 2026-06-14 - Page Header Consumer Migration
+
+- Correction: new `AppPageHeader` API existed, but pages still used separate breadcrumbs, generic `Back` links, `aside`, and wrapped action buttons.
+- Rule: when changing a shared UI primitive contract, migrate every consumer in the same pass and remove legacy props so typecheck catches stragglers.
+- Rule: breadcrumb labels must name the destination/domain (`Models`, `Schemas`, `Organizations`, `Members`) instead of generic navigation copy like `Back`.
+
+## 2026-06-14 - Component Barrel Cleanup
+
+- Correction: shared UI files were split but old `ui.tsx`/`ui-controls.tsx`/`ui-utils.ts` barrels remained.
+- Rule: in this frontend, `src/app/components/index.ts` is the only component barrel; split primitives must be imported through it by features, and component internals should import sibling files directly.
+- Correction: page-header action order was underspecified for 2x2 placement.
+- Rule: when a grid has semantic slot priority, encode explicit grid coordinates instead of relying on normal DOM flow.
+
 ## 2026-05-07
 
 - User correction: admin user table reordered after toggling enabled, making status changes visually disorienting.

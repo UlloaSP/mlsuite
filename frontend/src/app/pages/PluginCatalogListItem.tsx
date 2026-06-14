@@ -5,8 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Power, Trash2 } from "lucide-react";
 import { m as motion } from "motion/react";
-import { AppBadge, AppButton, AppIconButton } from "../components/ui-controls";
-import { cx } from "../components/ui-utils";
+import { AppBadge, AppButton, AppIconButton, cx } from "../components";
 import {
   type PluginPageItem,
   TYPE_META,

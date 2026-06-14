@@ -12,7 +12,7 @@ import {
   buildQuestionnaireFormSchema,
   buildQuestionnaireWizardLayout,
 } from "../questionnaire-schema";
-import { AppSectionTitle } from "../../app/components/ui";
+import { AppSectionTitle } from "../../app/components";
 import { createLocalQuestionnaireTransport } from "../local-questionnaire-transport";
 import {
   getQuestionnaireValues,

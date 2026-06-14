@@ -5,8 +5,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus } from "lucide-react";
 import { Link } from "react-router";
-import { AppButton } from "../../app/components/ui-controls";
-import { AppEmptyState, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
+import {
+  AppButton,
+  AppEmptyState,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSurface,
+} from "../../app/components";
 import { useSchemas } from "../hooks";
 
 export function SchemasPage() {
@@ -18,7 +24,7 @@ export function SchemasPage() {
         <AppPageHeader
           eyebrow="Schemas"
           title="Organization schemas"
-          aside={
+          actions={
             <Link to="/schemas/create">
               <AppButton>
                 <Plus size={16} />
@@ -44,7 +50,9 @@ export function SchemasPage() {
             {schemas.map((schema) => (
               <Link key={schema.id} to={`/schemas/${schema.id}`}>
                 <AppPanel className="h-full space-y-3 transition hover:border-[var(--text-primary)]">
-                  <h2 className="text-xl font-semibold text-[var(--text-primary)]">{schema.name}</h2>
+                  <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+                    {schema.name}
+                  </h2>
                   <p className="text-sm text-[var(--text-secondary)]">Organization-level form</p>
                 </AppPanel>
               </Link>

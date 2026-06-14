@@ -1,6 +1,6 @@
 import { FileDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AppButton, AppIconButton } from "../../app/components/ui-controls";
+import { AppButton, AppIconButton } from "../../app/components";
 import type { PredictionResultFeedbackDto, PredictionRunDto } from "../types";
 import { SchemaRunExportRunRow } from "./SchemaRunExportRunRow";
 import {
@@ -25,7 +25,9 @@ export function SchemaRunExportReviewModal({
   onClose,
   onExport,
 }: Props) {
-  const [selection, setSelection] = useState<SchemaRunExportSelection>(emptySchemaRunExportSelection);
+  const [selection, setSelection] = useState<SchemaRunExportSelection>(
+    emptySchemaRunExportSelection,
+  );
   const [openRunIds, setOpenRunIds] = useState<Set<string>>(new Set());
   const summaries = useMemo(
     () => buildSchemaRunExportSummaries(runs, feedbackByRun),
@@ -92,7 +94,9 @@ export function SchemaRunExportReviewModal({
                     onClick={() => toggleReviewer(reviewer)}
                     className="flex w-full items-center gap-3 border-b border-[var(--border-soft)] px-2 py-3 text-left text-sm last:border-b-0 hover:bg-[var(--surface-muted)]"
                   >
-                    <span className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${selected ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white" : "border-[var(--border-strong)] text-transparent"}`}>
+                    <span
+                      className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${selected ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white" : "border-[var(--border-strong)] text-transparent"}`}
+                    >
                       ✓
                     </span>
                     <span className="min-w-0 truncate">{reviewer}</span>
@@ -107,10 +111,22 @@ export function SchemaRunExportReviewModal({
                 Inferences
               </p>
               <div className="flex gap-2">
-                <AppButton type="button" variant="secondary" className="rounded-md px-3 py-2" onClick={() => setSelection(emptySchemaRunExportSelection())}>
+                <AppButton
+                  type="button"
+                  variant="secondary"
+                  className="rounded-md px-3 py-2"
+                  onClick={() => setSelection(emptySchemaRunExportSelection())}
+                >
                   Select all
                 </AppButton>
-                <AppButton type="button" variant="ghost" className="rounded-md px-3 py-2" onClick={() => update((draft) => runs.forEach((item) => draft.excludedRunIds.add(item.id)))}>
+                <AppButton
+                  type="button"
+                  variant="ghost"
+                  className="rounded-md px-3 py-2"
+                  onClick={() =>
+                    update((draft) => runs.forEach((item) => draft.excludedRunIds.add(item.id)))
+                  }
+                >
                   Deselect all
                 </AppButton>
               </div>

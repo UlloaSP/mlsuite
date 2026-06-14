@@ -1,8 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { AppButton, AppTextArea, AppTextField } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
+import {
+  AppButton,
+  AppTextArea,
+  AppTextField,
+  AppPage,
+  AppPageHeader,
+  AppSurface,
+} from "../../app/components";
 import { createOrganization } from "../api/workspaceService";
 
 export function CreateOrganizationPage() {
@@ -29,7 +35,10 @@ export function CreateOrganizationPage() {
             eyebrow="Workspace"
             title="Create Organization"
             description="Start a new org-scoped home for models, plugins, memberships, and invitations."
-            backHref="/workspace/organizations"
+            breadcrumbs={[
+              { label: "Organizations", to: "/workspace/organizations" },
+              { label: "Create Organization" },
+            ]}
           />
           <div className="mt-6 grid gap-4">
             <AppTextField

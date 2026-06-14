@@ -8,7 +8,7 @@ import { RefreshCcw, Save } from "lucide-react";
 import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
+import { AppButton, AppSelect, AppTextField } from "../../app/components";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { useCreateSignatureMutation, useGetSignatures } from "../hooks";
 import { sortSignaturesByVersionDesc } from "../utils";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, TerminalSquare } from "lucide-react";
-import { cx } from "../../../app/components/ui-utils";
+import { cx } from "../../../app/components";
 import { buildDashboardAlerts } from "../dashboardSummary";
 import type { InfrastructureOverviewDto } from "../types";
 
@@ -86,10 +86,16 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
               <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{alert.detail}</p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <button type="button" className="rounded-md border border-[var(--border-soft)] px-2.5 py-1 text-[0.65rem] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]">
+              <button
+                type="button"
+                className="rounded-md border border-[var(--border-soft)] px-2.5 py-1 text-[0.65rem] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+              >
                 Snooze
               </button>
-              <button type="button" className="rounded-md border border-[var(--border-soft)] px-2.5 py-1 text-[0.65rem] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]">
+              <button
+                type="button"
+                className="rounded-md border border-[var(--border-soft)] px-2.5 py-1 text-[0.65rem] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+              >
                 Acknowledge
               </button>
             </div>

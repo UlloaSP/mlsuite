@@ -1,8 +1,7 @@
 import { Edit3 } from "lucide-react";
 import { useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
-import { AppCopy, AppPanel } from "../../app/components/ui";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppCopy, AppPanel, AppButton } from "../../app/components";
 import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
@@ -10,10 +9,23 @@ import {
   valuesForCombinedStep,
 } from "../combined-feedback-questionnaire";
 import type { ExplanationFeedbackDto, OutputFeedbackDto, TargetDto } from "../api/modelService";
-import { useCreateExplanationFeedbackMutation, useUpdateExplanationFeedbackMutation, useUpdateTargetMutation } from "../hooks";
-import { useCreateOutputFeedbackMutation, useUpdateOutputFeedbackMutation } from "../output-feedback-hooks";
-import { createOutputFeedbackQuestionnaire, getOutputFeedbackFieldIds } from "../output-feedback-questionnaire";
-import { buildOutputFeedbackInitialValues, buildTargetUpdateRequest } from "../output-feedback-values";
+import {
+  useCreateExplanationFeedbackMutation,
+  useUpdateExplanationFeedbackMutation,
+  useUpdateTargetMutation,
+} from "../hooks";
+import {
+  useCreateOutputFeedbackMutation,
+  useUpdateOutputFeedbackMutation,
+} from "../output-feedback-hooks";
+import {
+  createOutputFeedbackQuestionnaire,
+  getOutputFeedbackFieldIds,
+} from "../output-feedback-questionnaire";
+import {
+  buildOutputFeedbackInitialValues,
+  buildTargetUpdateRequest,
+} from "../output-feedback-values";
 import type { PredictionReportDescriptor } from "../questionnaire-feedback";
 import { getEffectiveFeedbackValues } from "../questionnaire-feedback";
 import {
@@ -217,9 +229,7 @@ export function PredictionFeedbackQuestionnaire({
     return (
       <AppPanel className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-            Prediction feedback
-          </h2>
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Prediction feedback</h2>
           <AppButton type="button" variant="ghost" onClick={() => setEditing(true)}>
             <Edit3 size={15} />
             Edit

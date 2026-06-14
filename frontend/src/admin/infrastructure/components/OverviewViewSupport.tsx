@@ -4,7 +4,7 @@ import {
   LineChart as RechartsLineChart,
   ResponsiveContainer,
 } from "recharts";
-import { cx } from "../../../app/components/ui-utils";
+import { cx } from "../../../app/components";
 import { formatBytes } from "../formatters";
 import type { InfrastructureOverviewDto } from "../types";
 

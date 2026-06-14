@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
+import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import type { ExplanationFeedbackDto, TargetDto } from "../api/modelService";
 import type { PredictionReportDescriptor } from "../questionnaire-feedback";
 import { getFormattedReportContent } from "../report-feedback-utils";

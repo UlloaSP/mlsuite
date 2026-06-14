@@ -7,6 +7,7 @@ import { lazy } from "react";
 import { Navigate, Outlet } from "react-router";
 import { useUser } from "../user/hooks";
 import { useWorkspaceContextSync } from "../workspace/hooks";
+import { EditorAssemblyLoader } from "./EditorAssemblyLoader";
 
 export const CreatePredictionPage = lazy(async () => {
   const module = await import("../models/pages/create-prediction-page");
@@ -19,13 +20,7 @@ export const CreateSignaturePage = lazy(async () => {
 });
 
 export function EditorRouteFallback() {
-  return (
-    <div className="flex size-full items-center justify-center bg-neutral-100 dark:bg-neutral-900">
-      <div className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-600 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-        Loading editor…
-      </div>
-    </div>
-  );
+  return <EditorAssemblyLoader />;
 }
 
 export function ProtectedRoute() {

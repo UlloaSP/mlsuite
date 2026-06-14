@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Filter, RefreshCw, Search } from "lucide-react";
-import { AppBadge, AppButton } from "../../../app/components/ui-controls";
-import { cx } from "../../../app/components/ui-utils";
+import { AppBadge, AppButton, cx } from "../../../app/components";
 import { formatBytes, formatPercent } from "../formatters";
 import { labelForServiceHealth, toneForServiceStatus } from "../status";
 import type { ServiceStatusDto } from "../types";

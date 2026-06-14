@@ -1,6 +1,6 @@
 import { Check, ChevronDown } from "lucide-react";
 import { useId, useMemo, useState } from "react";
-import { cx } from "./ui-utils";
+import { cx } from "./cx";
 
 export interface AppComboboxItem {
   id: number;
@@ -54,7 +54,7 @@ export function AppCombobox({
         )}
       >
         <input
-          value={open ? query : selected?.label ?? query}
+          value={open ? query : (selected?.label ?? query)}
           disabled={disabled}
           placeholder={placeholder}
           aria-label={placeholder}

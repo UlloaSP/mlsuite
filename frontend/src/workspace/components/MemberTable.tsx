@@ -1,5 +1,4 @@
-import { AppButton } from "../../app/components/ui-controls";
-import { AppCopy, AppPanel } from "../../app/components/ui";
+import { AppButton, AppCopy, AppPanel } from "../../app/components";
 import { RoleBadge } from "./RoleBadge";
 import type { MembershipRowActionsDto, MembershipStatus, RoleSummaryDto } from "../types";
 

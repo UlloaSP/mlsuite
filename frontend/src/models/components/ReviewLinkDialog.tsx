@@ -1,7 +1,7 @@
 import { Copy, Link2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AppButton, AppIconButton, AppTextField } from "../../app/components/ui-controls";
+import { AppButton, AppIconButton, AppTextField } from "../../app/components";
 import {
   useCreateReviewLinkMutation,
   useReviewLinks,

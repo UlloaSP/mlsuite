@@ -2,8 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Shield, UserCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
-import { AppSelect } from "../../app/components/ui-controls";
+import { AppPage, AppPageHeader, AppSelect, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import {
   getOrganizationMembers,
@@ -48,7 +47,14 @@ export function MembersPage() {
         <AppPageHeader
           title="Members"
           description="Organization users, roles, and row-level permissions."
-          backHref={`/workspace/organizations/${id}`}
+          breadcrumbs={[
+            { label: "Workspace", to: "/workspace" },
+            {
+              label: workspace?.currentOrganization.name ?? "Organization",
+              to: `/workspace/organizations/${id}`,
+            },
+            { label: "Members" },
+          ]}
         />
         <div className="grid gap-4 md:grid-cols-4">
           <AdminStatCard

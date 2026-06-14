@@ -8,8 +8,7 @@ import { useAtom } from "jotai";
 import { useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppCopy, AppPanel } from "../../app/components/ui";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppCopy, AppPanel, AppButton } from "../../app/components";
 import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,

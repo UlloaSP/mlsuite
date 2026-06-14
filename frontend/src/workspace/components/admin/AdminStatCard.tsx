@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { AppPanel } from "../../../app/components/ui";
-import { cx } from "../../../app/components/ui-utils";
+import { AppPanel, cx } from "../../../app/components";
 
 export function AdminStatCard({
   label,

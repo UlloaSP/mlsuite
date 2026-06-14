@@ -5,9 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowUpDown, Check, ChevronDown, Search } from "lucide-react";
 import type { RefObject } from "react";
-import { AppPanel } from "../components/ui";
-import { cx } from "../components/ui-utils";
-import { AppSelect, AppTextField } from "../components/ui-controls";
+import { AppPanel, cx, AppSelect, AppTextField } from "../components";
 import {
   getPluginSummary,
   SORT_LABELS,
@@ -124,29 +122,27 @@ export function PluginCatalogToolbar({
               role="menu"
               className="absolute right-0 top-[calc(100%+0.75rem)] z-20 min-w-[220px] overflow-hidden rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]"
             >
-              {(Object.entries(SORT_LABELS) as Array<[SortMode, string]>).map(
-                ([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={sort === value}
-                    onClick={() => {
-                      setSort(value);
-                      setIsSortOpen(false);
-                    }}
-                    className={cx(
-                      "flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left text-sm font-medium transition",
-                      sort === value
-                        ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
-                        : "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
-                    )}
-                  >
-                    <span>{label}</span>
-                    {sort === value ? <Check size={15} /> : null}
-                  </button>
-                ),
-              )}
+              {(Object.entries(SORT_LABELS) as Array<[SortMode, string]>).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={sort === value}
+                  onClick={() => {
+                    setSort(value);
+                    setIsSortOpen(false);
+                  }}
+                  className={cx(
+                    "flex w-full items-center justify-between rounded-[18px] px-4 py-3 text-left text-sm font-medium transition",
+                    sort === value
+                      ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
+                      : "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
+                  )}
+                >
+                  <span>{label}</span>
+                  {sort === value ? <Check size={15} /> : null}
+                </button>
+              ))}
             </div>
           ) : null}
         </div>

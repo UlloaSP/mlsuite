@@ -4,8 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight } from "lucide-react";
-import { AppPanel } from "../../app/components/ui";
-import { AppBadge } from "../../app/components/ui-controls";
+import { AppPanel, AppBadge } from "../../app/components";
 import { formatTimestamp, getPredictionShortId } from "../../models/utils";
 import type { PredictionRunDto } from "../types";
 

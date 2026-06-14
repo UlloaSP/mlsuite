@@ -4,8 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { CalendarDays, Search, SlidersHorizontal } from "lucide-react";
-import { AppToolbar } from "../../app/components/ui";
-import { AppTextField } from "../../app/components/ui-controls";
+import { AppToolbar, AppTextField } from "../../app/components";
 import type { PredictionRunStatus, PredictionRunDto, SchemaVersionDto } from "../types";
 import { SchemaRunExportButton } from "./SchemaRunExportButton";
 

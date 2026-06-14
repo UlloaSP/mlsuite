@@ -2,8 +2,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Lock, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { AppBadge, AppButton } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components/ui";
+import {
+  AppBadge,
+  AppButton,
+  AppPage,
+  AppPageHeader,
+  AppSurface,
+  AppTabs,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import {
   createRole,
@@ -54,8 +60,15 @@ export function RolesPage() {
         <AppPageHeader
           title="Roles & Permissions"
           description="Manage roles, templates, and access control."
-          backHref={`/workspace/organizations/${id}`}
-          aside={
+          breadcrumbs={[
+            { label: "Workspace", to: "/workspace" },
+            {
+              label: workspace?.currentOrganization.name ?? "Organization",
+              to: `/workspace/organizations/${id}`,
+            },
+            { label: "Roles & Permissions" },
+          ]}
+          actions={
             <>
               <AppButton variant="secondary" onClick={() => setTab("templates")}>
                 <Copy size={16} />

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
-import { AppCopy } from "../../app/components/ui";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppCopy, AppButton } from "../../app/components";
 import type { FieldConfig } from "mlform/runtime";
 import type {
   ExplanationFeedbackDto,
@@ -47,8 +46,7 @@ const displayValue = (value: unknown, field?: FieldConfig, stepKind?: string): s
         typeof option.label === "string",
     );
     const matchingOption =
-      options.find((option) => String(option.value) === String(value)) ??
-      options[Number(value)];
+      options.find((option) => String(option.value) === String(value)) ?? options[Number(value)];
     if (matchingOption) {
       return matchingOption.label;
     }

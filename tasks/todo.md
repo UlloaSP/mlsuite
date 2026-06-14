@@ -1,31 +1,63 @@
-# Schema Bulk Exact Key Mapping
+# Page Header Consumer Migration
 
 ## Goal
-- [x] Remove schema bulk/display slug aliasing from labels.
-- [x] Keep bulk CSV columns as exact model/dataframe feature names.
-- [x] Keep MLForm submit values keyed by stable field ids.
-- [x] Keep labels editable and display-only.
-- [x] Verify lowercase/special-character keys without case/symbol transforms.
+- [x] Move page breadcrumbs into `AppPageHeader`.
+- [x] Replace legacy `backHref`/`backLabel` with semantic breadcrumb items.
+- [x] Replace `aside` usage with `actions`.
+- [x] Remove wrapped action button divs from header props.
+- [x] Remove legacy header props so regressions fail typecheck.
 
 ## Plan
-- [x] Simplify bulk schema/serialization around `modelKey -> field.id`.
-- [x] Simplify schema transport model input mapping around `serializedValues[field.id]`.
-- [x] Remove `toUniqueId(label)` display/payload fallbacks.
-- [x] Update tests to reject slug/case magic and assert exact keys.
-- [x] Run focused tests, full tests, typecheck, graph update.
+- [x] Audit every `AppPageHeader`, `AppBreadcrumbs`, `backHref`, and `aside` consumer.
+- [x] Patch model, schema, workspace, admin, and plugin pages.
+- [x] Patch header helper components.
+- [x] Run typecheck/tests/format checks and graphify update.
 
 ## Review
-- Removed runtime label slug aliases from schema display and schema transport payload mapping.
-- Schema transport now builds model payload from exact field-id values plus binding `inputMapping`; stale label keys only resolve when exact field id/model key still identifies the field.
-- Bulk upload still presents exact `modelKey` columns from bindings, so dataframe feature names remain the CSV contract.
-- Added exact-case/symbol test for model feature names.
+- Moved standalone model detail/signature/prediction breadcrumbs into `AppPageHeader`.
+- Replaced every `backHref` header call with semantic `breadcrumbs`.
+- Replaced every `aside` header call with `actions`; removed action wrapper `div` usage.
+- Removed `backHref`, `backLabel`, and `aside` from `AppPageHeader` props.
+- `AppPageHeader` now flattens fragments before assigning the 2x2 action slots.
 - Verification:
-  - `vp test schema-bulk-label-mapping schema-run-transport-mapping schema-run-display schema-plugin-transport` passed: 15 tests.
-  - `vp test schema-bulk-label-mapping schema-run-transport-mapping schema-run-display schema-plugin-transport schema-run-history schema-one-hot-select-values bulk-upload` passed: 42 tests.
-  - `vp test` passed: 32 files, 136 tests.
   - `vp exec tsc -b` passed.
-  - `npx react-doctor@latest --verbose` completed: score 71, 51 existing warnings.
-  - `vp fmt src\app\utils\mlform\schema-run-transport.ts src\app\utils\mlform\schema-run-input-mapping.ts src\app\utils\mlform\schema-run-payload.ts src\schemas\schema-run-display.ts src\schemas\schema-run-bulk-inputs.ts test\schema-bulk-label-mapping.test.ts test\schema-run-transport-mapping.test.ts --check` passed.
+  - `vp test` passed: 32 files, 136 tests.
+  - Targeted `vp fmt ... --check` passed.
+  - `rg "<AppBreadcrumbs|backHref=|backLabel=|aside=" frontend/src -g "*.tsx"` only finds the internal `PageHeader` breadcrumb render.
+  - `rg "actions=\{\s*<div|label: \"Back|>Back<" frontend/src -g "*.tsx"` found no matches.
+  - Source line-count check found no file over 300 lines.
   - `git diff --check` passed with CRLF warnings only.
-  - `graphify update .` passed: 8884 nodes, 19235 edges, 459 communities.
-  - `vp check` blocked by existing repo-wide formatting issues in `dist/` and 612 files.
+  - `npx react-doctor@latest --verbose` blocked by react-doctor internal `Invalid comparator: latest`.
+  - `graphify update .` passed.
+
+---
+
+# Component Barrel Cleanup
+
+## Goal
+- [x] Split `ui-controls.tsx` into one component per file.
+- [x] Split `ui-utils.ts` into dedicated utility files.
+- [x] Remove `ui.tsx`, `ui-controls.tsx`, and `ui-utils.ts` barrel-style entrypoints.
+- [x] Make `index.ts` the only app component barrel.
+- [x] Set `AppPageHeader` action visual order: first top-right, second top-left, third bottom-right, fourth bottom-left.
+
+## Plan
+- [x] Create separate files for controls and utilities.
+- [x] Update app component internals to import direct utility files.
+- [x] Update feature imports to use `app/components` index.
+- [x] Delete old barrel files.
+- [x] Run format, typecheck, tests, react-doctor, graphify.
+
+## Review
+- Split controls into `AppBadge`, `AppButton`, `AppIconButton`, `AppSelect`, `AppTextArea`, and `AppTextField`.
+- Split utils into `cx` and `focus-ring`.
+- Removed `ui.tsx`, `ui-controls.tsx`, and `ui-utils.ts`; `src/app/components/index.ts` is now the only component barrel.
+- Updated frontend imports from old `app/components/ui*` entrypoints to `app/components`.
+- `AppPageHeader` action nodes now use explicit grid positions: 1 top-right, 2 top-left, 3 bottom-right, 4 bottom-left.
+- Verification:
+  - `vp exec tsc -b` passed.
+  - `vp test` passed: 32 files, 136 tests.
+  - `vp fmt src\app\components src\models\pages\create-model-page.tsx src\models\pages\models-page.tsx src\schemas\pages\schema-detail-page.tsx --check` passed.
+  - `vp fmt src --check` blocked by 27 existing non-touched format issues.
+  - `npx react-doctor@latest --verbose` blocked by react-doctor internal `Invalid comparator: latest`.
+  - `graphify update .` passed.

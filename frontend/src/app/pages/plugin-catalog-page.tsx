@@ -15,15 +15,7 @@ import {
   activatePlugin,
   deactivatePlugin,
 } from "../api/pluginService";
-import {
-  AppButton,
-} from "../components/ui-controls";
-import {
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSurface,
-} from "../components/ui";
+import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "../components";
 import { invalidateActiveCustomFieldDefinition } from "../utils/mlform/custom-field";
 import { invalidateActiveCustomReportDefinition } from "../utils/mlform/custom-report";
 import { detectPluginType, invalidatePluginCatalog } from "../utils/mlform/plugin-catalog";
@@ -225,7 +217,8 @@ export function PluginCatalogPage() {
           eyebrow="Plugin Catalog"
           title={<span>Plugins</span>}
           description={`Unified catalog for MLForm plugins in ${workspace?.currentOrganization.name ?? "the current workspace"}. Use type filter, status, and search to manage plugin lifecycle in one place.`}
-          aside={
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Plugins" }]}
+          actions={
             canManagePlugins ? (
               <>
                 <AppButton

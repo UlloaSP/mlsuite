@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
-import { AppBreadcrumbs, AppPage } from "../../app/components/ui";
+import { AppPage, AppPageHeader } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { emitErrorFromUnknown } from "../../app/utils/error-sink";
 import { useUser } from "../../user/hooks";
@@ -204,19 +204,12 @@ export function CreateModelPage() {
   return (
     <AppPage>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
-        {/* ── Page header ─────────────────────────────────────────── */}
-        <AppBreadcrumbs items={[{ label: "Models", to: "/models" }, { label: "Create Model" }]} />
-        <header className="my-5 flex-shrink-0">
-          <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-primary)]">
-            Model Studio
-          </p>
-          <h1 className="text-[27px] font-semibold leading-[1.05] tracking-[-0.8px] text-[var(--text-primary)]">
-            Create New Model
-          </h1>
-          <p className="mt-1.5 text-[13px] text-[var(--text-muted)]">
-            Drop model artifacts and dataframes. Files are grouped by name when possible.
-          </p>
-        </header>
+        <AppPageHeader
+          breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create Model" }]}
+          eyebrow="Model Studio"
+          title="Create New Model"
+          description="Drop model artifacts and dataframes. Files are grouped by name when possible."
+        />
 
         {/* ── Two-column layout ────────────────────────────────────── */}
         <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
