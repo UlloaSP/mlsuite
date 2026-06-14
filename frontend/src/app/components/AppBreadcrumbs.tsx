@@ -3,22 +3,37 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ChevronRight } from "lucide-react";
-import type { HTMLAttributes, ReactNode } from "react";
-import { Link } from "react-router";
-import { cx } from "./cx";
+import { Fragment, type HTMLAttributes, type ReactNode } from "react";
+import {
+  Breadcrumb,
+  BreadcrumbCollapsedMenu,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "./breadcrumb";
 
 export type AppBreadcrumbItem = {
   label: ReactNode;
   to?: string;
 };
 
-function collapseBreadcrumbs(items: AppBreadcrumbItem[]): AppBreadcrumbItem[] {
+type BreadcrumbSegment =
+  | { kind: "item"; item: AppBreadcrumbItem }
+  | { hiddenItems: AppBreadcrumbItem[]; kind: "ellipsis" };
+
+function collapseBreadcrumbs(items: AppBreadcrumbItem[]): BreadcrumbSegment[] {
   if (items.length <= 3) {
-    return items;
+    return items.map((item) => ({ item, kind: "item" }));
   }
 
-  return [items[0], { label: "..." }, items[items.length - 1]];
+  return [
+    { item: items[0], kind: "item" },
+    { hiddenItems: items.slice(1, -2), kind: "ellipsis" },
+    { item: items[items.length - 2], kind: "item" },
+    { item: items[items.length - 1], kind: "item" },
+  ];
 }
 
 export function AppBreadcrumbs({
@@ -30,42 +45,36 @@ export function AppBreadcrumbs({
   const visibleItems = collapseBreadcrumbs(items);
 
   return (
-    <nav
-      className={cx("flex min-w-0 items-center gap-2 overflow-hidden text-[13px]", className)}
-      aria-label="Breadcrumb"
-    >
-      {visibleItems.map((item, index) => {
-        const isLast = index === visibleItems.length - 1;
-        const key = `${index}-${item.to ?? "current"}-${String(item.label)}`;
+    <Breadcrumb className={className}>
+      <BreadcrumbList className="flex-nowrap">
+        {visibleItems.map((segment, index) => {
+          const isLast = index === visibleItems.length - 1;
+          const item = segment.kind === "item" ? segment.item : undefined;
+          const key =
+            segment.kind === "item"
+              ? `${index}-${item?.to ?? "current"}-${String(item?.label)}`
+              : `${index}-ellipsis`;
 
-        return (
-          <div key={key} className="inline-flex min-w-0 items-center gap-2">
-            {item.to && !isLast ? (
-              <Link
-                to={item.to}
-                className="truncate font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
-              >
-                {item.label}
-              </Link>
-            ) : (
-              <span
-                aria-current={isLast ? "page" : undefined}
-                className={cx(
-                  "truncate",
-                  isLast
-                    ? "font-medium text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)]",
+          return (
+            <Fragment key={key}>
+              <BreadcrumbItem>
+                {segment.kind === "ellipsis" ? (
+                  <BreadcrumbCollapsedMenu items={segment.hiddenItems} />
+                ) : item?.to && !isLast ? (
+                  <BreadcrumbLink to={item.to}>{item.label}</BreadcrumbLink>
+                ) : isLast ? (
+                  <BreadcrumbPage>{item?.label}</BreadcrumbPage>
+                ) : (
+                  <span className="truncate text-[var(--text-secondary)]">
+                    {item?.label}
+                  </span>
                 )}
-              >
-                {item.label}
-              </span>
-            )}
-            {!isLast ? (
-              <ChevronRight size={14} className="shrink-0 text-[var(--text-muted)]" />
-            ) : null}
-          </div>
-        );
-      })}
-    </nav>
+              </BreadcrumbItem>
+              {!isLast ? <BreadcrumbSeparator /> : null}
+            </Fragment>
+          );
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }

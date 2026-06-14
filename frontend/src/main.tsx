@@ -10,6 +10,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
 import { Toaster } from "sonner";
+import { StartupGate } from "./app/startup/StartupGate";
 import { emitErrorFromUnknown } from "./app/utils/error-sink";
 import { router } from "./router/routes";
 
@@ -39,22 +40,24 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Provider>
         <LazyMotion features={domAnimation}>
           <MotionConfig reducedMotion="user">
-            <RouterProvider router={router} />
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                classNames: {
-                  toast: "rounded-lg border border-neutral-200 bg-white text-neutral-950 shadow-lg",
-                  title: "text-sm font-medium",
-                  description: "text-sm text-neutral-600",
-                  actionButton:
-                    "rounded-md bg-neutral-950 px-3 py-2 text-sm font-medium text-white",
-                  cancelButton:
-                    "rounded-md bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-950",
-                  closeButton: "border-neutral-200 bg-white text-neutral-950",
-                },
-              }}
-            />
+            <StartupGate>
+              <RouterProvider router={router} />
+              <Toaster
+                position="top-center"
+                toastOptions={{
+                  classNames: {
+                    toast: "rounded-lg border border-neutral-200 bg-white text-neutral-950 shadow-lg",
+                    title: "text-sm font-medium",
+                    description: "text-sm text-neutral-600",
+                    actionButton:
+                      "rounded-md bg-neutral-950 px-3 py-2 text-sm font-medium text-white",
+                    cancelButton:
+                      "rounded-md bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-950",
+                    closeButton: "border-neutral-200 bg-white text-neutral-950",
+                  },
+                }}
+              />
+            </StartupGate>
           </MotionConfig>
         </LazyMotion>
       </Provider>

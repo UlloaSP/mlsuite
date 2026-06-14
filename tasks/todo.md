@@ -137,3 +137,148 @@
   - `frontend`: `vp exec tsc -b` passed.
   - `frontend`: plugin/schema Vitest subset passed.
   - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails inside react-doctor with `Invalid comparator: latest`.
+
+# Startup Readiness Loader
+
+## Goal
+- [x] Keep initial UI on `EditorAssemblyLoader` until client runtime chunks are loaded.
+- [x] Keep initial UI on `EditorAssemblyLoader` until API, Postgres, py-analyzer, and ops-agent are reachable.
+- [x] Put backend-owned service readiness logic in API, not duplicated in frontend.
+- [x] Use `appFetch` and TanStack Query for frontend readiness polling.
+
+## Plan
+- [x] Add public API readiness endpoint that checks DB, analyzer `/health`, and ops-agent `/health`.
+- [x] Add backend tests for success and dependency failure cases.
+- [x] Add frontend startup readiness service that preloads TypeScript, Monaco, MLForm, and reads API readiness.
+- [x] Wrap router boot with `StartupGate` using TanStack Query polling and `EditorAssemblyLoader`.
+- [x] Run focused backend/frontend verification, react-doctor, graphify, and diff check.
+
+## Review
+- Added public `GET /api/readiness`; API owns dependency checks for Postgres, py-analyzer, and ops-agent.
+- Frontend `StartupGate` uses TanStack Query polling plus `appFetch`; it renders `EditorAssemblyLoader` until server readiness and client runtime preload succeed.
+- Client runtime preload covers TypeScript, Monaco, `@monaco-editor/react`, and MLForm runtime/kit/builtins chunks.
+- Verification:
+  - `api`: `mvn "-Dtest=StartupReadinessServiceTest" test` passed.
+  - `frontend`: `vp exec tsc -b` passed.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
+  - `frontend`: `vp check` failed on preexisting formatting issues across 73 files.
+  - Repo: `graphify update .` passed.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
+# Shadcn Breadcrumb Component
+
+## Goal
+- [x] Replace custom breadcrumb markup with shadcn-style breadcrumb primitives.
+- [x] Preserve existing `AppBreadcrumbs` external API for page headers.
+- [x] Avoid new runtime deps unless required.
+
+## Plan
+- [x] Audit existing breadcrumb usage and shadcn docs.
+- [x] Add local breadcrumb primitives matching shadcn composition.
+- [x] Refactor `AppBreadcrumbs` to compose those primitives with React Router links.
+- [x] Run focused frontend verification and graph update.
+
+## Review
+- Added local shadcn-style breadcrumb primitives under `frontend/src/app/components/breadcrumb`.
+- `AppBreadcrumbs` now composes `Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbPage`, `BreadcrumbSeparator`, and `BreadcrumbEllipsis`.
+- Existing page header API stays `breadcrumbs?: AppBreadcrumbItem[]`; React Router `to` links still work.
+- No runtime dependencies added.
+- Verification:
+  - `frontend`: `vp exec tsc -b` passed.
+  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
+  - Repo: `graphify update .` passed.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
+# Breadcrumb Ellipsis Dropdown
+
+## Goal
+- [x] Make collapsed breadcrumb ellipsis interactive.
+- [x] Show hidden breadcrumb items inside dropdown.
+- [x] Keep no-new-deps shadcn-style composition.
+
+## Plan
+- [x] Preserve collapsed hidden items instead of replacing with inert label only.
+- [x] Add ellipsis dropdown component with outside-click and Escape close.
+- [x] Render hidden items as router links when `to` exists, text otherwise.
+- [x] Run focused frontend verification, react-doctor, graph update.
+
+## Review
+- `AppBreadcrumbs` now keeps hidden middle breadcrumb items and shows them through ellipsis dropdown.
+- `BreadcrumbCollapsedMenu` closes on outside pointer, Escape, and link click.
+- Hidden items with `to` render as React Router links; no-`to` crumbs render as menu text.
+- Verification:
+  - `frontend`: `vp exec tsc -b` passed.
+  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
+  - Repo: `graphify update .` passed.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
+# Breadcrumb Dropdown Visibility Fix
+
+## Goal
+- [x] Make ellipsis dropdown visible above page content.
+- [x] Keep breadcrumb truncation working without clipping popover.
+- [x] Verify browser interaction.
+
+## Plan
+- [x] Remove clipping from breadcrumb shell where dropdown lives.
+- [x] Raise dropdown layer above page/header content.
+- [x] Run frontend verification and graph update.
+
+## Review
+- Root cause: dropdown rendered inside breadcrumb nav with `overflow-hidden`; menu got clipped/hidden. Z-index alone cannot fix ancestor clipping.
+- Fix: breadcrumb nav/list now use `overflow-visible`; breadcrumb nav/root and collapsed menu now set explicit relative z layers.
+- Verification:
+  - `frontend`: `vp exec tsc -b` passed.
+  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
+  - Repo: `graphify update .` passed.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
+# Breadcrumb Dropdown Portal Fix
+
+## Goal
+- [x] Render ellipsis menu outside page stacking contexts.
+- [x] Keep menu aligned under ellipsis button while scrolling/resizing.
+- [x] Preserve outside-click, Escape, and link-close behavior.
+
+## Plan
+- [x] Move dropdown panel to `document.body` with `createPortal`.
+- [x] Measure trigger button and use fixed viewport coordinates.
+- [x] Treat clicks inside trigger or portal menu as internal.
+- [x] Run frontend verification and graph update.
+
+## Review
+- Root cause after user DOM proof: menu existed, but page stacking context still painted over it.
+- Fix: `BreadcrumbCollapsedMenu` now portals menu to `document.body` and positions it with fixed viewport coordinates from the trigger rect.
+- Scroll/resize recompute menu coordinates; outside click checks both trigger and portal menu refs.
+- Verification:
+  - `frontend`: `vp exec tsc -b` passed.
+  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
+  - Repo: `graphify update .` passed.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
+# Breadcrumb Dropdown Minimal Styling
+
+## Goal
+- [x] Make breadcrumb ellipsis menu feel Radix-like and minimal.
+- [x] Reduce border radius and visual weight.
+- [x] Keep portal/dropdown behavior unchanged.
+
+## Plan
+- [x] Tighten menu radius, padding, shadow, and width.
+- [x] Tighten item radius, font size, hover state, and line height.
+- [x] Run frontend verification and graph update.
+
+## Review
+- Menu panel now uses smaller Radix-like radius (`rounded-lg`), tighter padding, narrower width, and lighter shadow.
+- Menu items now use `rounded-md`, compact vertical rhythm, 13px type, and subtle hover/focus background.
+- Portal/fixed positioning behavior unchanged.
+- Verification:
+  - `frontend`: `vp exec tsc -b` passed.
+  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
+  - Repo: `graphify update .` passed.
+  - Repo: `git diff --check` passed with CRLF warnings only.

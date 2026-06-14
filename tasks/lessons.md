@@ -1,5 +1,14 @@
 # Lessons
 
+## 2026-06-14 - Breadcrumb Ellipsis Correction
+
+- Correction: shadcn-style breadcrumb ellipsis was decorative only, but supplied reference expects the ellipsis to open a menu for collapsed breadcrumb items.
+- Rule: when implementing collapsed breadcrumbs, ellipsis must expose hidden path items as an interactive menu; do not replace collapsed structure with inert `...`.
+- Correction: breadcrumb dropdown was rendered inside an overflow-clipped breadcrumb shell, so the menu could be hidden behind/cut by nearby layout.
+- Rule: any dropdown/popover inside compact nav must either render in a non-clipping layer or avoid `overflow-hidden` ancestors; z-index alone cannot beat ancestor clipping.
+- Correction: even after visible overflow, later page stacking contexts could paint over the dropdown while HTML existed.
+- Rule: navigation dropdowns used inside arbitrary page shells should render through a document-body portal with viewport-fixed coordinates, not inside the breadcrumb DOM subtree.
+
 ## 2026-06-14 - Plugin Catalog Query Pattern Correction
 
 - Correction: plugin catalog page used custom local feed state and infinite scroll after backend pagination, while app convention expects `appFetch` services plus TanStack Query hooks for fetched pages and mutations.

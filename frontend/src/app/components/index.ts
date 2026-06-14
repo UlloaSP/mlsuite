@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 export { AppHeader } from "./AppHeader";
 export { AppBadge } from "./AppBadge";
 export { AppBreadcrumbs, type AppBreadcrumbItem } from "./AppBreadcrumbs";
+export * from "./breadcrumb";
 export { AppButton } from "./AppButton";
 export { AppCombobox, type AppComboboxItem } from "./AppCombobox";
 export { AppCopy } from "./AppCopy";
