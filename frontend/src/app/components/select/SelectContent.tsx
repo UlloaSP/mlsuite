@@ -14,7 +14,7 @@ export function SelectContent({ children, className, position, ...props }: Selec
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         className={cx(
-          "z-[1000] max-h-72 w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 text-[var(--text-primary)] shadow-[var(--shadow-hover)]",
+          "z-[1000] max-h-72 w-[var(--radix-select-trigger-width)] overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 text-[var(--text-primary)] shadow-[var(--shadow-hover)]",
           className,
         )}
         position={position ?? "item-aligned"}

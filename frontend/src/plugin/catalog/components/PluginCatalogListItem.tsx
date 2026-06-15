@@ -31,9 +31,9 @@ export function PluginCatalogListItem({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.28 }}
-      className="grid gap-4 rounded border border-[var(--border-soft)] p-5 lg:grid-cols-[minmax(260px,1fr)_auto]"
+      className="grid gap-3 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 transition lg:grid-cols-[minmax(260px,1fr)_auto]"
     >
-      <div className="min-w-0 space-y-3">
+      <div className="min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-base font-semibold text-[var(--text-primary)]">
             {displayName}
@@ -43,13 +43,13 @@ export function PluginCatalogListItem({
           </AppBadge>
         </div>
 
-        <p className="text-sm leading-6 text-[var(--text-secondary)]">
+        <p className="text-sm leading-5 text-[var(--text-secondary)]">
           {`Updated ${formatTimestamp(item.updatedAt)}`}
         </p>
       </div>
 
-      {canManage ? (
-        <div className="flex items-center justify-start gap-2 lg:justify-end">
+      <div className="flex items-center justify-start gap-2 lg:justify-end">
+        {canManage ? (
           <AppButton
             type="button"
             onClick={() => {
@@ -62,8 +62,8 @@ export function PluginCatalogListItem({
             <Trash2 size={14} />
             Delete
           </AppButton>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </motion.div>
   );
 }

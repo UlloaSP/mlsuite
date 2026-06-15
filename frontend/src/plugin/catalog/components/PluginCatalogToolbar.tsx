@@ -68,7 +68,7 @@ export function PluginCatalogToolbar({
   const filteredCount = pageData?.totalItems ?? 0;
 
   return (
-    <div className="grid gap-3 border-b border-[var(--border-soft)] py-4">
+    <div className="grid gap-3 border-b border-[var(--border-soft)] py-3">
       <input
         ref={inputRef}
         type="file"
@@ -89,7 +89,7 @@ export function PluginCatalogToolbar({
             </span>
           }
         />
-        <fieldset className="flex flex-wrap gap-2">
+        <fieldset className="inline-flex w-fit rounded border border-[var(--border-soft)] bg-[var(--surface-muted)] p-1">
           <legend className="sr-only">Filter by plugin type</legend>
           {TYPE_FILTERS.map((filter) => (
             <button
@@ -98,10 +98,10 @@ export function PluginCatalogToolbar({
               aria-pressed={typeFilter === filter.value}
               onClick={() => setTypeFilter(filter.value)}
               className={cx(
-                "rounded border px-3 py-2 text-sm font-semibold transition",
+                "rounded px-3 py-1.5 text-sm font-semibold transition",
                 typeFilter === filter.value
-                  ? "border-[var(--text-primary)] bg-[var(--surface-primary)] text-[var(--text-primary)]"
-                  : "border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]",
+                  ? "bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-card)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
               )}
             >
               {filter.label} ({filterCount(filter.value, fieldPlugins, reportPlugins)})
@@ -113,7 +113,7 @@ export function PluginCatalogToolbar({
           id="plugin-catalog-sort"
           value={sort}
           onValueChange={(nextSort) => setSort(nextSort as SortMode)}
-          className="w-full max-w-48"
+          className="w-fit bg-transparent px-2 py-2 text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]"
           options={(Object.entries(SORT_LABELS) as Array<[SortMode, string]>).map(
             ([value, label]) => ({ value, label }),
           )}

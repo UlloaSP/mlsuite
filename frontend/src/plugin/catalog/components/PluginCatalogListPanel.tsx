@@ -82,7 +82,7 @@ export function PluginCatalogListPanel({
 
   return (
     <>
-      <section className="min-h-0 flex-1 overflow-auto py-4">
+      <section className="min-h-0 flex-1 basis-0 overflow-y-auto py-4">
         <div className="space-y-3 pr-1">
           {items.length === 0 && pageQuery.isLoading ? (
             <AppPanel className="px-6 py-16 text-center text-sm text-[var(--text-secondary)]">
@@ -126,7 +126,7 @@ export function PluginCatalogListPanel({
           ))}
         </div>
       </section>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-soft)] bg-[var(--surface-primary)] py-4 text-sm text-[var(--text-secondary)]">
+      <div className="shrink-0 border-t border-[var(--border-soft)] bg-[var(--surface-primary)] py-3 text-sm text-[var(--text-secondary)]">
         <Pagination className="mx-0 w-auto">
           <PaginationContent>
             <PaginationItem>

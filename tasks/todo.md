@@ -1,3 +1,28 @@
+# Plugin Catalog Layout Polish
+
+## Goal
+- [ ] Make plugin toolbar feel compact and less mechanical.
+- [ ] Stop pagination from visually overlapping plugin rows.
+- [ ] Make plugin rows denser with clearer interaction.
+
+## Plan
+- [x] Convert type filters into compact segmented control.
+- [x] Keep only list body scrollable; footer stays below it with safe spacing.
+- [x] Tighten row spacing and add explicit source-view affordance.
+- [x] Run frontend checks and graph update.
+
+## Review
+- Toolbar now uses a compact segmented control for `All` / `Fields` / `Reports`, a shorter search track, and a quieter sort select.
+- Plugin list body is the only scroll region; pagination footer is a non-overlapping sibling below it.
+- Rows are denser, have stronger hover/border feedback, and expose a real `View source` action plus delete when allowed.
+- Verification:
+  - `frontend`: `vp exec tsc -b` passed.
+  - `frontend`: `vp build` passed with existing Vite chunk/runtime-config warnings.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed on existing `src/app/startup/StartupGate.tsx:14`; no new error in touched plugin files.
+  - Repo: `graphify update .` passed.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Browser preview loaded app, but `/plugins` redirected to public login without auth; snapshot tool also timed out.
+
 # Plugin Catalog Shadcn Search Empty
 
 ## Goal
