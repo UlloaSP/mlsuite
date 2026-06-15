@@ -1,5 +1,12 @@
 # Lessons
 
+## 2026-06-15 - Header Brand Reference Correction
+
+- Correction: header brand drifted from supplied visual reference for icon shape, typography, and icon/text spacing.
+- Rule: when user supplies brand reference imagery, update the shared brand mark and header brand composition together; do not tune surrounding layout while leaving old logo/type assets in place.
+- Correction: using the supplied SVG without checking its internal bounds made favicon/header mark look too small.
+- Rule: brand SVG assets used as favicon or compact header marks must have a tight viewBox; verify rendered alpha bounds, not only CSS size.
+
 ## 2026-06-14 - Breadcrumb Ellipsis Correction
 
 - Correction: shadcn-style breadcrumb ellipsis was decorative only, but supplied reference expects the ellipsis to open a menu for collapsed breadcrumb items.

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { APP_NAME, DATE_FORMATTER, ISSUE_LABEL } from "./authLandingCopy";
 import { AuthRule } from "./AuthRule";
+import { MLSuiteMark } from "../../components/MLSuiteMark";
 
 export function AuthHeader() {
   const now = new Date();
@@ -20,8 +21,9 @@ export function AuthHeader() {
 
       <AuthRule thick className="h-0.5" />
 
-      <div className="flex items-center justify-center gap-2.5 px-5 py-2.5 sm:px-7 lg:px-[44px]">
-        <span className="text-2xl font-bold leading-none tracking-[-1px] sm:text-[28px]">
+      <div className="flex items-center justify-center gap-4 px-5 py-2.5 sm:px-7 lg:px-[44px]">
+        <MLSuiteMark size={42} />
+        <span className="text-[28px] font-bold leading-none text-[var(--text-primary)] sm:text-[30px]">
           {APP_NAME}
         </span>
       </div>

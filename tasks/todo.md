@@ -1,3 +1,31 @@
+# Header Brand Match
+
+## Goal
+- [ ] Match header logo icon, type, and spacing to provided reference.
+
+## Plan
+- [x] Replace old blue mark with red MLSuite mark.
+- [x] Tune header brand type size/weight/color and icon-text gap.
+- [x] Apply same brand treatment to public auth header.
+- [x] Use `public/mlsuite-logo.svg` for favicon and shared header mark.
+- [x] Run frontend verification and graph update.
+
+## Review
+- `frontend/public/mlsuite-logo.svg` is now red `#ff385c`.
+- Cropped logo SVG viewBox so favicon/header mark fill available square.
+- `frontend/index.html` uses `/mlsuite-logo.svg` as favicon.
+- Shared `MLSuiteMark` renders that SVG asset, so app header and auth header use same mark.
+- Header brand type/gap adjusted to match reference direction.
+- Follow-up: SVG viewBox tightened and header mark sizes raised (`44px` app shell, `42px` auth) after favicon/header appeared too small.
+- Verification:
+  - `frontend`: `vp exec tsc -b` passed.
+  - `frontend`: `vp build` passed with existing Vite runtime-config/chunk warnings.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`.
+  - Repo: `graphify update .` passed.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Preview: `http://127.0.0.1:5174/?brand=1` shows favicon `/mlsuite-logo.svg`, header img `36x36`, gap `16px`.
+  - Latest preview retry blocked: `PreviewAutomationNoFocusedOwnerError`; build verification covers final code.
+
 # Plugin Catalog Layout Polish
 
 ## Goal
