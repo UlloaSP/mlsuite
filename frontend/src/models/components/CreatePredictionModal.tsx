@@ -9,8 +9,7 @@ import { AnimatePresence, m as motion } from "motion/react";
 import { useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { toast } from "sonner";
-import { AppCopy, AppSectionTitle } from "../../app/components/ui";
-import { AppIconButton } from "../../app/components/ui-controls";
+import { AppCopy, AppSectionTitle, AppIconButton } from "../../app/components";
 import { showModalAtom } from "../atoms";
 import {
   useCreateExplanationFeedbackMutation,
@@ -201,9 +200,7 @@ export function CreatePredictionModal({
             />
 
             <div className="space-y-6">
-              {reportsPending ? (
-                <AppCopy>Waiting for report result…</AppCopy>
-              ) : null}
+              {reportsPending ? <AppCopy>Waiting for report result…</AppCopy> : null}
               {reportEntries.map((report) => (
                 <PredictionReportReviewCard
                   key={report.reportId}

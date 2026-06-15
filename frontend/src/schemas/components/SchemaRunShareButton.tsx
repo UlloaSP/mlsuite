@@ -1,6 +1,6 @@
 import { Share2 } from "lucide-react";
 import { useState } from "react";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppButton } from "../../app/components";
 import type { PredictionRunDto, SchemaVersionDto } from "../types";
 import { SchemaRunReviewLinkDialog } from "./SchemaRunReviewLinkDialog";
 
@@ -14,7 +14,12 @@ export function SchemaRunShareButton({ runs, version }: Props) {
 
   return (
     <>
-      <AppButton type="button" variant="secondary" disabled={runs.length === 0} onClick={() => setOpen(true)}>
+      <AppButton
+        type="button"
+        variant="secondary"
+        disabled={runs.length === 0}
+        onClick={() => setOpen(true)}
+      >
         <Share2 size={16} />
         Share
       </AppButton>

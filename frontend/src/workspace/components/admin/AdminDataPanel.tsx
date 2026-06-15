@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
-import { AppPanel, AppSectionTitle } from "../../../app/components/ui";
-import { AppTextField } from "../../../app/components/ui-controls";
-import { cx } from "../../../app/components/ui-utils";
+import { AppPanel, AppSectionTitle, AppTextField, cx } from "../../../app/components";
 
 export function AdminDataPanel({
   title,

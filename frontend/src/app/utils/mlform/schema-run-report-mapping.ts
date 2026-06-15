@@ -6,10 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { normalizeSchemaId } from "mlform/schema";
 import { isRecord, type JsonRecord } from "./shared";
 
-export const mappingSourceForReport = (
-  mapping: unknown,
-  reportId: string,
-): string | undefined => {
+export const mappingSourceForReport = (mapping: unknown, reportId: string): string | undefined => {
   if (!isRecord(mapping)) return undefined;
   if (typeof mapping[reportId] === "string") return mapping[reportId];
   const normalizedReportId = normalizeSchemaId(reportId);
@@ -24,10 +21,7 @@ export const hasMappedReport = (mapping: unknown, reportId: string): boolean =>
 
 export const reportContextKey = (reportId: string): string => normalizeSchemaId(reportId);
 
-export const readReportContext = (
-  contexts: unknown,
-  reportId: string,
-): JsonRecord | undefined => {
+export const readReportContext = (contexts: unknown, reportId: string): JsonRecord | undefined => {
   if (!isRecord(contexts)) return undefined;
   const direct = contexts[reportId];
   if (isRecord(direct)) return direct;

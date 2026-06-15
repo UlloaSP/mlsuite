@@ -1,5 +1,5 @@
 import { Play, RotateCcw, StopCircle } from "lucide-react";
-import { cx } from "../../../app/components/ui-utils";
+import { cx } from "../../../app/components";
 
 export function ActionBtn({
   action,

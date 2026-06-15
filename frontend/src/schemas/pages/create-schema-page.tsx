@@ -3,20 +3,26 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import { useAtom } from "jotai";
+import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
-import { AppButton, AppTextField } from "../../app/components/ui-controls";
+import {
+  AppButton,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSurface,
+  AppTextField,
+} from "../../app/components";
 import { isRecord } from "../../app/utils/mlform/shared";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
 import { useGetModels } from "../../models/hooks";
 import { createSchemaVersion } from "../api/schemaService";
 import { SchemaModelSelector } from "../components/SchemaModelSelector";
-import { useCreateSchemaMutation, useSchemaVersions } from "../hooks";
+import { useCreateSchemaMutation, useSchema, useSchemaVersions } from "../hooks";
 import { countVisibleSchemaFields } from "../one-hot-schema";
 import { prepareSchemaVersionForSave } from "../schema-binding-rebase";
 import { composeSchemaVersion, type SelectedSchemaSignature } from "../schema-composer";
@@ -40,12 +46,17 @@ export function CreateSchemaPage() {
   const mode = targetSchemaId ? "version" : "schema";
   const [step, setStep] = useState<Step>(searchParams.get("schemaId") ? "editor" : "models");
   const [name, setName] = useState("");
+  const { data: targetSchema } = useSchema(targetSchemaId);
   const { data: existingVersions = [] } = useSchemaVersions(targetSchemaId);
   const [selected, setSelected] = useState<SelectedModel[]>([]);
   const [saving, setSaving] = useState(false);
 
   const composedVersion = useMemo(
-    () => composeSchemaVersion("v1", selected.map(({ modelId, signature }) => ({ modelId, signature }))),
+    () =>
+      composeSchemaVersion(
+        "v1",
+        selected.map(({ modelId, signature }) => ({ modelId, signature })),
+      ),
     [selected],
   );
   const latestVersion = existingVersions[0];
@@ -77,7 +88,8 @@ export function CreateSchemaPage() {
   const reportCount = Array.isArray(activeVersionRequest?.formSchema.reports)
     ? activeVersionRequest.formSchema.reports.length
     : 0;
-  const activeModelCount = mode === "version" ? activeVersionRequest?.bindings.length ?? 0 : selected.length;
+  const activeModelCount =
+    mode === "version" ? (activeVersionRequest?.bindings.length ?? 0) : selected.length;
 
   useEffect(() => {
     if (!hasEditor || !activeVersionRequest) {
@@ -123,7 +135,13 @@ export function CreateSchemaPage() {
         <AppPageHeader
           title={mode === "schema" ? "New schema" : "New schema version"}
           description="Select model signatures, then edit the generated form snapshot."
-          backHref="/schemas"
+          breadcrumbs={[
+            { label: "Schemas", to: "/schemas" },
+            ...(mode === "version"
+              ? [{ label: targetSchema?.name ?? "Schema", to: `/schemas/${targetSchemaId}` }]
+              : []),
+            { label: mode === "schema" ? "New Schema" : "New Version" },
+          ]}
         />
         <form className="flex min-h-0 flex-1 flex-col gap-6" onSubmit={submit}>
           <AppPanel className="shrink-0 space-y-4">
@@ -138,7 +156,9 @@ export function CreateSchemaPage() {
                 />
               ) : (
                 <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Locked model bindings</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">
+                    Locked model bindings
+                  </p>
                   <p className="text-sm text-[var(--text-secondary)]">
                     New version keeps {activeModelCount} model/signature pairs from v
                     {latestVersion?.version ?? "-"}.
@@ -177,8 +197,8 @@ export function CreateSchemaPage() {
                 >
                   {mode === "schema" && step === "models" ? (
                     <>
+                      Continue
                       <ArrowRight size={16} />
-                      Continue to editor
                     </>
                   ) : (
                     <>

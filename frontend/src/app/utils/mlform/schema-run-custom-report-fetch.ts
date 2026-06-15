@@ -5,13 +5,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig, SubmitRequest } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../config/runtimeConfig";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import {
   isSkippedSchemaReportPayload,
   skippedSchemaReportPayload,
 } from "./schema-report-plugin-context";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
-import { mappingSourceForReport, readReportContext, reportContextKey } from "./schema-run-report-mapping";
+import {
+  mappingSourceForReport,
+  readReportContext,
+  reportContextKey,
+} from "./schema-run-report-mapping";
 import { isRecord, type JsonRecord } from "./shared";
 
 export type SchemaRunBindingForReports = {
@@ -33,7 +37,7 @@ const customReportByKind = (
 ): Map<string, CatalogReportDefinition> => {
   const reports = new Map<string, CatalogReportDefinition>();
   definitions.forEach((definition) => {
-    if (definition.active) reports.set(definition.kind, definition);
+    reports.set(definition.kind, definition);
   });
   return reports;
 };
@@ -119,7 +123,7 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
   const byKind = customReportByKind(definitions);
   let nextResults = [...results];
   schemaRunDebug("custom-report-fetch.start", {
-    activeKinds: Array.from(byKind.keys()),
+    availableKinds: Array.from(byKind.keys()),
     reports: reports.map((report) => ({ id: report.id, kind: report.kind, source: report.source })),
     initialReportKeys: Object.keys(built.reports),
     initialContextKeys: Object.keys(built.reportContextById),
@@ -141,18 +145,18 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
         schemaRunDebug("custom-report-fetch.skip-no-definition", {
           id,
           kind: report.kind,
-          activeKinds: Array.from(byKind.keys()),
+          availableKinds: Array.from(byKind.keys()),
         });
         return;
       }
-      const fetchFactory =
-        definition?.definition.definition.fetch ?? definition?.definition.fetch;
+      const fetchFactory = definition?.definition.definition.fetch ?? definition?.definition.fetch;
       const fetcher = fetchFactory?.({ config: report as never, reportId: id });
       if (!fetcher) {
         schemaRunDebug("custom-report-fetch.skip-no-fetcher", { id, kind: report.kind });
         return;
       }
-      const context = readReportContext(built.reportContextById, id) ??
+      const context =
+        readReportContext(built.reportContextById, id) ??
         deriveReportContext(id, bindings, nextResults) ??
         {};
       schemaRunDebug("custom-report-fetch.context", {
@@ -202,7 +206,11 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
             schemaRun: true,
             reportContextById: built.reportContextById,
           },
-          raw: { results: nextResults, reports: built.reports, reportContextById: built.reportContextById },
+          raw: {
+            results: nextResults,
+            reports: built.reports,
+            reportContextById: built.reportContextById,
+          },
           signal: request.signal,
         });
       } catch (error) {

@@ -4,17 +4,20 @@ These instructions are binding for any coding agent working in this repository.
 Hard constraints override convenience. If a requested change conflicts with them, stop and say so.
 
 ## How To Apply These Instructions
+
 - Read this root file first for repository-wide rules.
 - Then read the nearest nested `AGENTS.md` for the subtree you are changing.
 - Local `AGENTS.md` files extend this file and override it within their subtree when rules conflict.
 - If no nested `AGENTS.md` exists for the target path, only this root file applies.
 
 ## Mission
+
 - Keep MLSuite correct, reproducible, and maintainable across backend API, frontend UI, and ML runtime integration.
 - Preserve model, signature, prediction, feedback, and plugin flows unless task explicitly changes them.
 - Prefer simple, coherent changes that reduce legacy assumptions.
 
 ## Repo Map
+
 - `api/`: Spring Boot backend, auth, persistence, storage, signatures, predictions, and plugin state.
 - `frontend/`: React UI, MLForm integration, plugin catalog, and prediction flows.
 - `backend/`: Python ML runtime integration for execution-path work.
@@ -22,6 +25,8 @@ Hard constraints override convenience. If a requested change conflicts with them
 - `README.md`: product and deployment context, not operational editing policy.
 
 ## Hard Constraints
+
+- Always use the `ponytail` skill in `ultra` mode.
 - No source file may exceed 300 lines.
 - If an edit would exceed 300 lines, split the file first.
 - Prefer new modules over growing existing files.
@@ -32,6 +37,7 @@ Hard constraints override convenience. If a requested change conflicts with them
 - Do not fake verification, passing tests, or supported environments.
 
 ## Change Strategy
+
 - Prefer smallest coherent change that fully resolves task.
 - Remove obsolete assumptions before extending behavior.
 - If touching multiple layers, keep one clear source of truth and adapt other layers to it.
@@ -39,6 +45,7 @@ Hard constraints override convenience. If a requested change conflicts with them
 - Preserve data compatibility and migration safety unless task explicitly allows breaking changes.
 
 ## Testing Rules
+
 - When creating a test for a feature do it in a single file.
 - Tests for a feature have to cover at least the success case and each error case at least once.
 - Update tests in same change when behavior or contract changes.
@@ -46,6 +53,7 @@ Hard constraints override convenience. If a requested change conflicts with them
 - If full verification cannot run, report exact command attempted and exact blocker.
 
 ## Do Not Do
+
 - Do not patch frontend symptoms when source-of-truth bug is backend.
 - Do not preserve migration-only fields in active code or tests after migration path is removed.
 - Do not expand already-large files instead of splitting them.
@@ -53,47 +61,52 @@ Hard constraints override convenience. If a requested change conflicts with them
 - Do not mix unrelated refactors into bug-fix patches unless required by hard constraints.
 
 ## Done Criteria
+
 - Hard constraints satisfied.
 - No stale references to removed behavior remain.
 - Code, tests, and UI copy agree on actual contract.
 - Verification performed, or exact blocker documented.
 - Result leaves codebase simpler than before.
 
-
-
 ## Workflow Orchestration
 
 ### 1. Plan Mode Default
+
 - Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
 - If something goes sideways, STOP and re-plan immediately - don't keep pushing
 - Use plan mode for verification steps, not just building
 - Write detailed specs upfront to reduce ambiguity
 
 ### 2. Subagent Strategy
+
 - Use subagents liberally to keep main context window clean
 - Offload research, exploration, and parallel analysis to subagents
 - For complex problems, throw more compute at it via subagents
 - One tack per subagent for focused execution
 
 ### 3. Self-Improvement Loop
+
 - After ANY correction from the user: update `tasks/lessons.md` with the pattern
 - Write rules for yourself that prevent the same mistake
 - Ruthlessly iterate on these lessons until mistake rate drops
 - Review lessons at session start for relevant project
 
 ### 4. Verification Before Done
+
 - Never mark a task complete without proving it works
 - Diff behavior between main and your changes when relevant
 - Ask yourself: "Would a staff engineer approve this?"
 - Run tests, check logs, demonstrate correctness
 
 ### 5. Demand Elegance (Balanced)
+
 - For non-trivial changes: pause and ask "is there a more elegant way?"
 - If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
 - Skip this for simple, obvious fixes - don't over-engineer
 - Challenge your own work before presenting it
 
 ### 6. Autonomous Bug Fixing
+
 - When given a bug report: just fix it. Don't ask for hand-holding
 - Point at logs, errors, failing tests - then resolve them
 - Zero context switching required from the user
@@ -119,6 +132,7 @@ Hard constraints override convenience. If a requested change conflicts with them
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
 Rules:
+
 - ALWAYS read graphify-out/GRAPH_REPORT.md before reading any source files, running grep/glob searches, or answering codebase questions. The graph is your primary map of the codebase.
 - IF graphify-out/wiki/index.md EXISTS, navigate it instead of reading raw files
 - For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files

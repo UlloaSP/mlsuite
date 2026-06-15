@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { LucideIcon } from "lucide-react";
 import { m as motion } from "motion/react";
-import { AppCopy, AppPanel } from "../../app/components/ui";
+import { AppCopy, AppPanel } from "../../app/components";
 
 export type InfoCardProps = {
   icon: LucideIcon;

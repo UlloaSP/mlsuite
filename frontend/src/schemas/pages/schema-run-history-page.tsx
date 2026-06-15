@@ -6,14 +6,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Play } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { AppButton } from "../../app/components/ui-controls";
 import {
+  AppButton,
   AppEmptyState,
   AppPage,
   AppPageHeader,
   AppPanel,
   AppSurface,
-} from "../../app/components/ui";
+} from "../../app/components";
 import { SchemaRunHistoryTable } from "../components/SchemaRunHistoryTable";
 import { SchemaRunShareButton } from "../components/SchemaRunShareButton";
 import {
@@ -23,7 +23,12 @@ import {
   type SchemaRunStatusFilter,
 } from "../components/SchemaRunHistoryToolbar";
 import { SchemaRunBulkUploadButton } from "../components/SchemaRunBulkUploadButton";
-import { usePredictionRuns, usePredictionRunsFeedback, useSchemaVersion } from "../hooks";
+import {
+  usePredictionRuns,
+  usePredictionRunsFeedback,
+  useSchema,
+  useSchemaVersion,
+} from "../hooks";
 import { isSchemaFeedbackComplete } from "../schema-feedback-state";
 import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
 import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
@@ -44,6 +49,7 @@ const inRange = (run: PredictionRunDto, range: SchemaRunDateRangeFilter): boolea
 export function SchemaRunHistoryPage() {
   const navigate = useNavigate();
   const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();
+  const { data: schema } = useSchema(schemaId);
   const { data: version } = useSchemaVersion(versionId);
   const executableVersion = useMemo(
     () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
@@ -87,13 +93,22 @@ export function SchemaRunHistoryPage() {
       <AppSurface className="flex-1 space-y-6 overflow-auto">
         <AppPageHeader
           title="Inference History"
-          backHref={`/schemas/${schemaId}`}
+          breadcrumbs={[
+            { label: "Schemas", to: "/schemas" },
+            { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
+            {
+              label: executableVersion
+                ? `${executableVersion.name} v${executableVersion.version}`
+                : "Version",
+            },
+            { label: "Inference History" },
+          ]}
           description={
             executableVersion
               ? `${executableVersion.name} · v${executableVersion.version}`
               : undefined
           }
-          aside={
+          actions={
             executableVersion ? (
               <>
                 <SchemaRunShareButton runs={runs} version={executableVersion} />

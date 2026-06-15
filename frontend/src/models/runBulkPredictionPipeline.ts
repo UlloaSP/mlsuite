@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { executeFormPipeline } from "mlform/runtime";
 import { createHeadlessPredictionForm } from "../app/utils/mlform/headless-prediction";
-import type { CatalogFieldDefinition } from "../app/utils/mlform/custom-field";
-import type { CatalogReportDefinition } from "../app/utils/mlform/custom-report";
+import type { CatalogFieldDefinition } from "../plugin/mlform/custom-field";
+import type { CatalogReportDefinition } from "../plugin/mlform/custom-report";
 import { type PredictionPayloadField, getBackendKey } from "../app/utils/mlform/shared";
 import {
   buildPersistedPredictionPayload,
@@ -57,26 +57,23 @@ export async function runBulkPredictionPipeline({
     reportFetchMode: "all",
     artifactAdapter: {
       derive({ submitResult, reportFetchResults, reportFetchErrors }) {
-        const feedbackReports = form.reports.reduce<PersistedReportState[]>(
-          (items, report) => {
-            if (!isFeedbackReportConfig(report)) {
-              return items;
-            }
-            items.push({
-              id: report.id,
-              status:
-                report.id in reportFetchResults
-                  ? "done"
-                  : report.id in reportFetchErrors
-                    ? "error"
-                    : "idle",
-              result: reportFetchResults[report.id],
-              error: reportFetchErrors[report.id] ?? null,
-            });
+        const feedbackReports = form.reports.reduce<PersistedReportState[]>((items, report) => {
+          if (!isFeedbackReportConfig(report)) {
             return items;
-          },
-          [],
-        );
+          }
+          items.push({
+            id: report.id,
+            status:
+              report.id in reportFetchResults
+                ? "done"
+                : report.id in reportFetchErrors
+                  ? "error"
+                  : "idle",
+            result: reportFetchResults[report.id],
+            error: reportFetchErrors[report.id] ?? null,
+          });
+          return items;
+        }, []);
         return buildPersistedPredictionPayload(submitResult.raw, feedbackReports);
       },
     },

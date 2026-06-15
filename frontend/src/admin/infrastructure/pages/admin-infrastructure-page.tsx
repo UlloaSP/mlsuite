@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
-import { AppEmptyState, AppPage, AppSurface } from "../../../app/components/ui";
+import { AppEmptyState, AppPage, AppSurface } from "../../../app/components";
 import { useUser } from "../../../user/hooks";
 import { AlertsView } from "../components/AlertsView";
 import { LogsView } from "../components/LogsView";

@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useMemo } from "react";
 import type { ReportConfig } from "mlform/runtime";
 import type { PrimitiveSubmitResult } from "mlform/primitives";
-import type { CatalogReportDefinition } from "../../app/utils/mlform/custom-report";
-import { AppCopy, AppPanel } from "../../app/components/ui";
+import type { CatalogReportDefinition } from "../../plugin/mlform/custom-report";
+import { AppCopy, AppPanel } from "../../app/components";
 import { getBackendBaseUrl } from "../../app/config/runtimeConfig";
 import { createPredictionPrimitiveRegistry } from "../../app/utils/mlform/primitive-registry";
 import { isBuiltinReportKind } from "../../app/utils/mlform/builtin-registry";
@@ -29,21 +29,14 @@ type Props = {
 
 const EMPTY_CUSTOM_REPORTS: readonly CatalogReportDefinition[] = [];
 
-const activeCustomReport = (
+const customReportByKind = (
   kind: string,
   definitions: readonly CatalogReportDefinition[] = [],
 ): CatalogReportDefinition | undefined =>
-  definitions.find((definition) => definition.active && definition.kind === kind);
+  definitions.find((definition) => definition.kind === kind);
 
-const activeCustomReportKinds = (
-  definitions: readonly CatalogReportDefinition[] = [],
-): string[] => {
-  const kinds: string[] = [];
-  definitions.forEach((definition) => {
-    if (definition.active) kinds.push(definition.kind);
-  });
-  return kinds;
-};
+const customReportKinds = (definitions: readonly CatalogReportDefinition[] = []): string[] =>
+  definitions.map((definition) => definition.kind);
 
 const reportsOf = (schema: unknown): ReportConfig[] =>
   isRecord(schema) && Array.isArray(schema.reports)
@@ -64,7 +57,9 @@ const resultPayload = (
     signatureId: result.signatureId,
     ...outputMeta,
   };
-  const outputContext = isRecord(result.output.reportContextById) ? result.output.reportContextById : {};
+  const outputContext = isRecord(result.output.reportContextById)
+    ? result.output.reportContextById
+    : {};
   const reportContextById = {
     ...outputContext,
     [report.id]: isRecord(outputContext[report.id])
@@ -96,14 +91,14 @@ export function SchemaRunReportRenderer({
   customReportDefinitions = EMPTY_CUSTOM_REPORTS,
 }: Props) {
   const registry = useMemo(() => createPredictionPrimitiveRegistry(), []);
-  const customReport = activeCustomReport(report.kind, customReportDefinitions);
+  const customReport = customReportByKind(report.kind, customReportDefinitions);
   schemaRunDebug("renderer.start", {
     reportId: report.id,
     kind: report.kind,
     modelId: result.modelId,
     hasPayload: report.payload !== undefined,
     customDefinition: Boolean(customReport),
-    activeKinds: activeCustomReportKinds(customReportDefinitions),
+    availableKinds: customReportKinds(customReportDefinitions),
   });
   if (!customReport) {
     if (!isBuiltinReportKind(report.kind)) {
@@ -131,7 +126,11 @@ export function SchemaRunReportRenderer({
     configIds: reportsOf(version.formSchema).map((item) => item.id),
   });
   const normalizedConfig = config
-    ? { ...config, id: report.id, source: typeof config.source === "string" ? config.source : report.id }
+    ? {
+        ...config,
+        id: report.id,
+        source: typeof config.source === "string" ? config.source : report.id,
+      }
     : null;
   const lastResult = resultPayload(report, result);
   const state = { payload: report.payload, error: null, status: "ready" };

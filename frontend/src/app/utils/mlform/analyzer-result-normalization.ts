@@ -27,7 +27,8 @@ export const normalizeAnalyzerPredictionResult = ({
   modelInput,
   reports,
 }: Options): NormalizedAnalyzerResult => {
-  const normalizedReports = isRecord(parsed) && isRecord(parsed.reports) ? { ...parsed.reports } : {};
+  const normalizedReports =
+    isRecord(parsed) && isRecord(parsed.reports) ? { ...parsed.reports } : {};
   const normalizedMeta = isRecord(parsed) && isRecord(parsed.meta) ? { ...parsed.meta } : {};
   normalizedMeta.modelId ??= modelId;
   normalizedMeta.backendUrl ??= getBackendBaseUrl();

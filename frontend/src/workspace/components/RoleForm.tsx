@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { AppButton, AppTextArea, AppTextField } from "../../app/components/ui-controls";
+import { AppButton, AppTextArea, AppTextField } from "../../app/components";
 import type { PermissionKey, RoleDefinitionDto } from "../types";
 
 type RolePermission = {

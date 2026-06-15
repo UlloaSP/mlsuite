@@ -9,7 +9,7 @@ import { z } from "zod";
 import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
 import { fetchSchemaCustomReports } from "../src/app/utils/mlform/schema-run-custom-report-fetch";
 import { isSkippedSchemaReportPayload } from "../src/app/utils/mlform/schema-report-plugin-context";
-import type { CatalogReportDefinition } from "../src/app/utils/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
 const crystalTreeDefinition = (): CatalogReportDefinition => ({
   id: "crystal-plugin",
@@ -19,7 +19,6 @@ const crystalTreeDefinition = (): CatalogReportDefinition => ({
   createdAt: "",
   contentType: "text/typescript",
   sizeBytes: 1,
-  active: true,
   kind: "Crystal Tree",
   definition: defineReportKind({
     kind: "Crystal Tree",
@@ -84,13 +83,33 @@ describe("schema plugin transport", () => {
       schema: {
         fields: [{ id: "age", label: "age", kind: "number" }],
         reports: [
-          { id: "crystal_1", source: "crystal_1", kind: "Crystal Tree", endpoint: "/api/analyzer/explanations" },
-          { id: "crystal_2", source: "crystal_2", kind: "Crystal Tree", endpoint: "/api/analyzer/explanations" },
+          {
+            id: "crystal_1",
+            source: "crystal_1",
+            kind: "Crystal Tree",
+            endpoint: "/api/analyzer/explanations",
+          },
+          {
+            id: "crystal_2",
+            source: "crystal_2",
+            kind: "Crystal Tree",
+            endpoint: "/api/analyzer/explanations",
+          },
         ],
       },
       bindings: [
-        { modelId: "model-1", signatureId: "sig-1", inputMapping: { age: "age" }, outputMapping: { crystal_1: "crystal-tree" } },
-        { modelId: "model-2", signatureId: "sig-2", inputMapping: { age: "age" }, outputMapping: { crystal_2: "crystal-tree" } },
+        {
+          modelId: "model-1",
+          signatureId: "sig-1",
+          inputMapping: { age: "age" },
+          outputMapping: { crystal_1: "crystal-tree" },
+        },
+        {
+          modelId: "model-2",
+          signatureId: "sig-2",
+          inputMapping: { age: "age" },
+          outputMapping: { crystal_2: "crystal-tree" },
+        },
       ],
       customReportDefinitions: [crystalTreeDefinition()],
     });
@@ -105,12 +124,18 @@ describe("schema plugin transport", () => {
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/predictions"))).toHaveLength(2);
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(true);
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-2"))).toBe(true);
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
+      true,
+    );
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-2"))).toBe(
+      true,
+    );
     const reports = (result as { reports: Record<string, unknown> }).reports;
     expect(reports["crystal-1"]).toEqual({ explanation: "tree-1" });
     expect(isSkippedSchemaReportPayload(reports["crystal-2"])).toBe(true);
-    const raw = (result as { raw: { results: Array<{ output: { reports?: Record<string, unknown> } }> } }).raw;
+    const raw = (
+      result as { raw: { results: Array<{ output: { reports?: Record<string, unknown> } }> } }
+    ).raw;
     expect(raw.results[0]?.output.reports?.["crystal-tree"]).toEqual({ explanation: "tree-1" });
     expect(raw.results[1]?.output.reports).toEqual({});
   });
@@ -129,7 +154,12 @@ describe("schema plugin transport", () => {
       schema: {
         fields: [{ id: "age", label: "age", kind: "number" }],
         reports: [
-          { id: "3-5-crystal-tree", source: "3-5-crystal-tree", kind: "Crystal Tree", endpoint: "/api/analyzer/explanations" },
+          {
+            id: "3-5-crystal-tree",
+            source: "3-5-crystal-tree",
+            kind: "Crystal Tree",
+            endpoint: "/api/analyzer/explanations",
+          },
         ],
       },
       bindings: [
@@ -191,7 +221,9 @@ describe("schema plugin transport", () => {
     } as never);
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(true);
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
+      true,
+    );
     expect((result as { reports: Record<string, unknown> }).reports.crystal).toEqual({
       explanation: "tree",
     });
@@ -230,7 +262,9 @@ describe("schema plugin transport", () => {
     } as never);
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(true);
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
+      true,
+    );
     expect((result as { reports: Record<string, unknown> }).reports.crystal).toEqual({
       explanation: "inner",
     });
@@ -250,7 +284,14 @@ describe("schema plugin transport", () => {
         serializedFieldValues: { age: 42 },
         reports: [],
       } as never,
-      reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree", endpoint: "/api/analyzer/explanations" }],
+      reports: [
+        {
+          id: "crystal",
+          source: "crystal",
+          kind: "Crystal Tree",
+          endpoint: "/api/analyzer/explanations",
+        },
+      ],
       built,
       results: [
         {
@@ -272,7 +313,9 @@ describe("schema plugin transport", () => {
     });
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(true);
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
+      true,
+    );
     expect(built.reports.crystal).toEqual({ explanation: "derived" });
   });
 });

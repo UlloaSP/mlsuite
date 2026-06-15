@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { Ref } from "react";
-import { AppCopy, AppPanel } from "../../app/components/ui";
+import { AppCopy, AppPanel } from "../../app/components";
 import type { PredictionReportDescriptor } from "../questionnaire-feedback";
 import type { ReportQuestionnaireMountHandle } from "./ReportQuestionnaireMount";
 import { ReportQuestionnaireMount } from "./ReportQuestionnaireMount";
@@ -29,11 +29,7 @@ export function PredictionReportReviewCard({
 }: PredictionReportReviewCardProps) {
   return (
     <AppPanel className="space-y-4">
-      <PredictionReportContent
-        label={report.label}
-        content={report.content}
-        error={report.error}
-      />
+      <PredictionReportContent label={report.label} content={report.content} error={report.error} />
       {report.feedbackQuestionnaire ? (
         <ReportQuestionnaireMount
           ref={questionnaireRef}

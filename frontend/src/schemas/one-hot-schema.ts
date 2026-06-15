@@ -24,10 +24,13 @@ const title = (value: string): string =>
 
 const encodeIdSource = (key: string): string =>
   Array.from(key)
-    .map((char) => (/^[a-zA-Z0-9_]$/.test(char) ? char : `_${char.codePointAt(0)?.toString(16) ?? "0"}_`))
+    .map((char) =>
+      /^[a-zA-Z0-9_]$/.test(char) ? char : `_${char.codePointAt(0)?.toString(16) ?? "0"}_`,
+    )
     .join("");
 
-const targetIdFor = (key: string): string => toUniqueId(encodeIdSource(key), key, new Set<string>());
+const targetIdFor = (key: string): string =>
+  toUniqueId(encodeIdSource(key), key, new Set<string>());
 
 const splitOneHotKey = (key: string): Pick<Candidate, "base" | "category"> | null => {
   const separator = "__";
@@ -43,7 +46,8 @@ const isOneHotField = (field: JsonRecord): boolean => {
   return ONE_HOT_KINDS.has(kind);
 };
 
-const featureKey = (field: JsonRecord): string => getString(field.label) ?? getString(field.id) ?? "field";
+const featureKey = (field: JsonRecord): string =>
+  getString(field.label) ?? getString(field.id) ?? "field";
 
 const candidateFor = (field: JsonRecord): Candidate | null => {
   if (!isOneHotField(field)) return null;
@@ -74,7 +78,9 @@ const createMasterField = (base: string, group: Candidate[]): JsonRecord => ({
   options: group.map(({ category, targetId }) => ({
     label: title(category),
     value: category,
-    mapping: Object.fromEntries(group.map((item) => [item.targetId, item.targetId === targetId ? 1 : 0])),
+    mapping: Object.fromEntries(
+      group.map((item) => [item.targetId, item.targetId === targetId ? 1 : 0]),
+    ),
   })),
 });
 

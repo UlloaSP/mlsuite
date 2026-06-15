@@ -59,7 +59,9 @@ export const prepareSchemaVersionForSave = (
   composed: CreateSchemaVersionRequest,
   editedSchema: JsonRecord,
 ): CreateSchemaVersionRequest => {
-  const boundIds = new Set(composed.bindings.flatMap((binding) => Object.keys(binding.outputMapping ?? {})));
+  const boundIds = new Set(
+    composed.bindings.flatMap((binding) => Object.keys(binding.outputMapping ?? {})),
+  );
   const reports = Array.isArray(editedSchema.reports) ? editedSchema.reports.filter(isRecord) : [];
   const usedIds = new Set<string>();
   const nextBindings = rebaseSchemaVersionBindings(composed, editedSchema).map((binding) => ({
@@ -74,27 +76,38 @@ export const prepareSchemaVersionForSave = (
     }
     const source = reportSource(report);
     return nextBindings.map((binding) => {
-      const nextId = toUniqueId(`${binding.modelId}-${binding.signatureId}-${source}`, "report", usedIds);
+      const nextId = toUniqueId(
+        `${binding.modelId}-${binding.signatureId}-${source}`,
+        "report",
+        usedIds,
+      );
       binding.outputMapping[nextId] = source;
       binding.pluginPolicy = addPolicyKind(binding.pluginPolicy, report.kind);
       return { ...report, id: nextId, source: nextId, label: reportLabel(report, binding.modelId) };
     });
   });
-  return { ...composed, formSchema: { ...editedSchema, reports: nextReports }, bindings: nextBindings };
+  return {
+    ...composed,
+    formSchema: { ...editedSchema, reports: nextReports },
+    bindings: nextBindings,
+  };
 };
 
 export const prepareSchemaVersionDtoForUse = (version: SchemaVersionDto): SchemaVersionDto => {
-  const prepared = prepareSchemaVersionForSave({
-    name: version.name,
-    formSchema: version.formSchema,
-    bindings: version.bindings.map((binding) => ({
-      modelId: binding.modelId,
-      signatureId: binding.signatureId,
-      inputMapping: binding.inputMapping,
-      outputMapping: binding.outputMapping,
-      pluginPolicy: binding.pluginPolicy ?? undefined,
-    })),
-  }, version.formSchema);
+  const prepared = prepareSchemaVersionForSave(
+    {
+      name: version.name,
+      formSchema: version.formSchema,
+      bindings: version.bindings.map((binding) => ({
+        modelId: binding.modelId,
+        signatureId: binding.signatureId,
+        inputMapping: binding.inputMapping,
+        outputMapping: binding.outputMapping,
+        pluginPolicy: binding.pluginPolicy ?? undefined,
+      })),
+    },
+    version.formSchema,
+  );
   return {
     ...version,
     formSchema: prepared.formSchema,

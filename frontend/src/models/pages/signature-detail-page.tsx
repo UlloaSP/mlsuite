@@ -1,8 +1,14 @@
 import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { AppBreadcrumbs, AppEmptyState, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components/ui";
-import { AppButton } from "../../app/components/ui-controls";
+import {
+  AppEmptyState,
+  AppPage,
+  AppPageHeader,
+  AppSurface,
+  AppTabs,
+  AppButton,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";
@@ -16,9 +22,20 @@ import { ReviewLinkButton } from "../components/ReviewLinkButton";
 import { SignatureHistorySection } from "../components/SignatureHistorySection";
 import { SignatureTechnicalTab } from "../components/SignatureTechnicalTab";
 import { extractPredictionReportEntries } from "../report-feedback-utils";
-import { GET_EXPLANATION_FEEDBACK_QUERY_KEY, useGetModels, useGetPredictions, useGetSignature } from "../hooks";
+import {
+  GET_EXPLANATION_FEEDBACK_QUERY_KEY,
+  useGetModels,
+  useGetPredictions,
+  useGetSignature,
+} from "../hooks";
 import { GET_OUTPUT_FEEDBACK_QUERY_KEY } from "../output-feedback-hooks";
-import { findModelById, formatTimestamp, getPredictionTimestamp, getSignatureVersionLabel, toTimestampMillis } from "../utils";
+import {
+  findModelById,
+  formatTimestamp,
+  getPredictionTimestamp,
+  getSignatureVersionLabel,
+  toTimestampMillis,
+} from "../utils";
 import { getOutputReports } from "../report-contract";
 
 type SignatureDetailTab = "technical" | "history";
@@ -113,9 +130,7 @@ export function SignatureDetailPage() {
       const myOutputFeedback =
         currentUserId === null ? [] : outputFeedback.filter((fb) => fb.userId === currentUserId);
       const myReportFeedback =
-        currentUserId === null
-          ? []
-          : reportFeedback.filter((fb) => fb.userId === currentUserId);
+        currentUserId === null ? [] : reportFeedback.filter((fb) => fb.userId === currentUserId);
       const predictionReports = getOutputReports(signature?.inputSignature);
       const feedbackReports = extractPredictionReportEntries(
         prediction.prediction,
@@ -164,16 +179,6 @@ export function SignatureDetailPage() {
   return (
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
-        <AppBreadcrumbs
-          items={[
-            { label: "Models", to: "/models" },
-            model
-              ? { label: model.name, to: `/models/${model.id}?tab=signatures` }
-              : { label: "Model", to: "/models" },
-            { label: signature ? `Schema ${getSignatureVersionLabel(signature)}` : "Schema" },
-          ]}
-        />
-
         {!signature && !isSignatureLoading ? (
           <AppEmptyState
             title="Schema not found"
@@ -191,10 +196,17 @@ export function SignatureDetailPage() {
         ) : signature ? (
           <>
             <AppPageHeader
+              breadcrumbs={[
+                { label: "Models", to: "/models" },
+                model
+                  ? { label: model.name, to: `/models/${model.id}?tab=signatures` }
+                  : { label: "Model", to: "/models" },
+                { label: `Schema ${getSignatureVersionLabel(signature)}` },
+              ]}
               eyebrow="Schema Detail"
               title={`Schema ${getSignatureVersionLabel(signature)}`}
               description={`${signature.name} · Created ${formatTimestamp(signature.createdAt)}${signature.origin ? " · Based on previous version" : ""}`}
-              aside={
+              actions={
                 <>
                   {canRunPredictions ? (
                     <>

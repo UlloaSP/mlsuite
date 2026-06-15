@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, Mail, Plus, Settings, Shield, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
-import { AppButton } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components/ui";
+import { AppButton, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { getOrganizationAdminDashboard } from "../api/workspaceService";
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
@@ -37,7 +36,11 @@ export function OrganizationAdminPage() {
         <AppPageHeader
           title={data?.organization.name ?? "Organization Admin"}
           description="Manage teams, roles, invitations, and access control."
-          aside={<HeaderActions id={id} canCreate={Boolean(data?.permissions.canCreateTeams)} />}
+          breadcrumbs={[
+            { label: "Organizations", to: "/workspace/organizations" },
+            { label: data?.organization.name ?? "Organization" },
+          ]}
+          actions={<HeaderActions id={id} canCreate={Boolean(data?.permissions.canCreateTeams)} />}
         />
         <AppTabs
           items={tabs as unknown as Array<{ label: string; value: string }>}

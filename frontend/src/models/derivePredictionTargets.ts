@@ -37,7 +37,11 @@ const getTargetClassLabel = (
     return null;
   }
   const report = (signatureSchema as { reports: unknown[] }).reports[order];
-  if (typeof report !== "object" || report === null || !Array.isArray((report as { labels?: unknown }).labels)) {
+  if (
+    typeof report !== "object" ||
+    report === null ||
+    !Array.isArray((report as { labels?: unknown }).labels)
+  ) {
     return null;
   }
   const label = (report as { labels: unknown[] }).labels[classIndex];

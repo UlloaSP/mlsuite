@@ -1,8 +1,16 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
-import { AppButton, AppSelect, AppTextArea, AppTextField } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
+import {
+  AppButton,
+  AppSelect,
+  AppTextArea,
+  AppTextField,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSurface,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import {
   getOrganization,
@@ -77,7 +85,11 @@ export function OrganizationSettingsPage() {
           eyebrow="Workspace Settings"
           title={organization.name}
           description="Edit the identity of this organization. Ownership and member operations live in adjacent workspace views."
-          backHref="/workspace/organizations"
+          breadcrumbs={[
+            { label: "Organizations", to: "/workspace/organizations" },
+            { label: organization.name, to: `/workspace/organizations/${id}` },
+            { label: "Settings" },
+          ]}
         />
         <div className="max-w-3xl rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-6 shadow-[var(--shadow-card)]">
           <div className="grid gap-4">
@@ -114,16 +126,16 @@ export function OrganizationSettingsPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <AppSelect
                   value={nextOwnerMembershipId}
-                  onChange={(event) => setNextOwnerMembershipId(event.target.value)}
+                  onValueChange={setNextOwnerMembershipId}
                   className="min-w-[260px]"
-                >
-                  <option value="">Select member</option>
-                  {ownerCandidates.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.fullName} - {member.email}
-                    </option>
-                  ))}
-                </AppSelect>
+                  options={[
+                    { value: "", label: "Select member" },
+                    ...ownerCandidates.map((member) => ({
+                      value: String(member.id),
+                      label: `${member.fullName} - ${member.email}`,
+                    })),
+                  ]}
+                />
                 <AppButton
                   type="button"
                   variant="secondary"

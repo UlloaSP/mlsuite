@@ -101,7 +101,13 @@ describe("prepareSchemaVersionForSave", () => {
 
     const reports = version.formSchema.reports as Array<Record<string, unknown>>;
     expect(reports.filter((report) => report.kind === "Crystal Tree")).toHaveLength(2);
-    expect(version.bindings[0]?.outputMapping).toHaveProperty(String(reports[0]?.id), "crystal-tree");
-    expect(version.bindings[1]?.outputMapping).toHaveProperty(String(reports[1]?.id), "crystal-tree");
+    expect(version.bindings[0]?.outputMapping).toHaveProperty(
+      String(reports[0]?.id),
+      "crystal-tree",
+    );
+    expect(version.bindings[1]?.outputMapping).toHaveProperty(
+      String(reports[1]?.id),
+      "crystal-tree",
+    );
   });
 });

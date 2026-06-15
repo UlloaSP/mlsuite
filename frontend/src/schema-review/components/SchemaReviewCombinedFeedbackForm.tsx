@@ -3,8 +3,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { FieldConfig } from "mlform/runtime";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppCopy } from "../../app/components/ui";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppCopy, AppButton } from "../../app/components";
 import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
@@ -13,7 +12,11 @@ import {
 import { ReportQuestionnaireMount } from "../../models/components/ReportQuestionnaireMount";
 import { buildQuestionnaireFormSchema } from "../../models/questionnaire-schema";
 import { buildSchemaFeedbackSteps } from "../../schemas/schema-feedback-steps";
-import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../../schemas/types";
+import type {
+  PredictionResultFeedbackDto,
+  PredictionRunDto,
+  SchemaVersionDto,
+} from "../../schemas/types";
 import { REVIEW_STEP_CONTEXT_EVENT } from "../../review/components/ReviewCombinedFeedbackForm";
 import * as api from "../api/schemaReviewLinkService";
 
@@ -37,14 +40,19 @@ const displayValue = (value: unknown, field?: FieldConfig): string => {
         typeof option.label === "string",
     );
     const matchingOption =
-      options.find((option) => String(option.value) === String(value)) ??
-      options[Number(value)];
+      options.find((option) => String(option.value) === String(value)) ?? options[Number(value)];
     if (matchingOption) return matchingOption.label;
   }
   return typeof value === "object" ? JSON.stringify(value) : String(value);
 };
 
-export function SchemaReviewCombinedFeedbackForm({ token, run, version, feedback, onSaved }: Props) {
+export function SchemaReviewCombinedFeedbackForm({
+  token,
+  run,
+  version,
+  feedback,
+  onSaved,
+}: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
   const [savedValues, setSavedValues] = useState<Record<string, unknown> | null>(null);
@@ -102,7 +110,11 @@ export function SchemaReviewCombinedFeedbackForm({ token, run, version, feedback
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
-          <AppButton variant="secondary" className="rounded-none px-4 py-2" onClick={() => setEditing(true)}>
+          <AppButton
+            variant="secondary"
+            className="rounded-none px-4 py-2"
+            onClick={() => setEditing(true)}
+          >
             Edit
           </AppButton>
         </div>

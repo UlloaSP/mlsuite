@@ -22,7 +22,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
 import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
 import dev.ulloasp.mlsuite.prediction.domain.model.PredictionStatus;
@@ -51,7 +51,7 @@ class SearchWorkspaceServiceTest {
     @Mock
     private PredictionRepository predictionRepository;
     @Mock
-    private ListPluginsUseCase listPluginsUseCase;
+    private PluginCatalogUseCase pluginCatalogUseCase;
 
     private SearchWorkspaceService service;
 
@@ -64,7 +64,7 @@ class SearchWorkspaceServiceTest {
                 modelRepository,
                 signatureRepository,
                 predictionRepository,
-                listPluginsUseCase);
+                pluginCatalogUseCase);
     }
 
     @Test
@@ -86,8 +86,16 @@ class SearchWorkspaceServiceTest {
         when(modelRepository.findByOrganizationId(41L)).thenReturn(List.of(model));
         when(signatureRepository.findByModelId(11L)).thenReturn(List.of(signature));
         when(predictionRepository.findBySignatureId(12L)).thenReturn(List.of(prediction));
-        when(listPluginsUseCase.list(7L)).thenReturn(List.of(new PluginDto(
-                "plug-1", "acme-plugin.ts", "application/typescript", 10L, now(), now(), true, "acme source")));
+        when(pluginCatalogUseCase.listAll(7L)).thenReturn(List.of(new PluginDto(
+                "plug-1",
+                "acme-plugin.ts",
+                "application/typescript",
+                10L,
+                now(),
+                now(),
+                "acme source",
+                "report",
+                "acme-plugin")));
 
         SearchResponseDto response = service.search(7L, "ac");
 

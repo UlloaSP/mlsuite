@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { cx } from "../../../app/components/ui-utils";
+import { cx } from "../../../app/components";
 
 export function SegmentedControl({
   options,

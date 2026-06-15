@@ -67,9 +67,7 @@ export function buildPredictionExportData({
   if (!predictions.length) return { headers: [], rows: [] };
 
   const inputKeys = Object.keys(flatten(toRecord(predictions[0].inputs))).sort();
-  const schemaResult = signatureSchema
-    ? validateMlformSchema(signatureSchema)
-    : null;
+  const schemaResult = signatureSchema ? validateMlformSchema(signatureSchema) : null;
   const schema = schemaResult?.success ? schemaResult.data : null;
   const outputReports = getOutputReports(schema) as ReportConfig[];
   const reviewerLabels = collectReviewerLabels(
@@ -135,10 +133,7 @@ export function buildPredictionExportData({
 
     const reportEntries =
       reportFeedbackHeaders.length > 0
-        ? extractPredictionReportEntries(
-            prediction.prediction,
-            signatureSchema,
-          )
+        ? extractPredictionReportEntries(prediction.prediction, signatureSchema)
         : [];
     const reportFeedbackValues = reportEntries.flatMap((report) => {
       const cells = [toCell(report.content.join("\n\n"))];

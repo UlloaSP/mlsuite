@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
-import dev.ulloasp.mlsuite.plugin.application.service.PluginService;
+import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.signature.domain.exception.InvalidSignatureSchemaException;
 
 @Service
@@ -33,58 +33,40 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
     private static final Set<String> BUILTIN_REPORT_KINDS = Set.of("classifier", "regressor");
     private static final Pattern KIND_PATTERN = Pattern.compile("\\bkind\\s*:\\s*[\"']([^\"']+)[\"']");
 
-    private final PluginService pluginService;
+    private final PluginCatalogUseCase pluginCatalogUseCase;
 
-    public SignatureSchemaCompatibilityServiceImpl(PluginService pluginService) {
-        this.pluginService = pluginService;
+    public SignatureSchemaCompatibilityServiceImpl(PluginCatalogUseCase pluginCatalogUseCase) {
+        this.pluginCatalogUseCase = pluginCatalogUseCase;
     }
 
     @Override
     public void validate(Long userId, Map<String, Object> inputSignature) {
         PluginCatalog catalog = loadCatalog(userId);
-        validateKinds(inputSignature.get("fields"), "field", BUILTIN_FIELD_KINDS, catalog.allFieldKinds(),
-                catalog.activeFieldKinds());
+        validateKinds(inputSignature.get("fields"), "field", BUILTIN_FIELD_KINDS, catalog.fieldKinds());
         validateReportKinds(inputSignature.get("reports"), catalog);
     }
 
     private PluginCatalog loadCatalog(Long userId) {
-        Set<String> allFieldKinds = new LinkedHashSet<>();
-        Set<String> activeFieldKinds = new LinkedHashSet<>();
-        Set<String> allReportKinds = new LinkedHashSet<>();
-        Set<String> activeReportKinds = new LinkedHashSet<>();
-        for (PluginDto plugin : pluginService.list(userId)) {
+        Set<String> fieldKinds = new LinkedHashSet<>();
+        Set<String> reportKinds = new LinkedHashSet<>();
+        for (PluginDto plugin : pluginCatalogUseCase.listAll(userId)) {
             Optional<PluginDescriptor> descriptor = detect(plugin.source());
             if (descriptor.isEmpty()) {
                 continue;
             }
             switch (descriptor.get().type()) {
-                case FIELD -> {
-                    allFieldKinds.add(descriptor.get().kind());
-                    if (plugin.active()) {
-                        activeFieldKinds.add(descriptor.get().kind());
-                    }
-                }
-                case REPORT -> {
-                    allReportKinds.add(descriptor.get().kind());
-                    if (plugin.active()) {
-                        activeReportKinds.add(descriptor.get().kind());
-                    }
-                }
+                case FIELD -> fieldKinds.add(descriptor.get().kind());
+                case REPORT -> reportKinds.add(descriptor.get().kind());
             }
         }
-        return new PluginCatalog(
-                Set.copyOf(allFieldKinds),
-                Set.copyOf(activeFieldKinds),
-                Set.copyOf(allReportKinds),
-                Set.copyOf(activeReportKinds));
+        return new PluginCatalog(Set.copyOf(fieldKinds), Set.copyOf(reportKinds));
     }
 
     private void validateKinds(
             Object rawItems,
             String pluginType,
             Set<String> builtinKinds,
-            Set<String> allKinds,
-            Set<String> activeKinds) {
+            Set<String> kinds) {
         if (!(rawItems instanceof List<?> items)) {
             return;
         }
@@ -96,13 +78,9 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
             if (!(rawKind instanceof String kind) || kind.isBlank() || builtinKinds.contains(kind)) {
                 continue;
             }
-            if (!allKinds.contains(kind)) {
+            if (!kinds.contains(kind)) {
                 throw new InvalidSignatureSchemaException(
-                        "Custom " + pluginType + " kind \"" + kind + "\" does not exist in active plugin catalog.");
-            }
-            if (!activeKinds.contains(kind)) {
-                throw new InvalidSignatureSchemaException(
-                        "Custom " + pluginType + " kind \"" + kind + "\" exists but is inactive.");
+                        "Custom " + pluginType + " kind \"" + kind + "\" does not exist in plugin catalog.");
             }
         }
     }
@@ -112,9 +90,7 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
             return;
         }
         Set<String> allKinds = new LinkedHashSet<>(BUILTIN_REPORT_KINDS);
-        allKinds.addAll(catalog.allReportKinds());
-        Set<String> activeKinds = new LinkedHashSet<>(BUILTIN_REPORT_KINDS);
-        activeKinds.addAll(catalog.activeReportKinds());
+        allKinds.addAll(catalog.reportKinds());
 
         for (Object rawItem : items) {
             if (!(rawItem instanceof Map<?, ?> item)) {
@@ -126,11 +102,7 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
             }
             if (!allKinds.contains(kind)) {
                 throw new InvalidSignatureSchemaException(
-                        "Custom report kind \"" + kind + "\" does not exist in active plugin catalog.");
-            }
-            if (!activeKinds.contains(kind)) {
-                throw new InvalidSignatureSchemaException(
-                        "Custom report kind \"" + kind + "\" exists but is inactive.");
+                        "Custom report kind \"" + kind + "\" does not exist in plugin catalog.");
             }
         }
     }
@@ -153,11 +125,7 @@ public class SignatureSchemaCompatibilityServiceImpl implements SignatureSchemaC
         return Optional.of(new PluginDescriptor(type, matcher.group(1)));
     }
 
-    private record PluginCatalog(
-            Set<String> allFieldKinds,
-            Set<String> activeFieldKinds,
-            Set<String> allReportKinds,
-            Set<String> activeReportKinds) {
+    private record PluginCatalog(Set<String> fieldKinds, Set<String> reportKinds) {
     }
 
     private record PluginDescriptor(PluginType type, String kind) {

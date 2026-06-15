@@ -4,7 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { SquareTerminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AppBadge, AppButton } from "../../../app/components/ui-controls";
+import { AppBadge, AppButton, AppSelect } from "../../../app/components";
 import { closeTerminalSession } from "../api/infrastructureService";
 import { useTerminalSession } from "../hooks/useInfrastructure";
 import { openTerminalSocket, sendTerminalFrame } from "../ws/infrastructureSocket";
@@ -186,17 +186,15 @@ export function TerminalView({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
+          <AppSelect
+            className="h-8 min-w-40 px-3 text-xs"
             value={selectedService ?? ""}
-            onChange={(e) => onSelectService(e.target.value)}
-          >
-            {runningServices.map((s) => (
-              <option key={s.name} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={onSelectService}
+            options={runningServices.map((service) => ({
+              value: service.name,
+              label: service.name,
+            }))}
+          />
           <AppButton
             variant="secondary"
             className="gap-2 px-3 py-2 text-xs"

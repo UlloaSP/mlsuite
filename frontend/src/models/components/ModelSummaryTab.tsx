@@ -3,8 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { AppBadge, AppButton } from "../../app/components/ui-controls";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
+import { AppBadge, AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import type { ModelDto, SignatureDto } from "../api/modelService";
 import {
   formatTimestamp,

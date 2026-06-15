@@ -8,7 +8,7 @@ import { getBackendBaseUrl } from "../../config/runtimeConfig";
 import { type JsonRecord, type PredictionPayloadField, isRecord } from "./shared";
 import { toLegacyReportPayload } from "./report-normalization";
 import { normalizeAnalyzerPredictionResult } from "./analyzer-result-normalization";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { fetchSchemaCustomReports } from "./schema-run-custom-report-fetch";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
 import { applySchemaRunInputMapping } from "./schema-run-input-mapping";

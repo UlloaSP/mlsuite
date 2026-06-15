@@ -1,9 +1,16 @@
-import { Check, KeyRound, Plus, ShieldCheck } from "lucide-react";
+import { Check, KeyRound, Plus } from "lucide-react";
 import type { FormEvent } from "react";
 import { useMemo, useRef, useState } from "react";
-import { Link, Navigate } from "react-router";
-import { AppBadge, AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
+import { Navigate } from "react-router";
+import {
+  AppButton,
+  AppSelect,
+  AppTextField,
+  AppPage,
+  AppPageHeader,
+  AppPanel,
+  AppSurface,
+} from "../../app/components";
 import { useUser } from "../../user/hooks";
 import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
 import {
@@ -16,6 +23,18 @@ import {
 type Role = "USER" | "SUPERADMIN";
 type UserSortMode = "current" | "name" | "newest" | "oldest" | "enabled" | "disabled";
 type ResetTarget = { id: number; fullName: string } | null;
+const ROLE_OPTIONS = [
+  { value: "USER", label: "USER" },
+  { value: "SUPERADMIN", label: "SUPERADMIN" },
+];
+const USER_SORT_OPTIONS = [
+  { value: "current", label: "Current order" },
+  { value: "name", label: "Name" },
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "enabled", label: "Enabled first" },
+  { value: "disabled", label: "Disabled first" },
+];
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- The create-user form fields and sort selector are independent controls.
 export function AdminUsersPage() {
@@ -117,20 +136,7 @@ export function AdminUsersPage() {
           eyebrow="Admin"
           title="Users"
           description="Create accounts, set global access, and reset passwords."
-          aside={
-            <>
-              <AppBadge tone="accent">
-                <ShieldCheck size={13} />
-                SUPERADMIN
-              </AppBadge>
-              <Link
-                to="/admin/infrastructure"
-                className="inline-flex items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm font-medium text-[var(--text-primary)] shadow-[var(--shadow-card)] transition hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)]"
-              >
-                Infrastructure
-              </Link>
-            </>
-          }
+          breadcrumbs={[{ label: "Admin" }, { label: "Users" }]}
         />
         <AppPanel>
           <form onSubmit={submit} className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
@@ -155,10 +161,11 @@ export function AdminUsersPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
             />
-            <AppSelect value={role} onChange={(e) => setRole(e.target.value as Role)}>
-              <option value="USER">USER</option>
-              <option value="SUPERADMIN">SUPERADMIN</option>
-            </AppSelect>
+            <AppSelect
+              value={role}
+              onValueChange={(nextRole) => setRole(nextRole as Role)}
+              options={ROLE_OPTIONS}
+            />
             <AppButton type="submit" disabled={createUser.isPending}>
               <Plus size={16} />
               Create
@@ -172,17 +179,11 @@ export function AdminUsersPage() {
             </span>
             <AppSelect
               value={sortMode}
-              onChange={(event) => setSortMode(event.target.value as UserSortMode)}
+              onValueChange={(nextSort) => setSortMode(nextSort as UserSortMode)}
               className="min-w-[180px]"
               aria-label="Sort users"
-            >
-              <option value="current">Current order</option>
-              <option value="name">Name</option>
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="enabled">Enabled first</option>
-              <option value="disabled">Disabled first</option>
-            </AppSelect>
+              options={USER_SORT_OPTIONS}
+            />
           </div>
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="text-xs uppercase tracking-[0.14em] text-[var(--text-secondary)]">
@@ -210,16 +211,14 @@ export function AdminUsersPage() {
                     <td className="px-3 py-4">
                       <AppSelect
                         value={row.systemRole}
-                        onChange={(e) =>
+                        onValueChange={(nextRole) =>
                           updateUser.mutate({
                             id: row.id,
-                            payload: { systemRole: e.target.value as Role },
+                            payload: { systemRole: nextRole as Role },
                           })
                         }
-                      >
-                        <option value="USER">USER</option>
-                        <option value="SUPERADMIN">SUPERADMIN</option>
-                      </AppSelect>
+                        options={ROLE_OPTIONS}
+                      />
                     </td>
                     <td className="w-32 px-3 py-4 text-center">
                       <label className="inline-grid size-9 place-items-center rounded-full transition hover:bg-[var(--surface-muted)]">

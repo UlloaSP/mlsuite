@@ -9,8 +9,8 @@ import type {
   FormSchema,
   NormalizedFieldConfig,
 } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "./custom-field";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 
 export type JsonRecord = Record<string, unknown>;
 type CompatIssueSeverity = "error" | "warning";

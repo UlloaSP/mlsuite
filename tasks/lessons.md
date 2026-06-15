@@ -1,5 +1,74 @@
 # Lessons
 
+## 2026-06-15 - Header Brand Reference Correction
+
+- Correction: header brand drifted from supplied visual reference for icon shape, typography, and icon/text spacing.
+- Rule: when user supplies brand reference imagery, update the shared brand mark and header brand composition together; do not tune surrounding layout while leaving old logo/type assets in place.
+- Correction: using the supplied SVG without checking its internal bounds made favicon/header mark look too small.
+- Rule: brand SVG assets used as favicon or compact header marks must have a tight viewBox; verify rendered alpha bounds, not only CSS size.
+
+## 2026-06-14 - Breadcrumb Ellipsis Correction
+
+- Correction: shadcn-style breadcrumb ellipsis was decorative only, but supplied reference expects the ellipsis to open a menu for collapsed breadcrumb items.
+- Rule: when implementing collapsed breadcrumbs, ellipsis must expose hidden path items as an interactive menu; do not replace collapsed structure with inert `...`.
+- Correction: breadcrumb dropdown was rendered inside an overflow-clipped breadcrumb shell, so the menu could be hidden behind/cut by nearby layout.
+- Rule: any dropdown/popover inside compact nav must either render in a non-clipping layer or avoid `overflow-hidden` ancestors; z-index alone cannot beat ancestor clipping.
+- Correction: even after visible overflow, later page stacking contexts could paint over the dropdown while HTML existed.
+- Rule: navigation dropdowns used inside arbitrary page shells should render through a document-body portal with viewport-fixed coordinates, not inside the breadcrumb DOM subtree.
+
+## 2026-06-14 - Plugin Catalog Query Pattern Correction
+
+- Correction: plugin catalog page used custom local feed state and infinite scroll after backend pagination, while app convention expects `appFetch` services plus TanStack Query hooks for fetched pages and mutations.
+- Rule: React pages that fetch/mutate app API data must use feature hooks built on TanStack Query; services own `appFetch`, hooks own request state/cache invalidation, pages own UI state.
+- Rule: when user asks for classic pagination, do not keep sentinel/infinite-scroll code or copy; expose explicit previous/next page controls and remove scroll-loading branches.
+- Correction: type filter should be direct `All` / `Fields` / `Reports` buttons, and pagination controls should stay visible while plugin rows scroll internally.
+- Rule: catalog pages with pagination need one scroll body for rows and a fixed footer outside that scroll body; filters with three options should prefer explicit segmented buttons over selects.
+- Correction: segmented/pill container looked like slider and duplicated count/page info below filters.
+- Rule: when user asks for separate buttons, render independent button affordances with visible gaps; avoid grouped segmented backgrounds, and keep page/count copy in one place only.
+- Correction: plugin search/filter/sort/count logic stayed in frontend even though backend can own it.
+- Rule: plugin catalog frontend should pass query intent only; backend owns catalog row metadata, counts, filtering, search, and ordering whenever data already lives server-side.
+- Correction: plugin catalog search/filter/sort refetch flickered because changing query keys temporarily cleared page data and reset page in a delayed effect.
+- Rule: paginated TanStack Query UIs must keep previous page data during refetch and reset page inside the initiating filter/search/sort handler, not through a later effect that creates intermediate query keys.
+- Correction: plugin page response carried catalog stats and redundant total, coupling list pagination with independent counters.
+- Rule: catalog stats that change on create/delete but not page filters belong in a separate query/endpoint; derive redundant totals client-side and invalidate page + stats query families after mutations.
+- Correction: plugin backend exposed a mixed `PluginService` interface that blurred hexagonal use-case ports with implementation service naming.
+- Rule: controllers and application consumers depend on explicit use-case ports; application service implementations may implement ports, but should not introduce broad service interfaces that duplicate port boundaries.
+- Correction: plugin catalog page subscribed to page/stats query state in the route shell, so refetches rerendered header/toolbar/page layout instead of only data regions.
+- Rule: route pages should own URL/local UI state; TanStack Query subscriptions should live in the smallest component that renders that data, with mutations invalidating query families from dedicated hooks.
+- Correction: plugin frontend files lived under generic `app/api`, `app/pages`, and `app/utils/mlform`, hiding feature ownership.
+- Rule: plugin-owned frontend API, catalog UI, TanStack hooks, and MLForm plugin runtime belong under `src/plugin/...`; app/model/schema/editor code imports plugin module instead of owning plugin files.
+- Correction: plugin catalog toolbar hand-rolled a sort dropdown while shared `AppSelect` already existed, and controls used overly rounded corners.
+- Rule: before adding feature-local form controls, check shared app primitives first; use global primitives and tune their radius/tokens there unless feature needs a distinct interaction.
+- Correction: shared select should use the requested shadcn/Radix primitive instead of a native `<select>` approximation.
+- Rule: when user names a specific UI system component, adapt the global primitive to that system and preserve existing call-site contracts.
+- Correction: Radix select migration showed ids for nested option labels, forced full-width layout, and missed native selects.
+- Rule: shared select migrations must audit every native `<select>`, preserve option display text separately from submitted value, and keep trigger width opt-in so compact toolbars do not wrap.
+- Correction: user wanted shadcn visual behavior but not Radix runtime dependency, matching breadcrumb local primitive approach.
+- Rule: when asked to mimic shadcn components in this repo, prefer local design-system primitives with the same visual/composition behavior; add a runtime dependency only when explicitly requested or impossible locally.
+- Correction: user supplied exact shadcn Select composition code, but previous change only reproduced behavior through `AppSelect`.
+- Rule: when user provides a target component import/composition snippet, expose primitives with matching names and JSX structure, then adapt legacy wrappers on top.
+- Correction: select trigger rendered empty because selected-label lookup only handled a single React element, while real composition passes arrays/fragments.
+- Rule: composed primitives that inspect children must handle arrays and nested wrappers, then verify at real call sites with current classes.
+- Correction: select popup was wider than trigger and opened with label level to trigger instead of item-aligned above selected option.
+- Rule: shared select popups must match trigger width and align selected option to trigger position; labels live above that aligned option.
+- Correction: local shadcn-like select kept diverging from requested Radix/shadcn behavior after multiple visual fixes.
+- Rule: when user explicitly accepts the dependency path for a UI primitive, use the upstream primitive and remove compatibility shims instead of extending a local clone.
+- Correction: preserving legacy `<AppSelect><option /></AppSelect>` delayed full migration and hid contract drift.
+- Rule: when a breaking UI primitive contract is requested, remove the legacy API in the shared wrapper and migrate every consumer so typecheck catches stragglers.
+
+## 2026-06-14 - Page Header Consumer Migration
+
+- Correction: new `AppPageHeader` API existed, but pages still used separate breadcrumbs, generic `Back` links, `aside`, and wrapped action buttons.
+- Rule: when changing a shared UI primitive contract, migrate every consumer in the same pass and remove legacy props so typecheck catches stragglers.
+- Rule: breadcrumb labels must name the destination/domain (`Models`, `Schemas`, `Organizations`, `Members`) instead of generic navigation copy like `Back`.
+
+## 2026-06-14 - Component Barrel Cleanup
+
+- Correction: shared UI files were split but old `ui.tsx`/`ui-controls.tsx`/`ui-utils.ts` barrels remained.
+- Rule: in this frontend, `src/app/components/index.ts` is the only component barrel; split primitives must be imported through it by features, and component internals should import sibling files directly.
+- Correction: page-header action order was underspecified for 2x2 placement.
+- Rule: when a grid has semantic slot priority, encode explicit grid coordinates instead of relying on normal DOM flow.
+
 ## 2026-05-07
 
 - User correction: admin user table reordered after toggling enabled, making status changes visually disorienting.

@@ -4,10 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { createMlRegistryPack } from "mlform/builtins";
-import {
-  registerDefinedFieldKind,
-  registerDefinedReportKind,
-} from "mlform/kit";
+import { registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import {
   createForm,
@@ -16,8 +13,8 @@ import {
   type Registry,
   type Transport,
 } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "./custom-field";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { toMlformSchema } from "./schema-validation";
 import { type PredictionPayloadField, type PredictionTheme } from "./shared";
 import { createPredictionTransport } from "./transport";
@@ -28,14 +25,10 @@ const createPredictionEngineRegistry = (
 ) => {
   const pack = createMlRegistryPack();
   for (const definition of customFieldDefinitions) {
-    if (definition.active) {
-      registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition);
-    }
+    registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition);
   }
   for (const definition of customReportDefinitions) {
-    if (definition.active) {
-      registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition);
-    }
+    registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition);
   }
   return pack;
 };

@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Check, Plus, RefreshCcw, Save } from "lucide-react";
 import { m as motion } from "motion/react";
 import type { DragEvent } from "react";
-import { cx } from "../../app/components/ui-utils";
+import { cx } from "../../app/components";
 import type { Bundle } from "../bundle-types";
 import { BundleFilePill } from "./BundleFilePill";
 

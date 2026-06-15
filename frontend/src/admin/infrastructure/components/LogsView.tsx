@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Pause, Play, Search } from "lucide-react";
-import { AppBadge, AppButton } from "../../../app/components/ui-controls";
-import { cx } from "../../../app/components/ui-utils";
+import { AppBadge, AppButton, AppSelect, cx } from "../../../app/components";
 import type { ServiceStatusDto } from "../types";
 
 type Props = {
@@ -99,18 +98,16 @@ export function LogsView({
               className="w-52 bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
             />
           </label>
-          <select
+          <AppSelect
             aria-label="Select log service"
-            className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
+            className="h-8 min-w-40 px-3 text-xs"
             value={selectedService ?? ""}
-            onChange={(e) => onSelectService(e.target.value)}
-          >
-            {services.map((s) => (
-              <option key={s.name} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={onSelectService}
+            options={services.map((service) => ({
+              value: service.name,
+              label: service.name,
+            }))}
+          />
           <div className="flex items-center gap-1.5">
             {(["INFO", "WARN", "ERROR", "DEBUG"] as LogLevel[]).map((lv) => (
               <button

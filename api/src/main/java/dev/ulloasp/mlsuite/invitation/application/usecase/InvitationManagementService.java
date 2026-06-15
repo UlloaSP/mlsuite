@@ -33,6 +33,7 @@ import dev.ulloasp.mlsuite.team.domain.model.TeamMembership;
 import dev.ulloasp.mlsuite.team.domain.model.TeamRole;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -120,6 +121,11 @@ public class InvitationManagementService implements InvitationManagementUseCase 
                 user,
                 OffsetDateTime.now(ZoneOffset.UTC).plusDays(7));
         Invitation saved = invitationRepository.save(invitation);
+        if (user.getSystemRole() == SystemRole.SUPERADMIN) {
+            User invitee = userRepository.findByEmailIgnoreCase(saved.getEmail())
+                    .orElseThrow(() -> new IllegalArgumentException("Invited user does not exist."));
+            acceptPendingInvitation(saved, invitee);
+        }
         auditLogService.record(organization, user, "INVITATION_CREATE", "INVITATION", saved.getId().toString(), saved.getEmail());
         return InvitationDto.from(saved);
     }
@@ -183,6 +189,30 @@ public class InvitationManagementService implements InvitationManagementUseCase 
             throw new IllegalArgumentException("Invitation email does not match current user.");
         }
 
+        acceptPendingInvitation(invitation, user);
+        return InvitationDto.from(invitation);
+    }
+
+    @Override
+    public void declineInvitation(Long userId, String token) {
+        userLookupService.requireById(userId);
+        Invitation invitation = invitationRepository.findByToken(token)
+                .orElseThrow(() -> new InvitationNotFoundException(token));
+        invitation.setStatus(InvitationStatus.REVOKED);
+        invitationRepository.save(invitation);
+    }
+
+    @Override
+    public List<InvitationDto> listPendingForUser(Long userId) {
+        User user = userLookupService.requireById(userId);
+        return invitationRepository.findByEmailAndStatusOrderByCreatedAtDesc(user.getEmail().toLowerCase(), InvitationStatus.PENDING)
+                .stream()
+                .filter(inv -> inv.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
+                .map(InvitationDto::from)
+                .toList();
+    }
+
+    private void acceptPendingInvitation(Invitation invitation, User user) {
         roleSeedService.ensureOrganizationRoles(invitation.getOrganization());
         organizationMembershipRepository.findByOrganizationIdAndUserId(invitation.getOrganization().getId(), user.getId())
                 .orElseGet(() -> {
@@ -205,26 +235,6 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         user.setCurrentOrganization(invitation.getOrganization());
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepository.save(invitation);
-        return InvitationDto.from(invitation);
-    }
-
-    @Override
-    public void declineInvitation(Long userId, String token) {
-        userLookupService.requireById(userId);
-        Invitation invitation = invitationRepository.findByToken(token)
-                .orElseThrow(() -> new InvitationNotFoundException(token));
-        invitation.setStatus(InvitationStatus.REVOKED);
-        invitationRepository.save(invitation);
-    }
-
-    @Override
-    public List<InvitationDto> listPendingForUser(Long userId) {
-        User user = userLookupService.requireById(userId);
-        return invitationRepository.findByEmailAndStatusOrderByCreatedAtDesc(user.getEmail().toLowerCase(), InvitationStatus.PENDING)
-                .stream()
-                .filter(inv -> inv.getExpiresAt().isAfter(OffsetDateTime.now(ZoneOffset.UTC)))
-                .map(InvitationDto::from)
-                .toList();
     }
 
     private TeamRole mapRole(OrganizationRole role) {

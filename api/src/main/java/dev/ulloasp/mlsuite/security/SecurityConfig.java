@@ -49,6 +49,7 @@ public class SecurityConfig {
                                                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                                 .authorizeHttpRequests(authorize -> authorize
                                                 .requestMatchers("/actuator/**").permitAll()
+                                                .requestMatchers("/api/readiness").permitAll()
                                                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                                                 .requestMatchers("/", "/assets/**").permitAll()
                                                 .anyRequest().authenticated())

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { AppCopy, AppPanel } from "../../app/components/ui";
+import { AppCopy, AppPanel } from "../../app/components";
 import { formatDisplayValue } from "../schema-run-display";
 import type { JsonRecord } from "../types";
 
@@ -58,7 +58,11 @@ export function SchemaRunReportCard({ label, kind, payload, labels = [] }: Props
                 <div key={index} className="space-y-1">
                   <div className="flex justify-between text-xs text-[var(--text-secondary)]">
                     <span>
-                      {String(labels[index] ?? (payload.labels as unknown[] | undefined)?.[index] ?? `Class ${index + 1}`)}
+                      {String(
+                        labels[index] ??
+                          (payload.labels as unknown[] | undefined)?.[index] ??
+                          `Class ${index + 1}`,
+                      )}
                     </span>
                     <span>{(probability * 100).toFixed(1)}%</span>
                   </div>

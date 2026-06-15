@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
-import { cx } from "../../../app/components/ui-utils";
+import { cx } from "../../../app/components";
 import { buildDashboardAlerts, countHealthyServices } from "../dashboardSummary";
 import { formatBytes } from "../formatters";
 import type { InfrastructureOverviewDto } from "../types";
@@ -100,16 +100,38 @@ export function OverviewServicePanels({
             ))}
           </div>
           <div className="grid grid-cols-4 gap-px overflow-hidden rounded-lg border border-[var(--border-soft)] bg-[var(--border-soft)]">
-            <CountCell label="Healthy" value={countHealthyServices(overview.services)} color="var(--success-text)" />
-            <CountCell label="Degraded" value={overview.services.filter((s) => s.status === "running" && s.health != null && s.health !== "healthy").length} color="#d97706" />
-            <CountCell label="Unknown" value={overview.services.filter((s) => s.health == null).length} color="var(--text-muted)" />
-            <CountCell label="Down" value={overview.services.filter((s) => s.status !== "running").length} color="var(--danger-text)" />
+            <CountCell
+              label="Healthy"
+              value={countHealthyServices(overview.services)}
+              color="var(--success-text)"
+            />
+            <CountCell
+              label="Degraded"
+              value={
+                overview.services.filter(
+                  (s) => s.status === "running" && s.health != null && s.health !== "healthy",
+                ).length
+              }
+              color="#d97706"
+            />
+            <CountCell
+              label="Unknown"
+              value={overview.services.filter((s) => s.health == null).length}
+              color="var(--text-muted)"
+            />
+            <CountCell
+              label="Down"
+              value={overview.services.filter((s) => s.status !== "running").length}
+              color="var(--danger-text)"
+            />
           </div>
         </div>
       </div>
       <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
         <div className="border-b border-[var(--border-soft)] px-5 py-3.5">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Memory usage by service</p>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">
+            Memory usage by service
+          </p>
           <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
             {formatBytes(totalMem)} allocated
           </p>

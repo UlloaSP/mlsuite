@@ -1,8 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
-import { AppButton, AppTextArea, AppTextField } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
+import {
+  AppButton,
+  AppTextArea,
+  AppTextField,
+  AppPage,
+  AppPageHeader,
+  AppSurface,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import {
   getTeam,
@@ -55,7 +61,11 @@ export function TeamDetailPage() {
           eyebrow="Team"
           title={team.name}
           description={team.description || "Manage team profile and member roles."}
-          backHref={`/workspace/organizations/${team.organizationId}/teams`}
+          breadcrumbs={[
+            { label: "Workspace", to: "/workspace" },
+            { label: "Teams", to: `/workspace/organizations/${team.organizationId}/teams` },
+            { label: team.name },
+          ]}
         />
         <div className="grid gap-6 xl:grid-cols-[0.9fr_1.2fr]">
           <div className="rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-card)]">

@@ -1,8 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { useState } from "react";
-import { AppButton, AppTextArea, AppTextField } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
+import {
+  AppButton,
+  AppTextArea,
+  AppTextField,
+  AppPage,
+  AppPageHeader,
+  AppSurface,
+} from "../../app/components";
 import { OrganizationCard } from "../components/OrganizationCard";
 import { getOrganizations, createOrganization } from "../api/workspaceService";
 import { useWorkspaceContext } from "../hooks";
@@ -36,7 +42,7 @@ export function OrganizationsPage() {
           eyebrow="Workspace"
           title="Organizations"
           description="Choose the organization you want to operate in, or spin up a new workspace."
-          aside={
+          actions={
             <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
               New Org
             </AppButton>

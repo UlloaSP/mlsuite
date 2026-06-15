@@ -2,8 +2,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box, MoreHorizontal, Plus, Users, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { AppButton, AppSelect, AppTextArea, AppTextField } from "../../app/components/ui-controls";
-import { AppPage, AppPageHeader, AppSurface } from "../../app/components/ui";
+import {
+  AppButton,
+  AppSelect,
+  AppTextArea,
+  AppTextField,
+  AppPage,
+  AppPageHeader,
+  AppSurface,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { createTeam, getOrganizationMembers, getTeams } from "../api/workspaceService";
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
@@ -58,8 +65,15 @@ export function TeamsPage() {
         <AppPageHeader
           title="Team Management"
           description="Create, manage, and organize model teams."
-          backHref={`/workspace/organizations/${id}`}
-          aside={
+          breadcrumbs={[
+            { label: "Workspace", to: "/workspace" },
+            {
+              label: workspace?.currentOrganization.name ?? "Organization",
+              to: `/workspace/organizations/${id}`,
+            },
+            { label: "Teams" },
+          ]}
+          actions={
             workspace?.permissions.canCreateTeams ? (
               <AppButton onClick={() => setOpen(true)}>
                 <Plus size={16} />
@@ -100,12 +114,16 @@ export function TeamsPage() {
           search={query}
           onSearch={setQuery}
           actions={
-            <AppSelect value={status} onChange={(event) => setStatus(event.target.value)}>
-              <option value="ALL">All status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-              <option value="ARCHIVED">Archived</option>
-            </AppSelect>
+            <AppSelect
+              value={status}
+              onValueChange={setStatus}
+              options={[
+                { value: "ALL", label: "All status" },
+                { value: "ACTIVE", label: "Active" },
+                { value: "INACTIVE", label: "Inactive" },
+                { value: "ARCHIVED", label: "Archived" },
+              ]}
+            />
           }
         >
           <table className="w-full min-w-[920px] text-sm">
@@ -201,14 +219,17 @@ function CreateTeamModal({
             onChange={(e) => setDescription(e.target.value)}
             placeholder="What does this team work on?"
           />
-          <AppSelect value={lead} onChange={(e) => setLead(e.target.value)}>
-            <option value="">No lead</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.fullName} - {m.email}
-              </option>
-            ))}
-          </AppSelect>
+          <AppSelect
+            value={lead}
+            onValueChange={setLead}
+            options={[
+              { value: "", label: "No lead" },
+              ...members.map((member) => ({
+                value: String(member.id),
+                label: `${member.fullName} - ${member.email}`,
+              })),
+            ]}
+          />
           <AppTextField
             value={quota}
             onChange={(e) => setQuota(e.target.value)}

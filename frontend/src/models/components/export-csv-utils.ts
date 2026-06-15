@@ -63,9 +63,7 @@ export const getReportFeedbackHeaders = (
         `report.${report.id}.content`,
         ...(questionnaire
           ? getQuestionnaireFieldIds(questionnaire).flatMap((fieldId) =>
-              reviewerLabels.map(
-                (reviewer) => `report.${report.id}.${fieldId}.${reviewer}`,
-              ),
+              reviewerLabels.map((reviewer) => `report.${report.id}.${fieldId}.${reviewer}`),
             )
           : []),
       ];

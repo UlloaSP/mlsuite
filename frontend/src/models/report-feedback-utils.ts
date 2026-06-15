@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { normalizeCustomReportResult } from "../app/utils/mlform/custom-report-result";
+import { normalizeCustomReportResult } from "../plugin/mlform/custom-report-result";
 import { toMlformSchema } from "../app/utils/mlform/schema-validation";
 import type { ReportConfig } from "mlform/runtime";
 import type { PredictionReportDescriptor } from "./questionnaire-feedback";
@@ -73,7 +73,9 @@ const getReportContent = (payload: unknown): string[] => {
     return [payload];
   }
   if (Array.isArray(payload)) {
-    return payload.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+    return payload.filter(
+      (item): item is string => typeof item === "string" && item.trim().length > 0,
+    );
   }
   const reportPayload = isRecord(payload) ? (payload as LegacyExplanationPayload) : null;
   const contentFromFormattedPayload =
@@ -86,9 +88,7 @@ const getReportContent = (payload: unknown): string[] => {
           (item): item is string => typeof item === "string" && item.trim().length > 0,
         )
       : [];
-  const normalizedReport = reportPayload
-    ? normalizeCustomReportResult(reportPayload)
-    : null;
+  const normalizedReport = reportPayload ? normalizeCustomReportResult(reportPayload) : null;
 
   if (contentFromFormattedPayload.length > 0) {
     return contentFromFormattedPayload;
@@ -136,9 +136,7 @@ const getEmbeddedFeedbackQuestionnaire = (
   return isRecord(value) && Array.isArray(value.steps) ? (value as QuestionnaireSchema) : undefined;
 };
 
-const getFallbackReportEntries = (
-  predictionValue: unknown,
-): PredictionReportDescriptor[] => {
+const getFallbackReportEntries = (predictionValue: unknown): PredictionReportDescriptor[] => {
   if (!isRecord(predictionValue)) {
     return [];
   }
@@ -183,7 +181,11 @@ const getEmbeddedSchemaReportEntries = (
   predictionValue: unknown,
   signatureSchema: unknown,
 ): PredictionReportDescriptor[] => {
-  if (!isRecord(predictionValue) || !isRecord(signatureSchema) || !Array.isArray(signatureSchema.reports)) {
+  if (
+    !isRecord(predictionValue) ||
+    !isRecord(signatureSchema) ||
+    !Array.isArray(signatureSchema.reports)
+  ) {
     return [];
   }
 
@@ -196,15 +198,14 @@ const getEmbeddedSchemaReportEntries = (
       return [];
     }
     const feedbackQuestionnaire =
-      getEmbeddedFeedbackQuestionnaire(item as ReportConfig) ?? getMetadataFeedbackQuestionnaire(item);
+      getEmbeddedFeedbackQuestionnaire(item as ReportConfig) ??
+      getMetadataFeedbackQuestionnaire(item);
     if (!feedbackQuestionnaire && item.feedbackEnabled !== false) {
       return [];
     }
 
     const reportId =
-      typeof item.id === "string" && item.id.trim().length > 0
-        ? item.id
-        : `report-${index + 1}`;
+      typeof item.id === "string" && item.id.trim().length > 0 ? item.id : `report-${index + 1}`;
     const content = getReportContent(reports[reportId]);
     const nextError = explainErrors[reportId];
     if (content.length === 0 && typeof nextError !== "string" && !feedbackQuestionnaire) {

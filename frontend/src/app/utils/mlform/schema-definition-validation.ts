@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FieldConfig, Registry, ReportConfig } from "mlform/runtime";
-import { type CatalogFieldDefinition } from "./custom-field";
-import { type CatalogReportDefinition } from "./custom-report";
+import { type CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
+import { type CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import type { CompatIssue } from "./shared";
 import { normalizeIssuePath } from "./shared";
 
@@ -45,15 +45,6 @@ export const validateFieldConfig = (
   }
 
   const result = definition.schema.safeParse(field);
-  if (customDefinition && !customDefinition.active) {
-    pushIssue(
-      issues,
-      ["fields", index, "kind"],
-      `Custom field kind "${field.kind}" is inactive and will be skipped at runtime.`,
-      "warning",
-    );
-  }
-
   if (result.success) {
     return { ...field, ...result.data, id: field.id, label: field.label };
   }
@@ -81,15 +72,6 @@ export const validateReportConfig = (
   }
 
   const result = definition.schema.safeParse(report);
-  if (customDefinition && !customDefinition.active) {
-    pushIssue(
-      issues,
-      ["reports", index, "kind"],
-      `Custom report kind "${report.kind}" is inactive and will be skipped at runtime.`,
-      "warning",
-    );
-  }
-
   if (result.success) {
     return { ...report, ...result.data, id: report.id, label: report.label, source: report.source };
   }

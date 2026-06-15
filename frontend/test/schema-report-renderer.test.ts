@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test } from "vite-plus/test";
 import { describeSchemaCustomReport } from "../src/schemas/schema-report-descriptor";
-import type { CatalogReportDefinition } from "../src/app/utils/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
 const catalogReport = (): CatalogReportDefinition =>
   ({
@@ -16,7 +16,6 @@ const catalogReport = (): CatalogReportDefinition =>
     createdAt: "",
     contentType: "text/typescript",
     sizeBytes: 1,
-    active: true,
     kind: "Crystal Tree",
     definition: {
       describe: () => ({ type: "text", value: "generic describe" }),

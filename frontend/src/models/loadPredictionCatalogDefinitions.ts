@@ -4,13 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import {
-  getActiveCustomFieldDefinitions,
+  getCustomFieldDefinitions,
   type CatalogFieldDefinition,
-} from "../app/utils/mlform/custom-field";
+} from "../plugin/mlform/custom-field";
 import {
-  getActiveCustomReportDefinitions,
+  getCustomReportDefinitions,
   type CatalogReportDefinition,
-} from "../app/utils/mlform/custom-report";
+} from "../plugin/mlform/custom-report";
 
 export type PredictionCatalogDefinitions = {
   fieldDefinitions: readonly CatalogFieldDefinition[];
@@ -19,8 +19,8 @@ export type PredictionCatalogDefinitions = {
 
 export const loadPredictionCatalogDefinitions = async (): Promise<PredictionCatalogDefinitions> => {
   const [fieldDefinitions, reportDefinitions] = await Promise.all([
-    getActiveCustomFieldDefinitions(),
-    getActiveCustomReportDefinitions(),
+    getCustomFieldDefinitions(),
+    getCustomReportDefinitions(),
   ]);
   return {
     fieldDefinitions,

@@ -7,8 +7,7 @@ import { useAtom } from "jotai";
 import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppCopy, AppPanel } from "../../app/components/ui";
-import { AppButton } from "../../app/components/ui-controls";
+import { AppCopy, AppPanel, AppButton } from "../../app/components";
 import { applyPredictionInputsToSchema } from "../../app/utils/mlform/schema";
 import { mountSchemaRunForm } from "../../app/utils/mlform/schema-run-mount";
 import {
@@ -69,8 +68,8 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
     try {
       schemaRunDebug("form.mount.start", {
         versionId: version.id,
-        fieldDefinitions: data.fieldDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
-        reportDefinitions: data.reportDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
+        fieldDefinitions: data.fieldDefinitions.map((definition) => definition.kind),
+        reportDefinitions: data.reportDefinitions.map((definition) => definition.kind),
       });
       const mounted = mountSchemaRunForm({
         container: containerRef.current,
@@ -96,7 +95,9 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
       });
       const unsubscribe = mounted.form.subscribe((state) => {
         if (!state.lastResult || !onResultUpdateRef.current) return;
-        const raw = isRecord(state.lastResult.raw) ? state.lastResult.raw : { raw: state.lastResult.raw };
+        const raw = isRecord(state.lastResult.raw)
+          ? state.lastResult.raw
+          : { raw: state.lastResult.raw };
         const next = buildSchemaRunRawFromSubmitResult(
           raw,
           mounted.form.reports,
@@ -146,7 +147,7 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
       </h2>
       <AppCopy>
         {status === "loading"
-          ? "Schema form waits for active plugin definitions before rendering custom fields and reports."
+          ? "Schema form waits for plugin definitions before rendering custom fields and reports."
           : catalog.error}
       </AppCopy>
       {status === "error" ? (

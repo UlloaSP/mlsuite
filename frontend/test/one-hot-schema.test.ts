@@ -4,7 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { applyOneHotMappedCategories, countVisibleSchemaFields } from "../src/schemas/one-hot-schema";
+import {
+  applyOneHotMappedCategories,
+  countVisibleSchemaFields,
+} from "../src/schemas/one-hot-schema";
 
 describe("schema one-hot merge", () => {
   test("groups only feature double-underscore category fields", () => {

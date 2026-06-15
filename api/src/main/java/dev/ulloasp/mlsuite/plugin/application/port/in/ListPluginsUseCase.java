@@ -1,10 +1,8 @@
 package dev.ulloasp.mlsuite.plugin.application.port.in;
 
-import java.util.List;
-
-import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
 
 public interface ListPluginsUseCase {
 
-    List<PluginDto> list(Long userId);
+    PluginPageDto list(Long userId, int page, int size, String type, String search, String sort);
 }

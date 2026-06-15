@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { m as motion } from "motion/react";
 import { useParams } from "react-router";
-import { AppBreadcrumbs, AppCopy, AppEyebrow, AppTitle } from "../../app/components/ui";
+import { AppPageHeader } from "../../app/components";
 import { useGetModels } from "../hooks";
 
 const CREATE_SIGNATURE_HEADER = "Create New Schema";
@@ -18,19 +18,17 @@ export function CreateSignatureHeader() {
   const modelName = models.find((model) => String(model.id) === String(modelId))?.name ?? "Model";
 
   return (
-    <motion.div className="space-y-4">
-      <AppBreadcrumbs
-        items={[
+    <motion.div>
+      <AppPageHeader
+        breadcrumbs={[
           { label: "Models", to: "/models" },
           ...(modelId ? [{ label: modelName, to: `/models/${modelId}?tab=signatures` }] : []),
           { label: "Create Schema" },
         ]}
+        eyebrow="Schema Studio"
+        title={CREATE_SIGNATURE_HEADER}
+        description={CREATE_SIGNATURE_SUBHEADER}
       />
-      <div className="space-y-3">
-        <AppEyebrow>Schema Studio</AppEyebrow>
-        <AppTitle>{CREATE_SIGNATURE_HEADER}</AppTitle>
-        <AppCopy className="max-w-3xl">{CREATE_SIGNATURE_SUBHEADER}</AppCopy>
-      </div>
     </motion.div>
   );
 }

@@ -6,13 +6,18 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components/ui";
-import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog";
+import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
+import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
 import { isRecord } from "../../app/utils/mlform/shared";
 import { SchemaRunForm } from "../components/SchemaRunForm";
 import { SchemaRunSaveModal } from "../components/SchemaRunSaveModal";
 import { createPredictionResultFeedback } from "../api/schemaService";
-import { useCreatePredictionRunMutation, usePredictionRun, useSchemaVersion } from "../hooks";
+import {
+  useCreatePredictionRunMutation,
+  usePredictionRun,
+  useSchema,
+  useSchemaVersion,
+} from "../hooks";
 import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
 import { mergeSchemaRunInputs } from "../schema-run-display";
 import type { PendingFeedback } from "../schema-run-save-feedback";
@@ -21,6 +26,7 @@ import type { CreatePredictionRunRequest, JsonRecord } from "../types";
 export function CreateSchemaRunPage() {
   const [searchParams] = useSearchParams();
   const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();
+  const { data: schema } = useSchema(schemaId);
   const { data: version, isLoading } = useSchemaVersion(versionId);
   const executableVersion = useMemo(
     () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
@@ -92,7 +98,22 @@ export function CreateSchemaRunPage() {
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <div className="shrink-0">
-          <AppPageHeader title="New schema run" backHref={`/schemas/${schemaId}`} />
+          <AppPageHeader
+            title="New schema run"
+            breadcrumbs={[
+              { label: "Schemas", to: "/schemas" },
+              { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
+              ...(executableVersion
+                ? [
+                    {
+                      label: `${executableVersion.name} v${executableVersion.version}`,
+                      to: `/schemas/${schemaId}/versions/${versionId}/runs`,
+                    },
+                  ]
+                : []),
+              { label: "New Run" },
+            ]}
+          />
         </div>
         {isLoading ? <AppPanel>Loading schema version...</AppPanel> : null}
         {executableVersion && isRecord(executableVersion.formSchema) ? (

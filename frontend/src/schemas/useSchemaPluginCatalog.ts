@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { schemaNeedsActivePluginCatalog } from "../app/utils/mlform/schema-needs-plugin-catalog";
+import { schemaNeedsPluginCatalog } from "../plugin/mlform/schema-needs-plugin-catalog";
 import { loadPredictionCatalogDefinitions } from "../models/loadPredictionCatalogDefinitions";
 import type { PredictionCatalogDefinitions } from "../models/loadPredictionCatalogDefinitions";
 import { schemaRunDebug, schemaRunDebugError } from "../app/utils/mlform/schema-run-debug";
@@ -21,7 +21,7 @@ type CatalogState =
   | { status: "error"; data: PredictionCatalogDefinitions; error: string };
 
 export const useSchemaPluginCatalog = (schema: unknown) => {
-  const needsPlugins = useMemo(() => schemaNeedsActivePluginCatalog(schema), [schema]);
+  const needsPlugins = useMemo(() => schemaNeedsPluginCatalog(schema), [schema]);
   const [state, setState] = useState<CatalogState>({
     status: needsPlugins ? "loading" : "ready",
     data: emptyCatalog,
@@ -39,8 +39,8 @@ export const useSchemaPluginCatalog = (schema: unknown) => {
     try {
       const definitions = await loadPredictionCatalogDefinitions();
       schemaRunDebug("catalog.load.ready", {
-        fields: definitions.fieldDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
-        reports: definitions.reportDefinitions.map((definition) => `${definition.kind}:${definition.active}`),
+        fields: definitions.fieldDefinitions.map((definition) => definition.kind),
+        reports: definitions.reportDefinitions.map((definition) => definition.kind),
       });
       setState({ status: "ready", data: definitions, error: null });
     } catch (error) {

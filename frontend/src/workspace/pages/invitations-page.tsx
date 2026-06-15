@@ -2,8 +2,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Mail, RotateCcw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { AppButton, AppSelect } from "../../app/components/ui-controls";
-import { AppCopy, AppPage, AppPageHeader, AppSectionTitle, AppSurface } from "../../app/components/ui";
+import {
+  AppButton,
+  AppSelect,
+  AppCopy,
+  AppPage,
+  AppPageHeader,
+  AppSectionTitle,
+  AppSurface,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { getRoles } from "../api/roleAdminService";
 import {
@@ -82,7 +89,14 @@ export function InvitationsPage() {
         <AppPageHeader
           title="Invitations"
           description="Invite users, assign starting role, and revoke pending access."
-          backHref={`/workspace/organizations/${id}`}
+          breadcrumbs={[
+            { label: "Workspace", to: "/workspace" },
+            {
+              label: workspace?.currentOrganization.name ?? "Organization",
+              to: `/workspace/organizations/${id}`,
+            },
+            { label: "Invitations" },
+          ]}
         />
         {workspace?.permissions.canManageInvitations ? (
           <section className="border-y border-[var(--border-soft)] py-5">
@@ -132,14 +146,9 @@ export function InvitationsPage() {
             <>
               <AppSelect
                 value={status}
-                onChange={(event) => setStatus(event.target.value as InvitationStatus | "ALL")}
-              >
-                {statuses.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </AppSelect>
+                onValueChange={(nextStatus) => setStatus(nextStatus as InvitationStatus | "ALL")}
+                options={statuses.map((item) => ({ value: item, label: item }))}
+              />
               {selected.length ? (
                 <AppButton
                   variant="danger"

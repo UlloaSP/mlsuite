@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportDescriptorContext } from "mlform/primitives";
 import type { ReportConfig } from "mlform/runtime";
-import type { CatalogReportDefinition } from "./custom-report";
+import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { readReportContext } from "./schema-run-report-mapping";
 import { isRecord } from "./shared";
 
@@ -40,9 +40,11 @@ const getRequestReportContext = (
   if (!isRecord(request)) return null;
   const raw = isRecord(request.raw) ? request.raw : {};
   const meta = isRecord(request.meta) ? request.meta : {};
-  return readReportContext(raw.reportContextById, reportId) ??
+  return (
+    readReportContext(raw.reportContextById, reportId) ??
     readReportContext(meta.reportContextById, reportId) ??
-    null;
+    null
+  );
 };
 
 export const patchSchemaReportRequest = <T>(request: T, reportId: string): T => {
@@ -122,9 +124,7 @@ export const wrapSchemaReportDefinitions = (
     const topFetch = definition.definition.fetch;
     const innerFetch = definition.definition.definition.fetch;
     const wrappedTopFetch = topFetch ? wrapFetchFactory(topFetch) : undefined;
-    const wrappedInnerFetch = innerFetch
-      ? wrapFetchFactory(innerFetch)
-      : wrappedTopFetch;
+    const wrappedInnerFetch = innerFetch ? wrapFetchFactory(innerFetch) : wrappedTopFetch;
     const wrapped = {
       ...definition,
       definition: {
@@ -139,8 +139,12 @@ export const wrapSchemaReportDefinitions = (
             ? undefined
             : (config: ReportConfig, context: ReportDescriptorContext) => {
                 if (isSkippedSchemaReportPayload(context.payload)) return null;
-                return definition.definition.describe?.(config as never, patchSchemaReportContext(context)) ??
-                  null;
+                return (
+                  definition.definition.describe?.(
+                    config as never,
+                    patchSchemaReportContext(context),
+                  ) ?? null
+                );
               },
         presenter: {
           ...definition.definition.presenter,

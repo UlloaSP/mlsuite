@@ -5,8 +5,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { AppBreadcrumbs, AppEmptyState, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components/ui";
-import { AppButton } from "../../app/components/ui-controls";
+import {
+  AppEmptyState,
+  AppPage,
+  AppPageHeader,
+  AppSurface,
+  AppTabs,
+  AppButton,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";
@@ -48,10 +54,6 @@ export function ModelDetailPage() {
   return (
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
-        <AppBreadcrumbs
-          items={[{ label: "Models", to: "/models" }, { label: model?.name ?? "Model" }]}
-        />
-
         {!model && !isLoading ? (
           <AppEmptyState
             title="Model not found"
@@ -65,10 +67,11 @@ export function ModelDetailPage() {
         ) : model ? (
           <>
             <AppPageHeader
+              breadcrumbs={[{ label: "Models", to: "/models" }, { label: model.name }]}
               eyebrow="Model Detail"
               title={model.name}
               description={`${getModelAlgorithmLabel(model)} · Created ${formatTimestamp(model.createdAt)}`}
-              aside={
+              actions={
                 canEditModels ? (
                   <AppButton
                     type="button"

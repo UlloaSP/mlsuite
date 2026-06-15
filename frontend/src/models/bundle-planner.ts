@@ -38,31 +38,37 @@ export function applyInspectedBundleFiles(
   const matchModels = options.matchModels ?? models;
   const matchDataframes = options.matchDataframes ?? dataframes;
 
-  models
-    .forEach((modelFile) => {
-      if (next.some((bundle) => bundle.modelFile?.name === modelFile.name)) return;
-      const stem = getStem(modelFile.name);
-      const matchedDf = findMatchedDataframe(modelFile, match, matchModels, matchDataframes);
-      const pending =
-        (matchedDf ? next.find((bundle) => !bundle.modelFile && bundle.dfFile === matchedDf) : undefined) ??
-        next.find((bundle) => !bundle.modelFile && bundle.dfFile && getStem(bundle.dfFile.name).toLowerCase() === stem.toLowerCase());
+  models.forEach((modelFile) => {
+    if (next.some((bundle) => bundle.modelFile?.name === modelFile.name)) return;
+    const stem = getStem(modelFile.name);
+    const matchedDf = findMatchedDataframe(modelFile, match, matchModels, matchDataframes);
+    const pending =
+      (matchedDf
+        ? next.find((bundle) => !bundle.modelFile && bundle.dfFile === matchedDf)
+        : undefined) ??
+      next.find(
+        (bundle) =>
+          !bundle.modelFile &&
+          bundle.dfFile &&
+          getStem(bundle.dfFile.name).toLowerCase() === stem.toLowerCase(),
+      );
 
-      if (pending) {
-        pending.modelFile = modelFile;
-        pending.name = pending.name.trim() ? pending.name : slugToTitle(stem);
-        pending.saved = false;
-        return;
-      }
+    if (pending) {
+      pending.modelFile = modelFile;
+      pending.name = pending.name.trim() ? pending.name : slugToTitle(stem);
+      pending.saved = false;
+      return;
+    }
 
-      next.push({
-        id: nextId++,
-        modelFile,
-        dfFile: matchedDf,
-        name: slugToTitle(stem),
-        saved: false,
-        saving: false,
-      });
+    next.push({
+      id: nextId++,
+      modelFile,
+      dfFile: matchedDf,
+      name: slugToTitle(stem),
+      saved: false,
+      saving: false,
     });
+  });
 
   applyMatches(next, match, matchModels, matchDataframes);
 
@@ -70,8 +76,12 @@ export function applyInspectedBundleFiles(
     if (next.some((bundle) => bundle.dfFile === dfFile && bundle.modelFile)) return;
     const stem = getStem(dfFile.name).toLowerCase();
     const target =
-      next.find((bundle) => bundle.modelFile && getStem(bundle.modelFile.name).toLowerCase() === stem && !bundle.dfFile) ??
-      next.find((bundle) => bundle.modelFile && !bundle.dfFile);
+      next.find(
+        (bundle) =>
+          bundle.modelFile &&
+          getStem(bundle.modelFile.name).toLowerCase() === stem &&
+          !bundle.dfFile,
+      ) ?? next.find((bundle) => bundle.modelFile && !bundle.dfFile);
     if (target) {
       target.dfFile = dfFile;
       target.saved = false;

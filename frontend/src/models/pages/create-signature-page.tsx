@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useEffect } from "react";
-import { AppPage, AppSurface } from "../../app/components/ui";
+import { AppPage, AppSurface } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page.tsx";
-import { invalidatePluginCatalog } from "../../app/utils/mlform/plugin-catalog.ts";
+import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
 import { EditorWrapper } from "../../editor/components/EditorWrapper.tsx";
 import { useUser } from "../../user/hooks.ts";
 import { CreateSignatureActionSection } from "../components/CreateSignatureActionSection.tsx";

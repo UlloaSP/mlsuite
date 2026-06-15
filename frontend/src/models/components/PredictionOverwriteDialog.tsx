@@ -4,8 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useEffect, useRef } from "react";
-import { AppButton } from "../../app/components/ui-controls";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
+import { AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 
 type PredictionOverwriteDialogProps = {
   open: boolean;

@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
-import dev.ulloasp.mlsuite.plugin.application.service.PluginService;
+import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.signature.domain.exception.InvalidSignatureSchemaException;
 import dev.ulloasp.mlsuite.signature.application.service.SignatureSchemaCompatibilityServiceImpl;
 
@@ -23,21 +23,21 @@ import dev.ulloasp.mlsuite.signature.application.service.SignatureSchemaCompatib
 class SignatureSchemaCompatibilityServiceTest {
 
     @Mock
-    private PluginService pluginService;
+    private PluginCatalogUseCase pluginCatalogUseCase;
 
     private SignatureSchemaCompatibilityServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new SignatureSchemaCompatibilityServiceImpl(pluginService);
+        service = new SignatureSchemaCompatibilityServiceImpl(pluginCatalogUseCase);
     }
 
     @Test
     void validate_AllowsBuiltinKindsAndActiveCustomKinds() {
-        when(pluginService.list(7L)).thenReturn(List.of(
-                plugin("field-kind", true, "export default defineFieldDefinition({ kind: \"field-kind\" });"),
-                plugin("report-kind", true, "export default defineReportDefinition({ kind: \"report-kind\" });"),
-                plugin("explanation-kind", true, "export default defineReportKind({ kind: \"explanation-kind\" });")));
+        when(pluginCatalogUseCase.listAll(7L)).thenReturn(List.of(
+                plugin("field-kind", "export default defineFieldDefinition({ kind: \"field-kind\" });"),
+                plugin("report-kind", "export default defineReportDefinition({ kind: \"report-kind\" });"),
+                plugin("explanation-kind", "export default defineReportKind({ kind: \"explanation-kind\" });")));
 
         assertDoesNotThrow(() -> service.validate(7L, Map.of(
                 "fields", List.of(Map.of("kind", "text"), Map.of("kind", "field-kind")),
@@ -49,7 +49,7 @@ class SignatureSchemaCompatibilityServiceTest {
 
     @Test
     void validate_AllowsBuiltinKindsIntroducedByNewerMlformVersions() {
-        when(pluginService.list(7L)).thenReturn(List.of());
+        when(pluginCatalogUseCase.listAll(7L)).thenReturn(List.of());
 
         assertDoesNotThrow(() -> service.validate(7L, Map.of(
                 "fields", List.of(
@@ -63,41 +63,41 @@ class SignatureSchemaCompatibilityServiceTest {
 
     @Test
     void validate_ThrowsWhenExplanationReportKindMissing() {
-        when(pluginService.list(7L)).thenReturn(List.of());
+        when(pluginCatalogUseCase.listAll(7L)).thenReturn(List.of());
 
         assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
                 Map.of("reports", List.of(Map.of("kind", "old-kind")))));
     }
 
     @Test
-    void validate_ThrowsWhenExplanationReportKindInactive() {
-        when(pluginService.list(7L)).thenReturn(List.of(
-                plugin("old-kind", false, "export default defineReportKind({ kind: \"old-kind\" });")));
+    void validate_AllowsExplanationReportKindWhenUploaded() {
+        when(pluginCatalogUseCase.listAll(7L)).thenReturn(List.of(
+                plugin("old-kind", "export default defineReportKind({ kind: \"old-kind\" });")));
 
-        assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
+        assertDoesNotThrow(() -> service.validate(7L,
                 Map.of("reports", List.of(Map.of("kind", "old-kind")))));
     }
 
     @Test
     void validate_ThrowsWhenFieldKindMissing() {
-        when(pluginService.list(7L)).thenReturn(List.of());
+        when(pluginCatalogUseCase.listAll(7L)).thenReturn(List.of());
 
         assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
                 Map.of("fields", List.of(Map.of("kind", "custom-field")))));
     }
 
     @Test
-    void validate_ThrowsWhenReportKindInactive() {
-        when(pluginService.list(7L)).thenReturn(List.of(
-                plugin("custom-report", false, "export default defineReportDefinition({ kind: \"custom-report\" });")));
+    void validate_AllowsReportKindWhenUploaded() {
+        when(pluginCatalogUseCase.listAll(7L)).thenReturn(List.of(
+                plugin("custom-report", "export default defineReportDefinition({ kind: \"custom-report\" });")));
 
-        assertThrows(InvalidSignatureSchemaException.class, () -> service.validate(7L,
+        assertDoesNotThrow(() -> service.validate(7L,
                 Map.of("reports", List.of(Map.of("kind", "custom-report")))));
     }
 
-    private PluginDto plugin(String id, boolean active, String source) {
+    private PluginDto plugin(String id, String source) {
         OffsetDateTime now = OffsetDateTime.now();
-        return new PluginDto(id, id + ".ts", "application/typescript", source.length(), now, now, active, source);
+        return new PluginDto(id, id + ".ts", "application/typescript", source.length(), now, now, source, "report", id);
     }
 }
 

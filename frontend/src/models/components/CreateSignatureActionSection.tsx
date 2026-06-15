@@ -8,7 +8,7 @@ import { RefreshCcw, Save } from "lucide-react";
 import { m as motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
+import { AppButton, AppSelect, AppTextField } from "../../app/components";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { useCreateSignatureMutation, useGetSignatures } from "../hooks";
 import { sortSignaturesByVersionDesc } from "../utils";
@@ -77,7 +77,7 @@ export function CreateSignatureActionSection() {
         origin: effectiveSignatureId,
       });
       navigate(`/models/${modelId}?tab=signatures`);
-    } catch (err) {
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -102,17 +102,18 @@ export function CreateSignatureActionSection() {
           <AppSelect
             id="base-version"
             value={effectiveSignatureId}
-            onChange={(e) => setSignatureId(e.target.value)}
+            onValueChange={setSignatureId}
             className="w-full"
             disabled={!signatures.length}
-          >
-            {signatures.length ? null : <option value="">No base schemas available</option>}
-            {signatures.map((signature) => (
-              <option key={signature.id} value={signature.id}>
-                {signature.name} (v{signature.major}.{signature.minor}.{signature.patch})
-              </option>
-            ))}
-          </AppSelect>
+            options={
+              signatures.length
+                ? signatures.map((signature) => ({
+                    value: String(signature.id),
+                    label: `${signature.name} (v${signature.major}.${signature.minor}.${signature.patch})`,
+                  }))
+                : [{ value: "", label: "No base schemas available" }]
+            }
+          />
         </div>
 
         <div className="space-y-2">

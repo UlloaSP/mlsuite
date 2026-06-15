@@ -8,8 +8,14 @@ import { AnimatePresence, m as motion } from "motion/react";
 import { useAtom } from "jotai";
 import { useMemo, useRef, useState } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components/ui";
-import { AppButton, AppIconButton, AppTextField } from "../../app/components/ui-controls";
+import {
+  AppCopy,
+  AppPanel,
+  AppSectionTitle,
+  AppButton,
+  AppIconButton,
+  AppTextField,
+} from "../../app/components";
 import { buildCombinedFeedbackQuestionnaire } from "../../models/combined-feedback-questionnaire";
 import {
   ReportQuestionnaireMount,

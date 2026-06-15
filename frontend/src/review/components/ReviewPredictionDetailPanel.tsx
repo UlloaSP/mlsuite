@@ -1,7 +1,7 @@
 import { useAtom } from "jotai";
 import { useMemo, useState } from "react";
 import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppEmptyState } from "../../app/components/ui";
+import { AppEmptyState } from "../../app/components";
 import { extractPredictionReportEntries } from "../../models/report-feedback-utils";
 import { getOutputReports } from "../../models/report-contract";
 import { useReviewPredictionDetail } from "../hooks";
@@ -31,11 +31,7 @@ export function ReviewPredictionDetailPanel({
     return getOutputReports(signatureSchema);
   }, [signatureSchema]);
   const feedbackReports = useMemo(
-    () =>
-      extractPredictionReportEntries(
-        detail.data?.prediction.prediction,
-        signatureSchema,
-      ),
+    () => extractPredictionReportEntries(detail.data?.prediction.prediction, signatureSchema),
     [detail.data?.prediction.prediction, signatureSchema],
   );
   const outputByOrder = useMemo(

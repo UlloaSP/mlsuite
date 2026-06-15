@@ -7,14 +7,23 @@ import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { AppBadge, AppButton, AppSelect, AppTextField } from "../../app/components/ui-controls";
-import { AppEmptyState, AppPage, AppPageHeader, AppSurface, AppToolbar } from "../../app/components/ui";
+import {
+  AppBadge,
+  AppButton,
+  AppEmptyState,
+  AppPage,
+  AppPageHeader,
+  AppSelect,
+  AppSurface,
+  AppTextField,
+  AppToolbar,
+} from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";
 import * as modelApi from "../api/modelService";
-import { ModelListItem } from "../components/ModelListItem";
 import type { ModelAction } from "../components/ModelActionsMenu";
+import { ModelListItem } from "../components/ModelListItem";
 import { GET_SIGNATURES_QUERY_KEY, useGetModels } from "../hooks";
 
 type ModelSortMode = "updated" | "name" | "algorithm";
@@ -108,17 +117,12 @@ export function ModelsPage() {
           eyebrow="Models"
           title="Machine Learning Models"
           description={`Navigate models, inspect derived schema metrics, and drill into prediction history for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
-          aside={
-            <div className="flex items-center gap-3">
-              {workspace ? (
-                <AppBadge tone="accent">{workspace.currentOrganization.name}</AppBadge>
-              ) : null}
-              {canCreateModels ? (
-                <AppButton type="button" onClick={() => navigate("/models/create")}>
-                  + New Model
-                </AppButton>
-              ) : null}
-            </div>
+          actions={
+            canCreateModels ? (
+              <AppButton type="button" onClick={() => navigate("/models/create")}>
+                + New Model
+              </AppButton>
+            ) : null
           }
         />
 
@@ -133,13 +137,14 @@ export function ModelsPage() {
 
             <AppSelect
               value={sort}
-              onChange={(event) => setSort(event.target.value as ModelSortMode)}
+              onValueChange={(nextSort) => setSort(nextSort as ModelSortMode)}
               className="min-w-[180px]"
-            >
-              <option value="updated">Latest updated</option>
-              <option value="name">Name</option>
-              <option value="algorithm">Algorithm</option>
-            </AppSelect>
+              options={[
+                { value: "updated", label: "Latest updated" },
+                { value: "name", label: "Name" },
+                { value: "algorithm", label: "Algorithm" },
+              ]}
+            />
           </div>
 
           <AppBadge>{visibleItems.length} models</AppBadge>
