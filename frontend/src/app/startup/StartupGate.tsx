@@ -11,7 +11,7 @@ type StartupGateProps = {
 };
 
 export function StartupGate({ children }: StartupGateProps) {
-  const readinessQuery = useQuery({
+  const { data } = useQuery({
     queryKey: STARTUP_QUERY_KEY,
     queryFn: getStartupReadiness,
     retry: false,
@@ -19,7 +19,7 @@ export function StartupGate({ children }: StartupGateProps) {
     refetchInterval: (query) => (query.state.data?.ready ? false : RETRY_MS),
   });
 
-  if (readinessQuery.data?.ready) {
+  if (data?.ready) {
     return <>{children}</>;
   }
 
