@@ -15,11 +15,7 @@ export type BreadcrumbCollapsedMenuItem = {
   to?: string;
 };
 
-export function BreadcrumbCollapsedMenu({
-  items,
-}: {
-  items: BreadcrumbCollapsedMenuItem[];
-}) {
+export function BreadcrumbCollapsedMenu({ items }: { items: BreadcrumbCollapsedMenuItem[] }) {
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0 });
   const menuId = useId();

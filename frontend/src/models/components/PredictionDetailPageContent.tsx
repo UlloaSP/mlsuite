@@ -51,11 +51,7 @@ export function PredictionDetailPageContent({
   const reportFeedback = reportFeedbackQuery.data ?? EMPTY_REPORT_FEEDBACK;
 
   const reportEntries = useMemo(
-    () =>
-      extractPredictionReportEntries(
-        prediction.prediction,
-        signature?.inputSignature,
-      ),
+    () => extractPredictionReportEntries(prediction.prediction, signature?.inputSignature),
     [prediction.prediction, signature?.inputSignature],
   );
   const currentUserId = user?.id ? Number(user.id) : null;
@@ -95,12 +91,7 @@ export function PredictionDetailPageContent({
     return myOutputCount >= requiredOutputs && myReportCount >= requiredFeedbackReports
       ? ("COMPLETED" as const)
       : ("PENDING" as const);
-  }, [
-    reports.length,
-    reportEntries,
-    myOutputFeedbackByOrder.size,
-    myReportFeedbackByOrder.size,
-  ]);
+  }, [reports.length, reportEntries, myOutputFeedbackByOrder.size, myReportFeedbackByOrder.size]);
 
   return (
     <div className="space-y-6">

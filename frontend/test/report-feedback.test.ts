@@ -202,26 +202,30 @@ describe("report feedback metadata", () => {
       feedbackReports: entries,
     });
 
-    expect(steps.map((step) => step.title)).toEqual(["Output 1: species", "Output 2: Crystal Tree"]);
+    expect(steps.map((step) => step.title)).toEqual([
+      "Output 1: species",
+      "Output 2: Crystal Tree",
+    ]);
   });
 
   it("uses default editable questionnaire for old feedback-enabled schemas", () => {
-    const entries = extractPredictionReportEntries(
-      predictionValue,
-      {
-        fields: [{ kind: "number", label: "petal_length" }],
-        reports: [
-          {
-            kind: "Crystal Tree",
-            id: "crystal-tree",
-            feedbackEnabled: true,
-          },
-        ],
-      },
-    );
+    const entries = extractPredictionReportEntries(predictionValue, {
+      fields: [{ kind: "number", label: "petal_length" }],
+      reports: [
+        {
+          kind: "Crystal Tree",
+          id: "crystal-tree",
+          feedbackEnabled: true,
+        },
+      ],
+    });
 
     expect(entries).toHaveLength(1);
-    expect(entries[0].feedbackQuestionnaire?.steps[0].fields.map((field) => field.label)).toEqual(["Clarity", "Usefulness", "Trust"]);
+    expect(entries[0].feedbackQuestionnaire?.steps[0].fields.map((field) => field.label)).toEqual([
+      "Clarity",
+      "Usefulness",
+      "Trust",
+    ]);
   });
 
   it("builds one review wizard with output then report steps", () => {
@@ -245,7 +249,10 @@ describe("report feedback metadata", () => {
     const combined = buildCombinedReviewQuestionnaire(steps);
 
     expect(steps.map((step) => step.kind)).toEqual(["output", "report"]);
-    expect(combined.schema.steps.map((step) => step.title)).toEqual(["Output 1: species", "Output 2: Crystal Tree"]);
+    expect(combined.schema.steps.map((step) => step.title)).toEqual([
+      "Output 1: species",
+      "Output 2: Crystal Tree",
+    ]);
     expect(combined.schema.steps[0].description).toContain("setosa");
     expect(combined.schema.steps[1].description).toContain("petal_length > 4.8");
   });

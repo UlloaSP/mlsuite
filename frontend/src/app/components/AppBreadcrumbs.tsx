@@ -65,9 +65,7 @@ export function AppBreadcrumbs({
                 ) : isLast ? (
                   <BreadcrumbPage>{item?.label}</BreadcrumbPage>
                 ) : (
-                  <span className="truncate text-[var(--text-secondary)]">
-                    {item?.label}
-                  </span>
+                  <span className="truncate text-[var(--text-secondary)]">{item?.label}</span>
                 )}
               </BreadcrumbItem>
               {!isLast ? <BreadcrumbSeparator /> : null}

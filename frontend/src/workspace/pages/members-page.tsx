@@ -91,13 +91,17 @@ export function MembersPage() {
           search={query}
           onSearch={setQuery}
           actions={
-            <AppSelect value={role} onChange={(event) => setRole(event.target.value)}>
-              <option value="ALL">All roles</option>
-              <option value="OWNER">Owner</option>
-              <option value="ADMIN">Admin</option>
-              <option value="MEMBER">Member</option>
-              <option value="VIEWER">Viewer</option>
-            </AppSelect>
+            <AppSelect
+              value={role}
+              onValueChange={setRole}
+              options={[
+                { value: "ALL", label: "All roles" },
+                { value: "OWNER", label: "Owner" },
+                { value: "ADMIN", label: "Admin" },
+                { value: "MEMBER", label: "Member" },
+                { value: "VIEWER", label: "Viewer" },
+              ]}
+            />
           }
         >
           <div className="p-6 pt-2">

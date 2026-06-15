@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { CalendarDays, Search, SlidersHorizontal } from "lucide-react";
-import { AppTextField, AppToolbar } from "../../app/components";
+import { AppSelect, AppTextField, AppToolbar } from "../../app/components";
 import type { PredictionDto } from "../api/modelService";
 import { ExportButton } from "./ExportButton";
 
@@ -56,43 +56,35 @@ export function PredictionHistoryToolbar({
           className="min-w-[280px] flex-1"
         />
 
-        <label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]">
+        <div className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
           <SlidersHorizontal size={15} className="text-[var(--text-muted)]" />
-          <select
+          <AppSelect
             aria-label="Feedback status"
             value={status}
-            onChange={(event) =>
-              onStatusChange(event.target.value as PredictionFeedbackStatusFilter)
+            onValueChange={(nextStatus) =>
+              onStatusChange(nextStatus as PredictionFeedbackStatusFilter)
             }
-            className="bg-transparent text-[var(--text-primary)] outline-none"
-          >
-            {(Object.entries(STATUS_LABELS) as Array<[PredictionFeedbackStatusFilter, string]>).map(
-              ([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ),
-            )}
-          </select>
-        </label>
+            className="min-w-40"
+            options={(
+              Object.entries(STATUS_LABELS) as Array<[PredictionFeedbackStatusFilter, string]>
+            ).map(([value, label]) => ({ value, label }))}
+          />
+        </div>
 
-        <label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]">
+        <div className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
           <CalendarDays size={15} className="text-[var(--text-muted)]" />
-          <select
+          <AppSelect
             aria-label="Date range"
             value={dateRange}
-            onChange={(event) => onDateRangeChange(event.target.value as PredictionDateRangeFilter)}
-            className="bg-transparent text-[var(--text-primary)] outline-none"
-          >
-            {(Object.entries(DATE_RANGE_LABELS) as Array<[PredictionDateRangeFilter, string]>).map(
-              ([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ),
-            )}
-          </select>
-        </label>
+            onValueChange={(nextDateRange) =>
+              onDateRangeChange(nextDateRange as PredictionDateRangeFilter)
+            }
+            className="min-w-36"
+            options={(
+              Object.entries(DATE_RANGE_LABELS) as Array<[PredictionDateRangeFilter, string]>
+            ).map(([value, label]) => ({ value, label }))}
+          />
+        </div>
       </div>
       <ExportButton predictions={predictions} signatureSchema={signatureSchema} />
     </AppToolbar>

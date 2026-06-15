@@ -5,7 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { isRecord, type JsonRecord } from "./shared";
 import { isSkippedSchemaReportPayload } from "./schema-report-plugin-context";
-import { mappingSourceForReport, readReportContext, reportContextKey } from "./schema-run-report-mapping";
+import {
+  mappingSourceForReport,
+  readReportContext,
+  reportContextKey,
+} from "./schema-run-report-mapping";
 
 type ReportState = {
   status?: string;
@@ -108,7 +112,5 @@ export const buildSchemaRunRawFromSubmitResult = (
   };
 };
 
-export const reportStatesFromSnapshot = (
-  value: unknown,
-): Record<string, ReportState> =>
+export const reportStatesFromSnapshot = (value: unknown): Record<string, ReportState> =>
   isRecord(value) ? (value as Record<string, ReportState>) : {};

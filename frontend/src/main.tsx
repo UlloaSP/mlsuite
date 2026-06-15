@@ -46,7 +46,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 position="top-center"
                 toastOptions={{
                   classNames: {
-                    toast: "rounded-lg border border-neutral-200 bg-white text-neutral-950 shadow-lg",
+                    toast:
+                      "rounded-lg border border-neutral-200 bg-white text-neutral-950 shadow-lg",
                     title: "text-sm font-medium",
                     description: "text-sm text-neutral-600",
                     actionButton:

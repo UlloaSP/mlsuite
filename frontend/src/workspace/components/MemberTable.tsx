@@ -1,4 +1,4 @@
-import { AppButton, AppCopy, AppPanel } from "../../app/components";
+import { AppButton, AppCopy, AppPanel, AppSelect } from "../../app/components";
 import { RoleBadge } from "./RoleBadge";
 import type { MembershipRowActionsDto, MembershipStatus, RoleSummaryDto } from "../types";
 
@@ -44,17 +44,15 @@ export function MemberTable({
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {row.actions.canChangeRole && row.role.id ? (
-                <select
-                  value={row.role.id}
-                  onChange={(event) => onRoleChange(row.id, Number(event.target.value))}
-                  className="rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-primary)] shadow-[var(--shadow-card)]"
-                >
-                  {row.actions.assignableRoles.map((role) => (
-                    <option key={role.id} value={role.id ?? ""}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
+                <AppSelect
+                  value={String(row.role.id)}
+                  onValueChange={(roleId) => onRoleChange(row.id, Number(roleId))}
+                  className="min-w-40"
+                  options={row.actions.assignableRoles.map((role) => ({
+                    value: String(role.id ?? ""),
+                    label: role.name,
+                  }))}
+                />
               ) : (
                 <p className="text-sm text-[var(--text-secondary)]">Read only</p>
               )}

@@ -48,10 +48,7 @@ export function ReviewOutputsSection({
         );
       })}
       {reports.map((report, index) => (
-        <div
-          key={report.reportId}
-          className="grid gap-1 py-3 md:grid-cols-[180px_minmax(0,1fr)]"
-        >
+        <div key={report.reportId} className="grid gap-1 py-3 md:grid-cols-[180px_minmax(0,1fr)]">
           <p className="text-sm font-semibold text-[var(--text-primary)]">
             Output {targets.length + index + 1}: {report.label}
           </p>

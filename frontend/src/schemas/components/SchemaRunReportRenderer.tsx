@@ -35,9 +35,8 @@ const customReportByKind = (
 ): CatalogReportDefinition | undefined =>
   definitions.find((definition) => definition.kind === kind);
 
-const customReportKinds = (
-  definitions: readonly CatalogReportDefinition[] = [],
-): string[] => definitions.map((definition) => definition.kind);
+const customReportKinds = (definitions: readonly CatalogReportDefinition[] = []): string[] =>
+  definitions.map((definition) => definition.kind);
 
 const reportsOf = (schema: unknown): ReportConfig[] =>
   isRecord(schema) && Array.isArray(schema.reports)

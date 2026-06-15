@@ -60,9 +60,7 @@ export const buildSchemaRunExportSummaries = (
     };
   });
 
-export const collectSchemaRunExportReviewers = (
-  summaries: readonly SchemaRunExportRunSummary[],
-) =>
+export const collectSchemaRunExportReviewers = (summaries: readonly SchemaRunExportRunSummary[]) =>
   Array.from(
     new Set(summaries.flatMap((summary) => summary.reviewers.map((item) => item.reviewer))),
   ).sort();

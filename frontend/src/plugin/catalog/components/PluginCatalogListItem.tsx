@@ -31,7 +31,7 @@ export function PluginCatalogListItem({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.28 }}
-      className="grid gap-4 rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)] lg:grid-cols-[minmax(260px,1fr)_auto]"
+      className="grid gap-4 rounded border border-[var(--border-soft)] p-5 lg:grid-cols-[minmax(260px,1fr)_auto]"
     >
       <div className="min-w-0 space-y-3">
         <div className="flex flex-wrap items-center gap-2">

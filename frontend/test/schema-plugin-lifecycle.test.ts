@@ -41,7 +41,12 @@ const crystal = (): CatalogReportDefinition => ({
         return response.json();
       },
     }),
-    render: { content: ({ payload }) => ({ type: "text", value: String((payload as { explanation?: string })?.explanation ?? "") }) },
+    render: {
+      content: ({ payload }) => ({
+        type: "text",
+        value: String((payload as { explanation?: string })?.explanation ?? ""),
+      }),
+    },
   }),
 });
 
@@ -49,31 +54,76 @@ describe("schema plugin real mlform lifecycle", () => {
   afterEach(() => vi.restoreAllMocks());
 
   test("creates one fetchable report controller per bound model", async () => {
-    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
-      if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
-      return new Response(JSON.stringify({ explanation: url }));
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
+        return new Response(JSON.stringify({ explanation: url }));
+      }),
+    );
     const runtime = createSchemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number" }],
         reports: [
-          { id: "crystal_1", source: "crystal_1", kind: "Crystal Tree", endpoint: "/api/analyzer/explanations" },
-          { id: "crystal_2", source: "crystal_2", kind: "Crystal Tree", endpoint: "/api/analyzer/explanations" },
-          { id: "crystal_3", source: "crystal_3", kind: "Crystal Tree", endpoint: "/api/analyzer/explanations" },
+          {
+            id: "crystal_1",
+            source: "crystal_1",
+            kind: "Crystal Tree",
+            endpoint: "/api/analyzer/explanations",
+          },
+          {
+            id: "crystal_2",
+            source: "crystal_2",
+            kind: "Crystal Tree",
+            endpoint: "/api/analyzer/explanations",
+          },
+          {
+            id: "crystal_3",
+            source: "crystal_3",
+            kind: "Crystal Tree",
+            endpoint: "/api/analyzer/explanations",
+          },
         ],
       },
       bindings: [
-        { modelId: "model-1", signatureId: "sig-1", inputMapping: { age: "age" }, outputMapping: { crystal_1: "crystal-tree" } },
-        { modelId: "model-2", signatureId: "sig-2", inputMapping: { age: "age" }, outputMapping: { crystal_2: "crystal-tree" } },
-        { modelId: "model-3", signatureId: "sig-3", inputMapping: { age: "age" }, outputMapping: { crystal_3: "crystal-tree" } },
+        {
+          modelId: "model-1",
+          signatureId: "sig-1",
+          inputMapping: { age: "age" },
+          outputMapping: { crystal_1: "crystal-tree" },
+        },
+        {
+          modelId: "model-2",
+          signatureId: "sig-2",
+          inputMapping: { age: "age" },
+          outputMapping: { crystal_2: "crystal-tree" },
+        },
+        {
+          modelId: "model-3",
+          signatureId: "sig-3",
+          inputMapping: { age: "age" },
+          outputMapping: { crystal_3: "crystal-tree" },
+        },
       ],
       customReportDefinitions: [crystal()],
     });
-    const form = createForm({ schema: runtime.formSchema, registry: runtime.registry, transport: runtime.transport });
+    const form = createForm({
+      schema: runtime.formSchema,
+      registry: runtime.registry,
+      transport: runtime.transport,
+    });
     form.setValues({ age: 42 });
     const result = await form.submit();
-    expect(form.reports.map((report) => report.id)).toEqual(["crystal-1", "crystal-2", "crystal-3"]);
-    await Promise.all(form.reports.map((report) => report.fetch(createReportFetchRequest(result, { reportId: report.id }))));
+    expect(form.reports.map((report) => report.id)).toEqual([
+      "crystal-1",
+      "crystal-2",
+      "crystal-3",
+    ]);
+    await Promise.all(
+      form.reports.map((report) =>
+        report.fetch(createReportFetchRequest(result, { reportId: report.id })),
+      ),
+    );
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
       "/api/analyzer/explanations?modelId=model-1",
@@ -83,10 +133,13 @@ describe("schema plugin real mlform lifecycle", () => {
   });
 
   test("prefetches custom reports during form submit without manual report fetch", async () => {
-    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
-      if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
-      return new Response(JSON.stringify({ explanation: url }));
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
+        return new Response(JSON.stringify({ explanation: url }));
+      }),
+    );
     const runtime = createSchemaRunRuntime({
       schema: {
         fields: [{ id: "age", label: "age", kind: "number" }],
@@ -96,12 +149,26 @@ describe("schema plugin real mlform lifecycle", () => {
         ],
       },
       bindings: [
-        { modelId: "model-1", signatureId: "sig-1", inputMapping: { age: "age" }, outputMapping: { crystal_1: "crystal-tree" } },
-        { modelId: "model-2", signatureId: "sig-2", inputMapping: { age: "age" }, outputMapping: { crystal_2: "crystal-tree" } },
+        {
+          modelId: "model-1",
+          signatureId: "sig-1",
+          inputMapping: { age: "age" },
+          outputMapping: { crystal_1: "crystal-tree" },
+        },
+        {
+          modelId: "model-2",
+          signatureId: "sig-2",
+          inputMapping: { age: "age" },
+          outputMapping: { crystal_2: "crystal-tree" },
+        },
       ],
       customReportDefinitions: [crystal()],
     });
-    const form = createForm({ schema: runtime.formSchema, registry: runtime.registry, transport: runtime.transport });
+    const form = createForm({
+      schema: runtime.formSchema,
+      registry: runtime.registry,
+      transport: runtime.transport,
+    });
     form.setValues({ age: 42 });
     const result = await form.submit();
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));

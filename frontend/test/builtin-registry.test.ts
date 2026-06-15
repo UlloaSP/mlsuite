@@ -39,11 +39,7 @@ describe("MLForm builtin registry", () => {
     });
 
     expect(result.success).toBe(false);
-    expect(result.issues.some((issue) => issue.message.includes("plugin catalog"))).toBe(
-      true,
-    );
-    expect(schemaNeedsPluginCatalog({ fields: [{ kind: "missing-custom-field" }] })).toBe(
-      true,
-    );
+    expect(result.issues.some((issue) => issue.message.includes("plugin catalog"))).toBe(true);
+    expect(schemaNeedsPluginCatalog({ fields: [{ kind: "missing-custom-field" }] })).toBe(true);
   });
 });

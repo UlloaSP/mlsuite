@@ -4,10 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { createMlRegistryPack } from "mlform/builtins";
-import {
-  registerDefinedFieldKind,
-  registerDefinedReportKind,
-} from "mlform/kit";
+import { registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import {
   createForm,

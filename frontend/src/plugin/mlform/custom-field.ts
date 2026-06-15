@@ -57,9 +57,7 @@ export const invalidateCustomFieldDefinitions = (): void => {
   invalidatePluginCatalog();
 };
 
-export const getCustomFieldDefinitions = async (): Promise<
-  readonly CatalogFieldDefinition[]
-> => {
+export const getCustomFieldDefinitions = async (): Promise<readonly CatalogFieldDefinition[]> => {
   catalogDefinitionsPromise ??= loadPlugins().then(async (items) => {
     const definitions = (await Promise.all(items.map((item) => toCatalogDefinition(item)))).filter(
       (definition): definition is CatalogFieldDefinition => definition !== null,

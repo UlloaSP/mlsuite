@@ -146,14 +146,9 @@ export function InvitationsPage() {
             <>
               <AppSelect
                 value={status}
-                onChange={(event) => setStatus(event.target.value as InvitationStatus | "ALL")}
-              >
-                {statuses.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </AppSelect>
+                onValueChange={(nextStatus) => setStatus(nextStatus as InvitationStatus | "ALL")}
+                options={statuses.map((item) => ({ value: item, label: item }))}
+              />
               {selected.length ? (
                 <AppButton
                   variant="danger"

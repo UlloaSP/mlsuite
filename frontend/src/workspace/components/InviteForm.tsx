@@ -57,29 +57,27 @@ export function InviteForm({
         }
       />
       <AppSelect
-        className="rounded-xl shadow-none"
+        className="rounded shadow-none"
         value={selectedRoleId ? String(selectedRoleId) : ""}
-        onChange={(event) => setRoleDefinitionId(event.target.value)}
+        onValueChange={setRoleDefinitionId}
         disabled={roleOptions.length === 0}
-      >
-        {roleOptions.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.name}
-          </option>
-        ))}
-      </AppSelect>
+        options={roleOptions.map((option) => ({
+          value: String(option.id),
+          label: option.name,
+        }))}
+      />
       <AppSelect
-        className="rounded-xl shadow-none"
+        className="rounded shadow-none"
         value={teamId}
-        onChange={(event) => setTeamId(event.target.value)}
-      >
-        <option value="">No team</option>
-        {teams.map((team) => (
-          <option key={team.id} value={team.id}>
-            {team.name}
-          </option>
-        ))}
-      </AppSelect>
+        onValueChange={setTeamId}
+        options={[
+          { value: "", label: "No team" },
+          ...teams.map((team) => ({
+            value: String(team.id),
+            label: team.name,
+          })),
+        ]}
+      />
       <AppButton
         type="button"
         className="w-full rounded-xl px-5 lg:w-auto"

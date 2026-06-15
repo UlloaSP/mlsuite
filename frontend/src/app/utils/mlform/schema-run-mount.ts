@@ -8,7 +8,12 @@ import { type AfterSubmitContext, type SubmitErrorContext } from "mlform/runtime
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
 import { createSchemaRunRuntime } from "./schema-run-runtime";
 import { getPredictionDesignSystem } from "./headless-prediction";
-import { type JsonRecord, type MountedPredictionForm, type PredictionTheme, isRecord } from "./shared";
+import {
+  type JsonRecord,
+  type MountedPredictionForm,
+  type PredictionTheme,
+  isRecord,
+} from "./shared";
 import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
 import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";

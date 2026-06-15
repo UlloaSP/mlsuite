@@ -105,17 +105,18 @@ export function CreateSchemaVersionPage() {
               <AppSelect
                 id="base-version"
                 value={effectiveBaseId}
-                onChange={(event) => setBaseVersionId(event.target.value)}
+                onValueChange={setBaseVersionId}
                 disabled={!sortedVersions.length}
                 className="w-full"
-              >
-                {sortedVersions.length ? null : <option value="">No versions available</option>}
-                {sortedVersions.map((version) => (
-                  <option key={schemaVersionId(version)} value={schemaVersionId(version)}>
-                    {version.name} · v{version.version}
-                  </option>
-                ))}
-              </AppSelect>
+                options={
+                  sortedVersions.length
+                    ? sortedVersions.map((version) => ({
+                        value: schemaVersionId(version),
+                        label: `${version.name} · v${version.version}`,
+                      }))
+                    : [{ value: "", label: "No versions available" }]
+                }
+              />
             </div>
             <div className="space-y-2">
               <label

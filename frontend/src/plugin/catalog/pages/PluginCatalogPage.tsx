@@ -11,9 +11,7 @@ import { AppButton, AppPage, AppPageHeader, AppSurface } from "../../../app/comp
 import { NotFoundError } from "../../../app/pages/error-page";
 import { useUser } from "../../../user/hooks";
 import { useWorkspaceContext } from "../../../workspace/hooks";
-import { PluginCatalogListPanel } from "../components/PluginCatalogListPanel";
-import { PluginCatalogStatsPanel } from "../components/PluginCatalogStatsPanel";
-import { PluginCatalogToolbar } from "../components/PluginCatalogToolbar";
+import { PluginCatalogBrowser } from "../components/PluginCatalogBrowser";
 import { useUploadPluginMutation } from "../hooks/usePluginCatalogPageData";
 import { TYPE_META, readFileText } from "../plugin-catalog-shared";
 import type { SortMode, TypeFilter } from "../plugin-catalog-shared";
@@ -22,12 +20,10 @@ import { invalidateCustomReportDefinitions } from "../../mlform/custom-report";
 import { detectPluginType, invalidatePluginCatalog } from "../../mlform/plugin-catalog";
 import { bumpPluginCatalogVersionAtom } from "../../mlform/plugin-catalog-state";
 
-// react-doctor-disable-next-line react-doctor/prefer-useReducer -- Filters, menu state, upload busy state, and catalog rows are independent UI controls.
 export function PluginCatalogPage() {
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const sortMenuRef = useRef<HTMLDivElement | null>(null);
   const organizationId = workspace?.currentOrganization.id;
   const canManagePlugins = workspace?.permissions.canManagePlugins ?? false;
   const bumpPluginCatalogVersion = useSetAtom(bumpPluginCatalogVersionAtom);
@@ -36,32 +32,12 @@ export function PluginCatalogPage() {
   const deferredQuery = useDeferredValue(query.trim());
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [sort, setSort] = useState<SortMode>("updated");
-  const [isSortOpen, setIsSortOpen] = useState(false);
   const uploadMutation = useUploadPluginMutation();
   const pushToast = (tone: "success" | "error", message: string) => toast[tone](message);
 
   useEffect(() => {
     setPage(0);
   }, [organizationId]);
-
-  useEffect(() => {
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!sortMenuRef.current?.contains(event.target as Node)) {
-        setIsSortOpen(false);
-      }
-    };
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsSortOpen(false);
-      }
-    };
-    window.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("keydown", handleEscape);
-    return () => {
-      window.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
 
   const refreshPluginRuntime = async () => {
     invalidatePluginCatalog();
@@ -116,11 +92,11 @@ export function PluginCatalogPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
+      <AppSurface className="flex flex-1 flex-col overflow-hidden">
         <AppPageHeader
-          eyebrow="Plugin Catalog"
+          eyebrow="Workspace Extensions"
           title={<span>Plugins</span>}
-          description={`Unified catalog for MLForm plugins in ${workspace?.currentOrganization.name ?? "the current workspace"}. Use type filter, search, and sort to manage plugin files in one place.`}
+          description="View and manage workspace plugins that extend MLForm with custom field and report renderers."
           breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Plugins" }]}
           actions={
             canManagePlugins ? (
@@ -135,32 +111,33 @@ export function PluginCatalogPage() {
             ) : null
           }
         />
-        <PluginCatalogStatsPanel organizationId={organizationId} />
-        <PluginCatalogToolbar
-          inputRef={inputRef}
-          isSortOpen={isSortOpen}
-          onFileSelection={(event) => {
-            void handleFileSelection(event);
+        <PluginCatalogBrowser
+          toolbar={{
+            inputRef,
+            onFileSelection: (event) => {
+              void handleFileSelection(event);
+            },
+            organizationId,
+            page,
+            query,
+            search: deferredQuery,
+            setQuery: handleQueryChange,
+            setSort: handleSortChange,
+            setTypeFilter: handleTypeFilterChange,
+            sort,
+            typeFilter,
           }}
-          query={query}
-          setIsSortOpen={setIsSortOpen}
-          setQuery={handleQueryChange}
-          setSort={handleSortChange}
-          setTypeFilter={handleTypeFilterChange}
-          sort={sort}
-          sortMenuRef={sortMenuRef}
-          typeFilter={typeFilter}
-        />
-        <PluginCatalogListPanel
-          canManagePlugins={canManagePlugins}
-          isUploadPending={uploadMutation.isPending}
-          onCatalogChanged={refreshPluginRuntime}
-          organizationId={organizationId}
-          page={page}
-          search={deferredQuery}
-          setPage={setPage}
-          sort={sort}
-          typeFilter={typeFilter}
+          list={{
+            canManagePlugins,
+            isUploadPending: uploadMutation.isPending,
+            onCatalogChanged: refreshPluginRuntime,
+            organizationId,
+            page,
+            search: deferredQuery,
+            setPage,
+            sort,
+            typeFilter,
+          }}
         />
       </AppSurface>
     </AppPage>

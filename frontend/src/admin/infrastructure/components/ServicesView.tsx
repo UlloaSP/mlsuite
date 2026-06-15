@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Filter, RefreshCw, Search } from "lucide-react";
-import { AppBadge, AppButton, cx } from "../../../app/components";
+import { AppBadge, AppButton, AppSelect, cx } from "../../../app/components";
 import { formatBytes, formatPercent } from "../formatters";
 import { labelForServiceHealth, toneForServiceStatus } from "../status";
 import type { ServiceStatusDto } from "../types";
@@ -116,17 +116,18 @@ export function ServicesView({
             value={statusFilter}
             onChange={setStatusFilter}
           />
-          <select
+          <AppSelect
             aria-label="Filter by service health"
-            className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5 text-xs text-[var(--text-primary)] outline-none"
+            className="h-8 min-w-32 px-3 text-xs"
             value={healthFilter}
-            onChange={(e) => setHealthFilter(e.target.value)}
-          >
-            <option value="all">All health</option>
-            <option value="healthy">Healthy</option>
-            <option value="degraded">Degraded</option>
-            <option value="unknown">Unknown</option>
-          </select>
+            onValueChange={setHealthFilter}
+            options={[
+              { value: "all", label: "All health" },
+              { value: "healthy", label: "Healthy" },
+              { value: "degraded", label: "Degraded" },
+              { value: "unknown", label: "Unknown" },
+            ]}
+          />
           <div className="flex-1" />
           <span className="flex items-center gap-1.5 text-[0.68rem] text-[var(--text-secondary)]">
             <Filter size={11} />

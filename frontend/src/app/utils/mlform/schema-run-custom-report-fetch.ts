@@ -11,7 +11,11 @@ import {
   skippedSchemaReportPayload,
 } from "./schema-report-plugin-context";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
-import { mappingSourceForReport, readReportContext, reportContextKey } from "./schema-run-report-mapping";
+import {
+  mappingSourceForReport,
+  readReportContext,
+  reportContextKey,
+} from "./schema-run-report-mapping";
 import { isRecord, type JsonRecord } from "./shared";
 
 export type SchemaRunBindingForReports = {
@@ -145,14 +149,14 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
         });
         return;
       }
-      const fetchFactory =
-        definition?.definition.definition.fetch ?? definition?.definition.fetch;
+      const fetchFactory = definition?.definition.definition.fetch ?? definition?.definition.fetch;
       const fetcher = fetchFactory?.({ config: report as never, reportId: id });
       if (!fetcher) {
         schemaRunDebug("custom-report-fetch.skip-no-fetcher", { id, kind: report.kind });
         return;
       }
-      const context = readReportContext(built.reportContextById, id) ??
+      const context =
+        readReportContext(built.reportContextById, id) ??
         deriveReportContext(id, bindings, nextResults) ??
         {};
       schemaRunDebug("custom-report-fetch.context", {
@@ -202,7 +206,11 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
             schemaRun: true,
             reportContextById: built.reportContextById,
           },
-          raw: { results: nextResults, reports: built.reports, reportContextById: built.reportContextById },
+          raw: {
+            results: nextResults,
+            reports: built.reports,
+            reportContextById: built.reportContextById,
+          },
           signal: request.signal,
         });
       } catch (error) {

@@ -63,12 +63,13 @@ export const getQuestionnaireFieldDescriptors = (
     kind: typeof field.kind === "string" ? field.kind : "unknown",
     options: Array.isArray(sourceFields[index]?.options)
       ? sourceFields[index].options
-          .filter((option): option is { label: string; value: unknown } =>
-            typeof option === "object" &&
-            option !== null &&
-            "label" in option &&
-            typeof option.label === "string" &&
-            "value" in option,
+          .filter(
+            (option): option is { label: string; value: unknown } =>
+              typeof option === "object" &&
+              option !== null &&
+              "label" in option &&
+              typeof option.label === "string" &&
+              "value" in option,
           )
           .map((option) => ({ label: option.label, value: option.value }))
       : undefined,

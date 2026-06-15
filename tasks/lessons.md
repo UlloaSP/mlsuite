@@ -30,6 +30,24 @@
 - Rule: route pages should own URL/local UI state; TanStack Query subscriptions should live in the smallest component that renders that data, with mutations invalidating query families from dedicated hooks.
 - Correction: plugin frontend files lived under generic `app/api`, `app/pages`, and `app/utils/mlform`, hiding feature ownership.
 - Rule: plugin-owned frontend API, catalog UI, TanStack hooks, and MLForm plugin runtime belong under `src/plugin/...`; app/model/schema/editor code imports plugin module instead of owning plugin files.
+- Correction: plugin catalog toolbar hand-rolled a sort dropdown while shared `AppSelect` already existed, and controls used overly rounded corners.
+- Rule: before adding feature-local form controls, check shared app primitives first; use global primitives and tune their radius/tokens there unless feature needs a distinct interaction.
+- Correction: shared select should use the requested shadcn/Radix primitive instead of a native `<select>` approximation.
+- Rule: when user names a specific UI system component, adapt the global primitive to that system and preserve existing call-site contracts.
+- Correction: Radix select migration showed ids for nested option labels, forced full-width layout, and missed native selects.
+- Rule: shared select migrations must audit every native `<select>`, preserve option display text separately from submitted value, and keep trigger width opt-in so compact toolbars do not wrap.
+- Correction: user wanted shadcn visual behavior but not Radix runtime dependency, matching breadcrumb local primitive approach.
+- Rule: when asked to mimic shadcn components in this repo, prefer local design-system primitives with the same visual/composition behavior; add a runtime dependency only when explicitly requested or impossible locally.
+- Correction: user supplied exact shadcn Select composition code, but previous change only reproduced behavior through `AppSelect`.
+- Rule: when user provides a target component import/composition snippet, expose primitives with matching names and JSX structure, then adapt legacy wrappers on top.
+- Correction: select trigger rendered empty because selected-label lookup only handled a single React element, while real composition passes arrays/fragments.
+- Rule: composed primitives that inspect children must handle arrays and nested wrappers, then verify at real call sites with current classes.
+- Correction: select popup was wider than trigger and opened with label level to trigger instead of item-aligned above selected option.
+- Rule: shared select popups must match trigger width and align selected option to trigger position; labels live above that aligned option.
+- Correction: local shadcn-like select kept diverging from requested Radix/shadcn behavior after multiple visual fixes.
+- Rule: when user explicitly accepts the dependency path for a UI primitive, use the upstream primitive and remove compatibility shims instead of extending a local clone.
+- Correction: preserving legacy `<AppSelect><option /></AppSelect>` delayed full migration and hid contract drift.
+- Rule: when a breaking UI primitive contract is requested, remove the legacy API in the shared wrapper and migrate every consumer so typecheck catches stragglers.
 
 ## 2026-06-14 - Page Header Consumer Migration
 

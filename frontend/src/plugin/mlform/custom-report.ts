@@ -57,9 +57,7 @@ export const invalidateCustomReportDefinitions = (): void => {
   invalidatePluginCatalog();
 };
 
-export const getCustomReportDefinitions = async (): Promise<
-  readonly CatalogReportDefinition[]
-> => {
+export const getCustomReportDefinitions = async (): Promise<readonly CatalogReportDefinition[]> => {
   catalogDefinitionsPromise ??= loadPlugins().then(async (items) => {
     const definitions = (await Promise.all(items.map((item) => toCatalogDefinition(item)))).filter(
       (definition): definition is CatalogReportDefinition => definition !== null,

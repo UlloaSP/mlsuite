@@ -148,7 +148,9 @@ describe("schema plugin readiness failures", () => {
     await submit(runtime);
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(true);
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
+      true,
+    );
   });
 
   test("numeric backend ids still call explanations with string modelId", async () => {

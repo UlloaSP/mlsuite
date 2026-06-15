@@ -57,26 +57,23 @@ export async function runBulkPredictionPipeline({
     reportFetchMode: "all",
     artifactAdapter: {
       derive({ submitResult, reportFetchResults, reportFetchErrors }) {
-        const feedbackReports = form.reports.reduce<PersistedReportState[]>(
-          (items, report) => {
-            if (!isFeedbackReportConfig(report)) {
-              return items;
-            }
-            items.push({
-              id: report.id,
-              status:
-                report.id in reportFetchResults
-                  ? "done"
-                  : report.id in reportFetchErrors
-                    ? "error"
-                    : "idle",
-              result: reportFetchResults[report.id],
-              error: reportFetchErrors[report.id] ?? null,
-            });
+        const feedbackReports = form.reports.reduce<PersistedReportState[]>((items, report) => {
+          if (!isFeedbackReportConfig(report)) {
             return items;
-          },
-          [],
-        );
+          }
+          items.push({
+            id: report.id,
+            status:
+              report.id in reportFetchResults
+                ? "done"
+                : report.id in reportFetchErrors
+                  ? "error"
+                  : "idle",
+            result: reportFetchResults[report.id],
+            error: reportFetchErrors[report.id] ?? null,
+          });
+          return items;
+        }, []);
         return buildPersistedPredictionPayload(submitResult.raw, feedbackReports);
       },
     },

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { CalendarDays, Search, SlidersHorizontal } from "lucide-react";
-import { AppToolbar, AppTextField } from "../../app/components";
+import { AppSelect, AppTextField, AppToolbar } from "../../app/components";
 import type { PredictionRunStatus, PredictionRunDto, SchemaVersionDto } from "../types";
 import { SchemaRunExportButton } from "./SchemaRunExportButton";
 
@@ -47,49 +47,54 @@ export function SchemaRunHistoryToolbar({
           prefix={<Search size={16} className="text-[var(--text-muted)]" />}
           className="min-w-[260px] flex-1"
         />
-        <label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm shadow-[var(--shadow-card)]">
+        <div className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
           <SlidersHorizontal size={15} className="text-[var(--text-muted)]" />
-          <select
+          <AppSelect
             aria-label="Inference status"
             value={status}
-            onChange={(event) => onStatusChange(event.target.value as SchemaRunStatusFilter)}
-            className="bg-transparent outline-none"
-          >
-            <option value="all">All status</option>
-            <option value="SUCCESS">SUCCESS</option>
-            <option value="PARTIAL_SUCCESS">PARTIAL_SUCCESS</option>
-            <option value="FAILED">FAILED</option>
-          </select>
-        </label>
-        <label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm shadow-[var(--shadow-card)]">
+            onValueChange={(nextStatus) => onStatusChange(nextStatus as SchemaRunStatusFilter)}
+            className="min-w-40"
+            options={[
+              { value: "all", label: "All status" },
+              { value: "SUCCESS", label: "SUCCESS" },
+              { value: "PARTIAL_SUCCESS", label: "PARTIAL_SUCCESS" },
+              { value: "FAILED", label: "FAILED" },
+            ]}
+          />
+        </div>
+        <div className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
           <SlidersHorizontal size={15} className="text-[var(--text-muted)]" />
-          <select
+          <AppSelect
             aria-label="Feedback status"
             value={feedbackStatus}
-            onChange={(event) =>
-              onFeedbackStatusChange(event.target.value as SchemaRunFeedbackStatusFilter)
+            onValueChange={(nextStatus) =>
+              onFeedbackStatusChange(nextStatus as SchemaRunFeedbackStatusFilter)
             }
-            className="bg-transparent outline-none"
-          >
-            <option value="all">All feedback</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="PENDING">Pending</option>
-          </select>
-        </label>
-        <label className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm shadow-[var(--shadow-card)]">
+            className="min-w-40"
+            options={[
+              { value: "all", label: "All feedback" },
+              { value: "COMPLETED", label: "Completed" },
+              { value: "PENDING", label: "Pending" },
+            ]}
+          />
+        </div>
+        <div className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
           <CalendarDays size={15} className="text-[var(--text-muted)]" />
-          <select
+          <AppSelect
             aria-label="Inference date range"
             value={dateRange}
-            onChange={(event) => onDateRangeChange(event.target.value as SchemaRunDateRangeFilter)}
-            className="bg-transparent outline-none"
-          >
-            <option value="all">All dates</option>
-            <option value="today">Today</option>
-            <option value="last7">Last 7 days</option>
-            <option value="last30">Last 30 days</option>
-          </select>
-        </label>
+            onValueChange={(nextDateRange) =>
+              onDateRangeChange(nextDateRange as SchemaRunDateRangeFilter)
+            }
+            className="min-w-36"
+            options={[
+              { value: "all", label: "All dates" },
+              { value: "today", label: "Today" },
+              { value: "last7", label: "Last 7 days" },
+              { value: "last30", label: "Last 30 days" },
+            ]}
+          />
+        </div>
       </div>
       <SchemaRunExportButton runs={runs} version={version} />
     </AppToolbar>

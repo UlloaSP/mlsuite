@@ -89,9 +89,7 @@ const buildInputMapping = (signature: SignatureDto, fieldsByKey: Map<string, Can
 
 const kindsFrom = (items: unknown): string[] =>
   Array.isArray(items)
-    ? Array.from(
-        new Set(items.filter(isRecord).flatMap((item) => getString(item.kind) ?? [])),
-      )
+    ? Array.from(new Set(items.filter(isRecord).flatMap((item) => getString(item.kind) ?? [])))
     : [];
 
 const buildPluginPolicy = (signature: SignatureDto): JsonRecord => {
@@ -110,7 +108,9 @@ const buildBindingReports = (
   const mappings: JsonRecord[] = [];
   selected.forEach(({ modelId, signature }) => {
     const outputMapping: JsonRecord = {};
-    const sourceReports = isRecord(signature.inputSignature) ? signature.inputSignature.reports : [];
+    const sourceReports = isRecord(signature.inputSignature)
+      ? signature.inputSignature.reports
+      : [];
     if (Array.isArray(sourceReports)) {
       sourceReports.filter(isRecord).forEach((report, index) => {
         const sourceId = canonicalReportSource(report, `report-${index + 1}`);
@@ -139,7 +139,12 @@ export const composeSchemaVersion = (
 
   selected.slice(1).forEach(({ signature }) => {
     const schema = signature.inputSignature;
-    addMissingCanonical(fieldsState.canonical, fieldsState.byKey, isRecord(schema) ? schema.fields : [], "field");
+    addMissingCanonical(
+      fieldsState.canonical,
+      fieldsState.byKey,
+      isRecord(schema) ? schema.fields : [],
+      "field",
+    );
   });
   const bindingReports = buildBindingReports(selected);
 

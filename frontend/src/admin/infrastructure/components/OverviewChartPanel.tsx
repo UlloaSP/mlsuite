@@ -16,7 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import { Download } from "lucide-react";
-import { AppBadge } from "../../../app/components";
+import { AppBadge, AppSelect } from "../../../app/components";
 import { formatTimestamp } from "../formatters";
 import type { InfrastructureOverviewDto } from "../types";
 import type { ChartLayer, ChartValueKey } from "./OverviewMetrics";
@@ -60,19 +60,19 @@ export function OverviewChartPanel({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select
+          <AppSelect
             aria-label="Select chart service"
-            className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-2 py-1 text-[0.68rem] text-[var(--text-primary)] outline-none"
+            className="h-8 min-w-36 px-3 text-xs"
             value={chartService}
-            onChange={(event) => setChartService(event.target.value)}
-          >
-            <option value="all">All services</option>
-            {overview.services.map((service) => (
-              <option key={service.name} value={service.name}>
-                {service.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={setChartService}
+            options={[
+              { value: "all", label: "All services" },
+              ...overview.services.map((service) => ({
+                value: service.name,
+                label: service.name,
+              })),
+            ]}
+          />
           <AppBadge
             tone={streamConnected ? "success" : "warning"}
             className="px-2 py-0.5 text-[0.6rem]"

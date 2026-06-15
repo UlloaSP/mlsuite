@@ -58,76 +58,76 @@ export function EditorBody() {
         return;
       }
 
-    const monacoNs = monacoRef.current;
-    const model = editorRef.current.getModel();
-    if (!model) {
-      return;
-    }
-
-    const runId = ++validationSequenceRef.current;
-    const compatMarkers: Monaco.editor.IMarkerData[] = [];
-    const compatCards: EditorErrorCard[] = [];
-    try {
-      const parsed = JSON.parse(text);
-      const result = validateMlformSchema(parsed, {
-        customFieldDefinitions,
-        customReportDefinitions,
-      });
-
-      if (runId !== validationSequenceRef.current) {
+      const monacoNs = monacoRef.current;
+      const model = editorRef.current.getModel();
+      if (!model) {
         return;
       }
 
-      if (result.success) {
-        setSchema(parsed);
-      }
-
-      for (const issue of result.issues) {
-        const { line, column } = pathToPos(text, issue.path);
-        const pathStr = issue.path.length ? issue.path.join(".") : "root";
-
-        compatCards.push({
-          line,
-          column,
-          path: pathStr,
-          message: issue.message,
-          severity: issue.severity,
+      const runId = ++validationSequenceRef.current;
+      const compatMarkers: Monaco.editor.IMarkerData[] = [];
+      const compatCards: EditorErrorCard[] = [];
+      try {
+        const parsed = JSON.parse(text);
+        const result = validateMlformSchema(parsed, {
+          customFieldDefinitions,
+          customReportDefinitions,
         });
-        compatMarkers.push({
-          startLineNumber: line,
-          startColumn: getCompatMarkerStartColumn(text, line, column),
-          endLineNumber: line,
-          endColumn: model.getLineMaxColumn(line),
-          message: issue.message,
-          severity:
-            issue.severity === "warning"
-              ? monacoNs.MarkerSeverity.Warning
-              : monacoNs.MarkerSeverity.Error,
-          source: "mlform-compat",
-          code: pathStr,
-        });
-      }
 
-      if (catalogWarningRef.current) {
-        compatCards.push(catalogWarningRef.current);
-        compatMarkers.push({
-          startLineNumber: 1,
-          startColumn: 1,
-          endLineNumber: 1,
-          endColumn: model.getLineMaxColumn(1),
-          message: catalogWarningRef.current.message,
-          severity: monacoNs.MarkerSeverity.Warning,
-          source: "mlform-compat",
-          code: "catalog",
-        });
-      }
+        if (runId !== validationSequenceRef.current) {
+          return;
+        }
 
-      monacoNs.editor.setModelMarkers(model, "mlform-compat", compatMarkers);
-      compatCardsRef.current = compatCards;
-    } catch {
-      monacoNs.editor.setModelMarkers(model, "mlform-compat", []);
-      compatCardsRef.current = catalogWarningRef.current ? [catalogWarningRef.current] : [];
-    }
+        if (result.success) {
+          setSchema(parsed);
+        }
+
+        for (const issue of result.issues) {
+          const { line, column } = pathToPos(text, issue.path);
+          const pathStr = issue.path.length ? issue.path.join(".") : "root";
+
+          compatCards.push({
+            line,
+            column,
+            path: pathStr,
+            message: issue.message,
+            severity: issue.severity,
+          });
+          compatMarkers.push({
+            startLineNumber: line,
+            startColumn: getCompatMarkerStartColumn(text, line, column),
+            endLineNumber: line,
+            endColumn: model.getLineMaxColumn(line),
+            message: issue.message,
+            severity:
+              issue.severity === "warning"
+                ? monacoNs.MarkerSeverity.Warning
+                : monacoNs.MarkerSeverity.Error,
+            source: "mlform-compat",
+            code: pathStr,
+          });
+        }
+
+        if (catalogWarningRef.current) {
+          compatCards.push(catalogWarningRef.current);
+          compatMarkers.push({
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: 1,
+            endColumn: model.getLineMaxColumn(1),
+            message: catalogWarningRef.current.message,
+            severity: monacoNs.MarkerSeverity.Warning,
+            source: "mlform-compat",
+            code: "catalog",
+          });
+        }
+
+        monacoNs.editor.setModelMarkers(model, "mlform-compat", compatMarkers);
+        compatCardsRef.current = compatCards;
+      } catch {
+        monacoNs.editor.setModelMarkers(model, "mlform-compat", []);
+        compatCardsRef.current = catalogWarningRef.current ? [catalogWarningRef.current] : [];
+      }
     },
     [setSchema],
   );
@@ -186,34 +186,37 @@ export function EditorBody() {
     );
   };
 
-  const handleOnValidate = useCallback((markers: Monaco.editor.IMarker[]) => {
-    if (!editorRef.current) {
-      return;
-    }
-
-    const model = editorRef.current.getModel();
-    if (!model) {
-      return;
-    }
-
-    const content = model.getValue();
-    const workerCards = markers.reduce<EditorErrorCard[]>((cards, marker) => {
-      if (marker.source !== "mlform-compat") {
-        cards.push(
-          getMarkerMessage(content, {
-            ...marker,
-            startOffset: model.getOffsetAt({
-              lineNumber: marker.startLineNumber,
-              column: marker.startColumn,
-            }),
-          }),
-        );
+  const handleOnValidate = useCallback(
+    (markers: Monaco.editor.IMarker[]) => {
+      if (!editorRef.current) {
+        return;
       }
-      return cards;
-    }, []);
 
-    setSchemaErrors([...workerCards, ...compatCardsRef.current]);
-  }, [setSchemaErrors]);
+      const model = editorRef.current.getModel();
+      if (!model) {
+        return;
+      }
+
+      const content = model.getValue();
+      const workerCards = markers.reduce<EditorErrorCard[]>((cards, marker) => {
+        if (marker.source !== "mlform-compat") {
+          cards.push(
+            getMarkerMessage(content, {
+              ...marker,
+              startOffset: model.getOffsetAt({
+                lineNumber: marker.startLineNumber,
+                column: marker.startColumn,
+              }),
+            }),
+          );
+        }
+        return cards;
+      }, []);
+
+      setSchemaErrors([...workerCards, ...compatCardsRef.current]);
+    },
+    [setSchemaErrors],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -232,11 +235,7 @@ export function EditorBody() {
         catalogReportDefinitionsRef.current = customReportDefinitions;
         catalogWarningRef.current = null;
         const nextText = editorRef.current?.getValue() ?? schemaText;
-        applyCompatValidation(
-          nextText,
-          customFieldDefinitions,
-          customReportDefinitions,
-        );
+        applyCompatValidation(nextText, customFieldDefinitions, customReportDefinitions);
       } catch (error: unknown) {
         if (cancelled) {
           return;

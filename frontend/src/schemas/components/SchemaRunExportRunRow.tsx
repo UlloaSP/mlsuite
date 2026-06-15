@@ -44,7 +44,9 @@ export function SchemaRunExportRunRow({
           ✓
         </button>
         <button type="button" onClick={onToggleOpen} className="min-w-0 text-left">
-          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{summary.run.name}</p>
+          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
+            {summary.run.name}
+          </p>
           <p className="text-xs text-[var(--text-secondary)]">
             {formatTimestamp(summary.run.createdAt)}
           </p>
@@ -52,7 +54,11 @@ export function SchemaRunExportRunRow({
         <p className="text-xs font-semibold text-[var(--text-secondary)]">
           {selectedReviews}/{summary.reviewCount} reviews
         </p>
-        <button type="button" onClick={onToggleOpen} className="rounded-md p-2 text-[var(--text-muted)] hover:bg-[var(--surface-muted)]">
+        <button
+          type="button"
+          onClick={onToggleOpen}
+          className="rounded-md p-2 text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"
+        >
           {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
       </div>
@@ -64,7 +70,10 @@ export function SchemaRunExportRunRow({
             summary.reviewers.map((reviewer) => {
               const selected = isSchemaRunReviewSelected(selection, runId, reviewer.reviewer);
               return (
-                <div key={schemaRunReviewerKey(runId, reviewer.reviewer)} className="border-b border-[var(--border-soft)] py-3 last:border-b-0">
+                <div
+                  key={schemaRunReviewerKey(runId, reviewer.reviewer)}
+                  className="border-b border-[var(--border-soft)] py-3 last:border-b-0"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <button
                       type="button"
@@ -74,17 +83,24 @@ export function SchemaRunExportRunRow({
                     >
                       ✓
                     </button>
-                    <p className="min-w-0 flex-1 truncate text-sm font-semibold">{reviewer.reviewer}</p>
+                    <p className="min-w-0 flex-1 truncate text-sm font-semibold">
+                      {reviewer.reviewer}
+                    </p>
                     <p className="text-xs text-[var(--text-secondary)]">
-                      {reviewer.outputFeedback.length} output · {reviewer.explanationFeedback.length} report
+                      {reviewer.outputFeedback.length} output ·{" "}
+                      {reviewer.explanationFeedback.length} report
                     </p>
                   </div>
                   <div className="mt-2 space-y-1 pl-8 text-xs text-[var(--text-secondary)]">
                     {reviewer.outputFeedback.map((item) => (
-                      <p key={`o-${item.id}`}>Output {item.order + 1}: {valueText(item.value)}</p>
+                      <p key={`o-${item.id}`}>
+                        Output {item.order + 1}: {valueText(item.value)}
+                      </p>
                     ))}
                     {reviewer.explanationFeedback.map((item) => (
-                      <p key={`e-${item.id}`}>Report {item.order + 1}: {valueText(item.value)}</p>
+                      <p key={`e-${item.id}`}>
+                        Report {item.order + 1}: {valueText(item.value)}
+                      </p>
                     ))}
                   </div>
                 </div>

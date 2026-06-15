@@ -126,16 +126,16 @@ export function OrganizationSettingsPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <AppSelect
                   value={nextOwnerMembershipId}
-                  onChange={(event) => setNextOwnerMembershipId(event.target.value)}
+                  onValueChange={setNextOwnerMembershipId}
                   className="min-w-[260px]"
-                >
-                  <option value="">Select member</option>
-                  {ownerCandidates.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.fullName} - {member.email}
-                    </option>
-                  ))}
-                </AppSelect>
+                  options={[
+                    { value: "", label: "Select member" },
+                    ...ownerCandidates.map((member) => ({
+                      value: String(member.id),
+                      label: `${member.fullName} - ${member.email}`,
+                    })),
+                  ]}
+                />
                 <AppButton
                   type="button"
                   variant="secondary"

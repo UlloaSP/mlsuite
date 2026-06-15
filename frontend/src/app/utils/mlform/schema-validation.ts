@@ -26,11 +26,7 @@ const makeUnknownKindIssue = (
   severity: "error",
 });
 
-const appendFieldIssues = (
-  schema: unknown,
-  allKinds: Set<string>,
-  issues: CompatIssue[],
-) => {
+const appendFieldIssues = (schema: unknown, allKinds: Set<string>, issues: CompatIssue[]) => {
   if (!isRecord(schema) || !Array.isArray(schema.fields)) {
     return;
   }
@@ -44,11 +40,7 @@ const appendFieldIssues = (
   });
 };
 
-const appendReportIssues = (
-  schema: unknown,
-  allKinds: Set<string>,
-  issues: CompatIssue[],
-) => {
+const appendReportIssues = (schema: unknown, allKinds: Set<string>, issues: CompatIssue[]) => {
   if (!isRecord(schema) || !Array.isArray(schema.reports)) {
     return;
   }

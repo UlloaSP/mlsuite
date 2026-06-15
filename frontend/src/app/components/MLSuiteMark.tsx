@@ -28,7 +28,6 @@ const VSCodium = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-
 export function MLSuiteMark({ size = 28 }: { size?: number }) {
   return <VSCodium width={size} height={size} />;
 }

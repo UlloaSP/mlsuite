@@ -61,11 +61,16 @@ const customReportDefinition = (): CatalogReportDefinition => ({
 });
 
 const explanationFetch = ({ config }: { config: { endpoint?: string } }) => ({
-  submit: async (request: { meta?: Record<string, unknown>; serializedFieldValues?: Record<string, unknown> }) => {
+  submit: async (request: {
+    meta?: Record<string, unknown>;
+    serializedFieldValues?: Record<string, unknown>;
+  }) => {
     const modelId = String(request.meta?.modelId ?? "");
     return fetch(`${config.endpoint ?? "/api/analyzer/explanations"}?modelId=${modelId}`, {
       method: "POST",
-      body: JSON.stringify({ instance: request.meta?.backendFieldValues ?? request.serializedFieldValues }),
+      body: JSON.stringify({
+        instance: request.meta?.backendFieldValues ?? request.serializedFieldValues,
+      }),
     }).then((response) => response.json());
   },
 });
@@ -124,13 +129,17 @@ describe("schema binding plugin policy", () => {
         { id: "report_b", label: "B", kind: "plugin-report", source: "report_b" },
       ],
     } as never);
-    const context = (result as { raw: { reportContextById: Record<string, { modelId: string }> } }).raw.reportContextById;
+    const context = (result as { raw: { reportContextById: Record<string, { modelId: string }> } })
+      .raw.reportContextById;
     expect(readReportContext(context, "report_a")?.modelId).toBe("model-1");
     expect(readReportContext(context, "report_b")?.modelId).toBe("model-2");
   });
 
   test("schema report context exists when custom report payload must be fetched", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ reports: {} }))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ reports: {} }))),
+    );
     const transport = createSchemaRunTransport(
       [{ modelId: "model-1", signatureId: "signature-1", outputMapping: { report_1: "score" } }],
       [],
@@ -219,12 +228,14 @@ describe("schema binding plugin policy", () => {
         fields: [{ id: "age", label: "age", kind: "number" }],
         reports: [{ id: "crystal-schema", source: "crystal-schema", kind: "plugin-report" }],
       },
-      bindings: [{
-        modelId: "model-1",
-        signatureId: "signature-1",
-        inputMapping: { age: "age" },
-        outputMapping: { "crystal-schema": "crystal-tree" },
-      }],
+      bindings: [
+        {
+          modelId: "model-1",
+          signatureId: "signature-1",
+          inputMapping: { age: "age" },
+          outputMapping: { "crystal-schema": "crystal-tree" },
+        },
+      ],
       customReportDefinitions: [fetchDefinition],
     });
     const submitResult = await runtime.transport.submit({
@@ -232,8 +243,13 @@ describe("schema binding plugin policy", () => {
       reports: runtime.formSchema.reports,
     } as never);
     const report = runtime.registry.getReport("plugin-report");
-    const fetcher = report?.fetch?.({ config: runtime.formSchema.reports[0], reportId: "crystal-schema" });
-    await fetcher?.submit(createReportFetchRequest(submitResult as never, { reportId: "crystal-schema" }));
+    const fetcher = report?.fetch?.({
+      config: runtime.formSchema.reports[0],
+      reportId: "crystal-schema",
+    });
+    await fetcher?.submit(
+      createReportFetchRequest(submitResult as never, { reportId: "crystal-schema" }),
+    );
     const explanationCall = (fetch as ReturnType<typeof vi.fn>).mock.calls[2];
     expect(String(explanationCall?.[0])).toContain("modelId=model-1");
     expect(JSON.parse(String(explanationCall?.[1]?.body)).instance).toEqual({ age: 42 });
@@ -244,7 +260,11 @@ describe("schema binding plugin policy", () => {
       ...customReportDefinition(),
       definition: {
         ...customReportDefinition().definition,
-        fetch: () => ({ submit: async () => { throw new Error("unsupported"); } }),
+        fetch: () => ({
+          submit: async () => {
+            throw new Error("unsupported");
+          },
+        }),
       },
     };
     const [wrapped] = wrapSchemaReportDefinitions([definition]);
@@ -297,5 +317,4 @@ describe("schema binding plugin policy", () => {
     expect(output.reports.score).toEqual({ explanation: "ok" });
     expect(built.reportsPending).toBe(false);
   });
-
 });

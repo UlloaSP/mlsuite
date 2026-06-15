@@ -33,7 +33,8 @@ export function useCreateSchemaReviewLinkMutation(schemaId: string, versionId: s
   const qc = useQueryClient();
   return useMutation({
     mutationFn: api.createSchemaReviewLink,
-    onSuccess: () => qc.invalidateQueries({ queryKey: SCHEMA_REVIEW_LINKS_QUERY_KEY(schemaId, versionId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: SCHEMA_REVIEW_LINKS_QUERY_KEY(schemaId, versionId) }),
   });
 }
 
@@ -41,7 +42,8 @@ export function useRevokeSchemaReviewLinkMutation(schemaId: string, versionId: s
   const qc = useQueryClient();
   return useMutation({
     mutationFn: api.revokeSchemaReviewLink,
-    onSuccess: () => qc.invalidateQueries({ queryKey: SCHEMA_REVIEW_LINKS_QUERY_KEY(schemaId, versionId) }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: SCHEMA_REVIEW_LINKS_QUERY_KEY(schemaId, versionId) }),
   });
 }
 

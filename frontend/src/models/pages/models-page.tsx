@@ -137,13 +137,14 @@ export function ModelsPage() {
 
             <AppSelect
               value={sort}
-              onChange={(event) => setSort(event.target.value as ModelSortMode)}
+              onValueChange={(nextSort) => setSort(nextSort as ModelSortMode)}
               className="min-w-[180px]"
-            >
-              <option value="updated">Latest updated</option>
-              <option value="name">Name</option>
-              <option value="algorithm">Algorithm</option>
-            </AppSelect>
+              options={[
+                { value: "updated", label: "Latest updated" },
+                { value: "name", label: "Name" },
+                { value: "algorithm", label: "Algorithm" },
+              ]}
+            />
           </div>
 
           <AppBadge>{visibleItems.length} models</AppBadge>

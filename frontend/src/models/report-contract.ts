@@ -10,7 +10,9 @@ export const isFeedbackReportConfig = (report: unknown): boolean =>
   isRecord(report) &&
   (() => {
     const config = isRecord(report.config) ? report.config : report;
-    return typeof config.feedbackEnabled === "boolean" || config.feedbackQuestionnaire !== undefined;
+    return (
+      typeof config.feedbackEnabled === "boolean" || config.feedbackQuestionnaire !== undefined
+    );
   })();
 
 export const getOutputReports = (signatureSchema: unknown): Record<string, unknown>[] => {

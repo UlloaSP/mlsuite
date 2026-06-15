@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueries } from "@tanstack/react-query";
 import { useState } from "react";
 import { Check, Database } from "lucide-react";
-import { AppBadge, AppCopy, AppPanel, AppSectionTitle, cx } from "../../app/components";
+import { AppBadge, AppCopy, AppPanel, AppSectionTitle, AppSelect, cx } from "../../app/components";
 import type { ModelDto, SignatureDto } from "../../models/api/modelService";
 import { getSignatures } from "../../models/api/modelService";
 import { GET_SIGNATURES_QUERY_KEY } from "../../models/hooks";
@@ -128,22 +128,24 @@ export function SchemaModelSelector({ models, value, onChange }: Props) {
                     <Check size={15} />
                   </span>
                 </button>
-                <label className="grid gap-1 text-xs font-semibold text-[var(--text-secondary)]">
-                  Signature
-                  <select
+                <div className="grid gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+                  <span>Signature</span>
+                  <AppSelect
+                    aria-label={`Signature for ${model.name}`}
                     disabled={!signatures.length}
                     value={signature?.id ?? ""}
-                    onChange={(event) => chooseSignature(model, signatures, event.target.value)}
-                    className="h-10 rounded-[14px] border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none transition focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)]/20 disabled:cursor-not-allowed"
-                  >
-                    {signatures.length ? null : <option value="">No signatures</option>}
-                    {signatures.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name} · {getSignatureVersionLabel(item)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    onValueChange={(signatureId) => chooseSignature(model, signatures, signatureId)}
+                    className="h-10 w-full px-3 text-sm font-medium"
+                    options={
+                      signatures.length
+                        ? signatures.map((item) => ({
+                            value: item.id,
+                            label: `${item.name} · ${getSignatureVersionLabel(item)}`,
+                          }))
+                        : [{ value: "", label: "No signatures" }]
+                    }
+                  />
+                </div>
               </div>
             );
           })}
