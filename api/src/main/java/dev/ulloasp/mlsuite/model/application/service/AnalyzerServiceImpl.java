@@ -65,7 +65,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     }
 
     @Override
-    public Map<String, Object> generateInputSignature(Long userId, MultipartFile model, @Nullable MultipartFile dataframe) {
+    public Map<String, Object> generateInputSchema(Long userId, MultipartFile model, @Nullable MultipartFile dataframe) {
         userLookupService.requireById(userId);
         LinkedMultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("model_file", model.getResource());

@@ -39,12 +39,12 @@ const toRows = (rows: unknown[][]): TabularPredictionRow[] =>
 
 export async function parseSpreadsheetPredictionFile(
   file: File,
-  signatureSchema: unknown,
+  schemaDefinition: unknown,
   maxRecords = 10000,
   autoNameBase?: number,
 ): Promise<ParseSpreadsheetPredictionResult> {
   if (isCsvFile(file)) {
-    return parseCsvPredictionFile(await file.text(), signatureSchema, maxRecords, autoNameBase);
+    return parseCsvPredictionFile(await file.text(), schemaDefinition, maxRecords, autoNameBase);
   }
 
   if (!isXlsxFile(file)) {
@@ -56,7 +56,7 @@ export async function parseSpreadsheetPredictionFile(
 
   try {
     const rows = await readSheet(file);
-    return parseTabularPredictionRecords(toRows(rows), signatureSchema, maxRecords, autoNameBase);
+    return parseTabularPredictionRecords(toRows(rows), schemaDefinition, maxRecords, autoNameBase);
   } catch (error: unknown) {
     return {
       records: [],

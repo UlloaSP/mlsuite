@@ -12,6 +12,16 @@ def _build_base_dataframe(features: list[str]) -> pd.DataFrame:
     return pd.DataFrame([[1] * len(features)], columns=features)
 
 
+def _with_mapped_fields(
+    fields: list[dict[str, object]],
+    features: list[str],
+) -> list[dict[str, object]]:
+    return [
+        {**field, "mappedTo": field.get("mappedTo") or features[index]}
+        for index, field in enumerate(fields)
+    ]
+
+
 def _load_candidate_dataframe(candidate: object, features: FeatureMetadata) -> pd.DataFrame:
     if not isinstance(candidate, pd.DataFrame):
         raise bad_request("File does not contain a DataFrame.")
@@ -35,11 +45,12 @@ def _build_schema_reports(runtime) -> list[dict[str, object]]:
         return [{
             "kind": "classifier",
             "label": "Predicted class",
+            "mappedTo": "classifier",
             "labels": runtime.class_labels(),
             "showClassProbabilities": True,
         }]
     if runtime.kind == "regressor":
-        return [{"kind": "regressor", "label": "Predicted value"}]
+        return [{"kind": "regressor", "label": "Predicted value", "mappedTo": "regressor"}]
     return []
 
 
@@ -55,6 +66,6 @@ async def build_schema(
         data_frame = _load_candidate_dataframe(candidate, features)
 
     return {
-        "fields": infer_schema(data_frame),
+        "fields": _with_mapped_fields(infer_schema(data_frame), features.names),
         "reports": _build_schema_reports(runtime),
     }

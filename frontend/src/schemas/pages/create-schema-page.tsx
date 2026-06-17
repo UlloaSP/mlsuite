@@ -25,12 +25,10 @@ import { SchemaModelSelector } from "../components/SchemaModelSelector";
 import { useCreateSchemaMutation, useSchema, useSchemaVersions } from "../hooks";
 import { countVisibleSchemaFields } from "../one-hot-schema";
 import { prepareSchemaVersionForSave } from "../schema-binding-rebase";
-import { composeSchemaVersion, type SelectedSchemaSignature } from "../schema-composer";
+import { composeSchemaVersion, type SelectedSchemaModel } from "../schema-composer";
 import type { CreateSchemaVersionRequest } from "../types";
 
-type SelectedModel = SelectedSchemaSignature & {
-  signatureId: string;
-};
+type SelectedModel = SelectedSchemaModel;
 
 type Step = "models" | "editor";
 
@@ -40,8 +38,8 @@ export function CreateSchemaPage() {
   const targetSchemaId = searchParams.get("schemaId") ?? "";
   const { data: models = [], isLoading } = useGetModels();
   const createSchema = useCreateSchemaMutation();
-  const [schema, setSchema] = useAtom(schemaAtom);
-  const [, setSchemaText] = useAtom(schemaTextAtom);
+  const [, setSchema] = useAtom(schemaAtom);
+  const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [schemaErrors] = useAtom(schemaErrorsAtom);
   const mode = targetSchemaId ? "version" : "schema";
   const [step, setStep] = useState<Step>(searchParams.get("schemaId") ? "editor" : "models");
@@ -55,7 +53,7 @@ export function CreateSchemaPage() {
     () =>
       composeSchemaVersion(
         "v1",
-        selected.map(({ modelId, signature }) => ({ modelId, signature })),
+        selected.map(({ modelId, modelName, model }) => ({ modelId, modelName, model })),
       ),
     [selected],
   );
@@ -67,9 +65,7 @@ export function CreateSchemaPage() {
       formSchema: latestVersion.formSchema,
       bindings: latestVersion.bindings.map((binding) => ({
         modelId: binding.modelId,
-        signatureId: binding.signatureId,
-        inputMapping: binding.inputMapping,
-        outputMapping: binding.outputMapping,
+        modelName: binding.modelName,
         pluginPolicy: binding.pluginPolicy ?? undefined,
       })),
     };
@@ -111,7 +107,10 @@ export function CreateSchemaPage() {
     setSaving(true);
     try {
       if (!activeVersionRequest) return;
-      const editedSchema = isRecord(schema) ? schema : activeVersionRequest.formSchema;
+      const currentSchema = JSON.parse(schemaText);
+      const editedSchema = isRecord(currentSchema)
+        ? currentSchema
+        : activeVersionRequest.formSchema;
       const preparedVersion = prepareSchemaVersionForSave(activeVersionRequest, editedSchema);
       const schemaId =
         mode === "schema" ? (await createSchema.mutateAsync({ name })).id : targetSchemaId;
@@ -134,7 +133,7 @@ export function CreateSchemaPage() {
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title={mode === "schema" ? "New schema" : "New schema version"}
-          description="Select model signatures, then edit the generated form snapshot."
+          description="Select one or more models, then edit the generated schema snapshot."
           breadcrumbs={[
             { label: "Schemas", to: "/schemas" },
             ...(mode === "version"
@@ -160,7 +159,7 @@ export function CreateSchemaPage() {
                     Locked model bindings
                   </p>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    New version keeps {activeModelCount} model/signature pairs from v
+                    New version keeps {activeModelCount} model bindings from v
                     {latestVersion?.version ?? "-"}.
                   </p>
                 </div>

@@ -73,7 +73,7 @@ export const validateReportConfig = (
 
   const result = definition.schema.safeParse(report);
   if (result.success) {
-    return { ...report, ...result.data, id: report.id, label: report.label, source: report.source };
+    return { ...report, ...result.data, id: report.id, label: report.label };
   }
 
   for (const issue of result.error.issues) {

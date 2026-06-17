@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { createBrowserRouter, type RouteObject } from "react-router";
 import { AdminUsersPage } from "../admin/pages/admin-users-page";
 import { AdminInfrastructurePage } from "../admin/infrastructure/pages/admin-infrastructure-page";
@@ -15,10 +15,6 @@ import { PublicLayout } from "../layout/PublicLayout";
 import { CreateModelPage } from "../models/pages/create-model-page";
 import { ModelDetailPage } from "../models/pages/model-detail-page";
 import { ModelsPage } from "../models/pages/models-page";
-import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
-import { ReviewProtectedRoute } from "../review/components/ReviewProtectedRoute";
-import { ReviewLoginRoute } from "../review/components/ReviewLoginRoute";
-import { ReviewWorkspacePage } from "../review/pages/review-workspace-page";
 import { SchemaReviewLoginRoute } from "../schema-review/components/SchemaReviewLoginRoute";
 import { SchemaReviewProtectedRoute } from "../schema-review/components/SchemaReviewProtectedRoute";
 import { SchemaReviewWorkspacePage } from "../schema-review/pages/schema-review-workspace-page";
@@ -29,7 +25,6 @@ import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-
 import { SchemaRunHistoryPage } from "../schemas/pages/schema-run-history-page";
 import { SchemaDetailPage } from "../schemas/pages/schema-detail-page";
 import { SchemasPage } from "../schemas/pages/schemas-page";
-import { SignatureDetailPage } from "../models/pages/signature-detail-page";
 import { ProfilePage } from "../user/pages/profilePage";
 import { CreateOrganizationPage } from "../workspace/pages/create-organization-page";
 import { InvitationAcceptPage } from "../workspace/pages/invitation-accept-page";
@@ -48,12 +43,7 @@ import {
   RequireWorkspacePermission,
 } from "../workspace/components/RequireWorkspacePermission";
 import type { WorkspacePermissionKey } from "../workspace/types";
-import {
-  CreatePredictionPage,
-  CreateSignaturePage,
-  EditorRouteFallback,
-  ProtectedRoute,
-} from "./route-components";
+import { ProtectedRoute } from "./route-components";
 import { enableViewTransitions } from "./view-transitions";
 
 function app(element: ReactNode) {
@@ -167,41 +157,6 @@ const routes: RouteObject[] = [
             element: workspace("canViewPlugins", <PluginCatalogPage />),
           },
           {
-            path: "models/:modelId/signatures/:signatureId",
-            element: workspace("canViewModels", <SignatureDetailPage />),
-          },
-          {
-            path: "models/:modelId/signatures/create",
-            element: workspace(
-              "canEditModels",
-              <Suspense fallback={<EditorRouteFallback />}>
-                <CreateSignaturePage />
-              </Suspense>,
-            ),
-          },
-          {
-            path: "models/:modelId/signatures/:signatureId/predictions/:predictionId",
-            element: workspace("canViewModels", <PredictionDetailPage />),
-          },
-          {
-            path: "models/:modelId/signatures/:signatureId/predictions/create",
-            element: workspace(
-              "canRunPredictions",
-              <Suspense fallback={<EditorRouteFallback />}>
-                <CreatePredictionPage />
-              </Suspense>,
-            ),
-          },
-          {
-            path: "models/:modelId/signatures/:signatureId/predictions/create/:inputs",
-            element: workspace(
-              "canRunPredictions",
-              <Suspense fallback={<EditorRouteFallback />}>
-                <CreatePredictionPage />
-              </Suspense>,
-            ),
-          },
-          {
             path: "schemas",
             element: workspace("canViewModels", <SchemasPage />),
           },
@@ -232,25 +187,8 @@ const routes: RouteObject[] = [
         ],
       },
       {
-        path: "review/:token/login",
-        element: <ReviewLoginRoute />,
-      },
-      {
         path: "schema-review/:token/login",
         element: <SchemaReviewLoginRoute />,
-      },
-      {
-        element: <ReviewProtectedRoute />,
-        children: [
-          {
-            path: "review/:token",
-            element: <ReviewWorkspacePage />,
-          },
-          {
-            path: "review/:token/predictions/:predictionToken",
-            element: <ReviewWorkspacePage />,
-          },
-        ],
       },
       {
         element: <SchemaReviewProtectedRoute />,

@@ -1,5 +1,70 @@
 # Lessons
 
+## 2026-06-17 - Schema feedback/display correction
+
+- Correction: schema reports without persisted ids lost classifier config during feedback-step building, so assessment fell back to number.
+- Rule: schema feedback must use the already resolved display report config after mapped report routing; do not re-find config only by optional runtime id.
+- Correction: removing label from every input lookup broke display for pending MLForm visible payloads, showing `N/A` even when the user entered a value.
+- Rule: labels may be read as UI-display/submitted aliases, but must never be persisted as data keys; persist mapped targets only.
+
+## 2026-06-17 - Schema mappedTo source of truth correction
+
+- Correction: label and source kept leaking as runtime fallbacks after mappedTo migration, so saved schema runs could still persist display aliases or route reports by legacy source/id.
+- Rule: schema data paths must use `mappedTo` only for model/report targets; `label` is display text, `id` is MLForm/UI identity, and `source` is not an active schema contract.
+
+## 2026-06-17 - Schema run persistence rework correction
+
+- Correction: assessment type must follow output kind only: classifier -> category, regressor -> number; labels/mapping do not change kind.
+- Rule: do not infer model task type from display metadata such as labels; use explicit backend/runtime kind.
+- Correction: previous save fix still trusted direct visible aliases even when their values were `undefined`, blocking mapped model-key fallback and saving unresolved fields.
+- Rule: schema visible-input reconstruction must treat `undefined`/`null`/empty string as absent before trying mapped model keys, and saved visible input must omit unresolved values.
+- Correction: plugin report payload aliases were updated in aggregate reports but custom-report result outputs missed the normalized report id alias.
+- Rule: any report payload persisted for history/review must be written to aggregate raw reports and owning result output under normalized id, raw id, and mapped source.
+
+## 2026-06-17 - Schema run persistence correction
+
+- Correction: fixing schema-run display did not fix saved `inputData`; save modal still sent stale raw visible inputs.
+- Rule: schema-run save/review/export must persist and consume one canonical visible-input reconstruction from schema snapshot + model inputs; do not trust first-submit `raw.inputData` after async report updates.
+- Correction: plugin reports rendered in form but were not persisted when async report state patched only display-level reports.
+- Rule: any report payload aliasing fix must update both initial transport result and async MLForm report-state merge path.
+- Correction: output feedback `assessment` relied on derived field ids, causing category questionnaire drift between save modal and review.
+- Rule: generated feedback fields need stable explicit ids when values are persisted or displayed later.
+
+## 2026-06-17 - Signature deprecation correction
+
+- Correction: schema cardinality was `>=1` models, not exactly one model.
+- Rule: when deprecating an intermediate domain object, preserve stated collection cardinality; do not infer simpler cardinality from "accept one" wording without confirmation.
+- Correction: hiding routes/controllers is not deprecation completion if legacy files remain importable and tests still exercise them.
+- Rule: removal tasks must delete dead files and then let compile/typecheck reveal real remaining dependencies; disabling exposure alone is incomplete.
+
+## 2026-06-17 - Schema mappedTo persistence correction
+
+- Correction: removing schema mapping logic is incomplete if persisted DTO/entity/form schema still writes legacy ids, source, inputMapping, or outputMapping.
+- Rule: when changing schema mapping source of truth, audit generated schema JSON, saved signature JSON, DTOs, entities, and runtime normalization in the same pass.
+- Rule: generated schema fields/reports should not persist runtime-only ids/source when `mappedTo` is the contract; runtime may derive local ids after load.
+- Rule: schema `mappedTo` record keys must use domain-stable names when those names are unique; one-hot option mappings must preserve per model/signature records after merge.
+- Correction: signature save wrapped fields before one-hot grouping, so feature keys became records and grouping failed.
+- Rule: one-hot grouping must run before wrapping `mappedTo`; after grouping, wrap one-hot option mappings, not the master field.
+- Correction: MLForm validates/submits concrete one-hot targets, but app persists per-binding mapped records.
+- Rule: schema-run runtime may collapse mapped records for MLForm only; transport must restore original field/report mapped records before building model input and report context.
+- Correction: schema-run normal fields with no persisted ids submitted exact mapped keys, but mapper only read generated UI ids, dropping scalar features.
+- Rule: schema-run input mapping must accept generated UI ids and exact mapped model keys for scalar and one-hot fields.
+- Correction: tests missed broken schema-run because submit success did not prove full feature count or report payload.
+- Rule: mapped schema-run regressions must assert exact model feature count and at least one mapped report payload.
+- Correction: editor validation used raw persisted schema while runtime used an adapted schema, so `onehot-category`/mapped records validated differently than render/submit.
+- Rule: editor validation and runtime mount must share the same MLForm adapter for persisted mapped records.
+- Correction: schema version creation dropped `modelName`/`signatureName`, breaking name-key report mappings after save/reload.
+- Rule: when mappedTo keys use names, every binding copy path must preserve names; ids alone are not enough.
+- Correction: report mapping lookup by exact id/source missed MLForm-normalized ids and no-id persisted reports.
+- Rule: report mapping lookup must normalize id/source/label aliases, and display must fall back to saved payload ids when binding source cannot be resolved.
+- Correction: report normalization by id/source/label reintroduced wrong model routing and duplicated one report across bindings.
+- Rule: schema runtime routing must use only `mappedTo`; missing field/report/onehot option `mappedTo` is a schema error, not a cue to infer from id/source/label.
+- Rule: onehot-category parent fields do not own model targets; each option owns its mapped target record.
+- Correction: single-model signature editor still showed raw analyzer signatures because only save/run paths were normalized.
+- Rule: mappedTo/one-hot contract changes must cover all boundaries: analyzer output, persisted old signatures, editor load, save normalization, and runtime submit/report rendering.
+- Correction: missing `mappedTo` surfaced as thrown errors instead of editor diagnostics.
+- Rule: schema authoring invariants that MLForm cannot express must be appended as `CompatIssue` editor validation errors, so users see markers and Save disables before runtime.
+
 ## 2026-06-15 - Header Brand Reference Correction
 
 - Correction: header brand drifted from supplied visual reference for icon shape, typography, and icon/text spacing.

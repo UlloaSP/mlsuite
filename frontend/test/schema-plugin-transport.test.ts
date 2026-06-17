@@ -7,7 +7,6 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
-import { fetchSchemaCustomReports } from "../src/app/utils/mlform/schema-run-custom-report-fetch";
 import { isSkippedSchemaReportPayload } from "../src/app/utils/mlform/schema-report-plugin-context";
 import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
@@ -81,34 +80,28 @@ describe("schema plugin transport", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
         reports: [
           {
             id: "crystal_1",
-            source: "crystal_1",
             kind: "Crystal Tree",
             endpoint: "/api/analyzer/explanations",
+            mappedTo: { "model-1": "crystal-tree" },
           },
           {
             id: "crystal_2",
-            source: "crystal_2",
             kind: "Crystal Tree",
             endpoint: "/api/analyzer/explanations",
+            mappedTo: { "model-2": "crystal-tree" },
           },
         ],
       },
       bindings: [
         {
           modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal_1: "crystal-tree" },
         },
         {
           modelId: "model-2",
-          signatureId: "sig-2",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal_2: "crystal-tree" },
         },
       ],
       customReportDefinitions: [crystalTreeDefinition()],
@@ -152,22 +145,19 @@ describe("schema plugin transport", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
         reports: [
           {
             id: "3-5-crystal-tree",
-            source: "3-5-crystal-tree",
             kind: "Crystal Tree",
             endpoint: "/api/analyzer/explanations",
+            mappedTo: { "3": "crystal-tree" },
           },
         ],
       },
       bindings: [
         {
           modelId: "3",
-          signatureId: "5",
-          inputMapping: { age: "age" },
-          outputMapping: { "3-5-crystal-tree": "crystal-tree" },
         },
       ],
       customReportDefinitions: [crystalTreeDefinition()],
@@ -197,15 +187,18 @@ describe("schema plugin transport", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": "crystal-tree" },
+          },
+        ],
       },
       bindings: [
         {
           modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal: "crystal-tree" },
           pluginPolicy: { reportKinds: ["classifier"] },
         },
       ],
@@ -239,15 +232,18 @@ describe("schema plugin transport", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": "crystal-tree" },
+          },
+        ],
       },
       bindings: [
         {
           modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal: "crystal-tree" },
         },
       ],
       customReportDefinitions: [innerOnlyCrystalTreeDefinition()],
@@ -268,54 +264,5 @@ describe("schema plugin transport", () => {
     expect((result as { reports: Record<string, unknown> }).reports.crystal).toEqual({
       explanation: "inner",
     });
-  });
-
-  test("derives report context from binding when built context is missing", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ explanation: "derived" }))),
-    );
-    const built = { reports: {}, reportContextById: {} };
-    await fetchSchemaCustomReports({
-      request: {
-        values: { age: 42 },
-        fieldValues: { age: 42 },
-        serializedValues: { age: 42 },
-        serializedFieldValues: { age: 42 },
-        reports: [],
-      } as never,
-      reports: [
-        {
-          id: "crystal",
-          source: "crystal",
-          kind: "Crystal Tree",
-          endpoint: "/api/analyzer/explanations",
-        },
-      ],
-      built,
-      results: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          modelInput: { age: 42 },
-          output: { meta: { modelId: "model-1", backendFieldValues: { age: 42 } }, reports: {} },
-          status: "SUCCESS",
-        },
-      ],
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          outputMapping: { crystal: "crystal-tree" },
-        },
-      ],
-      definitions: [crystalTreeDefinition()],
-    });
-
-    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
-    expect(built.reports.crystal).toEqual({ explanation: "derived" });
   });
 });

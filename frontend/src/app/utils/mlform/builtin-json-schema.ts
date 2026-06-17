@@ -183,13 +183,28 @@ const reportKeysByKind = Object.fromEntries(
 ) as Record<string, readonly string[]>;
 
 const allFieldKeys = [...new Set(Object.values(fieldKeysByKind).flat())];
-const allReportKeys = [...new Set(Object.values(reportKeysByKind).flat())];
+const allReportKeys = [...new Set(Object.values(reportKeysByKind).flat())].filter(
+  (key) => key !== "source",
+);
+const MAPPED_TO_KEY = "mappedTo";
 
 export const getAllowedFieldKeys = (kind: string | null): readonly string[] =>
-  (kind && fieldKeysByKind[kind]) || allFieldKeys;
+  Array.from(
+    new Set([
+      ...(kind && fieldKeysByKind[kind] ? fieldKeysByKind[kind] : allFieldKeys),
+      MAPPED_TO_KEY,
+    ]),
+  );
 
 export const getAllowedReportKeys = (kind: string | null): readonly string[] =>
-  (kind && reportKeysByKind[kind]) || allReportKeys;
+  Array.from(
+    new Set([
+      ...(kind && reportKeysByKind[kind]
+        ? reportKeysByKind[kind].filter((key) => key !== "source")
+        : allReportKeys),
+      MAPPED_TO_KEY,
+    ]),
+  );
 
 export const mlformJsonSchema = {
   type: "object",

@@ -35,7 +35,10 @@ const definition = (): CatalogReportDefinition => ({
 describe("schema plugin defaults", () => {
   test("custom report schema default endpoint is present after runtime normalization", () => {
     const runtime = createSchemaRunRuntime({
-      schema: { fields: [], reports: [{ id: "crystal", kind: "Crystal Tree" }] },
+      schema: {
+        fields: [],
+        reports: [{ id: "crystal", kind: "Crystal Tree", mappedTo: "crystal" }],
+      },
       bindings: [],
       customReportDefinitions: [definition()],
     });

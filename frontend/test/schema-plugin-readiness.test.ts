@@ -74,17 +74,17 @@ describe("schema plugin readiness failures", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "risk", label: "Risk", kind: "classifier" }],
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        reports: [
+          {
+            id: "risk",
+            label: "Risk",
+            kind: "classifier",
+            mappedTo: { "model-1": "risk" },
+          },
+        ],
       },
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { risk: "risk" },
-        },
-      ],
+      bindings: [{ modelId: "model-1" }],
       customReportDefinitions: [crystal()],
     });
 
@@ -95,30 +95,21 @@ describe("schema plugin readiness failures", () => {
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toHaveLength(0);
   });
 
-  test("custom report without outputMapping fails with unbound context", async () => {
+  test("custom report without mappedTo fails before submit", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response(JSON.stringify({ reports: {} }))),
     );
-    const runtime = createSchemaRunRuntime({
-      schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
-      },
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: {},
+    expect(() =>
+      createSchemaRunRuntime({
+        schema: {
+          fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+          reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
         },
-      ],
-      customReportDefinitions: [crystal()],
-    });
-
-    await expect(submit(runtime)).rejects.toThrow(
-      'Schema report "crystal" is not bound to a model context.',
-    );
+        bindings: [{ modelId: "model-1" }],
+        customReportDefinitions: [crystal()],
+      }),
+    ).toThrow("Schema report 1 falta mappedTo");
   });
 
   test("normalized report ids still map and call explanations", async () => {
@@ -131,17 +122,16 @@ describe("schema plugin readiness failures", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal_tree_1", source: "crystal_tree_1", kind: "Crystal Tree" }],
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal_tree_1",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": "crystal-tree" },
+          },
+        ],
       },
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal_tree_1: "crystal-tree" },
-        },
-      ],
+      bindings: [{ modelId: "model-1" }],
       customReportDefinitions: [crystal()],
     });
 
@@ -163,17 +153,16 @@ describe("schema plugin readiness failures", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal",
+            kind: "Crystal Tree",
+            mappedTo: { "1": "crystal" },
+          },
+        ],
       },
-      bindings: [
-        {
-          modelId: 1,
-          signatureId: 2,
-          inputMapping: { age: "age" },
-          outputMapping: { crystal: "crystal" },
-        },
-      ] as never,
+      bindings: [{ modelId: 1 } as never],
       customReportDefinitions: [crystal()],
     });
 

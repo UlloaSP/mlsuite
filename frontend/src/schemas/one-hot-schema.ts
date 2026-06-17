@@ -3,14 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getString, isRecord, toUniqueId } from "../app/utils/mlform/shared";
+import { getString, isRecord } from "../app/utils/mlform/shared";
 import type { JsonRecord } from "./types";
 
 type Candidate = {
   base: string;
   category: string;
   field: JsonRecord;
-  targetId: string;
 };
 
 const ONE_HOT_KINDS = new Set(["boolean", "number", "integer"]);
@@ -21,16 +20,6 @@ const title = (value: string): string =>
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\b\w/g, (char) => char.toUpperCase());
-
-const encodeIdSource = (key: string): string =>
-  Array.from(key)
-    .map((char) =>
-      /^[a-zA-Z0-9_]$/.test(char) ? char : `_${char.codePointAt(0)?.toString(16) ?? "0"}_`,
-    )
-    .join("");
-
-const targetIdFor = (key: string): string =>
-  toUniqueId(encodeIdSource(key), key, new Set<string>());
 
 const splitOneHotKey = (key: string): Pick<Candidate, "base" | "category"> | null => {
   const separator = "__";
@@ -46,18 +35,22 @@ const isOneHotField = (field: JsonRecord): boolean => {
   return ONE_HOT_KINDS.has(kind);
 };
 
-const featureKey = (field: JsonRecord): string =>
-  getString(field.label) ?? getString(field.id) ?? "field";
+const firstMappedString = (mappedTo: unknown): string | undefined => {
+  if (typeof mappedTo === "string") return mappedTo;
+  if (!isRecord(mappedTo)) return undefined;
+  return Object.values(mappedTo).find((value): value is string => typeof value === "string");
+};
 
 const candidateFor = (field: JsonRecord): Candidate | null => {
   if (!isOneHotField(field)) return null;
-  const key = featureKey(field);
+  const key = firstMappedString(field.mappedTo);
+  if (!key) return null;
   const parts = splitOneHotKey(key);
-  return parts ? { ...parts, field, targetId: targetIdFor(key) } : null;
+  return parts ? { ...parts, field } : null;
 };
 
 const acceptedGroups = (fields: JsonRecord[]): Map<string, Candidate[]> => {
-  const fieldKeys = new Set(fields.map(featureKey));
+  const fieldKeys = new Set(fields.map((field) => firstMappedString(field.mappedTo)));
   const groups = new Map<string, Candidate[]>();
   fields.forEach((field) => {
     const candidate = candidateFor(field);
@@ -70,29 +63,17 @@ const acceptedGroups = (fields: JsonRecord[]): Map<string, Candidate[]> => {
 };
 
 const createMasterField = (base: string, group: Candidate[]): JsonRecord => ({
-  kind: "mapped-category",
-  id: targetIdFor(base),
+  kind: "onehot-category",
   label: title(base),
   required: group.some(({ field }) => field.required === true),
-  includeInSubmission: false,
-  options: group.map(({ category, targetId }) => ({
+  options: group.map(({ category, field }) => ({
     label: title(category),
     value: category,
-    mapping: Object.fromEntries(
-      group.map((item) => [item.targetId, item.targetId === targetId ? 1 : 0]),
-    ),
+    mappedTo: field.mappedTo,
   })),
 });
 
-const createSubordinateField = ({ field, targetId }: Candidate): JsonRecord => ({
-  ...field,
-  id: targetId,
-  label: featureKey(field),
-  hidden: true,
-  inactiveFieldPolicy: "include",
-});
-
-export const applyOneHotMappedCategories = (schema: unknown): JsonRecord => {
+export const applyOneHotCategories = (schema: unknown): JsonRecord => {
   if (!isRecord(schema)) return { fields: [], reports: [] };
   const fields = Array.isArray(schema.fields) ? schema.fields.filter(isRecord) : [];
   const groups = acceptedGroups(fields);
@@ -104,7 +85,7 @@ export const applyOneHotMappedCategories = (schema: unknown): JsonRecord => {
     if (!group) return [field];
     if (emitted.has(candidate.base)) return [];
     emitted.add(candidate.base);
-    return [createMasterField(candidate.base, group), ...group.map(createSubordinateField)];
+    return [createMasterField(candidate.base, group)];
   });
   return { ...schema, fields: nextFields };
 };

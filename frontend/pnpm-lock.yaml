@@ -36,8 +36,8 @@ importers:
         specifier: ^1.16.0
         version: 1.16.0(react@19.2.6)
       mlform:
-        specifier: 0.1.13
-        version: 0.1.13
+        specifier: 0.1.15
+        version: 0.1.15
       monaco-editor:
         specifier: ^0.55.1
         version: 0.55.1
@@ -1840,8 +1840,8 @@ packages:
     engines: {node: '>= 18'}
     hasBin: true
 
-  mlform@0.1.13:
-    resolution: {integrity: sha512-tKiVdM5ZaDNEK7VmyPSF96JfUE710raTJzZ7b6I7cSt0KTAdaCoNQf28FfCsifodwLenpB2YtgaXYxuHhl6ZuA==}
+  mlform@0.1.15:
+    resolution: {integrity: sha512-6VWcYhj0XtQH6Arh6GS+C/wx2q3Nm9ryToIRIyazPw1HZ6BF97WoAp5vkXUyc+vS5EmTPfSA/8egKD2xUXJerg==}
     engines: {node: '>=24.9.0'}
 
   monaco-editor@0.55.1:
@@ -3600,7 +3600,7 @@ snapshots:
 
   marked@14.0.0: {}
 
-  mlform@0.1.13:
+  mlform@0.1.15:
     dependencies:
       lit: 3.3.3
       zod: 4.4.3

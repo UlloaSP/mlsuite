@@ -15,12 +15,10 @@ export type SchemaDto = {
 };
 
 export type SchemaModelBindingDto = {
-  id: string;
-  schemaVersionId: string;
+  id?: string;
+  schemaVersionId?: string;
   modelId: string;
-  signatureId: string;
-  inputMapping: JsonRecord;
-  outputMapping: JsonRecord;
+  modelName?: string;
   pluginPolicy?: JsonRecord | null;
 };
 
@@ -41,7 +39,6 @@ export type PredictionResultDto = {
   id: string;
   runId: string;
   modelId: string;
-  signatureId: string;
   modelInput: JsonRecord;
   output: JsonRecord;
   status: PredictionResultStatus;
@@ -98,9 +95,7 @@ export type CreateSchemaVersionRequest = {
   formSchema: JsonRecord;
   bindings: Array<{
     modelId: string;
-    signatureId: string;
-    inputMapping?: JsonRecord;
-    outputMapping?: JsonRecord;
+    modelName?: string;
     pluginPolicy?: JsonRecord;
   }>;
 };
@@ -110,7 +105,6 @@ export type CreatePredictionRunRequest = {
   inputData: JsonRecord;
   results: Array<{
     modelId: string;
-    signatureId: string;
     modelInput: JsonRecord;
     output: JsonRecord;
     status: PredictionResultStatus;

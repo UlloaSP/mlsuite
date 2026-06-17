@@ -7,8 +7,5 @@ import jakarta.validation.constraints.Positive;
 
 public record CreateSchemaModelBindingRequest(
         @NotNull @Positive Long modelId,
-        @NotNull @Positive Long signatureId,
-        Map<String, Object> inputMapping,
-        Map<String, Object> outputMapping,
         Map<String, Object> pluginPolicy) {
 }

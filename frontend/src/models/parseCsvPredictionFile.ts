@@ -68,11 +68,11 @@ const parseCsvRows = (text: string): { rows: TabularPredictionRow[]; error?: Ski
 
 export function parseCsvPredictionFile(
   text: string,
-  signatureSchema: unknown,
+  schemaDefinition: unknown,
   maxRecords = 10000,
   autoNameBase?: number,
 ): ParseCsvPredictionResult {
   const { rows, error } = parseCsvRows(text);
   if (error) return { records: [], skipped: [error] };
-  return parseTabularPredictionRecords(rows, signatureSchema, maxRecords, autoNameBase);
+  return parseTabularPredictionRecords(rows, schemaDefinition, maxRecords, autoNameBase);
 }

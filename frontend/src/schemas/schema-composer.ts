@@ -4,18 +4,20 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { getString, isRecord, toUniqueId } from "../app/utils/mlform/shared";
-import type { SignatureDto } from "../models/api/modelService";
-import { applyOneHotMappedCategories } from "./one-hot-schema";
+import type { ModelDto } from "../models/api/modelService";
+import { applyOneHotCategories } from "./one-hot-schema";
 import type { CreateSchemaVersionRequest, JsonRecord } from "./types";
 
-export type SelectedSchemaSignature = {
+export type SelectedSchemaModel = {
   modelId: string;
-  signature: SignatureDto;
+  modelName: string;
+  model: ModelDto;
 };
 
 type CanonicalItem = {
   id: string;
-  key: string;
+  key: string | number;
+  field: JsonRecord;
 };
 
 const normalize = (value: string): string => value.trim().toLowerCase();
@@ -26,11 +28,21 @@ const itemKey = (item: JsonRecord): string => {
   return `${normalize(label)}::${normalize(kind)}`;
 };
 
-const featureKey = (item: JsonRecord, fallback: string): string =>
-  getString(item.label) ?? getString(item.id) ?? fallback;
+const targetValue = (item: JsonRecord, path: string): string | number => {
+  if (typeof item.mappedTo === "string" || typeof item.mappedTo === "number") {
+    return item.mappedTo;
+  }
+  throw new Error(`${path} falta mappedTo`);
+};
 
-const canonicalReportSource = (report: JsonRecord, id: string): string =>
-  getString(report.source) ?? getString(report.id) ?? id;
+const bindingKey = (modelName: string): string => modelName;
+
+const setMappedTo = (item: JsonRecord, key: string, target: string | number) => {
+  item.mappedTo = { ...(isRecord(item.mappedTo) ? item.mappedTo : {}), [key]: target };
+};
+
+const canonicalReportTarget = (report: JsonRecord, path: string): string | number =>
+  targetValue(report, path);
 
 const reportLabel = (report: JsonRecord, modelId: string, index: number): string => {
   const label = getString(report.label) ?? getString(report.id) ?? `Report ${index + 1}`;
@@ -50,9 +62,11 @@ const createCanonical = (
     const key = itemKey(item);
     if (byKey.has(key)) return;
     const label = getString(item.label) ?? getString(item.id) ?? `${prefix}-${index + 1}`;
-    const id = toUniqueId(getString(item.id) ?? label, `${prefix}-${index + 1}`, usedIds);
-    byKey.set(key, { id, key: featureKey(item, label) });
-    canonical.push({ ...item, id });
+    const id = toUniqueId(label, `${prefix}-${index + 1}`, usedIds);
+    const field = { ...item };
+    delete field.id;
+    byKey.set(key, { id, key: targetValue(item, `${prefix}-${index + 1}`), field });
+    canonical.push(field);
   });
   return { canonical, byKey };
 };
@@ -69,22 +83,32 @@ const addMissingCanonical = (
     const key = itemKey(item);
     if (byKey.has(key)) return;
     const label = getString(item.label) ?? getString(item.id) ?? `${prefix}-${index + 1}`;
-    const id = toUniqueId(getString(item.id) ?? label, `${prefix}-${index + 1}`, usedIds);
-    byKey.set(key, { id, key: featureKey(item, label) });
-    canonical.push({ ...item, id });
+    const id = toUniqueId(label, `${prefix}-${index + 1}`, usedIds);
+    const field = { ...item };
+    delete field.id;
+    byKey.set(key, { id, key: targetValue(item, `${prefix}-${index + 1}`), field });
+    canonical.push(field);
   });
 };
 
-const buildInputMapping = (signature: SignatureDto, fieldsByKey: Map<string, CanonicalItem>) => {
-  const fields = isRecord(signature.inputSignature) ? signature.inputSignature.fields : [];
-  return Array.isArray(fields)
-    ? fields.filter(isRecord).reduce<JsonRecord>((mapping, field) => {
-        if (getString(field.kind) === "mapped-category") return mapping;
-        const canonical = fieldsByKey.get(itemKey(field));
-        if (canonical) mapping[canonical.key] = featureKey(field, canonical.key);
-        return mapping;
-      }, {})
-    : {};
+const addInputMappedTargets = (
+  selected: readonly SelectedSchemaModel[],
+  fieldsByKey: Map<string, CanonicalItem>,
+) => {
+  selected.forEach(({ modelId, modelName, model }) => {
+    const modelKeyName = modelName ?? modelId;
+    const fields = isRecord(model.inputSchema) ? model.inputSchema.fields : [];
+    if (!Array.isArray(fields)) return;
+    fields.filter(isRecord).forEach((field) => {
+      const canonical = fieldsByKey.get(itemKey(field));
+      if (canonical)
+        setMappedTo(
+          canonical.field,
+          bindingKey(modelKeyName),
+          targetValue(field, String(canonical.key)),
+        );
+    });
+  });
 };
 
 const kindsFrom = (items: unknown): string[] =>
@@ -92,53 +116,46 @@ const kindsFrom = (items: unknown): string[] =>
     ? Array.from(new Set(items.filter(isRecord).flatMap((item) => getString(item.kind) ?? [])))
     : [];
 
-const buildPluginPolicy = (signature: SignatureDto): JsonRecord => {
-  const schema = isRecord(signature.inputSignature) ? signature.inputSignature : {};
+const buildPluginPolicy = (model: ModelDto): JsonRecord => {
+  const schema = isRecord(model.inputSchema) ? model.inputSchema : {};
   return {
     fieldKinds: kindsFrom(schema.fields),
     reportKinds: kindsFrom(schema.reports),
   };
 };
 
-const buildBindingReports = (
-  selected: readonly SelectedSchemaSignature[],
-): { reports: JsonRecord[]; mappings: JsonRecord[] } => {
-  const usedIds = new Set<string>();
+const buildBindingReports = (selected: readonly SelectedSchemaModel[]): JsonRecord[] => {
   const reports: JsonRecord[] = [];
-  const mappings: JsonRecord[] = [];
-  selected.forEach(({ modelId, signature }) => {
-    const outputMapping: JsonRecord = {};
-    const sourceReports = isRecord(signature.inputSignature)
-      ? signature.inputSignature.reports
-      : [];
+  selected.forEach(({ modelId, modelName, model }) => {
+    const modelKeyName = modelName ?? modelId;
+    const sourceReports = isRecord(model.inputSchema) ? model.inputSchema.reports : [];
     if (Array.isArray(sourceReports)) {
       sourceReports.filter(isRecord).forEach((report, index) => {
-        const sourceId = canonicalReportSource(report, `report-${index + 1}`);
-        const id = toUniqueId(`${modelId}-${signature.id}-${sourceId}`, "report", usedIds);
-        outputMapping[id] = sourceId;
-        reports.push({
+        const target = canonicalReportTarget(report, `report-${index + 1}`);
+        const nextReport: JsonRecord = {
           ...report,
-          id,
-          label: reportLabel(report, modelId, index),
-          source: id,
-        });
+          label: reportLabel(report, modelKeyName, index),
+          mappedTo: { [bindingKey(modelKeyName)]: target },
+        };
+        delete nextReport.id;
+        delete nextReport.source;
+        reports.push(nextReport);
       });
     }
-    mappings.push(outputMapping);
   });
-  return { reports, mappings };
+  return reports;
 };
 
 export const composeSchemaVersion = (
   name: string,
-  selected: readonly SelectedSchemaSignature[],
+  selected: readonly SelectedSchemaModel[],
 ): CreateSchemaVersionRequest => {
-  const firstSchema = selected[0]?.signature.inputSignature;
+  const firstSchema = selected[0]?.model.inputSchema;
   const firstFields = isRecord(firstSchema) ? firstSchema.fields : [];
   const fieldsState = createCanonical(firstFields, "field");
 
-  selected.slice(1).forEach(({ signature }) => {
-    const schema = signature.inputSignature;
+  selected.slice(1).forEach(({ model }) => {
+    const schema = model.inputSchema;
     addMissingCanonical(
       fieldsState.canonical,
       fieldsState.byKey,
@@ -146,22 +163,21 @@ export const composeSchemaVersion = (
       "field",
     );
   });
-  const bindingReports = buildBindingReports(selected);
+  addInputMappedTargets(selected, fieldsState.byKey);
+  const reports = buildBindingReports(selected);
 
-  const formSchema = applyOneHotMappedCategories({
+  const formSchema = applyOneHotCategories({
     fields: fieldsState.canonical,
-    reports: bindingReports.reports,
+    reports,
   });
 
   return {
     name,
     formSchema,
-    bindings: selected.map(({ modelId, signature }, index) => ({
+    bindings: selected.map(({ modelId, modelName, model }) => ({
       modelId,
-      signatureId: signature.id,
-      inputMapping: buildInputMapping(signature, fieldsState.byKey),
-      outputMapping: bindingReports.mappings[index] ?? {},
-      pluginPolicy: buildPluginPolicy(signature),
+      modelName: modelName ?? modelId,
+      pluginPolicy: buildPluginPolicy(model),
     })),
   };
 };

@@ -38,7 +38,7 @@ public class AnalyzerControllerImpl implements AnalyzerController {
             Authentication authentication,
             @RequestPart("model") MultipartFile model,
             @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe) {
-        Map<String, Object> schema = analyzerUseCase.generateInputSignature(
+        Map<String, Object> schema = analyzerUseCase.generateInputSchema(
                 currentUserResolver.resolve(authentication).userId(),
                 model,
                 dataframe);

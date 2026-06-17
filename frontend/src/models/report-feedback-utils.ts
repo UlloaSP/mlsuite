@@ -179,12 +179,12 @@ const getFallbackReportEntries = (predictionValue: unknown): PredictionReportDes
 
 const getEmbeddedSchemaReportEntries = (
   predictionValue: unknown,
-  signatureSchema: unknown,
+  schemaDefinition: unknown,
 ): PredictionReportDescriptor[] => {
   if (
     !isRecord(predictionValue) ||
-    !isRecord(signatureSchema) ||
-    !Array.isArray(signatureSchema.reports)
+    !isRecord(schemaDefinition) ||
+    !Array.isArray(schemaDefinition.reports)
   ) {
     return [];
   }
@@ -193,7 +193,7 @@ const getEmbeddedSchemaReportEntries = (
   const meta = isRecord(predictionValue.meta) ? predictionValue.meta : {};
   const explainErrors = isRecord(meta.explainErrors) ? meta.explainErrors : {};
 
-  return signatureSchema.reports.flatMap((item, index) => {
+  return schemaDefinition.reports.flatMap((item, index) => {
     if (!isRecord(item)) {
       return [];
     }
@@ -226,14 +226,14 @@ const getEmbeddedSchemaReportEntries = (
 
 export const extractPredictionReportEntries = (
   predictionValue: unknown,
-  signatureSchema?: unknown,
+  schemaDefinition?: unknown,
 ): PredictionReportDescriptor[] => {
   if (!isRecord(predictionValue)) {
     return [];
   }
 
   try {
-    const schema = toMlformSchema(signatureSchema);
+    const schema = toMlformSchema(schemaDefinition);
     const feedbackReports = (schema.reports ?? []).filter(
       (report: ReportConfig) =>
         getEmbeddedFeedbackQuestionnaire(report) !== undefined ||
@@ -270,7 +270,7 @@ export const extractPredictionReportEntries = (
       ];
     });
   } catch {
-    const embeddedEntries = getEmbeddedSchemaReportEntries(predictionValue, signatureSchema);
+    const embeddedEntries = getEmbeddedSchemaReportEntries(predictionValue, schemaDefinition);
     return embeddedEntries.length > 0 ? embeddedEntries : getFallbackReportEntries(predictionValue);
   }
 };

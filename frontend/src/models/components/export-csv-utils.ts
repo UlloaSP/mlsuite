@@ -48,11 +48,11 @@ export const csvEscape = (value: string, separator: string) => {
 };
 
 export const getReportFeedbackHeaders = (
-  signatureSchema: unknown,
+  schemaDefinition: unknown,
   reviewerLabels: readonly string[] = [],
 ): string[] => {
   try {
-    const schema = toMlformSchema(signatureSchema);
+    const schema = toMlformSchema(schemaDefinition);
 
     return (schema.reports ?? []).flatMap((report: ReportConfig) => {
       const questionnaire = (report as Record<string, unknown>).feedbackQuestionnaire;

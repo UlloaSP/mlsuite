@@ -5,29 +5,51 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { SubmitRequest, Transport } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../config/runtimeConfig";
-import { type PredictionPayloadField, getBackendKey, isRecord } from "./shared";
+import { type PredictionPayloadField, isRecord } from "./shared";
+import { mappedTarget, targetKey } from "./mapped-to";
 import { normalizeAnalyzerPredictionResult } from "./analyzer-result-normalization";
 
-const toAnalyzerPayload = (
+const optionTarget = (option: unknown): string | undefined =>
+  isRecord(option) ? targetKey(mappedTarget(option.mappedTo)) : undefined;
+
+const optionValue = (option: unknown): unknown =>
+  isRecord(option) ? (option.value ?? option.label) : undefined;
+
+const appendOneHotValues = (
+  payload: Record<string, unknown>,
+  field: PredictionPayloadField,
+  serializedValues: Record<string, unknown>,
+): boolean => {
+  if (field.kind !== "onehot-category" || !Array.isArray(field.options)) return false;
+  const selected = serializedValues[field.id];
+  field.options.forEach((option) => {
+    const target = optionTarget(option);
+    if (!target) return;
+    payload[target] =
+      target in serializedValues
+        ? serializedValues[target]
+        : String(optionValue(option)) === String(selected)
+          ? 1
+          : 0;
+  });
+  return true;
+};
+
+export const toAnalyzerPayload = (
   serializedValues: Record<string, unknown>,
   fields: readonly PredictionPayloadField[],
 ): Record<string, unknown> =>
   fields.reduce<Record<string, unknown>>((payload, field) => {
+    if (appendOneHotValues(payload, field, serializedValues)) return payload;
     if (shouldIncludeInAnalyzerPayload(field) && field.id in serializedValues) {
-      payload[getBackendKey(field)] = serializedValues[field.id];
+      const target = targetKey(mappedTarget(field.mappedTo));
+      if (target) payload[target] = serializedValues[field.id];
     }
     return payload;
   }, {});
 
-const hasMappedOptions = (field: PredictionPayloadField): boolean =>
-  Array.isArray((field as Record<string, unknown>).options) &&
-  ((field as Record<string, unknown>).options as unknown[]).some(
-    (option: unknown) => isRecord(option) && isRecord(option.mapping),
-  );
-
 const shouldIncludeInAnalyzerPayload = (field: PredictionPayloadField): boolean =>
-  field.includeInSubmission !== false &&
-  !(field.kind === "mapped-category" && hasMappedOptions(field));
+  field.includeInSubmission !== false;
 
 const parseResponse = async (response: Response): Promise<unknown> => {
   const contentType = response.headers.get("content-type") ?? "";

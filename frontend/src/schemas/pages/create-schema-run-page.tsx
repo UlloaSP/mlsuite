@@ -71,8 +71,7 @@ export function CreateSchemaRunPage() {
         await Promise.all(
           feedback.map((item) => {
             const result = run.results.find(
-              (candidate) =>
-                candidate.modelId === item.modelId && candidate.signatureId === item.signatureId,
+              (candidate) => candidate.modelId === item.modelId,
             );
             if (!result) return Promise.resolve();
             return createPredictionResultFeedback({

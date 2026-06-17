@@ -23,9 +23,6 @@ type Options = {
   schema: unknown;
   bindings: readonly {
     modelId: string;
-    signatureId: string;
-    inputMapping?: JsonRecord;
-    outputMapping?: JsonRecord;
     pluginPolicy?: JsonRecord | null;
   }[];
   theme: PredictionTheme;

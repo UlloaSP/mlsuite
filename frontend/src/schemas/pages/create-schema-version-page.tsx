@@ -35,8 +35,8 @@ export function CreateSchemaVersionPage() {
   const { data: schemaDto } = useSchema(schemaId);
   const { data: versions = [] } = useSchemaVersions(schemaId);
   const mutation = useCreateSchemaVersionMutation(schemaId ?? "");
-  const [schema, setSchema] = useAtom(schemaAtom);
-  const [, setSchemaText] = useAtom(schemaTextAtom);
+  const [, setSchema] = useAtom(schemaAtom);
+  const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [schemaErrors] = useAtom(schemaErrorsAtom);
   const [baseVersionId, setBaseVersionId] = useState("");
   const [versionName, setVersionName] = useState("");
@@ -55,19 +55,18 @@ export function CreateSchemaVersionPage() {
 
   const save = async () => {
     if (!schemaId || !baseVersion || !canSave) return;
-    const request: CreateSchemaVersionRequest = {
-      name: versionName,
-      formSchema: isRecord(schema) ? schema : baseVersion.formSchema,
-      bindings: baseVersion.bindings.map((binding) => ({
-        modelId: binding.modelId,
-        signatureId: binding.signatureId,
-        inputMapping: binding.inputMapping,
-        outputMapping: binding.outputMapping,
-        pluginPolicy: binding.pluginPolicy ?? undefined,
-      })),
-    };
-    const prepared = prepareSchemaVersionForSave(request, request.formSchema);
     try {
+      const currentSchema = JSON.parse(schemaText);
+      const request: CreateSchemaVersionRequest = {
+        name: versionName,
+        formSchema: isRecord(currentSchema) ? currentSchema : baseVersion.formSchema,
+        bindings: baseVersion.bindings.map((binding) => ({
+          modelId: binding.modelId,
+          modelName: binding.modelName,
+          pluginPolicy: binding.pluginPolicy ?? undefined,
+        })),
+      };
+      const prepared = prepareSchemaVersionForSave(request, request.formSchema);
       await mutation.mutateAsync({
         ...prepared,
       });

@@ -7,10 +7,12 @@ import type { ReportConfig } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../config/runtimeConfig";
 import { toLegacyReportPayload } from "./report-normalization";
 import { isRecord } from "./shared";
+import { mappedTarget, targetKey } from "./mapped-to";
 
 type Options = {
   parsed: unknown;
   modelId: string;
+  modelName?: string;
   modelInput: Record<string, unknown>;
   reports: readonly ReportConfig[];
 };
@@ -24,6 +26,7 @@ type NormalizedAnalyzerResult = {
 export const normalizeAnalyzerPredictionResult = ({
   parsed,
   modelId,
+  modelName,
   modelInput,
   reports,
 }: Options): NormalizedAnalyzerResult => {
@@ -36,10 +39,11 @@ export const normalizeAnalyzerPredictionResult = ({
   const normalizedRaw = isRecord(parsed) ? parsed : { raw: parsed };
 
   reports.forEach((report) => {
-    const reportSource = report.source ?? report.id;
-    if (!reportSource || normalizedReports[reportSource] !== undefined) return;
+    const target = targetKey(mappedTarget(report.mappedTo, { modelId, modelName }));
+    if (!target || normalizedReports[target] !== undefined) return;
     const legacyPayload = toLegacyReportPayload(report, parsed);
-    if (legacyPayload !== undefined) normalizedReports[reportSource] = legacyPayload;
+    if (legacyPayload === undefined) return;
+    normalizedReports[target] = legacyPayload;
   });
 
   return {

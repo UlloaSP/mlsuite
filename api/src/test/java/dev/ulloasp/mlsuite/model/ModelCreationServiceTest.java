@@ -27,8 +27,6 @@ import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.service.ModelCreationService;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.signature.application.port.in.SignatureCatalogUseCase;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import jakarta.transaction.Transactional;
 
@@ -37,9 +35,6 @@ class ModelCreationServiceTest {
 
     @Mock
     private ModelCatalogUseCase modelCatalogUseCase;
-
-    @Mock
-    private SignatureCatalogUseCase signatureCatalogUseCase;
 
     @Mock
     private AnalyzerUseCase analyzerUseCase;
@@ -53,7 +48,6 @@ class ModelCreationServiceTest {
     void setUp() {
         service = new ModelCreationService(
                 modelCatalogUseCase,
-                signatureCatalogUseCase,
                 analyzerUseCase,
                 objectStorageService);
     }
@@ -70,25 +64,17 @@ class ModelCreationServiceTest {
     }
 
     @Test
-    void create_CreatesModelAndSignaturesWithReusableFiles() throws Exception {
+    void create_CreatesModelAndStoresSchemaWithReusableFiles() throws Exception {
         MockMultipartFile modelFile = new MockMultipartFile("model", "model.joblib", "application/octet-stream", "x".getBytes());
         MockMultipartFile dataframeFile = new MockMultipartFile("dataframe", "data.joblib", "application/octet-stream", "y".getBytes());
         Model model = storedModel();
-        Signature modelSignature = signature(12L, model);
-        Signature dataframeSignature = signature(13L, model);
         when(modelCatalogUseCase.createModel(eq(4L), eq("demo"), any(MultipartFile.class))).thenReturn(model);
-        when(analyzerUseCase.generateInputSignature(eq(4L), any(MultipartFile.class), eq(null)))
-                .thenReturn(Map.of("model", "schema"));
-        when(analyzerUseCase.generateInputSignature(eq(4L), any(MultipartFile.class), any(MultipartFile.class)))
+        when(analyzerUseCase.generateInputSchema(eq(4L), any(MultipartFile.class), any(MultipartFile.class)))
                 .thenReturn(Map.of("dataframe", "schema"));
-        when(signatureCatalogUseCase.createSignature(4L, 11L, Map.of("model", "schema"), "Model", 0, 0, 0, null))
-                .thenReturn(modelSignature);
-        when(signatureCatalogUseCase.createSignature(4L, 11L, Map.of("dataframe", "schema"), "Dataframe", 0, 0, 1, 12L))
-                .thenReturn(dataframeSignature);
 
         CreateModelDto result = service.create(4L, "demo", modelFile, dataframeFile);
 
-        assertEquals(13L, result.signatureFromDataframe().id());
+        assertEquals(Map.of("dataframe", "schema"), result.model().inputSchema());
         ArgumentCaptor<MultipartFile> modelCaptor = ArgumentCaptor.forClass(MultipartFile.class);
         verify(modelCatalogUseCase).createModel(eq(4L), eq("demo"), modelCaptor.capture());
         MultipartFile reusable = modelCaptor.getValue();
@@ -98,15 +84,12 @@ class ModelCreationServiceTest {
     }
 
     @Test
-    void create_DeletesStoredObjectWhenSignatureFails() {
+    void create_DeletesStoredObjectWhenSchemaGenerationFails() {
         MockMultipartFile modelFile = new MockMultipartFile("model", "model.joblib", "application/octet-stream", "x".getBytes());
         Model model = storedModel();
-        RuntimeException failure = new RuntimeException("signature failed");
+        RuntimeException failure = new RuntimeException("schema failed");
         when(modelCatalogUseCase.createModel(eq(4L), eq("demo"), any(MultipartFile.class))).thenReturn(model);
-        when(analyzerUseCase.generateInputSignature(eq(4L), any(MultipartFile.class), eq(null)))
-                .thenReturn(Map.of("model", "schema"));
-        when(signatureCatalogUseCase.createSignature(4L, 11L, Map.of("model", "schema"), "Model", 0, 0, 0, null))
-                .thenThrow(failure);
+        when(analyzerUseCase.generateInputSchema(eq(4L), any(MultipartFile.class), eq(null))).thenThrow(failure);
 
         RuntimeException thrown = assertThrows(
                 RuntimeException.class,
@@ -140,12 +123,5 @@ class ModelCreationServiceTest {
         model.setStorageBucket("bucket");
         model.setStorageObjectKey("key");
         return model;
-    }
-
-    private Signature signature(Long id, Model model) {
-        Signature signature = new Signature();
-        signature.setId(id);
-        signature.setModel(model);
-        return signature;
     }
 }

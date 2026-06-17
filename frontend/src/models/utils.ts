@@ -3,21 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ModelDto, PredictionDto, SignatureDto } from "./api/modelService";
-import { getOutputReports } from "./report-contract";
+import type { ModelDto } from "./api/modelService";
 
 type JsonRecord = Record<string, unknown>;
-
-type PredictionFeedbackStatus = "PENDING" | "COMPLETED";
-
-export type SignatureSummaryStats = {
-  fieldCount: number;
-  reportCount: number;
-  feedbackReportsEnabled: boolean;
-  fieldKinds: Record<string, number>;
-  reportKinds: Record<string, number>;
-  classifierLabelsCount: number;
-};
 
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -41,12 +29,6 @@ export const formatTimestamp = (value: string): string => {
 export const findModelById = (models: ModelDto[], modelId?: string): ModelDto | undefined =>
   models.find((model) => toIdString(model.id) === toIdString(modelId));
 
-export const findPredictionById = (
-  predictions: PredictionDto[],
-  predictionId?: string,
-): PredictionDto | undefined =>
-  predictions.find((prediction) => toIdString(prediction.id) === toIdString(predictionId));
-
 const getModelTypeLabel = (type: string): string => {
   switch (type) {
     case "classifier":
@@ -61,74 +43,17 @@ const getModelTypeLabel = (type: string): string => {
 export const getModelAlgorithmLabel = (model: Pick<ModelDto, "type" | "specificType">): string =>
   `${getModelTypeLabel(model.type)} - ${model.specificType}`;
 
-export const getSignatureVersionLabel = (
-  signature: Pick<SignatureDto, "major" | "minor" | "patch">,
-): string => `v${signature.major}.${signature.minor}.${signature.patch}`;
-
-const compareSignatureVersionsDesc = (left: SignatureDto, right: SignatureDto): number => {
-  if (left.major !== right.major) {
-    return right.major - left.major;
-  }
-
-  if (left.minor !== right.minor) {
-    return right.minor - left.minor;
-  }
-
-  if (left.patch !== right.patch) {
-    return right.patch - left.patch;
-  }
-
-  return toTimestampMillis(right.createdAt) - toTimestampMillis(left.createdAt);
-};
-
-export const sortSignaturesByVersionDesc = (signatures: readonly SignatureDto[]): SignatureDto[] =>
-  Array.from(signatures).sort(compareSignatureVersionsDesc);
-
-export const getLatestSignature = (signatures: SignatureDto[]): SignatureDto | undefined =>
-  signatures.reduce<SignatureDto | undefined>(
-    (latest, signature) =>
-      latest === undefined || compareSignatureVersionsDesc(latest, signature) > 0
-        ? signature
-        : latest,
-    undefined,
-  );
-
-export const getModelDerivedMetric = (signatures: SignatureDto[]): string =>
-  `${signatures.length} schema${signatures.length === 1 ? "" : "s"}`;
-
-const getPredictionStatus = (status: unknown): PredictionFeedbackStatus => {
-  const normalized = String(status ?? "PENDING").toUpperCase();
-  if (normalized === "COMPLETED" || normalized === "SUCCESS" || normalized === "FAILED") {
-    return "COMPLETED";
-  }
-  return "PENDING";
-};
-
-export const getPredictionStatusTone = (status: unknown): "success" | "warning" => {
-  switch (getPredictionStatus(status)) {
-    case "COMPLETED":
-      return "success";
-    case "PENDING":
-    default:
-      return "warning";
-  }
-};
-
-export const getPredictionStatusLabel = (status: unknown): string => {
-  return getPredictionStatus(status) === "COMPLETED" ? "Feedback completed" : "Feedback pending";
-};
-
-export const getPredictionShortId = (id: unknown): string => {
-  const normalized = toIdString(id);
-  return normalized.length <= 8 ? normalized : normalized.slice(0, 8);
-};
-
 export const getPredictionOutputs = (value: unknown): JsonRecord[] => {
   if (!isRecord(value) || !Array.isArray(value.outputs)) {
     return [];
   }
 
   return value.outputs.filter(isRecord);
+};
+
+export const getPredictionShortId = (id: unknown): string => {
+  const normalized = toIdString(id);
+  return normalized.length <= 8 ? normalized : normalized.slice(0, 8);
 };
 
 export const getPredictionExecutionTime = (value: unknown): number | null => {
@@ -156,57 +81,3 @@ export const formatExecutionTime = (time: number | null): string => {
 
   return `${(time / 3600000).toFixed(2)} h`;
 };
-
-export const getSignatureSummaryStats = (inputSignature: unknown): SignatureSummaryStats => {
-  if (!isRecord(inputSignature)) {
-    return {
-      fieldCount: 0,
-      reportCount: 0,
-      feedbackReportsEnabled: false,
-      fieldKinds: {},
-      reportKinds: {},
-      classifierLabelsCount: 0,
-    };
-  }
-
-  const fields = Array.isArray(inputSignature.fields) ? inputSignature.fields.filter(isRecord) : [];
-  const reports = getOutputReports(inputSignature);
-
-  const fieldKinds = fields.reduce<Record<string, number>>((acc, field) => {
-    const kind = typeof field.kind === "string" ? field.kind : "unknown";
-    acc[kind] = (acc[kind] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const reportKinds = reports.reduce<Record<string, number>>((acc, report) => {
-    const kind = typeof report.kind === "string" ? report.kind : "unknown";
-    acc[kind] = (acc[kind] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const classifierLabelsCount = reports.reduce((count, report) => {
-    if (report.kind !== "classifier" || !Array.isArray(report.labels)) {
-      return count;
-    }
-
-    return Math.max(count, report.labels.length);
-  }, 0);
-
-  return {
-    fieldCount: fields.length,
-    reportCount: reports.length,
-    feedbackReportsEnabled:
-      Array.isArray(inputSignature.reports) &&
-      inputSignature.reports.filter(isRecord).length > reports.length,
-    fieldKinds,
-    reportKinds,
-    classifierLabelsCount,
-  };
-};
-
-export const getPredictionDetailTitle = (prediction: PredictionDto): string =>
-  prediction.name || `Prediction ${getPredictionShortId(prediction.id)}`;
-
-export const getPredictionTimestamp = (
-  prediction: Pick<PredictionDto, "createdAt" | "updatedAt">,
-): string => prediction.updatedAt ?? prediction.createdAt;

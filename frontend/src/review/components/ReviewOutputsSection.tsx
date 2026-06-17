@@ -1,4 +1,3 @@
-import type { TargetDto } from "../../models/api/modelService";
 import type { PredictionReportDescriptor } from "../../models/questionnaire-feedback";
 import {
   formatProbability,
@@ -10,14 +9,20 @@ import {
 type ReviewOutputsSectionProps = {
   targets: TargetDto[];
   reports: PredictionReportDescriptor[];
-  signatureSchema: unknown;
+  schemaDefinition: unknown;
   predictionValue: unknown;
+};
+
+export type TargetDto = {
+  id: string;
+  order: number;
+  value: unknown;
 };
 
 export function ReviewOutputsSection({
   targets,
   reports,
-  signatureSchema,
+  schemaDefinition,
   predictionValue,
 }: ReviewOutputsSectionProps) {
   return (
@@ -27,13 +32,13 @@ export function ReviewOutputsSection({
         return (
           <div key={target.id} className="grid gap-1 py-3 md:grid-cols-[180px_minmax(0,1fr)]">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
-              {getTargetLabel(signatureSchema, target.order)}
+              {getTargetLabel(schemaDefinition, target.order)}
             </p>
             <div className="font-mono text-sm text-[var(--text-primary)]">
               {String(
                 getSchemaAwareTargetValue(
                   target.value,
-                  signatureSchema,
+                  schemaDefinition,
                   target.order,
                   predictionValue,
                 ) ?? "",

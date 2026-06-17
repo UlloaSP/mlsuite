@@ -1,3 +1,245 @@
+# Schema Classifier Feedback And Input Display Fix
+
+## Goal
+- [x] Classifier assessment renders as category when report labels/mapping come from mapped classifier payload.
+- [x] Saved schema-run inputs render from mapped records, no `N/A` for valid values.
+
+## Plan
+- [x] Add focused regression for classifier feedback kind with mapped classifier report payload.
+- [x] Add focused regression for visible inputs using per-model `mappedTo` records.
+- [x] Patch the smallest source helper(s) shared by modal/history/review.
+- [x] Run focused tests, typecheck, graph update.
+
+## Review
+- `buildSchemaFeedbackSteps` now uses the resolved display report config when the original schema report has no runtime `id`, so classifier assessment stays `category`.
+- Schema input display reads label as UI alias again, but `getMappedSchemaInputRecord` still persists mapped target keys, not label keys.
+- Regression covers no-id classifier mapped report feedback and label-backed visible input display/save.
+- Verification:
+  - `frontend`: `vp test test/schema-feedback-steps.test.ts test/schema-run-display.test.ts test/schema-run-save-modal.test.ts` passed, 16 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 28 files / 98 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
+  - Repo: line-count check passed, no frontend source/test file >300 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Schema MappedTo Source Of Truth
+
+## Goal
+- [x] Persist schema-run input data by `mappedTo`, not label.
+- [x] Treat labels as display-only.
+- [x] Remove `source` from active report payload routing.
+- [x] Keep `id` as MLForm/UI runtime identity only.
+
+## Plan
+- [x] Add mapped-input persistence helper beside schema display helpers.
+- [x] Switch save modal to persist mapped input record.
+- [x] Remove label fallback from bulk/upload technical parsing.
+- [x] Remove report `source` payload aliases from schema transport/custom-report/result-state paths.
+- [x] Remove backend analyzer fallback `mappedTo = label`.
+- [x] Update focused regressions and run frontend/backend checks.
+
+## Review
+- Save modal now persists schema-run inputs keyed by mapped model targets, including one-hot option targets.
+- Labels are display-only: display helpers can render labels, but save/bulk parsing no longer maps label keys to model values.
+- Report routing now uses mapped report targets; validation/runtime normalization no longer injects or reads schema report `source`.
+- Backend analyzer schema generation now sets field `mappedTo` from `features.names`, not field label fallback.
+- Verification:
+  - `frontend`: `vp test` passed, 28 files / 96 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: focused schema tests passed, 6 files / 25 tests.
+  - `backend`: `uv run pytest tests/test_runtime_api.py` passed, 25 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
+  - Repo: line-count check passed, no source file >300 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Assessment Kind Contract Fix
+
+## Goal
+- [x] `assessment` field is `category` for classifier.
+- [x] `assessment` field is `number` for regressor.
+- [x] No labels/mapping heuristic changes kind.
+
+## Plan
+- [x] Replace labels heuristic with explicit `kind === "classifier"` branch.
+- [x] Update regression test for classifier/regressor contract.
+- [x] Run focused test, typecheck, graph update.
+
+## Review
+- `createOutputFeedbackQuestionnaire` now uses `category` only when `reportConfig.kind === "classifier"`.
+- `regressor` stays `number`, even if labels exist.
+- Removed labels/mapping kind inference.
+- Verification:
+  - `frontend`: `vp test test/output-feedback-questionnaire.test.ts test/schema-run-save-modal.test.ts test/schema-feedback-steps.test.ts` passed, 3 files / 10 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Schema Run Persistence Rework
+
+## Goal
+- [x] Persist schema input values from real MLForm submit shape, no `N/A`/`undefined`.
+- [x] Persist assessment/review values with category field ids.
+- [x] Persist plugin report payload from run result into saved run.
+
+## Plan
+- [x] Reproduce with focused tests using actual pending-run/raw shapes.
+- [x] Trace save modal, feedback builder, report payload lookup.
+- [x] Patch single source-of-truth helpers only.
+- [x] Run focused tests, typecheck, graph update, react-doctor.
+
+## Review
+- Fixed visible input reconstruction: `undefined`/`null`/empty direct aliases no longer block mapped model-key fallback.
+- Saved visible input now omits unresolved fields instead of persisting `undefined`.
+- Fixed custom plugin report persistence: prefetch path now stores normalized id, raw id, and mapped source in aggregate reports and owning result output.
+- Output assessment now becomes `category` whenever labels/mapping can derive class options, not only when `kind` is exactly `classifier`.
+- Regression added for unresolved input omission and label-backed category assessment.
+- Verification:
+  - `frontend`: `vp test` passed, 28 files / 94 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: focused tests passed, 4 files / 16 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Schema Run Persistence Follow-up
+
+## Goal
+- [x] Persist visible schema inputs without `N/A`/`undefined` drift.
+- [x] Keep classifier assessment as category in save modal and external review.
+- [x] Persist plugin report payloads after async MLForm report updates.
+
+## Plan
+- [x] Add regression proving saved request uses schema-visible inputs rebuilt from model payload fallback.
+- [x] Make visible-input reconstruction fall back through `mappedTo` targets for scalar and one-hot fields.
+- [x] Make async report result builder store report aliases like initial transport.
+- [x] Give output assessment questionnaire stable category field id.
+- [x] Remove stale schema-run test `signatureId` mappings touched by these paths.
+- [x] Run focused frontend tests, typecheck, line check, graph update.
+
+## Review
+- Save modal now persists `inputData` from schema-visible reconstruction, not stale first-submit raw input.
+- Visible reconstruction now falls back through field `mappedTo` targets, so scalar/category fields recover from model keys.
+- Async MLForm report updates now store report payload aliases under normalized id, raw id, and mapped source in both `raw.reports` and owning `result.output.reports`.
+- Classifier output feedback now has explicit `output-feedback-assessment` id and remains `category` in save modal/review.
+- Deleted stale `schema-composer-runtime.test.ts`; remaining frontend tests use schema-only model mappings.
+- Verification:
+  - `frontend`: `vp test` passed, 27 files / 92 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: line-count check passed for all frontend tests and touched source.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Schema Run Saved Values And Reports
+
+## Goal
+- [x] Save schema field values with the same model-target mapping used for prediction.
+- [x] Render normal and plugin reports in form, save modal, and history.
+- [x] Keep schema-only contract; no legacy signature compat.
+
+## Plan
+- [x] Trace saved input/report payload shape across MLForm transport and schema history display.
+- [x] Store report payload aliases consistently by report id and mapped source.
+- [x] Read visible saved inputs from schema input data plus model input data.
+- [x] Add focused frontend regression for mapped inputs plus normal/plugin report payloads.
+- [x] Run targeted frontend checks, line-count check, and graph update.
+
+## Review
+- Fixed saved input display so original schema values win over encoded `modelInput`; `modelInput` is fallback only.
+- Normal and plugin report payloads are stored under normalized id, raw id, and mapped source.
+- History/modal report lookup now checks report id as alias when mapped source key is absent.
+- Stale plugin transport tests moved to schema-only model keys; no `model:signature` mapping kept.
+- Verification:
+  - `frontend`: `vp test test/schema-run-display.test.ts test/schema-plugin-transport.test.ts` passed, 7 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: touched-file line check passed; max 274 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Signature Deprecation To Schemas
+
+## Goal
+- [x] Keep catalog/model flows.
+- [x] Remove signature as public API/UI contract.
+- [x] Make schemas bind to one or more models.
+- [x] Move former signature schema payload to schema contract.
+- [x] Remove downstream signature routes/usages where schema replaces them.
+
+## Plan
+- [x] Inventory API/frontend/backend signature dependencies and current dirty changes.
+- [x] Change API schema binding/result contracts from model+signature to model-only.
+- [x] Restore schema `>=1` model binding validation and tests.
+- [x] Delete dead frontend signature/prediction route files and imports.
+- [x] Delete API signature controller/service/entity/repository/tests that no longer back schema.
+- [x] Delete or isolate legacy prediction files after signature removal; keep schema-run prediction domain.
+- [x] Run compile/typecheck/tests, line-count check, graph update.
+
+## Review
+- Schema versions now accept one or more model bindings; duplicate model binding still rejected.
+- Signature API/service/entity/repository/tests deleted.
+- Legacy prediction API/service/entity/repository/tests deleted; schema-run prediction domain kept.
+- Legacy review-link API/UI deleted; schema-review kept and owns its own DTO/exception.
+- Model now owns generated `inputSchema`; create-model returns only model.
+- Frontend schema composer/selector now works from model schemas and supports multiple models.
+- Search no longer indexes signatures/predictions or exposes `signatureId`/legacy `predictionId`.
+- Verification:
+  - `api`: `mvn -q "-Dtest=SchemaFlowServiceTest,ModelCreationServiceTest,ModelControllerTest,AnalyzerControllerTest,SearchWorkspaceServiceTest,SearchControllerTest" test` passed.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-composer.test.ts` passed, 6 tests.
+  - Source grep: no `signature` refs remain outside `schema-review` route name.
+  - Line-count check: no touched source file over 300 lines.
+  - Repo: `graphify update .` passed.
+
+# Schema mappedTo contract cleanup
+
+## Goal
+- [x] Stop persisting legacy schema model mapping fields.
+- [x] Stop generated schema fields/reports from persisting runtime ids/source.
+- [x] Use model/signature names as `mappedTo` record keys.
+- [x] Preserve per model/signature `mappedTo` records for `onehot-category`.
+- [x] Apply signature schema mapping/one-hot generation on signature save.
+- [x] Ensure initial model signatures shown in create-signature editor already include `mappedTo` and `onehot-category`.
+- [x] Show missing `mappedTo` as editor validation error instead of a runtime/editor exception.
+
+## Plan
+- [x] Locate single-model create-signature path showing raw base schema.
+- [x] Normalize base model signatures when loading editor.
+- [x] Fix source generator/persistence if initial signatures are saved raw.
+- [x] Add regression for single-model signature editor/schema output.
+- [x] Add MLSuite editor validation for missing field/report mappedTo.
+- [x] Run frontend/backend verification and graph update.
+
+## Review
+- Backend binding entity/request/DTO no longer carries `inputMapping` or `outputMapping`; DTO now exposes model/signature names.
+- Generated schema fields and reports no longer persist `id`/`source`; runtime derives ids after load.
+- Reports and one-hot options now persist `mappedTo` keyed by `modelName:signatureName`.
+- Signature save now prepares schema with generated `mappedTo`, strips runtime ids/source, and collapses one-hot fields to `onehot-category`.
+- Schema-run now accepts exact mapped model keys from MLForm submit for scalar fields and one-hot options.
+- Regression covers no-id schema with 18 scalar + 11 one-hot features = 29 model inputs and one mapped report payload.
+- Editor validation and runtime now share the same MLForm adapter for persisted mapped records.
+- Schema version creation preserves `modelName`/`signatureName`; report mapping lookup handles MLForm-normalized ids.
+- Correction applied: schema-run no longer maps reports by generated ids/source/labels; report configs are restored by schema order and routed only through `mappedTo`.
+- Correction applied: missing field/report/onehot-option `mappedTo` is now an editor validation error instead of guessing from labels or ids.
+- Correction applied: report rendering receives the exact schema report config already selected by `mappedTo`, so custom reports no longer re-find config by id/label.
+- Correction applied: signature/schema composition no longer derives model targets from `id`, `source`, or `label`; source signatures must provide `mappedTo`.
+- Correction applied: model signature editor now normalizes loaded base signatures, so old raw signatures display `mappedTo` and collapsed `onehot-category` before save.
+- Correction applied: analyzer `/build_schema` now emits `mappedTo` on generated fields and reports, so new initial model signatures are not born raw.
+- Correction applied: legacy analyzer output normalization stores report payloads under mapped report targets, so single-model schema run reports render from `mappedTo`.
+- Correction applied: missing field/report/onehot-option `mappedTo` now appears as Monaco/editor validation issue, so Save is disabled without crashing validation.
+- Verification:
+  - `backend`: `uv run pytest tests/test_runtime_api.py` passed, 25 tests.
+  - `api`: `mvn -q -DskipTests compile` passed.
+  - `frontend`: `vp fmt` passed.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/one-hot-schema.test.ts test/schema-plugin-policy.test.ts` passed, 2 files / 13 tests.
+  - `frontend`: `vp test test/builtin-registry.test.ts test/one-hot-schema.test.ts test/schema-plugin-readiness.test.ts` passed, 3 files / 14 tests.
+  - `frontend`: `vp test` passed, 33 files / 123 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing repo warnings; current scan reports 185 warnings.
+  - Repo: `graphify update .` passed.
+
 # Header Brand Match
 
 ## Goal

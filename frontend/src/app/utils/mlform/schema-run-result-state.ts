@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { isRecord, type JsonRecord } from "./shared";
 import { isSkippedSchemaReportPayload } from "./schema-report-plugin-context";
 import {
-  mappingSourceForReport,
   readReportContext,
+  reportTargetForBinding,
   reportContextKey,
 } from "./schema-run-report-mapping";
 
@@ -20,12 +20,12 @@ type ReportState = {
 type ReportController = {
   id: string;
   state?: ReportState;
+  mappedTo?: unknown;
 };
 
 type Binding = {
   modelId: string;
-  signatureId: string;
-  outputMapping?: JsonRecord;
+  modelName?: string;
 };
 
 const statusOf = (state: ReportState | undefined): string => state?.status ?? "idle";
@@ -44,23 +44,20 @@ const hasPendingReports = (
     return status === "idle" || status === "loading";
   });
 
-const sourceForReport = (
-  reportId: string,
+const targetForReport = (
+  report: ReportController,
   bindings: readonly Binding[],
   context: JsonRecord,
-): string => {
+): string | undefined => {
   const modelId = contextId(context.modelId);
-  const signatureId = contextId(context.signatureId);
-  const binding = bindings.find(
-    (item) => contextId(item.modelId) === modelId && contextId(item.signatureId) === signatureId,
-  );
-  return mappingSourceForReport(binding?.outputMapping, reportId) ?? reportId;
+  const binding = bindings.find((item) => contextId(item.modelId) === modelId);
+  return reportTargetForBinding(report, binding);
 };
 
 const patchResultOutput = (
   result: unknown,
   reportId: string,
-  source: string,
+  target: string,
   payload: unknown,
 ): unknown => {
   if (!isRecord(result)) return result;
@@ -72,11 +69,23 @@ const patchResultOutput = (
       ...output,
       reports: {
         ...reports,
-        [source]: payload,
+        [reportContextKey(reportId)]: payload,
         [reportId]: payload,
+        [target]: payload,
       },
     },
   };
+};
+
+const storeReportPayload = (
+  reports: JsonRecord,
+  reportId: string,
+  target: string,
+  payload: unknown,
+) => {
+  reports[reportContextKey(reportId)] = payload;
+  reports[reportId] = payload;
+  reports[target] = payload;
 };
 
 export const buildSchemaRunRawFromSubmitResult = (
@@ -94,15 +103,13 @@ export const buildSchemaRunRawFromSubmitResult = (
     if (statusOf(state) !== "ready" || state?.payload === undefined) return;
     if (isSkippedSchemaReportPayload(state.payload)) return;
     const context: JsonRecord = readReportContext(contexts, report.id) ?? {};
-    const source = sourceForReport(report.id, bindings, context);
-    reports[reportContextKey(report.id)] = state.payload;
+    const target = targetForReport(report, bindings, context);
+    if (!target) throw new Error(`Schema report "${report.id}" falta mappedTo`);
+    storeReportPayload(reports, report.id, target, state.payload);
     results = results.map((result) => {
       if (!isRecord(result)) return result;
       const sameModel = contextId(result.modelId) === contextId(context.modelId);
-      const sameSignature = contextId(result.signatureId) === contextId(context.signatureId);
-      return sameModel && sameSignature
-        ? patchResultOutput(result, report.id, source, state.payload)
-        : result;
+      return sameModel ? patchResultOutput(result, report.id, target, state.payload) : result;
     });
   });
 

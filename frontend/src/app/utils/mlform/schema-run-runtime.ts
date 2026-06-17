@@ -6,20 +6,19 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { createMlRegistryPack } from "mlform/builtins";
 import { registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
-import type { FormSchema, Registry, Transport } from "mlform/runtime";
+import type { FormSchema, Registry, ReportConfig, Transport } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
 import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { toMlformSchema } from "./schema-validation";
-import type { PredictionPayloadField } from "./shared";
+import { isRecord, type PredictionPayloadField } from "./shared";
 import { createSchemaRunTransport } from "./schema-run-transport";
 import { wrapSchemaReportDefinitions } from "./schema-report-plugin-context";
 import { schemaRunDebug } from "./schema-run-debug";
+import { toMlformRuntimeSchema } from "./schema-runtime-adapter";
 
 type Binding = {
   modelId: string;
-  signatureId: string;
-  inputMapping?: Record<string, unknown>;
-  outputMapping?: Record<string, unknown>;
+  modelName?: string;
   pluginPolicy?: Record<string, unknown> | null;
 };
 
@@ -54,6 +53,45 @@ const createRegistry = (
   return pack;
 };
 
+const transportFields = (
+  formSchema: FormSchema,
+  sourceSchema: unknown,
+): readonly PredictionPayloadField[] => {
+  if (!isRecord(sourceSchema) || !Array.isArray(sourceSchema.fields)) {
+    return formSchema.fields as PredictionPayloadField[];
+  }
+  const sourceFields = sourceSchema.fields;
+  return formSchema.fields.map((field: unknown, index: number) => {
+    const sourceField = sourceFields[index];
+    if (!isRecord(sourceField)) return field as PredictionPayloadField;
+    if (sourceField.kind === "onehot-category" && Array.isArray(sourceField.options)) {
+      sourceField.options.forEach((option, optionIndex) => {
+        if (isRecord(option) && option.mappedTo === undefined) {
+          throw new Error(`Schema field ${index + 1} option ${optionIndex + 1} falta mappedTo`);
+        }
+      });
+    } else if (sourceField.mappedTo === undefined) {
+      throw new Error(`Schema field ${index + 1} falta mappedTo`);
+    }
+    const next: PredictionPayloadField = {
+      ...(field as PredictionPayloadField),
+      mappedTo: sourceField.mappedTo,
+    };
+    if (Array.isArray(sourceField.options)) next.options = sourceField.options;
+    return next;
+  });
+};
+
+const reportMappings = (schema: unknown): readonly unknown[] => {
+  if (!isRecord(schema) || !Array.isArray(schema.reports)) return [];
+  return schema.reports.filter(isRecord).map((report, index) => {
+    if (report.mappedTo === undefined) {
+      throw new Error(`Schema report ${index + 1} falta mappedTo`);
+    }
+    return report.mappedTo;
+  });
+};
+
 export const createSchemaRunRuntime = ({
   schema,
   bindings,
@@ -66,17 +104,17 @@ export const createSchemaRunRuntime = ({
     customReports: customReportDefinitions.map((definition) => definition.kind),
   });
   const schemaReportDefinitions = wrapSchemaReportDefinitions(customReportDefinitions);
-  const formSchema = toMlformSchema(schema, {
+  const formSchema = toMlformSchema(toMlformRuntimeSchema(schema), {
     customFieldDefinitions,
     customReportDefinitions: schemaReportDefinitions,
   });
-  const normalizedFields = formSchema.fields as PredictionPayloadField[];
+  const mappings = reportMappings(schema);
+  const normalizedFields = transportFields(formSchema, schema);
   schemaRunDebug("runtime.create.normalized-schema", {
     fields: formSchema.fields.length,
-    reports: (formSchema.reports ?? []).map((report) => ({
+    reports: (formSchema.reports ?? []).map((report: ReportConfig) => ({
       id: report.id,
       kind: report.kind,
-      source: report.source,
     })),
   });
   const pack = createRegistry(customFieldDefinitions, schemaReportDefinitions);
@@ -84,7 +122,12 @@ export const createSchemaRunRuntime = ({
     formSchema,
     registry: pack.registry,
     descriptorRegistry: pack.descriptorRegistry,
-    transport: createSchemaRunTransport(bindings, normalizedFields, schemaReportDefinitions),
+    transport: createSchemaRunTransport(
+      bindings,
+      normalizedFields,
+      schemaReportDefinitions,
+      mappings,
+    ),
     normalizedFields,
   };
 };

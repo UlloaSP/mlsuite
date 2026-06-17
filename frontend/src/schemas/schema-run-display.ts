@@ -3,18 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { normalizeSchemaId } from "mlform/schema";
 import type { ReportConfig } from "mlform/runtime";
 import { isBuiltinReportKind } from "../app/utils/mlform/builtin-registry";
 import { type JsonRecord, getString, isRecord } from "../app/utils/mlform/shared";
-import { toLegacyReportPayload } from "../app/utils/mlform/report-normalization";
 import { isSkippedSchemaReportPayload } from "../app/utils/mlform/schema-report-plugin-context";
-import {
-  findMappedOptionByMapping,
-  findMappedOptionByValue,
-  mappedCategoryOptions,
-  mappedOptionDisplayValue,
-  mappedOptionSubmitValue,
-} from "../app/utils/mlform/mapped-category-options";
+import { mappedTarget, targetKey } from "../app/utils/mlform/mapped-to";
+import { reportTargetForBinding } from "../app/utils/mlform/schema-run-report-mapping";
 import type { PredictionResultDto, SchemaVersionDto } from "./types";
 
 type DisplayInput = { key: string; label: string; value: unknown };
@@ -23,6 +18,7 @@ export type SchemaDisplayReport = {
   order: number;
   label: string;
   kind: string;
+  config: ReportConfig;
   payload?: JsonRecord;
   labels?: string[];
 };
@@ -37,51 +33,62 @@ const reportsOf = (schema: unknown): ReportConfig[] =>
 
 const fieldKey = (field: JsonRecord): string => getString(field.label) ?? getString(field.id) ?? "";
 
-const fieldInputKeys = (field: JsonRecord): string[] =>
+const mappedTargetKeys = (mappedTo: unknown): string[] =>
   Array.from(
     new Set(
-      [fieldKey(field), getString(field.id)]
+      [
+        targetKey(mappedTarget(mappedTo)),
+        ...(isRecord(mappedTo)
+          ? Object.values(mappedTo).map((value) =>
+              typeof value === "string" || typeof value === "number" ? String(value) : undefined,
+            )
+          : []),
+      ]
         .filter((key): key is string => !!key)
         .filter((key) => key.trim().length > 0),
     ),
   );
 
+const fieldInputKeys = (field: JsonRecord): string[] =>
+  Array.from(
+    new Set(
+      [getString(field.id), getString(field.label), ...mappedTargetKeys(field.mappedTo)].filter(
+        (key): key is string => !!key,
+      ),
+    ),
+  );
+
 const fieldInputValue = (field: JsonRecord, inputData: JsonRecord): unknown => {
-  const key = fieldInputKeys(field).find((item) => item in inputData);
+  const key = fieldInputKeys(field).find(
+    (item) => item in inputData && hasMappedDirectValue(inputData[item]),
+  );
   return key ? inputData[key] : undefined;
 };
 
 const hasMappedDirectValue = (value: unknown): boolean =>
   value !== null && value !== undefined && !(typeof value === "string" && value.trim() === "");
 
-const mappedCategoryValue = (
+const optionDisplayValue = (option: JsonRecord): unknown => option.label ?? option.value;
+const optionSubmitValue = (option: JsonRecord): unknown => option.value ?? option.label;
+
+const oneHotValue = (
   field: JsonRecord,
   inputData: JsonRecord,
-  keyById: Map<string, string>,
   mode: "display" | "submit",
 ): unknown => {
   const direct = fieldInputValue(field, inputData);
-  const options = mappedCategoryOptions(field);
-  if (hasMappedDirectValue(direct)) {
-    const directOption = findMappedOptionByValue(options, direct);
-    if (directOption) {
-      return mode === "display"
-        ? mappedOptionDisplayValue(directOption)
-        : mappedOptionSubmitValue(directOption);
-    }
-    return direct;
-  }
-  const mappedOption = findMappedOptionByMapping(
-    options,
-    inputData,
-    (targetId) => keyById.get(targetId) ?? targetId,
-  );
-  if (mappedOption) {
-    return mode === "display"
-      ? mappedOptionDisplayValue(mappedOption)
-      : mappedOptionSubmitValue(mappedOption);
-  }
-  return fieldInputValue(field, inputData);
+  const options = Array.isArray(field.options) ? field.options.filter(isRecord) : [];
+  if (hasMappedDirectValue(direct)) return direct;
+  const option = options.find((item) => {
+    const targets = mappedTargetKeys(item.mappedTo);
+    return targets.some((target) => {
+      if (!(target in inputData)) return false;
+      const value = inputData[target];
+      return value === true || value === 1 || String(value).trim().toLowerCase() === "true";
+    });
+  });
+  if (!option) return undefined;
+  return mode === "display" ? optionDisplayValue(option) : optionSubmitValue(option);
 };
 
 const schemaInputs = (
@@ -90,18 +97,13 @@ const schemaInputs = (
   mode: "display" | "submit",
 ): DisplayInput[] => {
   const fields = fieldsOf(schema);
-  const keyById = fields.reduce<Map<string, string>>((map, field) => {
-    const id = getString(field.id);
-    if (id) map.set(id, fieldKey(field));
-    return map;
-  }, new Map());
   return fields.reduce<DisplayInput[]>((items, field) => {
     if (field.hidden === true) return items;
     const key = fieldKey(field);
     if (!key) return items;
     const value =
-      getString(field.kind) === "mapped-category"
-        ? mappedCategoryValue(field, inputData, keyById, mode)
+      getString(field.kind) === "onehot-category"
+        ? oneHotValue(field, inputData, mode)
         : fieldInputValue(field, inputData);
     items.push({ key, label: getString(field.label) ?? key, value });
     return items;
@@ -118,26 +120,58 @@ export const getSchemaRunPrefillInputs = (schema: unknown, inputData: JsonRecord
 
 export const getVisibleSchemaInputRecord = (schema: unknown, inputData: JsonRecord): JsonRecord =>
   Object.fromEntries(
-    getVisibleSchemaInputs(schema, inputData).map((input) => [input.label, input.value]),
+    getVisibleSchemaInputs(schema, inputData)
+      .filter((input) => input.value !== undefined)
+      .map((input) => [input.label, input.value]),
   );
 
+export const getMappedSchemaInputRecord = (schema: unknown, inputData: JsonRecord): JsonRecord =>
+  fieldsOf(schema).reduce<JsonRecord>((payload, field) => {
+    if (field.hidden === true) return payload;
+    if (getString(field.kind) === "onehot-category") {
+      const selected = oneHotValue(field, inputData, "submit");
+      const options = Array.isArray(field.options) ? field.options.filter(isRecord) : [];
+      options.forEach((option) => {
+        const value = optionSubmitValue(option);
+        mappedTargetKeys(option.mappedTo).forEach((target) => {
+          payload[target] = selected === value ? 1 : 0;
+        });
+      });
+      return payload;
+    }
+    const value = fieldInputValue(field, inputData);
+    if (value === undefined) return payload;
+    mappedTargetKeys(field.mappedTo).forEach((target) => {
+      payload[target] = value;
+    });
+    return payload;
+  }, {});
+
 const reportId = (report: ReportConfig): string | undefined =>
-  typeof report.id === "string" ? report.id : undefined;
+  typeof report.id === "string"
+    ? report.id
+    : typeof report.label === "string"
+      ? report.label
+      : undefined;
 
 const reportLabel = (report: ReportConfig): string =>
   typeof report.label === "string" ? report.label : (reportId(report) ?? "Report");
 
 const payloadFor = (
-  report: ReportConfig,
-  source: string,
+  target: string,
   output: JsonRecord,
+  aliases: readonly string[] = [],
 ): JsonRecord | undefined => {
-  if (isRecord(output.reports) && isRecord(output.reports[source])) return output.reports[source];
-  const id = reportId(report);
-  if (id && isRecord(output.reports) && isRecord(output.reports[id])) {
-    return output.reports[id];
+  if (!isRecord(output.reports)) return undefined;
+  for (const key of [
+    target,
+    normalizeSchemaId(target),
+    ...aliases,
+    ...aliases.map(normalizeSchemaId),
+  ]) {
+    if (isRecord(output.reports[key])) return output.reports[key];
   }
-  return toLegacyReportPayload(report, output);
+  return undefined;
 };
 
 const reportLabels = (report: ReportConfig): string[] =>
@@ -168,7 +202,7 @@ const normalizeReportPayload = (
   };
 };
 
-const METADATA_KEYS = new Set(["endpoint", "modelId", "signatureId", "backendUrl", "status"]);
+const METADATA_KEYS = new Set(["endpoint", "modelId", "backendUrl", "status"]);
 
 const hasMeaningfulValue = (value: unknown): boolean => {
   if (value === null || value === undefined) return false;
@@ -189,23 +223,22 @@ const isRenderablePayload = (report: ReportConfig, payload: JsonRecord | undefin
 
 export const getSchemaResultReports = (
   version: SchemaVersionDto,
-  result: Pick<PredictionResultDto, "modelId" | "signatureId" | "output">,
+  result: Pick<PredictionResultDto, "modelId" | "output">,
 ): SchemaDisplayReport[] => {
-  const binding = version.bindings.find(
-    (item) => item.modelId === result.modelId && item.signatureId === result.signatureId,
-  );
-  const mapping = isRecord(binding?.outputMapping) ? binding.outputMapping : {};
+  const binding = version.bindings.find((item) => item.modelId === result.modelId);
   const reports = reportsOf(version.formSchema);
   return reports.reduce<SchemaDisplayReport[]>((items, report, order) => {
     const id = reportId(report);
-    if (!id || typeof mapping[id] !== "string") return items;
-    const payload = normalizeReportPayload(report, payloadFor(report, mapping[id], result.output));
+    const target = reportTargetForBinding(report, binding);
+    if (!id || !target) return items;
+    const payload = normalizeReportPayload(report, payloadFor(target, result.output, [id]));
     if (!isRenderablePayload(report, payload)) return items;
     items.push({
       id,
       order,
       label: reportLabel(report),
       kind: typeof report.kind === "string" ? report.kind : "report",
+      config: report,
       labels: reportLabels(report),
       payload,
     });
@@ -216,10 +249,10 @@ export const getSchemaResultReports = (
 export const mergeSchemaRunInputs = (
   inputData: JsonRecord,
   results: readonly Pick<PredictionResultDto, "modelInput">[],
-): JsonRecord =>
-  results.reduce<JsonRecord>((payload, result) => ({ ...payload, ...result.modelInput }), {
-    ...inputData,
-  });
+): JsonRecord => ({
+  ...results.reduce<JsonRecord>((payload, result) => ({ ...payload, ...result.modelInput }), {}),
+  ...inputData,
+});
 
 export const formatDisplayValue = (value: unknown): string => {
   if (typeof value === "number") return value.toLocaleString();

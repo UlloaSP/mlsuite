@@ -89,7 +89,8 @@ export const buildSchemaFeedbackSteps = (
     const displayReports = getSchemaResultReports(version, result);
     return displayReports.flatMap((display, index): SchemaFeedbackStep[] => {
       const order = display.order ?? index;
-      const config = sourceReports.find((report) => reportId(report) === display.id);
+      const config =
+        sourceReports.find((report) => reportId(report) === display.id) ?? display.config;
       const outputFeedback = feedbackByKey.get(feedbackKey(result.id, "OUTPUT", order));
       const reportFeedback = feedbackByKey.get(feedbackKey(result.id, "EXPLANATION", order));
       const questionnaire = config ? feedbackQuestionnaire(config) : undefined;

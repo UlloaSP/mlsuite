@@ -8,6 +8,7 @@ import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field
 import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 import { isBuiltinFieldKind, isBuiltinReportKind } from "./builtin-registry";
 import { mlformJsonSchema, validateMlformSchema as validateBaseMlformSchema } from "./schema";
+import { toMlformRuntimeSchema } from "./schema-runtime-adapter";
 import type { CompatIssue, CompatValidationResult } from "./shared";
 import { hasBlockingIssues, isRecord } from "./shared";
 
@@ -54,6 +55,45 @@ const appendReportIssues = (schema: unknown, allKinds: Set<string>, issues: Comp
   });
 };
 
+const appendMappedToIssues = (schema: unknown, issues: CompatIssue[]) => {
+  if (!isRecord(schema)) return;
+  if (Array.isArray(schema.fields)) {
+    schema.fields.forEach((field, index) => {
+      if (!isRecord(field)) return;
+      if (field.kind === "onehot-category" && Array.isArray(field.options)) {
+        field.options.forEach((option, optionIndex) => {
+          if (isRecord(option) && option.mappedTo === undefined) {
+            issues.push({
+              path: ["fields", index, "options", optionIndex, "mappedTo"],
+              message: `Schema field ${index + 1} option ${optionIndex + 1} falta mappedTo`,
+              severity: "error",
+            });
+          }
+        });
+        return;
+      }
+      if (field.mappedTo === undefined) {
+        issues.push({
+          path: ["fields", index, "mappedTo"],
+          message: `Schema field ${index + 1} falta mappedTo`,
+          severity: "error",
+        });
+      }
+    });
+  }
+  if (Array.isArray(schema.reports)) {
+    schema.reports.forEach((report, index) => {
+      if (isRecord(report) && report.mappedTo === undefined) {
+        issues.push({
+          path: ["reports", index, "mappedTo"],
+          message: `Schema report ${index + 1} falta mappedTo`,
+          severity: "error",
+        });
+      }
+    });
+  }
+};
+
 const mergeIssues = (
   schema: unknown,
   baseIssues: readonly CompatIssue[],
@@ -86,6 +126,7 @@ const mergeIssues = (
   }
   appendFieldIssues(schema, allFieldKinds, filteredIssues);
   appendReportIssues(schema, allReportKinds, filteredIssues);
+  appendMappedToIssues(schema, filteredIssues);
   return filteredIssues;
 };
 
@@ -93,7 +134,8 @@ export const validateMlformSchema = (
   schema: unknown,
   options: ValidateMlformSchemaOptions = {},
 ): CompatValidationResult => {
-  const baseResult = validateBaseMlformSchema(schema, options);
+  const runtimeSchema = toMlformRuntimeSchema(schema);
+  const baseResult = validateBaseMlformSchema(runtimeSchema, options);
   const issues = mergeIssues(schema, baseResult.issues, options);
   if (!baseResult.success) {
     return { success: false, issues };

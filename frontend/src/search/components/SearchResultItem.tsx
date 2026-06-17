@@ -3,8 +3,6 @@ import {
   Building2,
   Boxes,
   BrainCircuit,
-  Fingerprint,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { Link } from "react-router";
@@ -15,8 +13,6 @@ const icons: Record<SearchResultType, typeof Building2> = {
   organization: Building2,
   team: Users,
   model: BrainCircuit,
-  signature: Fingerprint,
-  prediction: Sparkles,
   plugin: Boxes,
 };
 

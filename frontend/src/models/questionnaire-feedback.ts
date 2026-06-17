@@ -6,9 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { type FieldConfig } from "mlform/runtime";
 import { buildQuestionnaireFormSchema, type QuestionnaireSchema } from "./questionnaire-schema";
 import type { MountedForm } from "mlform/kit";
-import type { ExplanationFeedbackDto as ReportFeedbackDto } from "./api/modelService";
 
 type JsonRecord = Record<string, unknown>;
+
+type ReportFeedbackDto = {
+  value?: unknown;
+  realValue?: unknown;
+};
 
 export type PredictionReportDescriptor = {
   order: number;
@@ -64,14 +68,17 @@ export const getQuestionnaireFieldDescriptors = (
     options: Array.isArray(sourceFields[index]?.options)
       ? sourceFields[index].options
           .filter(
-            (option): option is { label: string; value: unknown } =>
+            (option: unknown): option is { label: string; value: unknown } =>
               typeof option === "object" &&
               option !== null &&
               "label" in option &&
               typeof option.label === "string" &&
               "value" in option,
           )
-          .map((option) => ({ label: option.label, value: option.value }))
+          .map((option: { label: string; value: unknown }) => ({
+            label: option.label,
+            value: option.value,
+          }))
       : undefined,
   }));
 };

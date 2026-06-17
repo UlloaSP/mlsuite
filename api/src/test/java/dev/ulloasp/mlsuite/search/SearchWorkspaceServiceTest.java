@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,13 +22,8 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
-import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
-import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
-import dev.ulloasp.mlsuite.prediction.domain.model.PredictionStatus;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
 import dev.ulloasp.mlsuite.search.application.usecase.SearchWorkspaceService;
-import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.SignatureRepository;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -47,10 +41,6 @@ class SearchWorkspaceServiceTest {
     @Mock
     private ModelRepository modelRepository;
     @Mock
-    private SignatureRepository signatureRepository;
-    @Mock
-    private PredictionRepository predictionRepository;
-    @Mock
     private PluginCatalogUseCase pluginCatalogUseCase;
 
     private SearchWorkspaceService service;
@@ -62,8 +52,6 @@ class SearchWorkspaceServiceTest {
                 membershipRepository,
                 teamRepository,
                 modelRepository,
-                signatureRepository,
-                predictionRepository,
                 pluginCatalogUseCase);
     }
 
@@ -78,14 +66,10 @@ class SearchWorkspaceServiceTest {
         Organization organization = organization();
         Team team = team(organization);
         Model model = model(organization, team);
-        Signature signature = signature(model);
-        Prediction prediction = prediction(signature);
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
         when(membershipRepository.findActiveByUserId(7L)).thenReturn(List.of(membership(organization)));
         when(teamRepository.findByOrganizationIdOrderByNameAsc(41L)).thenReturn(List.of(team));
         when(modelRepository.findByOrganizationId(41L)).thenReturn(List.of(model));
-        when(signatureRepository.findByModelId(11L)).thenReturn(List.of(signature));
-        when(predictionRepository.findBySignatureId(12L)).thenReturn(List.of(prediction));
         when(pluginCatalogUseCase.listAll(7L)).thenReturn(List.of(new PluginDto(
                 "plug-1",
                 "acme-plugin.ts",
@@ -99,7 +83,7 @@ class SearchWorkspaceServiceTest {
 
         SearchResponseDto response = service.search(7L, "ac");
 
-        assertEquals(6, response.groups().size());
+        assertEquals(4, response.groups().size());
         assertEquals("Organizations", response.groups().getFirst().label());
         assertTrue(response.groups().stream()
                 .flatMap(group -> group.results().stream())
@@ -159,26 +143,4 @@ class SearchWorkspaceServiceTest {
         return model;
     }
 
-    private Signature signature(Model model) {
-        Signature signature = new Signature();
-        signature.setId(12L);
-        signature.setModel(model);
-        signature.setName("Acme Signature");
-        signature.setMajor(1);
-        signature.setMinor(2);
-        signature.setPatch(3);
-        signature.setInputSignature(Map.of());
-        signature.setUpdatedAt(now());
-        return signature;
-    }
-
-    private Prediction prediction(Signature signature) {
-        Prediction prediction = new Prediction();
-        prediction.setId(13L);
-        prediction.setSignature(signature);
-        prediction.setName("Acme Prediction");
-        prediction.setStatus(PredictionStatus.COMPLETED);
-        prediction.setUpdatedAt(now());
-        return prediction;
-    }
 }

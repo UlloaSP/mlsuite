@@ -9,7 +9,6 @@ import type { SchemaFeedbackStep } from "./schema-feedback-steps";
 
 export type PendingFeedback = {
   modelId: string;
-  signatureId: string;
   type: "OUTPUT" | "EXPLANATION";
   order: number;
   value: Record<string, unknown>;
@@ -18,7 +17,6 @@ export type PendingFeedback = {
 type PendingFeedbackResult = {
   id: string;
   modelId: string;
-  signatureId: string;
 };
 
 export const buildPendingSchemaRunFeedback = (
@@ -33,7 +31,6 @@ export const buildPendingSchemaRunFeedback = (
     return [
       {
         modelId: result?.modelId ?? "",
-        signatureId: result?.signatureId ?? "",
         type: step.type,
         order: step.order,
         value,

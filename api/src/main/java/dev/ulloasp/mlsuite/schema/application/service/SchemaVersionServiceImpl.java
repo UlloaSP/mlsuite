@@ -20,8 +20,6 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.SignatureRepository;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -36,20 +34,18 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     private final SchemaVersionRepository versionRepository;
     private final SchemaModelBindingRepository bindingRepository;
     private final ModelRepository modelRepository;
-    private final SignatureRepository signatureRepository;
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
 
     public SchemaVersionServiceImpl(UserLookupService userLookupService, SchemaRepository schemaRepository,
             SchemaVersionRepository versionRepository, SchemaModelBindingRepository bindingRepository,
-            ModelRepository modelRepository, SignatureRepository signatureRepository,
+            ModelRepository modelRepository,
             WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService) {
         this.userLookupService = userLookupService;
         this.schemaRepository = schemaRepository;
         this.versionRepository = versionRepository;
         this.bindingRepository = bindingRepository;
         this.modelRepository = modelRepository;
-        this.signatureRepository = signatureRepository;
         this.workspaceAccessService = workspaceAccessService;
         this.authorizationService = authorizationService;
     }
@@ -84,7 +80,7 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     public SchemaModelBinding addBinding(Long userId, Long versionId, CreateSchemaModelBindingRequest request) {
         Long organizationId = requireOperate(userId);
         SchemaVersion version = requireVersion(versionId, organizationId);
-        if (bindingRepository.findBinding(versionId, request.modelId(), request.signatureId()).isPresent()) {
+        if (bindingRepository.findBinding(versionId, request.modelId()).isPresent()) {
             throw badRequest("Binding already exists");
         }
         return saveBinding(organizationId, version, request);
@@ -124,14 +120,7 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     private SchemaModelBinding saveBinding(Long orgId, SchemaVersion version, CreateSchemaModelBindingRequest req) {
         Model model = modelRepository.findByIdAndOrganizationId(req.modelId(), orgId)
                 .orElseThrow(() -> badRequest("Model unavailable"));
-        Signature signature = signatureRepository.findByIdAndOrganizationId(req.signatureId(), orgId)
-                .orElseThrow(() -> badRequest("Signature unavailable"));
-        if (!signature.getModel().getId().equals(model.getId())) {
-            throw badRequest("Signature does not belong to model");
-        }
-        return bindingRepository.save(new SchemaModelBinding(version, model, signature,
-                req.inputMapping() == null ? Map.of() : req.inputMapping(),
-                req.outputMapping() == null ? Map.of() : req.outputMapping(),
+        return bindingRepository.save(new SchemaModelBinding(version, model,
                 req.pluginPolicy() == null ? Map.of() : req.pluginPolicy()));
     }
 
@@ -142,11 +131,14 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     }
 
     private void assertUniqueBindings(List<CreateSchemaModelBindingRequest> bindings) {
+        if (bindings.isEmpty()) {
+            throw badRequest("Schema version must bind at least one model");
+        }
         Set<String> seen = new HashSet<>();
         for (CreateSchemaModelBindingRequest binding : bindings) {
-            String key = binding.modelId() + ":" + binding.signatureId();
+            String key = binding.modelId().toString();
             if (!seen.add(key)) {
-                throw badRequest("Duplicate model/signature binding");
+                throw badRequest("Duplicate model binding");
             }
         }
     }

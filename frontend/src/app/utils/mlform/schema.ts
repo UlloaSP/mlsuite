@@ -16,6 +16,7 @@ import {
 } from "./schema-definition-validation";
 import type { CompatIssue, CompatValidationResult, JsonRecord } from "./shared";
 import { getString, hasBlockingIssues, isRecord, toUniqueId } from "./shared";
+import { mappedTarget, targetKey } from "./mapped-to";
 
 export type ValidateMlformSchemaOptions = {
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
@@ -145,16 +146,6 @@ export const validateMlformSchema = (
       id,
       kind: String(field.kind),
       label,
-      ui: {
-        ...(isRecord(field.ui) ? field.ui : {}),
-        backendKey:
-          (isRecord(field.ui) && typeof field.ui.backendKey === "string"
-            ? field.ui.backendKey
-            : undefined) ??
-          getString(field.label) ??
-          getString(field.id) ??
-          id,
-      },
     };
 
     nextFields.push(
@@ -187,7 +178,6 @@ export const validateMlformSchema = (
       id,
       kind: String(report.kind),
       label,
-      source: getString(report.source) ?? id,
     };
 
     nextReports.push(
@@ -225,16 +215,11 @@ export const applyPredictionInputsToSchema = (
         return field;
       }
 
-      const backendKey =
-        (isRecord(field.ui) && typeof field.ui.backendKey === "string"
-          ? field.ui.backendKey
-          : undefined) ??
-        getString(field.label) ??
-        getString(field.id);
+      const modelKey = targetKey(mappedTarget(field.mappedTo));
 
-      return !backendKey || !(backendKey in inputs)
+      return !modelKey || !(modelKey in inputs)
         ? field
-        : { ...field, defaultValue: inputs[backendKey] };
+        : { ...field, defaultValue: inputs[modelKey] };
     }),
   };
 };

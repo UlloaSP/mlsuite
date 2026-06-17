@@ -25,18 +25,18 @@ const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
 };
 
 const getTargetClassLabel = (
-  signatureSchema: unknown,
+  schemaDefinition: unknown,
   order: number,
   classIndex: number,
 ): string | null => {
   if (
-    typeof signatureSchema !== "object" ||
-    signatureSchema === null ||
-    !Array.isArray((signatureSchema as { reports?: unknown }).reports)
+    typeof schemaDefinition !== "object" ||
+    schemaDefinition === null ||
+    !Array.isArray((schemaDefinition as { reports?: unknown }).reports)
   ) {
     return null;
   }
-  const report = (signatureSchema as { reports: unknown[] }).reports[order];
+  const report = (schemaDefinition as { reports: unknown[] }).reports[order];
   if (
     typeof report !== "object" ||
     report === null ||
@@ -50,7 +50,7 @@ const getTargetClassLabel = (
 
 export function derivePredictionTargets(
   prediction: Record<string, unknown>,
-  signatureSchema: unknown,
+  schemaDefinition: unknown,
 ): DerivedPredictionTarget[] {
   const output = asOutput(prediction);
   if (!output) {
@@ -64,7 +64,7 @@ export function derivePredictionTargets(
         order: index,
         value: {
           value:
-            getTargetClassLabel(signatureSchema, index, maxIndex) ??
+            getTargetClassLabel(schemaDefinition, index, maxIndex) ??
             output.mapping?.[maxIndex] ??
             maxIndex,
           classIndex: maxIndex,

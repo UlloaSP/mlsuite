@@ -12,21 +12,19 @@ import {
 } from "./schema-report-plugin-context";
 import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
 import {
-  mappingSourceForReport,
   readReportContext,
+  reportTargetForBinding,
   reportContextKey,
 } from "./schema-run-report-mapping";
 import { isRecord, type JsonRecord } from "./shared";
 
 export type SchemaRunBindingForReports = {
   modelId: string;
-  signatureId: string;
-  outputMapping?: JsonRecord;
+  modelName?: string;
 };
 
 export type SchemaRunModelResult = {
   modelId: string;
-  signatureId: string;
   modelInput?: unknown;
   output: JsonRecord;
   [key: string]: unknown;
@@ -42,43 +40,34 @@ const customReportByKind = (
   return reports;
 };
 
-const sourceForReport = (
-  reportId: string,
+const targetForReport = (
+  report: ReportConfig,
   context: JsonRecord,
   bindings: readonly SchemaRunBindingForReports[],
-): string => {
-  const binding = bindings.find(
-    (item) => item.modelId === context.modelId && item.signatureId === context.signatureId,
-  );
-  return mappingSourceForReport(binding?.outputMapping, reportId) ?? reportId;
+): string | undefined => {
+  const binding = bindings.find((item) => item.modelId === context.modelId);
+  return reportTargetForBinding(report, binding);
 };
 
 const hasBindingForReport = (
-  reportId: string,
+  report: ReportConfig,
   bindings: readonly SchemaRunBindingForReports[],
-): boolean =>
-  bindings.some((binding) => mappingSourceForReport(binding.outputMapping, reportId) !== undefined);
+): boolean => bindings.some((binding) => reportTargetForBinding(report, binding) !== undefined);
 
 const deriveReportContext = <TResult extends SchemaRunModelResult>(
-  reportId: string,
+  report: ReportConfig,
   bindings: readonly SchemaRunBindingForReports[],
   results: readonly TResult[],
 ): JsonRecord | null => {
-  const binding = bindings.find(
-    (item) => mappingSourceForReport(item.outputMapping, reportId) !== undefined,
-  );
+  const binding = bindings.find((item) => reportTargetForBinding(report, item) !== undefined);
   if (!binding) return null;
   const result = results.find(
-    (item) =>
-      item.modelId === binding.modelId &&
-      item.signatureId === binding.signatureId &&
-      item.status === "SUCCESS",
+    (item) => item.modelId === binding.modelId && item.status === "SUCCESS",
   );
   if (!result || !isRecord(result.output)) return null;
   const meta = isRecord(result.output.meta) ? result.output.meta : {};
   return {
     modelId: result.modelId,
-    signatureId: result.signatureId,
     modelInput: isRecord(result.modelInput) ? result.modelInput : {},
     meta,
     raw: result.output,
@@ -91,7 +80,7 @@ const contextId = (value: unknown): string | undefined =>
 const patchResultReportPayload = <TResult extends SchemaRunModelResult>(
   result: TResult,
   reportId: string,
-  source: string,
+  target: string,
   payload: unknown,
 ): TResult => {
   const output = isRecord(result.output) ? result.output : {};
@@ -100,9 +89,26 @@ const patchResultReportPayload = <TResult extends SchemaRunModelResult>(
     ...result,
     output: {
       ...output,
-      reports: { ...reports, [reportId]: payload, [source]: payload },
+      reports: {
+        ...reports,
+        [reportContextKey(reportId)]: payload,
+        [reportId]: payload,
+        [target]: payload,
+      },
     },
   };
+};
+
+const storeReportPayload = (
+  reports: JsonRecord,
+  reportId: string,
+  target: string,
+  payload: unknown,
+) => {
+  const key = reportContextKey(reportId);
+  reports[key] = payload;
+  reports[reportId] = payload;
+  reports[target] = payload;
 };
 
 export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelResult>({
@@ -124,7 +130,7 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
   let nextResults = [...results];
   schemaRunDebug("custom-report-fetch.start", {
     availableKinds: Array.from(byKind.keys()),
-    reports: reports.map((report) => ({ id: report.id, kind: report.kind, source: report.source })),
+    reports: reports.map((report) => ({ id: report.id, kind: report.kind })),
     initialReportKeys: Object.keys(built.reports),
     initialContextKeys: Object.keys(built.reportContextById),
   });
@@ -157,28 +163,26 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
       }
       const context =
         readReportContext(built.reportContextById, id) ??
-        deriveReportContext(id, bindings, nextResults) ??
+        deriveReportContext(report, bindings, nextResults) ??
         {};
       schemaRunDebug("custom-report-fetch.context", {
         id,
         key,
         kind: report.kind,
         modelId: context.modelId,
-        signatureId: context.signatureId,
         hasMeta: isRecord(context.meta),
         hasModelInput: isRecord(context.modelInput),
       });
       const modelId = contextId(context.modelId);
-      const signatureId = contextId(context.signatureId);
       if (!modelId) {
-        if (hasBindingForReport(id, bindings)) {
+        if (hasBindingForReport(report, bindings)) {
           schemaRunDebug("custom-report-fetch.skip-mapped-no-success-context", { id, key });
           built.reports[key] = skippedSchemaReportPayload;
           return;
         }
         throw new Error(`Schema report "${id}" is not bound to a model context.`);
       }
-      const normalizedContext = { ...context, modelId, signatureId };
+      const normalizedContext = { ...context, modelId };
       built.reportContextById[key] = normalizedContext;
       let payload: unknown;
       const contextMeta = isRecord(context.meta) ? context.meta : {};
@@ -226,18 +230,19 @@ export const fetchSchemaCustomReports = async <TResult extends SchemaRunModelRes
         schemaRunDebug("custom-report-fetch.skip-empty-payload", { id, key, payload });
         return;
       }
-      const source = sourceForReport(id, context, bindings);
-      built.reports[key] = payload;
+      const target = targetForReport(report, context, bindings);
+      if (!target) throw new Error(`Schema report "${id}" falta mappedTo`);
+      storeReportPayload(built.reports, id, target, payload);
       schemaRunDebug("custom-report-fetch.success", {
         id,
         key,
-        source,
+        target,
         modelId,
         payloadKeys: isRecord(payload) ? Object.keys(payload) : typeof payload,
       });
       nextResults = nextResults.map((result) =>
-        contextId(result.modelId) === modelId && contextId(result.signatureId) === signatureId
-          ? patchResultReportPayload(result, id, source, payload)
+        contextId(result.modelId) === modelId
+          ? patchResultReportPayload(result, id, target, payload)
           : result,
       );
     }),

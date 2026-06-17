@@ -4,7 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { QuestionnaireSchema } from "./questionnaire-schema";
-import type { TargetDto } from "./api/modelService";
+
+type OutputTarget = {
+  value: unknown;
+};
 
 const OUTPUT_STEP_ID = "output-feedback";
 const ASSESSMENT_FIELD_ID = `${OUTPUT_STEP_ID}-assessment`;
@@ -14,7 +17,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const getClassifierOptions = (
   reportConfig: Record<string, unknown> | undefined,
-  target: TargetDto,
+  target: OutputTarget,
   predictionValue: unknown,
 ) => {
   const labels = Array.isArray(reportConfig?.labels)
@@ -46,7 +49,7 @@ export const getOutputFeedbackFieldIds = (kind: string | null) => ({
 
 export const createOutputFeedbackQuestionnaire = (
   reportConfig: Record<string, unknown> | undefined,
-  target: TargetDto,
+  target: OutputTarget,
   predictionValue: unknown,
 ): QuestionnaireSchema => {
   const kind = typeof reportConfig?.kind === "string" ? reportConfig.kind : null;
@@ -60,6 +63,7 @@ export const createOutputFeedbackQuestionnaire = (
           fields: [
             {
               kind: "category" as const,
+              id: ASSESSMENT_FIELD_ID,
               label: "Assessment",
               required: true,
               options: getClassifierOptions(reportConfig, target, predictionValue),
@@ -78,6 +82,7 @@ export const createOutputFeedbackQuestionnaire = (
         fields: [
           {
             kind: "number" as const,
+            id: ASSESSMENT_FIELD_ID,
             label: "Assessment",
             required: true,
           },

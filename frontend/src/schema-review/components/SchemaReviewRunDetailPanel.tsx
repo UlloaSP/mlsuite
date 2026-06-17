@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
 import { AppEmptyState } from "../../app/components";
 import { isBuiltinReportKind } from "../../app/utils/mlform/builtin-registry";
-import type { TargetDto } from "../../models/api/modelService";
 import { ReviewAccordionSection } from "../../review/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "../../review/components/ReviewInputsSection";
-import { ReviewOutputsSection } from "../../review/components/ReviewOutputsSection";
+import { ReviewOutputsSection, type TargetDto } from "../../review/components/ReviewOutputsSection";
 import { getFormattedReportContent } from "../../models/report-feedback-utils";
 import {
   getSchemaResultReports,
@@ -128,7 +127,7 @@ export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewC
         <ReviewOutputsSection
           targets={outputTargets}
           reports={reportEntries}
-          signatureSchema={version.formSchema}
+          schemaDefinition={version.formSchema}
           predictionValue={detail.data.run.results[0]?.output ?? {}}
         />
       </ReviewAccordionSection>

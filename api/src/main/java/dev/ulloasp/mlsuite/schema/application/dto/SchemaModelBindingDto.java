@@ -9,9 +9,7 @@ public record SchemaModelBindingDto(
         Long id,
         Long schemaVersionId,
         Long modelId,
-        Long signatureId,
-        Map<String, Object> inputMapping,
-        Map<String, Object> outputMapping,
+        String modelName,
         Map<String, Object> pluginPolicy) {
 
     public static SchemaModelBindingDto from(SchemaModelBinding binding) {
@@ -19,9 +17,7 @@ public record SchemaModelBindingDto(
                 binding.getId(),
                 binding.getSchemaVersion().getId(),
                 binding.getModel().getId(),
-                binding.getSignature().getId(),
-                binding.getInputMapping(),
-                binding.getOutputMapping(),
+                binding.getModel().getName(),
                 binding.getPluginPolicy());
     }
 

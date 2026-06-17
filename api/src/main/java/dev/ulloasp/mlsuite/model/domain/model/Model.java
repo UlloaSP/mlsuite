@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.model.domain.model;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -92,6 +93,10 @@ public class Model {
 
     @Column(name = "model_size_bytes")
     private Long modelSizeBytes;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "input_schema", nullable = false)
+    private Map<String, Object> inputSchema = Map.of();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

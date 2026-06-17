@@ -15,11 +15,11 @@ export const isFeedbackReportConfig = (report: unknown): boolean =>
     );
   })();
 
-export const getOutputReports = (signatureSchema: unknown): Record<string, unknown>[] => {
-  if (!isRecord(signatureSchema) || !Array.isArray(signatureSchema.reports)) {
+export const getOutputReports = (schemaDefinition: unknown): Record<string, unknown>[] => {
+  if (!isRecord(schemaDefinition) || !Array.isArray(schemaDefinition.reports)) {
     return [];
   }
-  return signatureSchema.reports.reduce<Record<string, unknown>[]>((reports, report) => {
+  return schemaDefinition.reports.reduce<Record<string, unknown>[]>((reports, report) => {
     if (isRecord(report) && !isFeedbackReportConfig(report)) {
       reports.push(report);
     }

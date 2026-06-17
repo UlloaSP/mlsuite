@@ -24,7 +24,7 @@ import {
 import type { CreatePredictionRunRequest, JsonRecord, SchemaVersionDto } from "../types";
 import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
 import { buildPendingSchemaRunFeedback, type PendingFeedback } from "../schema-run-save-feedback";
-import { mergeSchemaRunInputs } from "../schema-run-display";
+import { getMappedSchemaInputRecord, mergeSchemaRunInputs } from "../schema-run-display";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 import { SchemaRunInputsPanel } from "./SchemaRunInputsPanel";
 import { SchemaRunReportsPanel } from "./SchemaRunReportsPanel";
@@ -69,7 +69,7 @@ export function SchemaRunSaveModal({
   const displayResults = useMemo(
     () =>
       results.map((result, index) => ({
-        id: `${result.modelId}-${result.signatureId}-${index}`,
+        id: `${result.modelId}-${index}`,
         runId: "pending",
         createdAt: "",
         ...result,
@@ -89,7 +89,14 @@ export function SchemaRunSaveModal({
     if (!pendingRun) return;
     const values = feedbackSteps.length > 0 ? (questionnaireRef.current?.getValues() ?? {}) : {};
     const feedback = buildPendingSchemaRunFeedback(feedbackSteps, values, displayResults);
-    onSave({ name: name.trim(), inputData: pendingRun.inputData, results }, feedback);
+    onSave(
+      {
+        name: name.trim(),
+        inputData: getMappedSchemaInputRecord(version.formSchema, displayInputData),
+        results,
+      },
+      feedback,
+    );
   };
 
   return (

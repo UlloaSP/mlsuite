@@ -28,8 +28,8 @@ const feedbackStep = (
 });
 
 const results = [
-  { id: "result-1", modelId: "model-1", signatureId: "signature-1" },
-  { id: "result-2", modelId: "model-2", signatureId: "signature-2" },
+  { id: "result-1", modelId: "model-1" },
+  { id: "result-2", modelId: "model-2" },
 ];
 
 describe("schema run save modal feedback", () => {
@@ -50,7 +50,6 @@ describe("schema run save modal feedback", () => {
     ).toEqual([
       {
         modelId: "model-1",
-        signatureId: "signature-1",
         type: "OUTPUT",
         order: 0,
         value: { assessment: 4 },
@@ -76,14 +75,12 @@ describe("schema run save modal feedback", () => {
     ).toEqual([
       {
         modelId: "model-1",
-        signatureId: "signature-1",
         type: "OUTPUT",
         order: 0,
         value: { assessment: 5 },
       },
       {
         modelId: "model-2",
-        signatureId: "signature-2",
         type: "EXPLANATION",
         order: 1,
         value: { note: "good" },

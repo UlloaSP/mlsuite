@@ -17,7 +17,7 @@ import type {
   PredictionRunDto,
   SchemaVersionDto,
 } from "../../schemas/types";
-import { REVIEW_STEP_CONTEXT_EVENT } from "../../review/components/ReviewCombinedFeedbackForm";
+import { REVIEW_STEP_CONTEXT_EVENT } from "../../review/components/ReviewStepContextPanel";
 import * as api from "../api/schemaReviewLinkService";
 
 type Props = {
@@ -32,7 +32,7 @@ const displayValue = (value: unknown, field?: FieldConfig): string => {
   if (value === null || value === undefined || value === "") return "Not answered";
   if (Array.isArray(field?.options)) {
     const options = field.options.filter(
-      (option): option is { label: string; value: unknown } =>
+      (option: unknown): option is { label: string; value: unknown } =>
         typeof option === "object" &&
         option !== null &&
         "value" in option &&
@@ -40,7 +40,9 @@ const displayValue = (value: unknown, field?: FieldConfig): string => {
         typeof option.label === "string",
     );
     const matchingOption =
-      options.find((option) => String(option.value) === String(value)) ?? options[Number(value)];
+      options.find(
+        (option: { label: string; value: unknown }) => String(option.value) === String(value),
+      ) ?? options[Number(value)];
     if (matchingOption) return matchingOption.label;
   }
   return typeof value === "object" ? JSON.stringify(value) : String(value);

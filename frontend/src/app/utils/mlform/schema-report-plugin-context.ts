@@ -11,7 +11,6 @@ import { isRecord } from "./shared";
 
 type SchemaReportContext = {
   modelId?: unknown;
-  signatureId?: unknown;
   modelInput?: unknown;
   meta?: unknown;
   raw?: unknown;

@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Positive;
 
 public record CreatePredictionResultRequest(
         @NotNull @Positive Long modelId,
-        @NotNull @Positive Long signatureId,
         Map<String, Object> modelInput,
         Map<String, Object> output,
         @NotNull PredictionResultStatus status,

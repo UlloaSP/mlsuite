@@ -71,7 +71,9 @@ def test_build_schema_success_with_optional_dataframe() -> None:
     payload = response.json()
     assert response.status_code == 200
     assert [field["kind"] for field in payload["fields"]] == ["number", "number"]
+    assert [field["mappedTo"] for field in payload["fields"]] == ["age", "income"]
     assert payload["reports"][0]["kind"] == "classifier"
+    assert payload["reports"][0]["mappedTo"] == "classifier"
 
 
 def test_build_schema_generates_features_from_model_width() -> None:
@@ -84,6 +86,7 @@ def test_build_schema_generates_features_from_model_width() -> None:
     labels = [field["label"] for field in payload["fields"]]
     kinds = [field["kind"] for field in payload["fields"]]
     assert labels == ["feature_1", "feature_2"]
+    assert [field["mappedTo"] for field in payload["fields"]] == labels
     assert kinds == ["number", "number"]
 
 
@@ -106,10 +109,7 @@ def test_build_schema_rejects_dataframe_width_mismatch_for_positional_model() ->
     frame = pd.DataFrame({"only_one": [1, 2]})
     response = client.post(
         "/build_schema",
-        files={
-            "model_file": serialize_joblib(make_positional_classifier(), "model.joblib"),
-            "df_file": serialize_joblib(frame, "data.joblib"),
-        },
+        files={"model_file": serialize_joblib(make_positional_classifier(), "model.joblib"), "df_file": serialize_joblib(frame, "data.joblib")},
     )
     assert response.status_code == 400
     assert response.json()["detail"] == (
@@ -121,15 +121,13 @@ def test_build_schema_supports_xgboost_regressor() -> None:
     frame = pd.DataFrame({"rooms": [2, 3], "area": [45, 60]})
     response = client.post(
         "/build_schema",
-        files={
-            "model_file": serialize_joblib(make_xgboost_regressor(), "model.joblib"),
-            "df_file": serialize_joblib(frame, "data.joblib"),
-        },
+        files={"model_file": serialize_joblib(make_xgboost_regressor(), "model.joblib"), "df_file": serialize_joblib(frame, "data.joblib")},
     )
     payload = response.json()
     assert response.status_code == 200
     assert [field["kind"] for field in payload["fields"]] == ["number", "number"]
     assert payload["reports"][0]["kind"] == "regressor"
+    assert payload["reports"][0]["mappedTo"] == "regressor"
 
 
 def test_build_schema_rejects_non_joblib_model() -> None:

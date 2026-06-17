@@ -48,7 +48,7 @@ export function SchemaRunReviewLinkDialog({ runs, version, onClose }: Props) {
   );
 
   useEffect(() => {
-    // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-derived-state, react-doctor/no-adjust-state-on-prop-change, react-doctor/no-pass-data-to-parent -- Modal selection resets when opening/changing visible inference set, matching signature share modal behavior.
+    // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-derived-state, react-doctor/no-adjust-state-on-prop-change, react-doctor/no-pass-data-to-parent -- Modal selection resets when opening/changing visible inference set, matching schema share modal behavior.
     setSelectedRunIds(new Set(runs.map((run) => run.id)));
   }, [runs]);
 

@@ -12,24 +12,10 @@ import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runti
 import { buildSchemaRunRawFromSubmitResult } from "../src/app/utils/mlform/schema-run-result-state";
 import {
   isSkippedSchemaReportPayload,
-  patchSchemaReportRequest,
   wrapSchemaReportDefinitions,
 } from "../src/app/utils/mlform/schema-report-plugin-context";
 import { readReportContext } from "../src/app/utils/mlform/schema-run-report-mapping";
-import { composeSchemaVersion } from "../src/schemas/schema-composer";
-import type { SignatureDto } from "../src/models/api/modelService";
 import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
-
-const signature = (inputSignature: unknown): SignatureDto => ({
-  id: "signature-1",
-  modelId: "model-1",
-  name: "v1",
-  inputSignature,
-  major: 1,
-  minor: 0,
-  patch: 0,
-  createdAt: "2026-06-02T00:00:00Z",
-});
 
 const customReportDefinition = (): CatalogReportDefinition => ({
   id: "report-plugin",
@@ -89,8 +75,6 @@ describe("schema binding plugin policy", () => {
       [
         {
           modelId: "model-1",
-          signatureId: "signature-1",
-          outputMapping: { report_1: "score" },
           pluginPolicy: { reportKinds: ["other-report"] },
         },
       ],
@@ -99,11 +83,20 @@ describe("schema binding plugin policy", () => {
 
     const result = await transport.submit({
       serializedValues: {},
-      reports: [{ id: "report_1", label: "Score", kind: "plugin-report", source: "report_1" }],
+      reports: [
+        {
+          id: "report_1",
+          label: "Score",
+          kind: "plugin-report",
+          mappedTo: { "model-1": "score" },
+        },
+      ],
     } as never);
 
-    expect((result as { reports: Record<string, unknown> }).reports).toEqual({
+    expect((result as { reports: Record<string, unknown> }).reports).toMatchObject({
       "report-1": { value: 1 },
+      report_1: { value: 1 },
+      score: { value: 1 },
     });
   });
 
@@ -116,17 +109,24 @@ describe("schema binding plugin policy", () => {
         .mockResolvedValueOnce(new Response(JSON.stringify({ reports: { score: { value: 2 } } }))),
     );
     const transport = createSchemaRunTransport(
-      [
-        { modelId: "model-1", signatureId: "signature-1", outputMapping: { report_a: "score" } },
-        { modelId: "model-2", signatureId: "signature-2", outputMapping: { report_b: "score" } },
-      ],
+      [{ modelId: "model-1" }, { modelId: "model-2" }],
       [],
     );
     const result = await transport.submit({
       serializedValues: {},
       reports: [
-        { id: "report_a", label: "A", kind: "plugin-report", source: "report_a" },
-        { id: "report_b", label: "B", kind: "plugin-report", source: "report_b" },
+        {
+          id: "report_a",
+          label: "A",
+          kind: "plugin-report",
+          mappedTo: { "model-1": "score" },
+        },
+        {
+          id: "report_b",
+          label: "B",
+          kind: "plugin-report",
+          mappedTo: { "model-2": "score" },
+        },
       ],
     } as never);
     const context = (result as { raw: { reportContextById: Record<string, { modelId: string }> } })
@@ -140,66 +140,21 @@ describe("schema binding plugin policy", () => {
       "fetch",
       vi.fn(async () => new Response(JSON.stringify({ reports: {} }))),
     );
-    const transport = createSchemaRunTransport(
-      [{ modelId: "model-1", signatureId: "signature-1", outputMapping: { report_1: "score" } }],
-      [],
-    );
+    const transport = createSchemaRunTransport([{ modelId: "model-1" }], []);
     const result = await transport.submit({
       serializedValues: {},
-      reports: [{ id: "report_1", label: "Score", kind: "plugin-report", source: "report_1" }],
+      reports: [
+        {
+          id: "report_1",
+          label: "Score",
+          kind: "plugin-report",
+          mappedTo: { "model-1": "score" },
+        },
+      ],
     } as never);
     const raw = (result as { raw: { reportContextById: Record<string, { modelId: string }> } }).raw;
     expect((result as { reports: Record<string, unknown> }).reports).toEqual({});
     expect(readReportContext(raw.reportContextById, "report_1")?.modelId).toBe("model-1");
-  });
-
-  test("schema report fetch request is patched with selected model context", () => {
-    const request = patchSchemaReportRequest(
-      {
-        meta: { schemaRun: true },
-        raw: {
-          reportContextById: {
-            report_a: {
-              modelId: "model-1",
-              modelInput: { age: 40 },
-              meta: { backendUrl: "/api", backendFieldValues: { age: 40 } },
-              raw: { reports: {} },
-            },
-          },
-        },
-      },
-      "report_a",
-    );
-    expect(request.meta.modelId).toBe("model-1");
-    expect(request.meta.backendFieldValues).toEqual({ age: 40 });
-    expect(request.serializedFieldValues).toEqual({ age: 40 });
-  });
-
-  test("wrapped custom report fetch receives model patched request", async () => {
-    let receivedModelId: unknown;
-    const definition = {
-      ...customReportDefinition(),
-      definition: {
-        ...customReportDefinition().definition,
-        fetch: () => ({
-          submit: async (request: { meta?: Record<string, unknown> }) => {
-            receivedModelId = request.meta?.modelId;
-            return { ok: true };
-          },
-        }),
-      },
-    };
-    const [wrapped] = wrapSchemaReportDefinitions([definition]);
-    const fetcher = wrapped?.definition.definition.fetch?.({ reportId: "report_a" } as never);
-    await fetcher?.submit({
-      meta: {},
-      raw: {
-        reportContextById: {
-          report_a: { modelId: "model-1", meta: {}, modelInput: {}, raw: {} },
-        },
-      },
-    } as never);
-    expect(receivedModelId).toBe("model-1");
   });
 
   test("registered schema report fetch handles real mlform request shape", async () => {
@@ -225,17 +180,16 @@ describe("schema binding plugin policy", () => {
     };
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal-schema", source: "crystal-schema", kind: "plugin-report" }],
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal-schema",
+            kind: "plugin-report",
+            mappedTo: { "model-1": "crystal-tree" },
+          },
+        ],
       },
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "signature-1",
-          inputMapping: { age: "age" },
-          outputMapping: { "crystal-schema": "crystal-tree" },
-        },
-      ],
+      bindings: [{ modelId: "model-1" }],
       customReportDefinitions: [fetchDefinition],
     });
     const submitResult = await runtime.transport.submit({
@@ -293,14 +247,12 @@ describe("schema binding plugin policy", () => {
       results: [
         {
           modelId: "model-1",
-          signatureId: "signature-1",
           output: { reports: {}, meta: { modelId: "model-1" } },
         },
       ],
       reportContextById: {
         report_1: {
           modelId: "model-1",
-          signatureId: "signature-1",
           modelInput: {},
           meta: {},
           raw: {},
@@ -309,12 +261,25 @@ describe("schema binding plugin policy", () => {
     };
     const built = buildSchemaRunRawFromSubmitResult(
       initialRaw,
-      [{ id: "report_1", state: { status: "ready", payload: { explanation: "ok" } } }],
+      [
+        {
+          id: "report_1",
+          mappedTo: { "model-1": "score" },
+          state: { status: "ready", payload: { explanation: "ok" } },
+        },
+      ],
       {},
-      [{ modelId: "model-1", signatureId: "signature-1", outputMapping: { report_1: "score" } }],
+      [{ modelId: "model-1" }],
     );
     const output = built.raw.results[0]?.output as { reports: Record<string, unknown> };
     expect(output.reports.score).toEqual({ explanation: "ok" });
+    expect(output.reports["report-1"]).toEqual({ explanation: "ok" });
+    expect(output.reports.report_1).toEqual({ explanation: "ok" });
+    expect(built.raw.reports).toMatchObject({
+      "report-1": { explanation: "ok" },
+      report_1: { explanation: "ok" },
+      score: { explanation: "ok" },
+    });
     expect(built.reportsPending).toBe(false);
   });
 });

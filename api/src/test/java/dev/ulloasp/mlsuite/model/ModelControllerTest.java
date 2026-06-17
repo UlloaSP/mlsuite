@@ -22,7 +22,6 @@ import dev.ulloasp.mlsuite.model.application.service.ModelCreationService;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 
 @ExtendWith(MockitoExtension.class)
 class ModelControllerTest {
@@ -57,10 +56,7 @@ class ModelControllerTest {
         Model model = new Model();
         model.setId(11L);
         model.setName("demo");
-        Signature signature = new Signature();
-        signature.setId(12L);
-        signature.setModel(model);
-        CreateModelDto dto = CreateModelDto.toDto(model, signature, null);
+        CreateModelDto dto = CreateModelDto.toDto(model);
         when(modelCreationService.create(4L, "demo", modelFile, dataframeFile)).thenReturn(dto);
 
         assertEquals(HttpStatus.CREATED, controller.createModel(authentication, "demo", modelFile, dataframeFile).getStatusCode());

@@ -3,12 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type {
-  FieldConfig,
-  FormController,
-  FormSchema,
-  NormalizedFieldConfig,
-} from "mlform/runtime";
+import type { FormController, FormSchema, NormalizedFieldConfig } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
 import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
 
@@ -55,7 +50,10 @@ export type MountedPredictionForm = {
 export type PredictionPayloadField = Pick<
   NormalizedFieldConfig,
   "id" | "kind" | "label" | "ui" | "includeInSubmission"
->;
+> & {
+  mappedTo?: unknown;
+  options?: unknown;
+};
 
 export const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -88,14 +86,6 @@ export const toUniqueId = (preferred: string, fallback: string, usedIds: Set<str
 
 export const getString = (value: unknown): string | undefined =>
   typeof value === "string" && value.trim() ? value : undefined;
-
-export const getBackendKey = (field: Pick<FieldConfig, "id" | "label" | "ui">): string => {
-  if (isRecord(field.ui) && typeof field.ui.backendKey === "string" && field.ui.backendKey.trim()) {
-    return field.ui.backendKey;
-  }
-
-  return field.label || field.id || "field";
-};
 
 export const normalizeIssuePath = (path: readonly PropertyKey[]): Array<string | number> =>
   path.map((part) => (typeof part === "number" ? part : String(part)));

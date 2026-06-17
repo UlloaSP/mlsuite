@@ -5,19 +5,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { normalizeSchemaId } from "mlform/schema";
 import { isRecord, type JsonRecord } from "./shared";
+import { type BindingIdentity, mappedTarget, targetKey } from "./mapped-to";
 
-export const mappingSourceForReport = (mapping: unknown, reportId: string): string | undefined => {
-  if (!isRecord(mapping)) return undefined;
-  if (typeof mapping[reportId] === "string") return mapping[reportId];
-  const normalizedReportId = normalizeSchemaId(reportId);
-  const entry = Object.entries(mapping).find(
-    ([key]) => normalizeSchemaId(key) === normalizedReportId,
-  );
-  return typeof entry?.[1] === "string" ? entry[1] : undefined;
+export const reportTargetForBinding = (
+  report: unknown,
+  binding?: BindingIdentity,
+): string | undefined => {
+  if (!isRecord(report)) return undefined;
+  return targetKey(mappedTarget(report.mappedTo, binding));
 };
-
-export const hasMappedReport = (mapping: unknown, reportId: string): boolean =>
-  mappingSourceForReport(mapping, reportId) !== undefined;
 
 export const reportContextKey = (reportId: string): string => normalizeSchemaId(reportId);
 
