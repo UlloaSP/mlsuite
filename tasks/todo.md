@@ -1,3 +1,63 @@
+# OneHot Parent mappedTo Composer Fix
+
+## Goal
+
+- [x] Fix schema selection when analyzer returns `onehot-category` fields without parent `mappedTo`.
+- [x] Keep MLSchema 0.2.1 contract: one-hot option mappings own model targets.
+- [x] Verify focused frontend tests, TypeScript, line-count, diff check, graph update.
+
+## Plan
+
+- [x] Add composer regression for analyzer `onehot-category` output with no parent `mappedTo`.
+- [x] Update schema merge to merge/wrap `options[].mappedTo` per model binding.
+- [x] Run narrow frontend verification and repo checks.
+
+## Review
+
+- Fixed schema composition for analyzer-produced `onehot-category` fields that intentionally lack parent `mappedTo`.
+- Composer now wraps/merges `options[].mappedTo` per selected model binding and leaves the parent as UI-only.
+- Added regression for MLSchema 0.2.1 analyzer output: parent no `mappedTo`, options mapped to concrete model features.
+- Verification:
+  - `frontend`: `vp test test/schema-composer.test.ts test/builtin-registry.test.ts` passed, 12 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - Repo: touched source/test line-count passed: merge 205, composer test 165 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# MLSchema 0.2.1 Backend Update
+
+## Goal
+
+- [x] Bump Python analyzer to `mlschema==0.2.1`.
+- [x] Let MLSchema own `mappedTo` and `onehot-category` generation.
+- [x] Preserve model/dataframe feature-name behavior for named and positional models.
+- [x] Pass one-hot separator from UI/API to analyzer.
+
+## Plan
+
+- [x] Remove backend schema mappedTo shim and use `infer_schema(..., onehot_separator=...)`.
+- [x] Use named DataFrame columns only when model exposes feature names.
+- [x] Use positional DataFrame columns for models without feature names, restoring display labels from original dataframe columns by `mappedTo` position.
+- [x] Add optional `oneHotSeparator` through frontend create-model request and Java API/analyzer service.
+- [x] Cover success/error cases in existing backend/API/frontend tests.
+- [x] Run narrow verification, then graph update.
+
+## Review
+
+- Updated backend analyzer dependency and lockfile from `mlschema==0.2.0` to `0.2.1`.
+- Removed app-side mappedTo injection; MLSchema now emits `mappedTo` and `onehot-category`.
+- Positional models now infer against positional DataFrame columns; when user supplies a dataframe, labels are restored from original column names via integer `mappedTo`.
+- Added `oneHotSeparator` frontend create-model field and propagated it through Spring API as analyzer `onehot_separator`.
+- Verification:
+  - `backend`: `uv run pytest tests/test_runtime_api.py -k build_schema tests/test_schema_api.py` passed, 10 tests.
+  - `api`: `mvn "-Dtest=AnalyzerServiceTest,AnalyzerControllerTest,ModelCreationServiceTest,ModelControllerTest" test` passed, 21 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/artifact-inspection-service.test.ts` passed, 4 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing warnings.
+  - Repo: touched file line-count passed; all checked files under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Blocked broader backend runtime check: `uv run pytest tests/test_runtime_api.py` fails 4 prediction tests that still expect `outputs`, while current service returns `reports`.
+
 # Review Domain Merge
 
 ## Goal

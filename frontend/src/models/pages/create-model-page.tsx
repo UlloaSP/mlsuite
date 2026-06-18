@@ -107,6 +107,11 @@ export function CreateModelPage() {
   const setBundleName = (id: number, value: string) =>
     setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, name: value } : b)));
 
+  const setBundleOneHotSeparator = (id: number, value: string) =>
+    setBundles((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, oneHotSeparator: value, saved: false } : b)),
+    );
+
   const attachFileToBundle = async (bundleId: number, file: File, kind: "model" | "dataframe") => {
     try {
       const inspection = await inspectArtifact(file);
@@ -168,6 +173,7 @@ export function CreateModelPage() {
         name: bundle.name.trim(),
         modelFile: bundle.modelFile,
         dataframeFile: bundle.dfFile ?? undefined,
+        oneHotSeparator: bundle.oneHotSeparator,
       });
       setBundles((prev) =>
         prev.map((b) => (b.id === id ? { ...b, saved: true, saving: false } : b)),
@@ -232,6 +238,7 @@ export function CreateModelPage() {
                     onSave={() => saveBundle(bundle.id)}
                     onRemove={() => removeBundle(bundle.id)}
                     onRename={(v) => setBundleName(bundle.id, v)}
+                    onOneHotSeparatorChange={(v) => setBundleOneHotSeparator(bundle.id, v)}
                     onAttachModel={() => attachModel(bundle.id)}
                     onAttachDf={() => attachDf(bundle.id)}
                     onDropModel={(file) => void attachFileToBundle(bundle.id, file, "model")}

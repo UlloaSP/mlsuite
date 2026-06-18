@@ -50,4 +50,19 @@ describe("artifact inspection service", () => {
       body: expect.any(FormData),
     });
   });
+
+  it("posts one-hot separator when creating a model", async () => {
+    const { createModel } = await import("../src/api/models/services");
+    (appFetch as Mock).mockResolvedValue({ model: { id: 1, name: "demo" } });
+
+    await createModel({
+      name: "demo",
+      modelFile: new File(["x"], "model.joblib"),
+      dataframeFile: new File(["x"], "data.joblib"),
+      oneHotSeparator: "_",
+    });
+
+    const body = (appFetch as Mock).mock.calls[0][1].body as FormData;
+    expect(body.get("oneHotSeparator")).toBe("_");
+  });
 });

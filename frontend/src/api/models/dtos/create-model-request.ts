@@ -8,4 +8,5 @@ export interface CreateModelRequest {
   name: string;
   modelFile: File;
   dataframeFile?: File;
+  oneHotSeparator?: string;
 }

@@ -54,12 +54,12 @@ class AnalyzerControllerTest {
 
     @Test
     void generateSchema_UsesInternalUserId() {
-        when(analyzerUseCase.generateInputSchema(5L, modelFile, null)).thenReturn(Map.of("x", "int"));
+        when(analyzerUseCase.generateInputSchema(5L, modelFile, null, "__")).thenReturn(Map.of("x", "int"));
 
-        ResponseEntity<Map<String, Object>> response = controller.generateSchema(authentication, modelFile, null);
+        ResponseEntity<Map<String, Object>> response = controller.generateSchema(authentication, modelFile, null, "__");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(analyzerUseCase).generateInputSchema(5L, modelFile, null);
+        verify(analyzerUseCase).generateInputSchema(5L, modelFile, null, "__");
     }
 
     @Test

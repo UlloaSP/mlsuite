@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-06-18 - MLSchema one-hot parent correction
+
+- Correction: frontend schema composer still required or preserved parent-level `mappedTo` for `onehot-category`, while MLSchema 0.2.1 puts model targets on `options[].mappedTo`.
+- Rule: all schema paths must treat `onehot-category` parent as UI-only; compose, validate, run, display, and transport must read/write option mappings only.
+
 ## 2026-06-17 - MLForm UI fetch regression correction
 
 - Correction: removing MLSuite prefetch before proving mounted MLForm UI consumes upstream report fetch state left report cards in error and no analyzer request visible.

@@ -100,8 +100,8 @@ def test_build_schema_generates_features_from_model_width() -> None:
     assert response.status_code == 200
     labels = [field["label"] for field in payload["fields"]]
     kinds = [field["kind"] for field in payload["fields"]]
-    assert labels == ["feature_1", "feature_2"]
-    assert [field["mappedTo"] for field in payload["fields"]] == labels
+    assert labels == ["feature_0", "feature_1"]
+    assert [field["mappedTo"] for field in payload["fields"]] == [0, 1]
     assert kinds == ["number", "number"]
 
 
@@ -118,6 +118,7 @@ def test_build_schema_adopts_dataframe_columns_for_positional_model() -> None:
     assert response.status_code == 200
     labels = [field["label"] for field in payload["fields"]]
     assert labels == ["height", "weight"]
+    assert [field["mappedTo"] for field in payload["fields"]] == [0, 1]
 
 
 def test_build_schema_rejects_dataframe_width_mismatch_for_positional_model() -> None:

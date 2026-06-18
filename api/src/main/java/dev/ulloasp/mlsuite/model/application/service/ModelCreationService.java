@@ -40,7 +40,8 @@ public class ModelCreationService {
             Long userId,
             String name,
             MultipartFile modelFile,
-            @Nullable MultipartFile dataframeFile) {
+            @Nullable MultipartFile dataframeFile,
+            String oneHotSeparator) {
         MultipartFile reusableModelFile = BufferedMultipartFile.from(modelFile);
         MultipartFile reusableDataframeFile = dataframeFile != null
                 ? BufferedMultipartFile.from(dataframeFile)
@@ -49,7 +50,7 @@ public class ModelCreationService {
         try {
             model = modelCatalogUseCase.createModel(userId, name, reusableModelFile);
             model.setInputSchema(analyzerUseCase.generateInputSchema(userId, reusableModelFile,
-                    reusableDataframeFile));
+                    reusableDataframeFile, oneHotSeparator));
             return CreateModelDto.toDto(model);
         } catch (RuntimeException ex) {
             deleteStoredObject(model, ex);

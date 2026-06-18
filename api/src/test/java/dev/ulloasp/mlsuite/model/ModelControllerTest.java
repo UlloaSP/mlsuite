@@ -57,11 +57,11 @@ class ModelControllerTest {
         model.setId(11L);
         model.setName("demo");
         CreateModelDto dto = CreateModelDto.toDto(model);
-        when(modelCreationService.create(4L, "demo", modelFile, dataframeFile)).thenReturn(dto);
+        when(modelCreationService.create(4L, "demo", modelFile, dataframeFile, "_")).thenReturn(dto);
 
-        assertEquals(HttpStatus.CREATED, controller.createModel(authentication, "demo", modelFile, dataframeFile).getStatusCode());
+        assertEquals(HttpStatus.CREATED, controller.createModel(authentication, "demo", modelFile, dataframeFile, "_").getStatusCode());
 
-        verify(modelCreationService).create(4L, "demo", modelFile, dataframeFile);
+        verify(modelCreationService).create(4L, "demo", modelFile, dataframeFile, "_");
     }
 
     @Test

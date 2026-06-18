@@ -27,7 +27,7 @@ export type SelectedSchemaModel = {
 
 type CanonicalItem = {
   id: string;
-  key: string | number;
+  key: string | number | null;
   field: JsonRecord;
 };
 
@@ -39,6 +39,24 @@ const itemKey = (item: JsonRecord): string => {
   const label = getString(item.label) ?? getString(item.id) ?? "item";
   const kind = getString(item.kind) ?? "unknown";
   return `${normalize(label)}::${normalize(kind)}`;
+};
+
+/** isOneHotCategory: internal predicate for schema composition, run, report, and feedback flow. @remarks Args: item; side cases: malformed options are treated as non-one-hot categories. @returns True when the field is an MLSchema one-hot category parent. @throws Does not intentionally throw. */
+const isOneHotCategory = (item: JsonRecord): boolean =>
+  getString(item.kind) === "onehot-category" && Array.isArray(item.options);
+
+/** optionKey: internal helper for schema composition, run, report, and feedback flow. @remarks Args: option, fallback; side cases: malformed labels fall back to stable index path. @returns Stable option merge key. @throws Does not intentionally throw. */
+const optionKey = (option: JsonRecord, fallback: string): string =>
+  getString(option.value) ?? getString(option.label) ?? fallback;
+
+/** cloneField: internal helper for schema composition, run, report, and feedback flow. @remarks Args: item; side cases: one-hot options are cloned shallowly to avoid mutating model input schemas. @returns Field copy. @throws Does not intentionally throw. */
+const cloneField = (item: JsonRecord): JsonRecord => {
+  const field = { ...item };
+  if (Array.isArray(item.options)) {
+    field.options = item.options.filter(isRecord).map((option) => ({ ...option }));
+  }
+  delete field.id;
+  return field;
 };
 
 /** targetValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
@@ -55,6 +73,31 @@ const bindingKey = (modelName: string): string => modelName;
 /** setMappedTo: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: item, key, target; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const setMappedTo = (item: JsonRecord, key: string, target: string | number) => {
   item.mappedTo = { ...(isRecord(item.mappedTo) ? item.mappedTo : {}), [key]: target };
+};
+
+/** mergeOneHotMappedTargets: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: targetField, sourceField, binding; side cases: missing target options are appended. @returns Mutates canonical option mappings for the current binding. @throws Error when an option lacks mappedTo. */
+const mergeOneHotMappedTargets = (
+  targetField: JsonRecord,
+  sourceField: JsonRecord,
+  binding: string,
+) => {
+  if (!Array.isArray(targetField.options) || !Array.isArray(sourceField.options)) return;
+  const targetOptionsRaw = targetField.options;
+  const targetOptions = targetOptionsRaw.filter(isRecord);
+  const byKey = new Map(
+    targetOptions.map((option, index) => [optionKey(option, String(index)), option]),
+  );
+  sourceField.options.filter(isRecord).forEach((sourceOption, index) => {
+    const target = targetValue(sourceOption, `option-${index + 1}`);
+    const key = optionKey(sourceOption, String(index));
+    let targetOption = byKey.get(key);
+    if (!targetOption) {
+      targetOption = { ...sourceOption };
+      targetOptionsRaw.push(targetOption);
+      byKey.set(key, targetOption);
+    }
+    setMappedTo(targetOption, binding, target);
+  });
 };
 
 /** canonicalReportTarget: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
@@ -82,9 +125,12 @@ const createCanonical = (
     if (byKey.has(key)) return;
     const label = getString(item.label) ?? getString(item.id) ?? `${prefix}-${index + 1}`;
     const id = toUniqueId(label, `${prefix}-${index + 1}`, usedIds);
-    const field = { ...item };
-    delete field.id;
-    byKey.set(key, { id, key: targetValue(item, `${prefix}-${index + 1}`), field });
+    const field = cloneField(item);
+    byKey.set(key, {
+      id,
+      key: isOneHotCategory(item) ? null : targetValue(item, `${prefix}-${index + 1}`),
+      field,
+    });
     canonical.push(field);
   });
   return { canonical, byKey };
@@ -104,9 +150,12 @@ const addMissingCanonical = (
     if (byKey.has(key)) return;
     const label = getString(item.label) ?? getString(item.id) ?? `${prefix}-${index + 1}`;
     const id = toUniqueId(label, `${prefix}-${index + 1}`, usedIds);
-    const field = { ...item };
-    delete field.id;
-    byKey.set(key, { id, key: targetValue(item, `${prefix}-${index + 1}`), field });
+    const field = cloneField(item);
+    byKey.set(key, {
+      id,
+      key: isOneHotCategory(item) ? null : targetValue(item, `${prefix}-${index + 1}`),
+      field,
+    });
     canonical.push(field);
   });
 };
@@ -122,6 +171,10 @@ const addInputMappedTargets = (
     if (!Array.isArray(fields)) return;
     fields.filter(isRecord).forEach((field) => {
       const canonical = fieldsByKey.get(itemKey(field));
+      if (canonical && isOneHotCategory(field)) {
+        mergeOneHotMappedTargets(canonical.field, field, bindingKey(modelKeyName));
+        return;
+      }
       if (canonical)
         setMappedTo(
           canonical.field,

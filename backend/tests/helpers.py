@@ -38,6 +38,18 @@ def make_classifier() -> LogisticRegression:
     return LogisticRegression().fit(features, labels)
 
 
+def make_onehot_classifier() -> LogisticRegression:
+    features = pd.DataFrame(
+        {
+            "color_red": [1, 0, 1, 0],
+            "color_blue": [0, 1, 0, 1],
+            "size": [10, 20, 12, 22],
+        }
+    )
+    labels = [0, 1, 0, 1]
+    return LogisticRegression().fit(features, labels)
+
+
 def make_regressor() -> LinearRegression:
     features = pd.DataFrame(
         {

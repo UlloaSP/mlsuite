@@ -59,7 +59,8 @@ class ModelCreationServiceTest {
                 Long.class,
                 String.class,
                 MultipartFile.class,
-                MultipartFile.class);
+                MultipartFile.class,
+                String.class);
         assertNotNull(method.getAnnotation(Transactional.class));
     }
 
@@ -69,10 +70,14 @@ class ModelCreationServiceTest {
         MockMultipartFile dataframeFile = new MockMultipartFile("dataframe", "data.joblib", "application/octet-stream", "y".getBytes());
         Model model = storedModel();
         when(modelCatalogUseCase.createModel(eq(4L), eq("demo"), any(MultipartFile.class))).thenReturn(model);
-        when(analyzerUseCase.generateInputSchema(eq(4L), any(MultipartFile.class), any(MultipartFile.class)))
+        when(analyzerUseCase.generateInputSchema(
+                eq(4L),
+                any(MultipartFile.class),
+                any(MultipartFile.class),
+                eq("_")))
                 .thenReturn(Map.of("dataframe", "schema"));
 
-        CreateModelDto result = service.create(4L, "demo", modelFile, dataframeFile);
+        CreateModelDto result = service.create(4L, "demo", modelFile, dataframeFile, "_");
 
         assertEquals(Map.of("dataframe", "schema"), result.model().inputSchema());
         ArgumentCaptor<MultipartFile> modelCaptor = ArgumentCaptor.forClass(MultipartFile.class);
@@ -89,11 +94,11 @@ class ModelCreationServiceTest {
         Model model = storedModel();
         RuntimeException failure = new RuntimeException("schema failed");
         when(modelCatalogUseCase.createModel(eq(4L), eq("demo"), any(MultipartFile.class))).thenReturn(model);
-        when(analyzerUseCase.generateInputSchema(eq(4L), any(MultipartFile.class), eq(null))).thenThrow(failure);
+        when(analyzerUseCase.generateInputSchema(eq(4L), any(MultipartFile.class), eq(null), eq("__"))).thenThrow(failure);
 
         RuntimeException thrown = assertThrows(
                 RuntimeException.class,
-                () -> service.create(4L, "demo", modelFile, null));
+                () -> service.create(4L, "demo", modelFile, null, "__"));
 
         assertEquals(failure, thrown);
         verify(objectStorageService).delete("bucket", "key");
@@ -107,7 +112,7 @@ class ModelCreationServiceTest {
 
         RuntimeException thrown = assertThrows(
                 RuntimeException.class,
-                () -> service.create(4L, "demo", modelFile, null));
+                () -> service.create(4L, "demo", modelFile, null, "__"));
 
         assertEquals(failure, thrown);
         verify(objectStorageService, never()).delete(any(), any());

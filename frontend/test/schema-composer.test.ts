@@ -55,6 +55,43 @@ describe("composeSchemaVersion one-hot mapping", () => {
     expect(countVisibleSchemaFields(result.formSchema)).toBe(2);
   });
 
+  test("accepts analyzer one-hot categories without parent mappedTo", () => {
+    const analyzerModel = {
+      ...model([]),
+      inputSchema: {
+        fields: [
+          {
+            kind: "onehot-category",
+            label: "Blood Group",
+            options: [
+              { label: "A", value: "A", mappedTo: "blood_group__A" },
+              { label: "B", value: "B", mappedTo: "blood_group__B" },
+            ],
+          },
+        ],
+        reports: [],
+      },
+    };
+    const result = composeSchemaVersion("v1", [
+      {
+        modelId: "model-1",
+        model: analyzerModel,
+      },
+    ]);
+
+    const fields = result.formSchema.fields as Array<Record<string, unknown>>;
+    expect(fields).toHaveLength(1);
+    expect(fields[0]).toMatchObject({
+      kind: "onehot-category",
+      label: "Blood Group",
+      options: [
+        { value: "A", mappedTo: { "model-1": "blood_group__A" } },
+        { value: "B", mappedTo: { "model-1": "blood_group__B" } },
+      ],
+    });
+    expect(fields[0]).not.toHaveProperty("mappedTo");
+  });
+
   test("keeps plus and minus one-hot categories as unique mapped targets", () => {
     const result = composeSchemaVersion("v1", [
       {

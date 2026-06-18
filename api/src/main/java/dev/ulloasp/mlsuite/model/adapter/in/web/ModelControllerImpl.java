@@ -44,10 +44,16 @@ public class ModelControllerImpl implements ModelController {
             Authentication authentication,
             @RequestParam String name,
             @RequestParam MultipartFile modelFile,
-            @RequestParam @Nullable MultipartFile dataframeFile) {
+            @RequestParam @Nullable MultipartFile dataframeFile,
+            @RequestParam(defaultValue = "__") String oneHotSeparator) {
         CurrentUser currentUser = currentUserResolver.resolve(authentication);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(modelCreationService.create(currentUser.userId(), name, modelFile, dataframeFile));
+                .body(modelCreationService.create(
+                        currentUser.userId(),
+                        name,
+                        modelFile,
+                        dataframeFile,
+                        oneHotSeparator));
     }
 
     @Override

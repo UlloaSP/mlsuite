@@ -85,6 +85,7 @@ export function applyInspectedBundleFiles(
       modelFile,
       dfFile: matchedDf,
       name: slugToTitle(stem),
+      oneHotSeparator: "__",
       saved: false,
       saving: false,
     });
@@ -111,6 +112,7 @@ export function applyInspectedBundleFiles(
         modelFile: null,
         dfFile,
         name: slugToTitle(getStem(dfFile.name)),
+        oneHotSeparator: "__",
         saved: false,
         saving: false,
       });
