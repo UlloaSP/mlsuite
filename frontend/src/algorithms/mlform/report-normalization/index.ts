@@ -6,11 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReportConfig } from "mlform/runtime";
 import { type JsonRecord, isRecord } from "../../../algorithms/mlform/shared";
 
+/** getLegacyOutputs: internal lookup helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getLegacyOutputs = (value: unknown): JsonRecord[] => {
   if (!isRecord(value) || !Array.isArray(value.outputs)) return [];
   return value.outputs.filter(isRecord);
 };
 
+/** toNumericArray: internal normalization helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const toNumericArray = (value: unknown): number[] => {
   if (!Array.isArray(value)) return [];
   return value.reduce<number[]>((items, item) => {
@@ -20,6 +22,7 @@ const toNumericArray = (value: unknown): number[] => {
   }, []);
 };
 
+/** getClassifierPrediction: internal lookup helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getClassifierPrediction = (output: JsonRecord): string | undefined => {
   const labels = Array.isArray(output.mapping)
     ? output.mapping.filter((item): item is string => typeof item === "string")
@@ -35,6 +38,14 @@ const getClassifierPrediction = (output: JsonRecord): string | undefined => {
   return labels[probabilities.indexOf(Math.max(...probabilities))];
 };
 
+/**
+ * toLegacyReportPayload: converts data into another contract shape
+ *
+ * Purpose: normalizes MLForm report payloads back to legacy report payload shape.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
+ */
 export const toLegacyReportPayload = (
   report: ReportConfig,
   parsed: unknown,

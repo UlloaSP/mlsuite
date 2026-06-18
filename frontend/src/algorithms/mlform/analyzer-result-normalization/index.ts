@@ -23,6 +23,14 @@ type NormalizedAnalyzerResult = {
   raw: Record<string, unknown>;
 };
 
+/**
+ * normalizeAnalyzerPredictionResult: normalizes loose runtime data into the app contract
+ *
+ * Purpose: normalizes analyzer prediction responses into MLForm report and meta payloads.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const normalizeAnalyzerPredictionResult = ({
   parsed,
   modelId,

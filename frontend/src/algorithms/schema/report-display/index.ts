@@ -11,6 +11,14 @@ import { isSkippedSchemaReportPayload } from "../report-plugin-context";
 import { reportTargetForBinding } from "../../mlform/schema-run-report-mapping";
 import type { PredictionResultDto, SchemaVersionDto } from "../../../schemas/types";
 
+/**
+ * SchemaDisplayReport: describes the public data contract consumed or returned by this algorithm.
+ *
+ * Purpose: normalizes schema result reports for display/review/export.
+ * @returns Type-only export; no runtime value is emitted.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export type SchemaDisplayReport = {
   id: string;
   order: number;
@@ -21,11 +29,13 @@ export type SchemaDisplayReport = {
   labels?: string[];
 };
 
+/** reportsOf: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportsOf = (schema: unknown): ReportConfig[] =>
   isRecord(schema) && Array.isArray(schema.reports)
     ? (schema.reports.filter(isRecord) as ReportConfig[])
     : [];
 
+/** reportId: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportId = (report: ReportConfig): string | undefined =>
   typeof report.id === "string"
     ? report.id
@@ -33,9 +43,11 @@ const reportId = (report: ReportConfig): string | undefined =>
       ? report.label
       : undefined;
 
+/** reportLabel: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportLabel = (report: ReportConfig): string =>
   typeof report.label === "string" ? report.label : (reportId(report) ?? "Report");
 
+/** payloadFor: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const payloadFor = (
   target: string,
   output: JsonRecord,
@@ -53,6 +65,7 @@ const payloadFor = (
   return undefined;
 };
 
+/** reportLabels: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportLabels = (report: ReportConfig): string[] =>
   Array.isArray((report as JsonRecord).labels)
     ? ((report as JsonRecord).labels as unknown[]).filter(
@@ -60,6 +73,7 @@ const reportLabels = (report: ReportConfig): string[] =>
       )
     : [];
 
+/** normalizeReportPayload: internal normalization helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const normalizeReportPayload = (
   report: ReportConfig,
   payload?: JsonRecord,
@@ -81,8 +95,10 @@ const normalizeReportPayload = (
   };
 };
 
+/** METADATA_KEYS: internal constant/cache for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const METADATA_KEYS = new Set(["endpoint", "modelId", "backendUrl", "status"]);
 
+/** hasMeaningfulValue: internal predicate for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const hasMeaningfulValue = (value: unknown): boolean => {
   if (value === null || value === undefined) return false;
   if (typeof value === "string") return value.trim().length > 0;
@@ -94,12 +110,21 @@ const hasMeaningfulValue = (value: unknown): boolean => {
   );
 };
 
+/** isRenderablePayload: internal predicate for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isRenderablePayload = (report: ReportConfig, payload: JsonRecord | undefined): boolean => {
   if (payload === undefined || isSkippedSchemaReportPayload(payload)) return false;
   const kind = typeof report.kind === "string" ? report.kind : "report";
   return isBuiltinReportKind(kind) || hasMeaningfulValue(payload);
 };
 
+/**
+ * getSchemaResultReports: extracts a derived value without mutating input
+ *
+ * Purpose: normalizes schema result reports for display/review/export.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getSchemaResultReports = (
   version: SchemaVersionDto,
   result: Pick<PredictionResultDto, "modelId" | "output">,

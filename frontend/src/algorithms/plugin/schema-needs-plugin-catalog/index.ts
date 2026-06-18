@@ -5,6 +5,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { isBuiltinFieldKind, isBuiltinReportKind } from "../../mlform/builtin-registry";
 
+/**
+ * schemaNeedsPluginCatalog: performs the exported transformation for this algorithm.
+ *
+ * Purpose: detects whether schema JSON references non-built-in plugin kinds.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const schemaNeedsPluginCatalog = (schema: unknown): boolean => {
   if (!schema || typeof schema !== "object") {
     return false;

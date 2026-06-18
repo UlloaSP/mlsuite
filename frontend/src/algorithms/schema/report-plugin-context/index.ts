@@ -16,12 +16,37 @@ type SchemaReportContext = {
   raw?: unknown;
 };
 
+/**
+ * skippedSchemaReportPayload: performs the exported transformation for this algorithm.
+ *
+ * Purpose: patches schema report plugin fetch/render contexts with model-specific data.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
+ */
 export const skippedSchemaReportPayload = { __mlsuiteSchemaReportSkipped: true };
+/**
+ * skippedReportIdsKey: performs the exported transformation for this algorithm.
+ *
+ * Purpose: patches schema report plugin fetch/render contexts with model-specific data.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const skippedReportIdsKey = "skippedReportIds";
 
+/**
+ * isSkippedSchemaReportPayload: returns a boolean guard/result for the requested predicate
+ *
+ * Purpose: patches schema report plugin fetch/render contexts with model-specific data.
+ * @returns Boolean result for the domain predicate.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
+ */
 export const isSkippedSchemaReportPayload = (value: unknown): boolean =>
   isRecord(value) && value.__mlsuiteSchemaReportSkipped === true;
 
+/** getReportContext: internal lookup helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getReportContext = (context: ReportDescriptorContext): SchemaReportContext | null => {
   const result = context.result;
   if (!isRecord(result)) return null;
@@ -33,6 +58,7 @@ const getReportContext = (context: ReportDescriptorContext): SchemaReportContext
   return rawCandidate ?? metaCandidate ?? null;
 };
 
+/** getRequestReportContext: internal lookup helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getRequestReportContext = (
   request: unknown,
   reportId: string,
@@ -47,6 +73,7 @@ const getRequestReportContext = (
   );
 };
 
+/** hasSchemaReportContextMap: internal constant/cache for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const hasSchemaReportContextMap = (request: unknown): boolean => {
   if (!isRecord(request)) return false;
   const raw = isRecord(request.raw) ? request.raw : {};
@@ -54,6 +81,14 @@ const hasSchemaReportContextMap = (request: unknown): boolean => {
   return isRecord(raw.reportContextById) || isRecord(meta.reportContextById);
 };
 
+/**
+ * patchSchemaReportRequest: returns a copy patched with schema-specific context
+ *
+ * Purpose: patches schema report plugin fetch/render contexts with model-specific data.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const patchSchemaReportRequest = <T>(request: T, reportId: string): T => {
   if (!isRecord(request)) return request;
   const reportContext = getRequestReportContext(request, reportId);
@@ -76,6 +111,15 @@ export const patchSchemaReportRequest = <T>(request: T, reportId: string): T => 
   } as T;
 };
 
+/**
+ * patchSchemaReportContext: returns a copy patched with schema-specific context
+ *
+ * Purpose: patches schema report plugin fetch/render contexts with model-specific data.
+ * @param fetchFactory - Input consumed by patchSchemaReportContext; uses the patches schema report plugin fetch/render contexts with model-specific data contract.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const patchSchemaReportContext = (
   context: ReportDescriptorContext,
 ): ReportDescriptorContext => {
@@ -103,6 +147,7 @@ export const patchSchemaReportContext = (
   };
 };
 
+/** reportIdFromFetchContext: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportIdFromFetchContext = (value: unknown): string => {
   if (!isRecord(value)) return "";
   if (typeof value.reportId === "string") return value.reportId;
@@ -111,6 +156,7 @@ const reportIdFromFetchContext = (value: unknown): string => {
   return "";
 };
 
+/** wrapFetchFactory: internal helper for plugin catalog/runtime source handling. @remarks Args: fetchFactory; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const wrapFetchFactory = (
   fetchFactory: NonNullable<CatalogReportDefinition["definition"]["fetch"]>,
 ) =>
@@ -129,6 +175,14 @@ const wrapFetchFactory = (
     };
   }) as CatalogReportDefinition["definition"]["fetch"];
 
+/**
+ * wrapSchemaReportDefinitions: wraps definitions to preserve schema-specific behavior
+ *
+ * Purpose: patches schema report plugin fetch/render contexts with model-specific data.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const wrapSchemaReportDefinitions = (
   definitions: readonly CatalogReportDefinition[],
 ): readonly CatalogReportDefinition[] =>

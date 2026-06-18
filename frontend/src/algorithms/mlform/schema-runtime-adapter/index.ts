@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
 
+/** firstMappedTarget: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const firstMappedTarget = (mappedTo: unknown): unknown => {
   if (!isRecord(mappedTo)) return mappedTo;
   return Object.values(mappedTo).find(
@@ -12,6 +13,14 @@ const firstMappedTarget = (mappedTo: unknown): unknown => {
   );
 };
 
+/**
+ * toMlformRuntimeSchema: converts data into another contract shape
+ *
+ * Purpose: adapts persisted schema JSON into the runtime MLForm schema contract.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const toMlformRuntimeSchema = (schema: unknown): unknown => {
   if (!isRecord(schema)) return schema;
   const collapseItem = (item: unknown): unknown => {

@@ -16,9 +16,11 @@ type FieldRecord = JsonRecord & {
   options?: Array<JsonRecord & { value?: unknown; mappedTo?: unknown }>;
 };
 
+/** isRecord: internal predicate for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** getFields: internal lookup helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getFields = (schema: unknown): FieldRecord[] => {
   if (!isRecord(schema) || !Array.isArray(schema.fields)) return [];
   const fields: FieldRecord[] = [];
@@ -28,6 +30,7 @@ const getFields = (schema: unknown): FieldRecord[] => {
   return fields;
 };
 
+/** inputKeysFor: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const inputKeysFor = (field: FieldRecord): string[] =>
   Array.from(
     new Set(
@@ -35,9 +38,11 @@ const inputKeysFor = (field: FieldRecord): string[] =>
     ),
   );
 
+/** displayKeysFor: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const displayKeysFor = (field: FieldRecord): string[] =>
   typeof field.label === "string" && field.label.trim().length > 0 ? [field.label] : [];
 
+/** mappedTargets: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const mappedTargets = (mappedTo: unknown): string[] => {
   const direct = targetKey(mappedTarget(mappedTo));
   if (direct) return [direct];
@@ -47,6 +52,7 @@ const mappedTargets = (mappedTo: unknown): string[] => {
   );
 };
 
+/** modelInputFields: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
   const byKey = new Map<string, FieldRecord>();
   getFields(version.formSchema).forEach((field) => {
@@ -65,6 +71,14 @@ const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
   return [...byKey.values()];
 };
 
+/**
+ * getModelInputBulkSchema: extracts a derived value without mutating input
+ *
+ * Purpose: builds schema-run bulk upload schema and serialized values from model-facing rows.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getModelInputBulkSchema = (version: SchemaVersionDto): unknown => {
   const schema = version.formSchema;
   if (!isRecord(schema) || !Array.isArray(schema.fields)) return schema;
@@ -80,6 +94,14 @@ export const getModelInputBulkSchema = (version: SchemaVersionDto): unknown => {
   };
 };
 
+/**
+ * toSchemaRunSerializedValues: converts data into another contract shape
+ *
+ * Purpose: builds schema-run bulk upload schema and serialized values from model-facing rows.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const toSchemaRunSerializedValues = (
   version: SchemaVersionDto,
   inputs: JsonRecord,

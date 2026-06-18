@@ -14,6 +14,14 @@ type ReportFeedbackDto = {
   realValue?: unknown;
 };
 
+/**
+ * PredictionReportDescriptor: describes the public data contract consumed or returned by this algorithm.
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns Type-only export; no runtime value is emitted.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export type PredictionReportDescriptor = {
   order: number;
   reportId: string;
@@ -23,6 +31,14 @@ export type PredictionReportDescriptor = {
   feedbackQuestionnaire?: QuestionnaireSchema;
 };
 
+/**
+ * QuestionnaireFieldDescriptor: describes the public data contract consumed or returned by this algorithm.
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns Type-only export; no runtime value is emitted.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export type QuestionnaireFieldDescriptor = {
   id: string;
   label: string;
@@ -30,9 +46,11 @@ export type QuestionnaireFieldDescriptor = {
   options?: Array<{ label: string; value: unknown }>;
 };
 
+/** isRecord: internal predicate for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** cloneField: internal helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const cloneField = (field: FieldConfig, editable: boolean): FieldConfig =>
   editable
     ? { ...field }
@@ -42,6 +60,14 @@ const cloneField = (field: FieldConfig, editable: boolean): FieldConfig =>
         readOnly: true,
       };
 
+/**
+ * toQuestionnaireSchema: converts data into another contract shape
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const toQuestionnaireSchema = (
   schema: QuestionnaireSchema,
   editable: boolean,
@@ -52,9 +78,25 @@ export const toQuestionnaireSchema = (
   })),
 });
 
+/**
+ * getQuestionnaireFieldIds: extracts a derived value without mutating input
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getQuestionnaireFieldIds = (schema: QuestionnaireSchema): string[] =>
   buildQuestionnaireFormSchema(schema).fields.map((field: { id?: string }) => String(field.id));
 
+/**
+ * getQuestionnaireFieldDescriptors: extracts a derived value without mutating input
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getQuestionnaireFieldDescriptors = (
   schema: QuestionnaireSchema,
 ): QuestionnaireFieldDescriptor[] => {
@@ -83,6 +125,14 @@ export const getQuestionnaireFieldDescriptors = (
   }));
 };
 
+/**
+ * normalizeFeedbackValues: normalizes loose runtime data into the app contract
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const normalizeFeedbackValues = (
   value: unknown,
   schema?: QuestionnaireSchema,
@@ -95,15 +145,39 @@ export const normalizeFeedbackValues = (
   return Object.fromEntries(Object.entries(value).filter(([key]) => fieldIds.has(key)));
 };
 
+/**
+ * getEffectiveFeedbackValues: extracts a derived value without mutating input
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getEffectiveFeedbackValues = (
   feedback: Partial<Pick<ReportFeedbackDto, "value" | "realValue">> | undefined,
   schema?: QuestionnaireSchema,
 ): Record<string, unknown> =>
   normalizeFeedbackValues(feedback?.realValue ?? feedback?.value, schema);
 
+/**
+ * hasFeedbackValues: returns whether the requested condition exists
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns Boolean result for the domain predicate.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const hasFeedbackValues = (value: Record<string, unknown>): boolean =>
   Object.keys(value).length > 0;
 
+/**
+ * formatFeedbackValue: converts raw data into a stable human-readable string
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const formatFeedbackValue = (
   value: unknown,
   field?: Pick<QuestionnaireFieldDescriptor, "options">,
@@ -127,6 +201,14 @@ export const formatFeedbackValue = (
   return JSON.stringify(value);
 };
 
+/**
+ * submitQuestionnaire: performs the exported transformation for this algorithm.
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const submitQuestionnaire = async (
   mounted: MountedForm | null | undefined,
 ): Promise<Record<string, unknown>> => {
@@ -138,6 +220,14 @@ export const submitQuestionnaire = async (
   return isRecord(result.serializedValues) ? result.serializedValues : {};
 };
 
+/**
+ * getQuestionnaireValues: extracts a derived value without mutating input
+ *
+ * Purpose: extracts, normalizes, formats, and submits questionnaire feedback values.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getQuestionnaireValues = (
   mounted: MountedForm | null | undefined,
 ): Record<string, unknown> => {

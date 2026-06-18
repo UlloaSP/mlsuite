@@ -10,7 +10,7 @@ import {
   type SubmitErrorContext,
 } from "mlform/runtime";
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
-import { createSchemaRunRuntime } from "../../../algorithms/schema/run-runtime";
+import { createSchemaRunRuntime } from "../../../algorithms/schema/runtime-assembly";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
   type JsonRecord,

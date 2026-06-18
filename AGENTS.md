@@ -26,11 +26,10 @@ Hard constraints override convenience. If a requested change conflicts with them
 
 ## Hard Constraints
 
-- Always use the `ponytail` skill in `ultra` mode.
-- No source file may exceed 300 lines.
-- If an edit would exceed 300 lines, split the file first.
+- Always use the `ponytail` and `caveman` skills in `ultra` mode.
+- No source file may exceed 300 lines (comments not included).
+- If an edit would exceed 300 lines (comments not included), split the file first.
 - Prefer new modules over growing existing files.
-- For any communication with the user, always use the `caveman` skill in `ultra` mode.
 - Do not duplicate business rules across backend and frontend unless duplication is explicitly justified by UX or runtime needs.
 - Do not add new runtime dependencies without explicit reason.
 - Do not leave dead branches, half-wired flags, placeholder implementations, or misleading UI copy.

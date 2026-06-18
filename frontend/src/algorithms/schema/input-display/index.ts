@@ -9,11 +9,14 @@ import type { PredictionResultDto } from "../../../schemas/types";
 
 type DisplayInput = { key: string; label: string; value: unknown };
 
+/** fieldsOf: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const fieldsOf = (schema: unknown): JsonRecord[] =>
   isRecord(schema) && Array.isArray(schema.fields) ? schema.fields.filter(isRecord) : [];
 
+/** fieldKey: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const fieldKey = (field: JsonRecord): string => getString(field.label) ?? getString(field.id) ?? "";
 
+/** mappedTargetKeys: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const mappedTargetKeys = (mappedTo: unknown): string[] =>
   Array.from(
     new Set(
@@ -30,6 +33,7 @@ const mappedTargetKeys = (mappedTo: unknown): string[] =>
     ),
   );
 
+/** fieldInputKeys: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const fieldInputKeys = (field: JsonRecord): string[] =>
   Array.from(
     new Set(
@@ -39,9 +43,11 @@ const fieldInputKeys = (field: JsonRecord): string[] =>
     ),
   );
 
+/** hasMappedDirectValue: internal predicate for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const hasMappedDirectValue = (value: unknown): boolean =>
   value !== null && value !== undefined && !(typeof value === "string" && value.trim() === "");
 
+/** fieldInputValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const fieldInputValue = (field: JsonRecord, inputData: JsonRecord): unknown => {
   const key = fieldInputKeys(field).find(
     (item) => item in inputData && hasMappedDirectValue(inputData[item]),
@@ -49,9 +55,12 @@ const fieldInputValue = (field: JsonRecord, inputData: JsonRecord): unknown => {
   return key ? inputData[key] : undefined;
 };
 
+/** optionDisplayValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const optionDisplayValue = (option: JsonRecord): unknown => option.label ?? option.value;
+/** optionSubmitValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const optionSubmitValue = (option: JsonRecord): unknown => option.value ?? option.label;
 
+/** oneHotValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const oneHotValue = (
   field: JsonRecord,
   inputData: JsonRecord,
@@ -71,6 +80,7 @@ const oneHotValue = (
   return mode === "display" ? optionDisplayValue(option) : optionSubmitValue(option);
 };
 
+/** schemaInputs: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const schemaInputs = (
   schema: unknown,
   inputData: JsonRecord,
@@ -88,14 +98,38 @@ const schemaInputs = (
     return items;
   }, []);
 
+/**
+ * getVisibleSchemaInputs: extracts a derived value without mutating input
+ *
+ * Purpose: reconstructs visible schema inputs from raw, field-id, and model-input records.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getVisibleSchemaInputs = (schema: unknown, inputData: JsonRecord): DisplayInput[] =>
   schemaInputs(schema, inputData, "display");
 
+/**
+ * getSchemaRunPrefillInputs: extracts a derived value without mutating input
+ *
+ * Purpose: reconstructs visible schema inputs from raw, field-id, and model-input records.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getSchemaRunPrefillInputs = (schema: unknown, inputData: JsonRecord): JsonRecord =>
   Object.fromEntries(
     schemaInputs(schema, inputData, "submit").map((input) => [input.key, input.value]),
   );
 
+/**
+ * getVisibleSchemaInputRecord: extracts a derived value without mutating input
+ *
+ * Purpose: reconstructs visible schema inputs from raw, field-id, and model-input records.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getVisibleSchemaInputRecord = (schema: unknown, inputData: JsonRecord): JsonRecord =>
   Object.fromEntries(
     getVisibleSchemaInputs(schema, inputData)
@@ -103,6 +137,14 @@ export const getVisibleSchemaInputRecord = (schema: unknown, inputData: JsonReco
       .map((input) => [input.label, input.value]),
   );
 
+/**
+ * getMappedSchemaInputRecord: extracts a derived value without mutating input
+ *
+ * Purpose: reconstructs visible schema inputs from raw, field-id, and model-input records.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getMappedSchemaInputRecord = (schema: unknown, inputData: JsonRecord): JsonRecord =>
   fieldsOf(schema).reduce<JsonRecord>((payload, field) => {
     if (field.hidden === true) return payload;
@@ -125,6 +167,14 @@ export const getMappedSchemaInputRecord = (schema: unknown, inputData: JsonRecor
     return payload;
   }, {});
 
+/**
+ * mergeSchemaRunInputs: performs the exported transformation for this algorithm.
+ *
+ * Purpose: reconstructs visible schema inputs from raw, field-id, and model-input records.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const mergeSchemaRunInputs = (
   inputData: JsonRecord,
   results: readonly Pick<PredictionResultDto, "modelInput">[],
@@ -133,6 +183,14 @@ export const mergeSchemaRunInputs = (
   ...inputData,
 });
 
+/**
+ * formatDisplayValue: converts raw data into a stable human-readable string
+ *
+ * Purpose: reconstructs visible schema inputs from raw, field-id, and model-input records.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const formatDisplayValue = (value: unknown): string => {
   if (typeof value === "number") return value.toLocaleString();
   if (typeof value === "boolean") return value ? "Yes" : "No";

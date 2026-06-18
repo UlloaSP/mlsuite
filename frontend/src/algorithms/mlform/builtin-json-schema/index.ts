@@ -12,8 +12,10 @@ import {
 
 type JsonSchema = Record<string, unknown>;
 
+/** SUPPORTED_TOP_LEVEL_KEYS: internal constant/cache for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const SUPPORTED_TOP_LEVEL_KEYS = ["fields", "reports"] as const;
 
+/** sharedSchemaOverrides: internal override table for MLForm builtin schema JSON-schema conversion. @remarks Args: none; side cases: only known shared MLForm keys get handwritten schemas, unknown keys still use normal Zod conversion. @returns JSON-schema fragments used by the enclosing conversion algorithm. @throws Does not throw directly; malformed Zod conversion errors propagate from callers. */
 const sharedSchemaOverrides: Record<string, JsonSchema> = {
   asyncValidationDebounceMs: { type: "integer", minimum: 0 },
   defaultValue: {},
@@ -34,6 +36,7 @@ const sharedSchemaOverrides: Record<string, JsonSchema> = {
   },
 };
 
+/** unwrapZodSchema: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const unwrapZodSchema = (schema: { def?: { type?: string; innerType?: unknown } }): unknown => {
   let current: unknown = schema;
 
@@ -55,11 +58,13 @@ const unwrapZodSchema = (schema: { def?: { type?: string; innerType?: unknown } 
   return current;
 };
 
+/** toLiteralConst: internal normalization helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const toLiteralConst = (schema: { def?: { values?: readonly unknown[] } }): JsonSchema =>
   schema.def?.values?.length === 1
     ? { const: schema.def.values[0] }
     : { enum: schema.def?.values ?? [] };
 
+/** getRequiredKeys: internal lookup helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getRequiredKeys = (shape: Record<string, unknown>): string[] =>
   Object.entries(shape).reduce<string[]>((keys, [key, schema]) => {
     if (!schema || typeof schema !== "object" || !("def" in schema)) {
@@ -78,6 +83,7 @@ const getRequiredKeys = (shape: Record<string, unknown>): string[] =>
     return keys;
   }, []);
 
+/** zodToJsonSchema: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const zodToJsonSchema = (input: unknown): JsonSchema => {
   if (!input || typeof input !== "object") {
     return {};
@@ -132,6 +138,7 @@ const zodToJsonSchema = (input: unknown): JsonSchema => {
   }
 };
 
+/** fieldSchema: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const fieldSchema = {
   oneOf: [
     ...BUILTIN_FIELD_DEFINITIONS.map((definition) => zodToJsonSchema(definition.schema)),
@@ -150,6 +157,7 @@ const fieldSchema = {
   ],
 } as const;
 
+/** reportSchema: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportSchema = {
   oneOf: [
     ...BUILTIN_REPORT_DEFINITIONS.map((definition) => zodToJsonSchema(definition.schema)),
@@ -168,6 +176,7 @@ const reportSchema = {
   ],
 } as const;
 
+/** fieldKeysByKind: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const fieldKeysByKind = Object.fromEntries(
   BUILTIN_FIELD_DEFINITIONS.map((definition) => [
     definition.kind,
@@ -175,6 +184,7 @@ const fieldKeysByKind = Object.fromEntries(
   ]),
 ) as Record<string, readonly string[]>;
 
+/** reportKeysByKind: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportKeysByKind = Object.fromEntries(
   BUILTIN_REPORT_DEFINITIONS.map((definition) => [
     definition.kind,
@@ -182,12 +192,23 @@ const reportKeysByKind = Object.fromEntries(
   ]),
 ) as Record<string, readonly string[]>;
 
+/** allFieldKeys: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const allFieldKeys = [...new Set(Object.values(fieldKeysByKind).flat())];
+/** allReportKeys: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const allReportKeys = [...new Set(Object.values(reportKeysByKind).flat())].filter(
   (key) => key !== "source",
 );
+/** MAPPED_TO_KEY: internal constant/cache for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const MAPPED_TO_KEY = "mappedTo";
 
+/**
+ * getAllowedFieldKeys: extracts a derived value without mutating input
+ *
+ * Purpose: builds JSON-schema constraints for supported MLForm built-in field/report definitions.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getAllowedFieldKeys = (kind: string | null): readonly string[] =>
   Array.from(
     new Set([
@@ -196,6 +217,14 @@ export const getAllowedFieldKeys = (kind: string | null): readonly string[] =>
     ]),
   );
 
+/**
+ * getAllowedReportKeys: extracts a derived value without mutating input
+ *
+ * Purpose: builds JSON-schema constraints for supported MLForm built-in field/report definitions.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getAllowedReportKeys = (kind: string | null): readonly string[] =>
   Array.from(
     new Set([
@@ -206,6 +235,14 @@ export const getAllowedReportKeys = (kind: string | null): readonly string[] =>
     ]),
   );
 
+/**
+ * mlformJsonSchema: performs the exported transformation for this algorithm.
+ *
+ * Purpose: builds JSON-schema constraints for supported MLForm built-in field/report definitions.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const mlformJsonSchema = {
   type: "object",
   required: ["fields"],

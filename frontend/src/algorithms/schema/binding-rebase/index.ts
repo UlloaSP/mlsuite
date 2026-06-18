@@ -10,6 +10,7 @@ import type {
   SchemaVersionDto,
 } from "../../../schemas/types";
 
+/** rebaseSchemaVersionBindings: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const rebaseSchemaVersionBindings = (
   composed: CreateSchemaVersionRequest,
   _editedSchema: JsonRecord,
@@ -17,6 +18,14 @@ const rebaseSchemaVersionBindings = (
   return composed.bindings;
 };
 
+/**
+ * prepareSchemaVersionForSave: performs the exported transformation for this algorithm.
+ *
+ * Purpose: rebases schema version binding records before save and after DTO load.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const prepareSchemaVersionForSave = (
   composed: CreateSchemaVersionRequest,
   editedSchema: JsonRecord,
@@ -39,6 +48,14 @@ export const prepareSchemaVersionForSave = (
   };
 };
 
+/**
+ * prepareSchemaVersionDtoForUse: performs the exported transformation for this algorithm.
+ *
+ * Purpose: rebases schema version binding records before save and after DTO load.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const prepareSchemaVersionDtoForUse = (version: SchemaVersionDto): SchemaVersionDto => {
   const prepared = prepareSchemaVersionForSave(
     {

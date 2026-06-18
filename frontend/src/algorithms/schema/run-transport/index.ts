@@ -25,6 +25,7 @@ type SchemaRunBinding = {
   pluginPolicy?: JsonRecord | null;
 };
 
+/** parseResponse: internal normalization helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const parseResponse = async (response: Response): Promise<unknown> => {
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) return response.json();
@@ -37,6 +38,7 @@ const parseResponse = async (response: Response): Promise<unknown> => {
   }
 };
 
+/** failureOutput: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const failureOutput = (modelId: string, modelInput: JsonRecord): JsonRecord => ({
   meta: {
     modelId,
@@ -45,6 +47,7 @@ const failureOutput = (modelId: string, modelInput: JsonRecord): JsonRecord => (
   },
 });
 
+/** runBinding: internal helper for schema composition, run, report, and feedback flow. @remarks Args: binding, fieldValues, fields, reports; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const runBinding = async (
   binding: SchemaRunBinding,
   fieldValues: JsonRecord,
@@ -120,9 +123,11 @@ const runBinding = async (
   }
 };
 
+/** reportKey: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportKey = (report: ReportConfig): string | undefined =>
   typeof report.id === "string" ? report.id : undefined;
 
+/** findReportPayload: internal lookup helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const findReportPayload = (target: string, output: JsonRecord): JsonRecord | undefined => {
   if (isRecord(output.reports) && isRecord(output.reports[target])) {
     return output.reports[target];
@@ -130,6 +135,7 @@ const findReportPayload = (target: string, output: JsonRecord): JsonRecord | und
   return undefined;
 };
 
+/** storeReportPayload: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: reports, reportId, target, payload; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const storeReportPayload = (
   reports: JsonRecord,
   reportId: string,
@@ -141,6 +147,7 @@ const storeReportPayload = (
   reports[target] = payload;
 };
 
+/** buildReports: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const buildReports = (
   results: readonly Awaited<ReturnType<typeof runBinding>>[],
   bindings: readonly SchemaRunBinding[],
@@ -195,6 +202,14 @@ const buildReports = (
   );
 };
 
+/**
+ * createSchemaRunTransport: creates a configured runtime object or schema object
+ *
+ * Purpose: fans out schema-run submissions to bound analyzer models and merges results.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: May create network-capable runtime objects; validation happens before requests where possible.
+ */
 export const createSchemaRunTransport = (
   bindings: readonly SchemaRunBinding[],
   fields: readonly PredictionPayloadField[],

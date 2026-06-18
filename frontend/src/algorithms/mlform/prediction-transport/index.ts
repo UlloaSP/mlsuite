@@ -9,12 +9,15 @@ import { type PredictionPayloadField, isRecord } from "../../../algorithms/mlfor
 import { mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
 import { normalizeAnalyzerPredictionResult } from "../../../algorithms/mlform/analyzer-result-normalization";
 
+/** optionTarget: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const optionTarget = (option: unknown): string | undefined =>
   isRecord(option) ? targetKey(mappedTarget(option.mappedTo)) : undefined;
 
+/** optionValue: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const optionValue = (option: unknown): unknown =>
   isRecord(option) ? (option.value ?? option.label) : undefined;
 
+/** appendOneHotValues: internal transformation helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const appendOneHotValues = (
   payload: Record<string, unknown>,
   field: PredictionPayloadField,
@@ -35,6 +38,14 @@ const appendOneHotValues = (
   return true;
 };
 
+/**
+ * toAnalyzerPayload: converts data into another contract shape
+ *
+ * Purpose: adapts legacy prediction form submissions to analyzer API requests.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
+ */
 export const toAnalyzerPayload = (
   serializedValues: Record<string, unknown>,
   fields: readonly PredictionPayloadField[],
@@ -48,9 +59,11 @@ export const toAnalyzerPayload = (
     return payload;
   }, {});
 
+/** shouldIncludeInAnalyzerPayload: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const shouldIncludeInAnalyzerPayload = (field: PredictionPayloadField): boolean =>
   field.includeInSubmission !== false;
 
+/** parseResponse: internal normalization helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const parseResponse = async (response: Response): Promise<unknown> => {
   const contentType = response.headers.get("content-type") ?? "";
 
@@ -71,6 +84,14 @@ const parseResponse = async (response: Response): Promise<unknown> => {
   }
 };
 
+/**
+ * createPredictionTransport: creates a configured runtime object or schema object
+ *
+ * Purpose: adapts legacy prediction form submissions to analyzer API requests.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: May create network-capable runtime objects; validation happens before requests where possible.
+ */
 export const createPredictionTransport = (
   modelId: string,
   fields: readonly PredictionPayloadField[],

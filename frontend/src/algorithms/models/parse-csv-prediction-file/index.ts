@@ -10,8 +10,17 @@ import {
   type TabularPredictionRow,
 } from "../parse-tabular-prediction-records";
 
+/**
+ * ParseCsvPredictionResult: describes the public data contract consumed or returned by this algorithm.
+ *
+ * Purpose: parses CSV bulk prediction files into typed prediction records.
+ * @returns Type-only export; no runtime value is emitted.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export type ParseCsvPredictionResult = ParseBulkPredictionResult;
 
+/** parseCsvRows: internal normalization helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const parseCsvRows = (text: string): { rows: TabularPredictionRow[]; error?: SkippedRecord } => {
   const rows: TabularPredictionRow[] = [];
   let values: string[] = [];
@@ -66,6 +75,18 @@ const parseCsvRows = (text: string): { rows: TabularPredictionRow[]; error?: Ski
   return { rows };
 };
 
+/**
+ * parseCsvPredictionFile: parses external input and separates accepted data from errors
+ *
+ * Purpose: parses CSV bulk prediction files into typed prediction records.
+ * @param text - Input consumed by parseCsvPredictionFile; uses the parses CSV bulk prediction files into typed prediction records contract.
+ * @param schemaDefinition - Input consumed by parseCsvPredictionFile; uses the parses CSV bulk prediction files into typed prediction records contract.
+ * @param maxRecords - Input consumed by parseCsvPredictionFile; uses the parses CSV bulk prediction files into typed prediction records contract.
+ * @param autoNameBase - Input consumed by parseCsvPredictionFile; uses the parses CSV bulk prediction files into typed prediction records contract.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export function parseCsvPredictionFile(
   text: string,
   schemaDefinition: unknown,

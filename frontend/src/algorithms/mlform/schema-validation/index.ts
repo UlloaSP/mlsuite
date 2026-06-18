@@ -17,6 +17,7 @@ type ValidateMlformSchemaOptions = {
   customReportDefinitions?: readonly CatalogReportDefinition[];
 };
 
+/** makeUnknownKindIssue: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const makeUnknownKindIssue = (
   path: Array<string | number>,
   type: "field" | "report",
@@ -27,6 +28,7 @@ const makeUnknownKindIssue = (
   severity: "error",
 });
 
+/** appendFieldIssues: internal transformation helper for MLForm compatibility and runtime adaptation. @remarks Args: schema, allKinds, issues; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const appendFieldIssues = (schema: unknown, allKinds: Set<string>, issues: CompatIssue[]) => {
   if (!isRecord(schema) || !Array.isArray(schema.fields)) {
     return;
@@ -41,6 +43,7 @@ const appendFieldIssues = (schema: unknown, allKinds: Set<string>, issues: Compa
   });
 };
 
+/** appendReportIssues: internal transformation helper for MLForm compatibility and runtime adaptation. @remarks Args: schema, allKinds, issues; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const appendReportIssues = (schema: unknown, allKinds: Set<string>, issues: CompatIssue[]) => {
   if (!isRecord(schema) || !Array.isArray(schema.reports)) {
     return;
@@ -55,6 +58,7 @@ const appendReportIssues = (schema: unknown, allKinds: Set<string>, issues: Comp
   });
 };
 
+/** appendMappedToIssues: internal transformation helper for MLForm compatibility and runtime adaptation. @remarks Args: schema, issues; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const appendMappedToIssues = (schema: unknown, issues: CompatIssue[]) => {
   if (!isRecord(schema)) return;
   if (Array.isArray(schema.fields)) {
@@ -94,6 +98,7 @@ const appendMappedToIssues = (schema: unknown, issues: CompatIssue[]) => {
   }
 };
 
+/** mergeIssues: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const mergeIssues = (
   schema: unknown,
   baseIssues: readonly CompatIssue[],
@@ -130,6 +135,14 @@ const mergeIssues = (
   return filteredIssues;
 };
 
+/**
+ * validateMlformSchema: validates runtime/config data and returns normalized result or raises an error
+ *
+ * Purpose: validates and normalizes MLForm schema input before editor/runtime use.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const validateMlformSchema = (
   schema: unknown,
   options: ValidateMlformSchemaOptions = {},
@@ -150,6 +163,14 @@ export const validateMlformSchema = (
   };
 };
 
+/**
+ * toMlformSchema: converts data into another contract shape
+ *
+ * Purpose: validates and normalizes MLForm schema input before editor/runtime use.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const toMlformSchema = (
   schema: unknown,
   options: ValidateMlformSchemaOptions = {},

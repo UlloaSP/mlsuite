@@ -8,7 +8,7 @@ import { defineReportKind } from "mlform/kit";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
 import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
-import { createSchemaRunRuntime } from "../src/algorithms/schema/run-runtime";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
 import { buildSchemaRunRawFromSubmitResult } from "../src/algorithms/mlform/schema-run-result-state";
 import {
   isSkippedSchemaReportPayload,

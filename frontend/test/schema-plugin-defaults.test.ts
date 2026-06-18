@@ -7,7 +7,7 @@ import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { describe, expect, test } from "vite-plus/test";
 import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
-import { createSchemaRunRuntime } from "../src/algorithms/schema/run-runtime";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
 
 const definition = (): CatalogReportDefinition => ({
   id: "crystal",

@@ -486,3 +486,5 @@
 - Rule: use computed relative-path rewrites from old absolute module location to new location; do not apply broad textual replacements across unrelated specifiers.
 - Correction: "all frontend algorithms" also included plugin source runtime, catalog detection/loading helpers, built-in registry helpers, and schema run runtime mapping, not only obvious schema/model helpers.
 - Rule: before claiming "all algorithms moved", audit every exported non-UI/non-hook/non-API frontend module and every local pure helper inside runtime files; classify leftovers explicitly as wiring, UI, API, hook, type, atom, or config.
+- Correction: moving algorithms to `src/algorithms` was not enough; vague folder names and undocumented exports still left the architecture hard to navigate.
+- Rule: every frontend algorithm export and named internal helper needs TSDoc with purpose, params, return, throws, and side cases/effects; vague folders like `run-runtime` must be renamed to a domain action/name such as `runtime-assembly`.

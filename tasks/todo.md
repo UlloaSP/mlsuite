@@ -1,3 +1,32 @@
+# Frontend Algorithms TSDoc Audit
+
+## Goal
+
+- [x] Ensure every frontend algorithm lives under `frontend/src/algorithms` or is explicitly non-algorithm wiring/UI/API/hook/type/config.
+- [x] Rename vague algorithm folders to semantic names.
+- [x] Add detailed TSDoc to algorithm exports and named internal helpers: purpose, args, return, throws, side cases/side effects.
+
+## Plan
+
+- [x] Audit exported algorithm symbols and missing TSDoc.
+- [x] Rename vague runtime folder to semantic domain name.
+- [x] Add/upgrade TSDoc on exported algorithm functions/constants/types and named internal helpers.
+- [x] Run TypeScript, tests, line-count, react-doctor, graph update.
+
+## Review
+
+- Renamed `frontend/src/algorithms/schema/run-runtime` to `frontend/src/algorithms/schema/runtime-assembly`.
+- Added TSDoc to all 463 named algorithm symbols under `frontend/src/algorithms`; audit reports 0 missing blocks.
+- Export audit covers all 223 exported algorithm symbols; reports 0 missing and 0 malformed blocks.
+- TSDoc covers purpose, params when present, return behavior, throws, and side cases/effects via `@param`, `@returns`, `@throws`, and `@remarks`.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 28 files / 98 tests.
+  - Repo: frontend source/test line-count passed, no file >300 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 158 warnings.
+  - Repo: `graphify update .` passed.
+
 # Frontend Algorithms Full Move
 
 ## Goal
@@ -52,7 +81,7 @@
   - `plugin/custom-report-catalog`
   - `mlform/builtin-registry`
   - `models/prediction-catalog-definitions`
-  - `schema/run-runtime`
+  - `schema/runtime-assembly`
 - Remaining non-`algorithms` exported logic is wiring/UI/API/hooks/types/config only: startup gate/readiness, error sink, MLForm mount/headless/primitive registry, renderers, atoms, editor config, local questionnaire transport, hooks.
 - Verification:
   - `frontend`: `vp exec tsc -b --pretty false` passed.

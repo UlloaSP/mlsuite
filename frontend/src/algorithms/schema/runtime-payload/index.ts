@@ -11,9 +11,11 @@ import {
   isRecord,
 } from "../../../algorithms/mlform/shared";
 
+/** shouldInclude: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const shouldInclude = (field: PredictionPayloadField): boolean =>
   field.includeInSubmission !== false;
 
+/** mappedTargets: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const mappedTargets = (mappedTo: unknown): string[] => {
   const direct = targetKey(mappedTarget(mappedTo));
   if (direct) return [direct];
@@ -23,6 +25,7 @@ const mappedTargets = (mappedTo: unknown): string[] => {
   );
 };
 
+/** oneHotFieldValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const oneHotFieldValue = (
   serializedValues: Record<string, unknown>,
   field: PredictionPayloadField,
@@ -44,6 +47,14 @@ const oneHotFieldValue = (
   return isRecord(selected) ? (selected.value ?? selected.label) : undefined;
 };
 
+/**
+ * toCanonicalPayload: converts data into another contract shape
+ *
+ * Purpose: converts serialized MLForm values into canonical, field-id, and visible payloads.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
+ */
 export const toCanonicalPayload = (
   serializedValues: Record<string, unknown>,
   fields: readonly PredictionPayloadField[],
@@ -75,6 +86,14 @@ export const toCanonicalPayload = (
   }, {});
 };
 
+/**
+ * toFieldIdPayload: converts data into another contract shape
+ *
+ * Purpose: converts serialized MLForm values into canonical, field-id, and visible payloads.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
+ */
 export const toFieldIdPayload = (
   serializedValues: Record<string, unknown>,
   fields: readonly PredictionPayloadField[],
@@ -86,6 +105,14 @@ export const toFieldIdPayload = (
   }, {});
 };
 
+/**
+ * toVisiblePayload: converts data into another contract shape
+ *
+ * Purpose: converts serialized MLForm values into canonical, field-id, and visible payloads.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Propagates browser/API/runtime failures from the called platform APIs.
+ * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
+ */
 export const toVisiblePayload = (
   serializedValues: Record<string, unknown>,
   fields: readonly PredictionPayloadField[],

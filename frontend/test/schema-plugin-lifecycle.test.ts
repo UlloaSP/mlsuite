@@ -7,7 +7,7 @@ import { describe, expect, test, vi, afterEach } from "vite-plus/test";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "../src/algorithms/schema/run-runtime";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,

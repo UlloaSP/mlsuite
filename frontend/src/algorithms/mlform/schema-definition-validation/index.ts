@@ -9,6 +9,7 @@ import { type CatalogReportDefinition } from "../../plugin/custom-report-catalog
 import type { CompatIssue } from "../../../algorithms/mlform/shared";
 import { normalizeIssuePath } from "../../../algorithms/mlform/shared";
 
+/** pushIssue: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const pushIssue = (
   issues: CompatIssue[],
   path: Array<string | number>,
@@ -18,16 +19,40 @@ const pushIssue = (
   issues.push({ path, message, severity });
 };
 
+/**
+ * createCustomFieldDefinitionMap: creates a configured runtime object or schema object
+ *
+ * Purpose: validates field/report configs against built-in and custom MLForm definitions.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const createCustomFieldDefinitionMap = (
   definitions: readonly CatalogFieldDefinition[],
 ): Map<string, CatalogFieldDefinition> =>
   new Map(definitions.map((definition) => [definition.kind, definition]));
 
+/**
+ * createCustomReportDefinitionMap: creates a configured runtime object or schema object
+ *
+ * Purpose: validates field/report configs against built-in and custom MLForm definitions.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const createCustomReportDefinitionMap = (
   definitions: readonly CatalogReportDefinition[],
 ): Map<string, CatalogReportDefinition> =>
   new Map(definitions.map((definition) => [definition.kind, definition]));
 
+/**
+ * validateFieldConfig: validates runtime/config data and returns normalized result or raises an error
+ *
+ * Purpose: validates field/report configs against built-in and custom MLForm definitions.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const validateFieldConfig = (
   field: FieldConfig,
   index: number,
@@ -55,6 +80,14 @@ export const validateFieldConfig = (
   return null;
 };
 
+/**
+ * validateReportConfig: validates runtime/config data and returns normalized result or raises an error
+ *
+ * Purpose: validates field/report configs against built-in and custom MLForm definitions.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const validateReportConfig = (
   report: ReportConfig,
   index: number,

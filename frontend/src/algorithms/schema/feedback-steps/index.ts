@@ -19,25 +19,40 @@ import type {
 
 type FeedbackKind = "OUTPUT" | "EXPLANATION";
 
+/**
+ * SchemaFeedbackStep: describes the public data contract consumed or returned by this algorithm.
+ *
+ * Purpose: builds ordered feedback steps for schema run outputs and reports.
+ * @param order - Input consumed by SchemaFeedbackStep; uses the builds ordered feedback steps for schema run outputs and reports contract.
+ * @param value - Input consumed by SchemaFeedbackStep; uses the builds ordered feedback steps for schema run outputs and reports contract.
+ * @returns Type-only export; no runtime value is emitted.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export type SchemaFeedbackStep = CombinedFeedbackStep<FeedbackKind, PredictionResultFeedbackDto> & {
   resultId: string;
   type: PredictionResultFeedbackType;
 };
 
+/** isRecord: internal predicate for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** reportsOf: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportsOf = (schema: unknown): Record<string, unknown>[] =>
   isRecord(schema) && Array.isArray(schema.reports) ? schema.reports.filter(isRecord) : [];
 
+/** reportId: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportId = (report: Record<string, unknown>): string | undefined =>
   typeof report.id === "string" ? report.id : undefined;
 
+/** feedbackQuestionnaire: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const feedbackQuestionnaire = (report: Record<string, unknown>): QuestionnaireSchema | undefined =>
   isRecord(report.feedbackQuestionnaire)
     ? (report.feedbackQuestionnaire as QuestionnaireSchema)
     : undefined;
 
+/** fakeTarget: internal helper for schema composition, run, report, and feedback flow. @remarks Args: order, value; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const fakeTarget = (order: number, value: unknown) =>
   ({
     id: String(order),
@@ -45,11 +60,14 @@ const fakeTarget = (order: number, value: unknown) =>
     value,
   }) as any;
 
+/** displayRecord: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const displayRecord = (value: unknown): Record<string, unknown> => (isRecord(value) ? value : {});
 
+/** formatProbability: internal normalization helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const formatProbability = (value: unknown): string | null =>
   typeof value === "number" ? `${(value * 100).toFixed(2)}%` : null;
 
+/** outputDescription: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const outputDescription = (payload: unknown): string => {
   const record = displayRecord(payload);
   const probabilities = Array.isArray(record.probabilities) ? record.probabilities : [];
@@ -63,17 +81,27 @@ const outputDescription = (payload: unknown): string => {
     : `Prediction result: ${String(prediction)}`;
 };
 
+/** reportDescription: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportDescription = (payload: unknown): string => {
   const content = getFormattedReportContent(payload).join("\n\n");
   return content ? `Prediction report:\n${content}` : "Prediction report";
 };
 
+/** feedbackKey: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const feedbackKey = (
   resultId: string,
   type: PredictionResultFeedbackType,
   order: number,
 ): string => `${resultId}:${type}:${order}`;
 
+/**
+ * buildSchemaFeedbackSteps: constructs a new derived object from source data
+ *
+ * Purpose: builds ordered feedback steps for schema run outputs and reports.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const buildSchemaFeedbackSteps = (
   version: SchemaVersionDto,
   results: readonly PredictionResultDto[],

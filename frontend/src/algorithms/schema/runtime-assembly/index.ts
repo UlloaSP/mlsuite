@@ -29,6 +29,16 @@ type Options = {
   customReportDefinitions?: readonly CatalogReportDefinition[];
 };
 
+/**
+ * SchemaRunRuntime: describes the public data contract consumed or returned by this algorithm.
+ *
+ * Purpose: assembles schema-run MLForm schema, registries, descriptors, and transport.
+ * @param fields - Input consumed by SchemaRunRuntime; uses the assembles schema-run MLForm schema, registries, descriptors, and transport contract.
+ * @param reports - Input consumed by SchemaRunRuntime; uses the assembles schema-run MLForm schema, registries, descriptors, and transport contract.
+ * @returns Type-only export; no runtime value is emitted.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: May create network-capable runtime objects; validation happens before requests where possible.
+ */
 export type SchemaRunRuntime = {
   formSchema: FormSchema;
   registry: Registry;
@@ -37,6 +47,7 @@ export type SchemaRunRuntime = {
   normalizedFields: readonly PredictionPayloadField[];
 };
 
+/** createRegistry: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: fields, reports; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const createRegistry = (
   fields: readonly CatalogFieldDefinition[],
   reports: readonly CatalogReportDefinition[],
@@ -53,6 +64,7 @@ const createRegistry = (
   return pack;
 };
 
+/** transportFields: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const transportFields = (
   formSchema: FormSchema,
   sourceSchema: unknown,
@@ -82,6 +94,7 @@ const transportFields = (
   });
 };
 
+/** reportMappings: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportMappings = (schema: unknown): readonly unknown[] => {
   if (!isRecord(schema) || !Array.isArray(schema.reports)) return [];
   const mappings: unknown[] = [];
@@ -95,6 +108,7 @@ const reportMappings = (schema: unknown): readonly unknown[] => {
   return mappings;
 };
 
+/** restoreReportMappings: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const restoreReportMappings = (
   formSchema: FormSchema,
   mappings: readonly unknown[],
@@ -109,6 +123,14 @@ const restoreReportMappings = (
   };
 };
 
+/**
+ * createSchemaRunRuntime: creates a configured runtime object or schema object
+ *
+ * Purpose: assembles schema-run MLForm schema, registries, descriptors, and transport.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: May create network-capable runtime objects; validation happens before requests where possible.
+ */
 export const createSchemaRunRuntime = ({
   schema,
   bindings,

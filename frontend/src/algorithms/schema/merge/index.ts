@@ -8,6 +8,17 @@ import type { ModelDto } from "../../../models/api/modelService";
 import { applyOneHotCategories } from "../one-hot-category";
 import type { CreateSchemaVersionRequest, JsonRecord } from "../../../schemas/types";
 
+/**
+ * SelectedSchemaModel: describes the public data contract consumed or returned by this algorithm.
+ *
+ * Purpose: merges selected model signatures into one schema version.
+ * @param item - Input consumed by SelectedSchemaModel; uses the merges selected model signatures into one schema version contract.
+ * @param key - Input consumed by SelectedSchemaModel; uses the merges selected model signatures into one schema version contract.
+ * @param target - Input consumed by SelectedSchemaModel; uses the merges selected model signatures into one schema version contract.
+ * @returns Type-only export; no runtime value is emitted.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export type SelectedSchemaModel = {
   modelId: string;
   modelName: string;
@@ -20,14 +31,17 @@ type CanonicalItem = {
   field: JsonRecord;
 };
 
+/** normalize: internal normalization helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const normalize = (value: string): string => value.trim().toLowerCase();
 
+/** itemKey: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const itemKey = (item: JsonRecord): string => {
   const label = getString(item.label) ?? getString(item.id) ?? "item";
   const kind = getString(item.kind) ?? "unknown";
   return `${normalize(label)}::${normalize(kind)}`;
 };
 
+/** targetValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const targetValue = (item: JsonRecord, path: string): string | number => {
   if (typeof item.mappedTo === "string" || typeof item.mappedTo === "number") {
     return item.mappedTo;
@@ -35,20 +49,25 @@ const targetValue = (item: JsonRecord, path: string): string | number => {
   throw new Error(`${path} falta mappedTo`);
 };
 
+/** bindingKey: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const bindingKey = (modelName: string): string => modelName;
 
+/** setMappedTo: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: item, key, target; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const setMappedTo = (item: JsonRecord, key: string, target: string | number) => {
   item.mappedTo = { ...(isRecord(item.mappedTo) ? item.mappedTo : {}), [key]: target };
 };
 
+/** canonicalReportTarget: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const canonicalReportTarget = (report: JsonRecord, path: string): string | number =>
   targetValue(report, path);
 
+/** reportLabel: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportLabel = (report: JsonRecord, modelId: string, index: number): string => {
   const label = getString(report.label) ?? getString(report.id) ?? `Report ${index + 1}`;
   return `${label} · ${modelId}`;
 };
 
+/** createCanonical: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const createCanonical = (
   items: unknown,
   prefix: string,
@@ -71,6 +90,7 @@ const createCanonical = (
   return { canonical, byKey };
 };
 
+/** addMissingCanonical: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: canonical, byKey, CanonicalItem, sourceItems, prefix; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const addMissingCanonical = (
   canonical: JsonRecord[],
   byKey: Map<string, CanonicalItem>,
@@ -91,6 +111,7 @@ const addMissingCanonical = (
   });
 };
 
+/** addInputMappedTargets: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: selected, fieldsByKey, CanonicalItem; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const addInputMappedTargets = (
   selected: readonly SelectedSchemaModel[],
   fieldsByKey: Map<string, CanonicalItem>,
@@ -111,11 +132,13 @@ const addInputMappedTargets = (
   });
 };
 
+/** kindsFrom: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const kindsFrom = (items: unknown): string[] =>
   Array.isArray(items)
     ? Array.from(new Set(items.filter(isRecord).flatMap((item) => getString(item.kind) ?? [])))
     : [];
 
+/** buildPluginPolicy: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const buildPluginPolicy = (model: ModelDto): JsonRecord => {
   const schema = isRecord(model.inputSchema) ? model.inputSchema : {};
   return {
@@ -124,6 +147,7 @@ const buildPluginPolicy = (model: ModelDto): JsonRecord => {
   };
 };
 
+/** buildBindingReports: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const buildBindingReports = (selected: readonly SelectedSchemaModel[]): JsonRecord[] => {
   const reports: JsonRecord[] = [];
   selected.forEach(({ modelId, modelName, model }) => {
@@ -146,6 +170,14 @@ const buildBindingReports = (selected: readonly SelectedSchemaModel[]): JsonReco
   return reports;
 };
 
+/**
+ * composeSchemaVersion: performs the exported transformation for this algorithm.
+ *
+ * Purpose: merges selected model signatures into one schema version.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const composeSchemaVersion = (
   name: string,
   selected: readonly SelectedSchemaModel[],

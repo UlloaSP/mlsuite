@@ -7,7 +7,7 @@ import type { SubmitRequest } from "mlform/runtime";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { createSchemaRunRuntime } from "../algorithms/schema/run-runtime";
+import { createSchemaRunRuntime } from "../algorithms/schema/runtime-assembly";
 import { isRecord } from "../algorithms/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "../algorithms/models/prediction-catalog-definitions";
 import { parseSpreadsheetPredictionFile } from "../algorithms/models/parse-spreadsheet-prediction-file";

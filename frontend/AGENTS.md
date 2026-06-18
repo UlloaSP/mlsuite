@@ -29,6 +29,7 @@ If this file conflicts with root, this file wins for `frontend/`.
 - Keep architecture screaming: file and folder names must make feature ownership obvious.
 - Organize by feature or domain first so change impact is easy to trace.
 - Separate feature logic, design-system primitives, page wiring, and shared infrastructure clearly.
+- In `src/algorithms/` only `.ts` files allowed.
 
 ## Frontend Testing Rules
 

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { normalizeCustomReportResult } from "../../plugin/custom-report-result";
 import { toMlformSchema } from "../../mlform/schema-validation";
+import { DEFAULT_REPORT_FEEDBACK_QUESTIONNAIRE } from "./default-report-feedback-questionnaire";
 import type { ReportConfig } from "mlform/runtime";
 import type { PredictionReportDescriptor } from "../questionnaire-feedback";
 import type { QuestionnaireSchema } from "../questionnaire-schema";
@@ -16,9 +17,11 @@ type LegacyExplanationPayload = {
   explanations?: unknown;
 };
 
+/** isRecord: internal predicate for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** stripTreeToken: internal normalization helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const stripTreeToken = (value: string): string =>
   value
     .trim()
@@ -26,6 +29,7 @@ const stripTreeToken = (value: string): string =>
     .replace(/^[|_\\/\->:\s]+/, "")
     .trim();
 
+/** formatReportTree: internal normalization helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const formatReportTree = (value: string): string => {
   const parts = value.split(/(?:\s*\|\s*){2,}/).reduce<string[]>((items, part) => {
     const stripped = stripTreeToken(part);
@@ -55,6 +59,7 @@ const formatReportTree = (value: string): string => {
     .join("\n");
 };
 
+/** normalizeDisplayedReportContent: internal normalization helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const normalizeDisplayedReportContent = (value: string): string => {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -68,6 +73,7 @@ const normalizeDisplayedReportContent = (value: string): string => {
   return trimmed;
 };
 
+/** getReportContent: internal lookup helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getReportContent = (payload: unknown): string[] => {
   if (typeof payload === "string" && payload.trim().length > 0) {
     return [payload];
@@ -107,28 +113,24 @@ const getReportContent = (payload: unknown): string[] => {
     : [];
 };
 
+/**
+ * getFormattedReportContent: extracts a derived value without mutating input
+ *
+ * Purpose: extracts and formats report content for feedback/review display.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const getFormattedReportContent = (payload: unknown): string[] =>
   getReportContent(payload).map((item) => normalizeDisplayedReportContent(item));
 
-const DEFAULT_REPORT_FEEDBACK_QUESTIONNAIRE: QuestionnaireSchema = {
-  steps: [
-    {
-      id: "report-feedback",
-      title: "Report Feedback",
-      fields: [
-        { kind: "rating", id: "report-feedback-clarity", label: "Clarity", max: 5 },
-        { kind: "rating", id: "report-feedback-usefulness", label: "Usefulness", max: 5 },
-        { kind: "rating", id: "report-feedback-trust", label: "Trust", max: 5 },
-      ],
-    },
-  ],
-};
-
+/** getMetadataFeedbackQuestionnaire: internal lookup helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getMetadataFeedbackQuestionnaire = (
   report: Record<string, unknown>,
 ): QuestionnaireSchema | undefined =>
   report.feedbackEnabled === true ? DEFAULT_REPORT_FEEDBACK_QUESTIONNAIRE : undefined;
 
+/** getEmbeddedFeedbackQuestionnaire: internal lookup helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getEmbeddedFeedbackQuestionnaire = (
   report: ReportConfig,
 ): QuestionnaireSchema | undefined => {
@@ -136,6 +138,7 @@ const getEmbeddedFeedbackQuestionnaire = (
   return isRecord(value) && Array.isArray(value.steps) ? (value as QuestionnaireSchema) : undefined;
 };
 
+/** getFallbackReportEntries: internal lookup helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getFallbackReportEntries = (predictionValue: unknown): PredictionReportDescriptor[] => {
   if (!isRecord(predictionValue)) {
     return [];
@@ -177,6 +180,7 @@ const getFallbackReportEntries = (predictionValue: unknown): PredictionReportDes
   });
 };
 
+/** getEmbeddedSchemaReportEntries: internal lookup helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getEmbeddedSchemaReportEntries = (
   predictionValue: unknown,
   schemaDefinition: unknown,
@@ -224,6 +228,14 @@ const getEmbeddedSchemaReportEntries = (
   });
 };
 
+/**
+ * extractPredictionReportEntries: performs the exported transformation for this algorithm.
+ *
+ * Purpose: extracts and formats report content for feedback/review display.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const extractPredictionReportEntries = (
   predictionValue: unknown,
   schemaDefinition?: unknown,

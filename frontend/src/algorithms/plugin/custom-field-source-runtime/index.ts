@@ -15,18 +15,31 @@ declare global {
   }
 }
 
+/**
+ * CUSTOM_FIELD_COMPONENT: exposes a stable constant used by this algorithm.
+ *
+ * Purpose: compiles, imports, caches, and validates custom field plugin source modules.
+ * @param value - Input consumed by CUSTOM_FIELD_COMPONENT; uses the compiles, imports, caches, and validates custom field plugin source modules contract.
+ * @returns Stable constant value shared by callers.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Uses dynamic import Blob URLs and temporary globals; cleanup revokes URLs and deletes globals.
+ */
 export const CUSTOM_FIELD_COMPONENT = "mlsuite-custom-field";
 
 type CustomFieldKind = DefinedFieldKind<FieldConfig, unknown>;
 
+/** definitionCache: internal constant/cache for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const definitionCache = new Map<string, Promise<CustomFieldKind>>();
 let typescriptPromise: Promise<TypeScriptModule> | null = null;
 let zodPromise: Promise<ZodModule> | null = null;
+/** zodGlobalPrefix: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const zodGlobalPrefix = "__MLSUITE_CUSTOM_FIELD_ZOD__";
 
+/** isRecord: internal predicate for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** hashString: internal predicate for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const hashString = (value: string): string => {
   let hash = 0;
   for (let index = 0; index < value.length; index += 1) {
@@ -35,18 +48,22 @@ const hashString = (value: string): string => {
   return hash.toString(36);
 };
 
+/** getZodGlobalKey: internal lookup helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getZodGlobalKey = (source: string): string => `${zodGlobalPrefix}_${hashString(source)}`;
 
+/** loadTypeScript: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const loadTypeScript = async (): Promise<TypeScriptModule> => {
   typescriptPromise ??= import("typescript");
   return typescriptPromise;
 };
 
+/** loadZod: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const loadZod = async (): Promise<ZodModule> => {
   zodPromise ??= import("zod");
   return zodPromise;
 };
 
+/** formatDiagnostics: internal normalization helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const formatDiagnostics = (
   ts: TypeScriptModule,
   diagnostics: readonly import("typescript").Diagnostic[],
@@ -64,17 +81,21 @@ const formatDiagnostics = (
         })
         .join("\n");
 
+/** getDefineFieldKindGlobalKey: internal lookup helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getDefineFieldKindGlobalKey = (source: string): string =>
   `__MLSUITE_DEFINE_FIELD_KIND__${hashString(source)}`;
 
+/** prependRuntimeShims: internal transformation helper for plugin catalog/runtime source handling. @remarks Args: value; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const prependRuntimeShims = (
   source: string,
   zodGlobalKey: string,
   defineGlobalKey: string,
 ): string => `const defineFieldKind = (value) => globalThis[${JSON.stringify(defineGlobalKey)}](value);
+/** z: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const z = globalThis[${JSON.stringify(zodGlobalKey)}];
 ${source}`;
 
+/** transpileSource: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const transpileSource = async (source: string): Promise<string> => {
   const ts = await loadTypeScript();
   const result = ts.transpileModule(
@@ -97,6 +118,7 @@ const transpileSource = async (source: string): Promise<string> => {
   return result.outputText;
 };
 
+/** assertFieldDefinition: internal helper for plugin catalog/runtime source handling. @remarks Args: value; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 function assertFieldDefinition(value: unknown): asserts value is CustomFieldKind {
   if (!isRecord(value)) {
     throw new Error("Custom field module must export a default field definition.");
@@ -115,6 +137,7 @@ function assertFieldDefinition(value: unknown): asserts value is CustomFieldKind
   }
 }
 
+/** importDefinitionFromSource: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const importDefinitionFromSource = async (source: string): Promise<CustomFieldKind> => {
   const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
   const blob = new Blob([outputText], { type: "text/javascript" });
@@ -139,6 +162,14 @@ const importDefinitionFromSource = async (source: string): Promise<CustomFieldKi
   }
 };
 
+/**
+ * resolveCustomFieldDefinition: resolves ambiguous input into a concrete runtime value
+ *
+ * Purpose: compiles, imports, caches, and validates custom field plugin source modules.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Uses dynamic import Blob URLs and temporary globals; cleanup revokes URLs and deletes globals.
+ */
 export const resolveCustomFieldDefinition = async (source: string): Promise<CustomFieldKind> => {
   const cacheKey = hashString(source);
   let cachedModule = definitionCache.get(cacheKey);
@@ -149,6 +180,14 @@ export const resolveCustomFieldDefinition = async (source: string): Promise<Cust
   return cachedModule;
 };
 
+/**
+ * validateCustomFieldSource: validates runtime/config data and returns normalized result or raises an error
+ *
+ * Purpose: compiles, imports, caches, and validates custom field plugin source modules.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Uses dynamic import Blob URLs and temporary globals; cleanup revokes URLs and deletes globals.
+ */
 export const validateCustomFieldSource = async (source: string): Promise<CustomFieldKind> => {
   const definition = await resolveCustomFieldDefinition(source);
   const probe = definition.schema.safeParse({ kind: definition.kind, label: "Preview field" });

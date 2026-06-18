@@ -31,11 +31,14 @@ type Binding = {
   modelName?: string;
 };
 
+/** statusOf: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const statusOf = (state: ReportState | undefined): string => state?.status ?? "idle";
 
+/** contextId: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const contextId = (value: unknown): string | undefined =>
   typeof value === "string" || typeof value === "number" ? String(value) : undefined;
 
+/** hasPendingReports: internal predicate for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const hasPendingReports = (
   reports: readonly ReportController[],
   reportStates: Record<string, ReportState>,
@@ -51,6 +54,7 @@ const hasPendingReports = (
     return status === "idle" || status === "loading";
   });
 
+/** targetForReport: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const targetForReport = (
   report: ReportController,
   bindings: readonly Binding[],
@@ -61,6 +65,7 @@ const targetForReport = (
   return reportTargetForBinding(report, binding);
 };
 
+/** patchResultOutput: internal transformation helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const patchResultOutput = (
   result: unknown,
   reportId: string,
@@ -84,6 +89,7 @@ const patchResultOutput = (
   };
 };
 
+/** storeReportPayload: internal transformation helper for MLForm compatibility and runtime adaptation. @remarks Args: reports, reportId, target, payload; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const storeReportPayload = (
   reports: JsonRecord,
   reportId: string,
@@ -95,6 +101,14 @@ const storeReportPayload = (
   reports[target] = payload;
 };
 
+/**
+ * buildSchemaRunRawFromSubmitResult: constructs a new derived object from source data
+ *
+ * Purpose: rebuilds schema-run raw result and report-state snapshots after MLForm submission.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const buildSchemaRunRawFromSubmitResult = (
   raw: JsonRecord,
   formReports: readonly ReportController[],
@@ -129,5 +143,13 @@ export const buildSchemaRunRawFromSubmitResult = (
   };
 };
 
+/**
+ * reportStatesFromSnapshot: performs the exported transformation for this algorithm.
+ *
+ * Purpose: rebuilds schema-run raw result and report-state snapshots after MLForm submission.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const reportStatesFromSnapshot = (value: unknown): Record<string, ReportState> =>
   isRecord(value) ? (value as Record<string, ReportState>) : {};

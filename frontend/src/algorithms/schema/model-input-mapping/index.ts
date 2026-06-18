@@ -11,6 +11,14 @@ import {
 } from "../../../algorithms/mlform/mapped-to";
 import type { JsonRecord, PredictionPayloadField } from "../../../algorithms/mlform/shared";
 
+/**
+ * applySchemaRunInputMapping: applies a deterministic transformation to the supplied data
+ *
+ * Purpose: maps schema form values into model-specific analyzer input records.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
+ * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
+ */
 export const applySchemaRunInputMapping = (
   fieldValues: JsonRecord,
   fields: readonly PredictionPayloadField[],

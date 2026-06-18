@@ -28,12 +28,15 @@ type ModelResult = {
   [key: string]: unknown;
 };
 
+/** contextId: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const contextId = (value: unknown): string | undefined =>
   typeof value === "string" || typeof value === "number" ? String(value) : undefined;
 
+/** reportId: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportId = (report: ReportConfig): string | undefined =>
   typeof report.id === "string" ? report.id : undefined;
 
+/** reportTarget: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportTarget = (
   report: ReportConfig,
   context: JsonRecord,
@@ -44,6 +47,7 @@ const reportTarget = (
   return reportTargetForBinding(report, binding);
 };
 
+/** successfulContext: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const successfulContext = (
   report: ReportConfig,
   bindings: readonly Binding[],
@@ -62,6 +66,7 @@ const successfulContext = (
   };
 };
 
+/** storePayload: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const storePayload = (
   reports: JsonRecord,
   id: string,
@@ -73,6 +78,7 @@ const storePayload = (
   reports[target] = payload;
 };
 
+/** patchResult: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const patchResult = (
   result: ModelResult,
   id: string,
@@ -89,6 +95,14 @@ const patchResult = (
   };
 };
 
+/**
+ * fetchSchemaCustomReports: performs async report fetch work and merges results
+ *
+ * Purpose: fetches schema custom reports after successful per-model predictions.
+ * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
+ * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
+ * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
+ */
 export const fetchSchemaCustomReports = async ({
   request,
   reports,
