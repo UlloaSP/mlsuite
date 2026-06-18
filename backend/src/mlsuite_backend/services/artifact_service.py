@@ -9,7 +9,9 @@ from ..utils.errors import bad_request
 from ..utils.uploads import load_uploaded_object
 
 
-def _dataframe_summary(index: int, upload: UploadFile, dataframe: pd.DataFrame) -> dict[str, Any]:
+def _dataframe_summary(
+    index: int, upload: UploadFile, dataframe: pd.DataFrame
+) -> dict[str, Any]:
     return {
         "index": index,
         "fileName": upload.filename or "",
@@ -57,16 +59,18 @@ async def match_artifacts(
         artifact = await load_uploaded_object(upload, allowed_suffix=JOBLIB_SUFFIX)
         runtime = resolve_runtime_model(artifact)
         features = runtime.feature_metadata()
-        models.append({
-            "index": index,
-            "fileName": upload.filename or "",
-            "type": runtime.kind,
-            "specificType": runtime.specific_type,
-            "library": runtime.adapter.library,
-            "features": features.names,
-            "featureSource": features.source,
-            "runtime": runtime,
-        })
+        models.append(
+            {
+                "index": index,
+                "fileName": upload.filename or "",
+                "type": runtime.kind,
+                "specificType": runtime.specific_type,
+                "library": runtime.adapter.library,
+                "features": features.names,
+                "featureSource": features.source,
+                "runtime": runtime,
+            }
+        )
 
     for index, upload in enumerate(dataframe_uploads):
         artifact = await load_uploaded_object(upload, allowed_suffix=JOBLIB_SUFFIX)
@@ -74,7 +78,9 @@ async def match_artifacts(
             raise bad_request("Dataframe files must contain pandas DataFrame objects.")
         if artifact.empty:
             raise bad_request("DataFrame is empty.")
-        dataframes.append((upload, artifact, _dataframe_summary(index, upload, artifact)))
+        dataframes.append(
+            (upload, artifact, _dataframe_summary(index, upload, artifact))
+        )
 
     dataframe_summaries = [summary for *_unused, summary in dataframes]
     model_matches = [_match_model(model, dataframes) for model in models]
@@ -99,8 +105,12 @@ def _match_model(
             missing = []
             extra = []
             mode = "count"
-            reason = None if compatible else (
-                f"model expects {len(features)} columns, dataframe has {len(dataframe.columns)}"
+            reason = (
+                None
+                if compatible
+                else (
+                    f"model expects {len(features)} columns, dataframe has {len(dataframe.columns)}"
+                )
             )
         else:
             missing = sorted(required - columns)
@@ -112,20 +122,26 @@ def _match_model(
         smoke_reason = None
         if compatible:
             smoke_passed, smoke_reason = _predict_smoke(model, dataframe)
-        matches.append({
-            "dataframeIndex": summary["index"],
-            "compatible": compatible,
-            "missing": missing,
-            "extra": extra,
-            "mode": mode,
-            "reason": reason,
-            "smokePassed": smoke_passed,
-            "smokeReason": smoke_reason,
-            "score": 1.0 if compatible else 0.0,
-        })
+        matches.append(
+            {
+                "dataframeIndex": summary["index"],
+                "compatible": compatible,
+                "missing": missing,
+                "extra": extra,
+                "mode": mode,
+                "reason": reason,
+                "smokePassed": smoke_passed,
+                "smokeReason": smoke_reason,
+                "score": 1.0 if compatible else 0.0,
+            }
+        )
 
     compatible_matches = [match for match in matches if match["compatible"]]
-    auto_index = compatible_matches[0]["dataframeIndex"] if len(compatible_matches) == 1 else None
+    auto_index = (
+        compatible_matches[0]["dataframeIndex"]
+        if len(compatible_matches) == 1
+        else None
+    )
     public_model = {key: value for key, value in model.items() if key != "runtime"}
     return {
         **public_model,

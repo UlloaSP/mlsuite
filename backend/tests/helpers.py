@@ -103,7 +103,9 @@ def make_xgboost_classifier() -> XGBClassifier:
         }
     )
     labels = [0, 0, 1, 1, 1, 1]
-    return XGBClassifier(n_estimators=3, max_depth=2, eval_metric="logloss").fit(features, labels)
+    return XGBClassifier(n_estimators=3, max_depth=2, eval_metric="logloss").fit(
+        features, labels
+    )
 
 
 def make_xgboost_regressor() -> XGBRegressor:

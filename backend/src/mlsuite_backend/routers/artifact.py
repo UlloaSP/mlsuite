@@ -8,7 +8,9 @@ router = APIRouter()
 
 
 @router.post("/inspect_artifact")
-async def inspect_artifact_route(artifact_file: UploadFile = File(...)) -> dict[str, Any]:
+async def inspect_artifact_route(
+    artifact_file: UploadFile = File(...),
+) -> dict[str, Any]:
     return await inspect_artifact(artifact_file)
 
 

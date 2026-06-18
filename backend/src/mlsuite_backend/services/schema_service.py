@@ -22,7 +22,9 @@ def _with_mapped_fields(
     ]
 
 
-def _load_candidate_dataframe(candidate: object, features: FeatureMetadata) -> pd.DataFrame:
+def _load_candidate_dataframe(
+    candidate: object, features: FeatureMetadata
+) -> pd.DataFrame:
     if not isinstance(candidate, pd.DataFrame):
         raise bad_request("File does not contain a DataFrame.")
     if candidate.empty:
@@ -42,15 +44,19 @@ def _load_candidate_dataframe(candidate: object, features: FeatureMetadata) -> p
 
 def _build_schema_reports(runtime) -> list[dict[str, object]]:
     if runtime.kind == "classifier":
-        return [{
-            "kind": "classifier",
-            "label": "Predicted class",
-            "mappedTo": "classifier",
-            "labels": runtime.class_labels(),
-            "showClassProbabilities": True,
-        }]
+        return [
+            {
+                "kind": "classifier",
+                "label": "Predicted class",
+                "mappedTo": "classifier",
+                "labels": runtime.class_labels(),
+                "showClassProbabilities": True,
+            }
+        ]
     if runtime.kind == "regressor":
-        return [{"kind": "regressor", "label": "Predicted value", "mappedTo": "regressor"}]
+        return [
+            {"kind": "regressor", "label": "Predicted value", "mappedTo": "regressor"}
+        ]
     return []
 
 

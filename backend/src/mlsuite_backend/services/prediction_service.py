@@ -12,38 +12,43 @@ async def predict(model_upload: UploadFile, data: str) -> dict[str, object]:
     record = parse_record_json(data, "Invalid JSON")
     frame = build_prediction_dataframe(runtime.model, record)
 
+    if runtime.kind != "classifier" and runtime.kind != "regressor":
+        raise internal_runtime_error(f"Unsupported model kind: {runtime.kind}")
+
     if runtime.kind == "classifier":
         try:
             started = time.perf_counter()
             probabilities = runtime.predict_classifier(frame)
             execution_time = time.perf_counter() - started
-        except Exception as exc:  # pragma: no cover - model runtime failure path
+        except Exception as exc:
             raise internal_runtime_error(f"Error during inference: {exc}") from exc
         return {
-            "outputs": [{
-                "type": "classifier",
-                "execution_time": execution_time,
-                "title": "Predicted class",
-                "mapping": runtime.class_labels(),
-                "probabilities": probabilities,
-                "showClassProbabilities": True,
-            }]
+            "reports": [
+                {
+                    "kind": "classifier",
+                    "execution_time": execution_time,
+                    "label": "Predicted class",
+                    "mapping": runtime.class_labels(),
+                    "probabilities": probabilities,
+                    "showClassProbabilities": True,
+                }
+            ]
         }
-
-    try:
-        started = time.perf_counter()
-        predictions = runtime.predict_regressor(frame)
-        execution_time = time.perf_counter() - started
-    except Exception as exc:  # pragma: no cover - model runtime failure path
-        raise internal_runtime_error(f"Error during inference: {exc}") from exc
-
     if runtime.kind == "regressor":
+        try:
+            started = time.perf_counter()
+            predictions = runtime.predict_regressor(frame)
+            execution_time = time.perf_counter() - started
+        except Exception as exc:
+            raise internal_runtime_error(f"Error during inference: {exc}") from exc
+
         return {
-            "outputs": [{
-                "type": "regressor",
-                "execution_time": execution_time,
-                "title": "Predicted value",
-                "values": predictions,
-            }]
+            "reports": [
+                {
+                    "kind": "regressor",
+                    "execution_time": execution_time,
+                    "label": "Predicted value",
+                    "values": predictions,
+                }
+            ]
         }
-    return {"predictions": predictions}

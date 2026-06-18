@@ -13,7 +13,9 @@ from ..utils.dataframe import build_prediction_dataframe, parse_record_json
 from ..utils.errors import bad_request, internal_runtime_error
 
 
-async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str, list[str]]:
+async def explain(
+    model_upload: UploadFile, data: str, traces: str
+) -> dict[str, list[str]]:
     runtime = await load_runtime_model_from_upload(model_upload)
     model = runtime.model
     if not isinstance(model, (DecisionTreeClassifier, DecisionTreeRegressor)):

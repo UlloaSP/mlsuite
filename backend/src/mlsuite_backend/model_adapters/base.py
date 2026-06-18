@@ -15,7 +15,9 @@ class ModelAdapter(Protocol):
 
     def class_labels(self, model: object) -> list[str]: ...
 
-    def predict_classifier(self, model: object, frame: pd.DataFrame) -> list[list[float]]: ...
+    def predict_classifier(
+        self, model: object, frame: pd.DataFrame
+    ) -> list[list[float]]: ...
 
     def predict_regressor(self, model: object, frame: pd.DataFrame) -> list[object]: ...
 
@@ -49,4 +51,3 @@ class RuntimeModel:
 
     def predict_regressor(self, frame: pd.DataFrame) -> list[object]:
         return self.adapter.predict_regressor(self.model, frame)
-
