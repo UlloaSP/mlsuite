@@ -7,7 +7,7 @@ import type { ReportConfig, SubmitRequest, Transport } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../../app/config/runtimeConfig";
 import { type JsonRecord, type PredictionPayloadField, isRecord } from "../../mlform/shared";
 import { normalizeAnalyzerPredictionResult } from "../../mlform/analyzer-result-normalization";
-import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
+import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
 import { skippedReportIdsKey } from "../report-plugin-context";
 import { fetchSchemaCustomReports } from "../custom-report-fetch";
 import { schemaRunDebug, schemaRunDebugError } from "../run-debug";

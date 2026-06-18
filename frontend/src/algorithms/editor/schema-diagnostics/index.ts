@@ -9,7 +9,7 @@ import { getLocation } from "jsonc-parser";
 import { MarkerSeverity } from "monaco-editor";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only Monaco import is erased from runtime.
 import type * as Monaco from "monaco-editor";
-import { builtinFieldKindsDisplay } from "../../../app/utils/mlform/builtin-registry";
+import { builtinFieldKindsDisplay } from "../../mlform/builtin-registry";
 
 export interface EditorErrorCard {
   line: number;

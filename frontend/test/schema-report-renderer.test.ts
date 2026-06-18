@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test } from "vite-plus/test";
 import { describeSchemaCustomReport } from "../src/algorithms/schema/report-descriptor";
-import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
 
 const catalogReport = (): CatalogReportDefinition =>
   ({

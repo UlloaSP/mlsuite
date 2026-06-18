@@ -8,14 +8,14 @@ import { defineReportKind } from "mlform/kit";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
 import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
-import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/run-runtime";
 import { buildSchemaRunRawFromSubmitResult } from "../src/algorithms/mlform/schema-run-result-state";
 import {
   isSkippedSchemaReportPayload,
   wrapSchemaReportDefinitions,
 } from "../src/algorithms/schema/report-plugin-context";
 import { readReportContext } from "../src/algorithms/mlform/schema-run-report-mapping";
-import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
 
 const customReportDefinition = (): CatalogReportDefinition => ({
   id: "report-plugin",

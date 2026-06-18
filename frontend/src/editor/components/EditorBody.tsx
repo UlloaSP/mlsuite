@@ -11,12 +11,12 @@ import { themeWithHtmlAtom } from "../../app/atoms";
 import {
   getCustomFieldDefinitions,
   type CatalogFieldDefinition,
-} from "../../plugin/mlform/custom-field";
+} from "../../algorithms/plugin/custom-field-catalog";
 import {
   getCustomReportDefinitions,
   type CatalogReportDefinition,
-} from "../../plugin/mlform/custom-report";
-import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
+} from "../../algorithms/plugin/custom-report-catalog";
+import { invalidatePluginCatalog } from "../../algorithms/plugin/catalog-loader";
 import { pluginCatalogVersionAtom } from "../../plugin/mlform/plugin-catalog-state";
 import { schemaNeedsPluginCatalog } from "../../algorithms/plugin/schema-needs-plugin-catalog";
 import { mlformJsonSchema, validateMlformSchema } from "../../algorithms/mlform/schema-validation";

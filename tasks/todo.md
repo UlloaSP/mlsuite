@@ -26,6 +26,42 @@
   - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 158 warnings.
   - Repo: `graphify update .` passed.
 
+# Frontend Algorithms Final Audit
+
+## Goal
+
+- [x] Audit remaining exported logic outside `frontend/src/algorithms`.
+- [x] Move remaining algorithm-like plugin/catalog/runtime helpers with semantic names.
+- [x] Leave only wiring, API, hooks, UI, atoms, DTO/types, config.
+
+## Plan
+
+- [x] Classify non-algorithm files outside `src/algorithms`.
+- [x] Move plugin source runtime/detection/catalog helpers.
+- [x] Move MLForm runtime mapping helpers if separable without churn.
+- [x] Update imports, tests, TypeScript, full tests, line-count, react-doctor, graph update.
+
+## Review
+
+- Moved final algorithm-like leftovers:
+  - `plugin/custom-field-source-runtime`
+  - `plugin/custom-report-source-runtime`
+  - `plugin/catalog-loader`
+  - `plugin/catalog-page-model`
+  - `plugin/custom-field-catalog`
+  - `plugin/custom-report-catalog`
+  - `mlform/builtin-registry`
+  - `models/prediction-catalog-definitions`
+  - `schema/run-runtime`
+- Remaining non-`algorithms` exported logic is wiring/UI/API/hooks/types/config only: startup gate/readiness, error sink, MLForm mount/headless/primitive registry, renderers, atoms, editor config, local questionnaire transport, hooks.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 28 files / 98 tests.
+  - Repo: frontend source/test line-count check passed, no file >300 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 158 warnings.
+  - Repo: `graphify update .` passed.
+
 # Frontend Schema Algorithms Move
 
 ## Goal

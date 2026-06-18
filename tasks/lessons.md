@@ -484,3 +484,5 @@
 - Rule: broad frontend algorithm moves must include `frontend/test` import rewrites and full `vp test`; TypeScript app build alone does not cover test import paths.
 - Correction: broad string-based import replacement produced invalid paths during the move.
 - Rule: use computed relative-path rewrites from old absolute module location to new location; do not apply broad textual replacements across unrelated specifiers.
+- Correction: "all frontend algorithms" also included plugin source runtime, catalog detection/loading helpers, built-in registry helpers, and schema run runtime mapping, not only obvious schema/model helpers.
+- Rule: before claiming "all algorithms moved", audit every exported non-UI/non-hook/non-API frontend module and every local pure helper inside runtime files; classify leftovers explicitly as wiring, UI, API, hook, type, atom, or config.

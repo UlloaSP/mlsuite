@@ -10,7 +10,7 @@ import {
   usePluginCatalogPageQuery,
   usePluginCatalogStatsQuery,
 } from "../hooks/usePluginCatalogPageData";
-import { SORT_LABELS, type SortMode, type TypeFilter } from "../plugin-catalog-shared";
+import { SORT_LABELS, type SortMode, type TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
 
 export type PluginCatalogToolbarProps = {
   inputRef: RefObject<HTMLInputElement | null>;

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig, SubmitRequest } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../../app/config/runtimeConfig";
-import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
+import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
 import { isSkippedSchemaReportPayload } from "../report-plugin-context";
 import { schemaRunDebug, schemaRunDebugError } from "../run-debug";
 import {

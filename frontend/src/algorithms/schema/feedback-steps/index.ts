@@ -7,7 +7,7 @@ import type { CombinedFeedbackStep } from "../../../algorithms/models/combined-f
 import { createOutputFeedbackQuestionnaire } from "../../../algorithms/models/output-feedback-questionnaire";
 import { getEffectiveFeedbackValues } from "../../models/questionnaire-feedback";
 import type { QuestionnaireSchema } from "../../models/questionnaire-schema";
-import { isBuiltinReportKind } from "../../../app/utils/mlform/builtin-registry";
+import { isBuiltinReportKind } from "../../mlform/builtin-registry";
 import { getFormattedReportContent } from "../../models/report-feedback-utils";
 import { getSchemaResultReports } from "../report-display";
 import type {

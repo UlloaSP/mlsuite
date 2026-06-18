@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FieldConfig, Registry, ReportConfig } from "mlform/runtime";
-import { type CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
-import { type CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
+import { type CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
+import { type CatalogReportDefinition } from "../../plugin/custom-report-catalog";
 import type { CompatIssue } from "../../../algorithms/mlform/shared";
 import { normalizeIssuePath } from "../../../algorithms/mlform/shared";
 

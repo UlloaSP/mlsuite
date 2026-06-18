@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { isBuiltinReportKind } from "../../../app/utils/mlform/builtin-registry";
+import { isBuiltinReportKind } from "../../mlform/builtin-registry";
 import { csvEscape, toCell } from "../../../algorithms/models/export-csv";
 import { getOutputFeedbackFieldIds } from "../../../algorithms/models/output-feedback-questionnaire";
 import { getQuestionnaireFieldIds } from "../../models/questionnaire-feedback";

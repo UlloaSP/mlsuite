@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
-import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/run-runtime";
+import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
 
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",

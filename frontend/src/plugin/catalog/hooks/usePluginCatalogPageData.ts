@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deletePlugin, getPluginPage, getPluginStats, uploadPlugin } from "../../api/pluginService";
-import type { SortMode, TypeFilter } from "../plugin-catalog-shared";
+import type { SortMode, TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
 
 export const PLUGIN_CATALOG_PAGE_SIZE = 24;
 

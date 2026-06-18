@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { isBuiltinFieldKind, isBuiltinReportKind } from "../../../app/utils/mlform/builtin-registry";
+import { isBuiltinFieldKind, isBuiltinReportKind } from "../../mlform/builtin-registry";
 
 export const schemaNeedsPluginCatalog = (schema: unknown): boolean => {
   if (!schema || typeof schema !== "object") {

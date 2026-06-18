@@ -3,9 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getAllPlugins, type PluginDto } from "../api/pluginService";
-import { validateCustomFieldSource } from "./custom-field-runtime";
-import { validateCustomReportSource } from "./custom-report-runtime";
+import { getAllPlugins, type PluginDto } from "../../../plugin/api/pluginService";
+import { validateCustomFieldSource } from "../custom-field-source-runtime";
+import { validateCustomReportSource } from "../custom-report-source-runtime";
 
 export type DetectedPluginType = "field" | "report";
 

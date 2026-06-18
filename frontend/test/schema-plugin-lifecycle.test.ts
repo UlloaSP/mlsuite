@@ -7,12 +7,12 @@ import { describe, expect, test, vi, afterEach } from "vite-plus/test";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/run-runtime";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
 } from "../src/algorithms/mlform/schema-run-result-state";
-import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
+import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
 
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",

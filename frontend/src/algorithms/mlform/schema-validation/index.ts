@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FormSchema } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
-import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
-import { isBuiltinFieldKind, isBuiltinReportKind } from "../../../app/utils/mlform/builtin-registry";
+import type { CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
+import { isBuiltinFieldKind, isBuiltinReportKind } from "../builtin-registry";
 import { mlformJsonSchema, validateMlformSchema as validateBaseMlformSchema } from "../../../algorithms/mlform/schema-compat";
 import { toMlformRuntimeSchema } from "../schema-runtime-adapter";
 import type { CompatIssue, CompatValidationResult } from "../../../algorithms/mlform/shared";

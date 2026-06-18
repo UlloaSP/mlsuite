@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
-import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
+import { invalidatePluginCatalog } from "../../algorithms/plugin/catalog-loader";
 import { isRecord } from "../../algorithms/mlform/shared";
 import { SchemaRunForm } from "../components/SchemaRunForm";
 import { SchemaRunSaveModal } from "../components/SchemaRunSaveModal";

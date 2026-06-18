@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AppEmptyState } from "../../app/components";
-import { isBuiltinReportKind } from "../../app/utils/mlform/builtin-registry";
+import { isBuiltinReportKind } from "../../algorithms/mlform/builtin-registry";
 import { ReviewAccordionSection } from "../../review/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "../../review/components/ReviewInputsSection";
 import { ReviewOutputsSection, type TargetDto } from "../../review/components/ReviewOutputsSection";

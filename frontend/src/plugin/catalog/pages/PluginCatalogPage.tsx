@@ -13,11 +13,11 @@ import { useUser } from "../../../user/hooks";
 import { useWorkspaceContext } from "../../../workspace/hooks";
 import { PluginCatalogBrowser } from "../components/PluginCatalogBrowser";
 import { useUploadPluginMutation } from "../hooks/usePluginCatalogPageData";
-import { TYPE_META, readFileText } from "../plugin-catalog-shared";
-import type { SortMode, TypeFilter } from "../plugin-catalog-shared";
-import { invalidateCustomFieldDefinitions } from "../../mlform/custom-field";
-import { invalidateCustomReportDefinitions } from "../../mlform/custom-report";
-import { detectPluginType, invalidatePluginCatalog } from "../../mlform/plugin-catalog";
+import { TYPE_META, readFileText } from "../../../algorithms/plugin/catalog-page-model";
+import type { SortMode, TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
+import { invalidateCustomFieldDefinitions } from "../../../algorithms/plugin/custom-field-catalog";
+import { invalidateCustomReportDefinitions } from "../../../algorithms/plugin/custom-report-catalog";
+import { detectPluginType, invalidatePluginCatalog } from "../../../algorithms/plugin/catalog-loader";
 import { bumpPluginCatalogVersionAtom } from "../../mlform/plugin-catalog-state";
 
 export function PluginCatalogPage() {

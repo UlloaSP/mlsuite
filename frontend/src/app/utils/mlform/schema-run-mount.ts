@@ -10,7 +10,7 @@ import {
   type SubmitErrorContext,
 } from "mlform/runtime";
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
-import { createSchemaRunRuntime } from "./schema-run-runtime";
+import { createSchemaRunRuntime } from "../../../algorithms/schema/run-runtime";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
   type JsonRecord,
@@ -18,8 +18,8 @@ import {
   type PredictionTheme,
   isRecord,
 } from "../../../algorithms/mlform/shared";
-import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
-import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
+import type { CatalogFieldDefinition } from "../../../algorithms/plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "../../../algorithms/plugin/custom-report-catalog";
 import { schemaRunDebug, schemaRunDebugError } from "../../../algorithms/schema/run-debug";
 import {
   buildSchemaRunRawFromSubmitResult,

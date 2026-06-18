@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PluginDto } from "../api/pluginService";
-import type { DetectedPluginType } from "../mlform/plugin-catalog";
+import type { PluginDto } from "../../../plugin/api/pluginService";
+import type { DetectedPluginType } from "../catalog-loader";
 
 export type SortMode = "updated" | "name";
 export type PluginViewType = DetectedPluginType | "invalid";

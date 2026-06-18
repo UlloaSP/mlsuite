@@ -1,7 +1,7 @@
 import type { FieldConfig, ReportConfig } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
-import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
-import { getBuiltinRegistry } from "../../../app/utils/mlform/builtin-registry";
+import type { CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
+import { getBuiltinRegistry } from "../builtin-registry";
 import {
   getAllowedFieldKeys,
   getAllowedReportKeys,

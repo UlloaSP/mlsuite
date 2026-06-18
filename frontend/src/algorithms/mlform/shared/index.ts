@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FormController, FormSchema, NormalizedFieldConfig } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
-import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
+import type { CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
 
 export type JsonRecord = Record<string, unknown>;
 type CompatIssueSeverity = "error" | "warning";

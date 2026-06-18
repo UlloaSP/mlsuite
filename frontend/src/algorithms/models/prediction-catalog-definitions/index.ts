@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import {
   getCustomFieldDefinitions,
   type CatalogFieldDefinition,
-} from "../plugin/mlform/custom-field";
+} from "../../plugin/custom-field-catalog";
 import {
   getCustomReportDefinitions,
   type CatalogReportDefinition,
-} from "../plugin/mlform/custom-report";
+} from "../../plugin/custom-report-catalog";
 
 export type PredictionCatalogDefinitions = {
   fieldDefinitions: readonly CatalogFieldDefinition[];
