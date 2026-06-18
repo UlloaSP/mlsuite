@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import { formatDisplayValue, getVisibleSchemaInputs } from "../../algorithms/schema/input-display";
-import type { JsonRecord } from "../types";
+import type { JsonRecord } from "../../api/schemas/dtos";
 
 type Props = {
   schema: unknown;

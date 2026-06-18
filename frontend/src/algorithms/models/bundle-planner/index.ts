@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ArtifactKind } from "../../../models/api/artifactService";
-import type { ArtifactMatchDto } from "../../../models/api/artifactService";
+import type { ArtifactKind } from "../../../api/models/services";
+import type { ArtifactMatchDto } from "../../../api/models/services";
 import type { Bundle } from "../../../models/bundle-types";
 import { getStem, slugToTitle } from "../bundle-utils";
 

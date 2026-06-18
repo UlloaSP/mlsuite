@@ -8,7 +8,7 @@ import {
   prepareSchemaVersionDtoForUse,
   prepareSchemaVersionForSave,
 } from "../src/algorithms/schema/binding-rebase";
-import type { CreateSchemaVersionRequest } from "../src/schemas/types";
+import type { CreateSchemaVersionRequest } from "../src/api/schemas/dtos";
 
 const baseRequest = (): CreateSchemaVersionRequest => ({
   name: "v1",

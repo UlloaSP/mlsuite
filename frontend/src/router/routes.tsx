@@ -15,9 +15,9 @@ import { PublicLayout } from "../layout/PublicLayout";
 import { CreateModelPage } from "../models/pages/create-model-page";
 import { ModelDetailPage } from "../models/pages/model-detail-page";
 import { ModelsPage } from "../models/pages/models-page";
-import { SchemaReviewLoginRoute } from "../schema-review/components/SchemaReviewLoginRoute";
-import { SchemaReviewProtectedRoute } from "../schema-review/components/SchemaReviewProtectedRoute";
-import { SchemaReviewWorkspacePage } from "../schema-review/pages/schema-review-workspace-page";
+import { SchemaReviewLoginRoute } from "../review/components/SchemaReviewLoginRoute";
+import { SchemaReviewProtectedRoute } from "../review/components/SchemaReviewProtectedRoute";
+import { SchemaReviewWorkspacePage } from "../review/pages/review-workspace-page";
 import { CreateSchemaPage } from "../schemas/pages/create-schema-page";
 import { CreateSchemaRunPage } from "../schemas/pages/create-schema-run-page";
 import { CreateSchemaVersionPage } from "../schemas/pages/create-schema-version-page";
@@ -42,7 +42,7 @@ import {
   RequireSuperadmin,
   RequireWorkspacePermission,
 } from "../workspace/components/RequireWorkspacePermission";
-import type { WorkspacePermissionKey } from "../workspace/types";
+import type { WorkspacePermissionKey } from "../api/workspace/dtos";
 import { ProtectedRoute } from "./route-components";
 import { enableViewTransitions } from "./view-transitions";
 
@@ -187,18 +187,18 @@ const routes: RouteObject[] = [
         ],
       },
       {
-        path: "schema-review/:token/login",
+        path: "review/:token/login",
         element: <SchemaReviewLoginRoute />,
       },
       {
         element: <SchemaReviewProtectedRoute />,
         children: [
           {
-            path: "schema-review/:token",
+            path: "review/:token",
             element: <SchemaReviewWorkspacePage />,
           },
           {
-            path: "schema-review/:token/runs/:runToken",
+            path: "review/:token/runs/:runToken",
             element: <SchemaReviewWorkspacePage />,
           },
         ],

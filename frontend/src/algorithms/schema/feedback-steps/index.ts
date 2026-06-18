@@ -15,7 +15,7 @@ import type {
   PredictionResultFeedbackDto,
   PredictionResultFeedbackType,
   SchemaVersionDto,
-} from "../../../schemas/types";
+} from "../../../api/schemas/dtos";
 
 type FeedbackKind = "OUTPUT" | "EXPLANATION";
 

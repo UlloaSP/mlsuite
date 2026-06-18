@@ -9,7 +9,7 @@ import {
   toSchemaRunSerializedValues,
 } from "../src/algorithms/schema/bulk-upload";
 import { parseCsvPredictionFile } from "../src/algorithms/models/parse-csv-prediction-file";
-import type { SchemaVersionDto } from "../src/schemas/types";
+import type { SchemaVersionDto } from "../src/api/schemas/dtos";
 
 const version: SchemaVersionDto = {
   id: "version-1",

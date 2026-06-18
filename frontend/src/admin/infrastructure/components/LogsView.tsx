@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Pause, Play, Search } from "lucide-react";
 import { AppBadge, AppButton, AppSelect, cx } from "../../../app/components";
-import type { ServiceStatusDto } from "../types";
+import type { ServiceStatusDto } from "../../../api/infrastructure/dtos";
 
 type Props = {
   services: ServiceStatusDto[];

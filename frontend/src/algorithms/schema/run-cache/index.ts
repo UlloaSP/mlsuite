@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PredictionRunDto } from "../../../schemas/types";
+import type { PredictionRunDto } from "../../../api/schemas/dtos";
 
 /**
  * prependMissingPredictionRuns: prepends data while preserving immutable state shape

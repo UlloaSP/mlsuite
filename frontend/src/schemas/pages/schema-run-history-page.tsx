@@ -28,11 +28,11 @@ import {
   usePredictionRunsFeedback,
   useSchema,
   useSchemaVersion,
-} from "../hooks";
+} from "../../api/schemas/hooks";
 import { isSchemaFeedbackComplete } from "../../algorithms/schema/feedback-state";
 import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
 import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
-import type { PredictionRunDto } from "../types";
+import type { PredictionRunDto } from "../../api/schemas/dtos";
 
 const inRange = (run: PredictionRunDto, range: SchemaRunDateRangeFilter): boolean => {
   if (range === "all") return true;

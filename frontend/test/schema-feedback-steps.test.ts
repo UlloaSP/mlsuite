@@ -2,7 +2,7 @@ import { describe, expect, test } from "vite-plus/test";
 import { skippedSchemaReportPayload } from "../src/algorithms/schema/report-plugin-context";
 import { buildSchemaFeedbackSteps } from "../src/algorithms/schema/feedback-steps";
 import { getSchemaResultReports } from "../src/algorithms/schema/report-display";
-import type { PredictionRunDto, SchemaVersionDto } from "../src/schemas/types";
+import type { PredictionRunDto, SchemaVersionDto } from "../src/api/schemas/dtos";
 
 const version: SchemaVersionDto = {
   id: "version-1",

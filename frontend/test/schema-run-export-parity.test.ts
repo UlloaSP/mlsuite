@@ -9,7 +9,7 @@ import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
   SchemaVersionDto,
-} from "../src/schemas/types";
+} from "../src/api/schemas/dtos";
 
 const version: SchemaVersionDto = {
   id: "version-1",

@@ -2,7 +2,8 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
 import { SearchResultsPanel } from "../../search/components/SearchResultsPanel";
-import { useDebouncedValue, useSearchResults } from "../../search/hooks";
+import { useSearchResults } from "../../api/search/hooks";
+import { useDebouncedValue } from "../../search/hooks";
 import { isGlobalSearchShortcut } from "../../algorithms/search/shortcut";
 
 const isTypingTarget = (target: EventTarget | null) =>

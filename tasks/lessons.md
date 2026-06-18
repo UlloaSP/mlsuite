@@ -488,3 +488,5 @@
 - Rule: before claiming "all algorithms moved", audit every exported non-UI/non-hook/non-API frontend module and every local pure helper inside runtime files; classify leftovers explicitly as wiring, UI, API, hook, type, atom, or config.
 - Correction: moving algorithms to `src/algorithms` was not enough; vague folder names and undocumented exports still left the architecture hard to navigate.
 - Rule: every frontend algorithm export and named internal helper needs TSDoc with purpose, params, return, throws, and side cases/effects; vague folders like `run-runtime` must be renamed to a domain action/name such as `runtime-assembly`.
+- Correction: schema-review and review were the same frontend domain, but keeping both folders split ownership and made architecture misleading.
+- Rule: when two frontend feature names represent one workflow, fuse UI, API, algorithms, routes, and tests under one domain folder; keep old backend endpoint names only when they are real server contracts.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { PREDICTION_RUNS_QUERY_KEY } from "../src/schemas/hooks";
+import { PREDICTION_RUNS_QUERY_KEY } from "../src/api/schemas/hooks";
 import { prependMissingPredictionRuns } from "../src/algorithms/schema/run-cache";
-import type { PredictionRunDto } from "../src/schemas/types";
+import type { PredictionRunDto } from "../src/api/schemas/dtos";
 
 const run = (id: string): PredictionRunDto => ({
   id,

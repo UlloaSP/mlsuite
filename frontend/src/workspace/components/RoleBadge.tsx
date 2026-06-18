@@ -1,5 +1,5 @@
 import { AppBadge } from "../../app/components";
-import type { InvitationStatus, MembershipStatus, OrganizationRole, TeamRole } from "../types";
+import type { InvitationStatus, MembershipStatus, OrganizationRole, TeamRole } from "../../api/workspace/dtos";
 
 type RoleValue = OrganizationRole | TeamRole | MembershipStatus | InvitationStatus;
 

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AppBadge, AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
-import type { ModelDto } from "../api/modelService";
+import type { ModelDto } from "../../api/models/services";
 import { formatTimestamp, getModelAlgorithmLabel } from "../../algorithms/models/utils";
 
 type ModelSummaryTabProps = {

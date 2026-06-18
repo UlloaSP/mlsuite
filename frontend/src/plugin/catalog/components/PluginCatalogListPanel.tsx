@@ -24,7 +24,7 @@ import {
   PLUGIN_CATALOG_PAGE_SIZE,
   useDeletePluginMutation,
   usePluginCatalogPageQuery,
-} from "../hooks/usePluginCatalogPageData";
+} from "../../../api/plugins/hooks";
 
 export type PluginCatalogListPanelProps = {
   canManagePlugins: boolean;

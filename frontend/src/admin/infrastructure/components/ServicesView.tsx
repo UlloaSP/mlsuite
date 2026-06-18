@@ -3,7 +3,7 @@ import { Filter, RefreshCw, Search } from "lucide-react";
 import { AppBadge, AppButton, AppSelect, cx } from "../../../app/components";
 import { formatBytes, formatPercent } from "../../../algorithms/admin/infrastructure/formatters";
 import { labelForServiceHealth, toneForServiceStatus } from "../../../algorithms/admin/infrastructure/status";
-import type { ServiceStatusDto } from "../types";
+import type { ServiceStatusDto } from "../../../api/infrastructure/dtos";
 import { SegmentedControl } from "./ServicesSegmentedControl";
 import { SortTh } from "./ServicesSortTh";
 import { ActionBtn } from "./ServicesViewSupport";

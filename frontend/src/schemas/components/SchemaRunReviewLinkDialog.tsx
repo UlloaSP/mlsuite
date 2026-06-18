@@ -12,8 +12,8 @@ import {
   useCreateSchemaReviewLinkMutation,
   useRevokeSchemaReviewLinkMutation,
   useSchemaReviewLinks,
-} from "../../schema-review/hooks";
-import type { PredictionRunDto, SchemaVersionDto } from "../types";
+} from "../../api/review/hooks";
+import type { PredictionRunDto, SchemaVersionDto } from "../../api/schemas/dtos";
 
 type Props = {
   runs: PredictionRunDto[];
@@ -21,7 +21,7 @@ type Props = {
   onClose: () => void;
 };
 
-const reviewUrl = (token: string): string => `${window.location.origin}/schema-review/${token}`;
+const reviewUrl = (token: string): string => `${window.location.origin}/review/${token}`;
 
 const defaultExpiryDate = () => {
   const date = new Date();

@@ -3,7 +3,7 @@ import { Download, RefreshCw } from "lucide-react";
 import { AppButton } from "../../../app/components";
 import { countHealthyServices, countProblemServices, toneForMetric } from "../../../algorithms/admin/infrastructure/dashboard-summary";
 import { formatBytes, formatPercent } from "../../../algorithms/admin/infrastructure/formatters";
-import type { InfrastructureOverviewDto } from "../types";
+import type { InfrastructureOverviewDto } from "../../../api/infrastructure/dtos";
 import { KpiCard, SegmentedControl } from "./OverviewViewSupport";
 import { OverviewChartPanel } from "./OverviewChartPanel";
 import { OverviewServicePanels, OverviewSignalsPanel } from "./OverviewSidePanels";

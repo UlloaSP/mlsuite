@@ -13,10 +13,10 @@ import {
   AppButton,
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
-import { useUser } from "../../user/hooks";
-import { useWorkspaceContext } from "../../workspace/hooks";
+import { useUser } from "../../api/user/hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 import { ModelSummaryTab } from "../components/ModelSummaryTab";
-import { useGetModels } from "../hooks";
+import { useGetModels } from "../../api/models/hooks";
 import { findModelById, formatTimestamp, getModelAlgorithmLabel } from "../../algorithms/models/utils";
 
 export function ModelDetailPage() {

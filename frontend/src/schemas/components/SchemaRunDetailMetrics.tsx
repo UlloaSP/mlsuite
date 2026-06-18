@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { AppPanel, AppBadge } from "../../app/components";
 import { formatTimestamp } from "../../algorithms/models/utils";
-import type { PredictionRunDto } from "../types";
+import type { PredictionRunDto } from "../../api/schemas/dtos";
 
 type Props = {
   run: PredictionRunDto;

@@ -15,7 +15,7 @@ import {
   AppButton,
   AppSelect,
 } from "../../app/components";
-import { useSchema, useSchemaVersions } from "../hooks";
+import { useSchema, useSchemaVersions } from "../../api/schemas/hooks";
 import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
 import {
   schemaVersionId,

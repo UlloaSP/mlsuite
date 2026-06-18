@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { FieldConfig } from "mlform/runtime";
 import type { DefinedFieldKind } from "mlform/kit";
-import type { PluginDto } from "../../../plugin/api/pluginService";
+import type { PluginDto } from "../../../api/plugins/services";
 import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "../catalog-loader";
 import {
   CUSTOM_FIELD_COMPONENT,

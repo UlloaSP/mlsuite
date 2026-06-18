@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ArrowRight } from "lucide-react";
 import { AppPanel, AppBadge } from "../../app/components";
 import { formatTimestamp, getPredictionShortId } from "../../algorithms/models/utils";
-import type { PredictionRunDto } from "../types";
+import type { PredictionRunDto } from "../../api/schemas/dtos";
 
 type Props = {
   runs: PredictionRunDto[];

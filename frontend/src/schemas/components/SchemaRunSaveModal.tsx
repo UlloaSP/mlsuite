@@ -21,7 +21,7 @@ import {
   ReportQuestionnaireMount,
   type ReportQuestionnaireMountHandle,
 } from "../../models/components/ReportQuestionnaireMount";
-import type { CreatePredictionRunRequest, JsonRecord, SchemaVersionDto } from "../types";
+import type { CreatePredictionRunRequest, JsonRecord, SchemaVersionDto } from "../../api/schemas/dtos";
 import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
 import { buildPendingSchemaRunFeedback, type PendingFeedback } from "../../algorithms/schema/pending-feedback";
 import { getMappedSchemaInputRecord, mergeSchemaRunInputs } from "../../algorithms/schema/input-display";

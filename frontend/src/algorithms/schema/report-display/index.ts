@@ -9,7 +9,7 @@ import { isBuiltinReportKind } from "../../mlform/builtin-registry";
 import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
 import { isSkippedSchemaReportPayload } from "../report-plugin-context";
 import { reportTargetForBinding } from "../../mlform/schema-run-report-mapping";
-import type { PredictionResultDto, SchemaVersionDto } from "../../../schemas/types";
+import type { PredictionResultDto, SchemaVersionDto } from "../../../api/schemas/dtos";
 
 /**
  * SchemaDisplayReport: describes the public data contract consumed or returned by this algorithm.

@@ -7,7 +7,7 @@ import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
-import { usePredictionRun, usePredictionRunFeedback, useSchema, useSchemaVersion } from "../hooks";
+import { usePredictionRun, usePredictionRunFeedback, useSchema, useSchemaVersion } from "../../api/schemas/hooks";
 import { SchemaRunInputsPanel } from "../components/SchemaRunInputsPanel";
 import { SchemaRunFeedbackQuestionnaire } from "../components/SchemaRunFeedbackQuestionnaire";
 import { SchemaRunDetailMetrics } from "../components/SchemaRunDetailMetrics";

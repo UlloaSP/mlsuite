@@ -10,7 +10,7 @@ import {
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "../src/algorithms/admin/infrastructure/state";
-import type { InfrastructureOverviewDto } from "../src/admin/infrastructure/types";
+import type { InfrastructureOverviewDto } from "../src/api/infrastructure/dtos";
 import { buildWebSocketUrl } from "../src/admin/infrastructure/ws/infrastructureSocket";
 
 const overview: InfrastructureOverviewDto = {

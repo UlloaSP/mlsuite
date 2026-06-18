@@ -19,13 +19,13 @@ import { ReportQuestionnaireMount } from "../../models/components/ReportQuestion
 import {
   useCreatePredictionResultFeedbackMutation,
   useUpdatePredictionResultFeedbackMutation,
-} from "../hooks";
+} from "../../api/schemas/hooks";
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
 } from "../../algorithms/schema/feedback-state";
 import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
-import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../types";
+import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../../api/schemas/dtos";
 
 type Props = {
   run: PredictionRunDto;

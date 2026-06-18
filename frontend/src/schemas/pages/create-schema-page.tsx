@@ -19,14 +19,14 @@ import {
 import { isRecord } from "../../algorithms/mlform/shared";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
-import { useGetModels } from "../../models/hooks";
-import { createSchemaVersion } from "../api/schemaService";
+import { useGetModels } from "../../api/models/hooks";
+import { createSchemaVersion } from "../../api/schemas/services";
 import { SchemaModelSelector } from "../components/SchemaModelSelector";
-import { useCreateSchemaMutation, useSchema, useSchemaVersions } from "../hooks";
+import { useCreateSchemaMutation, useSchema, useSchemaVersions } from "../../api/schemas/hooks";
 import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
 import { prepareSchemaVersionForSave } from "../../algorithms/schema/binding-rebase";
 import { composeSchemaVersion, type SelectedSchemaModel } from "../../algorithms/schema/merge";
-import type { CreateSchemaVersionRequest } from "../types";
+import type { CreateSchemaVersionRequest } from "../../api/schemas/dtos";
 
 type SelectedModel = SelectedSchemaModel;
 

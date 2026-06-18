@@ -9,8 +9,8 @@ import {
   AppSectionTitle,
   AppSurface,
 } from "../../app/components";
-import { useGetModels } from "../../models/hooks";
-import { useWorkspaceContext } from "../hooks";
+import { useGetModels } from "../../api/models/hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 
 export function WorkspaceHomePage() {
   const { data: context } = useWorkspaceContext();

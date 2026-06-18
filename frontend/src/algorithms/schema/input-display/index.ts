@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { getString, isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
 import { mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
-import type { PredictionResultDto } from "../../../schemas/types";
+import type { PredictionResultDto } from "../../../api/schemas/dtos";
 
 type DisplayInput = { key: string; label: string; value: unknown };
 

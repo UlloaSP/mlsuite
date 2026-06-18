@@ -11,17 +11,17 @@ import { invalidatePluginCatalog } from "../../algorithms/plugin/catalog-loader"
 import { isRecord } from "../../algorithms/mlform/shared";
 import { SchemaRunForm } from "../components/SchemaRunForm";
 import { SchemaRunSaveModal } from "../components/SchemaRunSaveModal";
-import { createPredictionResultFeedback } from "../api/schemaService";
+import { createPredictionResultFeedback } from "../../api/schemas/services";
 import {
   useCreatePredictionRunMutation,
   usePredictionRun,
   useSchema,
   useSchemaVersion,
-} from "../hooks";
+} from "../../api/schemas/hooks";
 import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
 import { mergeSchemaRunInputs } from "../../algorithms/schema/input-display";
 import type { PendingFeedback } from "../../algorithms/schema/pending-feedback";
-import type { CreatePredictionRunRequest, JsonRecord } from "../types";
+import type { CreatePredictionRunRequest, JsonRecord } from "../../api/schemas/dtos";
 
 export function CreateSchemaRunPage() {
   const [searchParams] = useSearchParams();

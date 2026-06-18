@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 import { cx } from "../../app/components";
-import type { SearchResultDto, SearchResultType } from "../types";
+import type { SearchResultDto, SearchResultType } from "../../api/search/dtos";
 
 const icons: Record<SearchResultType, typeof Building2> = {
   organization: Building2,

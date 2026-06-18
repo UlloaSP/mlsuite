@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { LoaderCircle, Square, Upload } from "lucide-react";
 import { useRef, type ChangeEvent } from "react";
 import { AppButton } from "../../app/components";
-import { useSchemaRunBulkUpload } from "../useSchemaRunBulkUpload";
-import type { SchemaVersionDto } from "../types";
+import { useSchemaRunBulkUpload } from "../../api/schemas/hooks";
+import type { SchemaVersionDto } from "../../api/schemas/dtos";
 
 type Props = {
   version: SchemaVersionDto;

@@ -26,8 +26,8 @@ import {
   Sun,
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import { useUser } from "../../user/hooks";
-import { useWorkspaceContext } from "../../workspace/hooks";
+import { useUser } from "../../api/user/hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 import { fullscreenAtom, sidebarCollapsedAtom, themeWithHtmlAtom } from "../atoms";
 import { SidebarSection } from "./SidebarSection";
 import { SidebarTile } from "./SidebarTile";

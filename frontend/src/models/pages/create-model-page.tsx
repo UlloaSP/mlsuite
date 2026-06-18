@@ -8,8 +8,8 @@ import { useNavigate } from "react-router";
 import { AppPage, AppPageHeader } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { emitErrorFromUnknown } from "../../app/utils/error-sink";
-import { useUser } from "../../user/hooks";
-import { useWorkspaceContext } from "../../workspace/hooks";
+import { useUser } from "../../api/user/hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 import { applyInspectedBundleFiles, type InspectedBundleFile } from "../../algorithms/models/bundle-planner";
 import type { Bundle } from "../bundle-types";
 import {
@@ -28,7 +28,7 @@ import {
   useCreateModelMutation,
   useInspectArtifactMutation,
   useMatchArtifactsMutation,
-} from "../hooks";
+} from "../../api/models/hooks";
 
 let _nextId = 1;
 

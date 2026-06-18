@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Navigate, Outlet } from "react-router";
-import { useUser } from "../user/hooks";
-import { useWorkspaceContextSync } from "../workspace/hooks";
+import { useUser } from "../api/user/hooks";
+import { useWorkspaceContextSync } from "../api/workspace/hooks";
 import { EditorAssemblyLoader } from "./EditorAssemblyLoader";
 
 export function EditorRouteFallback() {

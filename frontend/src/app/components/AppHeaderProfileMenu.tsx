@@ -1,7 +1,7 @@
 import { ChevronDown, LogOut, ShieldCheck, User2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { useLogout, useUser } from "../../user/hooks";
+import { useLogout, useUser } from "../../api/user/hooks";
 import { AppPanel } from "./AppPanel";
 import { cx } from "./cx";
 import { FOCUS_RING } from "./focus-ring";

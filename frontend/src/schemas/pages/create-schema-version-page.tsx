@@ -20,14 +20,14 @@ import {
 import { isRecord } from "../../algorithms/mlform/shared";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
-import { useCreateSchemaVersionMutation, useSchema, useSchemaVersions } from "../hooks";
+import { useCreateSchemaVersionMutation, useSchema, useSchemaVersions } from "../../api/schemas/hooks";
 import { prepareSchemaVersionForSave } from "../../algorithms/schema/binding-rebase";
 import {
   schemaVersionId,
   selectSchemaVersion,
   sortSchemaVersions,
 } from "../../algorithms/schema/version-selection";
-import type { CreateSchemaVersionRequest } from "../types";
+import type { CreateSchemaVersionRequest } from "../../api/schemas/dtos";
 
 export function CreateSchemaVersionPage() {
   const { schemaId } = useParams<{ schemaId: string }>();

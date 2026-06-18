@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { getString, isRecord, toUniqueId } from "../../../algorithms/mlform/shared";
-import type { ModelDto } from "../../../models/api/modelService";
+import type { ModelDto } from "../../../api/models/services";
 import { applyOneHotCategories } from "../one-hot-category";
-import type { CreateSchemaVersionRequest, JsonRecord } from "../../../schemas/types";
+import type { CreateSchemaVersionRequest, JsonRecord } from "../../../api/schemas/dtos";
 
 /**
  * SelectedSchemaModel: describes the public data contract consumed or returned by this algorithm.

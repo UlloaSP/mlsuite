@@ -16,7 +16,7 @@ import {
 } from "../../algorithms/mlform/schema-run-result-state";
 import { isRecord } from "../../algorithms/mlform/shared";
 import { schemaRunDebug, schemaRunDebugError } from "../../algorithms/schema/run-debug";
-import type { JsonRecord, SchemaVersionDto } from "../types";
+import type { JsonRecord, SchemaVersionDto } from "../../api/schemas/dtos";
 import { getSchemaRunPrefillInputs } from "../../algorithms/schema/input-display";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 

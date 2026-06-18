@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import type { CatalogReportDefinition } from "../../algorithms/plugin/custom-report-catalog";
 import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import { getSchemaResultReports } from "../../algorithms/schema/report-display";
-import type { PredictionResultDto, SchemaVersionDto } from "../types";
+import type { PredictionResultDto, SchemaVersionDto } from "../../api/schemas/dtos";
 import { SchemaRunReportRenderer } from "./SchemaRunReportRenderer";
 
 type Props = {

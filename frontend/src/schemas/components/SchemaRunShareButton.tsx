@@ -1,7 +1,7 @@
 import { Share2 } from "lucide-react";
 import { useState } from "react";
 import { AppButton } from "../../app/components";
-import type { PredictionRunDto, SchemaVersionDto } from "../types";
+import type { PredictionRunDto, SchemaVersionDto } from "../../api/schemas/dtos";
 import { SchemaRunReviewLinkDialog } from "./SchemaRunReviewLinkDialog";
 
 type Props = {

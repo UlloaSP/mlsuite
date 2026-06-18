@@ -1,3 +1,71 @@
+# Review Domain Merge
+
+## Goal
+
+- [x] Merge `frontend/src/schema-review` into `frontend/src/review`.
+- [x] Move `frontend/src/api/schema-review` into `frontend/src/api/review`.
+- [x] Move `frontend/src/algorithms/schema-review` into `frontend/src/algorithms/review`.
+- [x] Leave no stale `schema-review` source folder or import path.
+
+## Plan
+
+- [x] Move files/directories with same names first, no behavior rewrite.
+- [x] Rewrite imports from `schema-review` paths to `review` paths.
+- [x] Keep URLs/tokens/backend endpoint strings unchanged unless they are frontend ownership names.
+- [x] Run TypeScript, tests, line-count, react-doctor, graph update.
+
+## Review
+
+- Moved feature UI from `frontend/src/schema-review` to `frontend/src/review`.
+- Moved API domain from `frontend/src/api/schema-review` to `frontend/src/api/review`.
+- Moved algorithms from `frontend/src/algorithms/schema-review` to `frontend/src/algorithms/review`.
+- Updated frontend route ownership and generated links from `/schema-review/...` to `/review/...`.
+- Kept backend endpoint strings as `/api/schema-review-links` because that is the server contract.
+- Removed old `schema-review` source directories; stale-path grep has no matches.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 29 files / 100 tests.
+  - Repo: frontend source/test line-count passed, no file >300 lines.
+  - Repo: old `frontend/src/schema-review`, `frontend/src/api/schema-review`, and `frontend/src/algorithms/schema-review` paths are absent.
+  - Repo: stale path grep passed for old imports/routes and accidental `/api/review-links`.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 214 warnings.
+  - Repo: `graphify update .` passed.
+
+# Frontend API Architecture Move
+
+## Goal
+
+- [x] Move frontend API contracts into `frontend/src/api`.
+- [x] Organize by domain first: `dtos/`, `services/`, `hooks/`.
+- [x] Enforce max one DTO/service/hook export per file with arch tests.
+- [x] Leave feature folders using API only, not owning API contracts.
+
+## Plan
+
+- [x] Audit current `*/api/*Service.ts`, `*/hooks.ts`, `*/types.ts`, and API-like hook files.
+- [x] Create `src/api/<domain>/{dtos,services,hooks}` and move files with semantic names.
+- [x] Split DTO/service/hook files so each file owns one DTO, service fn, or TanStack hook.
+- [x] Rewrite imports in app and tests.
+- [x] Add one architecture test that fails on misplaced API files or multi-symbol API files.
+- [x] Run TypeScript, tests, line-count, react-doctor, graph update.
+
+## Review
+
+- Created `frontend/src/api/{admin-users,core,infrastructure,models,plugins,schema-review,schemas,search,user,workspace}`.
+- Split API into 100 DTO files, 79 service files, and 62 hook files; barrels only re-export.
+- Removed legacy feature-owned API files such as `schemas/types.ts`, `models/api/*`, `workspace/api/*`, `user/hooks.ts`, and similar.
+- Added `frontend/test/api-architecture.test.ts` to enforce API location and max one DTO/service/hook owner per file.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 29 files / 100 tests.
+  - Repo: no frontend source/test file over 300 lines.
+  - Repo: no legacy `*/api/` files outside `src/api`.
+  - Repo: no stale imports to removed API/type paths.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 214 warnings.
+  - Repo: `graphify update .` passed.
+
 # Frontend Algorithms TSDoc Audit
 
 ## Goal

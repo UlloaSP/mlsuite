@@ -9,7 +9,7 @@ import { AppSelect, AppTextField, cx } from "../../../app/components";
 import {
   usePluginCatalogPageQuery,
   usePluginCatalogStatsQuery,
-} from "../hooks/usePluginCatalogPageData";
+} from "../../../api/plugins/hooks";
 import { SORT_LABELS, type SortMode, type TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
 
 export type PluginCatalogToolbarProps = {

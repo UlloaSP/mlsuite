@@ -18,12 +18,12 @@ import {
   AppToolbar,
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
-import { useUser } from "../../user/hooks";
-import { useWorkspaceContext } from "../../workspace/hooks";
-import * as modelApi from "../api/modelService";
+import { useUser } from "../../api/user/hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
+import * as modelApi from "../../api/models/services";
 import type { ModelAction } from "../components/ModelActionsMenu";
 import { ModelListItem } from "../components/ModelListItem";
-import { useGetModels } from "../hooks";
+import { useGetModels } from "../../api/models/hooks";
 
 type ModelSortMode = "updated" | "name" | "algorithm";
 

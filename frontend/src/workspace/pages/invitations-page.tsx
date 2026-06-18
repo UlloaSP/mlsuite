@@ -12,7 +12,7 @@ import {
   AppSurface,
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
-import { getRoles } from "../api/roleAdminService";
+import { getRoles } from "../../api/workspace/services";
 import {
   bulkRevokeInvitations,
   createInvitation,
@@ -21,15 +21,15 @@ import {
   getTeams,
   resendInvitation,
   revokeInvitation,
-} from "../api/workspaceService";
+} from "../../api/workspace/services";
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
 import { AdminStatCard } from "../components/admin/AdminStatCard";
 import { StatusBadge } from "../components/admin/StatusBadge";
 import { InviteForm } from "../components/InviteForm";
 import { RoleBadge } from "../components/RoleBadge";
-import { useWorkspaceContext } from "../hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 import { invitationRoleOptions } from "../../algorithms/workspace/invitation-role-options";
-import type { InvitationStatus } from "../types";
+import type { InvitationStatus } from "../../api/workspace/dtos";
 
 const statuses: Array<InvitationStatus | "ALL"> = [
   "ALL",

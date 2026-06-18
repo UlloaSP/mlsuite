@@ -12,7 +12,7 @@ import { createPredictionPrimitiveRegistry } from "../../app/utils/mlform/primit
 import { isBuiltinReportKind } from "../../algorithms/mlform/builtin-registry";
 import { patchSchemaReportContext } from "../../algorithms/schema/report-plugin-context";
 import type { SchemaDisplayReport } from "../../algorithms/schema/report-display";
-import type { PredictionResultDto, SchemaVersionDto } from "../types";
+import type { PredictionResultDto, SchemaVersionDto } from "../../api/schemas/dtos";
 import { isRecord } from "../../algorithms/mlform/shared";
 import { describeSchemaCustomReport } from "../../algorithms/schema/report-descriptor";
 import { SchemaPrimitiveReport } from "./SchemaPrimitiveReport";

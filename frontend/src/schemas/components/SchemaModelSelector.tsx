@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Check, Database } from "lucide-react";
 import { AppBadge, AppCopy, AppPanel, AppSectionTitle, cx } from "../../app/components";
 import { isRecord } from "../../algorithms/mlform/shared";
-import type { ModelDto } from "../../models/api/modelService";
+import type { ModelDto } from "../../api/models/services";
 import { getModelAlgorithmLabel } from "../../algorithms/models/utils";
 
 type Selection = {

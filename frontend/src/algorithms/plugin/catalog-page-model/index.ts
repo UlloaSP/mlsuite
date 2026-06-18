@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PluginDto } from "../../../plugin/api/pluginService";
+import type { PluginDto } from "../../../api/plugins/services";
 import type { DetectedPluginType } from "../catalog-loader";
 
 /**
