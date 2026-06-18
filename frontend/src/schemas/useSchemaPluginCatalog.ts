@@ -5,10 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { schemaNeedsPluginCatalog } from "../plugin/mlform/schema-needs-plugin-catalog";
+import { schemaNeedsPluginCatalog } from "../algorithms/plugin/schema-needs-plugin-catalog";
 import { loadPredictionCatalogDefinitions } from "../models/loadPredictionCatalogDefinitions";
 import type { PredictionCatalogDefinitions } from "../models/loadPredictionCatalogDefinitions";
-import { schemaRunDebug, schemaRunDebugError } from "../app/utils/mlform/schema-run-debug";
+import { schemaRunDebug, schemaRunDebugError } from "../algorithms/schema/run-debug";
 
 const emptyCatalog: PredictionCatalogDefinitions = {
   fieldDefinitions: [],

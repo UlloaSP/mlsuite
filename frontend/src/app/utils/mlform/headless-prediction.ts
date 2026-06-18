@@ -15,9 +15,9 @@ import {
 } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
 import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
-import { toMlformSchema } from "./schema-validation";
-import { type PredictionPayloadField, type PredictionTheme } from "./shared";
-import { createPredictionTransport } from "./transport";
+import { toMlformSchema } from "../../../algorithms/mlform/schema-validation";
+import { type PredictionPayloadField, type PredictionTheme } from "../../../algorithms/mlform/shared";
+import { createPredictionTransport } from "../../../algorithms/mlform/prediction-transport";
 
 const createPredictionEngineRegistry = (
   customFieldDefinitions: readonly CatalogFieldDefinition[],

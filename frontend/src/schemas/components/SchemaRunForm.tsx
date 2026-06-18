@@ -8,16 +8,16 @@ import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import { AppCopy, AppPanel, AppButton } from "../../app/components";
-import { applyPredictionInputsToSchema } from "../../app/utils/mlform/schema";
+import { applyPredictionInputsToSchema } from "../../algorithms/mlform/schema-compat";
 import { mountSchemaRunForm } from "../../app/utils/mlform/schema-run-mount";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
-} from "../../app/utils/mlform/schema-run-result-state";
-import { isRecord } from "../../app/utils/mlform/shared";
-import { schemaRunDebug, schemaRunDebugError } from "../../app/utils/mlform/schema-run-debug";
+} from "../../algorithms/mlform/schema-run-result-state";
+import { isRecord } from "../../algorithms/mlform/shared";
+import { schemaRunDebug, schemaRunDebugError } from "../../algorithms/schema/run-debug";
 import type { JsonRecord, SchemaVersionDto } from "../types";
-import { getSchemaRunPrefillInputs } from "../schema-run-display";
+import { getSchemaRunPrefillInputs } from "../../algorithms/schema/input-display";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 
 type Props = {

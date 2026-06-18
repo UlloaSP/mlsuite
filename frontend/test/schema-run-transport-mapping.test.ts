@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test, vi } from "vite-plus/test";
-import { createSchemaRunTransport } from "../src/app/utils/mlform/schema-run-transport";
+import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
 
 describe("schema run transport mapping", () => {
   test("runs every binding when labels changed but mappedTo keeps model keys", async () => {

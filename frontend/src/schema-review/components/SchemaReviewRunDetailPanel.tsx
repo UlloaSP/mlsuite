@@ -4,12 +4,12 @@ import { isBuiltinReportKind } from "../../app/utils/mlform/builtin-registry";
 import { ReviewAccordionSection } from "../../review/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "../../review/components/ReviewInputsSection";
 import { ReviewOutputsSection, type TargetDto } from "../../review/components/ReviewOutputsSection";
-import { getFormattedReportContent } from "../../models/report-feedback-utils";
+import { getFormattedReportContent } from "../../algorithms/models/report-feedback-utils";
 import {
-  getSchemaResultReports,
   getVisibleSchemaInputRecord,
   mergeSchemaRunInputs,
-} from "../../schemas/schema-run-display";
+} from "../../algorithms/schema/input-display";
+import { getSchemaResultReports } from "../../algorithms/schema/report-display";
 import type { SchemaVersionDto } from "../../schemas/types";
 import { useSchemaReviewRun } from "../hooks";
 import { SchemaReviewCombinedFeedbackForm } from "./SchemaReviewCombinedFeedbackForm";

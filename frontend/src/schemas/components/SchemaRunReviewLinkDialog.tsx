@@ -7,7 +7,7 @@ import { Copy, Link2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppButton, AppIconButton, AppTextField } from "../../app/components";
-import { formatTimestamp } from "../../models/utils";
+import { formatTimestamp } from "../../algorithms/models/utils";
 import {
   useCreateSchemaReviewLinkMutation,
   useRevokeSchemaReviewLinkMutation,

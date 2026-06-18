@@ -10,14 +10,14 @@ import { AppCopy, AppPanel } from "../../app/components";
 import { getBackendBaseUrl } from "../../app/config/runtimeConfig";
 import { createPredictionPrimitiveRegistry } from "../../app/utils/mlform/primitive-registry";
 import { isBuiltinReportKind } from "../../app/utils/mlform/builtin-registry";
-import { patchSchemaReportContext } from "../../app/utils/mlform/schema-report-plugin-context";
-import type { SchemaDisplayReport } from "../schema-run-display";
+import { patchSchemaReportContext } from "../../algorithms/schema/report-plugin-context";
+import type { SchemaDisplayReport } from "../../algorithms/schema/report-display";
 import type { PredictionResultDto, SchemaVersionDto } from "../types";
-import { isRecord } from "../../app/utils/mlform/shared";
-import { describeSchemaCustomReport } from "../schema-report-descriptor";
+import { isRecord } from "../../algorithms/mlform/shared";
+import { describeSchemaCustomReport } from "../../algorithms/schema/report-descriptor";
 import { SchemaPrimitiveReport } from "./SchemaPrimitiveReport";
 import { SchemaRunReportCard } from "./SchemaRunReportCard";
-import { schemaRunDebug } from "../../app/utils/mlform/schema-run-debug";
+import { schemaRunDebug } from "../../algorithms/schema/run-debug";
 
 type Props = {
   version: SchemaVersionDto;

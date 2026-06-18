@@ -8,13 +8,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { createSchemaRunRuntime } from "../app/utils/mlform/schema-run-runtime";
-import { isRecord } from "../app/utils/mlform/shared";
+import { isRecord } from "../algorithms/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "../models/loadPredictionCatalogDefinitions";
-import { parseSpreadsheetPredictionFile } from "../models/parseSpreadsheetPredictionFile";
+import { parseSpreadsheetPredictionFile } from "../algorithms/models/parse-spreadsheet-prediction-file";
 import { createPredictionRun, getLastPredictionRunId } from "./api/schemaService";
 import { PREDICTION_RUNS_QUERY_KEY } from "./hooks";
-import { prependMissingPredictionRuns } from "./schema-run-cache";
-import { getModelInputBulkSchema, toSchemaRunSerializedValues } from "./schema-run-bulk-inputs";
+import { prependMissingPredictionRuns } from "../algorithms/schema/run-cache";
+import { getModelInputBulkSchema, toSchemaRunSerializedValues } from "../algorithms/schema/bulk-upload";
 import type { CreatePredictionRunRequest, PredictionRunDto, SchemaVersionDto } from "./types";
 
 type Status = "idle" | "parsing" | "processing" | "done";

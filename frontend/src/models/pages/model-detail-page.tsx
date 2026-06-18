@@ -17,7 +17,7 @@ import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";
 import { ModelSummaryTab } from "../components/ModelSummaryTab";
 import { useGetModels } from "../hooks";
-import { findModelById, formatTimestamp, getModelAlgorithmLabel } from "../utils";
+import { findModelById, formatTimestamp, getModelAlgorithmLabel } from "../../algorithms/models/utils";
 
 export function ModelDetailPage() {
   const navigate = useNavigate();

@@ -13,7 +13,7 @@ import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
-} from "../../models/combined-feedback-questionnaire";
+} from "../../algorithms/models/combined-feedback-questionnaire";
 import { ReportFeedbackSummary } from "../../models/components/ReportFeedbackSummary";
 import { ReportQuestionnaireMount } from "../../models/components/ReportQuestionnaireMount";
 import {
@@ -23,8 +23,8 @@ import {
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
-} from "../schema-feedback-state";
-import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
+} from "../../algorithms/schema/feedback-state";
+import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
 import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../types";
 
 type Props = {

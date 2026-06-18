@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import { createOutputFeedbackQuestionnaire } from "../src/models/output-feedback-questionnaire";
+import { createOutputFeedbackQuestionnaire } from "../src/algorithms/models/output-feedback-questionnaire";
 
 describe("output feedback questionnaire", () => {
   test("uses category assessment for classifier", () => {

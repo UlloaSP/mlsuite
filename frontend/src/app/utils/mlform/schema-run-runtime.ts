@@ -9,12 +9,12 @@ import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import type { FormSchema, Registry, ReportConfig, Transport } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
 import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
-import { toMlformSchema } from "./schema-validation";
-import { isRecord, type PredictionPayloadField } from "./shared";
-import { createSchemaRunTransport } from "./schema-run-transport";
-import { wrapSchemaReportDefinitions } from "./schema-report-plugin-context";
-import { schemaRunDebug } from "./schema-run-debug";
-import { toMlformRuntimeSchema } from "./schema-runtime-adapter";
+import { toMlformSchema } from "../../../algorithms/mlform/schema-validation";
+import { isRecord, type PredictionPayloadField } from "../../../algorithms/mlform/shared";
+import { createSchemaRunTransport } from "../../../algorithms/schema/run-transport";
+import { wrapSchemaReportDefinitions } from "../../../algorithms/schema/report-plugin-context";
+import { schemaRunDebug } from "../../../algorithms/schema/run-debug";
+import { toMlformRuntimeSchema } from "../../../algorithms/mlform/schema-runtime-adapter";
 
 type Binding = {
   modelId: string;
@@ -84,12 +84,29 @@ const transportFields = (
 
 const reportMappings = (schema: unknown): readonly unknown[] => {
   if (!isRecord(schema) || !Array.isArray(schema.reports)) return [];
-  return schema.reports.filter(isRecord).map((report, index) => {
+  const mappings: unknown[] = [];
+  schema.reports.forEach((report, index) => {
+    if (!isRecord(report)) return;
     if (report.mappedTo === undefined) {
       throw new Error(`Schema report ${index + 1} falta mappedTo`);
     }
-    return report.mappedTo;
+    mappings.push(report.mappedTo);
   });
+  return mappings;
+};
+
+const restoreReportMappings = (
+  formSchema: FormSchema,
+  mappings: readonly unknown[],
+): FormSchema => {
+  if (mappings.length === 0 || !Array.isArray(formSchema.reports)) return formSchema;
+  return {
+    ...formSchema,
+    reports: formSchema.reports.map((report: ReportConfig, index: number) => ({
+      ...report,
+      mappedTo: mappings[index],
+    })),
+  };
 };
 
 export const createSchemaRunRuntime = ({
@@ -104,11 +121,12 @@ export const createSchemaRunRuntime = ({
     customReports: customReportDefinitions.map((definition) => definition.kind),
   });
   const schemaReportDefinitions = wrapSchemaReportDefinitions(customReportDefinitions);
-  const formSchema = toMlformSchema(toMlformRuntimeSchema(schema), {
+  const normalizedFormSchema = toMlformSchema(toMlformRuntimeSchema(schema), {
     customFieldDefinitions,
     customReportDefinitions: schemaReportDefinitions,
   });
   const mappings = reportMappings(schema);
+  const formSchema = restoreReportMappings(normalizedFormSchema, mappings);
   const normalizedFields = transportFields(formSchema, schema);
   schemaRunDebug("runtime.create.normalized-schema", {
     fields: formSchema.fields.length,

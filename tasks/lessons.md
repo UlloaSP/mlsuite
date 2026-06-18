@@ -1,5 +1,23 @@
 # Lessons
 
+## 2026-06-17 - MLForm UI fetch regression correction
+
+- Correction: removing MLSuite prefetch before proving mounted MLForm UI consumes upstream report fetch state left report cards in error and no analyzer request visible.
+- Rule: MLForm submit pipeline fixes must verify both headless `executeFormPipeline()` and mounted `mountForm` UI path; kit submit may not use the pipeline automatically.
+- Correction: storing MLSuite skipped sentinel as a report payload can still render as MLForm report `ERROR` when the plugin has a strict payload schema.
+- Rule: skipped/unsupported custom report fetches must be omitted from MLForm `reports`; sentinel is only safe in internal raw/result merge paths that explicitly filter it.
+- Correction: tests that only assert "fetch was called" missed the user-visible error card regression.
+- Rule: schema custom-report regressions need a strict `payloadSchema` fake and a mounted-style `form.submit()` assertion that unsupported reports do not enter `error` state.
+- Correction: omitting unsupported report payloads fixed MLForm `ERROR` but left the report controller `idle`, so save/result code kept waiting forever.
+- Rule: unsupported schema custom reports need an internal skipped id marker outside MLForm `reports`; result-state pending checks must ignore those ids without feeding invalid payloads to plugins.
+- Correction: explanations fetch could still receive the full schema input record through report request values, causing 400 missing-feature errors for the target model.
+- Rule: schema custom-report fetch requests must be model-scoped across `values`, `fieldValues`, `serializedValues`, `serializedFieldValues`, and `meta.backendFieldValues`; tests must inspect request bodies, not only URLs.
+
+## 2026-06-17 - MLForm report fetch correction
+
+- Correction: treating schema custom report prefetch as an upstream MLForm gap was stale; MLForm already exposes `ReportDefinition.fetch`, `executeReportFetches`, and `executeFormPipeline`.
+- Rule: before adding or preserving app-owned MLForm lifecycle workarounds, check current MLForm runtime exports and prefer upstream orchestration APIs over duplicating report fetch logic.
+
 ## 2026-06-17 - Schema feedback/display correction
 
 - Correction: schema reports without persisted ids lost classifier config during feedback-step building, so assessment fell back to number.
@@ -460,3 +478,9 @@
 - Rule: schema transport must build model input from exact field ids and mapped model keys; multi-model bulk regressions must assert every binding succeeds and every mapped report is hydrated.
 - Correction: normalized label aliases overcomplicated schema bulk mapping and broke lowercase/special-character cases.
 - Rule: schema bulk/model paths must not slug, uppercase, lowercase, or deaccent labels/headers at runtime; CSV uses exact model feature names, MLForm uses exact field ids, labels are display-only.
+- Correction: first schema algorithm move missed smaller pure helpers in `src/schemas` after moving the obvious merge/one-hot/display/bulk/export files.
+- Rule: before claiming frontend algorithms were moved, audit all non-hook/non-API/non-type exports in the feature folder and classify each as algorithm, wiring, UI, or contract.
+- Correction: after moving non-schema algorithms, tests still imported old feature-folder paths because only app source was typechecked first.
+- Rule: broad frontend algorithm moves must include `frontend/test` import rewrites and full `vp test`; TypeScript app build alone does not cover test import paths.
+- Correction: broad string-based import replacement produced invalid paths during the move.
+- Rule: use computed relative-path rewrites from old absolute module location to new location; do not apply broad textual replacements across unrelated specifiers.

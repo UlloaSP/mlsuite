@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, it } from "vite-plus/test";
 import { createMlRegistryPack } from "mlform/builtins";
-import { schemaNeedsPluginCatalog } from "../src/plugin/mlform/schema-needs-plugin-catalog";
-import { validateMlformSchema } from "../src/app/utils/mlform/schema-validation";
+import { schemaNeedsPluginCatalog } from "../src/algorithms/plugin/schema-needs-plugin-catalog";
+import { validateMlformSchema } from "../src/algorithms/mlform/schema-validation";
 
 const builtinSchema = {
   fields: [

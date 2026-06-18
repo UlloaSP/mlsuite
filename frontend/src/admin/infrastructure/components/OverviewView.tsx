@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Download, RefreshCw } from "lucide-react";
 import { AppButton } from "../../../app/components";
-import { countHealthyServices, countProblemServices, toneForMetric } from "../dashboardSummary";
-import { formatBytes, formatPercent } from "../formatters";
+import { countHealthyServices, countProblemServices, toneForMetric } from "../../../algorithms/admin/infrastructure/dashboard-summary";
+import { formatBytes, formatPercent } from "../../../algorithms/admin/infrastructure/formatters";
 import type { InfrastructureOverviewDto } from "../types";
 import { KpiCard, SegmentedControl } from "./OverviewViewSupport";
 import { OverviewChartPanel } from "./OverviewChartPanel";

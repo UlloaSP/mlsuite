@@ -16,12 +16,12 @@ import {
   AppSelect,
 } from "../../app/components";
 import { useSchema, useSchemaVersions } from "../hooks";
-import { countVisibleSchemaFields } from "../one-hot-schema";
+import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
 import {
   schemaVersionId,
   selectSchemaVersion,
   sortSchemaVersions,
-} from "../schema-version-selection";
+} from "../../algorithms/schema/version-selection";
 
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();

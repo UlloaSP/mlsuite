@@ -7,7 +7,7 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   prepareSchemaVersionDtoForUse,
   prepareSchemaVersionForSave,
-} from "../src/schemas/schema-binding-rebase";
+} from "../src/algorithms/schema/binding-rebase";
 import type { CreateSchemaVersionRequest } from "../src/schemas/types";
 
 const baseRequest = (): CreateSchemaVersionRequest => ({

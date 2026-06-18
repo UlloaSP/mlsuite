@@ -17,16 +17,16 @@ import {
   AppSelect,
   AppTextField,
 } from "../../app/components";
-import { isRecord } from "../../app/utils/mlform/shared";
+import { isRecord } from "../../algorithms/mlform/shared";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
 import { useCreateSchemaVersionMutation, useSchema, useSchemaVersions } from "../hooks";
-import { prepareSchemaVersionForSave } from "../schema-binding-rebase";
+import { prepareSchemaVersionForSave } from "../../algorithms/schema/binding-rebase";
 import {
   schemaVersionId,
   selectSchemaVersion,
   sortSchemaVersions,
-} from "../schema-version-selection";
+} from "../../algorithms/schema/version-selection";
 import type { CreateSchemaVersionRequest } from "../types";
 
 export function CreateSchemaVersionPage() {

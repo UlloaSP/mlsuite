@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AppCopy, AppPanel } from "../../app/components";
-import { formatDisplayValue } from "../schema-run-display";
+import { formatDisplayValue } from "../../algorithms/schema/input-display";
 import type { JsonRecord } from "../types";
 
 type Props = {

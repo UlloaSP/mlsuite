@@ -10,7 +10,7 @@ import type {
   PrimitiveReportRendererElement,
   PrimitiveText,
 } from "mlform/primitives";
-import { normalizeCustomReportResult } from "./custom-report-result";
+import { normalizeCustomReportResult } from "../../algorithms/plugin/custom-report-result";
 
 export const CUSTOM_REPORT_RENDERER_TAG = "mlsuite-custom-report-renderer";
 

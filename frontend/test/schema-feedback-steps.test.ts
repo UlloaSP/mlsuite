@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
-import { skippedSchemaReportPayload } from "../src/app/utils/mlform/schema-report-plugin-context";
-import { buildSchemaFeedbackSteps } from "../src/schemas/schema-feedback-steps";
-import { getSchemaResultReports } from "../src/schemas/schema-run-display";
+import { skippedSchemaReportPayload } from "../src/algorithms/schema/report-plugin-context";
+import { buildSchemaFeedbackSteps } from "../src/algorithms/schema/feedback-steps";
+import { getSchemaResultReports } from "../src/algorithms/schema/report-display";
 import type { PredictionRunDto, SchemaVersionDto } from "../src/schemas/types";
 
 const version: SchemaVersionDto = {

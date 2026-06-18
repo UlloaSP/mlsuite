@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { describe, expect, test } from "vite-plus/test";
 import {
   getMappedSchemaInputRecord,
-  getSchemaResultReports,
   getVisibleSchemaInputRecord,
   getVisibleSchemaInputs,
   mergeSchemaRunInputs,
-} from "../src/schemas/schema-run-display";
+} from "../src/algorithms/schema/input-display";
+import { getSchemaResultReports } from "../src/algorithms/schema/report-display";
 
 describe("schema run display", () => {
   test("fills visible fields from model input fallback", () => {

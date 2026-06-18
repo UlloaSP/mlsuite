@@ -7,7 +7,7 @@ import { FileDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppButton } from "../../app/components";
 import { usePredictionRunsFeedback } from "../hooks";
-import { buildSchemaRunExport, downloadSchemaRunExport } from "../schema-run-export";
+import { buildSchemaRunExport, downloadSchemaRunExport } from "../../algorithms/schema/export";
 import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../types";
 import { SchemaRunExportReviewModal } from "./SchemaRunExportReviewModal";
 import {

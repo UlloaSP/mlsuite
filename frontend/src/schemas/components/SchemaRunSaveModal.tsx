@@ -16,15 +16,15 @@ import {
   AppIconButton,
   AppTextField,
 } from "../../app/components";
-import { buildCombinedFeedbackQuestionnaire } from "../../models/combined-feedback-questionnaire";
+import { buildCombinedFeedbackQuestionnaire } from "../../algorithms/models/combined-feedback-questionnaire";
 import {
   ReportQuestionnaireMount,
   type ReportQuestionnaireMountHandle,
 } from "../../models/components/ReportQuestionnaireMount";
 import type { CreatePredictionRunRequest, JsonRecord, SchemaVersionDto } from "../types";
-import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
-import { buildPendingSchemaRunFeedback, type PendingFeedback } from "../schema-run-save-feedback";
-import { getMappedSchemaInputRecord, mergeSchemaRunInputs } from "../schema-run-display";
+import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
+import { buildPendingSchemaRunFeedback, type PendingFeedback } from "../../algorithms/schema/pending-feedback";
+import { getMappedSchemaInputRecord, mergeSchemaRunInputs } from "../../algorithms/schema/input-display";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 import { SchemaRunInputsPanel } from "./SchemaRunInputsPanel";
 import { SchemaRunReportsPanel } from "./SchemaRunReportsPanel";

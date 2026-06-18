@@ -5,16 +5,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
-import { createReportFetchRequest } from "mlform/schema";
+import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
-import { createSchemaRunTransport } from "../src/app/utils/mlform/schema-run-transport";
+import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
 import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
-import { buildSchemaRunRawFromSubmitResult } from "../src/app/utils/mlform/schema-run-result-state";
+import { buildSchemaRunRawFromSubmitResult } from "../src/algorithms/mlform/schema-run-result-state";
 import {
   isSkippedSchemaReportPayload,
   wrapSchemaReportDefinitions,
-} from "../src/app/utils/mlform/schema-report-plugin-context";
-import { readReportContext } from "../src/app/utils/mlform/schema-run-report-mapping";
+} from "../src/algorithms/schema/report-plugin-context";
+import { readReportContext } from "../src/algorithms/mlform/schema-run-report-mapping";
 import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
 const customReportDefinition = (): CatalogReportDefinition => ({
@@ -192,19 +192,14 @@ describe("schema binding plugin policy", () => {
       bindings: [{ modelId: "model-1" }],
       customReportDefinitions: [fetchDefinition],
     });
-    const submitResult = await runtime.transport.submit({
-      serializedValues: { age: 42 },
-      reports: runtime.formSchema.reports,
-    } as never);
-    const report = runtime.registry.getReport("plugin-report");
-    const fetcher = report?.fetch?.({
-      config: runtime.formSchema.reports[0],
-      reportId: "crystal-schema",
+    const form = createForm({
+      schema: runtime.formSchema,
+      registry: runtime.registry,
+      transport: runtime.transport,
     });
-    await fetcher?.submit(
-      createReportFetchRequest(submitResult as never, { reportId: "crystal-schema" }),
-    );
-    const explanationCall = (fetch as ReturnType<typeof vi.fn>).mock.calls[2];
+    form.setValues({ age: 42 });
+    await executeFormPipeline({ form });
+    const explanationCall = (fetch as ReturnType<typeof vi.fn>).mock.calls[1];
     expect(String(explanationCall?.[0])).toContain("modelId=model-1");
     expect(JSON.parse(String(explanationCall?.[1]?.body)).instance).toEqual({ age: 42 });
   });

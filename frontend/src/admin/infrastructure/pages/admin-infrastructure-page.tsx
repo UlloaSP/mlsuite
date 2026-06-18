@@ -12,7 +12,7 @@ import {
   useServiceAction,
   useServiceLogsSnapshot,
 } from "../hooks/useInfrastructure";
-import { appendLogLine, applyInfrastructureEvent, resolveSelectedService } from "../state";
+import { appendLogLine, applyInfrastructureEvent, resolveSelectedService } from "../../../algorithms/admin/infrastructure/state";
 import { isOverviewSnapshotEvent, isServiceLogEvent } from "../types";
 import type { InfrastructureEvent, InfrastructureOverviewDto } from "../types";
 import { openInfrastructureSocket, subscribeToServiceLogs } from "../ws/infrastructureSocket";

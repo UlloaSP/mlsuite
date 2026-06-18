@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test, vi } from "vite-plus/test";
-import { createSchemaRunTransport } from "../src/app/utils/mlform/schema-run-transport";
-import { toSchemaRunSerializedValues } from "../src/schemas/schema-run-bulk-inputs";
+import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
+import { toSchemaRunSerializedValues } from "../src/algorithms/schema/bulk-upload";
 import type { SchemaVersionDto } from "../src/schemas/types";
 
 const version: SchemaVersionDto = {

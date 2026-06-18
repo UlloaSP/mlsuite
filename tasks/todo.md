@@ -1,16 +1,197 @@
+# Frontend Algorithms Full Move
+
+## Goal
+
+- [x] Move remaining non-schema frontend algorithms under `frontend/src/algorithms`.
+- [x] Leave feature folders for UI, hooks, API, DTO/types, runtime wiring only.
+- [x] Keep behavior unchanged.
+
+## Plan
+
+- [x] Audit pure helpers outside `src/algorithms`.
+- [x] Move pure model, MLForm, admin infra, plugin, review, editor, search helpers by domain.
+- [x] Update imports/tests.
+- [x] Run TypeScript, focused tests, line-count, react-doctor, graph update.
+
+## Review
+
+- Moved non-schema pure algorithms into `frontend/src/algorithms/{admin,editor,mlform,models,plugin,review,schema-review,search,workspace}`.
+- Moved remaining schema runtime/report algorithms into `frontend/src/algorithms/schema/{run-transport,custom-report-fetch,report-plugin-context,run-debug}`.
+- Left hooks, API clients, DTO/types, atoms, runtime mount/registry wiring, plugin loaders/renderers, and route/UI files in feature folders.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 28 files / 98 tests.
+  - Repo: frontend source/test line-count check passed, no file >300 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 158 warnings.
+  - Repo: `graphify update .` passed.
+
+# Frontend Schema Algorithms Move
+
+## Goal
+
+- [x] Move schema-touching frontend algorithms under `frontend/src/algorithms/schema`.
+- [x] Keep old feature folders as usage/wiring only, not algorithm homes.
+- [x] Preserve schema merge, one-hot category, visible input reconstruction, bulk upload, export, and transport payload behavior.
+
+## Plan
+
+- [x] Identify pure schema algorithms and current callers.
+- [x] Create screaming architecture folders:
+  - `schema/merge` for multi-model schema composition.
+  - `schema/one-hot-category` for one-hot field collapse/counting.
+  - `schema/input-display` for visible input reconstruction, prefill, mapped input reconstruction, and input merging.
+  - `schema/report-display` for result report normalization/renderability.
+  - `schema/bulk-upload` for model-facing bulk schema and serialized value reconstruction.
+  - `schema/export` for CSV export build/download.
+  - `schema/runtime-payload` for MLForm serialized values -> canonical/field/visible payload.
+  - `schema/model-input-mapping` for per-binding model input mapping.
+- [x] Move code, update imports, delete obsolete algorithm files.
+- [x] Run focused schema tests, TypeScript, line-count, `graphify update .`.
+
+## Review
+
+- Created `frontend/src/algorithms/schema/{merge,one-hot-category,input-display,report-display,bulk-upload,export,runtime-payload,model-input-mapping}`.
+- Follow-up audit moved remaining pure schema helpers to `binding-rebase`, `feedback-steps`, `feedback-state`, `pending-feedback`, `report-descriptor`, `version-selection`, and `run-cache`.
+- Removed old algorithm homes from `src/schemas` and `src/app/utils/mlform`; callers now import algorithms directly where used.
+- Split former `schema-run-display.ts` into input reconstruction and report display modules.
+- Made schema export helper `getSchemaRunModelInputColumns` internal after `react-doctor` flagged it unused.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-composer.test.ts test/one-hot-schema.test.ts test/schema-bulk-mapped-to.test.ts test/schema-one-hot-select-values.test.ts test/schema-run-display.test.ts test/schema-run-export-parity.test.ts test/schema-run-history.test.ts test/schema-bulk-label-mapping.test.ts` passed, 6 files / 21 tests.
+  - `frontend`: `vp test test/schema-binding-rebase.test.ts test/schema-feedback-state.test.ts test/schema-version-selectors-and-search-shortcut.test.ts test/schema-run-save-modal.test.ts test/schema-run-bulk-refresh.test.ts test/schema-review-output-context.test.ts test/schema-report-renderer.test.ts test/schema-feedback-steps.test.ts` passed, 8 files / 28 tests.
+  - Repo: frontend source/test line-count check passed, no file >300 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 161 warnings.
+  - Repo: `graphify update .` passed.
+
+# Schema Plugin Explanation Input Mapping Fix
+
+## Goal
+
+- [x] Explanation report fetch sends only target model features.
+- [x] Multi-model schema fields do not leak other-model mapped keys into `/api/analyzer/explanations`.
+- [x] Keep save-modal pending/error behavior from previous fix.
+
+## Plan
+
+- [x] Make custom report fetch request values model-scoped, using per-binding `modelInput`.
+- [x] Add regression that inspects explanation request bodies for each model.
+- [x] Run focused schema plugin tests, TS, line counts, react-doctor, graph update.
+
+## Review
+
+- Custom report fetch now sends per-model `modelInput` as `values`, `fieldValues`, `serializedValues`, `serializedFieldValues`, and `meta.backendFieldValues`.
+- Schema report wrapper now prefers per-report `modelInput` for `backendFieldValues`, avoiding stale/global meta payloads.
+- Transport regression checks `/api/analyzer/explanations` bodies: model-1 gets `{ age, rec }`, model-2 gets `{ years, don }`.
+- Verification:
+  - `frontend`: `vp test test/schema-plugin-transport.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-policy.test.ts` passed, 14 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - Repo: touched source/test line-count check passed; largest touched test 294 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 161 warnings.
+  - Repo: `graphify update .` passed.
+
+# Schema Plugin Error Regression Guard
+
+## Goal
+
+- [x] Add regression coverage for strict custom-report payload schema.
+- [x] Prove mounted-style schema submit does not turn unsupported custom reports into MLForm `ERROR`.
+- [x] Keep test change inside existing schema plugin lifecycle coverage.
+
+## Plan
+
+- [x] Make fake Crystal Tree report validate payload shape with `payloadSchema`.
+- [x] Assert unsupported mapped report remains non-error after mounted-style `form.submit()`.
+- [x] Assert unsupported mapped report no longer keeps schema run pending forever.
+- [x] Run focused tests, TS, line-count check, graph update.
+
+## Review
+
+- Added strict `payloadSchema` to lifecycle fake Crystal Tree report so sentinel/placeholder payloads fail like real plugin payload validation.
+- Mounted-style submit regression now asserts unsupported mapped custom report remains `idle` with `error === null`.
+- Unsupported custom reports now write only an internal `skippedReportIds` raw marker; MLForm `reports` stays clean, and `reportsPending` ignores those ids.
+- Verification:
+  - `frontend`: `vp test test/schema-plugin-lifecycle.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts` passed, 14 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - Repo: touched source/test line-count check passed: largest touched test 294 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 161 warnings.
+  - Repo: `graphify update .` passed.
+
+# Schema MLForm Mounted Fetch Fix
+
+## Goal
+
+- [x] Mounted schema form fetches custom reports after submit.
+- [x] Report cards no longer show error solely because fetch was not executed.
+- [x] Keep transport report fetch scoped to schema custom reports only.
+
+## Plan
+
+- [x] Reproduce mounted/UI fetch path with narrow test or runtime inspection.
+- [x] Patch smallest path that makes MLForm report fetch execute for mounted form.
+- [x] Verify focused tests, TS, line count, graph update.
+
+## Review
+
+- Restored schema custom report prefetch in transport, scoped to reports with custom fetch definitions and successful model context.
+- Kept MLForm runtime fetch support for headless pipeline, but mounted schema UI no longer depends on report-pane/lifecycle lazy fetch.
+- Removed second mounted `executeReportFetches()` pass; transport prefetch is single fetch path for mounted schema UI.
+- Failed/unsupported per-model custom report fetch is omitted from MLForm `reports`, avoiding invalid plugin payload/schema error cards.
+- Verification:
+  - `frontend`: `vp test test/schema-plugin-transport.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-policy.test.ts` passed, 14 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: touched file line-count check passed; all touched source/test files <300 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx react-doctor@latest --verbose` completed with existing 161 warnings.
+  - Repo: `graphify update .` passed.
+
+# Schema MLForm Report Fetch Cleanup
+
+## Goal
+
+- [x] Remove MLSuite manual custom-report prefetch from schema transport.
+- [x] Use MLForm report fetch orchestration for custom report payloads.
+- [x] Keep schema report context/model binding behavior intact.
+
+## Plan
+
+- [x] Move post-submit custom report fetching to MLForm runtime APIs.
+- [x] Delete the app-owned custom-report fetch helper and unused transport dependency.
+- [x] Update schema plugin regressions to use upstream pipeline/fetch behavior.
+- [x] Run focused frontend tests, typecheck, line-count check, graph update.
+
+## Review
+
+- Removed `schema-run-custom-report-fetch.ts`; schema transport now only submits predictions.
+- Schema custom reports now fetch through MLForm runtime orchestration: tests use `executeFormPipeline()`, mounted UI uses upstream `executeReportFetches()` after submit because MLForm kit submit does not expose pipeline mode.
+- Kept MLSuite-only context patching for mapped model report fetches; no model context still returns skipped payload and does not call analyzer fetch.
+- Verification:
+  - `frontend`: `vp test test/schema-plugin-transport.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-policy.test.ts` passed, 13 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: touched file line-count check passed; all touched source/test files <300 lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx react-doctor@latest --verbose` completed with existing 161 warnings.
+  - Repo: `graphify update .` passed; graph rebuilt.
+
 # Schema Classifier Feedback And Input Display Fix
 
 ## Goal
+
 - [x] Classifier assessment renders as category when report labels/mapping come from mapped classifier payload.
 - [x] Saved schema-run inputs render from mapped records, no `N/A` for valid values.
 
 ## Plan
+
 - [x] Add focused regression for classifier feedback kind with mapped classifier report payload.
 - [x] Add focused regression for visible inputs using per-model `mappedTo` records.
 - [x] Patch the smallest source helper(s) shared by modal/history/review.
 - [x] Run focused tests, typecheck, graph update.
 
 ## Review
+
 - `buildSchemaFeedbackSteps` now uses the resolved display report config when the original schema report has no runtime `id`, so classifier assessment stays `category`.
 - Schema input display reads label as UI alias again, but `getMappedSchemaInputRecord` still persists mapped target keys, not label keys.
 - Regression covers no-id classifier mapped report feedback and label-backed visible input display/save.
@@ -22,908 +203,3 @@
   - Repo: line-count check passed, no frontend source/test file >300 lines.
   - Repo: `git diff --check` passed with CRLF warnings only.
   - Repo: `graphify update .` passed.
-
-# Schema MappedTo Source Of Truth
-
-## Goal
-- [x] Persist schema-run input data by `mappedTo`, not label.
-- [x] Treat labels as display-only.
-- [x] Remove `source` from active report payload routing.
-- [x] Keep `id` as MLForm/UI runtime identity only.
-
-## Plan
-- [x] Add mapped-input persistence helper beside schema display helpers.
-- [x] Switch save modal to persist mapped input record.
-- [x] Remove label fallback from bulk/upload technical parsing.
-- [x] Remove report `source` payload aliases from schema transport/custom-report/result-state paths.
-- [x] Remove backend analyzer fallback `mappedTo = label`.
-- [x] Update focused regressions and run frontend/backend checks.
-
-## Review
-- Save modal now persists schema-run inputs keyed by mapped model targets, including one-hot option targets.
-- Labels are display-only: display helpers can render labels, but save/bulk parsing no longer maps label keys to model values.
-- Report routing now uses mapped report targets; validation/runtime normalization no longer injects or reads schema report `source`.
-- Backend analyzer schema generation now sets field `mappedTo` from `features.names`, not field label fallback.
-- Verification:
-  - `frontend`: `vp test` passed, 28 files / 96 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: focused schema tests passed, 6 files / 25 tests.
-  - `backend`: `uv run pytest tests/test_runtime_api.py` passed, 25 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
-  - Repo: line-count check passed, no source file >300 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Assessment Kind Contract Fix
-
-## Goal
-- [x] `assessment` field is `category` for classifier.
-- [x] `assessment` field is `number` for regressor.
-- [x] No labels/mapping heuristic changes kind.
-
-## Plan
-- [x] Replace labels heuristic with explicit `kind === "classifier"` branch.
-- [x] Update regression test for classifier/regressor contract.
-- [x] Run focused test, typecheck, graph update.
-
-## Review
-- `createOutputFeedbackQuestionnaire` now uses `category` only when `reportConfig.kind === "classifier"`.
-- `regressor` stays `number`, even if labels exist.
-- Removed labels/mapping kind inference.
-- Verification:
-  - `frontend`: `vp test test/output-feedback-questionnaire.test.ts test/schema-run-save-modal.test.ts test/schema-feedback-steps.test.ts` passed, 3 files / 10 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Schema Run Persistence Rework
-
-## Goal
-- [x] Persist schema input values from real MLForm submit shape, no `N/A`/`undefined`.
-- [x] Persist assessment/review values with category field ids.
-- [x] Persist plugin report payload from run result into saved run.
-
-## Plan
-- [x] Reproduce with focused tests using actual pending-run/raw shapes.
-- [x] Trace save modal, feedback builder, report payload lookup.
-- [x] Patch single source-of-truth helpers only.
-- [x] Run focused tests, typecheck, graph update, react-doctor.
-
-## Review
-- Fixed visible input reconstruction: `undefined`/`null`/empty direct aliases no longer block mapped model-key fallback.
-- Saved visible input now omits unresolved fields instead of persisting `undefined`.
-- Fixed custom plugin report persistence: prefetch path now stores normalized id, raw id, and mapped source in aggregate reports and owning result output.
-- Output assessment now becomes `category` whenever labels/mapping can derive class options, not only when `kind` is exactly `classifier`.
-- Regression added for unresolved input omission and label-backed category assessment.
-- Verification:
-  - `frontend`: `vp test` passed, 28 files / 94 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: focused tests passed, 4 files / 16 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Schema Run Persistence Follow-up
-
-## Goal
-- [x] Persist visible schema inputs without `N/A`/`undefined` drift.
-- [x] Keep classifier assessment as category in save modal and external review.
-- [x] Persist plugin report payloads after async MLForm report updates.
-
-## Plan
-- [x] Add regression proving saved request uses schema-visible inputs rebuilt from model payload fallback.
-- [x] Make visible-input reconstruction fall back through `mappedTo` targets for scalar and one-hot fields.
-- [x] Make async report result builder store report aliases like initial transport.
-- [x] Give output assessment questionnaire stable category field id.
-- [x] Remove stale schema-run test `signatureId` mappings touched by these paths.
-- [x] Run focused frontend tests, typecheck, line check, graph update.
-
-## Review
-- Save modal now persists `inputData` from schema-visible reconstruction, not stale first-submit raw input.
-- Visible reconstruction now falls back through field `mappedTo` targets, so scalar/category fields recover from model keys.
-- Async MLForm report updates now store report payload aliases under normalized id, raw id, and mapped source in both `raw.reports` and owning `result.output.reports`.
-- Classifier output feedback now has explicit `output-feedback-assessment` id and remains `category` in save modal/review.
-- Deleted stale `schema-composer-runtime.test.ts`; remaining frontend tests use schema-only model mappings.
-- Verification:
-  - `frontend`: `vp test` passed, 27 files / 92 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: line-count check passed for all frontend tests and touched source.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Schema Run Saved Values And Reports
-
-## Goal
-- [x] Save schema field values with the same model-target mapping used for prediction.
-- [x] Render normal and plugin reports in form, save modal, and history.
-- [x] Keep schema-only contract; no legacy signature compat.
-
-## Plan
-- [x] Trace saved input/report payload shape across MLForm transport and schema history display.
-- [x] Store report payload aliases consistently by report id and mapped source.
-- [x] Read visible saved inputs from schema input data plus model input data.
-- [x] Add focused frontend regression for mapped inputs plus normal/plugin report payloads.
-- [x] Run targeted frontend checks, line-count check, and graph update.
-
-## Review
-- Fixed saved input display so original schema values win over encoded `modelInput`; `modelInput` is fallback only.
-- Normal and plugin report payloads are stored under normalized id, raw id, and mapped source.
-- History/modal report lookup now checks report id as alias when mapped source key is absent.
-- Stale plugin transport tests moved to schema-only model keys; no `model:signature` mapping kept.
-- Verification:
-  - `frontend`: `vp test test/schema-run-display.test.ts test/schema-plugin-transport.test.ts` passed, 7 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: touched-file line check passed; max 274 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Signature Deprecation To Schemas
-
-## Goal
-- [x] Keep catalog/model flows.
-- [x] Remove signature as public API/UI contract.
-- [x] Make schemas bind to one or more models.
-- [x] Move former signature schema payload to schema contract.
-- [x] Remove downstream signature routes/usages where schema replaces them.
-
-## Plan
-- [x] Inventory API/frontend/backend signature dependencies and current dirty changes.
-- [x] Change API schema binding/result contracts from model+signature to model-only.
-- [x] Restore schema `>=1` model binding validation and tests.
-- [x] Delete dead frontend signature/prediction route files and imports.
-- [x] Delete API signature controller/service/entity/repository/tests that no longer back schema.
-- [x] Delete or isolate legacy prediction files after signature removal; keep schema-run prediction domain.
-- [x] Run compile/typecheck/tests, line-count check, graph update.
-
-## Review
-- Schema versions now accept one or more model bindings; duplicate model binding still rejected.
-- Signature API/service/entity/repository/tests deleted.
-- Legacy prediction API/service/entity/repository/tests deleted; schema-run prediction domain kept.
-- Legacy review-link API/UI deleted; schema-review kept and owns its own DTO/exception.
-- Model now owns generated `inputSchema`; create-model returns only model.
-- Frontend schema composer/selector now works from model schemas and supports multiple models.
-- Search no longer indexes signatures/predictions or exposes `signatureId`/legacy `predictionId`.
-- Verification:
-  - `api`: `mvn -q "-Dtest=SchemaFlowServiceTest,ModelCreationServiceTest,ModelControllerTest,AnalyzerControllerTest,SearchWorkspaceServiceTest,SearchControllerTest" test` passed.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/schema-composer.test.ts` passed, 6 tests.
-  - Source grep: no `signature` refs remain outside `schema-review` route name.
-  - Line-count check: no touched source file over 300 lines.
-  - Repo: `graphify update .` passed.
-
-# Schema mappedTo contract cleanup
-
-## Goal
-- [x] Stop persisting legacy schema model mapping fields.
-- [x] Stop generated schema fields/reports from persisting runtime ids/source.
-- [x] Use model/signature names as `mappedTo` record keys.
-- [x] Preserve per model/signature `mappedTo` records for `onehot-category`.
-- [x] Apply signature schema mapping/one-hot generation on signature save.
-- [x] Ensure initial model signatures shown in create-signature editor already include `mappedTo` and `onehot-category`.
-- [x] Show missing `mappedTo` as editor validation error instead of a runtime/editor exception.
-
-## Plan
-- [x] Locate single-model create-signature path showing raw base schema.
-- [x] Normalize base model signatures when loading editor.
-- [x] Fix source generator/persistence if initial signatures are saved raw.
-- [x] Add regression for single-model signature editor/schema output.
-- [x] Add MLSuite editor validation for missing field/report mappedTo.
-- [x] Run frontend/backend verification and graph update.
-
-## Review
-- Backend binding entity/request/DTO no longer carries `inputMapping` or `outputMapping`; DTO now exposes model/signature names.
-- Generated schema fields and reports no longer persist `id`/`source`; runtime derives ids after load.
-- Reports and one-hot options now persist `mappedTo` keyed by `modelName:signatureName`.
-- Signature save now prepares schema with generated `mappedTo`, strips runtime ids/source, and collapses one-hot fields to `onehot-category`.
-- Schema-run now accepts exact mapped model keys from MLForm submit for scalar fields and one-hot options.
-- Regression covers no-id schema with 18 scalar + 11 one-hot features = 29 model inputs and one mapped report payload.
-- Editor validation and runtime now share the same MLForm adapter for persisted mapped records.
-- Schema version creation preserves `modelName`/`signatureName`; report mapping lookup handles MLForm-normalized ids.
-- Correction applied: schema-run no longer maps reports by generated ids/source/labels; report configs are restored by schema order and routed only through `mappedTo`.
-- Correction applied: missing field/report/onehot-option `mappedTo` is now an editor validation error instead of guessing from labels or ids.
-- Correction applied: report rendering receives the exact schema report config already selected by `mappedTo`, so custom reports no longer re-find config by id/label.
-- Correction applied: signature/schema composition no longer derives model targets from `id`, `source`, or `label`; source signatures must provide `mappedTo`.
-- Correction applied: model signature editor now normalizes loaded base signatures, so old raw signatures display `mappedTo` and collapsed `onehot-category` before save.
-- Correction applied: analyzer `/build_schema` now emits `mappedTo` on generated fields and reports, so new initial model signatures are not born raw.
-- Correction applied: legacy analyzer output normalization stores report payloads under mapped report targets, so single-model schema run reports render from `mappedTo`.
-- Correction applied: missing field/report/onehot-option `mappedTo` now appears as Monaco/editor validation issue, so Save is disabled without crashing validation.
-- Verification:
-  - `backend`: `uv run pytest tests/test_runtime_api.py` passed, 25 tests.
-  - `api`: `mvn -q -DskipTests compile` passed.
-  - `frontend`: `vp fmt` passed.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/one-hot-schema.test.ts test/schema-plugin-policy.test.ts` passed, 2 files / 13 tests.
-  - `frontend`: `vp test test/builtin-registry.test.ts test/one-hot-schema.test.ts test/schema-plugin-readiness.test.ts` passed, 3 files / 14 tests.
-  - `frontend`: `vp test` passed, 33 files / 123 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing repo warnings; current scan reports 185 warnings.
-  - Repo: `graphify update .` passed.
-
-# Header Brand Match
-
-## Goal
-- [ ] Match header logo icon, type, and spacing to provided reference.
-
-## Plan
-- [x] Replace old blue mark with red MLSuite mark.
-- [x] Tune header brand type size/weight/color and icon-text gap.
-- [x] Apply same brand treatment to public auth header.
-- [x] Use `public/mlsuite-logo.svg` for favicon and shared header mark.
-- [x] Run frontend verification and graph update.
-
-## Review
-- `frontend/public/mlsuite-logo.svg` is now red `#ff385c`.
-- Cropped logo SVG viewBox so favicon/header mark fill available square.
-- `frontend/index.html` uses `/mlsuite-logo.svg` as favicon.
-- Shared `MLSuiteMark` renders that SVG asset, so app header and auth header use same mark.
-- Header brand type/gap adjusted to match reference direction.
-- Follow-up: SVG viewBox tightened and header mark sizes raised (`44px` app shell, `42px` auth) after favicon/header appeared too small.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp build` passed with existing Vite runtime-config/chunk warnings.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Preview: `http://127.0.0.1:5174/?brand=1` shows favicon `/mlsuite-logo.svg`, header img `36x36`, gap `16px`.
-  - Latest preview retry blocked: `PreviewAutomationNoFocusedOwnerError`; build verification covers final code.
-
-# Plugin Catalog Layout Polish
-
-## Goal
-- [ ] Make plugin toolbar feel compact and less mechanical.
-- [ ] Stop pagination from visually overlapping plugin rows.
-- [ ] Make plugin rows denser with clearer interaction.
-
-## Plan
-- [x] Convert type filters into compact segmented control.
-- [x] Keep only list body scrollable; footer stays below it with safe spacing.
-- [x] Tighten row spacing and add explicit source-view affordance.
-- [x] Run frontend checks and graph update.
-
-## Review
-- Toolbar now uses a compact segmented control for `All` / `Fields` / `Reports`, a shorter search track, and a quieter sort select.
-- Plugin list body is the only scroll region; pagination footer is a non-overlapping sibling below it.
-- Rows are denser, have stronger hover/border feedback, and expose a real `View source` action plus delete when allowed.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp build` passed with existing Vite chunk/runtime-config warnings.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed on existing `src/app/startup/StartupGate.tsx:14`; no new error in touched plugin files.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Browser preview loaded app, but `/plugins` redirected to public login without auth; snapshot tool also timed out.
-
-# Plugin Catalog Shadcn Search Empty
-
-## Goal
-- [ ] Make plugin search look like shadcn input group with filtered result count.
-- [ ] Use shadcn-like empty state when plugin list has no items.
-
-## Plan
-- [x] Extend shared text field with suffix slot.
-- [x] Read filtered `totalItems` from catalog page query in toolbar.
-- [x] Replace plugin no-results copy with shared empty state.
-- [x] Run frontend verification and graph update.
-
-## Review
-- Plugin catalog search now uses the shared input-group shape with search icon and filtered result count suffix.
-- Empty plugin results now render the shared shadcn-like empty state with icon, title, and description.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Browser preview reached app, but `/plugins` redirected to login without auth.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`.
-
-# AppSelect Stable Width
-
-## Goal
-- [ ] Stop `AppSelect` trigger width changing when selected option changes.
-
-## Plan
-- [x] Keep fix in shared `AppSelect`.
-- [x] Size trigger from longest option/placeholder.
-- [x] Run narrow frontend verification.
-- [x] Run `graphify update .`.
-
-## Review
-- `AppSelect` trigger now reserves width for the longest option label or placeholder, so selecting shorter/longer values does not resize it.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - Repo: `graphify update .` passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed on existing `StartupGate.tsx:14` query-result issue; no new `AppSelect` finding reported.
-
-# Superadmin Invitation Auto-Accept
-
-## Goal
-- When a superadmin invites an existing user to an organization, accept the invitation immediately.
-- Normal inviters keep current pending invitation flow: invited user logs in and accepts or declines.
-
-## Plan
-- [x] Keep source of truth in API invitation service.
-- [x] Refactor invitation acceptance side effects into shared helper.
-- [x] In create flow, detect `SystemRole.SUPERADMIN`, resolve invited user by email, apply membership/team membership, set invitation `ACCEPTED`.
-- [x] Preserve pending flow for non-superadmin inviters.
-- [x] Add service tests for superadmin auto-accept and normal pending behavior.
-- [x] Run narrow Maven test and line-count check.
-
-## Review
-- `InvitationManagementService` now auto-accepts invites sent by `SUPERADMIN` users after resolving the invitee by email.
-- Normal inviters still produce `PENDING` invitations.
-- Shared helper keeps manual accept and auto-accept membership side effects aligned.
-- Verified with `mvn -Dtest=InvitationManagementServiceTest test`.
-- Line counts: service 272, test 253.
-
-# Plugin Catalog Simplification
-
-## Goal
-- [x] Remove plugin activation/deactivation behavior from backend.
-- [x] Make uploaded plugins implicitly active at all times.
-- [x] Expose plugin lists through pagination contract.
-- [x] Move plugin catalog search/filter/sort/count logic to backend.
-- [x] Replace frontend infinite scroll with classic pagination.
-- [x] Use separated type filter buttons and keep pagination footer fixed below plugin scroll area.
-- [x] Remove stale tests, copy, and branches tied to activation state.
-
-## Plan
-- [x] Audit plugin API, persistence, frontend catalog, and nearest tests.
-- [x] Refactor backend plugin contract/services/controllers to drop activation state and support paged listing.
-- [x] Refactor frontend plugin queries/components to consume paged results with classic pagination UX.
-- [x] Remove frontend plugin filter/sort business logic and consume backend catalog metadata.
-- [x] Adjust plugin catalog layout so only plugin list scrolls and pagination footer stays visible.
-- [x] Update tests and run narrow verification, then broader checks if environment supports them.
-- [x] Run `graphify update .` and record review notes.
-
-## Review
-- Backend plugin contract now removes `active` state, activation endpoints, activation use-cases, and persisted activation state files.
-- `GET /api/plugins` now returns paged payload `{ items, page, size, totalItems, hasNext }`; internal callers use `PluginService.listAll(...)`.
-- Signature/runtime/plugin validation now treats uploaded plugins as immediately available; inactive warnings/messages were removed.
-- Frontend plugin API now fetches paged data with `appFetch`, catalog runtime loads all pages transparently, and plugin catalog page uses TanStack Query plus classic pagination controls.
-- Plugin catalog UI no longer exposes active/inactive controls or status filters; uploaded plugins are labeled as live on upload.
-- Backend owns plugin type/kind detection for catalog rows, search/filter/sort, and total/field/report counts.
-- Correction applied: removed custom infinite-scroll feed state and moved plugin page fetch/upload/delete to TanStack Query with query invalidation.
-- Correction applied: replaced type `<select>` with separated `All` / `Fields` / `Reports` buttons, removed duplicated summary copy, and moved pagination footer outside the scroll region.
-- Correction applied: removed frontend row filtering/sorting and file-size display; added backend-sourced stat cards.
-- Verification:
-  - `api`: `mvn "-Dtest=PluginServiceImplTest,PluginControllerTest,SignatureSchemaCompatibilityServiceTest,SearchWorkspaceServiceTest" test` passed.
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp test test/schema-plugin-readiness.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts test/schema-plugin-defaults.test.ts test/schema-plugin-lifecycle.test.ts test/schema-report-renderer.test.ts test/builtin-registry.test.ts` passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Plugin Catalog Refetch Flicker Fix
-
-## Goal
-- [x] Remove stats/list flicker when search, type filter, or sort changes.
-- [x] Keep backend-owned plugin logic unchanged.
-- [x] Keep UI layout/copy unchanged except loading stability.
-
-## Plan
-- [x] Confirm flicker source in TanStack Query/page state.
-- [x] Keep previous plugin page data visible while next page/filter/sort query fetches.
-- [x] Reset page to first page inside search/filter/sort handlers to avoid stale intermediate keys.
-- [x] Run narrow frontend verification and graph update.
-
-## Review
-- Flicker source: query key changes made `pageQuery.data` undefined during refetch, so stats/list rendered zero/empty before new backend data arrived.
-- Fix: `usePluginCatalogPageData` uses TanStack Query `placeholderData: keepPreviousData`.
-- Fix: search/type/sort handlers reset page to 0 in the same event instead of a delayed effect creating intermediate query keys.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: plugin/schema Vitest subset passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails inside react-doctor with `Invalid comparator: latest`.
-
-# Plugin Catalog Query Subscription Split
-
-## Goal
-- [x] Verify TanStack Query usage for plugin endpoints/mutations.
-- [x] Stop plugin page shell from subscribing to page/stats query state.
-- [x] Keep page, stats, upload, delete invalidation correct.
-- [x] Preserve UI behavior.
-
-## Plan
-- [x] Split plugin query hooks into page query, stats query, upload mutation, delete mutation.
-- [x] Move stats query subscription into stats panel.
-- [x] Move paged list query/delete mutation subscription into list panel.
-- [x] Keep parent page responsible only for route/workspace/local filter/upload shell state.
-- [x] Run frontend typecheck/tests, react-doctor, graphify, diff check.
-
-## Review
-- Previous issue: `PluginCatalogPage` subscribed to `pageQuery` and `statsQuery`; every refetch updated route shell state and rerendered header/toolbar/layout.
-- Fix: `PluginCatalogStatsPanel` owns stats query; `PluginCatalogListPanel` owns page query and delete mutation.
-- Fix: upload/delete mutations live in dedicated hooks and invalidate page + stats query families.
-- Result: page shell rerenders for local UI/upload state; stats/list rerender for their own query data.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: plugin/schema Vitest subset passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails inside react-doctor with `Invalid comparator: latest`.
-
-# Plugin Frontend Screaming Architecture Move
-
-## Goal
-- [x] Move all frontend plugin feature files under `frontend/src/plugin/...`.
-- [x] Keep app/shared code imports explicit and domain-shaped.
-- [x] Preserve runtime behavior and TanStack Query wiring.
-
-## Plan
-- [x] Inventory frontend plugin files/imports.
-- [x] Create `src/plugin/api`, `src/plugin/catalog`, and `src/plugin/mlform`.
-- [x] Move plugin catalog page, panels, components, shared helpers, hooks, and plugin API service.
-- [x] Move plugin MLForm runtime/cache helpers under `src/plugin/mlform`.
-- [x] Update app router and MLForm consumers to import from new plugin module.
-- [x] Run frontend verification, react-doctor, graphify, diff check.
-
-## Review
-- Plugin API now lives at `frontend/src/plugin/api/pluginService.ts`.
-- Plugin catalog UI now lives under `frontend/src/plugin/catalog/...`.
-- Plugin MLForm runtime/cache helpers now live under `frontend/src/plugin/mlform/...`.
-- Generic `app/pages`, `app/api`, and `app/utils/mlform` no longer own plugin feature files.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: plugin/schema Vitest subset passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails inside react-doctor with `Invalid comparator: latest`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Plugin Catalog Stats Contract Split
-
-## Goal
-- [x] Move field/report plugin counts to a separate backend request.
-- [x] Remove redundant total count from backend stats/page contract; frontend derives total as field + report.
-- [x] Keep React Query cache correct after upload/delete by invalidating plugin pages and stats.
-- [x] Clean plugin backend architecture around hexagonal ports/use cases instead of mixed service contracts.
-
-## Plan
-- [x] Add backend `PluginStatsDto` and `GetPluginStatsUseCase`, expose `GET /api/plugins/stats`.
-- [x] Remove `totalPlugins`, `fieldPlugins`, and `reportPlugins` from `PluginPageDto`.
-- [x] Replace `PluginService` mixed interface with use-case ports plus internal catalog port for `listAll`.
-- [x] Update backend tests for page contract + stats endpoint.
-- [x] Update frontend API/query hooks: page query and stats query separate; derive total in UI; invalidate both after mutations.
-- [x] Run narrow backend/frontend verification, react-doctor, graphify, diff check.
-
-## Review
-- Backend page endpoint now returns only paged list state: `items`, `page`, `size`, `totalItems`, `hasNext`.
-- Backend stats endpoint now returns only `fieldPlugins` and `reportPlugins`; no redundant total.
-- Frontend derives total as `fieldPlugins + reportPlugins`.
-- React Query now has separate page and stats query families; upload/delete invalidates both.
-- Hexagonal cleanup: removed broad `PluginService` interface; controllers/app consumers depend on explicit use-case ports.
-- Verification:
-  - `api`: `mvn "-Dtest=PluginServiceImplTest,PluginControllerTest,SignatureSchemaCompatibilityServiceTest,SearchWorkspaceServiceTest" test` passed.
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: plugin/schema Vitest subset passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails inside react-doctor with `Invalid comparator: latest`.
-
-# Startup Readiness Loader
-
-## Goal
-- [x] Keep initial UI on `EditorAssemblyLoader` until client runtime chunks are loaded.
-- [x] Keep initial UI on `EditorAssemblyLoader` until API, Postgres, py-analyzer, and ops-agent are reachable.
-- [x] Put backend-owned service readiness logic in API, not duplicated in frontend.
-- [x] Use `appFetch` and TanStack Query for frontend readiness polling.
-
-## Plan
-- [x] Add public API readiness endpoint that checks DB, analyzer `/health`, and ops-agent `/health`.
-- [x] Add backend tests for success and dependency failure cases.
-- [x] Add frontend startup readiness service that preloads TypeScript, Monaco, MLForm, and reads API readiness.
-- [x] Wrap router boot with `StartupGate` using TanStack Query polling and `EditorAssemblyLoader`.
-- [x] Run focused backend/frontend verification, react-doctor, graphify, and diff check.
-
-## Review
-- Added public `GET /api/readiness`; API owns dependency checks for Postgres, py-analyzer, and ops-agent.
-- Frontend `StartupGate` uses TanStack Query polling plus `appFetch`; it renders `EditorAssemblyLoader` until server readiness and client runtime preload succeed.
-- Client runtime preload covers TypeScript, Monaco, `@monaco-editor/react`, and MLForm runtime/kit/builtins chunks.
-- Verification:
-  - `api`: `mvn "-Dtest=StartupReadinessServiceTest" test` passed.
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
-  - `frontend`: `vp check` failed on preexisting formatting issues across 73 files.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Shadcn Breadcrumb Component
-
-## Goal
-- [x] Replace custom breadcrumb markup with shadcn-style breadcrumb primitives.
-- [x] Preserve existing `AppBreadcrumbs` external API for page headers.
-- [x] Avoid new runtime deps unless required.
-
-## Plan
-- [x] Audit existing breadcrumb usage and shadcn docs.
-- [x] Add local breadcrumb primitives matching shadcn composition.
-- [x] Refactor `AppBreadcrumbs` to compose those primitives with React Router links.
-- [x] Run focused frontend verification and graph update.
-
-## Review
-- Added local shadcn-style breadcrumb primitives under `frontend/src/app/components/breadcrumb`.
-- `AppBreadcrumbs` now composes `Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbPage`, `BreadcrumbSeparator`, and `BreadcrumbEllipsis`.
-- Existing page header API stays `breadcrumbs?: AppBreadcrumbItem[]`; React Router `to` links still work.
-- No runtime dependencies added.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Breadcrumb Ellipsis Dropdown
-
-## Goal
-- [x] Make collapsed breadcrumb ellipsis interactive.
-- [x] Show hidden breadcrumb items inside dropdown.
-- [x] Keep no-new-deps shadcn-style composition.
-
-## Plan
-- [x] Preserve collapsed hidden items instead of replacing with inert label only.
-- [x] Add ellipsis dropdown component with outside-click and Escape close.
-- [x] Render hidden items as router links when `to` exists, text otherwise.
-- [x] Run focused frontend verification, react-doctor, graph update.
-
-## Review
-- `AppBreadcrumbs` now keeps hidden middle breadcrumb items and shows them through ellipsis dropdown.
-- `BreadcrumbCollapsedMenu` closes on outside pointer, Escape, and link click.
-- Hidden items with `to` render as React Router links; no-`to` crumbs render as menu text.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Breadcrumb Dropdown Visibility Fix
-
-## Goal
-- [x] Make ellipsis dropdown visible above page content.
-- [x] Keep breadcrumb truncation working without clipping popover.
-- [x] Verify browser interaction.
-
-## Plan
-- [x] Remove clipping from breadcrumb shell where dropdown lives.
-- [x] Raise dropdown layer above page/header content.
-- [x] Run frontend verification and graph update.
-
-## Review
-- Root cause: dropdown rendered inside breadcrumb nav with `overflow-hidden`; menu got clipped/hidden. Z-index alone cannot fix ancestor clipping.
-- Fix: breadcrumb nav/list now use `overflow-visible`; breadcrumb nav/root and collapsed menu now set explicit relative z layers.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Breadcrumb Dropdown Portal Fix
-
-## Goal
-- [x] Render ellipsis menu outside page stacking contexts.
-- [x] Keep menu aligned under ellipsis button while scrolling/resizing.
-- [x] Preserve outside-click, Escape, and link-close behavior.
-
-## Plan
-- [x] Move dropdown panel to `document.body` with `createPortal`.
-- [x] Measure trigger button and use fixed viewport coordinates.
-- [x] Treat clicks inside trigger or portal menu as internal.
-- [x] Run frontend verification and graph update.
-
-## Review
-- Root cause after user DOM proof: menu existed, but page stacking context still painted over it.
-- Fix: `BreadcrumbCollapsedMenu` now portals menu to `document.body` and positions it with fixed viewport coordinates from the trigger rect.
-- Scroll/resize recompute menu coordinates; outside click checks both trigger and portal menu refs.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Breadcrumb Dropdown Minimal Styling
-
-## Goal
-- [x] Make breadcrumb ellipsis menu feel Radix-like and minimal.
-- [x] Reduce border radius and visual weight.
-- [x] Keep portal/dropdown behavior unchanged.
-
-## Plan
-- [x] Tighten menu radius, padding, shadow, and width.
-- [x] Tighten item radius, font size, hover state, and line height.
-- [x] Run frontend verification and graph update.
-
-## Review
-- Menu panel now uses smaller Radix-like radius (`rounded-lg`), tighter padding, narrower width, and lighter shadow.
-- Menu items now use `rounded-md`, compact vertical rhythm, 13px type, and subtle hover/focus background.
-- Portal/fixed positioning behavior unchanged.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp build` passed with existing bundle/dynamic-import warnings.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Plugin Catalog Connected Surface
-
-## Goal
-- [x] Make plugin catalog toolbar and list read as one connected catalog surface.
-- [x] Avoid `AppPanel` for new wrapper surface.
-- [x] Preserve backend-owned search/filter/sort/page behavior.
-
-## Plan
-- [x] Add feature-owned wrapper component for toolbar + list.
-- [x] Remove standalone toolbar panel and list footer panel visual splits.
-- [x] Wire page through wrapper with existing state/handlers.
-- [x] Run frontend typecheck, react-doctor, graphify update, and diff check.
-
-## Review
-- Added `PluginCatalogBrowser` as one connected catalog surface around toolbar and list without using `AppPanel`.
-- Removed standalone `AppPanel` shell from toolbar and pagination footer so controls, scroll body, and footer share one visual frame.
-- Page now wires toolbar/list through the browser wrapper; search/filter/sort/page behavior and query ownership stay unchanged.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp fmt --check src/plugin/catalog/components/PluginCatalogBrowser.tsx src/plugin/catalog/components/PluginCatalogToolbar.tsx src/plugin/catalog/components/PluginCatalogListPanel.tsx src/plugin/catalog/pages/PluginCatalogPage.tsx` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` failed inside react-doctor with `Invalid comparator: latest`.
-  - `frontend`: `vp check` failed on 74 preexisting formatting issues; touched files were no longer listed after local formatting.
-  - Browser preview: `http://127.0.0.1:5173/plugins` redirected to `/`; snapshot timed out in T3 preview, so full visual route inspection was blocked.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Plugin Catalog Native Select Cleanup
-
-## Goal
-- [x] Use shared `AppSelect` for plugin catalog sort.
-- [x] Remove custom sort dropdown state/markup.
-- [x] Reduce over-rounded select styling globally.
-
-## Plan
-- [x] Replace toolbar sort menu with `AppSelect`.
-- [x] Remove menu refs/effects from catalog page props.
-- [x] Update correction lesson.
-- [x] Run focused frontend verification and graph update.
-
-## Review
-- `PluginCatalogToolbar` now uses shared `AppSelect` for sort instead of custom dropdown markup/state.
-- Removed sort menu refs, outside-click/Escape state, and stale menu-state comment from `PluginCatalogPage`.
-- `AppSelect` now uses normal `rounded` radius instead of `rounded-full`.
-- Replaced toolbar filter `role="group"` with native `fieldset`/`legend` after react-doctor flagged the role.
-- Added lesson: check shared primitives before hand-rolling feature-local controls.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp fmt --check src/app/components/AppSelect.tsx src/plugin/catalog/components/PluginCatalogToolbar.tsx src/plugin/catalog/pages/PluginCatalogPage.tsx` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` ran and reduced issue count from 181 to 180; still fails on existing `src/app/startup/StartupGate.tsx:14`.
-  - `frontend`: `vp check` still fails on 74 preexisting formatting issues.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Plugin Catalog Compact Counts
-
-## Goal
-- [x] Remove oversized standalone plugin KPI row.
-- [x] Show counts inside filter buttons as `All (n)`, `Fields (n)`, `Reports (n)`.
-- [x] Keep counts backend-owned through existing stats query.
-
-## Plan
-- [x] Move stats query subscription into toolbar.
-- [x] Render compact count labels in filter buttons.
-- [x] Remove unused stats panel/cards.
-- [x] Run focused frontend verification and graph update.
-
-## Review
-- Removed standalone `PluginCatalogStatsPanel` row and deleted unused stats card components.
-- `PluginCatalogToolbar` now reads backend stats through `usePluginCatalogStatsQuery`.
-- Type filters now render compact counts: `All (n)`, `Fields (n)`, `Reports (n)`.
-- Counts stay backend-owned and update through existing plugin stats invalidation after upload/delete.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp fmt --check src/plugin/catalog/components/PluginCatalogToolbar.tsx src/plugin/catalog/pages/PluginCatalogPage.tsx` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` ran and reduced issue count from 180 to 179; still fails on existing `src/app/startup/StartupGate.tsx:14`.
-  - `frontend`: `vp check` still fails on 74 preexisting formatting issues.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Shadcn Radix AppSelect
-
-## Goal
-- [x] Replace native `AppSelect` implementation with shadcn/Radix Select.
-- [x] Preserve existing `AppSelect` call sites using `<option>` children and `onChange`.
-- [x] Keep compact MLSuite styling and avoid oversized radius.
-
-## Plan
-- [x] Add explicit Radix Select dependency for shadcn Select.
-- [x] Rebuild `AppSelect` around Radix `Select/Trigger/Value/Content/Item` composition.
-- [x] Keep Radix primitives internal until a direct consumer exists.
-- [x] Run focused frontend verification and graph update.
-
-## Review
-- Added `@radix-ui/react-select` and rewired `AppSelect` to use shadcn/Radix composition internally.
-- Preserved legacy `<option>` children and `onChange(event.target.value)` contract for existing callers.
-- Added empty-value compatibility because Radix Select items cannot use `value=""`; native callers still receive `""`.
-- Kept compact `rounded` styling and changed invite-form select overrides from `rounded-xl` to `rounded`.
-- Added lesson for requested UI-system primitives.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `vp fmt --write src/app/components/AppSelect.tsx src/workspace/components/InviteForm.tsx` completed.
-  - `frontend`: `vp check` still fails on 74 preexisting formatting issues.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`; warnings also include broader existing repo issues.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Shadcn Select Regression Fix
-
-## Goal
-- [x] Stop Radix `AppSelect` from showing ids when option label is nested text.
-- [x] Stop select trigger from forcing full-width row expansion.
-- [x] Replace remaining native `<select>` controls with `AppSelect`.
-- [x] Match shadcn Select visual shape more closely without over-rounded controls.
-
-## Plan
-- [x] Fix option text extraction and selected-label resolution in `AppSelect`.
-- [x] Tune trigger/content/item classes for compact shadcn-like UI.
-- [x] Migrate native select call sites to `AppSelect` with size-preserving classes.
-- [x] Add correction lesson and run verification.
-
-## Review
-- `AppSelect` now extracts visible text from nested option children instead of falling back to ids.
-- `AppSelect` trigger no longer defaults to `w-full`; width is opt-in via call-site classes.
-- Trigger/content/item styling now follows shadcn Select closer: compact trigger, chevron, rounded-lg trigger, rounded-xl menu, subtle item highlight.
-- Migrated all remaining frontend native `<select>` controls to `AppSelect`; `rg -n "<select" src` returns no matches.
-- Kept compact toolbars with `h-8`/`min-w-*` classes so selects use available row space instead of forcing new rows.
-- Replaced Radix button-wrapping `label` elements with non-label wrappers plus `aria-label`.
-- Added correction lesson for select migrations.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `rg -n "<select" src` found no matches.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`; total returned to 179 issues after removing new label warnings.
-  - `frontend`: `vp check` still fails on 74 preexisting formatting issues.
-  - Browser preview: `/plugins` redirected to `/`, then T3 preview automation disconnected with `PreviewAutomationUnavailableError`; visual inspection blocked.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Local Shadcn Select Primitive
-
-## Goal
-- [x] Remove Radix Select runtime dependency.
-- [x] Keep shadcn-like select behavior as local design-system code.
-- [x] Add dropdown anchored at trigger position with title/header.
-- [x] Preserve `<AppSelect><option /></AppSelect>` contract.
-
-## Plan
-- [x] Replace Radix-based `AppSelect` with local button + portal implementation.
-- [x] Position popup with trigger rect so it opens where select lives.
-- [x] Render popup title from `aria-label`, `title`, or `placeholder`.
-- [x] Remove dependency through Vite+ and verify.
-
-## Review
-- Removed `@radix-ui/react-select` via `vp remove`; no `radix-ui`/`@radix-ui/react-select` refs remain in frontend package/lock/src.
-- Replaced Radix `AppSelect` with local design-system implementation: button trigger, body portal, fixed trigger-rect positioning, outside click, Escape close, ArrowDown open, and focus return after selection.
-- Popup opens at the trigger position and renders a header/title from `aria-label`, `title`, or `placeholder`.
-- Preserved legacy `<option>` child parsing, empty-string values, `event.target.value`, `name`, `required`, and disabled form behavior through a hidden input.
-- Kept shadcn-like visual details: chevron trigger, selected check, item hover/focus state, rounded menu, compact trigger.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `rg -n "@radix-ui/react-select|radix-ui" frontend/package.json frontend/pnpm-lock.yaml frontend/src` found no matches.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`; issue count remains baseline 179.
-  - `frontend`: `vp check` still fails on 74 preexisting formatting issues.
-  - Browser preview: auth screen renders at `/`; select routes remain login-gated, so no select visual could be inspected without app session.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Shadcn Select Composition API
-
-## Goal
-- [x] Expose local select primitives with the exact shadcn composition API.
-- [x] Keep `AppSelect` as legacy wrapper over those primitives.
-- [x] Preserve local no-Radix implementation and compact MLSuite styling.
-- [x] Verify typecheck, tests, static checks, and graph update.
-
-## Plan
-- [x] Split local select into `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectLabel`, and `SelectItem`.
-- [x] Rebuild `AppSelect` on top of those primitives while preserving `<option>` children.
-- [x] Export primitives from the shared component barrel.
-- [x] Run focused frontend verification, react-doctor/check, graphify, and diff check.
-
-## Review
-- Added local shadcn-style select primitives under `frontend/src/app/components/select`: `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectGroup`, `SelectLabel`, and `SelectItem`.
-- Shared barrel now exports those primitives, so consumers can use the requested composition shape.
-- `AppSelect` now wraps those primitives and keeps existing `<option>` children, `onChange`, hidden input, placeholder, disabled, required, and empty-value behavior.
-- Select content still uses local portal positioning at the trigger with label/header support; no Radix dependency was added.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `rg -n '@radix-ui/react-select|radix-ui' frontend/package.json frontend/pnpm-lock.yaml frontend/src` found no matches.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`; issue count remains baseline 179.
-  - `frontend`: `vp check` still fails on 74 preexisting formatting issues.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Shadcn Select Item-Aligned Popup
-
-## Goal
-- [x] Make every shared select popup match trigger width.
-- [x] Align open popup so selected item sits at trigger height and label appears above it.
-- [x] Remove selected check icon to match requested shadcn demo visual.
-- [x] Keep behavior global through shared select primitive.
-
-## Plan
-- [x] Derive selected item index while walking composed select children.
-- [x] Use trigger width exactly for `SelectContent`.
-- [x] Offset popup top by label height plus selected item row height.
-- [x] Tighten item padding after removing check icon.
-- [x] Run frontend verification and graph update.
-
-## Review
-- `SelectContent` now uses exact trigger width instead of minimum `224px`.
-- Popup position is item-aligned: label/header sits above selected row, selected row aligns with trigger.
-- `SelectItem` no longer renders check icon or left check gutter, matching supplied demo closer.
-- All `AppSelect` consumers inherit this through the shared primitive.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`; issue count remains baseline 179.
-  - `frontend`: `vp check` still fails on 74 preexisting formatting issues.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Radix Shadcn Select Migration
-
-## Goal
-- [x] Replace local hand-rolled select behavior with Radix-backed shadcn primitives.
-- [x] Remove legacy `<AppSelect><option /></AppSelect>` API as breaking change.
-- [x] Migrate every select call site to new explicit option data.
-- [x] Preserve MLSuite compact styling and current labels/values.
-- [x] Run frontend verification, react-doctor, graph update, and diff check.
-
-## Plan
-- [x] Add `radix-ui` dependency through Vite+.
-- [x] Rebuild shared select primitives around `radix-ui` Select.
-- [x] Redefine `AppSelect` as a thin wrapper over primitives with `options` data, not `<option>` children.
-- [x] Update all `AppSelect` usages across admin, infra, workspace, schemas, models, and plugin catalog.
-- [x] Remove obsolete local select context/portal code.
-- [x] Verify typecheck/tests/static checks and document blockers.
-
-## Review
-- Added `radix-ui` and rebuilt shared select primitives around `SelectPrimitive`.
-- `AppSelect` now has the breaking `options` API and `onValueChange`; legacy `<option>` children and `onChange` support are gone.
-- Migrated all `AppSelect` consumers across admin, infrastructure, workspace, schemas, models, and plugin catalog to explicit `{ value, label }` options.
-- Empty values are normalized through a sentinel so Radix can still support existing "none/select member" UX.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `vp fmt --write` passed; `vp check` still fails on existing repo lint/type issues, with formatting passing.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`; issue count remains baseline 179.
-  - `frontend`: no modified `frontend/src` file exceeds 300 lines.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# Shadcn Pagination Footer
-
-## Goal
-- [x] Replace plugin catalog pagination footer controls with shadcn-style pagination primitives.
-- [x] Keep backend page contract and existing page state unchanged.
-- [x] Add reusable pagination primitives in design-system layer.
-- [x] Preserve compact operational UI.
-- [x] Verify typecheck/tests/react-doctor/graph update/diff check.
-
-## Plan
-- [x] Add `Pagination`, `PaginationContent`, `PaginationItem`, `PaginationLink`, `PaginationPrevious`, `PaginationNext`, and `PaginationEllipsis`.
-- [x] Export pagination primitives from app component barrel.
-- [x] Swap plugin catalog footer buttons for pagination composition with page numbers and ellipsis.
-- [x] Run focused frontend verification and document blockers.
-
-## Review
-- Added shadcn-style pagination primitives under `frontend/src/app/components/pagination`.
-- Plugin catalog footer now uses `Pagination > PaginationContent > PaginationItem` with previous/next, page links, active state, and ellipsis.
-- Backend pagination contract unchanged; component still drives existing zero-based `page` state.
-- Verification:
-  - `frontend`: `vp exec tsc -b` passed.
-  - `frontend`: `vp test` passed, 32 files / 136 tests.
-  - `frontend`: `vp fmt --write src/app/components/pagination src/app/components/index.ts src/plugin/catalog/components/PluginCatalogListPanel.tsx` passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` still fails on existing `src/app/startup/StartupGate.tsx:14`; issue count remains baseline 179.
-  - `frontend`: `vp check` still fails on existing repo lint/type issues; formatter portion passes all 395 files.
-  - Line counts: `PluginCatalogListPanel.tsx` 193, pagination primitives 11-30 lines.
-  - Browser preview: navigated to `http://127.0.0.1:5173/plugins`; T3 snapshot failed with `PreviewAutomationExecutionError`.
-  - Repo: `graphify update .` passed.
-  - Repo: `git diff --check` passed with CRLF warnings only.

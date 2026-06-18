@@ -7,8 +7,8 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   getModelInputBulkSchema,
   toSchemaRunSerializedValues,
-} from "../src/schemas/schema-run-bulk-inputs";
-import { parseCsvPredictionFile } from "../src/models/parseCsvPredictionFile";
+} from "../src/algorithms/schema/bulk-upload";
+import { parseCsvPredictionFile } from "../src/algorithms/models/parse-csv-prediction-file";
 import type { SchemaVersionDto } from "../src/schemas/types";
 
 const version: SchemaVersionDto = {

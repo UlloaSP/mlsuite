@@ -16,16 +16,16 @@ import {
   AppSurface,
   AppTextField,
 } from "../../app/components";
-import { isRecord } from "../../app/utils/mlform/shared";
+import { isRecord } from "../../algorithms/mlform/shared";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
 import { useGetModels } from "../../models/hooks";
 import { createSchemaVersion } from "../api/schemaService";
 import { SchemaModelSelector } from "../components/SchemaModelSelector";
 import { useCreateSchemaMutation, useSchema, useSchemaVersions } from "../hooks";
-import { countVisibleSchemaFields } from "../one-hot-schema";
-import { prepareSchemaVersionForSave } from "../schema-binding-rebase";
-import { composeSchemaVersion, type SelectedSchemaModel } from "../schema-composer";
+import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
+import { prepareSchemaVersionForSave } from "../../algorithms/schema/binding-rebase";
+import { composeSchemaVersion, type SelectedSchemaModel } from "../../algorithms/schema/merge";
 import type { CreateSchemaVersionRequest } from "../types";
 
 type SelectedModel = SelectedSchemaModel;

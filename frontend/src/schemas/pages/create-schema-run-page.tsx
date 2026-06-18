@@ -8,7 +8,7 @@ import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
 import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
-import { isRecord } from "../../app/utils/mlform/shared";
+import { isRecord } from "../../algorithms/mlform/shared";
 import { SchemaRunForm } from "../components/SchemaRunForm";
 import { SchemaRunSaveModal } from "../components/SchemaRunSaveModal";
 import { createPredictionResultFeedback } from "../api/schemaService";
@@ -18,9 +18,9 @@ import {
   useSchema,
   useSchemaVersion,
 } from "../hooks";
-import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
-import { mergeSchemaRunInputs } from "../schema-run-display";
-import type { PendingFeedback } from "../schema-run-save-feedback";
+import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
+import { mergeSchemaRunInputs } from "../../algorithms/schema/input-display";
+import type { PendingFeedback } from "../../algorithms/schema/pending-feedback";
 import type { CreatePredictionRunRequest, JsonRecord } from "../types";
 
 export function CreateSchemaRunPage() {

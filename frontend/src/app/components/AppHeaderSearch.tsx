@@ -3,7 +3,7 @@ import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
 import { SearchResultsPanel } from "../../search/components/SearchResultsPanel";
 import { useDebouncedValue, useSearchResults } from "../../search/hooks";
-import { isGlobalSearchShortcut } from "../../search/shortcut";
+import { isGlobalSearchShortcut } from "../../algorithms/search/shortcut";
 
 const isTypingTarget = (target: EventTarget | null) =>
   target instanceof HTMLElement &&

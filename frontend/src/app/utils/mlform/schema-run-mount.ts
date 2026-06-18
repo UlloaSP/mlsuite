@@ -4,7 +4,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { mountForm } from "mlform/kit";
-import { type AfterSubmitContext, type SubmitErrorContext } from "mlform/runtime";
+import {
+  type AfterSubmitContext,
+  type FormController,
+  type SubmitErrorContext,
+} from "mlform/runtime";
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
 import { createSchemaRunRuntime } from "./schema-run-runtime";
 import { getPredictionDesignSystem } from "./headless-prediction";
@@ -13,10 +17,14 @@ import {
   type MountedPredictionForm,
   type PredictionTheme,
   isRecord,
-} from "./shared";
+} from "../../../algorithms/mlform/shared";
 import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
 import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
-import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
+import { schemaRunDebug, schemaRunDebugError } from "../../../algorithms/schema/run-debug";
+import {
+  buildSchemaRunRawFromSubmitResult,
+  reportStatesFromSnapshot,
+} from "../../../algorithms/mlform/schema-run-result-state";
 
 type Options = {
   container: HTMLElement;
@@ -53,6 +61,7 @@ export const mountSchemaRunForm = ({
     customFieldDefinitions,
     customReportDefinitions,
   });
+  let mountedForm: FormController | null = null;
   const mounted = mountForm(container, {
     schema: runtime.formSchema,
     registry: runtime.registry,
@@ -60,17 +69,25 @@ export const mountSchemaRunForm = ({
     primitiveRegistry: createPredictionPrimitiveRegistry(),
     transport: runtime.transport,
     hooks: {
-      afterSubmit({ result }: AfterSubmitContext) {
+      async afterSubmit({ result }: AfterSubmitContext) {
         const raw = isRecord(result.raw) ? result.raw : { raw: result.raw };
-        const reports = isRecord(raw.reports) ? raw.reports : {};
-        const contexts = isRecord(raw.reportContextById) ? raw.reportContextById : {};
-        const reportsPending = Object.keys(contexts).some((reportId) => !(reportId in reports));
+        const next = mountedForm
+          ? buildSchemaRunRawFromSubmitResult(
+              raw,
+              mountedForm.reports,
+              reportStatesFromSnapshot(mountedForm.state.reportStates),
+              bindings,
+            )
+          : { raw, reportsPending: false };
         schemaRunDebug("mount.after-submit", {
-          reportKeys: Object.keys(reports),
-          contextKeys: Object.keys(contexts),
-          reportsPending,
+          reportKeys: isRecord(next.raw.reports) ? Object.keys(next.raw.reports) : [],
+          reportsPending: next.reportsPending,
         });
-        onSubmit?.(isRecord(raw.inputData) ? raw.inputData : {}, raw, reportsPending);
+        onSubmit?.(
+          isRecord(next.raw.inputData) ? next.raw.inputData : {},
+          next.raw,
+          next.reportsPending,
+        );
       },
       onSubmitError({ error }: SubmitErrorContext) {
         schemaRunDebugError("mount.submit-error", error);
@@ -88,6 +105,7 @@ export const mountSchemaRunForm = ({
     },
     designSystem: getPredictionDesignSystem(theme),
   });
+  mountedForm = mounted.form;
   return {
     form: mounted.form,
     host: mounted.host,

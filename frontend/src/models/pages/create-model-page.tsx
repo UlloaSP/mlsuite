@@ -10,7 +10,7 @@ import { NotFoundError } from "../../app/pages/error-page";
 import { emitErrorFromUnknown } from "../../app/utils/error-sink";
 import { useUser } from "../../user/hooks";
 import { useWorkspaceContext } from "../../workspace/hooks";
-import { applyInspectedBundleFiles, type InspectedBundleFile } from "../bundle-planner";
+import { applyInspectedBundleFiles, type InspectedBundleFile } from "../../algorithms/models/bundle-planner";
 import type { Bundle } from "../bundle-types";
 import {
   DF_EXTS,
@@ -19,7 +19,7 @@ import {
   isJoblibFile,
   isModelFile,
   slugToTitle,
-} from "../bundle-utils";
+} from "../../algorithms/models/bundle-utils";
 import { BundleCard } from "../components/BundleCard";
 import { BundleDropZone } from "../components/BundleDropZone";
 import { BundleEmptyState } from "../components/BundleEmptyState";

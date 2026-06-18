@@ -6,10 +6,10 @@ import { ReviewShell } from "../../review/components/ReviewShell";
 import { ReviewStepContextPanel } from "../../review/components/ReviewStepContextPanel";
 import { ReviewUnavailable } from "../../review/components/ReviewUnavailable";
 import { useSchemaReviewContext, useSubmitSchemaReviewRunsMutation } from "../hooks";
-import { firstReviewRunToken, hasReviewRunToken } from "../reviewRunSelection";
+import { firstReviewRunToken, hasReviewRunToken } from "../../algorithms/schema-review/run-selection";
 import { SchemaReviewRunDetailPanel } from "../components/SchemaReviewRunDetailPanel";
 import { SchemaReviewRunRail } from "../components/SchemaReviewRunRail";
-import { prepareSchemaVersionDtoForUse } from "../../schemas/schema-binding-rebase";
+import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
 
 export function SchemaReviewWorkspacePage() {
   const { token = "", runToken } = useParams<{ token: string; runToken?: string }>();

@@ -28,7 +28,7 @@ import { StatusBadge } from "../components/admin/StatusBadge";
 import { InviteForm } from "../components/InviteForm";
 import { RoleBadge } from "../components/RoleBadge";
 import { useWorkspaceContext } from "../hooks";
-import { invitationRoleOptions } from "../permissions/invitationRoleOptions";
+import { invitationRoleOptions } from "../../algorithms/workspace/invitation-role-options";
 import type { InvitationStatus } from "../types";
 
 const statuses: Array<InvitationStatus | "ALL"> = [

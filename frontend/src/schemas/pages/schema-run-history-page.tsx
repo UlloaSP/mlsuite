@@ -29,9 +29,9 @@ import {
   useSchema,
   useSchemaVersion,
 } from "../hooks";
-import { isSchemaFeedbackComplete } from "../schema-feedback-state";
-import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
-import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
+import { isSchemaFeedbackComplete } from "../../algorithms/schema/feedback-state";
+import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
+import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
 import type { PredictionRunDto } from "../types";
 
 const inRange = (run: PredictionRunDto, range: SchemaRunDateRangeFilter): boolean => {

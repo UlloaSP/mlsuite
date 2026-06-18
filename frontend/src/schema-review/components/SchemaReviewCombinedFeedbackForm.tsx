@@ -8,10 +8,10 @@ import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
-} from "../../models/combined-feedback-questionnaire";
+} from "../../algorithms/models/combined-feedback-questionnaire";
 import { ReportQuestionnaireMount } from "../../models/components/ReportQuestionnaireMount";
-import { buildQuestionnaireFormSchema } from "../../models/questionnaire-schema";
-import { buildSchemaFeedbackSteps } from "../../schemas/schema-feedback-steps";
+import { buildQuestionnaireFormSchema } from "../../algorithms/models/questionnaire-schema";
+import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,

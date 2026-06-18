@@ -7,7 +7,7 @@ import { ArrowRight, Database, TrendingUp } from "lucide-react";
 import { AppBadge, cx } from "../../app/components";
 import type { ModelDto } from "../api/modelService";
 import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
-import { formatTimestamp, getModelAlgorithmLabel } from "../utils";
+import { formatTimestamp, getModelAlgorithmLabel } from "../../algorithms/models/utils";
 
 const getModelIcon = (type: string) => {
   switch (type) {

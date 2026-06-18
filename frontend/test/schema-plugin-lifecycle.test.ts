@@ -4,11 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test, vi, afterEach } from "vite-plus/test";
-import { createForm } from "mlform/runtime";
-import { createReportFetchRequest } from "mlform/schema";
+import { createForm, executeFormPipeline } from "mlform/runtime";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
+import {
+  buildSchemaRunRawFromSubmitResult,
+  reportStatesFromSnapshot,
+} from "../src/algorithms/mlform/schema-run-result-state";
 import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
 
 const crystal = (): CatalogReportDefinition => ({
@@ -29,6 +32,7 @@ const crystal = (): CatalogReportDefinition => ({
       kind: z.literal("Crystal Tree"),
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
+    payloadSchema: z.object({ explanation: z.string() }),
     resolve: ({ report, result }) => result.reports[report.id],
     fetch: ({ config }) => ({
       submit: async (request) => {
@@ -100,20 +104,19 @@ describe("schema plugin real mlform lifecycle", () => {
       "crystal-2",
       "crystal-3",
     ]);
-    await Promise.all(
-      form.reports.map((report) =>
-        report.fetch(createReportFetchRequest(result, { reportId: report.id })),
-      ),
-    );
+    expect(form.reports.map((report) => report.state.status)).toEqual(["ready", "ready", "ready"]);
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
       "/api/analyzer/explanations?modelId=model-1",
       "/api/analyzer/explanations?modelId=model-2",
       "/api/analyzer/explanations?modelId=model-3",
     ]);
+    expect(result.reports["crystal-1"]).toEqual({
+      explanation: "/api/analyzer/explanations?modelId=model-1",
+    });
   });
 
-  test("prefetches custom reports during form submit without manual report fetch", async () => {
+  test("fetches custom reports through upstream form pipeline", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
@@ -146,15 +149,76 @@ describe("schema plugin real mlform lifecycle", () => {
       transport: runtime.transport,
     });
     form.setValues({ age: 42 });
-    const result = await form.submit();
+    const result = await executeFormPipeline({ form });
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
       "/api/analyzer/explanations?modelId=model-1",
       "/api/analyzer/explanations?modelId=model-2",
     ]);
-    expect((result as { reports: Record<string, unknown> }).reports["crystal-1"]).toEqual({
+    expect(result.submitResult.reports["crystal-1"]).toEqual({
       explanation: "/api/analyzer/explanations?modelId=model-1",
     });
+  });
+
+  test("mounted-style submit uses transport-prefetched custom reports", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
+        if (url.includes("modelId=model-2")) {
+          return new Response("unsupported", { status: 400 });
+        }
+        return new Response(JSON.stringify({ explanation: url }));
+      }),
+    );
+    const runtime = createSchemaRunRuntime({
+      schema: {
+        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": "crystal-tree" },
+          },
+          {
+            id: "crystal_2",
+            kind: "Crystal Tree",
+            mappedTo: { "model-2": "crystal-tree" },
+          },
+        ],
+      },
+      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      customReportDefinitions: [crystal()],
+    });
+    const form = createForm({
+      schema: runtime.formSchema,
+      registry: runtime.registry,
+      transport: runtime.transport,
+    });
+    form.setValues({ age: 42 });
+    const result = await form.submit();
+
+    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
+    expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
+      "/api/analyzer/explanations?modelId=model-1",
+      "/api/analyzer/explanations?modelId=model-2",
+    ]);
+    expect(form.reports[0]?.state).toMatchObject({
+      status: "ready",
+      payload: { explanation: "/api/analyzer/explanations?modelId=model-1" },
+    });
+    expect(form.reports[1]?.state.status).toBe("idle");
+    expect(form.reports[1]?.state.error).toBeNull();
+    expect((result.raw as { skippedReportIds?: string[] }).skippedReportIds).toContain(
+      "crystal-2",
+    );
+    const built = buildSchemaRunRawFromSubmitResult(
+      result.raw as Record<string, unknown>,
+      form.reports,
+      reportStatesFromSnapshot(form.state.reportStates),
+      [{ modelId: "model-1" }, { modelId: "model-2" }],
+    );
+    expect(built.reportsPending).toBe(false);
   });
 
   test("submits no-id schema with all normal and one-hot features plus report", async () => {
@@ -211,9 +275,9 @@ describe("schema plugin real mlform lifecycle", () => {
       category: "1",
     });
 
-    const result = await form.submit();
+    const result = await executeFormPipeline({ form });
     const modelInput = (
-      result as { raw: { results: Array<{ modelInput: Record<string, unknown> }> } }
+      result.submitResult as { raw: { results: Array<{ modelInput: Record<string, unknown> }> } }
     ).raw.results[0].modelInput;
 
     expect(Object.keys(modelInput)).toHaveLength(29);
@@ -223,7 +287,7 @@ describe("schema plugin real mlform lifecycle", () => {
       category__1: 1,
       category__11: 0,
     });
-    expect((result as { reports: Record<string, unknown> }).reports.report).toEqual({
+    expect(result.submitResult.reports.report).toEqual({
       explanation: "/api/analyzer/explanations?modelId=model-1",
     });
   });

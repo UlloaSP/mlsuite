@@ -1,10 +1,10 @@
-import type { PredictionReportDescriptor } from "../../models/questionnaire-feedback";
+import type { PredictionReportDescriptor } from "../../algorithms/models/questionnaire-feedback";
 import {
   formatProbability,
   getSchemaAwareTargetValue,
   getTargetLabel,
   getTargetProbability,
-} from "../../models/target-utils";
+} from "../../algorithms/models/target-utils";
 
 type ReviewOutputsSectionProps = {
   targets: TargetDto[];
