@@ -1,29 +1,28 @@
 # Analyzer Reports Contract Cleanup
 
-# MLForm Linked Docker Build
+# Multi-Model Plugin Report Expansion
 
 ## Goal
 
-- [x] Make frontend dev Docker build use linked `../../mlform`.
-- [x] Stop Docker from compiling MLSuite against registry `mlform@0.1.16` old types.
-- [x] Verify frontend TypeScript/build and Docker frontend build.
+- [x] Render one plugin report per bound model when schema report uses multi-model `mappedTo`.
+- [x] Ensure modal/persist receives fetched plugin payloads for every successful model.
+- [x] Verify focused plugin lifecycle, mounted run, TypeScript, full frontend tests, graph update.
 
 ## Plan
 
-- [x] Change frontend dependency to `file:../../mlform`.
-- [x] Add Compose `additional_contexts` for sibling MLForm.
-- [x] Copy MLForm named context into Docker build at the same relative path.
+- [x] Add regression for one Crystal Tree schema report mapped to multiple models.
+- [x] Expand multi-model report configs into per-model runtime report instances before MLForm mount.
+- [x] Keep persisted schema contract unchanged; expansion is runtime-only.
 
 ## Review
 
-- Root cause: local `../mlform` had new `reports: unknown[]` types, but Docker installed registry `mlform@0.1.16` with old `reports: Record<string, unknown>`.
-- Dev Compose now provides the sibling MLForm package to the frontend build context.
+- Root cause: MLForm saw one report controller for one schema report id, while `reportContextById` is per report instance. Multi-model contexts collapsed to one runtime report.
+- Runtime now expands report `mappedTo` records into per-binding report instances with stable ids like `crystal-model-1`, each retaining one backend-specific `mappedTo` record.
 - Verification:
+  - `frontend`: `vp test test/schema-run-mounted-render.test.ts test/schema-plugin-lifecycle.test.ts test/schema-run-multi-plugin-report.test.ts` passed, 10 tests.
   - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp run build` passed.
-  - `frontend`: `vp test` passed, 30 files / 107 tests.
-  - `docker compose -f docker-compose.dev.yml config` passed and resolves `mlform` additional context to `C:\software\mlform`.
-  - `docker compose -f docker-compose.dev.yml build frontend` passed.
+  - `frontend`: `vp test` passed, 31 files / 108 tests.
+  - `frontend`: touched source/test line-count passed; max touched test 293 non-comment lines.
   - Repo: `git diff --check` passed for touched MLSuite files.
   - Repo: `graphify update .` passed.
 

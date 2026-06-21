@@ -68,7 +68,7 @@ const crystal = (): CatalogReportDefinition => ({
 describe("schema plugin real mlform lifecycle", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  test("creates one fetchable report controller per bound model", async () => {
+  test("expands one mapped custom report into one fetchable controller per model", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
@@ -81,21 +81,13 @@ describe("schema plugin real mlform lifecycle", () => {
         fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
-            id: "crystal_1",
+            id: "crystal",
             kind: "Crystal Tree",
-            mappedTo: { "model-1": "crystal-tree" },
-            endpoint: "/api/analyzer/explanations",
-          },
-          {
-            id: "crystal_2",
-            kind: "Crystal Tree",
-            mappedTo: { "model-2": "crystal-tree" },
-            endpoint: "/api/analyzer/explanations",
-          },
-          {
-            id: "crystal_3",
-            kind: "Crystal Tree",
-            mappedTo: { "model-3": "crystal-tree" },
+            mappedTo: {
+              "model-1": "crystal-tree",
+              "model-2": "crystal-tree",
+              "model-3": "crystal-tree",
+            },
             endpoint: "/api/analyzer/explanations",
           },
         ],
@@ -111,9 +103,9 @@ describe("schema plugin real mlform lifecycle", () => {
     form.setValues({ age: 42 });
     const result = await executeFormPipeline({ form });
     expect(form.reports.map((report) => report.id)).toEqual([
-      "crystal-1",
-      "crystal-2",
-      "crystal-3",
+      "crystal-model-1",
+      "crystal-model-2",
+      "crystal-model-3",
     ]);
     expect(form.reports.map((report) => report.state.status)).toEqual(["ready", "ready", "ready"]);
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
@@ -122,9 +114,20 @@ describe("schema plugin real mlform lifecycle", () => {
       "/api/analyzer/explanations?modelId=model-2",
       "/api/analyzer/explanations?modelId=model-3",
     ]);
-    expect(result.reportFetchResults["crystal-1"]).toEqual({
+    expect(result.reportFetchResults["crystal-model-1"]).toEqual({
       explanation: "/api/analyzer/explanations?modelId=model-1",
     });
+    const built = buildSchemaRunRawFromSubmitResult(
+      result.submitResult.raw as Record<string, unknown>,
+      form.reports,
+      reportStatesFromSnapshot(form.state.reportStates),
+      [{ modelId: "model-1" }, { modelId: "model-2" }, { modelId: "model-3" }],
+    );
+    expect(
+      (built.raw.results as Array<{ output: { reports: unknown[] } }>).map(
+        (item) => item.output.reports.length,
+      ),
+    ).toEqual([1, 1, 1]);
   });
 
   test("fetches custom reports through upstream form pipeline", async () => {

@@ -10,11 +10,12 @@ import type { FormSchema, Registry, ReportConfig, Transport } from "mlform/runti
 import type { CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
 import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
 import { toMlformSchema } from "../../../algorithms/mlform/schema-validation";
-import type { PredictionPayloadField } from "../../../algorithms/mlform/shared";
+import { isRecord, type PredictionPayloadField } from "../../../algorithms/mlform/shared";
 import { createSchemaRunTransport } from "../../../algorithms/schema/run-transport";
 import { wrapSchemaReportDefinitions } from "../../../algorithms/schema/report-plugin-context";
 import { schemaRunDebug } from "../../../algorithms/schema/run-debug";
 import { toMlformRuntimeSchema } from "../../../algorithms/mlform/schema-runtime-adapter";
+import { mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
 
 type Binding = {
   modelId: string;
@@ -64,6 +65,41 @@ const createRegistry = (
   return pack;
 };
 
+const reportBaseId = (report: Record<string, unknown>, index: number): string =>
+  typeof report.id === "string" && report.id.trim()
+    ? report.id
+    : typeof report.label === "string" && report.label.trim()
+      ? report.label
+      : `report-${index + 1}`;
+
+const reportLabel = (
+  report: Record<string, unknown>,
+  binding: Binding,
+): string | undefined => {
+  const label = typeof report.label === "string" ? report.label : undefined;
+  const model = binding.modelName ?? binding.modelId;
+  return label && model ? `${label} ${model}` : label;
+};
+
+const expandRuntimeReports = (schema: unknown, bindings: readonly Binding[]): unknown => {
+  if (!isRecord(schema) || !Array.isArray(schema.reports) || bindings.length <= 1) return schema;
+  const reports = schema.reports.flatMap((report, index) => {
+    if (!isRecord(report) || !isRecord(report.mappedTo)) return [report];
+    const targets = bindings
+      .map((binding) => ({ binding, target: targetKey(mappedTarget(report.mappedTo, binding)) }))
+      .filter((item): item is { binding: Binding; target: string } => item.target !== undefined);
+    if (targets.length <= 1) return [report];
+    const baseId = reportBaseId(report, index);
+    return targets.map(({ binding, target }) => ({
+      ...report,
+      id: `${baseId}-${binding.modelId}`,
+      label: reportLabel(report, binding),
+      mappedTo: { [binding.modelName ?? binding.modelId]: target },
+    }));
+  });
+  return { ...schema, reports };
+};
+
 /**
  * createSchemaRunRuntime: creates a configured runtime object or schema object
  *
@@ -84,7 +120,8 @@ export const createSchemaRunRuntime = ({
     customReports: customReportDefinitions.map((definition) => definition.kind),
   });
   const schemaReportDefinitions = wrapSchemaReportDefinitions(customReportDefinitions);
-  const formSchema = toMlformSchema(toMlformRuntimeSchema(schema), {
+  const runtimeSchema = expandRuntimeReports(schema, bindings);
+  const formSchema = toMlformSchema(toMlformRuntimeSchema(runtimeSchema), {
     customFieldDefinitions,
     customReportDefinitions: schemaReportDefinitions,
   });

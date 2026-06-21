@@ -6,8 +6,8 @@
 - Rule: when backend contract migration is complete and user requests breaking cleanup, delete compatibility reads and update tests to the current contract; do not keep silent fallback paths that hide wrong payload shapes.
 - Correction: report fixes kept compatibility for keyed `reports` maps, `explanations`, exact report-id aliases, and single-target `mappedTo` map fallback after the user clarified those were legacy.
 - Rule: current report contract is `reports[]` plus explicit `mappedTo`; do not keep keyed report maps, `outputs`, `explanations`, report-id fallback, alias migration, or model-map fallback unless the user explicitly asks for a migration bridge.
-- Correction: frontend Docker build compiled against registry `mlform@0.1.16` while local/dev tests used linked `../mlform` with newer report-array types.
-- Rule: when adapting MLSuite to linked MLForm API, verify installed package source in `node_modules`, lockfile, and Docker build context; registry fallback can hide stale public types.
+- Correction: a single plugin report with multi-model `mappedTo` rendered as one MLForm report controller, so report fetch/display state did not align with per-model persistence.
+- Rule: schema reports with multi-model `mappedTo` must expand into per-binding runtime report instances before MLForm mount; persisted schema can stay compact, but report lifecycle state needs model-specific ids.
 
 ## 2026-06-19 - MLForm linked API correction
 
