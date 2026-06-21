@@ -10,7 +10,10 @@ import { NotFoundError } from "../../app/pages/error-page";
 import { emitErrorFromUnknown } from "../../app/utils/error-sink";
 import { useUser } from "../../api/user/hooks";
 import { useWorkspaceContext } from "../../api/workspace/hooks";
-import { applyInspectedBundleFiles, type InspectedBundleFile } from "../../algorithms/models/bundle-planner";
+import {
+  applyInspectedBundleFiles,
+  type InspectedBundleFile,
+} from "../../algorithms/models/bundle-planner";
 import type { Bundle } from "../bundle-types";
 import {
   DF_EXTS,

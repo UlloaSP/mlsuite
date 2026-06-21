@@ -56,10 +56,10 @@ const resultPayload = (
   const reportContextById = {
     ...outputContext,
     [report.id]: isRecord(outputContext[report.id])
-        ? outputContext[report.id]
-        : {
-            modelId: result.modelId,
-            modelInput: result.modelInput,
+      ? outputContext[report.id]
+      : {
+          modelId: result.modelId,
+          modelInput: result.modelInput,
           meta,
           raw: result.output,
         },
@@ -69,7 +69,14 @@ const resultPayload = (
     fieldValues: {},
     serializedValues: {},
     serializedFieldValues: {},
-    reports: { [report.id]: report.payload },
+    reports: [
+      {
+        id: report.id,
+        kind: report.kind,
+        mappedTo: report.config.mappedTo,
+        payload: report.payload,
+      },
+    ],
     reportStates: { [report.id]: state },
     meta: { ...meta, reportContextById },
     raw: { ...result.output, reportContextById },
@@ -84,6 +91,8 @@ export function SchemaRunReportRenderer({
   const registry = useMemo(() => createPredictionPrimitiveRegistry(), []);
   const customReport = customReportByKind(report.kind, customReportDefinitions);
   schemaRunDebug("renderer.start", {
+    result,
+    report,
     reportId: report.id,
     kind: report.kind,
     modelId: result.modelId,
@@ -113,6 +122,8 @@ export function SchemaRunReportRenderer({
   const config = report.config;
   schemaRunDebug("renderer.config", {
     reportId: report.id,
+    config,
+    payload: report.payload,
     hasConfig: true,
   });
   const normalizedConfig = { ...config, id: report.id };
@@ -130,6 +141,10 @@ export function SchemaRunReportRenderer({
   const descriptor = describeSchemaCustomReport(customReport, normalizedConfig, context);
   schemaRunDebug("renderer.descriptor", {
     reportId: report.id,
+    lastResult,
+    context,
+    patchedLastResult,
+    descriptor,
     hasDescriptor: Boolean(descriptor),
     descriptorType: isRecord(descriptor) ? descriptor.type : typeof descriptor,
   });

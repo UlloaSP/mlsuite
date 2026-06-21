@@ -5,9 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../../app/config/runtimeConfig";
-import { toLegacyReportPayload } from "../../../algorithms/mlform/report-normalization";
-import { isRecord } from "../../../algorithms/mlform/shared";
+import { toAnalyzerReportPayload } from "../../../algorithms/mlform/report-normalization";
+import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
 import { mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
+import { reportTargetForBinding } from "../schema-run-report-mapping";
+import { schemaRunDebug } from "../../schema/run-debug";
 
 type Options = {
   parsed: unknown;
@@ -18,7 +20,7 @@ type Options = {
 };
 
 type NormalizedAnalyzerResult = {
-  reports: Record<string, unknown>;
+  reports: JsonRecord[];
   meta: Record<string, unknown>;
   raw: Record<string, unknown>;
 };
@@ -39,34 +41,52 @@ export const normalizeAnalyzerPredictionResult = ({
   reports,
 }: Options): NormalizedAnalyzerResult => {
   const normalizedReports =
-    isRecord(parsed) && isRecord(parsed.reports) ? { ...parsed.reports } : {};
+    isRecord(parsed) && Array.isArray(parsed.reports) ? parsed.reports.filter(isRecord) : [];
   const normalizedMeta = isRecord(parsed) && isRecord(parsed.meta) ? { ...parsed.meta } : {};
   normalizedMeta.modelId ??= modelId;
   normalizedMeta.backendUrl ??= getBackendBaseUrl();
   normalizedMeta.backendFieldValues ??= modelInput;
   const normalizedRaw = isRecord(parsed) ? parsed : { raw: parsed };
-
-  reports.forEach((report) => {
-    const target = targetKey(mappedTarget(report.mappedTo, { modelId, modelName }));
-    if (!target || normalizedReports[target] !== undefined) return;
-    const legacyPayload = toLegacyReportPayload(report, parsed);
-    if (legacyPayload === undefined) return;
-    normalizedReports[target] = legacyPayload;
+  schemaRunDebug("normalize-analyzer.start", {
+    parsed,
+    modelId,
+    modelName,
+    modelInput,
+    reports,
+    normalizedReports,
+    normalizedMeta,
   });
 
-  return {
+  reports.forEach((report) => {
+    const kind = typeof report.kind === "string" ? report.kind : "";
+    const target =
+      reportTargetForBinding(report, { modelId, modelName }) ??
+      targetKey(mappedTarget(report.mappedTo, { modelId, modelName }));
+    schemaRunDebug("normalize-analyzer.report-target", { report, kind, target });
+    if (!target || normalizedReports.some((item) => String(item.mappedTo) === target)) return;
+    const analyzerPayload = toAnalyzerReportPayload(report, parsed);
+    schemaRunDebug("normalize-analyzer.report-payload", { report, target, analyzerPayload });
+    if (analyzerPayload === undefined) return;
+    normalizedReports.push({
+      ...analyzerPayload,
+      id: report.id,
+      kind,
+      mappedTo: target,
+    });
+  });
+
+  const normalized = {
     reports: normalizedReports,
     meta: normalizedMeta,
     raw: {
       ...normalizedRaw,
-      reports: {
-        ...(isRecord(normalizedRaw.reports) ? normalizedRaw.reports : {}),
-        ...normalizedReports,
-      },
+      reports: normalizedReports,
       meta: {
         ...(isRecord(normalizedRaw.meta) ? normalizedRaw.meta : {}),
         ...normalizedMeta,
       },
     },
   };
+  schemaRunDebug("normalize-analyzer.done", normalized);
+  return normalized;
 };

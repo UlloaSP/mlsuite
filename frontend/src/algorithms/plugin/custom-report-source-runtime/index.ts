@@ -204,7 +204,7 @@ export const validateCustomReportSource = async (source: string): Promise<Custom
         payload: {},
         result: {
           reportStates: {},
-          reports: {},
+          reports: [],
           meta: {},
           raw: {},
           values: {},

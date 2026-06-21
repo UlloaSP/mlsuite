@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import type { CatalogReportDefinition } from "../../algorithms/plugin/custom-report-catalog";
 import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
 import { getSchemaResultReports } from "../../algorithms/schema/report-display";
+import { schemaRunDebug } from "../../algorithms/schema/run-debug";
 import type { PredictionResultDto, SchemaVersionDto } from "../../api/schemas/dtos";
 import { SchemaRunReportRenderer } from "./SchemaRunReportRenderer";
 
@@ -28,6 +29,12 @@ export function SchemaRunReportsPanel({
   const reports = results.flatMap((result) =>
     getSchemaResultReports(version, result).map((report) => ({ result, report })),
   );
+  schemaRunDebug("reports-panel.render", {
+    versionId: version.id,
+    results,
+    reports,
+    customKinds: customReportDefinitions.map((definition) => definition.kind),
+  });
   return (
     <AppPanel className="space-y-4">
       <button

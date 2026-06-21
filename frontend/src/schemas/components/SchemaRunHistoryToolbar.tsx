@@ -5,7 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { CalendarDays, Search, SlidersHorizontal } from "lucide-react";
 import { AppSelect, AppTextField, AppToolbar } from "../../app/components";
-import type { PredictionRunStatus, PredictionRunDto, SchemaVersionDto } from "../../api/schemas/dtos";
+import type {
+  PredictionRunStatus,
+  PredictionRunDto,
+  SchemaVersionDto,
+} from "../../api/schemas/dtos";
 import { SchemaRunExportButton } from "./SchemaRunExportButton";
 
 export type SchemaRunStatusFilter = "all" | PredictionRunStatus;

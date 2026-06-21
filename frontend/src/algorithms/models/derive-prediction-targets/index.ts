@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 type PredictionOutput = {
-  type?: string;
+  kind?: string;
   probabilities?: number[][];
   mapping?: Array<string | number>;
   values?: Array<string | number>;
@@ -13,7 +13,7 @@ type PredictionOutput = {
 /**
  * DerivedPredictionTarget: describes the public data contract consumed or returned by this algorithm.
  *
- * Purpose: derives feedback targets from prediction outputs.
+ * Purpose: derives feedback targets from prediction reports.
  * @returns Type-only export; no runtime value is emitted.
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
@@ -23,13 +23,13 @@ export type DerivedPredictionTarget = {
   value: unknown;
 };
 
-/** asOutput: internal helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const asOutput = (value: Record<string, unknown>): PredictionOutput | null => {
-  const outputs = value.outputs;
-  if (!Array.isArray(outputs) || outputs.length === 0) {
+/** asReport: internal helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
+const asReport = (value: Record<string, unknown>): PredictionOutput | null => {
+  const reports = value.reports;
+  if (!Array.isArray(reports) || reports.length === 0) {
     return null;
   }
-  const first = outputs[0];
+  const first = reports[0];
   return typeof first === "object" && first !== null ? (first as PredictionOutput) : null;
 };
 
@@ -61,10 +61,10 @@ const getTargetClassLabel = (
 /**
  * derivePredictionTargets: performs the exported transformation for this algorithm.
  *
- * Purpose: derives feedback targets from prediction outputs.
- * @param prediction - Input consumed by derivePredictionTargets; uses the derives feedback targets from prediction outputs contract.
- * @param unknown - Input consumed by derivePredictionTargets; uses the derives feedback targets from prediction outputs contract.
- * @param schemaDefinition - Input consumed by derivePredictionTargets; uses the derives feedback targets from prediction outputs contract.
+ * Purpose: derives feedback targets from prediction reports.
+ * @param prediction - Input consumed by derivePredictionTargets; uses the derives feedback targets from prediction reports contract.
+ * @param unknown - Input consumed by derivePredictionTargets; uses the derives feedback targets from prediction reports contract.
+ * @param schemaDefinition - Input consumed by derivePredictionTargets; uses the derives feedback targets from prediction reports contract.
  * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
@@ -73,12 +73,12 @@ export function derivePredictionTargets(
   prediction: Record<string, unknown>,
   schemaDefinition: unknown,
 ): DerivedPredictionTarget[] {
-  const output = asOutput(prediction);
+  const output = asReport(prediction);
   if (!output) {
     return [];
   }
 
-  if (output.type === "classifier" && Array.isArray(output.probabilities)) {
+  if (output.kind === "classifier" && Array.isArray(output.probabilities)) {
     return output.probabilities.map((target, index) => {
       const maxIndex = target.indexOf(Math.max(...target));
       return {
@@ -95,7 +95,7 @@ export function derivePredictionTargets(
     });
   }
 
-  if (output.type === "regressor" && Array.isArray(output.values)) {
+  if (output.kind === "regressor" && Array.isArray(output.values)) {
     return output.values.map((target, index) => ({
       order: index,
       value: target,

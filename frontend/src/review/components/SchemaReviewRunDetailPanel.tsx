@@ -5,10 +5,7 @@ import { ReviewAccordionSection } from "../../review/components/ReviewAccordionS
 import { ReviewInputsSection } from "../../review/components/ReviewInputsSection";
 import { ReviewOutputsSection, type TargetDto } from "../../review/components/ReviewOutputsSection";
 import { getFormattedReportContent } from "../../algorithms/models/report-feedback-utils";
-import {
-  getVisibleSchemaInputRecord,
-  mergeSchemaRunInputs,
-} from "../../algorithms/schema/input-display";
+import { getVisibleSchemaInputRecord } from "../../algorithms/schema/input-display";
 import { getSchemaResultReports } from "../../algorithms/schema/report-display";
 import type { SchemaVersionDto } from "../../api/schemas/dtos";
 import { useSchemaReviewRun } from "../../api/review/hooks";
@@ -18,7 +15,7 @@ type Props = {
   token: string;
   runToken: string;
   version: SchemaVersionDto;
-  onReviewChanged: () => Promise<unknown> | unknown;
+  onReviewChanged: () => unknown;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -41,12 +38,7 @@ export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewC
   const [inputsOpen, setInputsOpen] = useState(false);
   const visibleInputs = useMemo(
     () =>
-      detail.data
-        ? getVisibleSchemaInputRecord(
-            version.formSchema,
-            mergeSchemaRunInputs(detail.data.run.inputData, detail.data.run.results),
-          )
-        : {},
+      detail.data ? getVisibleSchemaInputRecord(version.formSchema, detail.data.run.inputData) : {},
     [detail.data, version.formSchema],
   );
   const feedbackReports = useMemo(

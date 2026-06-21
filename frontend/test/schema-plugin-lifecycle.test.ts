@@ -14,6 +14,17 @@ import {
 } from "../src/algorithms/mlform/schema-run-result-state";
 import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
 
+const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
+
+const findReport = (reports: readonly unknown[], id: string) =>
+  reports.find(
+    (report): report is { id?: string; payload?: unknown } =>
+      typeof report === "object" &&
+      report !== null &&
+      "id" in report &&
+      (report as { id?: unknown }).id === id,
+  );
+
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",
   fileName: "crystal.ts",
@@ -33,10 +44,10 @@ const crystal = (): CatalogReportDefinition => ({
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
     payloadSchema: z.object({ explanation: z.string() }),
-    resolve: ({ report, result }) => result.reports[report.id],
-    fetch: ({ config }) => ({
-      submit: async (request) => {
-        const modelId = String(request.meta?.modelId ?? "");
+    resolve: ({ report, result }) => findReport(result.reports, report.id)?.payload,
+    fetch: ({ config }: { config: { endpoint: string } }) => ({
+      submit: async (request: { meta?: Record<string, unknown> }) => {
+        const modelId = stringMeta(request.meta?.modelId);
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, {
           method: "POST",
           body: JSON.stringify({ instance: request.meta?.backendFieldValues }),
@@ -61,13 +72,13 @@ describe("schema plugin real mlform lifecycle", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "crystal_1",
@@ -98,7 +109,7 @@ describe("schema plugin real mlform lifecycle", () => {
       transport: runtime.transport,
     });
     form.setValues({ age: 42 });
-    const result = await form.submit();
+    const result = await executeFormPipeline({ form });
     expect(form.reports.map((report) => report.id)).toEqual([
       "crystal-1",
       "crystal-2",
@@ -111,7 +122,7 @@ describe("schema plugin real mlform lifecycle", () => {
       "/api/analyzer/explanations?modelId=model-2",
       "/api/analyzer/explanations?modelId=model-3",
     ]);
-    expect(result.reports["crystal-1"]).toEqual({
+    expect(result.reportFetchResults["crystal-1"]).toEqual({
       explanation: "/api/analyzer/explanations?modelId=model-1",
     });
   });
@@ -120,13 +131,13 @@ describe("schema plugin real mlform lifecycle", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "crystal_1",
@@ -155,16 +166,16 @@ describe("schema plugin real mlform lifecycle", () => {
       "/api/analyzer/explanations?modelId=model-1",
       "/api/analyzer/explanations?modelId=model-2",
     ]);
-    expect(result.submitResult.reports["crystal-1"]).toEqual({
+    expect(result.reportFetchResults["crystal-1"]).toEqual({
       explanation: "/api/analyzer/explanations?modelId=model-1",
     });
   });
 
-  test("mounted-style submit uses transport-prefetched custom reports", async () => {
+  test("pipeline stores fetched custom report states", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
         if (url.includes("modelId=model-2")) {
           return new Response("unsupported", { status: 400 });
         }
@@ -173,7 +184,7 @@ describe("schema plugin real mlform lifecycle", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "crystal",
@@ -196,7 +207,7 @@ describe("schema plugin real mlform lifecycle", () => {
       transport: runtime.transport,
     });
     form.setValues({ age: 42 });
-    const result = await form.submit();
+    const result = await executeFormPipeline({ form });
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
@@ -207,13 +218,10 @@ describe("schema plugin real mlform lifecycle", () => {
       status: "ready",
       payload: { explanation: "/api/analyzer/explanations?modelId=model-1" },
     });
-    expect(form.reports[1]?.state.status).toBe("idle");
-    expect(form.reports[1]?.state.error).toBeNull();
-    expect((result.raw as { skippedReportIds?: string[] }).skippedReportIds).toContain(
-      "crystal-2",
-    );
+    expect(form.reports[1]?.state.status).toBe("error");
+    expect(form.reports[1]?.state.error).toBe("unsupported");
     const built = buildSchemaRunRawFromSubmitResult(
-      result.raw as Record<string, unknown>,
+      result.submitResult.raw as Record<string, unknown>,
       form.reports,
       reportStatesFromSnapshot(form.state.reportStates),
       [{ modelId: "model-1" }, { modelId: "model-2" }],
@@ -225,13 +233,14 @@ describe("schema plugin real mlform lifecycle", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
         return new Response(JSON.stringify({ explanation: url }));
       }),
     );
     const normalFields = Array.from({ length: 18 }, (_, index) => ({
       kind: "number",
       label: `feature_${index + 1}`,
+      displayKey: `feature_${index + 1}`,
       mappedTo: { "Model One": `feature_${index + 1}` },
     }));
     const oneHotOptions = Array.from({ length: 11 }, (_, index) => ({
@@ -246,6 +255,7 @@ describe("schema plugin real mlform lifecycle", () => {
           {
             label: "Category",
             kind: "onehot-category",
+            displayKey: "category",
             options: oneHotOptions,
           },
         ],
@@ -287,7 +297,7 @@ describe("schema plugin real mlform lifecycle", () => {
       category__1: 1,
       category__11: 0,
     });
-    expect(result.submitResult.reports.report).toEqual({
+    expect(result.reportFetchResults.report).toEqual({
       explanation: "/api/analyzer/explanations?modelId=model-1",
     });
   });

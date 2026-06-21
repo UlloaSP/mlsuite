@@ -5,9 +5,22 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
+import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
 import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+
+const stringMeta = (value: unknown): string =>
+  typeof value === "string" || typeof value === "number" ? String(value) : "";
+
+const findReport = (reports: readonly unknown[], id: string) =>
+  reports.find(
+    (report): report is { id?: string; payload?: unknown } =>
+      typeof report === "object" &&
+      report !== null &&
+      "id" in report &&
+      (report as { id?: unknown }).id === id,
+  );
 
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",
@@ -27,10 +40,10 @@ const crystal = (): CatalogReportDefinition => ({
       kind: z.literal("Crystal Tree"),
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
-    resolve: ({ report, result }) => result.reports[report.id],
-    fetch: ({ config }) => ({
-      submit: async (request) => {
-        const modelId = String(request.meta?.modelId ?? "");
+    resolve: ({ report, result }) => findReport(result.reports, report.id)?.payload,
+    fetch: ({ config }: { config: { endpoint: string } }) => ({
+      submit: async (request: { meta?: Record<string, unknown> }) => {
+        const modelId = stringMeta(request.meta?.modelId);
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, {
           method: "POST",
           body: JSON.stringify({ instance: request.meta?.backendFieldValues }),
@@ -42,14 +55,15 @@ const crystal = (): CatalogReportDefinition => ({
   }),
 });
 
-const submit = (runtime: ReturnType<typeof createSchemaRunRuntime>) =>
-  runtime.transport.submit({
-    values: { age: 42 },
-    fieldValues: { age: 42 },
-    serializedValues: { age: 42 },
-    serializedFieldValues: { age: 42 },
-    reports: runtime.formSchema.reports,
-  } as never);
+const submit = (runtime: ReturnType<typeof createSchemaRunRuntime>) => {
+  const form = createForm({
+    schema: runtime.formSchema,
+    registry: runtime.registry,
+    transport: runtime.transport,
+  });
+  form.setValues({ age: 42 });
+  return executeFormPipeline({ form });
+};
 
 describe("schema plugin readiness failures", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -70,11 +84,13 @@ describe("schema plugin readiness failures", () => {
   test("schema without Crystal Tree report never calls explanations", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: { risk: { value: 1 } } }))),
+      vi.fn(
+        async () => new Response(JSON.stringify({ reports: [{ mappedTo: "risk", value: 1 }] })),
+      ),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "risk",
@@ -98,12 +114,12 @@ describe("schema plugin readiness failures", () => {
   test("custom report without mappedTo fails before submit", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: {} }))),
+      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
     );
     expect(() =>
       createSchemaRunRuntime({
         schema: {
-          fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+          fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
           reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
         },
         bindings: [{ modelId: "model-1" }],
@@ -116,13 +132,13 @@ describe("schema plugin readiness failures", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
-        return new Response(JSON.stringify({ explanations: ["ok"] }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+        return new Response(JSON.stringify({ reports: [{ explanation: "ok" }] }));
       }),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "crystal_tree_1",
@@ -147,13 +163,13 @@ describe("schema plugin readiness failures", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
-        return new Response(JSON.stringify({ explanations: ["ok"] }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+        return new Response(JSON.stringify({ reports: [{ explanation: "ok" }] }));
       }),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "crystal",

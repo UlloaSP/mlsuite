@@ -10,8 +10,8 @@ import { validateMlformSchema } from "../src/algorithms/mlform/schema-validation
 
 const builtinSchema = {
   fields: [
-    { kind: "text", label: "Name", mappedTo: "name" },
-    { kind: "number", label: "Age", mappedTo: "age" },
+    { kind: "text", label: "Name", displayKey: "name", mappedTo: "name" },
+    { kind: "number", label: "Age", displayKey: "age", mappedTo: "age" },
   ],
   reports: [{ kind: "classifier", labels: ["yes", "no"], mappedTo: "classifier" }],
 };
@@ -39,6 +39,7 @@ describe("MLForm builtin registry", () => {
         {
           kind: "onehot-category",
           label: "Blood",
+          displayKey: "blood",
           options: [
             { label: "A", value: "A", mappedTo: { "Model:Signature": "blood__A" } },
             { label: "B", value: "B", mappedTo: { "Model:Signature": "blood__B" } },

@@ -63,10 +63,10 @@ const run: PredictionRunDto = {
       createdAt: "2026-06-02T10:00:00Z",
       modelInput: { age: 52 },
       output: {
-        reports: {
-          predicted_class: { prediction: 1, probabilities: [0.2, 0.8] },
-          crystal: { explanation: "tree path" },
-        },
+        reports: [
+          { mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] },
+          { mappedTo: "crystal", explanation: "tree path" },
+        ],
       },
     },
   ],

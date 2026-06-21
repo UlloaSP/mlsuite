@@ -19,7 +19,6 @@ import {
   useSchemaVersion,
 } from "../../api/schemas/hooks";
 import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
-import { mergeSchemaRunInputs } from "../../algorithms/schema/input-display";
 import type { PendingFeedback } from "../../algorithms/schema/pending-feedback";
 import type { CreatePredictionRunRequest, JsonRecord } from "../../api/schemas/dtos";
 
@@ -43,7 +42,7 @@ export function CreateSchemaRunPage() {
   const [defaultName] = useState(`run-${new Date().toISOString()}`);
   const initialInputsRef = useRef<JsonRecord | undefined>(undefined);
   if (!initialInputsRef.current && sourceRun) {
-    initialInputsRef.current = mergeSchemaRunInputs(sourceRun.inputData, sourceRun.results);
+    initialInputsRef.current = sourceRun.inputData;
   }
 
   useEffect(() => {
@@ -70,9 +69,7 @@ export function CreateSchemaRunPage() {
         const run = await createRun.mutateAsync(request);
         await Promise.all(
           feedback.map((item) => {
-            const result = run.results.find(
-              (candidate) => candidate.modelId === item.modelId,
-            );
+            const result = run.results.find((candidate) => candidate.modelId === item.modelId);
             if (!result) return Promise.resolve();
             return createPredictionResultFeedback({
               resultId: result.id,

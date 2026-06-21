@@ -20,7 +20,11 @@ import {
 import { isRecord } from "../../algorithms/mlform/shared";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
-import { useCreateSchemaVersionMutation, useSchema, useSchemaVersions } from "../../api/schemas/hooks";
+import {
+  useCreateSchemaVersionMutation,
+  useSchema,
+  useSchemaVersions,
+} from "../../api/schemas/hooks";
 import { prepareSchemaVersionForSave } from "../../algorithms/schema/binding-rebase";
 import {
   schemaVersionId,

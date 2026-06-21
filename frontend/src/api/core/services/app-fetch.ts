@@ -15,9 +15,15 @@ export class HttpError extends Error {
     this.dto = dto;
   }
 
-  get status() { return this.dto.status; }
-  get timestamp() { return this.dto.timestamp; }
-  get path() { return this.dto.path; }
+  get status() {
+    return this.dto.status;
+  }
+  get timestamp() {
+    return this.dto.timestamp;
+  }
+  get path() {
+    return this.dto.path;
+  }
 }
 
 export const isHttpError = (e: unknown): e is HttpError => e instanceof HttpError;
@@ -28,14 +34,25 @@ const buildInit = (init?: RequestInit): RequestInit => ({
   headers: { ...init?.headers },
 });
 const toUrl = (path: string) => new URL(path, getBackendBaseUrl()).toString();
-const isJson = (res: Response) => res.headers.get("content-type")?.includes("application/json") ?? false;
+const isJson = (res: Response) =>
+  res.headers.get("content-type")?.includes("application/json") ?? false;
 const nowIso = () => new Date().toISOString();
 
 function fabricateDto(res: Response, path: string, msg: string): ErrorDto {
-  return { timestamp: nowIso(), status: res.status, message: msg, path: new URL(path, getBackendBaseUrl()).pathname };
+  return {
+    timestamp: nowIso(),
+    status: res.status,
+    message: msg,
+    path: new URL(path, getBackendBaseUrl()).pathname,
+  };
 }
 function fabricateNetworkDto(path: string, msg = "Network Error"): ErrorDto {
-  return { timestamp: nowIso(), status: 0, message: msg, path: new URL(path, getBackendBaseUrl()).pathname };
+  return {
+    timestamp: nowIso(),
+    status: 0,
+    message: msg,
+    path: new URL(path, getBackendBaseUrl()).pathname,
+  };
 }
 
 export async function appFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {

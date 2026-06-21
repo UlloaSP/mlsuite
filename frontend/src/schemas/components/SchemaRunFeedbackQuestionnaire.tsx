@@ -25,7 +25,11 @@ import {
   isSchemaFeedbackComplete,
 } from "../../algorithms/schema/feedback-state";
 import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
-import type { PredictionResultFeedbackDto, PredictionRunDto, SchemaVersionDto } from "../../api/schemas/dtos";
+import type {
+  PredictionResultFeedbackDto,
+  PredictionRunDto,
+  SchemaVersionDto,
+} from "../../api/schemas/dtos";
 
 type Props = {
   run: PredictionRunDto;

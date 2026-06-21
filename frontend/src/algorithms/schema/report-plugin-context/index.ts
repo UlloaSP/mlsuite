@@ -16,6 +16,9 @@ type SchemaReportContext = {
   raw?: unknown;
 };
 
+const modelIdString = (value: unknown): string | undefined =>
+  typeof value === "string" || typeof value === "number" ? String(value) : undefined;
+
 /**
  * skippedSchemaReportPayload: performs the exported transformation for this algorithm.
  *
@@ -100,7 +103,7 @@ export const patchSchemaReportRequest = <T>(request: T, reportId: string): T => 
     meta: {
       ...(isRecord(request.meta) ? request.meta : {}),
       ...reportMeta,
-      modelId: reportContext.modelId,
+      modelId: modelIdString(reportContext.modelId),
       backendUrl: reportMeta.backendUrl,
       backendFieldValues: modelInput,
     },
@@ -136,7 +139,7 @@ export const patchSchemaReportContext = (
       meta: {
         ...(isRecord(result.meta) ? result.meta : {}),
         ...reportMeta,
-        modelId: reportContext.modelId,
+        modelId: modelIdString(reportContext.modelId),
         backendUrl: reportMeta.backendUrl,
         backendFieldValues: reportMeta.backendFieldValues,
       },
@@ -175,6 +178,33 @@ const wrapFetchFactory = (
     };
   }) as CatalogReportDefinition["definition"]["fetch"];
 
+type SchemaLike = CatalogReportDefinition["definition"]["schema"];
+
+const schemaRunKeys = ["id", "label", "mappedTo", "displayKey", "source"] as const;
+
+const mergeSchemaRunConfig = (parsed: unknown, source: unknown): unknown => {
+  if (!isRecord(parsed) || !isRecord(source)) return parsed;
+  const next: Record<string, unknown> = { ...parsed };
+  schemaRunKeys.forEach((key) => {
+    if (source[key] !== undefined) next[key] = source[key];
+  });
+  return next;
+};
+
+const preserveSchemaRunConfig = (schema: SchemaLike): SchemaLike =>
+  ({
+    ...schema,
+    parse(value: unknown) {
+      return mergeSchemaRunConfig(schema.parse(value), value);
+    },
+    safeParse(value: unknown) {
+      const result = schema.safeParse(value);
+      return result.success
+        ? { ...result, data: mergeSchemaRunConfig(result.data, value) }
+        : result;
+    },
+  }) as SchemaLike;
+
 /**
  * wrapSchemaReportDefinitions: wraps definitions to preserve schema-specific behavior
  *
@@ -195,9 +225,11 @@ export const wrapSchemaReportDefinitions = (
       ...definition,
       definition: {
         ...definition.definition,
+        schema: preserveSchemaRunConfig(definition.definition.schema),
         fetch: wrappedTopFetch,
         definition: {
           ...definition.definition.definition,
+          schema: preserveSchemaRunConfig(definition.definition.definition.schema),
           fetch: wrappedInnerFetch,
         },
         describe:

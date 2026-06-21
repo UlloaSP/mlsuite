@@ -39,7 +39,7 @@ describe("schema review output context", () => {
           createdAt: "2026-06-04T00:00:00Z",
           modelInput: {},
           output: {
-            reports: { predicted_class: { prediction: 1, probabilities: [0.2, 0.8] } },
+            reports: [{ mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] }],
           },
         },
       ],
@@ -55,6 +55,7 @@ describe("schema review output context", () => {
         {
           id: "blood_group",
           label: "Blood Group",
+          displayKey: "bloodGroup",
           kind: "onehot-category",
           options: [
             {
@@ -69,14 +70,13 @@ describe("schema review output context", () => {
             },
           ],
         },
-        { id: "age", label: "age", kind: "number" },
+        { id: "age", label: "age", displayKey: "age", kind: "number" },
       ],
     };
 
     expect(
       getVisibleSchemaInputRecord(schema, {
-        blood_group__A: 0,
-        blood_group__B: 1,
+        bloodGroup: "B",
         age: 52,
       }),
     ).toEqual({ "Blood Group": "B", age: 52 });

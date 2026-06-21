@@ -17,7 +17,7 @@
     "json-source-map": "^0.6.1",
     "jsonc-parser": "^3.3.1",
     "lucide-react": "^1.16.0",
-    "mlform": "0.1.15",
+    "mlform": "0.1.18",
     "monaco-editor": "^0.55.1",
     "motion": "^12.38.0",
     "radix-ui": "^1.5.0",
@@ -36,6 +36,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react-swc": "^4.3.1",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
@@ -45,5 +46,5 @@
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
   },
-  "packageManager": "pnpm@11.6.0"
+  "packageManager": "pnpm@11.8.0"
 }

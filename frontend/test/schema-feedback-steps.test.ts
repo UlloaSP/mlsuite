@@ -41,7 +41,7 @@ const run: PredictionRunDto = {
       runId: "run-1",
       modelId: "model-1",
       modelInput: {},
-      output: { reports: { score: { prediction: 1, probabilities: [0.1, 0.9] } } },
+      output: { reports: [{ mappedTo: "score", prediction: 1, probabilities: [0.1, 0.9] }] },
       status: "SUCCESS",
       createdAt: "2026-06-02T00:00:00Z",
     },
@@ -121,7 +121,15 @@ describe("schema feedback steps", () => {
       results: [
         {
           ...run.results[0]!,
-          output: { reports: { plugin_payload: { blocks: ["Rendered"] } } },
+          output: {
+            reports: [
+              {
+                id: "custom_report",
+                mappedTo: "plugin_payload",
+                payload: { blocks: ["Rendered"] },
+              },
+            ],
+          },
         },
       ],
     };
@@ -151,7 +159,15 @@ describe("schema feedback steps", () => {
       results: [
         {
           ...run.results[0]!,
-          output: { reports: { plugin_payload: { explanation: "Rendered" } } },
+          output: {
+            reports: [
+              {
+                id: "custom_report",
+                mappedTo: "plugin_payload",
+                payload: { explanation: "Rendered" },
+              },
+            ],
+          },
         },
       ],
     };
@@ -192,13 +208,19 @@ describe("schema feedback steps", () => {
       results: [
         {
           ...run.results[0]!,
-          output: { reports: { "crystal-tree": { explanation: "ok" } } },
+          output: {
+            reports: [{ id: "tree_1", mappedTo: "crystal-tree", payload: { explanation: "ok" } }],
+          },
         },
         {
           ...run.results[0]!,
           id: "result-2",
           modelId: "model-2",
-          output: { reports: { "crystal-tree": skippedSchemaReportPayload } },
+          output: {
+            reports: [
+              { id: "tree_2", mappedTo: "crystal-tree", payload: skippedSchemaReportPayload },
+            ],
+          },
         },
       ],
     };
@@ -245,21 +267,26 @@ describe("schema feedback steps", () => {
       results: [
         {
           ...run.results[0]!,
-          output: { reports: { "crystal-tree": { explanation: "ok", explanations: ["ok"] } } },
+          output: {
+            reports: [{ id: "tree_1", mappedTo: "crystal-tree", payload: { explanation: "ok" } }],
+          },
         },
         {
           ...run.results[0]!,
           id: "result-2",
           modelId: "model-2",
           output: {
-            reports: {
-              "crystal-tree": {
-                endpoint: "/api/analyzer/explanations",
-                explanation: "",
-                explanations: [],
-                modelId: "model-2",
+            reports: [
+              {
+                id: "tree_2",
+                mappedTo: "crystal-tree",
+                payload: {
+                  endpoint: "/api/analyzer/explanations",
+                  explanation: "",
+                  modelId: "model-2",
+                },
               },
-            },
+            ],
           },
         },
       ],

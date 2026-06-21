@@ -7,17 +7,10 @@ import type { ReportConfig, SubmitRequest, Transport } from "mlform/runtime";
 import { getBackendBaseUrl } from "../../../app/config/runtimeConfig";
 import { type JsonRecord, type PredictionPayloadField, isRecord } from "../../mlform/shared";
 import { normalizeAnalyzerPredictionResult } from "../../mlform/analyzer-result-normalization";
-import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
 import { skippedReportIdsKey } from "../report-plugin-context";
-import { fetchSchemaCustomReports } from "../custom-report-fetch";
 import { schemaRunDebug, schemaRunDebugError } from "../run-debug";
 import { applySchemaRunInputMapping } from "../model-input-mapping";
 import { reportTargetForBinding, reportContextKey } from "../../mlform/schema-run-report-mapping";
-import {
-  toCanonicalPayload,
-  toFieldIdPayload,
-  toVisiblePayload,
-} from "../runtime-payload";
 
 type SchemaRunBinding = {
   modelId: string;
@@ -47,6 +40,8 @@ const failureOutput = (modelId: string, modelInput: JsonRecord): JsonRecord => (
   },
 });
 
+const requestRecord = (value: unknown): JsonRecord => (isRecord(value) ? value : {});
+
 /** runBinding: internal helper for schema composition, run, report, and feedback flow. @remarks Args: binding, fieldValues, fields, reports; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const runBinding = async (
   binding: SchemaRunBinding,
@@ -56,6 +51,10 @@ const runBinding = async (
 ) => {
   const modelInput = applySchemaRunInputMapping(fieldValues, fields, binding);
   schemaRunDebug("transport.model.start", {
+    binding,
+    fieldValues,
+    fields,
+    modelInput,
     modelId: binding.modelId,
     modelInputKeys: Object.keys(modelInput),
     requestedReports: reports.map((report) => ({ id: report.id, kind: report.kind })),
@@ -71,6 +70,12 @@ const runBinding = async (
       { method: "POST", body: formData, credentials: "include" },
     );
     const parsed = await parseResponse(response);
+    schemaRunDebug("transport.model.response", {
+      modelId: binding.modelId,
+      ok: response.ok,
+      status: response.status,
+      parsed,
+    });
     if (response.ok) {
       const normalized = normalizeAnalyzerPredictionResult({
         parsed,
@@ -81,7 +86,8 @@ const runBinding = async (
       });
       schemaRunDebug("transport.model.success", {
         modelId: binding.modelId,
-        reportKeys: isRecord(normalized.raw.reports) ? Object.keys(normalized.raw.reports) : [],
+        normalized,
+        reportCount: Array.isArray(normalized.raw.reports) ? normalized.raw.reports.length : 0,
         meta: normalized.meta,
       });
       return {
@@ -129,22 +135,9 @@ const reportKey = (report: ReportConfig): string | undefined =>
 
 /** findReportPayload: internal lookup helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const findReportPayload = (target: string, output: JsonRecord): JsonRecord | undefined => {
-  if (isRecord(output.reports) && isRecord(output.reports[target])) {
-    return output.reports[target];
-  }
-  return undefined;
-};
-
-/** storeReportPayload: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: reports, reportId, target, payload; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const storeReportPayload = (
-  reports: JsonRecord,
-  reportId: string,
-  target: string,
-  payload: unknown,
-) => {
-  reports[reportContextKey(reportId)] = payload;
-  reports[reportId] = payload;
-  reports[target] = payload;
+  const reports = Array.isArray(output.reports) ? output.reports.filter(isRecord) : [];
+  const payload = reports.find((item) => String(item.mappedTo) === target);
+  return payload;
 };
 
 /** buildReports: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
@@ -152,9 +145,9 @@ const buildReports = (
   results: readonly Awaited<ReturnType<typeof runBinding>>[],
   bindings: readonly SchemaRunBinding[],
   reports: readonly ReportConfig[],
-): { reports: JsonRecord; reportContextById: JsonRecord; skippedReportIds: string[] } => {
+): { reports: JsonRecord[]; reportContextById: JsonRecord; skippedReportIds: string[] } => {
   return results.reduce<{
-    reports: JsonRecord;
+    reports: JsonRecord[];
     reportContextById: JsonRecord;
     skippedReportIds: string[];
   }>(
@@ -170,7 +163,16 @@ const buildReports = (
       reports.forEach((report) => {
         const canonicalId = reportKey(report);
         if (!canonicalId) return;
+        const kind = typeof report.kind === "string" ? report.kind : "";
         const target = reportTargetForBinding(report, binding);
+        schemaRunDebug("transport.reports.resolve", {
+          result,
+          binding,
+          report,
+          canonicalId,
+          kind,
+          target,
+        });
         if (!target) {
           schemaRunDebug("transport.reports.no-target", {
             modelId: result.modelId,
@@ -182,23 +184,25 @@ const buildReports = (
         const meta = isRecord(result.output.meta) ? result.output.meta : {};
         payload.reportContextById[reportContextKey(canonicalId)] = {
           modelId: result.modelId,
+          target,
           modelInput: result.modelInput,
           meta,
           raw: result.output,
         };
-        if (reportPayload !== undefined)
-          storeReportPayload(payload.reports, canonicalId, target, reportPayload);
+        if (reportPayload !== undefined) payload.reports.push(reportPayload);
         schemaRunDebug("transport.reports.mapped", {
           modelId: result.modelId,
           reportId: canonicalId,
           contextKey: reportContextKey(canonicalId),
           target,
+          reportPayload,
+          payload,
           hasPayload: reportPayload !== undefined,
         });
       });
       return payload;
     },
-    { reports: {}, reportContextById: {}, skippedReportIds: [] },
+    { reports: [], reportContextById: {}, skippedReportIds: [] },
   );
 };
 
@@ -213,19 +217,21 @@ const buildReports = (
 export const createSchemaRunTransport = (
   bindings: readonly SchemaRunBinding[],
   fields: readonly PredictionPayloadField[],
-  customReportDefinitions: readonly CatalogReportDefinition[] = [],
-  reportMappings: readonly unknown[] = [],
 ): Transport => ({
   async submit(request: SubmitRequest) {
     const reports = request.reports.map((report: ReportConfig, index: number) => {
-      const mappedTo = reportMappings[index] ?? report.mappedTo;
+      const mappedTo = report.mappedTo;
       if (mappedTo === undefined) throw new Error(`Schema report ${index + 1} falta mappedTo`);
       return { ...report, mappedTo };
     });
-    const canonical = toCanonicalPayload(request.serializedValues, fields);
-    const fieldValues = toFieldIdPayload(request.serializedValues, fields);
-    const inputData = toVisiblePayload(request.serializedValues, fields);
+    const canonical = requestRecord(request.modelValues);
+    const fieldValues = requestRecord(request.fieldValues);
+    const inputData = requestRecord(request.displayValues);
     schemaRunDebug("transport.submit.start", {
+      request,
+      canonical,
+      fieldValues,
+      inputData,
       serializedKeys: Object.keys(request.serializedValues),
       canonicalKeys: Object.keys(canonical),
       fieldKeys: Object.keys(fieldValues),
@@ -236,24 +242,18 @@ export const createSchemaRunTransport = (
       reports: reports.map((report: ReportConfig) => ({ id: report.id, kind: report.kind })),
     });
     const initialResults = await Promise.all(
-      bindings.map((binding) => runBinding(binding, request.serializedValues, fields, reports)),
+      bindings.map((binding) => runBinding(binding, fieldValues, fields, reports)),
     );
     const built = buildReports(initialResults, bindings, reports);
     schemaRunDebug("transport.submit.after-models", {
+      results: initialResults,
+      built,
       statuses: initialResults.map((result) => ({
         modelId: result.modelId,
         status: result.status,
       })),
-      reportKeys: Object.keys(built.reports),
+      reportCount: built.reports.length,
       contextKeys: Object.keys(built.reportContextById),
-    });
-    const results = await fetchSchemaCustomReports({
-      request,
-      reports,
-      built,
-      results: initialResults,
-      bindings,
-      definitions: customReportDefinitions,
     });
     const meta = {
       backendUrl: getBackendBaseUrl(),
@@ -267,7 +267,7 @@ export const createSchemaRunTransport = (
       raw: {
         inputData,
         modelInputData: canonical,
-        results,
+        results: initialResults,
         reports: built.reports,
         meta,
         reportContextById: built.reportContextById,

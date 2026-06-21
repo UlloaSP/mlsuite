@@ -21,9 +21,6 @@ const probabilities = (payload?: JsonRecord): number[] =>
 
 const textContent = (payload?: JsonRecord): string[] => {
   if (typeof payload?.explanation === "string") return [payload.explanation];
-  if (Array.isArray(payload?.explanations)) {
-    return payload.explanations.filter((item): item is string => typeof item === "string");
-  }
   if (typeof payload?.text === "string") return [payload.text];
   return [];
 };

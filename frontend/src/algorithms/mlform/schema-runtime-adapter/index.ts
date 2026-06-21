@@ -5,14 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
 
-/** firstMappedTarget: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const firstMappedTarget = (mappedTo: unknown): unknown => {
-  if (!isRecord(mappedTo)) return mappedTo;
-  return Object.values(mappedTo).find(
-    (value) => typeof value === "string" || typeof value === "number",
-  );
-};
-
 /**
  * toMlformRuntimeSchema: converts data into another contract shape
  *
@@ -23,16 +15,40 @@ const firstMappedTarget = (mappedTo: unknown): unknown => {
  */
 export const toMlformRuntimeSchema = (schema: unknown): unknown => {
   if (!isRecord(schema)) return schema;
-  const collapseItem = (item: unknown): unknown => {
+  const adaptItem = (item: unknown): unknown => {
     if (!isRecord(item)) return item;
     const next: JsonRecord = { ...item };
-    if ("mappedTo" in next) next.mappedTo = firstMappedTarget(next.mappedTo);
-    if (Array.isArray(next.options)) next.options = next.options.map(collapseItem);
+    if (typeof next.displayKey !== "string" || next.displayKey.trim().length === 0) {
+      next.displayKey = typeof next.label === "string" && next.label.trim() ? next.label : next.id;
+    }
+    if (Array.isArray(next.options)) next.options = next.options.map(adaptItem);
     return next;
+  };
+  const reportTargets = Array.isArray(schema.reports)
+    ? schema.reports.flatMap((report) =>
+        isRecord(report) && isRecord(report.mappedTo)
+          ? Object.values(report.mappedTo).filter(
+              (value) => typeof value === "string" || typeof value === "number",
+            )
+          : [],
+      )
+    : [];
+  const uniqueReportTarget = (target: string | number): boolean =>
+    reportTargets.filter((value) => String(value) === String(target)).length === 1;
+  const adaptReport = (item: unknown): unknown => {
+    if (!isRecord(item) || !isRecord(item.mappedTo) || item.mappedTo.default !== undefined) {
+      return item;
+    }
+    const targets = Object.values(item.mappedTo).filter(
+      (value) => typeof value === "string" || typeof value === "number",
+    );
+    return targets.length === 1 && uniqueReportTarget(targets[0])
+      ? { ...item, mappedTo: { ...item.mappedTo, default: targets[0] } }
+      : item;
   };
   return {
     ...schema,
-    fields: Array.isArray(schema.fields) ? schema.fields.map(collapseItem) : schema.fields,
-    reports: Array.isArray(schema.reports) ? schema.reports.map(collapseItem) : schema.reports,
+    fields: Array.isArray(schema.fields) ? schema.fields.map(adaptItem) : schema.fields,
+    reports: Array.isArray(schema.reports) ? schema.reports.map(adaptReport) : schema.reports,
   };
 };

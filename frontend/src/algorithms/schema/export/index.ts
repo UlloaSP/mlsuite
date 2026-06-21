@@ -52,23 +52,10 @@ const modelInputColumn = (modelId: string, key: string): string => `input.${mode
 /** reportColumnId: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportColumnId = (report: SchemaDisplayReport): string => report.id;
 
-/** outputAt: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const outputAt = (
-  output: Record<string, unknown>,
-  order: number,
-): Record<string, unknown> | null => {
-  const outputs = Array.isArray(output.outputs) ? output.outputs : [];
-  const item = outputs[order];
-  return typeof item === "object" && item !== null && !Array.isArray(item)
-    ? (item as Record<string, unknown>)
-    : null;
-};
-
 /** predictionValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const predictionValue = (report: SchemaDisplayReport, output: Record<string, unknown>): unknown => {
+const predictionValue = (report: SchemaDisplayReport): unknown => {
   const payload = feedbackRecord(report.payload);
-  const rawPrediction =
-    payload.prediction ?? payload.value ?? outputAt(output, report.order)?.prediction;
+  const rawPrediction = payload.prediction ?? payload.value;
   if (typeof rawPrediction === "number") return report.labels?.[rawPrediction] ?? rawPrediction;
   if (typeof rawPrediction === "string" && /^\d+$/.test(rawPrediction)) {
     const index = Number(rawPrediction);
@@ -180,7 +167,7 @@ export const buildSchemaRunExport = (
   ];
   const rows = runs.map((run) => {
     const inputs = getSchemaRunModelInputValues(run);
-    const outputs = new Map<string, string>();
+    const builtInReportValues = new Map<string, string>();
     const reportContent = new Map<string, string>();
     const outputFeedback = new Map<string, string>();
     const reportFeedback = new Map<string, string>();
@@ -189,9 +176,9 @@ export const buildSchemaRunExport = (
         const reportId = reportColumnId(report);
         const config = reportConfigs.find((item) => item.id === reportId);
         if (isBuiltinReportKind(report.kind)) {
-          outputs.set(
+          builtInReportValues.set(
             outputPredictionColumn(reportId),
-            toCell(predictionValue(report, result.output)),
+            toCell(predictionValue(report)),
           );
         }
         if (config?.feedbackQuestionnaire) {
@@ -227,7 +214,9 @@ export const buildSchemaRunExport = (
       formatTimestamp(run.createdAt),
       String(run.results.length),
       ...inputLabels.map((label) => toCell(inputs.get(label))),
-      ...outputHeaders.map((label) => outputs.get(label) ?? outputFeedback.get(label) ?? ""),
+      ...outputHeaders.map(
+        (label) => builtInReportValues.get(label) ?? outputFeedback.get(label) ?? "",
+      ),
       ...reportHeaders.map((label) => reportContent.get(label) ?? reportFeedback.get(label) ?? ""),
     ];
   });

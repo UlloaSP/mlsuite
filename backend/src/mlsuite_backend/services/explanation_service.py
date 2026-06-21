@@ -13,9 +13,7 @@ from ..utils.dataframe import build_prediction_dataframe, parse_record_json
 from ..utils.errors import bad_request, internal_runtime_error
 
 
-async def explain(
-    model_upload: UploadFile, data: str, traces: str
-) -> dict[str, list[str]]:
+async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str, list[dict[str, str]]]:
     runtime = await load_runtime_model_from_upload(model_upload)
     model = runtime.model
     if not isinstance(model, (DecisionTreeClassifier, DecisionTreeRegressor)):
@@ -35,7 +33,7 @@ async def explain(
     trace_definitions = parse_trace_definitions(raw_traces)
 
     try:
-        explanations = explain_with_feature_name_aliases(
+        generated_trees = explain_with_feature_name_aliases(
             model,
             frame,
             feature_names,
@@ -44,8 +42,15 @@ async def explain(
     except Exception as exc:  # pragma: no cover - third-party runtime failure path
         raise internal_runtime_error(f"crystal-tree explain error: {exc}") from exc
 
-    trees = [item.ascii_tree() for item in explanations if item is not None]
+    trees = [item.ascii_tree() for item in generated_trees if item is not None]
     trees = [tree for tree in trees if tree.strip()]
     if not trees:
         trees = [build_tree_path_explanation(model, frame, feature_names)]
-    return {"explanations": trees}
+    return {
+        "reports": [
+            {
+                "kind": "Crystal Tree",
+                "explanation": "\n\n".join(trees),
+            }
+        ]
+    }

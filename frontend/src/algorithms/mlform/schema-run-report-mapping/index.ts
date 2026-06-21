@@ -5,7 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { normalizeSchemaId } from "mlform/schema";
 import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
-import { type BindingIdentity, mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
+import {
+  type BindingIdentity,
+  mappedTarget,
+  targetKey,
+} from "../../../algorithms/mlform/mapped-to";
 
 /**
  * reportTargetForBinding: performs the exported transformation for this algorithm.

@@ -6,11 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Search } from "lucide-react";
 import type { RefObject } from "react";
 import { AppSelect, AppTextField, cx } from "../../../app/components";
+import { usePluginCatalogPageQuery, usePluginCatalogStatsQuery } from "../../../api/plugins/hooks";
 import {
-  usePluginCatalogPageQuery,
-  usePluginCatalogStatsQuery,
-} from "../../../api/plugins/hooks";
-import { SORT_LABELS, type SortMode, type TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
+  SORT_LABELS,
+  type SortMode,
+  type TypeFilter,
+} from "../../../algorithms/plugin/catalog-page-model";
 
 export type PluginCatalogToolbarProps = {
   inputRef: RefObject<HTMLInputElement | null>;

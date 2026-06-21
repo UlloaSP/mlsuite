@@ -7,7 +7,11 @@ import { mountForm } from "mlform/kit";
 import { type AfterSubmitContext, type SubmitErrorContext } from "mlform/runtime";
 import { createPredictionRuntime, getPredictionDesignSystem } from "./headless-prediction";
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
-import { type MountedPredictionForm, type MountPredictionFormOptions, isRecord } from "../../../algorithms/mlform/shared";
+import {
+  type MountedPredictionForm,
+  type MountPredictionFormOptions,
+  isRecord,
+} from "../../../algorithms/mlform/shared";
 import { toAnalyzerPayload } from "../../../algorithms/mlform/prediction-transport";
 
 export const mountPredictionForm = ({

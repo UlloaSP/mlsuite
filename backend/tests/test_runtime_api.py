@@ -195,9 +195,9 @@ def test_predict_classifier_success() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["outputs"][0]["type"] == "classifier"
-    assert payload["outputs"][0]["showClassProbabilities"] is True
-    assert "execution_time" in payload["outputs"][0]
+    assert payload["reports"][0]["kind"] == "classifier"
+    assert payload["reports"][0]["showClassProbabilities"] is True
+    assert "execution_time" in payload["reports"][0]
 
 
 def test_predict_xgboost_classifier_success() -> None:
@@ -210,9 +210,9 @@ def test_predict_xgboost_classifier_success() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["outputs"][0]["type"] == "classifier"
-    assert payload["outputs"][0]["mapping"] == ["0", "1"]
-    assert payload["outputs"][0]["probabilities"]
+    assert payload["reports"][0]["kind"] == "classifier"
+    assert payload["reports"][0]["mapping"] == ["0", "1"]
+    assert payload["reports"][0]["probabilities"]
 
 
 def test_predict_regressor_success() -> None:
@@ -223,8 +223,8 @@ def test_predict_regressor_success() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["outputs"][0]["type"] == "regressor"
-    assert isinstance(payload["outputs"][0]["values"], list)
+    assert payload["reports"][0]["kind"] == "regressor"
+    assert isinstance(payload["reports"][0]["values"], list)
 
 
 def test_predict_xgboost_regressor_success() -> None:
@@ -237,8 +237,8 @@ def test_predict_xgboost_regressor_success() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["outputs"][0]["type"] == "regressor"
-    assert isinstance(payload["outputs"][0]["values"], list)
+    assert payload["reports"][0]["kind"] == "regressor"
+    assert isinstance(payload["reports"][0]["values"], list)
 
 
 def test_predict_rejects_invalid_json() -> None:
@@ -272,7 +272,7 @@ def test_explain_success() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["explanations"]
+    assert payload["reports"][0]["explanation"]
 
 
 def test_explain_success_when_tree_does_not_use_tail_features() -> None:
@@ -290,7 +290,7 @@ def test_explain_success_when_tree_does_not_use_tail_features() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["explanations"]
+    assert payload["reports"][0]["explanation"]
 
 
 def test_explain_rejects_non_tree_model() -> None:
@@ -338,4 +338,4 @@ def test_explain_falls_back_when_crystal_tree_returns_none(monkeypatch) -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["explanations"][0].startswith("Prediction path")
+    assert payload["reports"][0]["explanation"].startswith("Prediction path")

@@ -17,6 +17,12 @@ import {
 import { readReportContext } from "../src/algorithms/mlform/schema-run-report-mapping";
 import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
 
+const stringMeta = (value: unknown, fallback = ""): string =>
+  typeof value === "string" ? value : fallback;
+
+const requestBody = (request: RequestInit | undefined): string =>
+  typeof request?.body === "string" ? request.body : "";
+
 const customReportDefinition = (): CatalogReportDefinition => ({
   id: "report-plugin",
   fileName: "report.ts",
@@ -40,7 +46,10 @@ const customReportDefinition = (): CatalogReportDefinition => ({
     render: {
       content: ({ result }) => ({
         type: "text",
-        value: String((result?.meta as Record<string, unknown> | undefined)?.modelId ?? "missing"),
+        value: stringMeta(
+          (result?.meta as Record<string, unknown> | undefined)?.modelId,
+          "missing",
+        ),
       }),
     },
   }),
@@ -51,7 +60,7 @@ const explanationFetch = ({ config }: { config: { endpoint?: string } }) => ({
     meta?: Record<string, unknown>;
     serializedFieldValues?: Record<string, unknown>;
   }) => {
-    const modelId = String(request.meta?.modelId ?? "");
+    const modelId = stringMeta(request.meta?.modelId);
     return fetch(`${config.endpoint ?? "/api/analyzer/explanations"}?modelId=${modelId}`, {
       method: "POST",
       body: JSON.stringify({
@@ -69,7 +78,9 @@ describe("schema binding plugin policy", () => {
   test("exposes a mapped report even when stale policy lacks its kind", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: { score: { value: 1 } } }))),
+      vi.fn(
+        async () => new Response(JSON.stringify({ reports: [{ mappedTo: "score", value: 1 }] })),
+      ),
     );
     const transport = createSchemaRunTransport(
       [
@@ -93,11 +104,9 @@ describe("schema binding plugin policy", () => {
       ],
     } as never);
 
-    expect((result as { reports: Record<string, unknown> }).reports).toMatchObject({
-      "report-1": { value: 1 },
-      report_1: { value: 1 },
-      score: { value: 1 },
-    });
+    expect((result as { reports: unknown[] }).reports).toMatchObject([
+      { mappedTo: "score", value: 1 },
+    ]);
   });
 
   test("schema report context maps schema report ids to model contexts", async () => {
@@ -105,8 +114,12 @@ describe("schema binding plugin policy", () => {
       "fetch",
       vi
         .fn()
-        .mockResolvedValueOnce(new Response(JSON.stringify({ reports: { score: { value: 1 } } })))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ reports: { score: { value: 2 } } }))),
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ reports: [{ mappedTo: "score", value: 1 }] })),
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ reports: [{ mappedTo: "score", value: 2 }] })),
+        ),
     );
     const transport = createSchemaRunTransport(
       [{ modelId: "model-1" }, { modelId: "model-2" }],
@@ -138,7 +151,7 @@ describe("schema binding plugin policy", () => {
   test("schema report context exists when custom report payload must be fetched", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: {} }))),
+      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
     );
     const transport = createSchemaRunTransport([{ modelId: "model-1" }], []);
     const result = await transport.submit({
@@ -153,7 +166,7 @@ describe("schema binding plugin policy", () => {
       ],
     } as never);
     const raw = (result as { raw: { reportContextById: Record<string, { modelId: string }> } }).raw;
-    expect((result as { reports: Record<string, unknown> }).reports).toEqual({});
+    expect((result as { reports: unknown[] }).reports).toEqual([]);
     expect(readReportContext(raw.reportContextById, "report_1")?.modelId).toBe("model-1");
   });
 
@@ -162,9 +175,13 @@ describe("schema binding plugin policy", () => {
       "fetch",
       vi
         .fn()
-        .mockResolvedValueOnce(new Response(JSON.stringify({ reports: {} })))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ explanations: ["root||leaf"] })))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ explanations: ["root||leaf"] }))),
+        .mockResolvedValueOnce(new Response(JSON.stringify({ reports: [] })))
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ reports: [{ explanation: "root||leaf" }] })),
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ reports: [{ explanation: "root||leaf" }] })),
+        ),
     );
     const base = customReportDefinition();
     const fetchDefinition = {
@@ -180,7 +197,7 @@ describe("schema binding plugin policy", () => {
     };
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "crystal-schema",
@@ -201,7 +218,7 @@ describe("schema binding plugin policy", () => {
     await executeFormPipeline({ form });
     const explanationCall = (fetch as ReturnType<typeof vi.fn>).mock.calls[1];
     expect(String(explanationCall?.[0])).toContain("modelId=model-1");
-    expect(JSON.parse(String(explanationCall?.[1]?.body)).instance).toEqual({ age: 42 });
+    expect(JSON.parse(requestBody(explanationCall?.[1])).instance).toEqual({ age: 42 });
   });
 
   test("wrapped custom report fetch exposes missing context errors", async () => {
@@ -226,23 +243,23 @@ describe("schema binding plugin policy", () => {
   test("schema raw builder ignores skipped custom report payloads", () => {
     const payload = { __mlsuiteSchemaReportSkipped: true };
     const built = buildSchemaRunRawFromSubmitResult(
-      { reports: {}, results: [], reportContextById: { report_1: {} } },
+      { reports: [], results: [], reportContextById: { report_1: {} } },
       [{ id: "report_1", state: { status: "ready", payload } }],
       {},
       [],
     );
     expect(isSkippedSchemaReportPayload(payload)).toBe(true);
-    expect(built.raw.reports).toEqual({});
+    expect(built.raw.reports).toEqual([]);
     expect(built.reportsPending).toBe(false);
   });
 
   test("schema raw builder persists async plugin payload in owning result output", () => {
     const initialRaw = {
-      reports: {},
+      reports: [],
       results: [
         {
           modelId: "model-1",
-          output: { reports: {}, meta: { modelId: "model-1" } },
+          output: { reports: [], meta: { modelId: "model-1" } },
         },
       ],
       reportContextById: {
@@ -266,15 +283,16 @@ describe("schema binding plugin policy", () => {
       {},
       [{ modelId: "model-1" }],
     );
-    const output = built.raw.results[0]?.output as { reports: Record<string, unknown> };
-    expect(output.reports.score).toEqual({ explanation: "ok" });
-    expect(output.reports["report-1"]).toEqual({ explanation: "ok" });
-    expect(output.reports.report_1).toEqual({ explanation: "ok" });
-    expect(built.raw.reports).toMatchObject({
-      "report-1": { explanation: "ok" },
-      report_1: { explanation: "ok" },
-      score: { explanation: "ok" },
-    });
+    const raw = built.raw as {
+      results: Array<{ output?: { reports: Array<Record<string, unknown>> } }>;
+    };
+    const output = raw.results[0]?.output;
+    expect(output?.reports).toMatchObject([
+      { id: "report_1", mappedTo: "score", payload: { explanation: "ok" } },
+    ]);
+    expect(built.raw.reports).toMatchObject([
+      { id: "report_1", mappedTo: "score", payload: { explanation: "ok" } },
+    ]);
     expect(built.reportsPending).toBe(false);
   });
 });

@@ -22,9 +22,9 @@ type FeedbackKind = "OUTPUT" | "EXPLANATION";
 /**
  * SchemaFeedbackStep: describes the public data contract consumed or returned by this algorithm.
  *
- * Purpose: builds ordered feedback steps for schema run outputs and reports.
- * @param order - Input consumed by SchemaFeedbackStep; uses the builds ordered feedback steps for schema run outputs and reports contract.
- * @param value - Input consumed by SchemaFeedbackStep; uses the builds ordered feedback steps for schema run outputs and reports contract.
+ * Purpose: builds ordered feedback steps for schema run model reports and plugin reports.
+ * @param order - Input consumed by SchemaFeedbackStep; uses the ordered feedback steps for schema run reports contract.
+ * @param value - Input consumed by SchemaFeedbackStep; uses the ordered feedback steps for schema run reports contract.
  * @returns Type-only export; no runtime value is emitted.
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
@@ -88,16 +88,13 @@ const reportDescription = (payload: unknown): string => {
 };
 
 /** feedbackKey: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const feedbackKey = (
-  resultId: string,
-  type: PredictionResultFeedbackType,
-  order: number,
-): string => `${resultId}:${type}:${order}`;
+const feedbackKey = (resultId: string, type: PredictionResultFeedbackType, order: number): string =>
+  `${resultId}:${type}:${order}`;
 
 /**
  * buildSchemaFeedbackSteps: constructs a new derived object from source data
  *
- * Purpose: builds ordered feedback steps for schema run outputs and reports.
+ * Purpose: builds ordered feedback steps for schema run model reports and plugin reports.
  * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.

@@ -14,7 +14,10 @@ import { isRecord } from "../../../algorithms/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "../../../algorithms/models/prediction-catalog-definitions";
 import { parseSpreadsheetPredictionFile } from "../../../algorithms/models/parse-spreadsheet-prediction-file";
 import { prependMissingPredictionRuns } from "../../../algorithms/schema/run-cache";
-import { getModelInputBulkSchema, toSchemaRunSerializedValues } from "../../../algorithms/schema/bulk-upload";
+import {
+  getModelInputBulkSchema,
+  toSchemaRunSerializedValues,
+} from "../../../algorithms/schema/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
 
 type Status = "idle" | "parsing" | "processing" | "done";

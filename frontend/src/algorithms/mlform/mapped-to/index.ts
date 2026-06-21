@@ -19,10 +19,7 @@ export type BindingIdentity = {
 };
 
 /** bindingKeys: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const bindingKeys = ({
-  modelId,
-  modelName,
-}: BindingIdentity): string[] => [
+const bindingKeys = ({ modelId, modelName }: BindingIdentity): string[] => [
   ...(modelName ? [modelName] : []),
   modelId,
 ];
@@ -48,9 +45,16 @@ export const mappedTarget = (
     }
     return undefined;
   }
-  const values = Object.values(mappedTo).filter(
-    (value): value is string | number => typeof value === "string" || typeof value === "number",
-  );
+  const values = [
+    ...new Map(
+      Object.values(mappedTo)
+        .filter(
+          (value): value is string | number =>
+            typeof value === "string" || typeof value === "number",
+        )
+        .map((value) => [String(value), value]),
+    ).values(),
+  ];
   if (values.length === 1) return values[0];
   return undefined;
 };

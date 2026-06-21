@@ -19,7 +19,11 @@ import {
   PaginationPrevious,
 } from "../../../app/components";
 import { PluginCatalogListItem } from "./PluginCatalogListItem";
-import { TYPE_META, type SortMode, type TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
+import {
+  TYPE_META,
+  type SortMode,
+  type TypeFilter,
+} from "../../../algorithms/plugin/catalog-page-model";
 import {
   PLUGIN_CATALOG_PAGE_SIZE,
   useDeletePluginMutation,

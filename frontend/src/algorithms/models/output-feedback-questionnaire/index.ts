@@ -27,12 +27,12 @@ const getClassifierOptions = (
   const labels = Array.isArray(reportConfig?.labels)
     ? reportConfig.labels.filter((item): item is string => typeof item === "string")
     : [];
-  const outputs =
-    isRecord(predictionValue) && Array.isArray(predictionValue.outputs)
-      ? predictionValue.outputs.filter(isRecord)
+  const reports =
+    isRecord(predictionValue) && Array.isArray(predictionValue.reports)
+      ? predictionValue.reports.filter(isRecord)
       : [];
-  const classifierOutput = outputs.find((output) => output.type === "classifier");
-  const mapping = Array.isArray(classifierOutput?.mapping) ? classifierOutput.mapping : [];
+  const classifierReport = reports.find((output) => output.kind === "classifier");
+  const mapping = Array.isArray(classifierReport?.mapping) ? classifierReport.mapping : [];
   const fallbackIndex =
     isRecord(target.value) && typeof target.value.classIndex === "number"
       ? target.value.classIndex + 1

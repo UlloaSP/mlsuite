@@ -12,9 +12,16 @@ import {
   useServiceAction,
   useServiceLogsSnapshot,
 } from "../../../api/infrastructure/hooks";
-import { appendLogLine, applyInfrastructureEvent, resolveSelectedService } from "../../../algorithms/admin/infrastructure/state";
+import {
+  appendLogLine,
+  applyInfrastructureEvent,
+  resolveSelectedService,
+} from "../../../algorithms/admin/infrastructure/state";
 import { isOverviewSnapshotEvent, isServiceLogEvent } from "../../../api/infrastructure/dtos";
-import type { InfrastructureEvent, InfrastructureOverviewDto } from "../../../api/infrastructure/dtos";
+import type {
+  InfrastructureEvent,
+  InfrastructureOverviewDto,
+} from "../../../api/infrastructure/dtos";
 import { openInfrastructureSocket, subscribeToServiceLogs } from "../ws/infrastructureSocket";
 
 type InfraTab = "overview" | "services" | "logs" | "terminal" | "alerts";

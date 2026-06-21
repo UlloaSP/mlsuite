@@ -3,13 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { normalizeSchemaId } from "mlform/schema";
 import type { ReportConfig } from "mlform/runtime";
 import { isBuiltinReportKind } from "../../mlform/builtin-registry";
 import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
 import { isSkippedSchemaReportPayload } from "../report-plugin-context";
 import { reportTargetForBinding } from "../../mlform/schema-run-report-mapping";
 import type { PredictionResultDto, SchemaVersionDto } from "../../../api/schemas/dtos";
+import { schemaRunDebug } from "../run-debug";
 
 /**
  * SchemaDisplayReport: describes the public data contract consumed or returned by this algorithm.
@@ -35,6 +35,11 @@ const reportsOf = (schema: unknown): ReportConfig[] =>
     ? (schema.reports.filter(isRecord) as ReportConfig[])
     : [];
 
+const sameId = (left: unknown, right: unknown): boolean =>
+  (typeof left === "string" || typeof left === "number") &&
+  (typeof right === "string" || typeof right === "number") &&
+  String(left) === String(right);
+
 /** reportId: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportId = (report: ReportConfig): string | undefined =>
   typeof report.id === "string"
@@ -53,16 +58,15 @@ const payloadFor = (
   output: JsonRecord,
   aliases: readonly string[] = [],
 ): JsonRecord | undefined => {
-  if (!isRecord(output.reports)) return undefined;
-  for (const key of [
-    target,
-    normalizeSchemaId(target),
-    ...aliases,
-    ...aliases.map(normalizeSchemaId),
-  ]) {
-    if (isRecord(output.reports[key])) return output.reports[key];
-  }
-  return undefined;
+  const reports = Array.isArray(output.reports) ? output.reports.filter(isRecord) : [];
+  const match = reports.find(
+    (report) =>
+      String(report.mappedTo) === target ||
+      aliases.some((alias) => String(report.id) === alias || String(report.mappedTo) === alias),
+  );
+  if (!match) return undefined;
+  const payload = "payload" in match ? match.payload : match;
+  return isRecord(payload) ? payload : { value: payload };
 };
 
 /** reportLabels: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
@@ -73,6 +77,15 @@ const reportLabels = (report: ReportConfig): string[] =>
       )
     : [];
 
+const mappingLabels = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  if (!isRecord(value)) return [];
+  return Object.entries(value)
+    .sort(([left], [right]) => Number(left) - Number(right))
+    .map(([, label]) => label)
+    .filter((label): label is string => typeof label === "string");
+};
+
 /** normalizeReportPayload: internal normalization helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const normalizeReportPayload = (
   report: ReportConfig,
@@ -80,8 +93,17 @@ const normalizeReportPayload = (
 ): JsonRecord | undefined => {
   if (!payload) return undefined;
   const labels = reportLabels(report);
-  if (labels.length === 0) return payload;
+  const payloadOnlyLabels = mappingLabels(payload.labels);
+  const payloadLabels =
+    labels.length > 0
+      ? labels
+      : payloadOnlyLabels.length > 0
+        ? payloadOnlyLabels
+        : mappingLabels(payload.mapping);
+  if (payloadLabels.length > 0) payload = { ...payload, labels: payloadLabels };
+  if (payloadLabels.length === 0) return payload;
   const prediction = payload.prediction;
+  if (typeof prediction === "string" && payloadLabels.includes(prediction)) return payload;
   const index =
     typeof prediction === "number"
       ? prediction
@@ -90,8 +112,8 @@ const normalizeReportPayload = (
         : -1;
   return {
     ...payload,
-    labels,
-    prediction: labels[index] ?? prediction,
+    labels: payloadLabels,
+    prediction: payloadLabels[index] ?? prediction,
   };
 };
 
@@ -129,22 +151,45 @@ export const getSchemaResultReports = (
   version: SchemaVersionDto,
   result: Pick<PredictionResultDto, "modelId" | "output">,
 ): SchemaDisplayReport[] => {
-  const binding = version.bindings.find((item) => item.modelId === result.modelId);
-  return reportsOf(version.formSchema).reduce<SchemaDisplayReport[]>((items, report, order) => {
-    const id = reportId(report);
-    const target = reportTargetForBinding(report, binding);
-    if (!id || !target) return items;
-    const payload = normalizeReportPayload(report, payloadFor(target, result.output, [id]));
-    if (!isRenderablePayload(report, payload)) return items;
-    items.push({
-      id,
-      order,
-      label: reportLabel(report),
-      kind: typeof report.kind === "string" ? report.kind : "report",
-      config: report,
-      labels: reportLabels(report),
-      payload,
-    });
-    return items;
-  }, []);
+  const binding = version.bindings.find((item) => sameId(item.modelId, result.modelId));
+  schemaRunDebug("display-reports.start", {
+    versionId: version.id,
+    result,
+    binding,
+    schemaReports: reportsOf(version.formSchema),
+  });
+  const items = reportsOf(version.formSchema).reduce<SchemaDisplayReport[]>(
+    (items, report, order) => {
+      const id = reportId(report);
+      const kind = typeof report.kind === "string" ? report.kind : "report";
+      const target = reportTargetForBinding(report, binding);
+      const rawPayload = target ? payloadFor(target, result.output, [id ?? ""]) : undefined;
+      const payload = normalizeReportPayload(report, rawPayload);
+      const renderable = isRenderablePayload(report, payload);
+      schemaRunDebug("display-reports.item", {
+        report,
+        order,
+        id,
+        kind,
+        target,
+        rawPayload,
+        payload,
+        renderable,
+      });
+      if (!id || !target || !renderable) return items;
+      items.push({
+        id,
+        order,
+        label: reportLabel(report),
+        kind,
+        config: report,
+        labels: reportLabels(report),
+        payload,
+      });
+      return items;
+    },
+    [],
+  );
+  schemaRunDebug("display-reports.done", { modelId: result.modelId, items });
+  return items;
 };

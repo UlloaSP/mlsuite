@@ -17,7 +17,10 @@ import { TYPE_META, readFileText } from "../../../algorithms/plugin/catalog-page
 import type { SortMode, TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
 import { invalidateCustomFieldDefinitions } from "../../../algorithms/plugin/custom-field-catalog";
 import { invalidateCustomReportDefinitions } from "../../../algorithms/plugin/custom-report-catalog";
-import { detectPluginType, invalidatePluginCatalog } from "../../../algorithms/plugin/catalog-loader";
+import {
+  detectPluginType,
+  invalidatePluginCatalog,
+} from "../../../algorithms/plugin/catalog-loader";
 import { bumpPluginCatalogVersionAtom } from "../../mlform/plugin-catalog-state";
 
 export function PluginCatalogPage() {

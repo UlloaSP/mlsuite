@@ -1,3 +1,87 @@
+# Analyzer Reports Contract Cleanup
+
+# MLForm Linked Docker Build
+
+## Goal
+
+- [x] Make frontend dev Docker build use linked `../../mlform`.
+- [x] Stop Docker from compiling MLSuite against registry `mlform@0.1.16` old types.
+- [x] Verify frontend TypeScript/build and Docker frontend build.
+
+## Plan
+
+- [x] Change frontend dependency to `file:../../mlform`.
+- [x] Add Compose `additional_contexts` for sibling MLForm.
+- [x] Copy MLForm named context into Docker build at the same relative path.
+
+## Review
+
+- Root cause: local `../mlform` had new `reports: unknown[]` types, but Docker installed registry `mlform@0.1.16` with old `reports: Record<string, unknown>`.
+- Dev Compose now provides the sibling MLForm package to the frontend build context.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp run build` passed.
+  - `frontend`: `vp test` passed, 30 files / 107 tests.
+  - `docker compose -f docker-compose.dev.yml config` passed and resolves `mlform` additional context to `C:\software\mlform`.
+  - `docker compose -f docker-compose.dev.yml build frontend` passed.
+  - Repo: `git diff --check` passed for touched MLSuite files.
+  - Repo: `graphify update .` passed.
+
+## Goal
+
+- [x] Remove MLSuite frontend legacy analyzer `outputs` compatibility for model reports.
+- [x] Normalize current backend `reports: []` payloads into MLForm keyed reports by schema `mappedTo`.
+- [x] Cover current classifier/regressor report array contract.
+
+## Plan
+
+- [x] Replace legacy `outputs/type` report extraction with current `reports/kind` extraction.
+- [x] Rename frontend normalization helper away from legacy wording.
+- [x] Update regressions to use backend-current payload shape.
+- [x] Run focused tests, TypeScript, full frontend tests, line-count, graph update.
+
+## Review
+
+- Removed analyzer `outputs[]/type` report normalization. MLSuite now reads backend `reports[]/kind` directly and hydrates MLForm keyed reports from current analyzer payloads.
+- Updated classifier/regressor consumers, schema export, output feedback, target derivation, and runtime tests to use report-array payloads.
+- Kept unrelated legacy contracts alone: old prediction-form naming, architecture tests, and historical explanation formatter fallbacks are outside analyzer model-report normalization.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-report-renderer.test.ts test/schema-run-transport-mapping.test.ts test/schema-one-hot-select-values.test.ts test/schema-run-mounted-render.test.ts test/output-feedback-questionnaire.test.ts` passed, 14 tests.
+  - `frontend`: `vp test` passed, 30 files / 107 tests.
+  - `backend`: `uv run pytest tests/test_runtime_api.py` passed, 25 tests.
+  - Repo: touched source/test line-count passed, no file >300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 214 warnings.
+  - Repo: `graphify update .` passed.
+
+# Schema Run Submit Instrumentation
+
+## Goal
+
+- [x] Log every frontend schema-run submit normalization step from MLForm submit to save modal.
+- [x] Keep behavior unchanged; only add diagnostic `console.log` traces.
+- [x] Verify TypeScript/tests, line-count, graph update.
+
+## Plan
+
+- [x] Add `[schema-plugin-debug]` traces at submit event, transport, analyzer normalization, report target mapping, result-state merge, report display, renderer, and save modal.
+- [x] Run focused frontend tests and TypeScript.
+- [x] Document verification and usage.
+
+## Review
+
+- Added exhaustive frontend diagnostics under `[schema-plugin-debug]` for MLForm submit event detail, raw merge, model request/response normalization, report target resolution, result-state merge, display filtering, renderer descriptor creation, and save payload.
+- No runtime contract changed; logs only.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-run-mounted-render.test.ts test/schema-report-renderer.test.ts` passed, 9 tests.
+  - `frontend`: `vp test` passed, 30 files / 107 tests.
+  - Repo: touched file line-count passed; largest touched file 265 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 214 warnings.
+  - Repo: `graphify update .` passed.
+
 # OneHot Parent mappedTo Composer Fix
 
 ## Goal
@@ -369,6 +453,157 @@
   - `frontend`: `npx react-doctor@latest --verbose` completed with existing 161 warnings.
   - Repo: `graphify update .` passed; graph rebuilt.
 
+# MLForm Linked API Adaptation
+
+## Goal
+
+- [x] Adapt MLSuite frontend to current linked MLForm API.
+- [x] Remove old compatibility paths instead of preserving legacy API shims.
+
+## Plan
+
+- [x] Inspect linked MLForm public API and current frontend failures.
+- [x] Patch MLSuite integration to current API, allowing breaking cleanup where needed.
+- [x] Run focused frontend verification and line-count checks.
+- [x] Update review with exact commands and blockers.
+
+## Review
+
+- MLSuite schema-run now consumes MLForm submission records directly: `displayValues` for UI/display input data, `modelValues`/`fieldValues` for model mapping.
+- Removed old MLSuite custom-report prefetch and runtime-payload modules; report fetching now goes through MLForm pipeline/report fetch orchestration.
+- Mounted schema forms use `reportFetchMode: "all"` and listen to MLForm submit success instead of `afterSubmit`.
+- Preserved schema-run config (`mappedTo`, `displayKey`, one-hot option mappings) through MLForm/Zod normalization, and added a unique single-target report default only where MLForm needs one to resolve built-in reports.
+- Rebuilt linked `../mlform` dist and refreshed frontend local package link so tests use the changed API.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 29 files / 99 tests.
+  - Repo: frontend source/test line-count check passed, no file >300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
+# MLForm Display Fields Regression
+
+## Goal
+
+- [x] Restore schema form field rendering in MLSuite with linked MLForm.
+- [x] Restore displayed user inputs outside the form.
+- [x] Keep plugin reports rendered through MLForm pipeline, no old prefetch compat.
+
+## Plan
+
+- [x] Compare MLSuite field/report rendering against `../prueba-mlform`.
+- [x] Reproduce missing display fields/inputs with focused tests.
+- [x] Patch smallest MLSuite integration seam.
+- [x] Run focused tests, full frontend tests, line-count, graph update.
+
+## Review
+
+- Added `jsdom` to frontend dev dependencies for mounted MLForm regression coverage.
+- Added mounted schema-run test that verifies fields render in MLForm shadow DOM, reports render after submit, and display inputs are emitted.
+- Restored visible-input fallback: display key, field id, label, mapped model targets, and one-hot target reconstruction.
+- Restored prefill/default fallback for schemas that do not persist explicit `displayKey`.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 30 files / 100 tests.
+  - Repo: frontend source/test line-count check passed, no file >300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
+# MLForm Plugin Report Mounted Regression
+
+## Goal
+
+- [x] Restore mounted schema plugin report fetch with `mlform@0.1.16`.
+- [x] Stop schema runs from waiting forever when plugin report fetch is skipped.
+
+## Plan
+
+- [x] Add mounted regression that model request is followed by plugin fetch.
+- [x] Locate why report context/pipeline skip happens only in mounted UI.
+- [x] Patch smallest integration seam.
+- [x] Run focused tests, full frontend tests, line-count, graph update.
+
+## Review
+
+- Mounted submit now reads MLForm `pipelineResult.reportFetchResults`, not only model submit raw.
+- Schema report contexts now store resolved report target, so reports still alias to mapped targets when MLForm report controllers omit MLSuite `mappedTo`.
+- Result-state merge treats raw fetched reports as completed and hydrates normalized id, raw id, and mapped target aliases.
+- Regression verifies mounted UI dispatch makes analyzer prediction request, plugin explanation request, and emits `raw.reports.crystal` plus `raw.reports.crystal-tree` with `reportsPending=false`.
+- Verification:
+  - `frontend`: `vp test test/schema-run-mounted-render.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts` passed, 16 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 30 files / 101 tests.
+  - Repo: touched file line-count passed; max touched source/test file 236 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Crystal Tree Real Plugin Regression
+
+## Goal
+
+- [x] Reproduce real Crystal Tree plugin id/context mismatch.
+- [x] Restore plugin explanation fetch in mounted multi-model schema runs.
+- [x] Stop save modal from waiting when plugin report is skipped or completed.
+
+## Plan
+
+- [x] Add regression using real plugin shape: catalog id `crystal-tree`, runtime schema report id like `report-2`.
+- [x] Inspect report context keys from transport and MLForm fetch request ids.
+- [x] Patch smallest id/context resolution seam.
+- [x] Verify focused tests, TypeScript, full frontend suite, line-count, graph update.
+
+## Review
+
+- Real blocker was numeric backend model ids: strict Crystal Tree plugin checks `typeof request.meta.modelId === "string"` and threw before analyzer explanation fetch.
+- Schema report plugin context now passes string `meta.modelId` to fetch/render contexts while preserving raw model ids elsewhere.
+- Mounted regression covers numeric `modelId: 1` with strict plugin and verifies `/api/analyzer/explanations?modelId=1` is called and `reportsPending=false`.
+- Also covered schema report id differing from plugin catalog id (`report-2` vs `crystal-tree`).
+- Verification:
+  - `frontend`: `vp test test/schema-run-mounted-render.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts` passed, 18 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 30 files / 103 tests.
+  - Repo: frontend source/test line-count passed, no file >300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 214 warnings.
+  - Repo: `graphify update .` passed.
+
+# Schema Model Reports Render Regression
+
+## Goal
+
+- [x] Render model reports after prediction requests complete.
+- [x] Keep plugin reports rendered.
+- [x] Avoid waiting/empty save modal when model reports exist.
+- [x] Render classifier reports when analyzer returns `mapping` as an object.
+- [x] Prove whether remaining non-render is MLForm report pane or MLSuite save-modal/result extraction.
+
+## Plan
+
+- [x] Reproduce display path with model report payloads plus plugin report.
+- [x] Locate report-display filtering/alias mismatch.
+- [x] Patch smallest normalization seam.
+- [x] Run focused tests, TypeScript, full frontend suite, line-count, graph update.
+- [x] Add regression for analyzer classifier payload shape: `mapping: { "0": "1" }`.
+- [x] Normalize mapping object labels and scalar report payloads.
+- [x] Re-run focused/full frontend verification.
+- [x] Add mounted/save-modal-style regression that model reports appear in emitted raw results.
+- [x] Patch the actual missing boundary, not another payload-shape guess.
+
+## Review
+
+- Model reports were present in result payloads, but display dropped them in multi-model schemas when binding ids were strings and result ids were numbers.
+- `getSchemaResultReports` now matches binding/result model ids by normalized scalar string value.
+- Regression covers multi-model `mappedTo` records with binding ids `"1"`/`"2"` and result id `1`, proving target report payload renders.
+- Analyzer classifier outputs with `mapping` as an object now normalize into labels, keep numeric-string labels as labels instead of indices, and still render probabilities.
+- Report display now wraps scalar report payloads as `{ value }` instead of dropping them.
+- Remaining bug was not MLForm: MLSuite could not resolve built-in report `mappedTo` keyed by model name when `binding.modelName` was absent and the runtime adapter had added a duplicate `default` target.
+- Built-in model report paths now allow a single-target fallback; custom/plugin reports keep strict per-binding routing so Crystal Tree context does not collapse across models.
+- Verification:
+  - `frontend`: `vp test test/schema-report-renderer.test.ts test/schema-run-mounted-render.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts` passed, 23 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 30 files / 107 tests.
+  - Repo: frontend source/test line-count passed, no file >300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
 # Schema Classifier Feedback And Input Display Fix
 
 ## Goal
@@ -396,3 +631,44 @@
   - Repo: line-count check passed, no frontend source/test file >300 lines.
   - Repo: `git diff --check` passed with CRLF warnings only.
   - Repo: `graphify update .` passed.
+# Remove Legacy Report Contracts
+
+## Goal
+
+- [x] Use `mappedTo` as the only schema field/report binding contract.
+- [x] Remove keyed report payloads from active MLForm/MLSuite schema-run flow.
+- [x] Replace legacy `explanations` payloads with report items.
+- [x] Remove `inputMapping`/`outputMapping` active usage where schema `mappedTo` now owns mapping.
+
+## Plan
+
+- [x] Change MLForm result/transport/report-fetch types to `reports: unknown[]`.
+- [x] Make MLForm built-in report resolution read report items by `mappedTo`, no keyed/outputs fallback.
+- [x] Change MLSuite analyzer/schema-run normalization to keep report arrays and enrich items with `id/kind/mappedTo`.
+- [x] Store plugin fetch payloads back into the same schema `reports: []` array.
+- [x] Update schema display/review/save paths to resolve from report arrays.
+- [x] Change Crystal Tree/backend explanation response to report-item payload, no `explanations`.
+- [x] Update focused tests and run narrow verification first, then broader checks.
+
+## Review
+
+- MLForm now treats `reports` as an array contract in submit results, transport responses, report contexts, report fetch requests, primitives, fanout, stream updates, and built-in report payload lookup.
+- MLForm report resolution uses `mappedTo` only; keyed report maps, exact report-id fallback, `outputs` fallback, and alias migration support were removed.
+- MLSuite schema-run keeps backend/model/plugin report payloads in `reports[]`, enriches report items with `id/kind/mappedTo`, and resolves display/review/save/export payloads from arrays.
+- Removed single-target fallback for per-model `mappedTo` records in MLSuite report routing; direct `mappedTo` must be used when no binding key applies.
+- Crystal Tree/backend explanation payloads now return report items under `reports[]`; the old `explanations` payload field is gone.
+- Temporary `[schema-plugin-debug]` console output was disabled after diagnosis.
+- Verification:
+  - `mlform`: `vp test` passed, 27 files / 270 tests.
+  - `mlform`: `vp exec tsc -b --pretty false` passed.
+  - `mlform`: `vp build` passed.
+  - `frontend`: `vp test` passed, 30 files / 107 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `backend`: `uv run pytest tests/test_runtime_api.py` passed, 25 tests.
+  - `api`: `mvn -Dtest=SchemaFlowServiceTest test` passed, 10 tests.
+  - `models/plugins`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp fmt` passed.
+  - `mlform`: `vp fmt` passed.
+  - `mlform`: `graphify update .` passed.
+  - Repo: `graphify update .` passed.
+  - Line count: changed production files are under 300 non-comment lines except pre-existing unrelated `frontend/src/admin/infrastructure/components/ServicesView.tsx` at 302 non-comment lines.

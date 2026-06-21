@@ -12,11 +12,6 @@ import type { QuestionnaireSchema } from "../questionnaire-schema";
 
 type JsonRecord = Record<string, unknown>;
 
-type LegacyExplanationPayload = {
-  explanation?: unknown;
-  explanations?: unknown;
-};
-
 /** isRecord: internal predicate for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isRecord = (value: unknown): value is JsonRecord =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -83,25 +78,15 @@ const getReportContent = (payload: unknown): string[] => {
       (item): item is string => typeof item === "string" && item.trim().length > 0,
     );
   }
-  const reportPayload = isRecord(payload) ? (payload as LegacyExplanationPayload) : null;
+  const reportPayload = isRecord(payload) ? payload : null;
   const contentFromFormattedPayload =
     typeof reportPayload?.explanation === "string" && reportPayload.explanation.trim().length > 0
       ? [reportPayload.explanation]
-      : [];
-  const contentFromLegacyPayload =
-    reportPayload && Array.isArray(reportPayload.explanations)
-      ? reportPayload.explanations.filter(
-          (item): item is string => typeof item === "string" && item.trim().length > 0,
-        )
       : [];
   const normalizedReport = reportPayload ? normalizeCustomReportResult(reportPayload) : null;
 
   if (contentFromFormattedPayload.length > 0) {
     return contentFromFormattedPayload;
-  }
-
-  if (contentFromLegacyPayload.length > 0) {
-    return contentFromLegacyPayload;
   }
 
   return normalizedReport
@@ -144,26 +129,24 @@ const getFallbackReportEntries = (predictionValue: unknown): PredictionReportDes
     return [];
   }
 
-  const reports = isRecord(predictionValue.reports) ? predictionValue.reports : null;
+  const reports = Array.isArray(predictionValue.reports) ? predictionValue.reports : [];
   const fallbackReportEntries = reports
-    ? Object.entries(reports).filter(([, value]) => {
-        if (!isRecord(value)) {
-          return false;
-        }
-        const normalized = normalizeCustomReportResult(value);
-        const hasLegacyReportBlocks =
-          Array.isArray(value.explanations) &&
-          value.explanations.some((item) => typeof item === "string" && item.trim().length > 0);
-        return (
-          hasLegacyReportBlocks ||
-          normalized.blocks.length > 0 ||
-          normalized.html !== null ||
-          normalized.jsonFallback !== null
-        );
-      })
-    : [];
-  return fallbackReportEntries.flatMap(([reportId, value], index) => {
-    const content = getReportContent(value);
+    .filter(isRecord)
+    .map((item, index) => ({
+      reportId: typeof item.id === "string" ? item.id : `report-${index + 1}`,
+      payload: "payload" in item ? item.payload : item,
+    }))
+    .filter(({ payload }) => {
+      if (!isRecord(payload)) {
+        return false;
+      }
+      const normalized = normalizeCustomReportResult(payload);
+      return (
+        normalized.blocks.length > 0 || normalized.html !== null || normalized.jsonFallback !== null
+      );
+    });
+  return fallbackReportEntries.flatMap(({ reportId, payload }, index) => {
+    const content = getReportContent(payload);
     if (content.length === 0) {
       return [];
     }
@@ -193,9 +176,9 @@ const getEmbeddedSchemaReportEntries = (
     return [];
   }
 
-  const reports = isRecord(predictionValue.reports) ? predictionValue.reports : {};
-  const meta = isRecord(predictionValue.meta) ? predictionValue.meta : {};
-  const explainErrors = isRecord(meta.explainErrors) ? meta.explainErrors : {};
+  const reports = Array.isArray(predictionValue.reports)
+    ? predictionValue.reports.filter(isRecord)
+    : [];
 
   return schemaDefinition.reports.flatMap((item, index) => {
     if (!isRecord(item)) {
@@ -210,9 +193,11 @@ const getEmbeddedSchemaReportEntries = (
 
     const reportId =
       typeof item.id === "string" && item.id.trim().length > 0 ? item.id : `report-${index + 1}`;
-    const content = getReportContent(reports[reportId]);
-    const nextError = explainErrors[reportId];
-    if (content.length === 0 && typeof nextError !== "string" && !feedbackQuestionnaire) {
+    const reportPayload = reports.find((report) => String(report.id) === reportId);
+    const content = getReportContent(
+      reportPayload && "payload" in reportPayload ? reportPayload.payload : reportPayload,
+    );
+    if (content.length === 0 && !feedbackQuestionnaire) {
       return [];
     }
     return [
@@ -221,7 +206,7 @@ const getEmbeddedSchemaReportEntries = (
         reportId,
         label: typeof item.label === "string" ? item.label : reportId,
         content: content.map((value) => normalizeDisplayedReportContent(value)),
-        error: typeof nextError === "string" ? nextError : null,
+        error: null,
         feedbackQuestionnaire,
       },
     ];
@@ -254,19 +239,21 @@ export const extractPredictionReportEntries = (
     if (feedbackReports.length === 0) {
       return getFallbackReportEntries(predictionValue);
     }
-    const reports = isRecord(predictionValue.reports) ? predictionValue.reports : {};
-    const meta = isRecord(predictionValue.meta) ? predictionValue.meta : {};
-    const explainErrors = isRecord(meta.explainErrors) ? meta.explainErrors : {};
+    const reports = Array.isArray(predictionValue.reports)
+      ? predictionValue.reports.filter(isRecord)
+      : [];
 
     return feedbackReports.flatMap((report: ReportConfig, index: number) => {
       const reportId = report.id ?? `report-${index + 1}`;
-      const content = getReportContent(reports[reportId]);
-      const nextError = explainErrors[reportId];
+      const reportPayload = reports.find((item) => String(item.id) === reportId);
+      const content = getReportContent(
+        reportPayload && "payload" in reportPayload ? reportPayload.payload : reportPayload,
+      );
       const feedbackQuestionnaire =
         getEmbeddedFeedbackQuestionnaire(report) ??
         getMetadataFeedbackQuestionnaire(report as Record<string, unknown>);
 
-      if (content.length === 0 && typeof nextError !== "string" && !feedbackQuestionnaire) {
+      if (content.length === 0 && !feedbackQuestionnaire) {
         return [];
       }
 
@@ -276,7 +263,7 @@ export const extractPredictionReportEntries = (
           reportId,
           label: report.label ?? reportId,
           content: content.map((item) => normalizeDisplayedReportContent(item)),
-          error: typeof nextError === "string" ? nextError : null,
+          error: null,
           feedbackQuestionnaire,
         },
       ];

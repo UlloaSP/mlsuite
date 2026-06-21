@@ -19,6 +19,30 @@ const pushIssue = (
   issues.push({ path, message, severity });
 };
 
+const schemaRunKeys = ["mappedTo", "displayKey", "source"] as const;
+
+const preserveSchemaRunConfig = <T extends FieldConfig | ReportConfig>(
+  parsed: unknown,
+  source: T,
+): T => {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return source;
+  const next = {
+    ...source,
+    ...(parsed as Record<string, unknown>),
+    id: source.id,
+    label: source.label,
+  };
+  schemaRunKeys.forEach((key) => {
+    if ((source as Record<string, unknown>)[key] !== undefined) {
+      next[key] = (source as Record<string, unknown>)[key];
+    }
+  });
+  if (Array.isArray((source as Record<string, unknown>).options)) {
+    next.options = (source as Record<string, unknown>).options;
+  }
+  return next as T;
+};
+
 /**
  * createCustomFieldDefinitionMap: creates a configured runtime object or schema object
  *
@@ -71,7 +95,7 @@ export const validateFieldConfig = (
 
   const result = definition.schema.safeParse(field);
   if (result.success) {
-    return { ...field, ...result.data, id: field.id, label: field.label };
+    return preserveSchemaRunConfig(result.data, field);
   }
 
   for (const issue of result.error.issues) {
@@ -106,7 +130,7 @@ export const validateReportConfig = (
 
   const result = definition.schema.safeParse(report);
   if (result.success) {
-    return { ...report, ...result.data, id: report.id, label: report.label };
+    return preserveSchemaRunConfig(result.data, report);
   }
 
   for (const issue of result.error.issues) {

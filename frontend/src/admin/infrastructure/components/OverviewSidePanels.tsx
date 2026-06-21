@@ -5,7 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
 import { cx } from "../../../app/components";
-import { buildDashboardAlerts, countHealthyServices } from "../../../algorithms/admin/infrastructure/dashboard-summary";
+import {
+  buildDashboardAlerts,
+  countHealthyServices,
+} from "../../../algorithms/admin/infrastructure/dashboard-summary";
 import { formatBytes } from "../../../algorithms/admin/infrastructure/formatters";
 import type { InfrastructureOverviewDto } from "../../../api/infrastructure/dtos";
 import { CountCell, MemoryBar, ServiceHealthSegment } from "./OverviewViewSupport";

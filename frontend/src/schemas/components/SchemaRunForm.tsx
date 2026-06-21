@@ -80,6 +80,8 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
         customReportDefinitions: data.reportDefinitions,
         onSubmit(inputData, raw, reportsPending) {
           schemaRunDebug("form.submit.callback", {
+            inputData,
+            raw,
             inputKeys: Object.keys(inputData),
             rawKeys: Object.keys(raw),
             reportsPending,
@@ -95,6 +97,11 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
       });
       const unsubscribe = mounted.form.subscribe((state) => {
         if (!state.lastResult || !onResultUpdateRef.current) return;
+        schemaRunDebug("form.subscribe.state", {
+          lastResult: state.lastResult,
+          reportStates: state.reportStates,
+          reports: mounted.form.reports,
+        });
         const raw = isRecord(state.lastResult.raw)
           ? state.lastResult.raw
           : { raw: state.lastResult.raw };
@@ -105,7 +112,9 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
           version.bindings,
         );
         schemaRunDebug("form.result-update", {
-          reportKeys: isRecord(next.raw.reports) ? Object.keys(next.raw.reports) : [],
+          inputData: isRecord(next.raw.inputData) ? next.raw.inputData : {},
+          raw: next.raw,
+          reportCount: Array.isArray(next.raw.reports) ? next.raw.reports.length : 0,
           reportsPending: next.reportsPending,
         });
         onResultUpdateRef.current(

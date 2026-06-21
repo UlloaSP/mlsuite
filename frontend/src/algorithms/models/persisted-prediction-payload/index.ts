@@ -39,30 +39,21 @@ export function buildPersistedPredictionPayload(
   feedbackReports: readonly PersistedReportState[],
 ): Record<string, unknown> {
   const base = isRecord(raw) ? raw : { raw };
-  const reports = isRecord(base.reports) ? { ...base.reports } : {};
+  const reports = Array.isArray(base.reports) ? base.reports.filter(isRecord) : [];
   const meta = isRecord(base.meta) ? { ...base.meta } : {};
-  const explainErrors = isRecord(meta.explainErrors) ? { ...meta.explainErrors } : {};
 
   for (const report of feedbackReports) {
     if (report.status === "done" && report.result !== undefined) {
-      reports[report.id] = report.result;
-      delete explainErrors[report.id];
+      const next = { id: report.id, payload: report.result };
+      const index = reports.findIndex((item) => String(item.id) === report.id);
+      if (index >= 0) reports[index] = next;
+      else reports.push(next);
     }
-    if (report.status === "error" && report.error) {
-      explainErrors[report.id] = report.error;
-    }
-  }
-
-  const nextMeta: JsonRecord = { ...meta };
-  if (Object.keys(explainErrors).length > 0) {
-    nextMeta.explainErrors = explainErrors;
-  } else {
-    delete nextMeta.explainErrors;
   }
 
   return {
     ...base,
     reports,
-    meta: nextMeta,
+    meta,
   };
 }

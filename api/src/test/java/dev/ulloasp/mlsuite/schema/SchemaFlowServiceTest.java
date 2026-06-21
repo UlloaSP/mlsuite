@@ -231,7 +231,7 @@ class SchemaFlowServiceTest {
 
     private CreatePredictionResultRequest result(Long modelId, PredictionResultStatus status) {
         return new CreatePredictionResultRequest(modelId, Map.of("age", 52),
-                status == PredictionResultStatus.SUCCESS ? Map.of("outputs", List.of()) : Map.of(),
+                status == PredictionResultStatus.SUCCESS ? Map.of("reports", List.of()) : Map.of(),
                 status,
                 status == PredictionResultStatus.FAILED ? "failed" : null,
                 status == PredictionResultStatus.FAILED ? Map.of("status", 500) : null);

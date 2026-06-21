@@ -6,10 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReportDescriptorContext } from "mlform/primitives";
 import type { ReportConfig } from "mlform/runtime";
 import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
-import {
-  schemaRunDebug,
-  schemaRunDebugError,
-} from "../run-debug";
+import { schemaRunDebug, schemaRunDebugError } from "../run-debug";
 
 /**
  * describeSchemaCustomReport: performs the exported transformation for this algorithm.

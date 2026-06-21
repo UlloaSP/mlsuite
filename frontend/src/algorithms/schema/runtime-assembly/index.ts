@@ -10,7 +10,7 @@ import type { FormSchema, Registry, ReportConfig, Transport } from "mlform/runti
 import type { CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
 import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
 import { toMlformSchema } from "../../../algorithms/mlform/schema-validation";
-import { isRecord, type PredictionPayloadField } from "../../../algorithms/mlform/shared";
+import type { PredictionPayloadField } from "../../../algorithms/mlform/shared";
 import { createSchemaRunTransport } from "../../../algorithms/schema/run-transport";
 import { wrapSchemaReportDefinitions } from "../../../algorithms/schema/report-plugin-context";
 import { schemaRunDebug } from "../../../algorithms/schema/run-debug";
@@ -64,65 +64,6 @@ const createRegistry = (
   return pack;
 };
 
-/** transportFields: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const transportFields = (
-  formSchema: FormSchema,
-  sourceSchema: unknown,
-): readonly PredictionPayloadField[] => {
-  if (!isRecord(sourceSchema) || !Array.isArray(sourceSchema.fields)) {
-    return formSchema.fields as PredictionPayloadField[];
-  }
-  const sourceFields = sourceSchema.fields;
-  return formSchema.fields.map((field: unknown, index: number) => {
-    const sourceField = sourceFields[index];
-    if (!isRecord(sourceField)) return field as PredictionPayloadField;
-    if (sourceField.kind === "onehot-category" && Array.isArray(sourceField.options)) {
-      sourceField.options.forEach((option, optionIndex) => {
-        if (isRecord(option) && option.mappedTo === undefined) {
-          throw new Error(`Schema field ${index + 1} option ${optionIndex + 1} falta mappedTo`);
-        }
-      });
-    } else if (sourceField.mappedTo === undefined) {
-      throw new Error(`Schema field ${index + 1} falta mappedTo`);
-    }
-    const next: PredictionPayloadField = {
-      ...(field as PredictionPayloadField),
-      mappedTo: sourceField.mappedTo,
-    };
-    if (Array.isArray(sourceField.options)) next.options = sourceField.options;
-    return next;
-  });
-};
-
-/** reportMappings: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const reportMappings = (schema: unknown): readonly unknown[] => {
-  if (!isRecord(schema) || !Array.isArray(schema.reports)) return [];
-  const mappings: unknown[] = [];
-  schema.reports.forEach((report, index) => {
-    if (!isRecord(report)) return;
-    if (report.mappedTo === undefined) {
-      throw new Error(`Schema report ${index + 1} falta mappedTo`);
-    }
-    mappings.push(report.mappedTo);
-  });
-  return mappings;
-};
-
-/** restoreReportMappings: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const restoreReportMappings = (
-  formSchema: FormSchema,
-  mappings: readonly unknown[],
-): FormSchema => {
-  if (mappings.length === 0 || !Array.isArray(formSchema.reports)) return formSchema;
-  return {
-    ...formSchema,
-    reports: formSchema.reports.map((report: ReportConfig, index: number) => ({
-      ...report,
-      mappedTo: mappings[index],
-    })),
-  };
-};
-
 /**
  * createSchemaRunRuntime: creates a configured runtime object or schema object
  *
@@ -143,13 +84,11 @@ export const createSchemaRunRuntime = ({
     customReports: customReportDefinitions.map((definition) => definition.kind),
   });
   const schemaReportDefinitions = wrapSchemaReportDefinitions(customReportDefinitions);
-  const normalizedFormSchema = toMlformSchema(toMlformRuntimeSchema(schema), {
+  const formSchema = toMlformSchema(toMlformRuntimeSchema(schema), {
     customFieldDefinitions,
     customReportDefinitions: schemaReportDefinitions,
   });
-  const mappings = reportMappings(schema);
-  const formSchema = restoreReportMappings(normalizedFormSchema, mappings);
-  const normalizedFields = transportFields(formSchema, schema);
+  const normalizedFields = formSchema.fields as PredictionPayloadField[];
   schemaRunDebug("runtime.create.normalized-schema", {
     fields: formSchema.fields.length,
     reports: (formSchema.reports ?? []).map((report: ReportConfig) => ({
@@ -162,12 +101,7 @@ export const createSchemaRunRuntime = ({
     formSchema,
     registry: pack.registry,
     descriptorRegistry: pack.descriptorRegistry,
-    transport: createSchemaRunTransport(
-      bindings,
-      normalizedFields,
-      schemaReportDefinitions,
-      mappings,
-    ),
+    transport: createSchemaRunTransport(bindings, normalizedFields),
     normalizedFields,
   };
 };

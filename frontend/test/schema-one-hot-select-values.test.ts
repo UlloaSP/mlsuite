@@ -21,12 +21,13 @@ const version: SchemaVersionDto = {
         id: "blood-group",
         label: "Blood Group",
         kind: "onehot-category",
+        displayKey: "bloodGroup",
         options: [
           { label: "O Positive", value: "O_positive", mappedTo: "blood_group__O_positive" },
           { label: "A Negative", value: "A_negative", mappedTo: "blood_group__A_negative" },
         ],
       },
-      { id: "age", label: "age", kind: "number", mappedTo: "age" },
+      { id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" },
     ],
     reports: [],
   },
@@ -46,7 +47,7 @@ describe("schema one-hot select values", () => {
   test("submit expands selected value to mapped one-hot columns", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ outputs: [] }))),
+      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
     );
     const transport = createSchemaRunTransport(
       version.bindings,
@@ -54,6 +55,13 @@ describe("schema one-hot select values", () => {
     );
 
     const result = await transport.submit({
+      modelValues: {
+        blood_group__O_positive: 1,
+        blood_group__A_negative: 0,
+        age: 52,
+      },
+      displayValues: { bloodGroup: "O_positive", age: 52 },
+      fieldValues: { "blood-group": "O_positive", age: 52 },
       serializedValues: { "blood-group": "O_positive", age: 52 },
       reports: [],
     } as never);

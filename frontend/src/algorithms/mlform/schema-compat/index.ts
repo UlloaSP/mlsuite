@@ -14,9 +14,17 @@ import {
   validateFieldConfig,
   validateReportConfig,
 } from "../schema-definition-validation";
-import type { CompatIssue, CompatValidationResult, JsonRecord } from "../../../algorithms/mlform/shared";
-import { getString, hasBlockingIssues, isRecord, toUniqueId } from "../../../algorithms/mlform/shared";
-import { mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
+import type {
+  CompatIssue,
+  CompatValidationResult,
+  JsonRecord,
+} from "../../../algorithms/mlform/shared";
+import {
+  getString,
+  hasBlockingIssues,
+  isRecord,
+  toUniqueId,
+} from "../../../algorithms/mlform/shared";
 
 /**
  * ValidateMlformSchemaOptions: describes the public data contract consumed or returned by this algorithm.
@@ -169,6 +177,10 @@ export const validateMlformSchema = (
       label,
     };
 
+    if (getString(nextField.displayKey) === undefined) {
+      pushIssue(issues, ["fields", index, "displayKey"], `Field "${id}" must define displayKey.`);
+    }
+
     nextFields.push(
       validateFieldConfig(nextField, index, issues, engineRegistry, fieldDefinitions) ?? nextField,
     );
@@ -244,11 +256,12 @@ export const applyPredictionInputsToSchema = (
         return field;
       }
 
-      const modelKey = targetKey(mappedTarget(field.mappedTo));
+      const displayKey =
+        getString(field.displayKey) ?? getString(field.id) ?? getString(field.label);
 
-      return !modelKey || !(modelKey in inputs)
+      return !displayKey || !(displayKey in inputs)
         ? field
-        : { ...field, defaultValue: inputs[modelKey] };
+        : { ...field, defaultValue: inputs[displayKey] };
     }),
   };
 };

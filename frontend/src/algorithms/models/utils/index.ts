@@ -80,19 +80,19 @@ export const getModelAlgorithmLabel = (model: Pick<ModelDto, "type" | "specificT
   `${getModelTypeLabel(model.type)} - ${model.specificType}`;
 
 /**
- * getPredictionOutputs: extracts a derived value without mutating input
+ * getPredictionReports: extracts a derived value without mutating input
  *
  * Purpose: normalizes model and prediction metadata for display and lookup.
  * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export const getPredictionOutputs = (value: unknown): JsonRecord[] => {
-  if (!isRecord(value) || !Array.isArray(value.outputs)) {
+export const getPredictionReports = (value: unknown): JsonRecord[] => {
+  if (!isRecord(value) || !Array.isArray(value.reports)) {
     return [];
   }
 
-  return value.outputs.filter(isRecord);
+  return value.reports.filter(isRecord);
 };
 
 /**
@@ -117,8 +117,8 @@ export const getPredictionShortId = (id: unknown): string => {
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
 export const getPredictionExecutionTime = (value: unknown): number | null => {
-  const outputs = getPredictionOutputs(value);
-  const executionTime = outputs[0]?.execution_time;
+  const reports = getPredictionReports(value);
+  const executionTime = reports[0]?.execution_time;
   return typeof executionTime === "number" ? executionTime : null;
 };
 

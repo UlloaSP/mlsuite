@@ -1,5 +1,31 @@
 # Lessons
 
+## 2026-06-21 - Analyzer reports contract correction
+
+- Correction: MLSuite kept normalizing backend model reports from legacy `outputs[]/type` after backend prediction responses had already moved to `reports[]/kind`.
+- Rule: when backend contract migration is complete and user requests breaking cleanup, delete compatibility reads and update tests to the current contract; do not keep silent fallback paths that hide wrong payload shapes.
+- Correction: report fixes kept compatibility for keyed `reports` maps, `explanations`, exact report-id aliases, and single-target `mappedTo` map fallback after the user clarified those were legacy.
+- Rule: current report contract is `reports[]` plus explicit `mappedTo`; do not keep keyed report maps, `outputs`, `explanations`, report-id fallback, alias migration, or model-map fallback unless the user explicitly asks for a migration bridge.
+- Correction: frontend Docker build compiled against registry `mlform@0.1.16` while local/dev tests used linked `../mlform` with newer report-array types.
+- Rule: when adapting MLSuite to linked MLForm API, verify installed package source in `node_modules`, lockfile, and Docker build context; registry fallback can hide stale public types.
+
+## 2026-06-19 - MLForm linked API correction
+
+- Correction: headless MLForm API tests passed while MLSuite browser/render path lost fields and visible inputs.
+- Rule: linked MLForm migrations must verify mounted DOM has field controls plus reports, and saved/review display shows user-facing input values; headless `executeFormPipeline()` is not enough.
+- Correction: repeated report fixes still left uncertainty about where payloads disappeared between submit, MLForm fetch, MLSuite normalization, display extraction, and save modal.
+- Rule: when browser behavior remains unclear after contract tests pass, add one stable-prefix diagnostic trace across every boundary from user submit to final display/save before changing more logic.
+- Correction: mounted MLForm submit exposed fetched plugin reports on `pipelineResult.reportFetchResults`, but MLSuite read only model submit `result.raw`, so plugin payloads were lost and reports stayed pending/empty.
+- Rule: mounted MLForm submit handlers must merge `pipelineResult.reportFetchResults` into schema-run raw reports and preserve report target aliases from `reportContextById`; model submit raw alone is incomplete.
+- Correction: real backend schema bindings can carry numeric model ids, while strict report plugins expect string `meta.modelId`, causing plugin fetch to throw before making the analyzer request.
+- Rule: schema report plugin context must normalize backend DTO ids to string at plugin boundaries; mounted regressions need numeric model ids plus strict plugin `modelId` checks.
+- Correction: model reports fetched but did not render because schema display matched result `modelId` to bindings with strict equality, while backend/runtime ids can differ by string vs number.
+- Rule: schema display/report lookup must normalize scalar ids at DTO/runtime boundaries; multi-model regressions must include string binding ids and numeric result ids.
+- Correction: classifier model reports still did not render correctly when analyzer returned `mapping` as an object such as `{ "0": "1" }`, and numeric-string labels were reinterpreted as indices.
+- Rule: analyzer report regressions must cover real payload shapes, including object mappings, scalar/array report payloads, and numeric-string class labels; display should normalize payload shape once before rendering.
+- Correction: model reports still stayed pending/empty when schema report `mappedTo` was keyed by model name but persisted binding lacked `modelName`; the runtime adapter added `default`, but MLSuite treated duplicate target values as ambiguous.
+- Rule: built-in model report routing may fallback to a single unique mapped target when binding metadata is incomplete; custom/plugin report routing must stay strict to avoid collapsing multi-model plugin contexts.
+
 ## 2026-06-18 - MLSchema one-hot parent correction
 
 - Correction: frontend schema composer still required or preserved parent-level `mappedTo` for `onehot-category`, while MLSchema 0.2.1 puts model targets on `options[].mappedTo`.

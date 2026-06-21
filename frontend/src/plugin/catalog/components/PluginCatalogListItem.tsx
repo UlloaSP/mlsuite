@@ -6,7 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Trash2 } from "lucide-react";
 import { m as motion } from "motion/react";
 import { AppBadge, AppButton } from "../../../app/components";
-import { type PluginPageItem, TYPE_META, formatTimestamp } from "../../../algorithms/plugin/catalog-page-model";
+import {
+  type PluginPageItem,
+  TYPE_META,
+  formatTimestamp,
+} from "../../../algorithms/plugin/catalog-page-model";
 
 type PluginCatalogListItemProps = {
   canManage: boolean;

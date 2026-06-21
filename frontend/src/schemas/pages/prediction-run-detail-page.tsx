@@ -7,12 +7,16 @@ import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
-import { usePredictionRun, usePredictionRunFeedback, useSchema, useSchemaVersion } from "../../api/schemas/hooks";
+import {
+  usePredictionRun,
+  usePredictionRunFeedback,
+  useSchema,
+  useSchemaVersion,
+} from "../../api/schemas/hooks";
 import { SchemaRunInputsPanel } from "../components/SchemaRunInputsPanel";
 import { SchemaRunFeedbackQuestionnaire } from "../components/SchemaRunFeedbackQuestionnaire";
 import { SchemaRunDetailMetrics } from "../components/SchemaRunDetailMetrics";
 import { SchemaRunReportsPanel } from "../components/SchemaRunReportsPanel";
-import { mergeSchemaRunInputs } from "../../algorithms/schema/input-display";
 import { isSchemaFeedbackComplete } from "../../algorithms/schema/feedback-state";
 import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
@@ -80,7 +84,7 @@ export function PredictionRunDetailPage() {
             />
             <SchemaRunInputsPanel
               schema={executableVersion.formSchema}
-              inputData={mergeSchemaRunInputs(run.inputData, run.results)}
+              inputData={run.inputData}
               open={inputsOpen}
               onToggle={() => setInputsOpen((current) => !current)}
             />

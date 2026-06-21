@@ -3,7 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { OrganizationRole, MembershipStatus, RoleSummaryDto, MembershipRowActionsDto } from "./index";
+import type {
+  OrganizationRole,
+  MembershipStatus,
+  RoleSummaryDto,
+  MembershipRowActionsDto,
+} from "./index";
 
 export interface OrganizationMembershipRowDto {
   id: number;

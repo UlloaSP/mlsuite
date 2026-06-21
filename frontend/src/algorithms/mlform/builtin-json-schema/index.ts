@@ -200,6 +200,7 @@ const allReportKeys = [...new Set(Object.values(reportKeysByKind).flat())].filte
 );
 /** MAPPED_TO_KEY: internal constant/cache for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const MAPPED_TO_KEY = "mappedTo";
+const DISPLAY_KEY = "displayKey";
 
 /**
  * getAllowedFieldKeys: extracts a derived value without mutating input
@@ -214,6 +215,7 @@ export const getAllowedFieldKeys = (kind: string | null): readonly string[] =>
     new Set([
       ...(kind && fieldKeysByKind[kind] ? fieldKeysByKind[kind] : allFieldKeys),
       MAPPED_TO_KEY,
+      DISPLAY_KEY,
     ]),
   );
 

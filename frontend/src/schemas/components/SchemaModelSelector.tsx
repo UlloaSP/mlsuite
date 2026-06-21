@@ -39,9 +39,7 @@ export function SchemaModelSelector({ models, value, onChange }: Props) {
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div>
           <AppSectionTitle>Models</AppSectionTitle>
-          <AppCopy>
-            Choose one or more models. MLSuite uses each generated schema snapshot.
-          </AppCopy>
+          <AppCopy>Choose one or more models. MLSuite uses each generated schema snapshot.</AppCopy>
         </div>
         <AppBadge tone={value.length > 0 ? "accent" : "neutral"}>{value.length} selected</AppBadge>
       </div>

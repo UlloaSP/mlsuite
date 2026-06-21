@@ -107,6 +107,6 @@ export const createCombinedQuestionnaireTransport = (
         ? (request.serializedValues as Record<string, unknown>)
         : {};
     await onSubmit(values);
-    return { raw: values, meta: {}, reports: {} };
+    return { raw: values, meta: {}, reports: [] };
   },
 });

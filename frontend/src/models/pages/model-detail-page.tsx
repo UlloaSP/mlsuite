@@ -5,19 +5,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import {
-  AppEmptyState,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-  AppButton,
-} from "../../app/components";
+import { AppEmptyState, AppPage, AppPageHeader, AppSurface, AppButton } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
 import { useUser } from "../../api/user/hooks";
 import { useWorkspaceContext } from "../../api/workspace/hooks";
 import { ModelSummaryTab } from "../components/ModelSummaryTab";
 import { useGetModels } from "../../api/models/hooks";
-import { findModelById, formatTimestamp, getModelAlgorithmLabel } from "../../algorithms/models/utils";
+import {
+  findModelById,
+  formatTimestamp,
+  getModelAlgorithmLabel,
+} from "../../algorithms/models/utils";
 
 export function ModelDetailPage() {
   const navigate = useNavigate();
