@@ -17,7 +17,7 @@
     "json-source-map": "^0.6.1",
     "jsonc-parser": "^3.3.1",
     "lucide-react": "^1.16.0",
-    "mlform": "0.1.18",
+    "mlform": "0.1.19",
     "monaco-editor": "^0.55.1",
     "motion": "^12.38.0",
     "radix-ui": "^1.5.0",
