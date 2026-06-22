@@ -13,6 +13,7 @@ import {
   AppPageHeader,
   AppSurface,
   AppButton,
+  AppPanel,
   AppSelect,
   AppTextField,
 } from "../../app/components";
@@ -31,6 +32,10 @@ import {
   sortSchemaVersions,
 } from "../../algorithms/schema/version-selection";
 import type { CreateSchemaVersionRequest } from "../../api/schemas/dtos";
+import { SchemaFormPreview } from "../components/SchemaFormPreview";
+import { ToggleButton } from "../../models/components/ToggleButton";
+
+type EditorView = "code" | "preview";
 
 export function CreateSchemaVersionPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
@@ -38,11 +43,12 @@ export function CreateSchemaVersionPage() {
   const { data: schemaDto } = useSchema(schemaId);
   const { data: versions = [] } = useSchemaVersions(schemaId);
   const mutation = useCreateSchemaVersionMutation(schemaId ?? "");
-  const [, setSchema] = useAtom(schemaAtom);
+  const [currentSchema, setSchema] = useAtom(schemaAtom);
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [schemaErrors] = useAtom(schemaErrorsAtom);
   const [baseVersionId, setBaseVersionId] = useState("");
   const [versionName, setVersionName] = useState("");
+  const [editorView, setEditorView] = useState<EditorView>("code");
 
   const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
   const effectiveBaseId = baseVersionId || schemaVersionId(sortedVersions[0]);
@@ -73,7 +79,7 @@ export function CreateSchemaVersionPage() {
       await mutation.mutateAsync({
         ...prepared,
       });
-      navigate(`/schemas/${schemaId}`);
+      void navigate(`/schemas/${schemaId}`);
     } catch (error) {
       toast.error("Schema version save failed", {
         description: error instanceof Error ? error.message : String(error),
@@ -152,8 +158,21 @@ export function CreateSchemaVersionPage() {
             </AppButton>
           </div>
         </div>
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <EditorWrapper />
+        <div className="flex relative min-h-0 flex-1 overflow-hidden">
+          <div className="absolute right-6 top-6 z-20">
+            <ToggleButton
+              isProcessing={false}
+              isJsonActive={editorView === "code"}
+              onToggleMode={() => setEditorView((view) => (view === "code" ? "preview" : "code"))}
+            />
+          </div>
+          {editorView === "code" ? (
+            <EditorWrapper />
+          ) : editorHasErrors ? (
+            <AppPanel>Fix schema errors to preview the form.</AppPanel>
+          ) : (
+            <SchemaFormPreview schema={currentSchema ?? baseVersion?.formSchema} />
+          )}
         </div>
       </AppSurface>
     </AppPage>

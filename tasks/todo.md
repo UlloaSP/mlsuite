@@ -1,3 +1,99 @@
+# Schema Create Direct Flow And Split Preview
+
+## Goal
+
+- [x] Keep schema editor previews in MLForm split layout.
+- [x] Make first-time schema creation save the generated schema automatically.
+- [x] Remove form preview from first-time schema creation.
+- [x] Keep mutable schema editing available for new schema versions.
+
+## Plan
+
+- [x] Restore preview mount to MLForm split layout.
+- [x] Remove JSON editor/toggle/preview dependence from the first schema creation flow.
+- [x] Save initial `composedVersion.formSchema` directly instead of parsing editor text.
+- [x] Keep `CreateSchemaVersionPage` using the editor plus split preview.
+- [x] Update focused preview/create tests and run frontend verification.
+
+## Review
+
+- Schema preview now mounts MLForm with split layout and always-visible report pane.
+- Initial schema creation no longer exposes the JSON editor, floating Code/Preview toggle, or generated form preview; it saves generated `composedVersion.formSchema` directly.
+- New schema versions keep the editable editor/toggle flow and inherit the split preview through `SchemaFormPreview`.
+- Preview report expansion still generates MLForm-normalized ids for expanded multi-target reports.
+- Verification:
+  - `frontend`: `vp test test/schema-form-preview.test.tsx` passed, 3 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp check --fix src/algorithms/schema/preview-transport/index.ts src/schemas/components/SchemaFormPreview.tsx src/schemas/pages/create-schema-page.tsx src/schemas/pages/create-schema-version-page.tsx test/schema-form-preview.test.tsx` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 216 existing warnings, 0 errors.
+  - Repo: touched file line-count passed; largest touched source file 171 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Schema Preview Report Expansion And Floating Toggle
+
+## Goal
+
+- [x] Render one preview report per `mappedTo` entry in schema reports.
+- [x] Use the existing `models/components/ToggleButton.tsx` as a floating Code/Preview switch.
+- [x] Keep preview local: no real model calls, no persistence, no new runtime deps.
+
+## Plan
+
+- [x] Expand compact schema reports before MLForm mount so MLForm creates one report frame per target.
+- [x] Make preview transport return fake built-in payloads for every mapped report target.
+- [x] Replace top tabs with an absolutely positioned `ToggleButton`.
+- [x] Add regression for a report with two `mappedTo` entries.
+- [x] Run focused and full frontend verification, line-count, graph update.
+
+## Review
+
+- Preview now expands compact schema reports with multi-entry `mappedTo` before MLForm mount, so MLForm creates one report frame per mapped target.
+- Preview transport now returns fake built-in classifier/regressor payloads for every preview report target.
+- Create schema and create schema version pages now use the existing animated `models/components/ToggleButton.tsx` as an absolute floating switch.
+- Added mounted regression for one classifier report mapped to two targets rendering two report frames.
+- Verification:
+  - `frontend`: `vp check --fix src/algorithms/schema/preview-transport/index.ts src/schemas/components/SchemaFormPreview.tsx src/schemas/pages/create-schema-page.tsx src/schemas/pages/create-schema-version-page.tsx test/schema-form-preview.test.tsx src/models/components/ToggleButton.tsx` passed.
+  - `frontend`: `vp test test/schema-form-preview.test.tsx` passed, 3 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 216 existing warnings, 0 errors.
+  - Repo: touched file line-count passed; largest touched source file 237 non-comment lines.
+  - Repo: `git diff --check` passed for touched files with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Schema Editor Form Preview
+
+## Goal
+
+- [x] Add a Code/Preview switch while creating or editing schema versions.
+- [x] Render the current valid schema as an MLForm form preview without calling real models.
+- [x] Keep report preview local and visibly non-persistent; no floating controls or new runtime deps.
+
+## Plan
+
+- [x] Add a local schema preview transport that returns fake built-in report payloads.
+- [x] Add a schema-owned preview component that mounts MLForm with existing design system and plugin catalog.
+- [x] Wire Code/Preview tabs into create schema and create schema version pages using the validated editor schema.
+- [x] Add focused mounted preview test, then run TypeScript/tests/line-count/graph update.
+
+## Review
+
+- Added Code/Preview tabs to schema creation and schema-version creation pages.
+- Preview mounts the current validated editor schema through MLForm with the existing prediction design system.
+- Preview uses local fake report transport for built-in classifier/regressor reports; it does not call real models or persist runs.
+- Plugin-backed field/report definitions still load through the existing schema plugin catalog.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-form-preview.test.tsx` passed, 2 tests.
+  - `frontend`: `vp test` passed, 32 files / 110 tests.
+  - `frontend`: `vp check --fix src/algorithms/schema/preview-transport/index.ts src/schemas/components/SchemaFormPreview.tsx src/schemas/pages/create-schema-page.tsx src/schemas/pages/create-schema-version-page.tsx test/schema-form-preview.test.tsx` passed.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 217 existing warnings, 0 errors.
+  - Repo: touched file line-count passed; largest touched source file 238 non-comment lines.
+  - Repo: `git diff --check` passed for touched files with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
 # Schema Detail Readonly Editor
 
 ## Goal

@@ -1,5 +1,16 @@
 # Lessons
 
+## 2026-06-22 - Schema preview correction
+
+- Correction: schema editor preview rendered one report for multi-model `mappedTo` because the preview used only the first target and did not expand MLForm report configs.
+- Rule: editor/schema previews must expand compact multi-target schema reports before MLForm mount; transport payload count alone cannot create extra report frames.
+- Correction: user preferred the existing animated floating `ToggleButton.tsx` over top tabs.
+- Rule: when a previous local UI component is named, inspect and reuse it before introducing a new switch primitive.
+- Correction: first-time schema creation should not expose mutable JSON; the schema is generated from selected models and only version creation is an editing/refinement flow.
+- Rule: keep initial schema creation automatic from model selection, and reserve mutable schema editing for explicit schema-version creation.
+- Correction: user reverted schema preview tabs and removed create-schema preview entirely.
+- Rule: for schema creation, do the shortest direct flow: name + model selection + create; keep visual form preview only where user explicitly needs refinement/inspection.
+
 ## 2026-06-21 - Analyzer reports contract correction
 
 - Correction: MLSuite kept normalizing backend model reports from legacy `outputs[]/type` after backend prediction responses had already moved to `reports[]/kind`.
