@@ -1,3 +1,32 @@
+# Schema Detail Readonly Editor
+
+## Goal
+
+- [x] Replace schema detail gray `<pre>` JSON block with a read-only Monaco editor.
+- [x] Keep `Ctrl+F`, selection, `Ctrl+A`, and `Ctrl+C` available through Monaco.
+- [x] Avoid extra copy button or new runtime dependencies.
+
+## Plan
+
+- [x] Add a small schema-owned readonly JSON viewer component using existing Monaco config.
+- [x] Replace the schema detail `<pre>` renderer with that component.
+- [x] Run focused frontend verification, line-count check, and graph update.
+
+## Review
+
+- Added `SchemaCodeViewer` using existing Monaco dependency, editor config, and light/dark themes.
+- Schema detail now renders the selected schema JSON in Monaco readonly mode instead of a gray `<pre>`.
+- No copy button was added; native editor selection, `Ctrl+F`, `Ctrl+A`, and `Ctrl+C` cover that workflow.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 31 files / 108 tests.
+  - `frontend`: `vp check --fix src/schemas/pages/schema-detail-page.tsx src/schemas/components/SchemaCodeViewer.tsx` passed for touched frontend files.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing warnings, 217 issues.
+  - Repo: touched file line-count passed; largest touched source file 128 non-comment lines.
+  - Repo: `git diff --check` passed for touched files.
+  - Repo: `graphify update .` passed.
+  - Browser preview blocked: T3 preview returned `PreviewAutomationNoFocusedOwnerError`.
+
 # Analyzer Reports Contract Cleanup
 
 # Multi-Model Plugin Report Expansion

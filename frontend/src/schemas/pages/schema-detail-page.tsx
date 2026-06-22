@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Code2, History, Play, Plus } from "lucide-react";
+import { History, Play, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
@@ -22,6 +22,7 @@ import {
   selectSchemaVersion,
   sortSchemaVersions,
 } from "../../algorithms/schema/version-selection";
+import { SchemaCodeViewer } from "../components/SchemaCodeViewer";
 
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
@@ -93,13 +94,7 @@ export function SchemaDetailPage() {
                 </p>
               </div>
             </div>
-            <pre className="max-h-[480px] overflow-auto rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-xs leading-5 text-[var(--text-primary)]">
-              <code>
-                <Code2 className="mb-3 inline-block text-[var(--text-secondary)]" size={16} />
-                {"\n"}
-                {schemaCode}
-              </code>
-            </pre>
+            <SchemaCodeViewer value={schemaCode} />
           </AppPanel>
         ) : null}
         <div className="space-y-4">

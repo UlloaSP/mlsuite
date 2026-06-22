@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import {
   AppPage,
   AppPageHeader,
-  AppPanel,
   AppSurface,
   AppButton,
   AppSelect,
@@ -96,69 +95,63 @@ export function CreateSchemaVersionPage() {
             { label: "New Version" },
           ]}
         />
-        <AppPanel className="shrink-0">
-          <div className="grid gap-4 xl:grid-cols-[minmax(240px,1fr)_minmax(260px,1fr)_auto]">
-            <div className="space-y-2">
-              <label
-                htmlFor="base-version"
-                className="text-sm font-semibold text-[var(--text-primary)]"
-              >
-                Base version
-              </label>
-              <AppSelect
-                id="base-version"
-                value={effectiveBaseId}
-                onValueChange={setBaseVersionId}
-                disabled={!sortedVersions.length}
-                className="w-full"
-                options={
-                  sortedVersions.length
-                    ? sortedVersions.map((version) => ({
-                        value: schemaVersionId(version),
-                        label: `${version.name} · v${version.version}`,
-                      }))
-                    : [{ value: "", label: "No versions available" }]
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="version-name"
-                className="text-sm font-semibold text-[var(--text-primary)]"
-              >
-                Version name
-              </label>
-              <AppTextField
-                id="version-name"
-                value={versionName}
-                placeholder="Schema refinement"
-                onChange={(event) => setVersionName(event.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="flex min-w-[180px] items-end">
-              <AppButton
-                onClick={save}
-                disabled={!canSave || mutation.isPending}
-                className="w-full"
-              >
-                {mutation.isPending ? (
-                  <>
-                    <span className="animate-spin">
-                      <RefreshCcw size={18} />
-                    </span>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save size={18} />
-                    Save version
-                  </>
-                )}
-              </AppButton>
-            </div>
+        <div className="grid gap-4 xl:grid-cols-[minmax(240px,1fr)_minmax(260px,1fr)_auto]">
+          <div className="space-y-2">
+            <label
+              htmlFor="base-version"
+              className="text-sm font-semibold text-[var(--text-primary)]"
+            >
+              Base version
+            </label>
+            <AppSelect
+              id="base-version"
+              value={effectiveBaseId}
+              onValueChange={setBaseVersionId}
+              disabled={!sortedVersions.length}
+              className="w-full"
+              options={
+                sortedVersions.length
+                  ? sortedVersions.map((version) => ({
+                      value: schemaVersionId(version),
+                      label: `${version.name} · v${version.version}`,
+                    }))
+                  : [{ value: "", label: "No versions available" }]
+              }
+            />
           </div>
-        </AppPanel>
+          <div className="space-y-2">
+            <label
+              htmlFor="version-name"
+              className="text-sm font-semibold text-[var(--text-primary)]"
+            >
+              Version name
+            </label>
+            <AppTextField
+              id="version-name"
+              value={versionName}
+              placeholder="Schema refinement"
+              onChange={(event) => setVersionName(event.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="flex min-w-[180px] items-end">
+            <AppButton onClick={save} disabled={!canSave || mutation.isPending} className="w-full">
+              {mutation.isPending ? (
+                <>
+                  <span className="animate-spin">
+                    <RefreshCcw size={18} />
+                  </span>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  Save version
+                </>
+              )}
+            </AppButton>
+          </div>
+        </div>
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <EditorWrapper />
         </div>
