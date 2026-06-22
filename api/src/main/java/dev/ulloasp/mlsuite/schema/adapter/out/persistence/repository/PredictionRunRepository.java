@@ -24,4 +24,7 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
     Long findLastPredictionRunId();
 
     boolean existsBySchemaVersionIdAndName(Long schemaVersionId, String name);
+
+    @Query("SELECT COUNT(r) > 0 FROM PredictionRun r WHERE r.schemaVersion.schema.id = :schemaId")
+    boolean existsBySchemaId(Long schemaId);
 }

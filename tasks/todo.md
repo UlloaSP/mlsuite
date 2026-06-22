@@ -1,3 +1,39 @@
+# Schemas Catalog Pagination And Actions
+
+## Goal
+
+- [ ] Rework Schemas page like Plugins/Models: paginated backend data, compact borders, fixed pagination footer.
+- [ ] Add schema rename, archive, delete, duplicate from catalog actions.
+- [ ] Keep schema runs/review history safe: archive by default, block unsafe delete.
+
+## Plan
+
+- [x] Add backend schema page DTO, repo page query, archived state, and catalog actions.
+- [x] Copy latest schema version and bindings when duplicating a schema.
+- [x] Add focused backend tests for page/actions success and error cases.
+- [x] Add frontend schema page DTO/services/hooks/mutations.
+- [x] Split Schemas page into catalog browser/toolbar/list/actions components.
+- [x] Run focused API/frontend verification, line-count check, and graph update.
+
+## Review
+
+- Backend `GET /api/schemas` now returns a paged `SchemaPageDto`; active unpaged list moved to `GET /api/schemas/all`.
+- Added schema `archivedAt`, active/archive/all filters, backend search/sort, rename, archive, duplicate, and delete endpoints.
+- Delete blocks schemas referenced by prediction runs or review links; archive remains the safe removal path.
+- Duplicate copies the latest schema version as v1 plus its model bindings; run/review history is not copied.
+- Schemas frontend now uses paginated TanStack Query hooks, plugin/model-style toolbar/list/footer pagination, compact borders, and real action mutations.
+- Verification:
+  - `api`: `mvn "-Dtest=SchemaFlowServiceTest" test` passed, 15 tests.
+  - `api`: full `mvn test` blocked by existing stale test `dev.ulloasp.mlsuite.prediction.ExplanationFeedbackControllerTest` referencing missing `dev/ulloasp/mlsuite/prediction/domain/model/ExplanationFeedback`.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: `vp check --fix ...` passed with existing warnings in schema-run files.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 243 warnings; new accepted warning mirrors Models boolean-heavy catalog list props.
+  - Browser preview: Vite dev server is on `http://127.0.0.1:5175`; navigation to `/schemas` loaded, but T3 snapshot was blocked by `PreviewAutomationNoFocusedOwnerError`.
+  - Repo: changed source/test line-count check passed, no changed source file over 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
 # Models Catalog Pagination And Actions
 
 ## Goal

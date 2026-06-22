@@ -10,4 +10,5 @@ export type SchemaDto = {
   description?: string | null;
   createdAt: string;
   updatedAt?: string;
+  archivedAt?: string | null;
 };

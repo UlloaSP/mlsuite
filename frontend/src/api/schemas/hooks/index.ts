@@ -1,4 +1,10 @@
 export * from "./query-keys";
+export { useArchiveSchemaMutation } from "./use-archive-schema-mutation";
+export { useDeleteSchemaMutation } from "./use-delete-schema-mutation";
+export { useDuplicateSchemaMutation } from "./use-duplicate-schema-mutation";
+export { useInvalidateSchemaQueries } from "./use-invalidate-schema-queries";
+export { useRenameSchemaMutation } from "./use-rename-schema-mutation";
+export { useSchemaCatalogPageQuery } from "./use-schema-catalog-page-query";
 export { useSchemas } from "./use-schemas";
 export { useSchema } from "./use-schema";
 export { useSchemaVersions } from "./use-schema-versions";

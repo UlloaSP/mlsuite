@@ -1,6 +1,11 @@
 export { createSchema } from "./create-schema";
+export { archiveSchema } from "./archive-schema";
+export { deleteSchema } from "./delete-schema";
+export { duplicateSchema } from "./duplicate-schema";
+export { getSchemaPage } from "./get-schema-page";
 export { getSchemas } from "./get-schemas";
 export { getSchema } from "./get-schema";
+export { renameSchema } from "./rename-schema";
 export { createSchemaVersion } from "./create-schema-version";
 export { getSchemaVersions } from "./get-schema-versions";
 export { getSchemaVersion } from "./get-schema-version";

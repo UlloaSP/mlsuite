@@ -1,5 +1,8 @@
 export type { JsonRecord } from "./json-record";
 export type { SchemaDto } from "./schema-dto";
+export type { SchemaNameRequest } from "./schema-name-request";
+export type { SchemaPageDto } from "./schema-page-dto";
+export type { SchemaPageRequest } from "./schema-page-request";
 export type { SchemaModelBindingDto } from "./schema-model-binding-dto";
 export type { SchemaVersionDto } from "./schema-version-dto";
 export type { PredictionResultStatus } from "./prediction-result-status";
