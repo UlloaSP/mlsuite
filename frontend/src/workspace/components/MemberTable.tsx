@@ -1,6 +1,10 @@
 import { AppButton, AppCopy, AppPanel, AppSelect } from "../../app/components";
 import { RoleBadge } from "./RoleBadge";
-import type { MembershipRowActionsDto, MembershipStatus, RoleSummaryDto } from "../types";
+import type {
+  MembershipRowActionsDto,
+  MembershipStatus,
+  RoleSummaryDto,
+} from "../../api/workspace/dtos";
 
 type MemberTableRow = {
   id: number;

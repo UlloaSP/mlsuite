@@ -8,8 +8,8 @@ import {
   formatFeedbackValue,
   getQuestionnaireFieldDescriptors,
   type QuestionnaireFieldDescriptor,
-} from "../questionnaire-feedback";
-import type { QuestionnaireSchema } from "../questionnaire-schema";
+} from "../../algorithms/models/questionnaire-feedback";
+import type { QuestionnaireSchema } from "../../algorithms/models/questionnaire-schema";
 
 type ReportFeedbackSummaryProps = {
   schema?: QuestionnaireSchema;

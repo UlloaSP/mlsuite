@@ -1,4 +1,4 @@
-import type { PredictionResultFeedbackDto, PredictionRunDto } from "../types";
+import type { PredictionResultFeedbackDto, PredictionRunDto } from "../../api/schemas/dtos";
 
 export type SchemaRunExportSelection = {
   excludedRunIds: Set<string>;

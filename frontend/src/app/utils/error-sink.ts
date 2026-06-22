@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { toast } from "sonner";
-import { HttpError, isHttpError, type ErrorDto } from "../api/appFetch";
+import { HttpError, isHttpError, type ErrorDto } from "../../api/core/services";
 
 const toastErrorDto = (error: ErrorDto) => {
   toast.error(error.message || "Request failed", {

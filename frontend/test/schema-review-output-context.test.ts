@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { buildSchemaFeedbackSteps } from "../src/schemas/schema-feedback-steps";
-import { getVisibleSchemaInputRecord } from "../src/schemas/schema-run-display";
+import { buildSchemaFeedbackSteps } from "../src/algorithms/schema/feedback-steps";
+import { getVisibleSchemaInputRecord } from "../src/algorithms/schema/input-display";
 
 describe("schema review output context", () => {
   test("describes classifier feedback with prediction and probability", () => {
@@ -16,16 +16,7 @@ describe("schema review output context", () => {
         version: 1,
         name: "Risk",
         createdAt: "2026-06-04T00:00:00Z",
-        bindings: [
-          {
-            id: "binding-1",
-            schemaVersionId: "version-1",
-            modelId: "model-1",
-            signatureId: "signature-1",
-            inputMapping: {},
-            outputMapping: { report_1: "predicted_class" },
-          },
-        ],
+        bindings: [{ modelId: "model-1" }],
         formSchema: {
           fields: [],
           reports: [
@@ -33,6 +24,7 @@ describe("schema review output context", () => {
               id: "report_1",
               label: "Predicted class",
               kind: "classifier",
+              mappedTo: { "model-1": "predicted_class" },
               labels: ["Low", "High"],
             },
           ],
@@ -43,18 +35,11 @@ describe("schema review output context", () => {
           id: "result-1",
           runId: "run-1",
           modelId: "model-1",
-          signatureId: "signature-1",
           status: "SUCCESS",
           createdAt: "2026-06-04T00:00:00Z",
           modelInput: {},
           output: {
-            outputs: [
-              {
-                type: "classifier",
-                prediction: 1,
-                probabilities: [0.2, 0.8],
-              },
-            ],
+            reports: [{ mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] }],
           },
         },
       ],
@@ -70,30 +55,28 @@ describe("schema review output context", () => {
         {
           id: "blood_group",
           label: "Blood Group",
-          kind: "mapped-category",
+          displayKey: "bloodGroup",
+          kind: "onehot-category",
           options: [
             {
               label: "A",
               value: "A",
-              mapping: { blood_group_a: 1, blood_group_b: 0 },
+              mappedTo: "blood_group__A",
             },
             {
               label: "B",
               value: "B",
-              mapping: { blood_group_a: 0, blood_group_b: 1 },
+              mappedTo: "blood_group__B",
             },
           ],
         },
-        { id: "blood_group_a", label: "blood_group__A", kind: "number", hidden: true },
-        { id: "blood_group_b", label: "blood_group__B", kind: "number", hidden: true },
-        { id: "age", label: "age", kind: "number" },
+        { id: "age", label: "age", displayKey: "age", kind: "number" },
       ],
     };
 
     expect(
       getVisibleSchemaInputRecord(schema, {
-        blood_group__A: 0,
-        blood_group__B: 1,
+        bloodGroup: "B",
         age: 52,
       }),
     ).toEqual({ "Blood Group": "B", age: 52 });

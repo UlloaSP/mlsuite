@@ -25,7 +25,8 @@ public interface ModelController {
     @PostMapping
     public ResponseEntity<CreateModelDto> createModel(Authentication authentication,
             @RequestParam String name, @RequestParam MultipartFile modelFile,
-            @RequestParam @Nullable MultipartFile dataframeFile);
+            @RequestParam @Nullable MultipartFile dataframeFile,
+            @RequestParam(defaultValue = "__") String oneHotSeparator);
 
     @GetMapping
     public ResponseEntity<List<ModelDto>> getAllModels(Authentication authentication);

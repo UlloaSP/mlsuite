@@ -1,5 +1,5 @@
 import { SearchResultItem } from "./SearchResultItem";
-import type { SearchGroupDto } from "../types";
+import type { SearchGroupDto } from "../../api/search/dtos";
 
 export function SearchResultGroup({
   group,

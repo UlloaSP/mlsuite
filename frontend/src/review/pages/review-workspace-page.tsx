@@ -1,56 +1,54 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { HttpError } from "../../app/api/appFetch";
+import { HttpError } from "../../api/core/services";
 import { AppEmptyState } from "../../app/components";
-import { ReviewPredictionDetailPanel } from "../components/ReviewPredictionDetailPanel";
-import { ReviewPredictionRail } from "../components/ReviewPredictionRail";
-import { ReviewShell } from "../components/ReviewShell";
-import { ReviewUnavailable } from "../components/ReviewUnavailable";
-import { useReviewContext, useSubmitReviewPredictionsMutation } from "../hooks";
-import { firstReviewPredictionToken, hasReviewPredictionToken } from "../reviewPredictionSelection";
-import { ReviewStepContextPanel } from "../components/ReviewStepContextPanel";
+import { ReviewShell } from "../../review/components/ReviewShell";
+import { ReviewStepContextPanel } from "../../review/components/ReviewStepContextPanel";
+import { ReviewUnavailable } from "../../review/components/ReviewUnavailable";
+import { useSchemaReviewContext, useSubmitSchemaReviewRunsMutation } from "../../api/review/hooks";
+import { firstReviewRunToken, hasReviewRunToken } from "../../algorithms/review/run-selection";
+import { SchemaReviewRunDetailPanel } from "../components/SchemaReviewRunDetailPanel";
+import { SchemaReviewRunRail } from "../components/SchemaReviewRunRail";
+import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
 
-export function ReviewWorkspacePage() {
-  const { token = "", predictionToken } = useParams<{ token: string; predictionToken?: string }>();
+export function SchemaReviewWorkspacePage() {
+  const { token = "", runToken } = useParams<{ token: string; runToken?: string }>();
   const navigate = useNavigate();
-  const reviewContext = useReviewContext(token);
+  const reviewContext = useSchemaReviewContext(token);
   const { data, error, isLoading } = reviewContext;
-  const submitMutation = useSubmitReviewPredictionsMutation(token);
-  const selectedPredictionToken = useMemo(
-    () => predictionToken ?? (data ? firstReviewPredictionToken(data.predictions) : undefined),
-    [data, predictionToken],
+  const submitMutation = useSubmitSchemaReviewRunsMutation(token);
+  const selectedRunToken = useMemo(
+    () => runToken ?? (data ? firstReviewRunToken(data.runs) : undefined),
+    [data, runToken],
+  );
+  const executableVersion = useMemo(
+    () => (data ? prepareSchemaVersionDtoForUse(data.schemaVersion) : undefined),
+    [data],
   );
 
   useEffect(() => {
-    if (!token || predictionToken || !selectedPredictionToken) return;
-    navigate(`/review/${token}/predictions/${selectedPredictionToken}`, {
+    if (!token || runToken || !selectedRunToken) return;
+    navigate(`/review/${token}/runs/${selectedRunToken}`, {
       replace: true,
       viewTransition: false,
     });
-  }, [navigate, predictionToken, selectedPredictionToken, token]);
+  }, [navigate, runToken, selectedRunToken, token]);
 
   useEffect(() => {
-    if (
-      !token ||
-      !predictionToken ||
-      !data ||
-      hasReviewPredictionToken(data.predictions, predictionToken)
-    )
-      return;
-    const nextToken = firstReviewPredictionToken(data.predictions);
-    navigate(nextToken ? `/review/${token}/predictions/${nextToken}` : `/review/${token}`, {
+    if (!token || !runToken || !data || hasReviewRunToken(data.runs, runToken)) return;
+    const nextToken = firstReviewRunToken(data.runs);
+    navigate(nextToken ? `/review/${token}/runs/${nextToken}` : `/review/${token}`, {
       replace: true,
       viewTransition: false,
     });
-  }, [data, navigate, predictionToken, token]);
+  }, [data, navigate, runToken, token]);
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <ReviewShell>
         <p className="text-sm text-[var(--text-secondary)]">Loading review</p>
       </ReviewShell>
     );
-  }
   if (error instanceof HttpError && error.status === 403) {
     return (
       <ReviewUnavailable
@@ -59,35 +57,33 @@ export function ReviewWorkspacePage() {
       />
     );
   }
-  if (error || !data) {
-    return <ReviewUnavailable />;
-  }
+  if (error || !data) return <ReviewUnavailable />;
 
   return (
-    <ReviewShell title={data.model.name}>
-      {data.predictions.length === 0 ? (
+    <ReviewShell title={data.schema.name}>
+      {data.runs.length === 0 ? (
         <AppEmptyState
-          title="No predictions available"
-          description="No selected predictions are available for review."
+          title="No inferences available"
+          description="No selected inferences are available for review."
         />
       ) : (
         <div className="grid items-start gap-6 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
           <ReviewStepContextPanel />
           <section className="min-w-0">
-            {selectedPredictionToken ? (
-              <ReviewPredictionDetailPanel
+            {selectedRunToken ? (
+              <SchemaReviewRunDetailPanel
                 token={token}
-                predictionToken={selectedPredictionToken}
-                signatureSchema={data.signature.inputSignature}
+                runToken={selectedRunToken}
+                version={executableVersion ?? data.schemaVersion}
                 onReviewChanged={() => reviewContext.refetch()}
               />
             ) : null}
           </section>
-          <ReviewPredictionRail
-            items={data.predictions}
-            selectedPredictionToken={selectedPredictionToken}
-            onSelect={(selectedToken) =>
-              navigate(`/review/${token}/predictions/${selectedToken}`, { viewTransition: false })
+          <SchemaReviewRunRail
+            items={data.runs}
+            selectedRunToken={selectedRunToken}
+            onSelect={(selected) =>
+              navigate(`/review/${token}/runs/${selected}`, { viewTransition: false })
             }
             submitting={submitMutation.isPending}
             onSubmitRevision={(selectedTokens) => submitMutation.mutate(selectedTokens)}

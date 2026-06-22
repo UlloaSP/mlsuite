@@ -18,12 +18,12 @@ import {
   duplicateRole,
   getRoles,
   updateRole,
-} from "../api/roleAdminService";
+} from "../../api/workspace/services";
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
 import { RoleDrawer } from "../components/RoleDrawer";
 import { RoleForm } from "../components/RoleForm";
-import { useWorkspaceContext } from "../hooks";
-import type { PermissionKey, RoleDefinitionDto, RoleTemplateDto } from "../types";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
+import type { PermissionKey, RoleDefinitionDto, RoleTemplateDto } from "../../api/workspace/dtos";
 
 type Tab = "roles" | "templates" | "permissions";
 

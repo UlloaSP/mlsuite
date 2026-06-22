@@ -18,14 +18,10 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
-import dev.ulloasp.mlsuite.prediction.adapter.out.persistence.repository.PredictionRepository;
-import dev.ulloasp.mlsuite.prediction.domain.model.Prediction;
 import dev.ulloasp.mlsuite.search.application.dto.SearchGroupDto;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResultDto;
 import dev.ulloasp.mlsuite.search.application.port.in.SearchWorkspaceUseCase;
-import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.SignatureRepository;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -40,8 +36,6 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
     private final OrganizationMembershipRepository membershipRepository;
     private final TeamRepository teamRepository;
     private final ModelRepository modelRepository;
-    private final SignatureRepository signatureRepository;
-    private final PredictionRepository predictionRepository;
     private final PluginCatalogUseCase pluginCatalogUseCase;
 
     public SearchWorkspaceService(
@@ -49,15 +43,11 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
             OrganizationMembershipRepository membershipRepository,
             TeamRepository teamRepository,
             ModelRepository modelRepository,
-            SignatureRepository signatureRepository,
-            PredictionRepository predictionRepository,
             PluginCatalogUseCase pluginCatalogUseCase) {
         this.workspaceAccessService = workspaceAccessService;
         this.membershipRepository = membershipRepository;
         this.teamRepository = teamRepository;
         this.modelRepository = modelRepository;
-        this.signatureRepository = signatureRepository;
-        this.predictionRepository = predictionRepository;
         this.pluginCatalogUseCase = pluginCatalogUseCase;
     }
 
@@ -71,19 +61,11 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
         String needle = normalizedQuery.toLowerCase(Locale.ROOT);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         List<Model> models = modelRepository.findByOrganizationId(organization.getId());
-        List<Signature> signatures = models.stream()
-                .flatMap(model -> signatureRepository.findByModelId(model.getId()).stream())
-                .toList();
-        List<Prediction> predictions = signatures.stream()
-                .flatMap(signature -> predictionRepository.findBySignatureId(signature.getId()).stream())
-                .toList();
 
         List<SearchGroupDto> groups = new ArrayList<>();
         addGroup(groups, "Organizations", matchOrganizations(userId, needle));
         addGroup(groups, "Teams", rank(teamRepository.findByOrganizationIdOrderByNameAsc(organization.getId()), needle, this::toTeamMatch));
         addGroup(groups, "Models", rank(models, needle, this::toModelMatch));
-        addGroup(groups, "Signatures", rank(signatures, needle, this::toSignatureMatch));
-        addGroup(groups, "Predictions", rank(predictions, needle, this::toPredictionMatch));
         addGroup(groups, "Plugins", rank(pluginCatalogUseCase.listAll(userId), needle, this::toPluginMatch));
         return new SearchResponseDto(normalizedQuery, groups);
     }
@@ -128,8 +110,6 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                         "/workspace/organizations/" + organization.getId(),
                         organization.getId(),
                         null,
-                        null,
-                        null,
                         null),
                 organization.getUpdatedAt(),
                 organization.getName(),
@@ -146,8 +126,6 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                         "/workspace/teams/" + team.getId(),
                         team.getOrganization().getId(),
                         team.getId(),
-                        null,
-                        null,
                         null),
                 team.getUpdatedAt(),
                 team.getName(),
@@ -165,57 +143,12 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                         "/models/" + model.getId(),
                         model.getOrganization() == null ? null : model.getOrganization().getId(),
                         model.getTeam() == null ? null : model.getTeam().getId(),
-                        model.getId(),
-                        null,
-                        null),
+                        model.getId()),
                 model.getUpdatedAt(),
                 model.getName(),
                 model.getType(),
                 model.getSpecificType(),
                 model.getFileName());
-    }
-
-    private Candidate toSignatureMatch(Signature signature) {
-        String version = "v" + signature.getMajor() + "." + signature.getMinor() + "." + signature.getPatch();
-        return new Candidate(
-                new SearchResultDto(
-                        "signature",
-                        String.valueOf(signature.getId()),
-                        signature.getName(),
-                        version,
-                        "/models/" + signature.getModel().getId() + "/signatures/" + signature.getId(),
-                        signature.getModel().getOrganization() == null ? null : signature.getModel().getOrganization().getId(),
-                        signature.getModel().getTeam() == null ? null : signature.getModel().getTeam().getId(),
-                        signature.getModel().getId(),
-                        signature.getId(),
-                        null),
-                signature.getUpdatedAt(),
-                signature.getName(),
-                version);
-    }
-
-    private Candidate toPredictionMatch(Prediction prediction) {
-        return new Candidate(
-                new SearchResultDto(
-                        "prediction",
-                        String.valueOf(prediction.getId()),
-                        prediction.getName(),
-                        prediction.getStatus().name(),
-                        "/models/" + prediction.getSignature().getModel().getId()
-                                + "/signatures/" + prediction.getSignature().getId()
-                                + "/predictions/" + prediction.getId(),
-                        prediction.getSignature().getModel().getOrganization() == null
-                                ? null
-                                : prediction.getSignature().getModel().getOrganization().getId(),
-                        prediction.getSignature().getModel().getTeam() == null
-                                ? null
-                                : prediction.getSignature().getModel().getTeam().getId(),
-                        prediction.getSignature().getModel().getId(),
-                        prediction.getSignature().getId(),
-                        prediction.getId()),
-                prediction.getUpdatedAt(),
-                prediction.getName(),
-                prediction.getStatus().name());
     }
 
     private Candidate toPluginMatch(PluginDto plugin) {
@@ -226,8 +159,6 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                         plugin.fileName(),
                         "Plugin",
                         "/plugins",
-                        null,
-                        null,
                         null,
                         null,
                         null),

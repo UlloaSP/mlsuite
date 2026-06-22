@@ -16,11 +16,19 @@ type Props = {
   onSave: () => void;
   onRemove: () => void;
   onRename: (value: string) => void;
+  onOneHotSeparatorChange: (value: string) => void;
   onAttachModel: () => void;
   onAttachDf: () => void;
   onDropModel: (file: File) => void;
   onDropDf: (file: File) => void;
 };
+
+function dropFile(event: DragEvent<HTMLButtonElement>, handler: (file: File) => void) {
+  event.preventDefault();
+  event.stopPropagation();
+  const file = event.dataTransfer.files[0];
+  if (file) handler(file);
+}
 
 export function BundleCard({
   bundle,
@@ -28,18 +36,14 @@ export function BundleCard({
   onSave,
   onRemove,
   onRename,
+  onOneHotSeparatorChange,
   onAttachModel,
   onAttachDf,
   onDropModel,
   onDropDf,
 }: Props) {
-  const isSaveable = bundle.modelFile && bundle.name.trim() && !bundle.saving;
-  const dropFile = (event: DragEvent<HTMLButtonElement>, handler: (file: File) => void) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const file = event.dataTransfer.files[0];
-    if (file) handler(file);
-  };
+  const isSaveable =
+    bundle.modelFile && bundle.name.trim() && bundle.oneHotSeparator !== "" && !bundle.saving;
 
   return (
     <motion.div
@@ -115,6 +119,25 @@ export function BundleCard({
               bundle.saved && "cursor-not-allowed opacity-70",
             )}
           />
+
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase text-[var(--text-muted)]">
+              One-hot separator
+            </span>
+            <input
+              aria-label={`One-hot separator for ${bundle.name}`}
+              type="text"
+              value={bundle.oneHotSeparator}
+              onChange={(e) => onOneHotSeparatorChange(e.target.value)}
+              disabled={bundle.saved}
+              className={cx(
+                "w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-secondary)]",
+                "px-3 py-2 font-mono text-[12px] text-[var(--text-primary)] outline-none",
+                "transition-all duration-150 focus:border-[var(--accent-primary)] focus:bg-[var(--surface-primary)]",
+                bundle.saved && "cursor-not-allowed opacity-70",
+              )}
+            />
+          </label>
 
           <div className="flex items-center justify-between gap-2">
             {bundle.saved ? (

@@ -16,15 +16,23 @@ import {
   AppIconButton,
   AppTextField,
 } from "../../app/components";
-import { buildCombinedFeedbackQuestionnaire } from "../../models/combined-feedback-questionnaire";
+import { buildCombinedFeedbackQuestionnaire } from "../../algorithms/models/combined-feedback-questionnaire";
 import {
   ReportQuestionnaireMount,
   type ReportQuestionnaireMountHandle,
 } from "../../models/components/ReportQuestionnaireMount";
-import type { CreatePredictionRunRequest, JsonRecord, SchemaVersionDto } from "../types";
-import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
-import { buildPendingSchemaRunFeedback, type PendingFeedback } from "../schema-run-save-feedback";
-import { mergeSchemaRunInputs } from "../schema-run-display";
+import type {
+  CreatePredictionRunRequest,
+  JsonRecord,
+  SchemaVersionDto,
+} from "../../api/schemas/dtos";
+import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
+import {
+  buildPendingSchemaRunFeedback,
+  type PendingFeedback,
+} from "../../algorithms/schema/pending-feedback";
+import { mergeSchemaRunInputs } from "../../algorithms/schema/input-display";
+import { schemaRunDebug } from "../../algorithms/schema/run-debug";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 import { SchemaRunInputsPanel } from "./SchemaRunInputsPanel";
 import { SchemaRunReportsPanel } from "./SchemaRunReportsPanel";
@@ -69,7 +77,7 @@ export function SchemaRunSaveModal({
   const displayResults = useMemo(
     () =>
       results.map((result, index) => ({
-        id: `${result.modelId}-${result.signatureId}-${index}`,
+        id: `${result.modelId}-${index}`,
         runId: "pending",
         createdAt: "",
         ...result,
@@ -84,12 +92,27 @@ export function SchemaRunSaveModal({
     () => buildCombinedFeedbackQuestionnaire(feedbackSteps),
     [feedbackSteps],
   );
+  schemaRunDebug("save-modal.render", {
+    open,
+    pendingRun,
+    results,
+    displayInputData,
+    displayResults,
+    feedbackSteps,
+    pluginReports: catalog.data.reportDefinitions.map((definition) => definition.kind),
+  });
 
   const handleSave = async () => {
     if (!pendingRun) return;
     const values = feedbackSteps.length > 0 ? (questionnaireRef.current?.getValues() ?? {}) : {};
     const feedback = buildPendingSchemaRunFeedback(feedbackSteps, values, displayResults);
-    onSave({ name: name.trim(), inputData: pendingRun.inputData, results }, feedback);
+    const request = {
+      name: name.trim(),
+      inputData: displayInputData,
+      results,
+    };
+    schemaRunDebug("save-modal.save", { request, feedback, values });
+    onSave(request, feedback);
   };
 
   return (

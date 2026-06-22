@@ -16,7 +16,7 @@ import {
   removeTeamMember,
   updateTeam,
   updateTeamMemberRole,
-} from "../api/workspaceService";
+} from "../../api/workspace/services";
 import { MemberTable } from "../components/MemberTable";
 
 export function TeamDetailPage() {

@@ -24,8 +24,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.SignatureRepository;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -41,14 +39,13 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private final PredictionRunRepository runRepository;
     private final PredictionResultRepository resultRepository;
     private final ModelRepository modelRepository;
-    private final SignatureRepository signatureRepository;
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
 
     public PredictionRunServiceImpl(UserLookupService userLookupService, SchemaVersionRepository versionRepository,
             SchemaModelBindingRepository bindingRepository, PredictionRunRepository runRepository,
             PredictionResultRepository resultRepository, ModelRepository modelRepository,
-            SignatureRepository signatureRepository, WorkspaceAccessService workspaceAccessService,
+            WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService authorizationService) {
         this.userLookupService = userLookupService;
         this.versionRepository = versionRepository;
@@ -56,7 +53,6 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         this.runRepository = runRepository;
         this.resultRepository = resultRepository;
         this.modelRepository = modelRepository;
-        this.signatureRepository = signatureRepository;
         this.workspaceAccessService = workspaceAccessService;
         this.authorizationService = authorizationService;
     }
@@ -117,15 +113,15 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
 
     private void validateResults(List<SchemaModelBinding> bindings, List<CreatePredictionResultRequest> results) {
         Set<String> bound = new HashSet<>();
-        bindings.forEach(binding -> bound.add(key(binding.getModel().getId(), binding.getSignature().getId())));
+        bindings.forEach(binding -> bound.add(key(binding.getModel().getId())));
         Set<String> submitted = new HashSet<>();
         for (CreatePredictionResultRequest result : results) {
-            String key = key(result.modelId(), result.signatureId());
+            String key = key(result.modelId());
             if (!bound.contains(key)) {
-                throw badRequest("Prediction result references an unbound model/signature");
+                throw badRequest("Prediction result references an unbound model");
             }
             if (!submitted.add(key)) {
-                throw badRequest("Duplicate prediction result for model/signature");
+                throw badRequest("Duplicate prediction result for model");
             }
         }
         if (!submitted.equals(bound)) {
@@ -144,12 +140,7 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private PredictionResult saveResult(Long orgId, PredictionRun run, CreatePredictionResultRequest request) {
         Model model = modelRepository.findByIdAndOrganizationId(request.modelId(), orgId)
                 .orElseThrow(() -> badRequest("Model unavailable"));
-        Signature signature = signatureRepository.findByIdAndOrganizationId(request.signatureId(), orgId)
-                .orElseThrow(() -> badRequest("Signature unavailable"));
-        if (!signature.getModel().getId().equals(model.getId())) {
-            throw badRequest("Signature does not belong to model");
-        }
-        return resultRepository.save(new PredictionResult(run, model, signature,
+        return resultRepository.save(new PredictionResult(run, model,
                 request.modelInput() == null ? Map.of() : request.modelInput(),
                 request.output() == null ? Map.of() : request.output(),
                 request.status(),
@@ -157,8 +148,8 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
                 request.errorJson()));
     }
 
-    private String key(Long modelId, Long signatureId) {
-        return modelId + ":" + signatureId;
+    private String key(Long modelId) {
+        return modelId.toString();
     }
 
     private ResponseStatusException badRequest(String message) {

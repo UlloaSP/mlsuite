@@ -8,7 +8,5 @@ public record SearchResultDto(
         String href,
         Long organizationId,
         Long teamId,
-        Long modelId,
-        Long signatureId,
-        Long predictionId) {
+        Long modelId) {
 }

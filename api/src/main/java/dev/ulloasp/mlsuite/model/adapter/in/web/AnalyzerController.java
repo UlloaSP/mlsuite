@@ -28,7 +28,8 @@ public interface AnalyzerController {
         public ResponseEntity<Map<String, Object>> generateSchema(
                         Authentication authentication,
                         @RequestPart("model") MultipartFile model,
-                        @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe);
+                        @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe,
+                        @RequestParam(defaultValue = "__") String oneHotSeparator);
 
         @PostMapping("/artifacts/inspect")
         public ResponseEntity<Map<String, Object>> inspectArtifact(

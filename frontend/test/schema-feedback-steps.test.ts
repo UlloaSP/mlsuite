@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vite-plus/test";
-import { skippedSchemaReportPayload } from "../src/app/utils/mlform/schema-report-plugin-context";
-import { buildSchemaFeedbackSteps } from "../src/schemas/schema-feedback-steps";
-import { getSchemaResultReports } from "../src/schemas/schema-run-display";
-import type { PredictionRunDto, SchemaVersionDto } from "../src/schemas/types";
+import { skippedSchemaReportPayload } from "../src/algorithms/schema/report-plugin-context";
+import { buildSchemaFeedbackSteps } from "../src/algorithms/schema/feedback-steps";
+import { getSchemaResultReports } from "../src/algorithms/schema/report-display";
+import type { PredictionRunDto, SchemaVersionDto } from "../src/api/schemas/dtos";
 
 const version: SchemaVersionDto = {
   id: "version-1",
@@ -10,16 +10,7 @@ const version: SchemaVersionDto = {
   version: 1,
   name: "Risk",
   createdAt: "2026-06-02T00:00:00Z",
-  bindings: [
-    {
-      id: "binding-1",
-      schemaVersionId: "version-1",
-      modelId: "model-1",
-      signatureId: "signature-1",
-      inputMapping: {},
-      outputMapping: { report_1: "score" },
-    },
-  ],
+  bindings: [{ modelId: "model-1" }],
   formSchema: {
     fields: [],
     reports: [
@@ -27,6 +18,7 @@ const version: SchemaVersionDto = {
         id: "report_1",
         label: "Score",
         kind: "classifier",
+        mappedTo: { "model-1": "score" },
         labels: ["No", "Yes"],
         feedbackQuestionnaire: {
           steps: [{ id: "s", fields: [{ kind: "text", label: "Comment" }] }],
@@ -48,9 +40,8 @@ const run: PredictionRunDto = {
       id: "result-1",
       runId: "run-1",
       modelId: "model-1",
-      signatureId: "signature-1",
       modelInput: {},
-      output: { reports: { score: { prediction: 1, probabilities: [0.1, 0.9] } } },
+      output: { reports: [{ mappedTo: "score", prediction: 1, probabilities: [0.1, 0.9] }] },
       status: "SUCCESS",
       createdAt: "2026-06-02T00:00:00Z",
     },
@@ -58,7 +49,6 @@ const run: PredictionRunDto = {
       id: "result-2",
       runId: "run-1",
       modelId: "model-2",
-      signatureId: "signature-2",
       modelInput: {},
       output: {},
       status: "FAILED",
@@ -74,6 +64,38 @@ describe("schema feedback steps", () => {
       ["result-1", "OUTPUT", "Score"],
       ["result-1", "EXPLANATION", "Score review"],
     ]);
+    expect(steps[0]?.schema.steps[0]?.fields[0]).toMatchObject({
+      id: "output-feedback-assessment",
+      kind: "category",
+    });
+  });
+
+  test("uses displayed classifier config when persisted report has no id", () => {
+    const noIdVersion: SchemaVersionDto = {
+      ...version,
+      formSchema: {
+        fields: [],
+        reports: [
+          {
+            label: "Predicted class",
+            kind: "classifier",
+            mappedTo: { "model-1": "score" },
+            labels: ["No", "Yes"],
+          },
+        ],
+      },
+    };
+
+    const steps = buildSchemaFeedbackSteps(noIdVersion, run.results, []);
+
+    expect(steps[0]?.schema.steps[0]?.fields[0]).toMatchObject({
+      id: "output-feedback-assessment",
+      kind: "category",
+      options: [
+        { label: "No", value: "No" },
+        { label: "Yes", value: "Yes" },
+      ],
+    });
   });
 
   test("builds feedback steps for custom report kinds", () => {
@@ -86,29 +108,28 @@ describe("schema feedback steps", () => {
             id: "custom_report",
             label: "Plugin report",
             kind: "plugin-report",
+            mappedTo: { "model-1": "plugin_payload" },
             feedbackQuestionnaire: {
               steps: [{ id: "plugin", fields: [{ kind: "text", id: "note", label: "Note" }] }],
             },
           },
         ],
       },
-      bindings: [
-        {
-          id: "binding-1",
-          schemaVersionId: "version-1",
-          modelId: "model-1",
-          signatureId: "signature-1",
-          inputMapping: {},
-          outputMapping: { custom_report: "plugin_payload" },
-        },
-      ],
     };
     const customRun = {
       ...run,
       results: [
         {
           ...run.results[0]!,
-          output: { reports: { plugin_payload: { blocks: ["Rendered"] } } },
+          output: {
+            reports: [
+              {
+                id: "custom_report",
+                mappedTo: "plugin_payload",
+                payload: { blocks: ["Rendered"] },
+              },
+            ],
+          },
         },
       ],
     };
@@ -123,25 +144,30 @@ describe("schema feedback steps", () => {
       ...version,
       formSchema: {
         fields: [],
-        reports: [{ id: "custom_report", label: "Plugin report", kind: "plugin-report" }],
+        reports: [
+          {
+            id: "custom_report",
+            label: "Plugin report",
+            kind: "plugin-report",
+            mappedTo: { "model-1": "plugin_payload" },
+          },
+        ],
       },
-      bindings: [
-        {
-          id: "binding-1",
-          schemaVersionId: "version-1",
-          modelId: "model-1",
-          signatureId: "signature-1",
-          inputMapping: {},
-          outputMapping: { custom_report: "plugin_payload" },
-        },
-      ],
     };
     const customRun = {
       ...run,
       results: [
         {
           ...run.results[0]!,
-          output: { reports: { plugin_payload: { explanation: "Rendered" } } },
+          output: {
+            reports: [
+              {
+                id: "custom_report",
+                mappedTo: "plugin_payload",
+                payload: { explanation: "Rendered" },
+              },
+            ],
+          },
         },
       ],
     };
@@ -159,6 +185,7 @@ describe("schema feedback steps", () => {
             id: "tree_1",
             label: "Crystal Tree 1",
             kind: "Crystal Tree",
+            mappedTo: { "model-1": "crystal-tree" },
             feedbackQuestionnaire: {
               steps: [{ id: "plugin", fields: [{ kind: "text", id: "note", label: "Note" }] }],
             },
@@ -167,44 +194,33 @@ describe("schema feedback steps", () => {
             id: "tree_2",
             label: "Crystal Tree 2",
             kind: "Crystal Tree",
+            mappedTo: { "model-2": "crystal-tree" },
             feedbackQuestionnaire: {
               steps: [{ id: "plugin", fields: [{ kind: "text", id: "note", label: "Note" }] }],
             },
           },
         ],
       },
-      bindings: [
-        {
-          id: "binding-1",
-          schemaVersionId: "version-1",
-          modelId: "model-1",
-          signatureId: "signature-1",
-          inputMapping: {},
-          outputMapping: { tree_1: "crystal-tree" },
-        },
-        {
-          id: "binding-2",
-          schemaVersionId: "version-1",
-          modelId: "model-2",
-          signatureId: "signature-2",
-          inputMapping: {},
-          outputMapping: { tree_2: "crystal-tree" },
-        },
-      ],
+      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
     };
     const customRun = {
       ...run,
       results: [
         {
           ...run.results[0]!,
-          output: { reports: { "crystal-tree": { explanation: "ok" } } },
+          output: {
+            reports: [{ id: "tree_1", mappedTo: "crystal-tree", payload: { explanation: "ok" } }],
+          },
         },
         {
           ...run.results[0]!,
           id: "result-2",
           modelId: "model-2",
-          signatureId: "signature-2",
-          output: { reports: { "crystal-tree": skippedSchemaReportPayload } },
+          output: {
+            reports: [
+              { id: "tree_2", mappedTo: "crystal-tree", payload: skippedSchemaReportPayload },
+            ],
+          },
         },
       ],
     };
@@ -228,6 +244,7 @@ describe("schema feedback steps", () => {
             id: "tree_1",
             label: "Crystal Tree 1",
             kind: "Crystal Tree",
+            mappedTo: { "model-1": "crystal-tree" },
             feedbackQuestionnaire: {
               steps: [{ id: "plugin", fields: [{ kind: "text", id: "note", label: "Note" }] }],
             },
@@ -236,52 +253,40 @@ describe("schema feedback steps", () => {
             id: "tree_2",
             label: "Crystal Tree 2",
             kind: "Crystal Tree",
+            mappedTo: { "model-2": "crystal-tree" },
             feedbackQuestionnaire: {
               steps: [{ id: "plugin", fields: [{ kind: "text", id: "note", label: "Note" }] }],
             },
           },
         ],
       },
-      bindings: [
-        {
-          id: "binding-1",
-          schemaVersionId: "version-1",
-          modelId: "model-1",
-          signatureId: "signature-1",
-          inputMapping: {},
-          outputMapping: { tree_1: "crystal-tree" },
-        },
-        {
-          id: "binding-2",
-          schemaVersionId: "version-1",
-          modelId: "model-2",
-          signatureId: "signature-2",
-          inputMapping: {},
-          outputMapping: { tree_2: "crystal-tree" },
-        },
-      ],
+      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
     };
     const customRun = {
       ...run,
       results: [
         {
           ...run.results[0]!,
-          output: { reports: { "crystal-tree": { explanation: "ok", explanations: ["ok"] } } },
+          output: {
+            reports: [{ id: "tree_1", mappedTo: "crystal-tree", payload: { explanation: "ok" } }],
+          },
         },
         {
           ...run.results[0]!,
           id: "result-2",
           modelId: "model-2",
-          signatureId: "signature-2",
           output: {
-            reports: {
-              "crystal-tree": {
-                endpoint: "/api/analyzer/explanations",
-                explanation: "",
-                explanations: [],
-                modelId: "model-2",
+            reports: [
+              {
+                id: "tree_2",
+                mappedTo: "crystal-tree",
+                payload: {
+                  endpoint: "/api/analyzer/explanations",
+                  explanation: "",
+                  modelId: "model-2",
+                },
               },
-            },
+            ],
           },
         },
       ],

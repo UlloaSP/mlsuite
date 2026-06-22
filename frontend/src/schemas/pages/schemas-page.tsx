@@ -13,7 +13,7 @@ import {
   AppPanel,
   AppSurface,
 } from "../../app/components";
-import { useSchemas } from "../hooks";
+import { useSchemas } from "../../api/schemas/hooks";
 
 export function SchemasPage() {
   const { data: schemas = [], isLoading } = useSchemas();

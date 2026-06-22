@@ -18,8 +18,6 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-import dev.ulloasp.mlsuite.review.application.service.ReviewLinkUnavailableException;
-
 @Service
 public class SchemaReviewLinkTokenService {
     private static final int IV_BYTES = 12;
@@ -82,7 +80,7 @@ public class SchemaReviewLinkTokenService {
             cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new GCMParameterSpec(TAG_BITS, iv));
             return mapper.readValue(cipher.doFinal(encrypted), type);
         } catch (Exception e) {
-            throw new ReviewLinkUnavailableException();
+            throw new SchemaReviewLinkUnavailableException();
         }
     }
 

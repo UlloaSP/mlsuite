@@ -48,8 +48,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.signature.adapter.out.persistence.repository.SignatureRepository;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -75,8 +73,6 @@ class SchemaFlowServiceTest {
     @Mock
     private ModelRepository modelRepository;
     @Mock
-    private SignatureRepository signatureRepository;
-    @Mock
     private WorkspaceAccessService workspaceAccessService;
     @Mock
     private WorkspaceAuthorizationService authorizationService;
@@ -91,10 +87,9 @@ class SchemaFlowServiceTest {
         schemaService = new SchemaServiceImpl(userLookupService, schemaRepository,
                 workspaceAccessService, authorizationService);
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, modelRepository, signatureRepository, workspaceAccessService, authorizationService);
+                bindingRepository, modelRepository, workspaceAccessService, authorizationService);
         runService = new PredictionRunServiceImpl(userLookupService, versionRepository, bindingRepository,
-                runRepository, resultRepository, modelRepository, signatureRepository,
-                workspaceAccessService, authorizationService);
+                runRepository, resultRepository, modelRepository, workspaceAccessService, authorizationService);
         feedbackService = new PredictionResultFeedbackService(userLookupService, workspaceAccessService,
                 authorizationService, resultRepository, feedbackRepository);
         when(userLookupService.requireById(7L)).thenReturn(user());
@@ -113,15 +108,41 @@ class SchemaFlowServiceTest {
     }
 
     @Test
-    void createVersion_RejectsSignatureFromDifferentModel() {
+    void createVersion_RejectsDuplicateModelBinding() {
+        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
+
+        CreateSchemaVersionRequest request = new CreateSchemaVersionRequest("v1", formSchema(),
+                List.of(
+                        new CreateSchemaModelBindingRequest(11L, Map.of()),
+                        new CreateSchemaModelBindingRequest(11L, Map.of())));
+
+        assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L, request));
+    }
+
+    @Test
+    void createVersion_PersistsMultipleModelBindings() {
         when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
         when(versionRepository.findMaxVersionBySchemaId(5L)).thenReturn(0);
         when(versionRepository.save(any(SchemaVersion.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(bindingRepository.save(any(SchemaModelBinding.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(model(11L)));
-        when(signatureRepository.findByIdAndOrganizationId(22L, 41L)).thenReturn(Optional.of(signature(99L, 22L)));
+        when(modelRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(model(12L)));
 
-        CreateSchemaVersionRequest request = new CreateSchemaVersionRequest("v1", formSchema(),
-                List.of(new CreateSchemaModelBindingRequest(11L, 22L, Map.of(), Map.of(), Map.of())));
+        SchemaVersion version = versionService.createVersion(7L, 5L, new CreateSchemaVersionRequest("v1",
+                formSchema(),
+                List.of(
+                        new CreateSchemaModelBindingRequest(11L, Map.of()),
+                        new CreateSchemaModelBindingRequest(12L, Map.of()))));
+
+        assertEquals("v1", version.getName());
+        verify(bindingRepository, times(2)).save(any());
+    }
+
+    @Test
+    void createVersion_RejectsEmptyModelBindings() {
+        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
+
+        CreateSchemaVersionRequest request = new CreateSchemaVersionRequest("v1", formSchema(), List.of());
 
         assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L, request));
     }
@@ -131,19 +152,17 @@ class SchemaFlowServiceTest {
         SchemaVersion version = version();
         when(versionRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(version));
         when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(
-                binding(version, 11L, 21L),
-                binding(version, 12L, 22L)));
+                binding(version, 11L),
+                binding(version, 12L)));
         when(runRepository.save(any(PredictionRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(model(11L)));
         when(modelRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(model(12L)));
-        when(signatureRepository.findByIdAndOrganizationId(21L, 41L)).thenReturn(Optional.of(signature(11L, 21L)));
-        when(signatureRepository.findByIdAndOrganizationId(22L, 41L)).thenReturn(Optional.of(signature(12L, 22L)));
 
         PredictionRun run = runService.createRun(7L, 9L, new CreatePredictionRunRequest("case-1",
                 Map.of("age", 52),
                 List.of(
-                        result(11L, 21L, PredictionResultStatus.SUCCESS),
-                        result(12L, 22L, PredictionResultStatus.FAILED))));
+                        result(11L, PredictionResultStatus.SUCCESS),
+                        result(12L, PredictionResultStatus.FAILED))));
 
         assertEquals(PredictionRunStatus.PARTIAL_SUCCESS, run.getStatus());
         verify(resultRepository, times(2)).save(any());
@@ -153,10 +172,10 @@ class SchemaFlowServiceTest {
     void createRun_RejectsUnboundResult() {
         SchemaVersion version = version();
         when(versionRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(version));
-        when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(binding(version, 11L, 21L)));
+        when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(binding(version, 11L)));
 
         CreatePredictionRunRequest request = new CreatePredictionRunRequest("case-1", Map.of("age", 52),
-                List.of(result(12L, 22L, PredictionResultStatus.SUCCESS)));
+                List.of(result(12L, PredictionResultStatus.SUCCESS)));
 
         assertThrows(ResponseStatusException.class, () -> runService.createRun(7L, 9L, request));
     }
@@ -166,11 +185,11 @@ class SchemaFlowServiceTest {
         SchemaVersion version = version();
         when(versionRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(version));
         when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(
-                binding(version, 11L, 21L),
-                binding(version, 12L, 22L)));
+                binding(version, 11L),
+                binding(version, 12L)));
 
         CreatePredictionRunRequest request = new CreatePredictionRunRequest("case-1", Map.of("age", 52),
-                List.of(result(11L, 21L, PredictionResultStatus.SUCCESS)));
+                List.of(result(11L, PredictionResultStatus.SUCCESS)));
 
         assertThrows(ResponseStatusException.class, () -> runService.createRun(7L, 9L, request));
     }
@@ -210,9 +229,9 @@ class SchemaFlowServiceTest {
                         JsonNodeFactory.instance.objectNode())));
     }
 
-    private CreatePredictionResultRequest result(Long modelId, Long signatureId, PredictionResultStatus status) {
-        return new CreatePredictionResultRequest(modelId, signatureId, Map.of("age", 52),
-                status == PredictionResultStatus.SUCCESS ? Map.of("outputs", List.of()) : Map.of(),
+    private CreatePredictionResultRequest result(Long modelId, PredictionResultStatus status) {
+        return new CreatePredictionResultRequest(modelId, Map.of("age", 52),
+                status == PredictionResultStatus.SUCCESS ? Map.of("reports", List.of()) : Map.of(),
                 status,
                 status == PredictionResultStatus.FAILED ? "failed" : null,
                 status == PredictionResultStatus.FAILED ? Map.of("status", 500) : null);
@@ -222,9 +241,8 @@ class SchemaFlowServiceTest {
         return Map.of("fields", List.of(Map.of("id", "age", "kind", "number", "label", "Age")));
     }
 
-    private SchemaModelBinding binding(SchemaVersion version, Long modelId, Long signatureId) {
-        return new SchemaModelBinding(version, model(modelId), signature(modelId, signatureId),
-                Map.of(), Map.of(), Map.of());
+    private SchemaModelBinding binding(SchemaVersion version, Long modelId) {
+        return new SchemaModelBinding(version, model(modelId), Map.of());
     }
 
     private SchemaVersion version() {
@@ -235,19 +253,10 @@ class SchemaFlowServiceTest {
 
     private PredictionResult predictionResult() {
         PredictionRun run = new PredictionRun(version(), "case", Map.of(), PredictionRunStatus.SUCCESS);
-        PredictionResult result = new PredictionResult(run, model(11L), signature(11L, 21L),
+        PredictionResult result = new PredictionResult(run, model(11L),
                 Map.of(), Map.of(), PredictionResultStatus.SUCCESS, null, null);
         result.setId(77L);
         return result;
-    }
-
-    private Signature signature(Long modelId, Long signatureId) {
-        Signature signature = new Signature();
-        signature.setId(signatureId);
-        signature.setModel(model(modelId));
-        signature.setName("sig");
-        signature.setInputSignature(formSchema());
-        return signature;
     }
 
     private Model model(Long id) {

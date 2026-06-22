@@ -15,8 +15,6 @@ import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.upload.BufferedMultipartFile;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.signature.application.port.in.SignatureCatalogUseCase;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
@@ -25,17 +23,14 @@ import jakarta.transaction.Transactional;
 public class ModelCreationService {
 
     private final ModelCatalogUseCase modelCatalogUseCase;
-    private final SignatureCatalogUseCase signatureCatalogUseCase;
     private final AnalyzerUseCase analyzerUseCase;
     private final ObjectStorageService objectStorageService;
 
     public ModelCreationService(
             ModelCatalogUseCase modelCatalogUseCase,
-            SignatureCatalogUseCase signatureCatalogUseCase,
             AnalyzerUseCase analyzerUseCase,
             ObjectStorageService objectStorageService) {
         this.modelCatalogUseCase = modelCatalogUseCase;
-        this.signatureCatalogUseCase = signatureCatalogUseCase;
         this.analyzerUseCase = analyzerUseCase;
         this.objectStorageService = objectStorageService;
     }
@@ -45,7 +40,8 @@ public class ModelCreationService {
             Long userId,
             String name,
             MultipartFile modelFile,
-            @Nullable MultipartFile dataframeFile) {
+            @Nullable MultipartFile dataframeFile,
+            String oneHotSeparator) {
         MultipartFile reusableModelFile = BufferedMultipartFile.from(modelFile);
         MultipartFile reusableDataframeFile = dataframeFile != null
                 ? BufferedMultipartFile.from(dataframeFile)
@@ -53,52 +49,13 @@ public class ModelCreationService {
         Model model = null;
         try {
             model = modelCatalogUseCase.createModel(userId, name, reusableModelFile);
-            Map<String, Object> schemaFromModel = analyzerUseCase.generateInputSignature(userId, reusableModelFile, null);
-            Signature signatureFromModel = signatureCatalogUseCase.createSignature(
-                    userId,
-                    model.getId(),
-                    schemaFromModel,
-                    "Model",
-                    0,
-                    0,
-                    0,
-                    null);
-            Signature signatureFromDataframe = createDataframeSignature(
-                    userId,
-                    model,
-                    reusableModelFile,
-                    reusableDataframeFile,
-                    signatureFromModel);
-            return CreateModelDto.toDto(model, signatureFromModel, signatureFromDataframe);
+            model.setInputSchema(analyzerUseCase.generateInputSchema(userId, reusableModelFile,
+                    reusableDataframeFile, oneHotSeparator));
+            return CreateModelDto.toDto(model);
         } catch (RuntimeException ex) {
             deleteStoredObject(model, ex);
             throw ex;
         }
-    }
-
-    @Nullable
-    private Signature createDataframeSignature(
-            Long userId,
-            Model model,
-            MultipartFile reusableModelFile,
-            @Nullable MultipartFile reusableDataframeFile,
-            Signature signatureFromModel) {
-        if (reusableDataframeFile == null) {
-            return null;
-        }
-        Map<String, Object> schemaFromDataframe = analyzerUseCase.generateInputSignature(
-                userId,
-                reusableModelFile,
-                reusableDataframeFile);
-        return signatureCatalogUseCase.createSignature(
-                userId,
-                model.getId(),
-                schemaFromDataframe,
-                "Dataframe",
-                0,
-                0,
-                1,
-                signatureFromModel.getId());
     }
 
     private void deleteStoredObject(@Nullable Model model, RuntimeException original) {

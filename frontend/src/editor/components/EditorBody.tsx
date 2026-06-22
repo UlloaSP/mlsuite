@@ -11,21 +11,21 @@ import { themeWithHtmlAtom } from "../../app/atoms";
 import {
   getCustomFieldDefinitions,
   type CatalogFieldDefinition,
-} from "../../plugin/mlform/custom-field";
+} from "../../algorithms/plugin/custom-field-catalog";
 import {
   getCustomReportDefinitions,
   type CatalogReportDefinition,
-} from "../../plugin/mlform/custom-report";
-import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
+} from "../../algorithms/plugin/custom-report-catalog";
+import { invalidatePluginCatalog } from "../../algorithms/plugin/catalog-loader";
 import { pluginCatalogVersionAtom } from "../../plugin/mlform/plugin-catalog-state";
-import { schemaNeedsPluginCatalog } from "../../plugin/mlform/schema-needs-plugin-catalog";
-import { mlformJsonSchema, validateMlformSchema } from "../../app/utils/mlform/schema-validation";
+import { schemaNeedsPluginCatalog } from "../../algorithms/plugin/schema-needs-plugin-catalog";
+import { mlformJsonSchema, validateMlformSchema } from "../../algorithms/mlform/schema-validation";
 import {
   type EditorErrorCard,
   getCompatMarkerStartColumn,
   getMarkerMessage,
   pathToPos,
-} from "./editor-schema-diagnostics";
+} from "../../algorithms/editor/schema-diagnostics";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
 import { editorDarkTheme, editorLightTheme, editorOptions } from "../utils/editorConfig";
 

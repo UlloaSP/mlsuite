@@ -5,20 +5,25 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { type Ref, useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { createMlRegistryPack } from "mlform/builtins";
-import { mountForm, type FormViewController, type MountedForm } from "mlform/kit";
-import type { Transport } from "mlform/runtime";
-import type { QuestionnaireSchema } from "../questionnaire-schema";
+import {
+  mountForm,
+  type FormViewController,
+  type FormViewSnapshot,
+  type MountedForm,
+} from "mlform/kit";
+import type { FormState, Transport } from "mlform/runtime";
+import type { QuestionnaireSchema } from "../../algorithms/models/questionnaire-schema";
 import {
   buildQuestionnaireFormSchema,
   buildQuestionnaireWizardLayout,
-} from "../questionnaire-schema";
+} from "../../algorithms/models/questionnaire-schema";
 import { AppSectionTitle } from "../../app/components";
 import { createLocalQuestionnaireTransport } from "../local-questionnaire-transport";
 import {
   getQuestionnaireValues,
   submitQuestionnaire,
   toQuestionnaireSchema,
-} from "../questionnaire-feedback";
+} from "../../algorithms/models/questionnaire-feedback";
 
 export type ReportQuestionnaireMountHandle = {
   submit(): Promise<Record<string, unknown>>;
@@ -143,13 +148,13 @@ const mountQuestionnaireHost = ({
       lastStepId = stepId;
       onStepChange(stepId);
     };
-    const unsubscribeForm = mounted.form.subscribe((snapshot) => {
+    const unsubscribeForm = mounted.form.subscribe((snapshot: FormState) => {
       onValuesChange(
         typeof snapshot.values === "object" && snapshot.values !== null ? snapshot.values : {},
       );
     });
     const view = getMountedView(mounted);
-    const unsubscribeView = view?.subscribe((snapshot) => {
+    const unsubscribeView = view?.subscribe((snapshot: FormViewSnapshot) => {
       emitStepChange(snapshot.wizard?.currentStepId ?? null);
     });
 

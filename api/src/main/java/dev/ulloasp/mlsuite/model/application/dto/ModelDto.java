@@ -7,6 +7,7 @@ package dev.ulloasp.mlsuite.model.application.dto;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 public record ModelDto(
@@ -15,6 +16,7 @@ public record ModelDto(
         String type,
         String specificType,
         String fileName,
+        Map<String, Object> inputSchema,
         OffsetDateTime createdAt) {
 
     public static final ModelDto toDto(Model model) {
@@ -24,6 +26,7 @@ public record ModelDto(
                 model.getType(),
                 model.getSpecificType(),
                 model.getFileName(),
+                model.getInputSchema(),
                 model.getCreatedAt());
     }
 

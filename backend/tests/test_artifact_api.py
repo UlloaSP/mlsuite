@@ -18,7 +18,9 @@ client = TestClient(app)
 def test_inspect_artifact_identifies_model() -> None:
     response = client.post(
         "/inspect_artifact",
-        files={"artifact_file": serialize_joblib(make_xgboost_classifier(), "model.joblib")},
+        files={
+            "artifact_file": serialize_joblib(make_xgboost_classifier(), "model.joblib")
+        },
     )
     payload = response.json()
     assert response.status_code == 200
@@ -42,7 +44,10 @@ def test_inspect_artifact_identifies_dataframe() -> None:
 
 
 def test_inspect_artifact_rejects_non_joblib() -> None:
-    response = client.post("/inspect_artifact", files={"artifact_file": ("artifact.txt", BytesIO(b"nope"), "text/plain")})
+    response = client.post(
+        "/inspect_artifact",
+        files={"artifact_file": ("artifact.txt", BytesIO(b"nope"), "text/plain")},
+    )
     assert response.status_code == 400
     assert response.json()["detail"] == "File must be .joblib"
 
@@ -50,20 +55,27 @@ def test_inspect_artifact_rejects_non_joblib() -> None:
 def test_inspect_artifact_rejects_unsupported_joblib() -> None:
     response = client.post(
         "/inspect_artifact",
-        files={"artifact_file": serialize_joblib({"bad": "payload"}, "artifact.joblib")},
+        files={
+            "artifact_file": serialize_joblib({"bad": "payload"}, "artifact.joblib")
+        },
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Artifact must be a supported model or pandas DataFrame."
+    assert (
+        response.json()["detail"]
+        == "Artifact must be a supported model or pandas DataFrame."
+    )
 
 
 def test_match_artifacts_assigns_one_dataframe_to_multiple_models() -> None:
-    frame = pd.DataFrame({
-        "age": [30, 32],
-        "income": [50_000, 51_000],
-        "rooms": [2, 3],
-        "area": [45, 60],
-        "ignored": ["x", "y"],
-    })
+    frame = pd.DataFrame(
+        {
+            "age": [30, 32],
+            "income": [50_000, 51_000],
+            "rooms": [2, 3],
+            "area": [45, 60],
+            "ignored": ["x", "y"],
+        }
+    )
     response = client.post(
         "/match_artifacts",
         files=[
@@ -101,7 +113,10 @@ def test_match_artifacts_assigns_positional_model_by_dataframe_width() -> None:
     response = client.post(
         "/match_artifacts",
         files=[
-            ("model_files", serialize_joblib(make_positional_classifier(), "model.joblib")),
+            (
+                "model_files",
+                serialize_joblib(make_positional_classifier(), "model.joblib"),
+            ),
             ("dataframe_files", serialize_joblib(frame, "measurements.joblib")),
         ],
     )
@@ -119,7 +134,10 @@ def test_match_artifacts_keeps_positional_count_match_when_smoke_fails() -> None
     response = client.post(
         "/match_artifacts",
         files=[
-            ("model_files", serialize_joblib(make_positional_classifier(), "model.joblib")),
+            (
+                "model_files",
+                serialize_joblib(make_positional_classifier(), "model.joblib"),
+            ),
             ("dataframe_files", serialize_joblib(frame, "measurements.joblib")),
         ],
     )
@@ -137,7 +155,10 @@ def test_match_artifacts_rejects_positional_width_mismatch() -> None:
     response = client.post(
         "/match_artifacts",
         files=[
-            ("model_files", serialize_joblib(make_positional_classifier(), "model.joblib")),
+            (
+                "model_files",
+                serialize_joblib(make_positional_classifier(), "model.joblib"),
+            ),
             ("dataframe_files", serialize_joblib(frame, "partial.joblib")),
         ],
     )
@@ -158,4 +179,7 @@ def test_match_artifacts_rejects_non_dataframe_upload() -> None:
         ],
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Dataframe files must contain pandas DataFrame objects."
+    assert (
+        response.json()["detail"]
+        == "Dataframe files must contain pandas DataFrame objects."
+    )

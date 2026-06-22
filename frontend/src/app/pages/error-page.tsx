@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ArrowLeft, Check, Home, X } from "lucide-react";
 import { m as motion } from "motion/react";
 import { useNavigate } from "react-router";
-import { useUser } from "../../user/hooks";
+import { useUser } from "../../api/user/hooks";
 import { MLSuiteMark } from "../components/MLSuiteMark";
 import { AppPage } from "../components";
 

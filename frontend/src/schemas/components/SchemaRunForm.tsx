@@ -8,16 +8,16 @@ import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import { AppCopy, AppPanel, AppButton } from "../../app/components";
-import { applyPredictionInputsToSchema } from "../../app/utils/mlform/schema";
+import { applyPredictionInputsToSchema } from "../../algorithms/mlform/schema-compat";
 import { mountSchemaRunForm } from "../../app/utils/mlform/schema-run-mount";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
-} from "../../app/utils/mlform/schema-run-result-state";
-import { isRecord } from "../../app/utils/mlform/shared";
-import { schemaRunDebug, schemaRunDebugError } from "../../app/utils/mlform/schema-run-debug";
-import type { JsonRecord, SchemaVersionDto } from "../types";
-import { getSchemaRunPrefillInputs } from "../schema-run-display";
+} from "../../algorithms/mlform/schema-run-result-state";
+import { isRecord } from "../../algorithms/mlform/shared";
+import { schemaRunDebug, schemaRunDebugError } from "../../algorithms/schema/run-debug";
+import type { JsonRecord, SchemaVersionDto } from "../../api/schemas/dtos";
+import { getSchemaRunPrefillInputs } from "../../algorithms/schema/input-display";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 
 type Props = {
@@ -80,6 +80,8 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
         customReportDefinitions: data.reportDefinitions,
         onSubmit(inputData, raw, reportsPending) {
           schemaRunDebug("form.submit.callback", {
+            inputData,
+            raw,
             inputKeys: Object.keys(inputData),
             rawKeys: Object.keys(raw),
             reportsPending,
@@ -95,6 +97,11 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
       });
       const unsubscribe = mounted.form.subscribe((state) => {
         if (!state.lastResult || !onResultUpdateRef.current) return;
+        schemaRunDebug("form.subscribe.state", {
+          lastResult: state.lastResult,
+          reportStates: state.reportStates,
+          reports: mounted.form.reports,
+        });
         const raw = isRecord(state.lastResult.raw)
           ? state.lastResult.raw
           : { raw: state.lastResult.raw };
@@ -105,7 +112,9 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
           version.bindings,
         );
         schemaRunDebug("form.result-update", {
-          reportKeys: isRecord(next.raw.reports) ? Object.keys(next.raw.reports) : [],
+          inputData: isRecord(next.raw.inputData) ? next.raw.inputData : {},
+          raw: next.raw,
+          reportCount: Array.isArray(next.raw.reports) ? next.raw.reports.length : 0,
           reportsPending: next.reportsPending,
         });
         onResultUpdateRef.current(

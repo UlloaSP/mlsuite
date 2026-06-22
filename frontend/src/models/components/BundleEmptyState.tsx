@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useRef, useState } from "react";
 
 import { cx } from "../../app/components";
-import { ALL_EXTS } from "../bundle-utils";
+import { ALL_EXTS } from "../../algorithms/models/bundle-utils";
 
 type Props = {
   onFiles: (files: File[]) => void | Promise<void>;

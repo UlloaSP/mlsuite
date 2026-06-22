@@ -11,14 +11,14 @@ import {
   AppPanel,
   AppSurface,
 } from "../../app/components";
-import { useUser } from "../../user/hooks";
+import { useUser } from "../../api/user/hooks";
 import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
 import {
   useAdminUsers,
   useCreateAdminUser,
   useResetAdminUserPassword,
   useUpdateAdminUser,
-} from "../hooks";
+} from "../../api/admin-users/hooks";
 
 type Role = "USER" | "SUPERADMIN";
 type UserSortMode = "current" | "name" | "newest" | "oldest" | "enabled" | "disabled";

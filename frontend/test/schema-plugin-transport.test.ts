@@ -5,11 +5,24 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
+import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
-import { fetchSchemaCustomReports } from "../src/app/utils/mlform/schema-run-custom-report-fetch";
-import { isSkippedSchemaReportPayload } from "../src/app/utils/mlform/schema-report-plugin-context";
-import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
+import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+
+const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
+
+const requestBody = (request: RequestInit | undefined): string =>
+  typeof request?.body === "string" ? request.body : "";
+
+const findReport = (reports: readonly unknown[], id: string) =>
+  reports.find(
+    (report): report is { id?: string; payload?: unknown } =>
+      typeof report === "object" &&
+      report !== null &&
+      "id" in report &&
+      (report as { id?: unknown }).id === id,
+  );
 
 const crystalTreeDefinition = (): CatalogReportDefinition => ({
   id: "crystal-plugin",
@@ -29,10 +42,10 @@ const crystalTreeDefinition = (): CatalogReportDefinition => ({
       kind: z.literal("Crystal Tree"),
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
-    resolve: ({ report, result }) => result.reports[report.id],
-    fetch: ({ config }) => ({
-      submit: async (request) => {
-        const modelId = String(request.meta?.modelId ?? "");
+    resolve: ({ report, result }) => findReport(result.reports, report.id)?.payload,
+    fetch: ({ config }: { config: { endpoint: string } }) => ({
+      submit: async (request: { meta?: Record<string, unknown> }) => {
+        const modelId = stringMeta(request.meta?.modelId);
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, {
           method: "POST",
           body: JSON.stringify({ instance: request.meta?.backendFieldValues }),
@@ -50,17 +63,6 @@ const crystalTreeDefinition = (): CatalogReportDefinition => ({
   }),
 });
 
-const innerOnlyCrystalTreeDefinition = (): CatalogReportDefinition => {
-  const definition = crystalTreeDefinition();
-  return {
-    ...definition,
-    definition: {
-      ...definition.definition,
-      fetch: undefined,
-    },
-  };
-};
-
 describe("schema plugin transport", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -71,7 +73,7 @@ describe("schema plugin transport", () => {
       "fetch",
       vi.fn(async (url: string) => {
         if (url.includes("/predictions")) {
-          return new Response(JSON.stringify({ reports: {} }));
+          return new Response(JSON.stringify({ reports: [] }));
         }
         if (url.includes("modelId=model-1")) {
           return new Response(JSON.stringify({ explanation: "tree-1" }));
@@ -81,63 +83,81 @@ describe("schema plugin transport", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
+        fields: [
+          {
+            id: "age",
+            label: "age",
+            kind: "number",
+            displayKey: "age",
+            mappedTo: { "model-1": "age", "model-2": "years" },
+          },
+          {
+            id: "rec",
+            label: "rec",
+            kind: "number",
+            displayKey: "rec",
+            mappedTo: { "model-1": "rec" },
+          },
+          {
+            id: "don",
+            label: "don",
+            kind: "number",
+            displayKey: "don",
+            mappedTo: { "model-2": "don" },
+          },
+        ],
         reports: [
           {
             id: "crystal_1",
-            source: "crystal_1",
             kind: "Crystal Tree",
             endpoint: "/api/analyzer/explanations",
+            mappedTo: { "model-1": "crystal-tree" },
           },
           {
             id: "crystal_2",
-            source: "crystal_2",
             kind: "Crystal Tree",
             endpoint: "/api/analyzer/explanations",
+            mappedTo: { "model-2": "crystal-tree" },
           },
         ],
       },
       bindings: [
         {
           modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal_1: "crystal-tree" },
         },
         {
           modelId: "model-2",
-          signatureId: "sig-2",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal_2: "crystal-tree" },
         },
       ],
       customReportDefinitions: [crystalTreeDefinition()],
     });
 
-    const result = await runtime.transport.submit({
-      values: { age: 42 },
-      fieldValues: { age: 42 },
-      serializedValues: { age: 42 },
-      serializedFieldValues: { age: 42 },
-      reports: runtime.formSchema.reports,
-    } as never);
+    const form = createForm({
+      schema: runtime.formSchema,
+      registry: runtime.registry,
+      transport: runtime.transport,
+    });
+    form.setValues({ age: 42, rec: 1, don: 2 });
+    const result = await executeFormPipeline({ form });
 
-    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.filter((url) => url.includes("/predictions"))).toHaveLength(2);
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
+    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const urls = calls.map((call) => String(call[0]));
+    expect(urls.filter((url) => url.includes("/predictions"))).toHaveLength(2);
+    expect(urls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
       true,
     );
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-2"))).toBe(
+    expect(urls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-2"))).toBe(
       true,
     );
-    const reports = (result as { reports: Record<string, unknown> }).reports;
-    expect(reports["crystal-1"]).toEqual({ explanation: "tree-1" });
-    expect(isSkippedSchemaReportPayload(reports["crystal-2"])).toBe(true);
-    const raw = (
-      result as { raw: { results: Array<{ output: { reports?: Record<string, unknown> } }> } }
-    ).raw;
-    expect(raw.results[0]?.output.reports?.["crystal-tree"]).toEqual({ explanation: "tree-1" });
-    expect(raw.results[1]?.output.reports).toEqual({});
+    const explanationBodies = calls
+      .filter((call) => String(call[0]).includes("/api/analyzer/explanations"))
+      .map((call) => JSON.parse(requestBody(call[1] as RequestInit | undefined)));
+    expect(explanationBodies).toEqual([
+      { instance: { age: 42, rec: 1 } },
+      { instance: { years: 42, don: 2 } },
+    ]);
+    expect(result.reportFetchResults["crystal-1"]).toEqual({ explanation: "tree-1" });
+    expect(result.reportFetchResults["crystal-2"]).toBeUndefined();
   });
 
   test("skips mapped custom report when its model result failed before context exists", async () => {
@@ -152,37 +172,41 @@ describe("schema plugin transport", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "3-5-crystal-tree",
-            source: "3-5-crystal-tree",
             kind: "Crystal Tree",
             endpoint: "/api/analyzer/explanations",
+            mappedTo: { "3": "crystal-tree" },
           },
         ],
       },
       bindings: [
         {
           modelId: "3",
-          signatureId: "5",
-          inputMapping: { age: "age" },
-          outputMapping: { "3-5-crystal-tree": "crystal-tree" },
         },
       ],
       customReportDefinitions: [crystalTreeDefinition()],
     });
 
-    const result = await runtime.transport.submit({
-      values: { age: 42 },
-      fieldValues: { age: 42 },
-      serializedValues: { age: 42 },
-      serializedFieldValues: { age: 42 },
-      reports: runtime.formSchema.reports,
-    } as never);
+    const form = createForm({
+      schema: runtime.formSchema,
+      registry: runtime.registry,
+      transport: runtime.transport,
+    });
+    form.setValues({ age: 42 });
+    const result = await executeFormPipeline({ form });
 
-    const reports = (result as { reports: Record<string, unknown> }).reports;
-    expect(isSkippedSchemaReportPayload(reports["3-5-crystal-tree"])).toBe(true);
+    expect(
+      result.submitResult.reports.some(
+        (report) =>
+          typeof report === "object" &&
+          report !== null &&
+          "id" in report &&
+          (report as { id?: unknown }).id === "3-5-crystal-tree",
+      ),
+    ).toBe(false);
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toHaveLength(0);
   });
@@ -191,131 +215,44 @@ describe("schema plugin transport", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
         return new Response(JSON.stringify({ explanation: "tree" }));
       }),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": "crystal-tree" },
+          },
+        ],
       },
       bindings: [
         {
           modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal: "crystal-tree" },
           pluginPolicy: { reportKinds: ["classifier"] },
         },
       ],
       customReportDefinitions: [crystalTreeDefinition()],
     });
 
-    const result = await runtime.transport.submit({
-      values: { age: 42 },
-      fieldValues: { age: 42 },
-      serializedValues: { age: 42 },
-      serializedFieldValues: { age: 42 },
-      reports: runtime.formSchema.reports,
-    } as never);
+    const form = createForm({
+      schema: runtime.formSchema,
+      registry: runtime.registry,
+      transport: runtime.transport,
+    });
+    form.setValues({ age: 42 });
+    const result = await executeFormPipeline({ form });
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
       true,
     );
-    expect((result as { reports: Record<string, unknown> }).reports.crystal).toEqual({
+    expect(result.reportFetchResults.crystal).toEqual({
       explanation: "tree",
     });
-  });
-
-  test("prefetch uses inner mlform report fetch when top-level fetch is absent", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
-        return new Response(JSON.stringify({ explanation: "inner" }));
-      }),
-    );
-    const runtime = createSchemaRunRuntime({
-      schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
-      },
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal: "crystal-tree" },
-        },
-      ],
-      customReportDefinitions: [innerOnlyCrystalTreeDefinition()],
-    });
-
-    const result = await runtime.transport.submit({
-      values: { age: 42 },
-      fieldValues: { age: 42 },
-      serializedValues: { age: 42 },
-      serializedFieldValues: { age: 42 },
-      reports: runtime.formSchema.reports,
-    } as never);
-
-    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
-    expect((result as { reports: Record<string, unknown> }).reports.crystal).toEqual({
-      explanation: "inner",
-    });
-  });
-
-  test("derives report context from binding when built context is missing", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ explanation: "derived" }))),
-    );
-    const built = { reports: {}, reportContextById: {} };
-    await fetchSchemaCustomReports({
-      request: {
-        values: { age: 42 },
-        fieldValues: { age: 42 },
-        serializedValues: { age: 42 },
-        serializedFieldValues: { age: 42 },
-        reports: [],
-      } as never,
-      reports: [
-        {
-          id: "crystal",
-          source: "crystal",
-          kind: "Crystal Tree",
-          endpoint: "/api/analyzer/explanations",
-        },
-      ],
-      built,
-      results: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          modelInput: { age: 42 },
-          output: { meta: { modelId: "model-1", backendFieldValues: { age: 42 } }, reports: {} },
-          status: "SUCCESS",
-        },
-      ],
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          outputMapping: { crystal: "crystal-tree" },
-        },
-      ],
-      definitions: [crystalTreeDefinition()],
-    });
-
-    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
-    expect(built.reports.crystal).toEqual({ explanation: "derived" });
   });
 });

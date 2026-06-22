@@ -4,28 +4,29 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { mountForm } from "mlform/kit";
-import { type AfterSubmitContext, type SubmitErrorContext } from "mlform/runtime";
+import type { SubmitErrorContext } from "mlform/runtime";
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
-import { createSchemaRunRuntime } from "./schema-run-runtime";
+import { createSchemaRunRuntime } from "../../../algorithms/schema/runtime-assembly";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
   type JsonRecord,
   type MountedPredictionForm,
   type PredictionTheme,
   isRecord,
-} from "./shared";
-import type { CatalogFieldDefinition } from "../../../plugin/mlform/custom-field";
-import type { CatalogReportDefinition } from "../../../plugin/mlform/custom-report";
-import { schemaRunDebug, schemaRunDebugError } from "./schema-run-debug";
+} from "../../../algorithms/mlform/shared";
+import type { CatalogFieldDefinition } from "../../../algorithms/plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "../../../algorithms/plugin/custom-report-catalog";
+import { schemaRunDebug, schemaRunDebugError } from "../../../algorithms/schema/run-debug";
+import {
+  buildSchemaRunRawFromSubmitResult,
+  reportStatesFromSnapshot,
+} from "../../../algorithms/mlform/schema-run-result-state";
 
 type Options = {
   container: HTMLElement;
   schema: unknown;
   bindings: readonly {
     modelId: string;
-    signatureId: string;
-    inputMapping?: JsonRecord;
-    outputMapping?: JsonRecord;
     pluginPolicy?: JsonRecord | null;
   }[];
   theme: PredictionTheme;
@@ -33,6 +34,21 @@ type Options = {
   customReportDefinitions?: readonly CatalogReportDefinition[];
   onSubmit?: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
   onSubmitError?: (error: unknown) => void;
+};
+
+type SubmitSuccessDetail = {
+  result?: { raw?: unknown };
+  pipelineResult?: {
+    submitResult?: { raw?: unknown };
+  };
+};
+
+const rawFromSubmitSuccess = (detail: SubmitSuccessDetail | undefined): JsonRecord => {
+  schemaRunDebug("mount.submit-success.detail", detail);
+  const result = detail?.pipelineResult?.submitResult ?? detail?.result;
+  const raw = isRecord(result?.raw) ? result.raw : { raw: result?.raw };
+  schemaRunDebug("mount.submit-success.raw", raw);
+  return raw;
 };
 
 export const mountSchemaRunForm = ({
@@ -63,18 +79,6 @@ export const mountSchemaRunForm = ({
     primitiveRegistry: createPredictionPrimitiveRegistry(),
     transport: runtime.transport,
     hooks: {
-      afterSubmit({ result }: AfterSubmitContext) {
-        const raw = isRecord(result.raw) ? result.raw : { raw: result.raw };
-        const reports = isRecord(raw.reports) ? raw.reports : {};
-        const contexts = isRecord(raw.reportContextById) ? raw.reportContextById : {};
-        const reportsPending = Object.keys(contexts).some((reportId) => !(reportId in reports));
-        schemaRunDebug("mount.after-submit", {
-          reportKeys: Object.keys(reports),
-          contextKeys: Object.keys(contexts),
-          reportsPending,
-        });
-        onSubmit?.(isRecord(raw.inputData) ? raw.inputData : {}, raw, reportsPending);
-      },
       onSubmitError({ error }: SubmitErrorContext) {
         schemaRunDebugError("mount.submit-error", error);
         onSubmitError?.(error);
@@ -82,6 +86,7 @@ export const mountSchemaRunForm = ({
     },
     layout: { kind: "split" },
     reportPane: "always",
+    reportFetchMode: "all",
     labels: {
       form: "Schema Inputs",
       reports: "Model Results",
@@ -91,6 +96,31 @@ export const mountSchemaRunForm = ({
     },
     designSystem: getPredictionDesignSystem(theme),
   });
+  const handleSubmitSuccess = (event: Event) => {
+    const raw = rawFromSubmitSuccess((event as CustomEvent<SubmitSuccessDetail>).detail);
+    schemaRunDebug("mount.after-submit.before-normalize", {
+      raw,
+      reports: mounted.form.reports,
+      reportStates: mounted.form.state.reportStates,
+    });
+    const next = buildSchemaRunRawFromSubmitResult(
+      raw,
+      mounted.form.reports,
+      reportStatesFromSnapshot(mounted.form.state.reportStates),
+      bindings,
+    );
+    schemaRunDebug("mount.after-submit", {
+      raw: next.raw,
+      reportCount: Array.isArray(next.raw.reports) ? next.raw.reports.length : 0,
+      reportsPending: next.reportsPending,
+    });
+    onSubmit?.(
+      isRecord(next.raw.inputData) ? next.raw.inputData : {},
+      next.raw,
+      next.reportsPending,
+    );
+  };
+  mounted.host.addEventListener("mlf-submit-success", handleSubmitSuccess);
   return {
     form: mounted.form,
     host: mounted.host,
@@ -99,6 +129,7 @@ export const mountSchemaRunForm = ({
     },
     unmount() {
       schemaRunDebug("mount.unmount");
+      mounted.host.removeEventListener("mlf-submit-success", handleSubmitSuccess);
       mounted.unmount();
     },
   };

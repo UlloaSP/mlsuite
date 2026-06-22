@@ -10,9 +10,9 @@ import { createPredictionPrimitiveRegistry } from "./primitive-registry";
 import {
   type MountedPredictionForm,
   type MountPredictionFormOptions,
-  getBackendKey,
   isRecord,
-} from "./shared";
+} from "../../../algorithms/mlform/shared";
+import { toAnalyzerPayload } from "../../../algorithms/mlform/prediction-transport";
 
 export const mountPredictionForm = ({
   container,
@@ -39,12 +39,7 @@ export const mountPredictionForm = ({
     hooks: {
       afterSubmit({ result }: AfterSubmitContext) {
         onSubmit?.(
-          runtime.normalizedFields.reduce<Record<string, unknown>>((payload, field) => {
-            if (field.id in result.serializedValues) {
-              payload[getBackendKey(field)] = result.serializedValues[field.id];
-            }
-            return payload;
-          }, {}),
+          toAnalyzerPayload(result.serializedValues, runtime.normalizedFields),
           isRecord(result.raw) ? result.raw : { raw: result.raw },
         );
       },

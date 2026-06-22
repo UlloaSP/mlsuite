@@ -8,7 +8,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -27,20 +26,18 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "prediction_result", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_prediction_result_run_model_signature", columnNames = {
-                "prediction_run_id", "model_id", "signature_id" })
+        @UniqueConstraint(name = "uq_prediction_result_run_model", columnNames = { "prediction_run_id", "model_id" })
 })
 @Getter
 @Setter
 @NoArgsConstructor
 public class PredictionResult {
 
-    public PredictionResult(PredictionRun run, Model model, Signature signature, Map<String, Object> modelInput,
+    public PredictionResult(PredictionRun run, Model model, Map<String, Object> modelInput,
             Map<String, Object> output, PredictionResultStatus status, String errorMessage,
             Map<String, Object> errorJson) {
         this.run = run;
         this.model = model;
-        this.signature = signature;
         this.modelInput = modelInput;
         this.output = output;
         this.status = status;
@@ -59,10 +56,6 @@ public class PredictionResult {
     @ManyToOne(optional = false)
     @JoinColumn(name = "model_id", nullable = false, foreignKey = @ForeignKey(name = "fk_prediction_result_model"))
     private Model model;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "signature_id", nullable = false, foreignKey = @ForeignKey(name = "fk_prediction_result_signature"))
-    private Signature signature;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "model_input_json", nullable = false)

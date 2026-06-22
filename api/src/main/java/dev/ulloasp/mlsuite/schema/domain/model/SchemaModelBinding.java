@@ -8,7 +8,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.signature.domain.model.Signature;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -25,22 +24,16 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "schema_model_binding", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_schema_binding_model_signature", columnNames = {
-                "schema_version_id", "model_id", "signature_id" })
+        @UniqueConstraint(name = "uq_schema_binding_model", columnNames = { "schema_version_id", "model_id" })
 })
 @Getter
 @Setter
 @NoArgsConstructor
 public class SchemaModelBinding {
 
-    public SchemaModelBinding(SchemaVersion schemaVersion, Model model, Signature signature,
-            Map<String, Object> inputMapping, Map<String, Object> outputMapping,
-            Map<String, Object> pluginPolicy) {
+    public SchemaModelBinding(SchemaVersion schemaVersion, Model model, Map<String, Object> pluginPolicy) {
         this.schemaVersion = schemaVersion;
         this.model = model;
-        this.signature = signature;
-        this.inputMapping = inputMapping;
-        this.outputMapping = outputMapping;
         this.pluginPolicy = pluginPolicy;
     }
 
@@ -55,18 +48,6 @@ public class SchemaModelBinding {
     @ManyToOne(optional = false)
     @JoinColumn(name = "model_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_binding_model"))
     private Model model;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "signature_id", nullable = false, foreignKey = @ForeignKey(name = "fk_schema_binding_signature"))
-    private Signature signature;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "input_mapping_json", nullable = false)
-    private Map<String, Object> inputMapping;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "output_mapping_json", nullable = false)
-    private Map<String, Object> outputMapping;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "plugin_policy_json")

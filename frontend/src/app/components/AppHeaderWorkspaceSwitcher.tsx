@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { AppCopy } from "./AppCopy";
 import { AppPanel } from "./AppPanel";
-import { useSelectOrganization, useWorkspaceContext } from "../../workspace/hooks";
+import { useSelectOrganization, useWorkspaceContext } from "../../api/workspace/hooks";
 import { cx } from "./cx";
 import { FOCUS_RING } from "./focus-ring";
 

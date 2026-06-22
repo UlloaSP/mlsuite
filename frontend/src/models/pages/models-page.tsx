@@ -3,7 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -19,14 +18,19 @@ import {
   AppToolbar,
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
-import { useUser } from "../../user/hooks";
-import { useWorkspaceContext } from "../../workspace/hooks";
-import * as modelApi from "../api/modelService";
+import { useUser } from "../../api/user/hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
+import * as modelApi from "../../api/models/services";
 import type { ModelAction } from "../components/ModelActionsMenu";
 import { ModelListItem } from "../components/ModelListItem";
-import { GET_SIGNATURES_QUERY_KEY, useGetModels } from "../hooks";
+import { useGetModels } from "../../api/models/hooks";
 
 type ModelSortMode = "updated" | "name" | "algorithm";
+
+const isModelSchemaAvailable = (model: modelApi.ModelDto): boolean =>
+  typeof model.inputSchema === "object" &&
+  model.inputSchema !== null &&
+  Array.isArray((model.inputSchema as Record<string, unknown>).fields);
 
 export function ModelsPage() {
   const navigate = useNavigate();
@@ -36,27 +40,13 @@ export function ModelsPage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<ModelSortMode>("updated");
 
-  const signatureQueries = useQueries({
-    queries: models.map((model) => ({
-      queryKey: GET_SIGNATURES_QUERY_KEY({ modelId: model.id }),
-      queryFn: async () => modelApi.getSignatures({ modelId: model.id }),
-      enabled: Boolean(model.id),
-      placeholderData: [] as modelApi.SignatureDto[],
-      staleTime: 5 * 60_000,
-    })),
-  });
-
   const enrichedModels = useMemo(
     () =>
-      models.map((model, index) => {
-        const signatures =
-          (signatureQueries[index]?.data as modelApi.SignatureDto[] | undefined) ?? [];
-        return {
-          model,
-          signatureCount: signatures.length,
-        };
-      }),
-    [models, signatureQueries],
+      models.map((model) => ({
+        model,
+        schemaCount: isModelSchemaAvailable(model) ? 1 : 0,
+      })),
+    [models],
   );
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -116,7 +106,7 @@ export function ModelsPage() {
         <AppPageHeader
           eyebrow="Models"
           title="Machine Learning Models"
-          description={`Navigate models, inspect derived schema metrics, and drill into prediction history for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
+          description={`Navigate models and inspect generated schema snapshots for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
           actions={
             canCreateModels ? (
               <AppButton type="button" onClick={() => navigate("/models/create")}>
@@ -168,14 +158,14 @@ export function ModelsPage() {
           />
         ) : (
           <div className="space-y-3">
-            {visibleItems.map(({ model, signatureCount }) => (
+            {visibleItems.map(({ model, schemaCount }) => (
               <ModelListItem
                 canDelete={canDeleteModels}
                 canEdit={canEditModels}
                 key={model.id}
                 item={model}
-                signatureCount={signatureCount}
-                onOpen={() => navigate(`/models/${model.id}?tab=signatures`)}
+                schemaCount={schemaCount}
+                onOpen={() => navigate(`/models/${model.id}`)}
                 onAction={handleMockAction}
               />
             ))}

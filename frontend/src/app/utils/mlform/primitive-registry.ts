@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { createBuiltinPrimitiveRegistry, type PrimitiveRegistry } from "mlform/primitives";
-import { CUSTOM_FIELD_COMPONENT } from "../../../plugin/mlform/custom-field";
+import { CUSTOM_FIELD_COMPONENT } from "../../../algorithms/plugin/custom-field-catalog";
 import {
   CUSTOM_FIELD_RENDERER_TAG,
   PredictionCustomFieldRendererElement,
 } from "../../../plugin/mlform/custom-field-renderer";
-import { CUSTOM_REPORT_COMPONENT } from "../../../plugin/mlform/custom-report";
+import { CUSTOM_REPORT_COMPONENT } from "../../../algorithms/plugin/custom-report-catalog";
 import {
   CUSTOM_REPORT_RENDERER_TAG,
   PredictionCustomReportRendererElement,

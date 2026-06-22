@@ -7,7 +7,7 @@ import { useAtom } from "jotai";
 import { Calendar, Fullscreen, Languages, Mail, MapPin, Plane, SunMoon, User } from "lucide-react";
 import { m as motion } from "motion/react";
 import { fullscreenAtom, themeAtom } from "../../app/atoms";
-import type { UserDTO } from "../api/userService";
+import type { UserDTO } from "../../api/user/services";
 import { InfoCard } from "./InfoCard";
 
 export type ProfileBodyProps = {

@@ -29,16 +29,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExis
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
-import dev.ulloasp.mlsuite.prediction.domain.exception.ExplanationFeedbackDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.domain.exception.OutputFeedbackDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionAlreadyExistsException;
-import dev.ulloasp.mlsuite.prediction.domain.exception.PredictionDoesNotExistsException;
-import dev.ulloasp.mlsuite.prediction.domain.exception.TargetDoesNotExistsException;
-import dev.ulloasp.mlsuite.signature.domain.exception.InvalidSignatureSchemaException;
-import dev.ulloasp.mlsuite.signature.domain.exception.SignatureAlreadyExistsException;
-import dev.ulloasp.mlsuite.signature.domain.exception.SignatureDoesNotExistsException;
-import dev.ulloasp.mlsuite.signature.domain.exception.SignatureNotFromUserException;
-import dev.ulloasp.mlsuite.signature.domain.exception.SignatureNotSemVerException;
 import dev.ulloasp.mlsuite.team.domain.exception.TeamNotFoundException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
@@ -52,11 +42,6 @@ public class DomainExceptionHandler {
 
     @ExceptionHandler({
             ModelDoesNotExistsException.class,
-            SignatureDoesNotExistsException.class,
-            PredictionDoesNotExistsException.class,
-            TargetDoesNotExistsException.class,
-            OutputFeedbackDoesNotExistsException.class,
-            ExplanationFeedbackDoesNotExistsException.class,
             PluginNotFoundException.class,
             UserDoesNotExistException.class,
             OrganizationNotFoundException.class,
@@ -71,8 +56,6 @@ public class DomainExceptionHandler {
 
     @ExceptionHandler({
             ModelAlreadyExistsException.class,
-            SignatureAlreadyExistsException.class,
-            PredictionAlreadyExistsException.class,
             UserAlreadyExistsException.class,
             OrganizationAlreadyExistsException.class
     })
@@ -84,7 +67,6 @@ public class DomainExceptionHandler {
 
     @ExceptionHandler({
             ModelNotFromUserException.class,
-            SignatureNotFromUserException.class,
             OrganizationAccessDeniedException.class
     })
     public ResponseEntity<ErrorDto> handleForbidden(RuntimeException ex, HttpServletRequest req) {
@@ -104,18 +86,10 @@ public class DomainExceptionHandler {
     // ---- 400 BAD REQUEST ----
 
     @ExceptionHandler({
-            InvalidSignatureSchemaException.class,
             IllegalArgumentException.class
     })
     public ResponseEntity<ErrorDto> handleBadRequest(RuntimeException ex, HttpServletRequest req) {
         return respond(HttpStatus.BAD_REQUEST, ex, req);
-    }
-
-    // ---- 412 PRECONDITION FAILED ----
-
-    @ExceptionHandler(SignatureNotSemVerException.class)
-    public ResponseEntity<ErrorDto> handlePreconditionFailed(SignatureNotSemVerException ex, HttpServletRequest req) {
-        return respond(HttpStatus.PRECONDITION_FAILED, ex, req);
     }
 
     // ---- Analyzer (dynamic status) ----

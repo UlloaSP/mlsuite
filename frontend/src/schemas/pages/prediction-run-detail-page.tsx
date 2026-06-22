@@ -7,16 +7,20 @@ import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
-import { usePredictionRun, usePredictionRunFeedback, useSchema, useSchemaVersion } from "../hooks";
+import {
+  usePredictionRun,
+  usePredictionRunFeedback,
+  useSchema,
+  useSchemaVersion,
+} from "../../api/schemas/hooks";
 import { SchemaRunInputsPanel } from "../components/SchemaRunInputsPanel";
 import { SchemaRunFeedbackQuestionnaire } from "../components/SchemaRunFeedbackQuestionnaire";
 import { SchemaRunDetailMetrics } from "../components/SchemaRunDetailMetrics";
 import { SchemaRunReportsPanel } from "../components/SchemaRunReportsPanel";
-import { mergeSchemaRunInputs } from "../schema-run-display";
-import { isSchemaFeedbackComplete } from "../schema-feedback-state";
-import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
+import { isSchemaFeedbackComplete } from "../../algorithms/schema/feedback-state";
+import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
-import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
+import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
 
 export function PredictionRunDetailPage() {
   const { schemaId, runId } = useParams<{ schemaId: string; runId: string }>();
@@ -80,7 +84,7 @@ export function PredictionRunDetailPage() {
             />
             <SchemaRunInputsPanel
               schema={executableVersion.formSchema}
-              inputData={mergeSchemaRunInputs(run.inputData, run.results)}
+              inputData={run.inputData}
               open={inputsOpen}
               onToggle={() => setInputsOpen((current) => !current)}
             />

@@ -5,9 +5,22 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
+import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
-import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
+import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+
+const stringMeta = (value: unknown): string =>
+  typeof value === "string" || typeof value === "number" ? String(value) : "";
+
+const findReport = (reports: readonly unknown[], id: string) =>
+  reports.find(
+    (report): report is { id?: string; payload?: unknown } =>
+      typeof report === "object" &&
+      report !== null &&
+      "id" in report &&
+      (report as { id?: unknown }).id === id,
+  );
 
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",
@@ -27,10 +40,10 @@ const crystal = (): CatalogReportDefinition => ({
       kind: z.literal("Crystal Tree"),
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
-    resolve: ({ report, result }) => result.reports[report.id],
-    fetch: ({ config }) => ({
-      submit: async (request) => {
-        const modelId = String(request.meta?.modelId ?? "");
+    resolve: ({ report, result }) => findReport(result.reports, report.id)?.payload,
+    fetch: ({ config }: { config: { endpoint: string } }) => ({
+      submit: async (request: { meta?: Record<string, unknown> }) => {
+        const modelId = stringMeta(request.meta?.modelId);
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, {
           method: "POST",
           body: JSON.stringify({ instance: request.meta?.backendFieldValues }),
@@ -42,14 +55,15 @@ const crystal = (): CatalogReportDefinition => ({
   }),
 });
 
-const submit = (runtime: ReturnType<typeof createSchemaRunRuntime>) =>
-  runtime.transport.submit({
-    values: { age: 42 },
-    fieldValues: { age: 42 },
-    serializedValues: { age: 42 },
-    serializedFieldValues: { age: 42 },
-    reports: runtime.formSchema.reports,
-  } as never);
+const submit = (runtime: ReturnType<typeof createSchemaRunRuntime>) => {
+  const form = createForm({
+    schema: runtime.formSchema,
+    registry: runtime.registry,
+    transport: runtime.transport,
+  });
+  form.setValues({ age: 42 });
+  return executeFormPipeline({ form });
+};
 
 describe("schema plugin readiness failures", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -70,21 +84,23 @@ describe("schema plugin readiness failures", () => {
   test("schema without Crystal Tree report never calls explanations", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: { risk: { value: 1 } } }))),
+      vi.fn(
+        async () => new Response(JSON.stringify({ reports: [{ mappedTo: "risk", value: 1 }] })),
+      ),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "risk", label: "Risk", kind: "classifier" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
+        reports: [
+          {
+            id: "risk",
+            label: "Risk",
+            kind: "classifier",
+            mappedTo: { "model-1": "risk" },
+          },
+        ],
       },
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { risk: "risk" },
-        },
-      ],
+      bindings: [{ modelId: "model-1" }],
       customReportDefinitions: [crystal()],
     });
 
@@ -95,53 +111,43 @@ describe("schema plugin readiness failures", () => {
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toHaveLength(0);
   });
 
-  test("custom report without outputMapping fails with unbound context", async () => {
+  test("custom report without mappedTo fails before submit", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ reports: {} }))),
+      vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
     );
-    const runtime = createSchemaRunRuntime({
-      schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
-      },
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: {},
+    expect(() =>
+      createSchemaRunRuntime({
+        schema: {
+          fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
+          reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
         },
-      ],
-      customReportDefinitions: [crystal()],
-    });
-
-    await expect(submit(runtime)).rejects.toThrow(
-      'Schema report "crystal" is not bound to a model context.',
-    );
+        bindings: [{ modelId: "model-1" }],
+        customReportDefinitions: [crystal()],
+      }),
+    ).toThrow("Schema report 1 falta mappedTo");
   });
 
   test("normalized report ids still map and call explanations", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
-        return new Response(JSON.stringify({ explanations: ["ok"] }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+        return new Response(JSON.stringify({ reports: [{ explanation: "ok" }] }));
       }),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal_tree_1", source: "crystal_tree_1", kind: "Crystal Tree" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal_tree_1",
+            kind: "Crystal Tree",
+            mappedTo: { "model-1": "crystal-tree" },
+          },
+        ],
       },
-      bindings: [
-        {
-          modelId: "model-1",
-          signatureId: "sig-1",
-          inputMapping: { age: "age" },
-          outputMapping: { crystal_tree_1: "crystal-tree" },
-        },
-      ],
+      bindings: [{ modelId: "model-1" }],
       customReportDefinitions: [crystal()],
     });
 
@@ -157,23 +163,22 @@ describe("schema plugin readiness failures", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) => {
-        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: {} }));
-        return new Response(JSON.stringify({ explanations: ["ok"] }));
+        if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
+        return new Response(JSON.stringify({ reports: [{ explanation: "ok" }] }));
       }),
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "age", kind: "number" }],
-        reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
+        fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
+        reports: [
+          {
+            id: "crystal",
+            kind: "Crystal Tree",
+            mappedTo: { "1": "crystal" },
+          },
+        ],
       },
-      bindings: [
-        {
-          modelId: 1,
-          signatureId: 2,
-          inputMapping: { age: "age" },
-          outputMapping: { crystal: "crystal" },
-        },
-      ] as never,
+      bindings: [{ modelId: 1 } as never],
       customReportDefinitions: [crystal()],
     });
 

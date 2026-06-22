@@ -37,11 +37,13 @@ public class AnalyzerControllerImpl implements AnalyzerController {
     public ResponseEntity<Map<String, Object>> generateSchema(
             Authentication authentication,
             @RequestPart("model") MultipartFile model,
-            @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe) {
-        Map<String, Object> schema = analyzerUseCase.generateInputSignature(
+            @Nullable @RequestPart(value = "dataframe", required = false) MultipartFile dataframe,
+            @RequestParam(defaultValue = "__") String oneHotSeparator) {
+        Map<String, Object> schema = analyzerUseCase.generateInputSchema(
                 currentUserResolver.resolve(authentication).userId(),
                 model,
-                dataframe);
+                dataframe,
+                oneHotSeparator);
         return ResponseEntity.ok(schema);
     }
 
