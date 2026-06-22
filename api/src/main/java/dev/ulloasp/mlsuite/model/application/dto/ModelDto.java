@@ -17,7 +17,9 @@ public record ModelDto(
         String specificType,
         String fileName,
         Map<String, Object> inputSchema,
-        OffsetDateTime createdAt) {
+        OffsetDateTime createdAt,
+        OffsetDateTime updatedAt,
+        OffsetDateTime archivedAt) {
 
     public static final ModelDto toDto(Model model) {
         return new ModelDto(
@@ -27,7 +29,9 @@ public record ModelDto(
                 model.getSpecificType(),
                 model.getFileName(),
                 model.getInputSchema(),
-                model.getCreatedAt());
+                model.getCreatedAt(),
+                model.getUpdatedAt(),
+                model.getArchivedAt());
     }
 
     public static final List<ModelDto> toDtoList(List<Model> models) {

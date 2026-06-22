@@ -17,6 +17,7 @@ import org.springframework.security.core.Authentication;
 
 import dev.ulloasp.mlsuite.model.adapter.in.web.ModelControllerImpl;
 import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
+import dev.ulloasp.mlsuite.model.application.dto.ModelPageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.service.ModelCreationService;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
@@ -65,11 +66,60 @@ class ModelControllerTest {
     }
 
     @Test
+    void getModelPage_UsesInternalUserId() {
+        when(modelCatalogUseCase.getModelPage(4L, 2, 5, "rf", "name", "archived"))
+                .thenReturn(new ModelPageDto(List.of(), 2, 5, 0, false));
+
+        assertEquals(2, controller.getModelPage(authentication, 2, 5, "rf", "name", "archived").getBody().page());
+        verify(modelCatalogUseCase).getModelPage(4L, 2, 5, "rf", "name", "archived");
+    }
+
+    @Test
     void getAllModels_UsesInternalUserId() {
         when(modelCatalogUseCase.getModels(4L)).thenReturn(List.of(new Model()));
 
         assertEquals(1, controller.getAllModels(authentication).getBody().size());
         verify(modelCatalogUseCase).getModels(4L);
+    }
+
+    @Test
+    void rename_DelegatesToCatalogUseCase() {
+        Model model = model();
+        when(modelCatalogUseCase.renameModel(4L, 9L, "new")).thenReturn(model);
+
+        assertEquals("demo", controller.rename(authentication, 9L, "new").getBody().name());
+        verify(modelCatalogUseCase).renameModel(4L, 9L, "new");
+    }
+
+    @Test
+    void archive_DelegatesToCatalogUseCase() {
+        Model model = model();
+        when(modelCatalogUseCase.archiveModel(4L, 9L)).thenReturn(model);
+
+        assertEquals("demo", controller.archive(authentication, 9L).getBody().name());
+        verify(modelCatalogUseCase).archiveModel(4L, 9L);
+    }
+
+    @Test
+    void duplicate_DelegatesToCatalogUseCase() {
+        Model model = model();
+        when(modelCatalogUseCase.duplicateModel(4L, 9L, "copy")).thenReturn(model);
+
+        assertEquals(HttpStatus.CREATED, controller.duplicate(authentication, 9L, "copy").getStatusCode());
+        verify(modelCatalogUseCase).duplicateModel(4L, 9L, "copy");
+    }
+
+    @Test
+    void delete_DelegatesToCatalogUseCase() {
+        assertEquals(HttpStatus.NO_CONTENT, controller.delete(authentication, 9L).getStatusCode());
+        verify(modelCatalogUseCase).deleteModel(4L, 9L);
+    }
+
+    private Model model() {
+        Model model = new Model();
+        model.setId(9L);
+        model.setName("demo");
+        return model;
     }
 }
 

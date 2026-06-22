@@ -106,6 +106,9 @@ public class Model {
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
 
+    @Column(name = "archived_at", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime archivedAt;
+
     public boolean hasStoredObject() {
         return this.storageBucket != null
                 && !this.storageBucket.isBlank()

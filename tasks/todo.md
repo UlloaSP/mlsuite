@@ -1,3 +1,42 @@
+# Models Catalog Pagination And Actions
+
+## Goal
+
+- [ ] Rework Models catalog UI to match Plugins: backend pagination, compact borders, fixed pagination footer.
+- [ ] Rename sidebar `Catalog` to `Models`.
+- [ ] Add model rename, archive, delete, duplicate from catalog actions.
+- [ ] Keep schema/model flows using active models only.
+
+## Plan
+
+- [x] Add backend model page DTO, request params, repo queries, and service actions.
+- [x] Add API tests for paginated list plus rename/archive/delete/duplicate success and error cases.
+- [x] Add frontend model page DTO/services/hooks/mutations using TanStack Query.
+- [x] Split Models catalog UI into small components patterned after Plugins.
+- [x] Wire sidebar label and keep create/detail/schema selectors using active model list.
+- [x] Run narrow API/frontend checks, line-count check, graph update.
+
+## Review
+
+- Backend `GET /api/models` now returns a paged `ModelPageDto`; active model selector data moved to `GET /api/models/all`.
+- Added model `archivedAt`, active/archive/all filters, backend search/sort, rename, archive, duplicate, and delete endpoints.
+- Delete blocks models referenced by schema bindings or prediction results; archive is the safe removal path.
+- Duplicate copies stored model bytes into a new storage object.
+- Models frontend now uses paginated TanStack Query hooks, plugin-style toolbar/list/footer pagination, compact borders, and real action mutations.
+- Sidebar label changed from `Catalog` to `Models`.
+- Verification:
+  - `api`: `mvn "-Dtest=SchemaFlowServiceTest,ModelServiceTest,ModelControllerTest" test` passed, 26 tests.
+  - `api`: full `mvn test` blocked by pre-existing stale test `dev.ulloasp.mlsuite.prediction.ExplanationFeedbackControllerTest` referencing missing `dev/ulloasp/mlsuite/prediction/domain/model/ExplanationFeedback`.
+  - `frontend`: `vp check --fix ...` passed on touched files.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 228 warnings; remaining new notable warning is boolean-heavy `ModelsCatalogListPanel`, accepted for now to keep component split minimal.
+  - Browser preview: Vite dev server is on `http://127.0.0.1:5174`; `/models` bundle loaded, but page data/render verification was blocked by missing backend/auth (`/api/users/me` 401, readiness `https://localhost:8443` connection refused).
+  - Repo: touched source line-count check passed, no touched source file over 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+
 # Schema Create Direct Flow And Split Preview
 
 ## Goal

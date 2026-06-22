@@ -63,9 +63,7 @@ export function Sidebar() {
     ...(permissions?.canViewWorkspace
       ? [{ to: "/workspace", icon: Building2, label: "Workspace" }]
       : []),
-    ...(permissions?.canViewModels
-      ? [{ to: "/models", icon: BrainCircuit, label: "Catalog" }]
-      : []),
+    ...(permissions?.canViewModels ? [{ to: "/models", icon: BrainCircuit, label: "Models" }] : []),
     ...(permissions?.canViewModels
       ? [{ to: "/schemas", icon: ClipboardList, label: "Schemas" }]
       : []),
@@ -148,9 +146,9 @@ export function Sidebar() {
             collapsed={collapsed}
             onClick={() => {
               if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().then(() => setIsFullscreen(true));
+                void document.documentElement.requestFullscreen().then(() => setIsFullscreen(true));
               } else {
-                document.exitFullscreen().then(() => setIsFullscreen(false));
+                void document.exitFullscreen().then(() => setIsFullscreen(false));
               }
             }}
           />

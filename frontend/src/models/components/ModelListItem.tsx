@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ArrowRight, Database, TrendingUp } from "lucide-react";
-import { AppBadge, cx } from "../../app/components";
+import { cx } from "../../app/components";
 import type { ModelDto } from "../../api/models/services";
 import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
 import { formatTimestamp, getModelAlgorithmLabel } from "../../algorithms/models/utils";
@@ -33,7 +33,6 @@ export function ModelListItem({
   canDelete,
   canEdit,
   item,
-  schemaCount,
   onOpen,
   onAction,
 }: ModelListItemProps) {
@@ -44,24 +43,16 @@ export function ModelListItem({
       type="button"
       onClick={onOpen}
       className={cx(
-        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)] p-5 text-left shadow-[var(--shadow-card)] transition",
-        "hover:border-[var(--text-primary)] hover:shadow-[var(--shadow-hover)]",
+        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 text-left transition",
+        "hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
       )}
     >
-      <div className="flex size-12 items-center justify-center rounded-2xl bg-[var(--surface-muted)] text-[var(--accent-primary)]">
+      <div className="flex size-11 items-center justify-center rounded bg-[var(--surface-muted)] text-[var(--accent-primary)]">
         <Icon size={18} />
       </div>
 
       <div className="min-w-0 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="truncate text-base font-semibold text-[var(--text-primary)]">
-            {item.name}
-          </h3>
-          <AppBadge tone="success">active</AppBadge>
-          <AppBadge>
-            {schemaCount} schema{schemaCount === 1 ? "" : "s"}
-          </AppBadge>
-        </div>
+        <h3 className="truncate text-base font-semibold text-[var(--text-primary)]">{item.name}</h3>
 
         <p className="text-sm font-medium text-[var(--text-secondary)]">
           {getModelAlgorithmLabel(item)}
@@ -69,7 +60,7 @@ export function ModelListItem({
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
           <span>Created {formatTimestamp(item.createdAt)}</span>
-          <span>Updated {formatTimestamp(item.createdAt)}</span>
+          <span>Updated {formatTimestamp(item.updatedAt)}</span>
           <span>{item.fileName}</span>
         </div>
       </div>
@@ -83,7 +74,7 @@ export function ModelListItem({
             onAction={(action) => onAction(action, item)}
           />
         ) : null}
-        <div className="flex size-10 items-center justify-center rounded-full text-[var(--text-muted)]">
+        <div className="flex size-10 items-center justify-center rounded text-[var(--text-muted)]">
           <ArrowRight size={16} />
         </div>
       </div>

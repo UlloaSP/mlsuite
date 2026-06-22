@@ -11,4 +11,6 @@ export interface ModelDto {
   fileName: string;
   inputSchema: Record<string, unknown>;
   createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
 }

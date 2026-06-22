@@ -86,6 +86,7 @@ CREATE TABLE
         input_schema JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        archived_at TIMESTAMPTZ,
         CONSTRAINT pk_model PRIMARY KEY (id),
         CONSTRAINT fk_model_user FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE,
         CONSTRAINT fk_model_organization FOREIGN KEY (organization_id) REFERENCES organization (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE,

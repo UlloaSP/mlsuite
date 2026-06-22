@@ -17,4 +17,6 @@ public interface PredictionResultRepository extends JpaRepository<PredictionResu
             AND r.run.schemaVersion.schema.organization.id = :organizationId
             """)
     Optional<PredictionResult> findByIdAndOrganizationId(Long id, Long organizationId);
+
+    boolean existsByModelId(Long modelId);
 }
