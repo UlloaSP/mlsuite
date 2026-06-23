@@ -1,5 +1,12 @@
 # Lessons
 
+## 2026-06-23 - Sidebar shortcut and collapsed navigation correction
+
+- Correction: `Alt+Shift+1` did not navigate second-level items because browsers report shifted digit keys as symbols like `!`, not `"1"`.
+- Rule: shortcut digit helpers must normalize shifted digit symbols or use a physical-code strategy; tests need at least one `Shift+digit` symbol case.
+- Correction: collapsed sidebar still showed submenu chevrons/expanded-only hints, creating a broken visual rail.
+- Rule: collapsed sidebar rows must hide expanded-only affordances, including submenu chevrons, shortcut hint badges, and submenu containers.
+
 ## 2026-06-23 - Workspace org navigation correction
 
 - Correction: Organizations was exposed from org-scoped `canViewOrganization`, but product intent is superadmin-only global org access.

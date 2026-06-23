@@ -1,3 +1,39 @@
+# Sidebar Keyboard Shortcuts
+
+## Goal
+
+- [x] Add keyboard shortcuts for sidebar Actions.
+- [x] Add `Alt+1..9` shortcuts for top-level sidebar navigation.
+- [x] Add `Alt+Shift+1..9` shortcuts for the visible second-level navigation.
+- [x] Show transient numeric hints while `Alt` is held.
+
+## Plan
+
+- [x] Add a small keyboard shortcut helper for typing-target and modifier checks.
+- [x] Wire top-level and active/open child navigation shortcuts into `SidebarNavigation`.
+- [x] Render compact numeric hint badges while `Alt` is pressed.
+- [x] Wire dark mode/fullscreen action shortcuts and show all action hints.
+- [x] Run focused/full frontend verification, line-count check, diff check, and graph update.
+
+## Review
+
+- `Alt+1..9` now navigates the visible top-level sidebar items.
+- `Alt+Shift+1..9` now navigates the children of the active/open sidebar group, including shifted digit key symbols like `!`.
+- Holding `Alt` shows compact number badges on top-level and second-level sidebar items only while the sidebar is expanded.
+- Collapsed sidebar hides submenu chevrons, shortcut hint badges, and submenu containers.
+- Actions now display shortcuts: `Ctrl/Cmd+K`, `Ctrl/Cmd+Shift+L`, `Ctrl/Cmd+Shift+F`, and `Ctrl/Cmd+B`.
+- Added shared keyboard shortcut helpers plus focused helper tests.
+- Captured the shifted-digit/collapsed-affordance correction in `tasks/lessons.md`.
+- Verification:
+  - `frontend`: `vp check --fix src/app/components/SidebarNavigation.tsx src/app/components/SidebarActions.tsx src/app/components/sidebar-navigation-support.ts src/app/utils/keyboard-shortcuts.ts test/keyboard-shortcuts.test.ts` passed.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/keyboard-shortcuts.test.ts` passed, 3 tests.
+  - `frontend`: `vp test` passed, 33 files / 114 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 249 existing warnings and no new warnings in touched files.
+  - Repo: touched source files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
 # Sidebar Submenu Dropdown Stability
 
 ## Goal
