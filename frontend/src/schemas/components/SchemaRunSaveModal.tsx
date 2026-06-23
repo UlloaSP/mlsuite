@@ -7,6 +7,7 @@ import { Save, X } from "lucide-react";
 import { AnimatePresence, m as motion } from "motion/react";
 import { useAtom } from "jotai";
 import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
   AppCopy,
@@ -115,14 +116,18 @@ export function SchemaRunSaveModal({
     onSave(request, feedback);
   };
 
-  return (
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {open && pendingRun ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-x-0 bottom-0 top-[88px] z-40 flex bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[10000] flex bg-black/40 backdrop-blur-sm"
           onClick={onCancel}
         >
           <motion.div
@@ -130,7 +135,7 @@ export function SchemaRunSaveModal({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-            className="relative z-50 m-6 flex max-h-[calc(100dvh-136px)] flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
+            className="relative z-[10001] m-6 flex max-h-[calc(100dvh-3rem)] flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">
@@ -203,6 +208,7 @@ export function SchemaRunSaveModal({
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

@@ -9,6 +9,8 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
@@ -16,8 +18,12 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
-import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
-import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
+import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
+import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
+import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.search.application.dto.SearchGroupDto;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResultDto;
@@ -25,30 +31,41 @@ import dev.ulloasp.mlsuite.search.application.port.in.SearchWorkspaceUseCase;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @Service
 public class SearchWorkspaceService implements SearchWorkspaceUseCase {
 
     private static final int MIN_QUERY_LENGTH = 2;
     private static final int MAX_PER_GROUP = 5;
+    private static final int MAX_CANDIDATES = 25;
 
     private final WorkspaceAccessService workspaceAccessService;
+    private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final OrganizationMembershipRepository membershipRepository;
     private final TeamRepository teamRepository;
     private final ModelRepository modelRepository;
-    private final PluginCatalogUseCase pluginCatalogUseCase;
+    private final SchemaRepository schemaRepository;
+    private final PredictionRunRepository predictionRunRepository;
+    private final PluginMetadataRepository pluginMetadataRepository;
 
     public SearchWorkspaceService(
             WorkspaceAccessService workspaceAccessService,
+            WorkspaceAuthorizationService workspaceAuthorizationService,
             OrganizationMembershipRepository membershipRepository,
             TeamRepository teamRepository,
             ModelRepository modelRepository,
-            PluginCatalogUseCase pluginCatalogUseCase) {
+            SchemaRepository schemaRepository,
+            PredictionRunRepository predictionRunRepository,
+            PluginMetadataRepository pluginMetadataRepository) {
         this.workspaceAccessService = workspaceAccessService;
+        this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.membershipRepository = membershipRepository;
         this.teamRepository = teamRepository;
         this.modelRepository = modelRepository;
-        this.pluginCatalogUseCase = pluginCatalogUseCase;
+        this.schemaRepository = schemaRepository;
+        this.predictionRunRepository = predictionRunRepository;
+        this.pluginMetadataRepository = pluginMetadataRepository;
     }
 
     @Override
@@ -60,21 +77,38 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
 
         String needle = normalizedQuery.toLowerCase(Locale.ROOT);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        List<Model> models = modelRepository.findByOrganizationId(organization.getId());
+        Pageable candidates = PageRequest.of(0, MAX_CANDIDATES);
 
         List<SearchGroupDto> groups = new ArrayList<>();
-        addGroup(groups, "Organizations", matchOrganizations(userId, needle));
-        addGroup(groups, "Teams", rank(teamRepository.findByOrganizationIdOrderByNameAsc(organization.getId()), needle, this::toTeamMatch));
-        addGroup(groups, "Models", rank(models, needle, this::toModelMatch));
-        addGroup(groups, "Plugins", rank(pluginCatalogUseCase.listAll(userId), needle, this::toPluginMatch));
-        return new SearchResponseDto(normalizedQuery, groups);
-    }
-
-    private List<RankedResult> matchOrganizations(Long userId, String needle) {
-        return rank(
-                membershipRepository.findActiveByUserId(userId).stream().map(OrganizationMembership::getOrganization).toList(),
+        addGroup(groups, "Organizations", rank(
+                membershipRepository.searchActiveByUserId(userId, needle, candidates)
+                        .stream()
+                        .map(OrganizationMembership::getOrganization)
+                        .toList(),
                 needle,
-                this::toOrganizationMatch);
+                this::toOrganizationMatch));
+        addGroup(groups, "Teams", rank(
+                teamRepository.searchByOrganizationId(organization.getId(), needle, candidates),
+                needle,
+                this::toTeamMatch));
+        addGroup(groups, "Models", rank(
+                modelRepository.searchByOrganizationId(organization.getId(), needle, candidates),
+                needle,
+                this::toModelMatch));
+        addGroup(groups, "Schemas", rank(
+                schemaRepository.searchByOrganizationId(organization.getId(), needle, candidates),
+                needle,
+                this::toSchemaMatch));
+        addGroup(groups, "Prediction Runs", rank(
+                predictionRunRepository.searchByOrganizationId(organization.getId(), needle, candidates),
+                needle,
+                this::toPredictionRunMatch));
+        workspaceAuthorizationService.requirePluginView(userId, organization.getId());
+        addGroup(groups, "Plugins", rank(
+                pluginMetadataRepository.searchByOrganizationId(organization.getId(), needle, candidates),
+                needle,
+                this::toPluginMatch));
+        return new SearchResponseDto(normalizedQuery, groups);
     }
 
     private <T> List<RankedResult> rank(
@@ -151,20 +185,56 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                 model.getFileName());
     }
 
-    private Candidate toPluginMatch(PluginDto plugin) {
+    private Candidate toSchemaMatch(Schema schema) {
+        return new Candidate(
+                new SearchResultDto(
+                        "schema",
+                        String.valueOf(schema.getId()),
+                        schema.getName(),
+                        schema.getDescription(),
+                        "/schemas/" + schema.getId(),
+                        schema.getOrganization().getId(),
+                        null,
+                        null),
+                schema.getUpdatedAt(),
+                schema.getName(),
+                schema.getDescription());
+    }
+
+    private Candidate toPredictionRunMatch(PredictionRun run) {
+        Schema schema = run.getSchemaVersion().getSchema();
+        return new Candidate(
+                new SearchResultDto(
+                        "predictionRun",
+                        String.valueOf(run.getId()),
+                        run.getName(),
+                        schema.getName() + " / " + run.getStatus(),
+                        "/schemas/" + schema.getId()
+                                + "/versions/" + run.getSchemaVersion().getId()
+                                + "/runs/" + run.getId(),
+                        schema.getOrganization().getId(),
+                        null,
+                        null),
+                run.getUpdatedAt(),
+                run.getName(),
+                schema.getName());
+    }
+
+    private Candidate toPluginMatch(PluginMetadata plugin) {
         return new Candidate(
                 new SearchResultDto(
                         "plugin",
-                        plugin.id(),
-                        plugin.fileName(),
-                        "Plugin",
+                        plugin.getId(),
+                        plugin.getFileName(),
+                        plugin.getKind() == null ? "Plugin" : plugin.getKind(),
                         "/plugins",
-                        null,
+                        plugin.getOrganization().getId(),
                         null,
                         null),
-                plugin.updatedAt(),
-                plugin.fileName(),
-                plugin.source());
+                plugin.getUpdatedAt(),
+                plugin.getFileName(),
+                plugin.getPluginType(),
+                plugin.getKind());
     }
 
     private record Candidate(SearchResultDto result, OffsetDateTime updatedAt, String... terms) {

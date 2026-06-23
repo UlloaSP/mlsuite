@@ -26,6 +26,19 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
     @Query("""
             SELECT m FROM Model m
             WHERE m.organization.id = :organizationId
+            AND m.archivedAt IS NULL
+            AND (
+                lower(m.name) LIKE lower(concat('%', :search, '%'))
+                OR lower(m.type) LIKE lower(concat('%', :search, '%'))
+                OR lower(m.specificType) LIKE lower(concat('%', :search, '%'))
+                OR lower(m.fileName) LIKE lower(concat('%', :search, '%'))
+            )
+            """)
+    List<Model> searchByOrganizationId(Long organizationId, String search, Pageable pageable);
+
+    @Query("""
+            SELECT m FROM Model m
+            WHERE m.organization.id = :organizationId
             AND (:includeArchived = true OR m.archivedAt IS NULL)
             AND (:archivedOnly = false OR m.archivedAt IS NOT NULL)
             AND (

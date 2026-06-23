@@ -14,6 +14,8 @@
 - Rule: app chrome must live in one persistent layout route; permission wrappers belong inside the outlet content so navigation replaces pages, not the shell.
 - Correction: collapsed 52px sidebar was too tight for the shadcn-style org/user controls even after padding adjustments.
 - Rule: shadcn-style collapsed rails need enough rail width for icon/avatar controls plus padding; prefer the component's original collapsed width over forcing the old 52px rail.
+- Correction: sidebar/header migration left schema save modal below app chrome, so overlay did not cover the right sidebar.
+- Rule: app-level modals must render above persistent shell chrome and be checked with expanded/collapsed sidebar visible; portal modal overlays to `document.body` or use a z-index above sidebar/header.
 
 ## 2026-06-22 - Schema preview correction
 

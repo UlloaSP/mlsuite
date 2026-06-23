@@ -1,3 +1,67 @@
+# Modal Shell Overlay Fix
+
+## Goal
+
+- [x] Make schema save modal cover persistent sidebar/header chrome.
+- [x] Preserve existing save modal content and animations.
+
+## Plan
+
+- [x] Move schema save modal overlay into a document-body portal with shell-safe z-index.
+- [x] Run focused frontend checks, line-count, diff check, graph update.
+
+## Review
+
+- `SchemaRunSaveModal` now renders through `createPortal(..., document.body)` so it is not constrained by the app content/shell stacking context.
+- Overlay now uses full viewport `fixed inset-0` and `z-[10000]`, above sidebar/header and existing portal popovers.
+- Existing content, save flow, feedback questionnaire, and slide animation are unchanged.
+- Captured sidebar/modal lesson in `tasks/lessons.md`.
+- Verification:
+  - `frontend`: `vp check --fix src/schemas/components/SchemaRunSaveModal.tsx` passed.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 247 existing warnings.
+  - Repo: touched source line-count passed; `SchemaRunSaveModal.tsx` has 201 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
+# Global Search Postgres Phase 1
+
+## Goal
+
+- [x] Move global search filtering from in-memory scans to scoped DB queries.
+- [x] Include schemas and prediction runs in global search.
+- [x] Persist plugin metadata in DB while keeping plugin source in object storage.
+- [x] Add PostgreSQL `pg_trgm` indexes for phase 1.5 without adding a migration tool.
+- [x] Keep frontend search result contract aligned with backend result types.
+
+## Plan
+
+- [x] Add plugin metadata entity/repository and write/delete metadata from plugin service.
+- [x] Add repository search queries for organizations, teams, models, schemas, prediction runs, and plugin metadata.
+- [x] Refactor `SearchWorkspaceService` to use DB-filtered candidates and preserve existing ranking/group shape.
+- [x] Add PostgreSQL-only trigram index initializer.
+- [x] Update frontend search result type/icons.
+- [x] Update focused backend tests, run focused API/frontend checks, line-count check, diff check, graph update.
+
+## Review
+
+- Global search now uses DB-filtered repository queries for organizations, teams, models, schemas, prediction runs, and persisted plugin metadata.
+- Added `plugin_metadata` JPA entity/repository. Plugin upload writes metadata, catalog reads backfill existing object-storage plugins, and delete removes metadata.
+- Added PostgreSQL-only `pg_trgm` initializer with idempotent extension/index statements; non-PostgreSQL test DBs no-op.
+- Frontend search result types/icons now include schema and prediction run results.
+- Verification:
+  - `api`: `mvn "-Dtest=SearchWorkspaceServiceTest,SearchControllerTest,PluginServiceImplTest,PluginControllerTest" test` passed, 9 tests.
+  - `api`: `mvn -DskipTests package` passed.
+  - `api`: full `mvn test` blocked by existing stale `dev.ulloasp.mlsuite.prediction.ExplanationFeedbackControllerTest` requiring missing `dev/ulloasp/mlsuite/prediction/domain/model/ExplanationFeedback`.
+  - `frontend`: `vp check --fix src/api/search/dtos/search-result-type.ts src/search/components/SearchResultItem.tsx` passed.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 247 existing warnings.
+  - Repo: changed/new source line-count check passed, no changed source file over 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
 # Shadcn Radix Sidebar Migration
 
 ## Goal

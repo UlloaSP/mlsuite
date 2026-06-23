@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
 import dev.ulloasp.mlsuite.plugin.application.service.PluginServiceImpl;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
@@ -41,6 +42,8 @@ class PluginServiceImplTest {
     private WorkspaceAccessService workspaceAccessService;
     @Mock
     private WorkspaceAuthorizationService workspaceAuthorizationService;
+    @Mock
+    private PluginMetadataRepository pluginMetadataRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private PluginServiceImpl service;
@@ -56,7 +59,8 @@ class PluginServiceImplTest {
                 objectMapper,
                 userLookupService,
                 workspaceAccessService,
-                workspaceAuthorizationService);
+                workspaceAuthorizationService,
+                pluginMetadataRepository);
         objects = Map.of(
                 "organizations/41/plugins/items/field.json", bytes(plugin(
                         "field", "alpha.ts", "export default defineFieldKind({ kind: \"alpha-field\" });")),

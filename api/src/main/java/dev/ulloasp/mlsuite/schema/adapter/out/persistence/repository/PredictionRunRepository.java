@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -22,6 +23,16 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
 
     @Query("SELECT COALESCE(MAX(r.id), 0) FROM PredictionRun r")
     Long findLastPredictionRunId();
+
+    @Query("""
+            SELECT r FROM PredictionRun r
+            WHERE r.schemaVersion.schema.organization.id = :organizationId
+            AND (
+                lower(r.name) LIKE lower(concat('%', :search, '%'))
+                OR lower(r.schemaVersion.schema.name) LIKE lower(concat('%', :search, '%'))
+            )
+            """)
+    List<PredictionRun> searchByOrganizationId(Long organizationId, String search, Pageable pageable);
 
     boolean existsBySchemaVersionIdAndName(Long schemaVersionId, String name);
 

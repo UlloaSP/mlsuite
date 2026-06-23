@@ -18,6 +18,17 @@ public interface SchemaRepository extends JpaRepository<Schema, Long> {
     @Query("""
             SELECT s FROM Schema s
             WHERE s.organization.id = :organizationId
+            AND s.archivedAt IS NULL
+            AND (
+                lower(s.name) LIKE lower(concat('%', :search, '%'))
+                OR lower(coalesce(s.description, '')) LIKE lower(concat('%', :search, '%'))
+            )
+            """)
+    List<Schema> searchByOrganizationId(Long organizationId, String search, Pageable pageable);
+
+    @Query("""
+            SELECT s FROM Schema s
+            WHERE s.organization.id = :organizationId
             AND (:includeArchived = true OR s.archivedAt IS NULL)
             AND (:archivedOnly = false OR s.archivedAt IS NOT NULL)
             AND (

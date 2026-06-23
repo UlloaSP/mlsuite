@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -17,6 +18,18 @@ public interface OrganizationMembershipRepository extends JpaRepository<Organiza
 
     @Query("SELECT m FROM OrganizationMembership m WHERE m.user.id = :userId AND m.status = 'ACTIVE' ORDER BY m.organization.name ASC")
     List<OrganizationMembership> findActiveByUserId(Long userId);
+
+    @Query("""
+            SELECT m FROM OrganizationMembership m
+            WHERE m.user.id = :userId
+            AND m.status = 'ACTIVE'
+            AND (
+                lower(m.organization.name) LIKE lower(concat('%', :search, '%'))
+                OR lower(m.organization.slug) LIKE lower(concat('%', :search, '%'))
+                OR lower(coalesce(m.organization.description, '')) LIKE lower(concat('%', :search, '%'))
+            )
+            """)
+    List<OrganizationMembership> searchActiveByUserId(Long userId, String search, Pageable pageable);
 
     Optional<OrganizationMembership> findByOrganizationIdAndUserId(Long organizationId, Long userId);
 
