@@ -103,6 +103,7 @@ export function ModelsPage() {
         <AppPageHeader
           eyebrow="Models"
           title="Models"
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Models" }]}
           description={`Navigate models and inspect generated schema snapshots for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
           actions={
             canCreateModels ? (

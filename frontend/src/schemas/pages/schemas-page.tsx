@@ -112,6 +112,7 @@ export function SchemasPage() {
         <AppPageHeader
           eyebrow="Schemas"
           title="Schemas"
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Schemas" }]}
           description={`Navigate schema snapshots for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
           actions={
             canCreateSchemas ? (
