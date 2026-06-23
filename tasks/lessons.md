@@ -4,6 +4,8 @@
 
 - Correction: Vite dev loaded missing `/runtime-config.js` and `.env` forced cross-origin `https://localhost:8443`, so startup readiness failed with browser CORS before app UI rendered.
 - Rule: local Vite dev must serve a concrete runtime config and default backend calls to same-origin `/api`; deploy/runtime config owns absolute backend URLs.
+- Correction: user preferred removing frontend `.env.*` and runtime config duplication once global `.env` was confirmed as the config source.
+- Rule: frontend backend URL config must have one path only: global `.env` into Docker build args for bundled env, otherwise same-origin fallback; do not keep runtime env files/scripts that imply a second source.
 - Correction: sidebar migration moved the rail left, widened collapsed state, and made the collapse action icon-only.
 - Rule: when replacing a layout primitive, preserve explicit product layout invariants first: side, previous measured width, and visible action labels unless the user asks to change them.
 - Correction: putting Actions inside sidebar scroll content made route/menu changes feel like the rail jumped.

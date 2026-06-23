@@ -29,16 +29,18 @@
 - Restored the first shadcn-sidebar widths: `17rem` expanded and `4.25rem` collapsed; header/footer use normal padding again.
 - Centered collapsed org and user controls with `mx-auto` because those controls are fixed `size-9` instead of full-width menu rows.
 - Fixed the actual collapsed offset: hidden org/user labels and chevrons no longer reserve flex width, so the visible icon/avatar stays centered inside its button.
-- Fixed local Vite startup config after browser verification: dev now serves `/runtime-config.js`, keeps `VITE_BACKEND_URL` empty, and proxies `/api` to `http://localhost:8080`.
+- Removed duplicate frontend env files and runtime config script; frontend now reads build-time `import.meta.env.VITE_BACKEND_URL` only, with same-origin fallback.
+- Confirmed `docker-compose.dev.yml` passes global `.env` `VITE_BACKEND_URL` to the frontend Docker build through `build.args`; removed unused runtime `environment` entries.
 - No runtime dependencies added; used existing `radix-ui`, `lucide-react`, and app `cx`/tokens.
 - Verification:
   - `frontend`: `vp check --fix ...` passed for touched sidebar/header/shell files.
   - `frontend`: `vp exec tsc -b --pretty false` passed.
   - `frontend`: `vp test` passed, 32 files / 111 tests.
   - `frontend`: protected-route shell persistence and smoother sidebar transition changes also passed `vp check --fix ...`, `vp exec tsc -b --pretty false`, `vp test`, and `vp build`.
+  - `frontend/config`: `runtime-config.js` references removed; `docker compose -f docker-compose.dev.yml config` shows `VITE_BACKEND_URL` only under frontend `build.args`, and no frontend runtime environment entry.
   - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 247 existing warnings and no errors.
   - `frontend`: `vp build` passed with existing chunk/dynamic-import warnings.
-  - Browser preview: Vite dev server on `http://127.0.0.1:5176`; `/runtime-config.js` and `/workspace` returned 200. Browser now calls same-origin `http://127.0.0.1:5176/api/readiness`; remaining `502` is backend unavailable at `http://localhost:8080`, not script 404 or CORS.
+  - Browser preview: Vite dev server on `http://127.0.0.1:5176`; `/workspace` returned 200. Browser calls same-origin `/api/readiness`; remaining `502` is backend unavailable at `http://localhost:8080`, not script 404 or CORS.
   - Repo: changed source line-count check passed, no changed source file over 300 non-comment lines.
   - Repo: `git diff --check` passed with CRLF warnings only.
   - Repo: `graphify update .` passed; `graph.html` skipped because graph has 11134 nodes over graphify viz limit.
