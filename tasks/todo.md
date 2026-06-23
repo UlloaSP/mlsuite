@@ -1,3 +1,29 @@
+# Global Search Lightweight Token Matching
+
+## Goal
+
+- [x] Fix global search word separation without adding a search engine or runtime dependency.
+- [x] Keep database queries as scoped candidate prefilter.
+- [x] Rank results by token-aware matches across candidate fields.
+
+## Plan
+
+- [x] Add a small backend text matcher for normalization, tokenization, and scoring.
+- [x] Use the best query token for repository prefiltering, then require all query tokens in service ranking.
+- [x] Cover multi-word, separator, and camelCase searches in the existing search service test file.
+- [x] Run focused API tests, line-count check, diff check, and graph update.
+
+## Review
+
+- Added lightweight search text matching: lower-case, accent folding, camelCase splitting, separator tokenization, and all-token scoring.
+- Search repositories still act as scoped candidate prefilters using the longest query token; no runtime dependency or external search engine added.
+- Service ranking now matches tokens across candidate fields, so terms split across `RandomForest`, `audit-tool.zip`, and `Schema Report` behave consistently.
+- Verification so far:
+  - `api`: `mvn "-Dtest=SearchWorkspaceServiceTest,SearchControllerTest" test` passed, 6 tests.
+  - Repo: changed search source/test files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
 # Global Search Modal And User Notifications
 
 ## Goal

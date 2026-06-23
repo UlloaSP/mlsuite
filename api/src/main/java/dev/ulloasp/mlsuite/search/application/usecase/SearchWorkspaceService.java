@@ -4,10 +4,8 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +26,8 @@ import dev.ulloasp.mlsuite.search.application.dto.SearchGroupDto;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResultDto;
 import dev.ulloasp.mlsuite.search.application.port.in.SearchWorkspaceUseCase;
+import dev.ulloasp.mlsuite.search.application.service.SearchTextMatcher;
+import dev.ulloasp.mlsuite.search.application.service.SearchTextMatcher.SearchTextQuery;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -70,54 +70,54 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
 
     @Override
     public SearchResponseDto search(Long userId, String query) {
-        String normalizedQuery = query == null ? "" : query.trim();
-        if (normalizedQuery.length() < MIN_QUERY_LENGTH) {
-            return new SearchResponseDto(normalizedQuery, List.of());
+        SearchTextQuery searchQuery = SearchTextMatcher.parse(query);
+        if (searchQuery.tooShort(MIN_QUERY_LENGTH)) {
+            return new SearchResponseDto(searchQuery.raw(), List.of());
         }
 
-        String needle = normalizedQuery.toLowerCase(Locale.ROOT);
+        String prefilter = searchQuery.prefilter();
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         Pageable candidates = PageRequest.of(0, MAX_CANDIDATES);
 
         List<SearchGroupDto> groups = new ArrayList<>();
         addGroup(groups, "Organizations", rank(
-                membershipRepository.searchActiveByUserId(userId, needle, candidates)
+                membershipRepository.searchActiveByUserId(userId, prefilter, candidates)
                         .stream()
                         .map(OrganizationMembership::getOrganization)
                         .toList(),
-                needle,
+                searchQuery,
                 this::toOrganizationMatch));
         addGroup(groups, "Teams", rank(
-                teamRepository.searchByOrganizationId(organization.getId(), needle, candidates),
-                needle,
+                teamRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                searchQuery,
                 this::toTeamMatch));
         addGroup(groups, "Models", rank(
-                modelRepository.searchByOrganizationId(organization.getId(), needle, candidates),
-                needle,
+                modelRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                searchQuery,
                 this::toModelMatch));
         addGroup(groups, "Schemas", rank(
-                schemaRepository.searchByOrganizationId(organization.getId(), needle, candidates),
-                needle,
+                schemaRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                searchQuery,
                 this::toSchemaMatch));
         addGroup(groups, "Prediction Runs", rank(
-                predictionRunRepository.searchByOrganizationId(organization.getId(), needle, candidates),
-                needle,
+                predictionRunRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                searchQuery,
                 this::toPredictionRunMatch));
         workspaceAuthorizationService.requirePluginView(userId, organization.getId());
         addGroup(groups, "Plugins", rank(
-                pluginMetadataRepository.searchByOrganizationId(organization.getId(), needle, candidates),
-                needle,
+                pluginMetadataRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
+                searchQuery,
                 this::toPluginMatch));
-        return new SearchResponseDto(normalizedQuery, groups);
+        return new SearchResponseDto(searchQuery.raw(), groups);
     }
 
     private <T> List<RankedResult> rank(
             List<T> items,
-            String needle,
+            SearchTextQuery query,
             Function<T, Candidate> candidateFactory) {
         return items.stream()
                 .map(candidateFactory)
-                .map(candidate -> candidate.toRanked(needle))
+                .map(candidate -> candidate.toRanked(query))
                 .filter(Objects::nonNull)
                 .sorted(Comparator
                         .comparingInt(RankedResult::rank)
@@ -238,22 +238,9 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
     }
 
     private record Candidate(SearchResultDto result, OffsetDateTime updatedAt, String... terms) {
-        private RankedResult toRanked(String needle) {
-            return Stream.of(terms)
-                    .filter(Objects::nonNull)
-                    .map(term -> score(term, needle))
-                    .filter(score -> score >= 0)
-                    .min(Integer::compareTo)
-                    .map(score -> new RankedResult(score, updatedAt, result))
-                    .orElse(null);
-        }
-
-        private int score(String term, String needle) {
-            String normalized = term.toLowerCase(Locale.ROOT);
-            if (normalized.startsWith(needle)) {
-                return 0;
-            }
-            return normalized.contains(needle) ? 1 : -1;
+        private RankedResult toRanked(SearchTextQuery query) {
+            int score = SearchTextMatcher.score(query, terms);
+            return score < 0 ? null : new RankedResult(score, updatedAt, result);
         }
     }
 
