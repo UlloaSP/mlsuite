@@ -1,3 +1,33 @@
+# Sidebar Submenu Dropdown Stability
+
+## Goal
+
+- [x] Make second-level sidebar navigation behave like a shadcn-style dropdown.
+- [x] Stop Overview from staying selected on deeper Workspace routes.
+- [x] Keep submenus from snapping open/closed during child navigation.
+
+## Plan
+
+- [x] Add explicit submenu open state seeded from the active route.
+- [x] Make parent rows with children toggle the submenu instead of always navigating.
+- [x] Tighten child active matching for exact, query, and nested child routes.
+- [x] Add smooth height/opacity transition using existing sidebar primitives and tokens.
+- [x] Run focused frontend verification, line-count check, diff check, and graph update.
+
+## Review
+
+- Sidebar parents with children now render as toggle buttons with chevrons; child links remain normal route links.
+- Open state is derived from active route unless the user toggles it, so child navigation no longer remounts the submenu abruptly.
+- Overview children use exact matching; query tab children match exact `pathname + search`; nested child pages still stay selected under their child item.
+- Verification:
+  - `frontend`: `vp check --fix src/app/components/SidebarNavigation.tsx` passed.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 249 existing warnings and no `SidebarNavigation` warning.
+  - Browser preview: Vite served `http://127.0.0.1:5173`; protected sidebar route redirected to auth because `/api/users/me` returned 401, so sidebar visual interaction was blocked by auth.
+  - Repo: `SidebarNavigation.tsx` has 227 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
 # Global Search Lightweight Token Matching
 
 ## Goal

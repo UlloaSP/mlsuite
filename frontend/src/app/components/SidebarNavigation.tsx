@@ -9,6 +9,7 @@ import {
   Blocks,
   BrainCircuit,
   Building2,
+  ChevronRight,
   ClipboardList,
   KeyRound,
   LayoutGrid,
@@ -21,9 +22,11 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { useState } from "react";
 import { Link, useLocation } from "react-router";
 import { useUser } from "../../api/user/hooks";
 import { useWorkspaceContext } from "../../api/workspace/hooks";
+import { cx } from "./cx";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -42,19 +45,40 @@ type NavigationItem = {
   icon: LucideIcon;
   label: string;
   activeWhen?: (pathname: string) => boolean;
-  children?: Array<{ to: string; icon: LucideIcon; label: string }>;
+  children?: Array<{ to: string; icon: LucideIcon; label: string; exact?: boolean }>;
 };
 
 const INFRA_CHILDREN: NavigationItem["children"] = [
-  { to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview" },
+  { to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview", exact: true },
   { to: "/admin/infrastructure?tab=services", icon: Server, label: "Services" },
   { to: "/admin/infrastructure?tab=logs", icon: List, label: "Logs" },
   { to: "/admin/infrastructure?tab=terminal", icon: SquareTerminal, label: "Terminal" },
   { to: "/admin/infrastructure?tab=alerts", icon: AlertTriangle, label: "Alerts" },
 ];
 
+function splitHref(to: string) {
+  const [pathname, search = ""] = to.split("?");
+  return { pathname, search: search ? `?${search}` : "" };
+}
+
+function isChildActive(
+  child: { to: string; exact?: boolean },
+  currentPath: string,
+  pathname: string,
+) {
+  const childHref = splitHref(child.to);
+  const childPath = `${childHref.pathname}${childHref.search}`;
+
+  if (child.exact || childHref.search) {
+    return currentPath === childPath;
+  }
+
+  return pathname === childHref.pathname || pathname.startsWith(`${childHref.pathname}/`);
+}
+
 export function SidebarNavigation() {
   const location = useLocation();
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const { data: user } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const permissions = workspace?.permissions;
@@ -63,7 +87,7 @@ export function SidebarNavigation() {
     ? `/workspace/organizations/${workspace.currentOrganization.id}`
     : undefined;
   const workspaceChildren: NavigationItem["children"] = [
-    { to: "/workspace", icon: LayoutGrid, label: "Overview" },
+    { to: "/workspace", icon: LayoutGrid, label: "Overview", exact: true },
     ...(permissions?.canViewTeams && currentOrganizationPath
       ? [{ to: `${currentOrganizationPath}/teams`, icon: Users, label: "Teams" }]
       : []),
@@ -130,6 +154,9 @@ export function SidebarNavigation() {
         ]
       : []),
   ];
+  const isParentActive = (item: NavigationItem) =>
+    item.activeWhen?.(location.pathname) ??
+    (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
 
   return (
     <SidebarGroup>
@@ -137,40 +164,71 @@ export function SidebarNavigation() {
       <SidebarGroupContent>
         <SidebarMenu aria-label="Main navigation">
           {navigation.map((item) => {
-            const active =
-              item.activeWhen?.(location.pathname) ??
-              (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
+            const active = isParentActive(item);
+            const hasChildren = Boolean(item.children?.length);
+            const open = openItems[item.to] ?? active;
             const Icon = item.icon;
 
             return (
               <SidebarMenuItem key={item.to}>
-                <SidebarMenuButton asChild isActive={active} title={item.label}>
-                  <Link to={item.to} viewTransition>
+                {hasChildren ? (
+                  <SidebarMenuButton
+                    aria-expanded={open}
+                    isActive={active}
+                    onClick={() =>
+                      setOpenItems((current) => ({
+                        ...current,
+                        [item.to]: !(current[item.to] ?? active),
+                      }))
+                    }
+                    title={item.label}
+                    type="button"
+                  >
                     <Icon size={18} className="shrink-0" />
                     <SidebarLabel className="truncate">{item.label}</SidebarLabel>
-                  </Link>
-                </SidebarMenuButton>
-                {item.children && active ? (
-                  <SidebarMenuSub>
-                    {item.children.map((child) => {
-                      const childActive =
-                        currentPath === child.to ||
-                        location.pathname.startsWith(`${child.to}/`) ||
-                        (child.to === item.to && currentPath === `${item.to}?tab=overview`);
-                      const ChildIcon = child.icon;
+                    <ChevronRight
+                      size={15}
+                      className={cx(
+                        "ml-auto shrink-0 transition-transform duration-200",
+                        open && "rotate-90",
+                      )}
+                    />
+                  </SidebarMenuButton>
+                ) : (
+                  <SidebarMenuButton asChild isActive={active} title={item.label}>
+                    <Link to={item.to} viewTransition>
+                      <Icon size={18} className="shrink-0" />
+                      <SidebarLabel className="truncate">{item.label}</SidebarLabel>
+                    </Link>
+                  </SidebarMenuButton>
+                )}
+                {item.children ? (
+                  <div
+                    className={cx(
+                      "grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                    )}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <SidebarMenuSub>
+                        {item.children.map((child) => {
+                          const childActive = isChildActive(child, currentPath, location.pathname);
+                          const ChildIcon = child.icon;
 
-                      return (
-                        <SidebarMenuSubItem key={child.to}>
-                          <SidebarMenuSubButton asChild isActive={childActive}>
-                            <Link to={child.to} viewTransition>
-                              <ChildIcon size={14} className="shrink-0" />
-                              <span className="truncate">{child.label}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      );
-                    })}
-                  </SidebarMenuSub>
+                          return (
+                            <SidebarMenuSubItem key={child.to}>
+                              <SidebarMenuSubButton asChild isActive={childActive}>
+                                <Link to={child.to} viewTransition>
+                                  <ChildIcon size={14} className="shrink-0" />
+                                  <span className="truncate">{child.label}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </div>
+                  </div>
                 ) : null}
               </SidebarMenuItem>
             );
