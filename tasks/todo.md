@@ -1,3 +1,48 @@
+# Shadcn Radix Sidebar Migration
+
+## Goal
+
+- [x] Replace current custom right sidebar with shadcn/Radix-style composable sidebar.
+- [x] Move organization switcher into sidebar header with shadcn example layout.
+- [x] Move user account control into sidebar footer with shadcn example layout.
+- [x] Preserve Actions section and make collapse one action inside it.
+- [x] Avoid new runtime dependencies unless local Radix package cannot cover a primitive.
+
+## Plan
+
+- [x] Add small sidebar primitives under app design-system layer, split below 300 lines.
+- [x] Add sidebar organization header matching shadcn demo shape.
+- [x] Add sidebar user footer matching shadcn demo shape.
+- [x] Rebuild app sidebar content/actions/navigation on those primitives.
+- [x] Update shell/header so org/user move out of header without losing mobile access.
+- [x] Run typecheck, frontend checks, line-count check, browser verification, graph update.
+
+## Review
+
+- Added local shadcn/Radix-style sidebar primitives under `src/app/components/app-sidebar`.
+- Rebuilt app sidebar as left rail with organization header, navigation/content, preserved Actions group, and user footer.
+- Removed old header org/user menus and old tile/section sidebar helpers.
+- Shell now uses `SidebarProvider` + `SidebarInset`; mobile header has a sidebar trigger.
+- Corrected sidebar regression after review: sidebar stays on the right, uses previous 260px/52px widths, and collapse shows text inside Actions when expanded.
+- Corrected sidebar placement/transition feedback: Actions are fixed at the bottom above the user footer, and sidebar links opt into route view transitions.
+- Corrected transition feedback: protected routes now share one persistent `AppShellFrame`, route view transitions target only page content, and sidebar labels animate during collapse/expand instead of mounting abruptly.
+- Restored the first shadcn-sidebar widths: `17rem` expanded and `4.25rem` collapsed; header/footer use normal padding again.
+- Centered collapsed org and user controls with `mx-auto` because those controls are fixed `size-9` instead of full-width menu rows.
+- Fixed the actual collapsed offset: hidden org/user labels and chevrons no longer reserve flex width, so the visible icon/avatar stays centered inside its button.
+- Fixed local Vite startup config after browser verification: dev now serves `/runtime-config.js`, keeps `VITE_BACKEND_URL` empty, and proxies `/api` to `http://localhost:8080`.
+- No runtime dependencies added; used existing `radix-ui`, `lucide-react`, and app `cx`/tokens.
+- Verification:
+  - `frontend`: `vp check --fix ...` passed for touched sidebar/header/shell files.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: protected-route shell persistence and smoother sidebar transition changes also passed `vp check --fix ...`, `vp exec tsc -b --pretty false`, `vp test`, and `vp build`.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 247 existing warnings and no errors.
+  - `frontend`: `vp build` passed with existing chunk/dynamic-import warnings.
+  - Browser preview: Vite dev server on `http://127.0.0.1:5176`; `/runtime-config.js` and `/workspace` returned 200. Browser now calls same-origin `http://127.0.0.1:5176/api/readiness`; remaining `502` is backend unavailable at `http://localhost:8080`, not script 404 or CORS.
+  - Repo: changed source line-count check passed, no changed source file over 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph has 11134 nodes over graphify viz limit.
+
 # Schemas Catalog Pagination And Actions
 
 ## Goal

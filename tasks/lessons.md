@@ -1,5 +1,18 @@
 # Lessons
 
+## 2026-06-23 - Frontend dev runtime config correction
+
+- Correction: Vite dev loaded missing `/runtime-config.js` and `.env` forced cross-origin `https://localhost:8443`, so startup readiness failed with browser CORS before app UI rendered.
+- Rule: local Vite dev must serve a concrete runtime config and default backend calls to same-origin `/api`; deploy/runtime config owns absolute backend URLs.
+- Correction: sidebar migration moved the rail left, widened collapsed state, and made the collapse action icon-only.
+- Rule: when replacing a layout primitive, preserve explicit product layout invariants first: side, previous measured width, and visible action labels unless the user asks to change them.
+- Correction: putting Actions inside sidebar scroll content made route/menu changes feel like the rail jumped.
+- Rule: sidebar global actions belong in a fixed bottom area above the account footer; keep scrollable navigation separate from persistent controls.
+- Correction: wrapping every protected route element in its own `AppShellFrame` remounted header/sidebar on navigation, making sidebar clicks feel like hard jumps.
+- Rule: app chrome must live in one persistent layout route; permission wrappers belong inside the outlet content so navigation replaces pages, not the shell.
+- Correction: collapsed 52px sidebar was too tight for the shadcn-style org/user controls even after padding adjustments.
+- Rule: shadcn-style collapsed rails need enough rail width for icon/avatar controls plus padding; prefer the component's original collapsed width over forcing the old 52px rail.
+
 ## 2026-06-22 - Schema preview correction
 
 - Correction: schema editor preview rendered one report for multi-model `mappedTo` because the preview used only the first target and did not expand MLForm report configs.

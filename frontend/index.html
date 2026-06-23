@@ -114,15 +114,22 @@
 
       ::view-transition-old(root),
       ::view-transition-new(root) {
-        animation-duration: 180ms;
-        animation-timing-function: ease-out;
+        animation: none;
+        mix-blend-mode: normal;
       }
 
-      ::view-transition-old(root) {
+      ::view-transition-old(app-content),
+      ::view-transition-new(app-content) {
+        animation-duration: 220ms;
+        animation-timing-function: ease-out;
+        mix-blend-mode: normal;
+      }
+
+      ::view-transition-old(app-content) {
         animation-name: app-route-fade-out;
       }
 
-      ::view-transition-new(root) {
+      ::view-transition-new(app-content) {
         animation-name: app-route-fade-in;
       }
 
@@ -176,7 +183,9 @@
         }
 
         ::view-transition-old(root),
-        ::view-transition-new(root) {
+        ::view-transition-new(root),
+        ::view-transition-old(app-content),
+        ::view-transition-new(app-content) {
           animation: none !important;
         }
       }
