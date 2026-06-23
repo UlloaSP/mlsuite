@@ -58,16 +58,9 @@ export function RolesPage() {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
-          title="Roles & Permissions"
-          description="Manage roles, templates, and access control."
-          breadcrumbs={[
-            { label: "Workspace", to: "/workspace" },
-            {
-              label: workspace?.currentOrganization.name ?? "Organization",
-              to: `/workspace/organizations/${id}`,
-            },
-            { label: "Roles & Permissions" },
-          ]}
+          title="Roles & Templates"
+          description="Manage role definitions, templates, and permission coverage."
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Roles & Templates" }]}
           actions={
             <>
               <AppButton variant="secondary" onClick={() => setTab("templates")}>

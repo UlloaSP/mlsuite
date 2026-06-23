@@ -119,14 +119,6 @@ const routes: RouteObject[] = [
                 element: workspace("canViewOrganization", <OrganizationSettingsPage />),
               },
               {
-                path: "workspace/teams/:teamId",
-                element: (
-                  <RequireTeamPermission permission="canViewTeam">
-                    <TeamDetailPage />
-                  </RequireTeamPermission>
-                ),
-              },
-              {
                 path: "invite/:token",
                 element: <InvitationAcceptPage />,
               },

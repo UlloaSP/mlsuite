@@ -10,12 +10,16 @@ import {
   BrainCircuit,
   Building2,
   ClipboardList,
+  KeyRound,
   LayoutGrid,
   List,
+  Mail,
   Server,
   ServerCog,
   ShieldCheck,
   SquareTerminal,
+  Settings,
+  Users,
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { useUser } from "../../api/user/hooks";
@@ -37,6 +41,7 @@ type NavigationItem = {
   to: string;
   icon: LucideIcon;
   label: string;
+  activeWhen?: (pathname: string) => boolean;
   children?: Array<{ to: string; icon: LucideIcon; label: string }>;
 };
 
@@ -54,9 +59,59 @@ export function SidebarNavigation() {
   const { data: workspace } = useWorkspaceContext();
   const permissions = workspace?.permissions;
   const currentPath = `${location.pathname}${location.search}`;
+  const currentOrganizationPath = workspace
+    ? `/workspace/organizations/${workspace.currentOrganization.id}`
+    : undefined;
+  const workspaceChildren: NavigationItem["children"] = [
+    { to: "/workspace", icon: LayoutGrid, label: "Overview" },
+    ...(permissions?.canViewTeams && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/teams`, icon: Users, label: "Teams" }]
+      : []),
+    ...(permissions?.canViewMembers && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/members`, icon: Users, label: "Members" }]
+      : []),
+    ...(permissions?.canViewInvitations && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/invitations`, icon: Mail, label: "Invitations" }]
+      : []),
+    ...(permissions?.canViewMembers && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/roles`, icon: KeyRound, label: "Roles & Templates" }]
+      : []),
+    ...(permissions?.canViewOrganization && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/settings`, icon: Settings, label: "Settings" }]
+      : []),
+  ];
   const navigation: NavigationItem[] = [
     ...(permissions?.canViewWorkspace
-      ? [{ to: "/workspace", icon: Building2, label: "Workspace" }]
+      ? [
+          {
+            to: "/workspace",
+            icon: Building2,
+            label: "Workspace",
+            children: workspaceChildren,
+            activeWhen: (pathname: string) =>
+              pathname === "/workspace" ||
+              Boolean(
+                currentOrganizationPath && pathname.startsWith(`${currentOrganizationPath}/`),
+              ),
+          },
+        ]
+      : []),
+    ...(user?.systemRole === "SUPERADMIN"
+      ? [
+          {
+            to: "/workspace/organizations",
+            icon: Building2,
+            label: "Organizations",
+            activeWhen: (pathname: string) =>
+              pathname === "/workspace/organizations" ||
+              pathname === "/workspace/organizations/create" ||
+              Boolean(
+                currentOrganizationPath &&
+                pathname.startsWith("/workspace/organizations/") &&
+                !pathname.startsWith(currentOrganizationPath),
+              ),
+          },
+        ]
       : []),
     ...(permissions?.canViewModels ? [{ to: "/models", icon: BrainCircuit, label: "Models" }] : []),
     ...(permissions?.canViewModels
@@ -83,7 +138,8 @@ export function SidebarNavigation() {
         <SidebarMenu aria-label="Main navigation">
           {navigation.map((item) => {
             const active =
-              location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+              item.activeWhen?.(location.pathname) ??
+              (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
             const Icon = item.icon;
 
             return (
@@ -94,11 +150,12 @@ export function SidebarNavigation() {
                     <SidebarLabel className="truncate">{item.label}</SidebarLabel>
                   </Link>
                 </SidebarMenuButton>
-                {item.children && location.pathname.startsWith(item.to) ? (
+                {item.children && active ? (
                   <SidebarMenuSub>
                     {item.children.map((child) => {
                       const childActive =
                         currentPath === child.to ||
+                        location.pathname.startsWith(`${child.to}/`) ||
                         (child.to === item.to && currentPath === `${item.to}?tab=overview`);
                       const ChildIcon = child.icon;
 

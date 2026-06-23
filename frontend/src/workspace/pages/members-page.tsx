@@ -47,14 +47,7 @@ export function MembersPage() {
         <AppPageHeader
           title="Members"
           description="Organization users, roles, and row-level permissions."
-          breadcrumbs={[
-            { label: "Workspace", to: "/workspace" },
-            {
-              label: workspace?.currentOrganization.name ?? "Organization",
-              to: `/workspace/organizations/${id}`,
-            },
-            { label: "Members" },
-          ]}
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Members" }]}
         />
         <div className="grid gap-4 md:grid-cols-4">
           <AdminStatCard

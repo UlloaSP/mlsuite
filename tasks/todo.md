@@ -1006,6 +1006,40 @@
   - Repo: `graphify update .` passed.
   - Browser: dev server returned 200; shell smoke blocked by unauthenticated `/api/users/me` 401 redirect to auth.
 
+# Workspace Navigation Cleanup
+
+## Goal
+
+- [ ] Make current workspace navigation direct from sidebar.
+- [ ] Expose organizations as a superadmin-only first-level sidebar destination.
+- [ ] Remove confusing duplicate/alternate workspace access paths where possible.
+
+## Plan
+
+- [x] Add Workspace second-level sidebar links for overview, teams, members, invitations, roles/templates, and settings.
+- [x] Add Organizations as a superadmin-only first-level sidebar item using existing `/workspace/organizations`.
+- [x] Keep Admin focused on system admin routes; avoid creating duplicate org pages.
+- [x] Normalize workspace breadcrumbs to match the new navigation model.
+- [x] Prefer canonical org-scoped team URLs and remove redundant route if unused.
+- [x] Run typecheck plus targeted navigation grep/line-count checks, then update graph.
+
+## Review
+
+- Sidebar now treats `Workspace` as the active organization area and exposes second-level links for overview, teams, members, invitations, roles/templates, and settings.
+- `Organizations` is a superadmin-only first-level sidebar destination using the existing `/workspace/organizations` page.
+- Workspace subpage breadcrumbs now match the sidebar hierarchy instead of routing back through organization admin.
+- Removed unused `/workspace/teams/:teamId`; team detail keeps canonical `/workspace/organizations/:organizationId/teams/:teamId`.
+- Organization admin overview tab now marks itself as `Overview` instead of falsely selecting `Teams`.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: touched-file `vp fmt --check ...` passed.
+  - `frontend`: full `vp fmt --check` remains blocked by pre-existing repo-wide formatting drift across 537 files.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 249 warnings.
+  - Repo: touched frontend source files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Browser: dev server returned 200; preview reached auth landing, blocked from sidebar by unauthenticated `/api/users/me` 401.
+  - Repo: `graphify update .` passed.
+
 # Schema Classifier Feedback And Input Display Fix
 
 ## Goal

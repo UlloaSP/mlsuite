@@ -85,11 +85,7 @@ export function OrganizationSettingsPage() {
           eyebrow="Workspace Settings"
           title={organization.name}
           description="Edit the identity of this organization. Ownership and member operations live in adjacent workspace views."
-          breadcrumbs={[
-            { label: "Organizations", to: "/workspace/organizations" },
-            { label: organization.name, to: `/workspace/organizations/${id}` },
-            { label: "Settings" },
-          ]}
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Settings" }]}
         />
         <div className="max-w-3xl rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-6 shadow-[var(--shadow-card)]">
           <div className="grid gap-4">

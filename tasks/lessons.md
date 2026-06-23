@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-06-23 - Workspace org navigation correction
+
+- Correction: Organizations was exposed from org-scoped `canViewOrganization`, but product intent is superadmin-only global org access.
+- Rule: distinguish current-workspace/org scoped navigation from global admin navigation; first-level `Organizations` belongs behind `SUPERADMIN` unless explicitly scoped to the active workspace.
+
 ## 2026-06-23 - Frontend dev runtime config correction
 
 - Correction: Vite dev loaded missing `/runtime-config.js` and `.env` forced cross-origin `https://localhost:8443`, so startup readiness failed with browser CORS before app UI rendered.
