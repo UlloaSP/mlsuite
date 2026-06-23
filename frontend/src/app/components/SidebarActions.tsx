@@ -95,9 +95,11 @@ export function SidebarActions() {
             >
               <Search size={18} />
               <SidebarLabel className="truncate">Global Search</SidebarLabel>
-              <SidebarLabel className="ml-auto text-[0.68rem] font-semibold text-[var(--text-muted)]">
-                Ctrl K
-              </SidebarLabel>
+              {!collapsed ? (
+                <span className="ml-auto text-[0.68rem] font-semibold text-[var(--text-muted)]">
+                  Ctrl K
+                </span>
+              ) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
