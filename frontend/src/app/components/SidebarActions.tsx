@@ -3,11 +3,19 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Maximize, Minimize, Moon, PanelRightClose, PanelRightOpen, Sun } from "lucide-react";
+import {
+  Maximize,
+  Minimize,
+  Moon,
+  PanelRightClose,
+  PanelRightOpen,
+  Search,
+  Sun,
+} from "lucide-react";
 import { useAtom } from "jotai";
 import type { MouseEvent } from "react";
 import { useRef, useState } from "react";
-import { fullscreenAtom, themeWithHtmlAtom } from "../atoms";
+import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "../atoms";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -26,6 +34,7 @@ type ViewTransitionDocument = Document & {
 export function SidebarActions() {
   const [theme, setTheme] = useAtom(themeWithHtmlAtom);
   const [isFullscreen, setIsFullscreen] = useAtom(fullscreenAtom);
+  const [searchOpen, setSearchOpen] = useAtom(globalSearchOpenAtom);
   const [themeTransitioning, setThemeTransitioning] = useState(false);
   const themeTransitioningRef = useRef(false);
   const { state, toggleSidebar } = useSidebar();
@@ -78,6 +87,19 @@ export function SidebarActions() {
       <SidebarGroupLabel>Actions</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              title="Global Search"
+              isActive={searchOpen}
+              onClick={() => setSearchOpen(true)}
+            >
+              <Search size={18} />
+              <SidebarLabel className="truncate">Global Search</SidebarLabel>
+              <SidebarLabel className="ml-auto text-[0.68rem] font-semibold text-[var(--text-muted)]">
+                Ctrl K
+              </SidebarLabel>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               title={theme === "light" ? "Dark Mode" : "Light Mode"}

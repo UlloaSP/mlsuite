@@ -1,3 +1,35 @@
+# Global Search Modal And User Notifications
+
+## Goal
+
+- [x] Restyle global search modal like the provided compact docs-search reference, with `rounded` max.
+- [x] Move notifications out of Actions into user dropdown and a dedicated page.
+- [x] Show pending notification count on the avatar.
+
+## Plan
+
+- [x] Adjust search modal/list geometry and corner radius.
+- [x] Remove notification mini-popover from Actions.
+- [x] Add notifications route/page using pending invitations.
+- [x] Add avatar count marker and dropdown link.
+- [x] Run focused frontend verification and graph update.
+
+## Review
+
+- Global search modal now uses compact docs-search geometry: flat header, integrated results, `rounded`, no pill shell.
+- Notifications are removed from sidebar Actions and added to the user dropdown as a link to `/notifications`.
+- Pending notification count is rendered on the avatar itself.
+- `/notifications` lists pending invitations with accept/decline actions and an empty state.
+- Captured avatar-count correction in `tasks/lessons.md`.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-version-selectors-and-search-shortcut.test.ts` passed, 4 tests.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: touched-file `vp fmt --check` passed.
+  - Repo: changed source files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
 # Modal Shell Overlay Fix
 
 ## Goal
@@ -915,6 +947,38 @@
   - Repo: frontend source/test line-count passed, no file >300 non-comment lines.
   - Repo: `git diff --check` passed with CRLF warnings only.
   - Repo: `graphify update .` passed.
+
+# Global Search Modal Sidebar Entry
+
+## Goal
+
+- [x] Replace fixed header search with centered global search modal.
+- [x] Open same modal from sidebar Actions and `Ctrl+K`.
+- [x] Remove global app header chrome without breaking mobile sidebar access.
+
+## Plan
+
+- [x] Reuse existing search API, debounce, result panel, and shortcut guard.
+- [x] Add global search modal mounted in app shell.
+- [x] Add sidebar Actions search button and move notifications there.
+- [x] Replace header with a mobile-only floating sidebar trigger.
+- [x] Run frontend typecheck/check plus graph update.
+
+## Review
+
+- Header global removed from app shell; mobile keeps a floating sidebar trigger.
+- Global search now mounts once in shell as centered modal, opened by sidebar Actions or `Ctrl+K`.
+- Notifications moved into sidebar Actions and their panel uses fixed positioning so sidebar overflow does not clip it.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-version-selectors-and-search-shortcut.test.ts` passed, 4 tests.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: touched-file `vp fmt --check` passed.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 247 warnings.
+  - Repo: changed frontend files are under 300 non-comment lines; existing `frontend/src/admin/infrastructure/components/ServicesView.tsx` remains 302.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+  - Browser: dev server returned 200; shell smoke blocked by unauthenticated `/api/users/me` 401 redirect to auth.
 
 # Schema Classifier Feedback And Input Display Fix
 

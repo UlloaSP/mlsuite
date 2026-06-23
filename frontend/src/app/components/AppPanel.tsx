@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { HTMLAttributes } from "react";
 import { cx } from "./cx";
 
-export function AppPanel({ children, className }: HTMLAttributes<HTMLDivElement>) {
+export function AppPanel({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cx(
@@ -15,6 +15,7 @@ export function AppPanel({ children, className }: HTMLAttributes<HTMLDivElement>
         "shadow-[var(--shadow-card)]",
         className,
       )}
+      {...props}
     >
       {children}
     </div>

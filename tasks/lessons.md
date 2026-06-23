@@ -549,3 +549,5 @@
 - Rule: every frontend algorithm export and named internal helper needs TSDoc with purpose, params, return, throws, and side cases/effects; vague folders like `run-runtime` must be renamed to a domain action/name such as `runtime-assembly`.
 - Correction: schema-review and review were the same frontend domain, but keeping both folders split ownership and made architecture misleading.
 - Rule: when two frontend feature names represent one workflow, fuse UI, API, algorithms, routes, and tests under one domain folder; keep old backend endpoint names only when they are real server contracts.
+- Correction: notification count was described as a user badge, but intended placement was specifically on the avatar.
+- Rule: when placing user-notification counts in navigation, attach the numeric marker to the avatar itself, not a generic user/menu badge.

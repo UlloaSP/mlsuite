@@ -25,6 +25,7 @@ import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-
 import { SchemaRunHistoryPage } from "../schemas/pages/schema-run-history-page";
 import { SchemaDetailPage } from "../schemas/pages/schema-detail-page";
 import { SchemasPage } from "../schemas/pages/schemas-page";
+import { NotificationsPage } from "../user/pages/notifications-page";
 import { ProfilePage } from "../user/pages/profilePage";
 import { CreateOrganizationPage } from "../workspace/pages/create-organization-page";
 import { InvitationAcceptPage } from "../workspace/pages/invitation-accept-page";
@@ -132,6 +133,10 @@ const routes: RouteObject[] = [
               {
                 path: "profile",
                 element: <ProfilePage />,
+              },
+              {
+                path: "notifications",
+                element: <NotificationsPage />,
               },
               {
                 path: "admin/users",
