@@ -89,14 +89,7 @@ export function InvitationsPage() {
         <AppPageHeader
           title="Invitations"
           description="Invite users, assign starting role, and revoke pending access."
-          breadcrumbs={[
-            { label: "Workspace", to: "/workspace" },
-            {
-              label: workspace?.currentOrganization.name ?? "Organization",
-              to: `/workspace/organizations/${id}`,
-            },
-            { label: "Invitations" },
-          ]}
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Invitations" }]}
         />
         {workspace?.permissions.canManageInvitations ? (
           <section className="border-y border-[var(--border-soft)] py-5">

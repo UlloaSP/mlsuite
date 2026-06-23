@@ -1,12 +1,4 @@
-import {
-  ArrowUpRight,
-  Building2,
-  Boxes,
-  BrainCircuit,
-  FileJson2,
-  PlayCircle,
-  Users,
-} from "lucide-react";
+import { Building2, Boxes, BrainCircuit, FileJson2, PlayCircle, Users } from "lucide-react";
 import { Link } from "react-router";
 import { cx } from "../../app/components";
 import type { SearchResultDto, SearchResultType } from "../../api/search/dtos";
@@ -40,22 +32,19 @@ export function SearchResultItem({
       onMouseDown={(event) => event.preventDefault()}
       onClick={onSelect}
       className={cx(
-        "flex items-center justify-between gap-3 rounded-[20px] px-4 py-3 transition",
+        "flex items-center justify-between gap-3 border-t border-[var(--border-soft)] px-6 py-3 transition first:border-t-0",
         active
           ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
           : "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
       )}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <div className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--surface-primary)]">
-          <Icon size={16} />
-        </div>
+        <Icon size={16} className="shrink-0 text-[var(--text-muted)]" />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{result.title}</p>
           <p className="truncate text-xs text-[var(--text-secondary)]">{result.subtitle}</p>
         </div>
       </div>
-      <ArrowUpRight size={14} className="shrink-0 text-[var(--text-muted)]" />
     </Link>
   );
 }

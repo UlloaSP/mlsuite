@@ -65,14 +65,7 @@ export function TeamsPage() {
         <AppPageHeader
           title="Team Management"
           description="Create, manage, and organize model teams."
-          breadcrumbs={[
-            { label: "Workspace", to: "/workspace" },
-            {
-              label: workspace?.currentOrganization.name ?? "Organization",
-              to: `/workspace/organizations/${id}`,
-            },
-            { label: "Teams" },
-          ]}
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Teams" }]}
           actions={
             workspace?.permissions.canCreateTeams ? (
               <AppButton onClick={() => setOpen(true)}>

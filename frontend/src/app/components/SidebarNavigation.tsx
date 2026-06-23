@@ -3,23 +3,31 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { LucideIcon } from "lucide-react";
 import {
   AlertTriangle,
   Blocks,
   BrainCircuit,
   Building2,
+  ChevronRight,
   ClipboardList,
+  KeyRound,
   LayoutGrid,
   List,
+  Mail,
   Server,
   ServerCog,
   ShieldCheck,
   SquareTerminal,
+  Settings,
+  Users,
 } from "lucide-react";
-import { Link, useLocation } from "react-router";
+import { useEffect, useEffectEvent, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useUser } from "../../api/user/hooks";
 import { useWorkspaceContext } from "../../api/workspace/hooks";
+import { isTypingTarget, shortcutDigit } from "../utils/keyboard-shortcuts";
+import { cx } from "./cx";
+import { isChildActive, type NavigationItem } from "./sidebar-navigation-support";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -31,17 +39,11 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "./app-sidebar";
 
-type NavigationItem = {
-  to: string;
-  icon: LucideIcon;
-  label: string;
-  children?: Array<{ to: string; icon: LucideIcon; label: string }>;
-};
-
 const INFRA_CHILDREN: NavigationItem["children"] = [
-  { to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview" },
+  { to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview", exact: true },
   { to: "/admin/infrastructure?tab=services", icon: Server, label: "Services" },
   { to: "/admin/infrastructure?tab=logs", icon: List, label: "Logs" },
   { to: "/admin/infrastructure?tab=terminal", icon: SquareTerminal, label: "Terminal" },
@@ -50,13 +52,69 @@ const INFRA_CHILDREN: NavigationItem["children"] = [
 
 export function SidebarNavigation() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+  const [showShortcutHints, setShowShortcutHints] = useState(false);
+  const { state } = useSidebar();
   const { data: user } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const permissions = workspace?.permissions;
   const currentPath = `${location.pathname}${location.search}`;
+  const collapsed = state === "collapsed";
+  const showExpandedShortcutHints = showShortcutHints && !collapsed;
+  const currentOrganizationPath = workspace
+    ? `/workspace/organizations/${workspace.currentOrganization.id}`
+    : undefined;
+  const workspaceChildren: NavigationItem["children"] = [
+    { to: "/workspace", icon: LayoutGrid, label: "Overview", exact: true },
+    ...(permissions?.canViewTeams && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/teams`, icon: Users, label: "Teams" }]
+      : []),
+    ...(permissions?.canViewMembers && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/members`, icon: Users, label: "Members" }]
+      : []),
+    ...(permissions?.canViewInvitations && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/invitations`, icon: Mail, label: "Invitations" }]
+      : []),
+    ...(permissions?.canViewMembers && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/roles`, icon: KeyRound, label: "Roles & Templates" }]
+      : []),
+    ...(permissions?.canViewOrganization && currentOrganizationPath
+      ? [{ to: `${currentOrganizationPath}/settings`, icon: Settings, label: "Settings" }]
+      : []),
+  ];
   const navigation: NavigationItem[] = [
     ...(permissions?.canViewWorkspace
-      ? [{ to: "/workspace", icon: Building2, label: "Workspace" }]
+      ? [
+          {
+            to: "/workspace",
+            icon: Building2,
+            label: "Workspace",
+            children: workspaceChildren,
+            activeWhen: (pathname: string) =>
+              pathname === "/workspace" ||
+              Boolean(
+                currentOrganizationPath && pathname.startsWith(`${currentOrganizationPath}/`),
+              ),
+          },
+        ]
+      : []),
+    ...(user?.systemRole === "SUPERADMIN"
+      ? [
+          {
+            to: "/workspace/organizations",
+            icon: Building2,
+            label: "Organizations",
+            activeWhen: (pathname: string) =>
+              pathname === "/workspace/organizations" ||
+              pathname === "/workspace/organizations/create" ||
+              Boolean(
+                currentOrganizationPath &&
+                pathname.startsWith("/workspace/organizations/") &&
+                !pathname.startsWith(currentOrganizationPath),
+              ),
+          },
+        ]
       : []),
     ...(permissions?.canViewModels ? [{ to: "/models", icon: BrainCircuit, label: "Models" }] : []),
     ...(permissions?.canViewModels
@@ -75,45 +133,149 @@ export function SidebarNavigation() {
         ]
       : []),
   ];
+  const isParentActive = (item: NavigationItem) =>
+    item.activeWhen?.(location.pathname) ??
+    (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
+  const getShortcutChildren = () => {
+    const activeOpenItem = navigation.find(
+      (item) => item.children?.length && isParentActive(item) && (openItems[item.to] ?? true),
+    );
+    const firstOpenItem = navigation.find(
+      (item) => item.children?.length && (openItems[item.to] ?? false),
+    );
+    return activeOpenItem?.children ?? firstOpenItem?.children ?? [];
+  };
+  const handleWindowKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key === "Alt" && !collapsed && !isTypingTarget(event.target)) {
+      setShowShortcutHints(true);
+    }
+
+    if (!event.altKey || event.ctrlKey || event.metaKey || isTypingTarget(event.target)) {
+      return;
+    }
+
+    const digit = shortcutDigit(event);
+    if (!digit) return;
+
+    const target = event.shiftKey ? getShortcutChildren()[digit - 1] : navigation[digit - 1];
+    if (!target) return;
+
+    event.preventDefault();
+    void navigate(target.to, { viewTransition: true });
+  });
+
+  useEffect(() => {
+    const hide = () => setShowShortcutHints(false);
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Alt") hide();
+    };
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", hide);
+    return () => {
+      window.removeEventListener("keydown", handleWindowKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", hide);
+    };
+  }, []);
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Menu</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu aria-label="Main navigation">
-          {navigation.map((item) => {
-            const active =
-              location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+          {navigation.map((item, index) => {
+            const active = isParentActive(item);
+            const hasChildren = Boolean(item.children?.length);
+            const open = openItems[item.to] ?? active;
             const Icon = item.icon;
+            const shortcut = String(index + 1);
 
             return (
               <SidebarMenuItem key={item.to}>
-                <SidebarMenuButton asChild isActive={active} title={item.label}>
-                  <Link to={item.to} viewTransition>
+                {hasChildren ? (
+                  <SidebarMenuButton
+                    aria-expanded={open}
+                    aria-keyshortcuts={`Alt+${shortcut}`}
+                    isActive={active}
+                    onClick={() =>
+                      setOpenItems((current) => ({
+                        ...current,
+                        [item.to]: !(current[item.to] ?? active),
+                      }))
+                    }
+                    title={item.label}
+                    type="button"
+                  >
                     <Icon size={18} className="shrink-0" />
                     <SidebarLabel className="truncate">{item.label}</SidebarLabel>
-                  </Link>
-                </SidebarMenuButton>
-                {item.children && location.pathname.startsWith(item.to) ? (
-                  <SidebarMenuSub>
-                    {item.children.map((child) => {
-                      const childActive =
-                        currentPath === child.to ||
-                        (child.to === item.to && currentPath === `${item.to}?tab=overview`);
-                      const ChildIcon = child.icon;
+                    {showExpandedShortcutHints ? (
+                      <span className="ml-auto grid size-5 shrink-0 place-items-center rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] text-[0.68rem] font-semibold text-[var(--text-muted)]">
+                        {shortcut}
+                      </span>
+                    ) : null}
+                    {!collapsed ? (
+                      <ChevronRight
+                        size={15}
+                        className={cx(
+                          "shrink-0 transition-transform duration-200",
+                          !showExpandedShortcutHints && "ml-auto",
+                          open && "rotate-90",
+                        )}
+                      />
+                    ) : null}
+                  </SidebarMenuButton>
+                ) : (
+                  <SidebarMenuButton asChild isActive={active} title={item.label}>
+                    <Link aria-keyshortcuts={`Alt+${shortcut}`} to={item.to} viewTransition>
+                      <Icon size={18} className="shrink-0" />
+                      <SidebarLabel className="truncate">{item.label}</SidebarLabel>
+                      {showExpandedShortcutHints ? (
+                        <span className="ml-auto grid size-5 shrink-0 place-items-center rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] text-[0.68rem] font-semibold text-[var(--text-muted)]">
+                          {shortcut}
+                        </span>
+                      ) : null}
+                    </Link>
+                  </SidebarMenuButton>
+                )}
+                {item.children && !collapsed ? (
+                  <div
+                    className={cx(
+                      "grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                    )}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <SidebarMenuSub>
+                        {item.children.map((child, childIndex) => {
+                          const childActive = isChildActive(child, currentPath, location.pathname);
+                          const ChildIcon = child.icon;
+                          const childShortcut = String(childIndex + 1);
 
-                      return (
-                        <SidebarMenuSubItem key={child.to}>
-                          <SidebarMenuSubButton asChild isActive={childActive}>
-                            <Link to={child.to} viewTransition>
-                              <ChildIcon size={14} className="shrink-0" />
-                              <span className="truncate">{child.label}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      );
-                    })}
-                  </SidebarMenuSub>
+                          return (
+                            <SidebarMenuSubItem key={child.to}>
+                              <SidebarMenuSubButton asChild isActive={childActive}>
+                                <Link
+                                  aria-keyshortcuts={`Alt+Shift+${childShortcut}`}
+                                  to={child.to}
+                                  viewTransition
+                                >
+                                  <ChildIcon size={14} className="shrink-0" />
+                                  <span className="truncate">{child.label}</span>
+                                  {showExpandedShortcutHints ? (
+                                    <span className="ml-auto grid size-4 shrink-0 place-items-center rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] text-[0.62rem] font-semibold text-[var(--text-muted)]">
+                                      {childShortcut}
+                                    </span>
+                                  ) : null}
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </div>
+                  </div>
                 ) : null}
               </SidebarMenuItem>
             );

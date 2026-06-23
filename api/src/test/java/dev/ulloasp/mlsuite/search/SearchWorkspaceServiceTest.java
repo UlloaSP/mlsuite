@@ -122,6 +122,89 @@ class SearchWorkspaceServiceTest {
                 .anyMatch(result -> "predictionRun".equals(result.type())));
     }
 
+    @Test
+    void search_MatchesTokensSeparatedByCamelCase() {
+        Organization organization = organization();
+        Model model = model(organization, team(organization));
+        model.setName("RandomForestClassifier");
+        stubSearches(
+                "random",
+                organization,
+                List.of(),
+                List.of(),
+                List.of(model),
+                List.of(),
+                List.of(),
+                List.of());
+
+        SearchResponseDto response = service.search(7L, "random forest");
+
+        assertEquals(1, response.groups().size());
+        assertEquals("Models", response.groups().getFirst().label());
+        assertEquals("RandomForestClassifier", response.groups().getFirst().results().getFirst().title());
+    }
+
+    @Test
+    void search_FiltersCandidatesMissingAQueryToken() {
+        Organization organization = organization();
+        Schema schema = schema(organization);
+        schema.setName("Random Scores");
+        schema.setDescription("Quality dashboard");
+        stubSearches(
+                "random",
+                organization,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(schema),
+                List.of(),
+                List.of());
+
+        SearchResponseDto response = service.search(7L, "random schema");
+
+        assertTrue(response.groups().isEmpty());
+    }
+
+    @Test
+    void search_MatchesTokensAcrossPluginFields() {
+        Organization organization = organization();
+        PluginMetadata plugin = plugin(organization, "audit-tool.zip", "Schema Report");
+        stubSearches(
+                "schema",
+                organization,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(plugin));
+
+        SearchResponseDto response = service.search(7L, "schema audit");
+
+        assertEquals(1, response.groups().size());
+        assertEquals("Plugins", response.groups().getFirst().label());
+        assertEquals("audit-tool.zip", response.groups().getFirst().results().getFirst().title());
+    }
+
+    private void stubSearches(
+            String prefilter,
+            Organization organization,
+            List<OrganizationMembership> memberships,
+            List<Team> teams,
+            List<Model> models,
+            List<Schema> schemas,
+            List<PredictionRun> runs,
+            List<PluginMetadata> plugins) {
+        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
+        when(membershipRepository.searchActiveByUserId(eq(7L), eq(prefilter), any(Pageable.class)))
+                .thenReturn(memberships);
+        when(teamRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(teams);
+        when(modelRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(models);
+        when(schemaRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(schemas);
+        when(predictionRunRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(runs);
+        when(pluginMetadataRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(plugins);
+    }
+
     private OffsetDateTime now() {
         return OffsetDateTime.parse("2026-04-28T12:00:00Z");
     }
@@ -193,6 +276,20 @@ class SearchWorkspaceServiceTest {
         run.setStatus(PredictionRunStatus.SUCCESS);
         run.setUpdatedAt(now());
         return run;
+    }
+
+    private PluginMetadata plugin(Organization organization, String fileName, String kind) {
+        return new PluginMetadata(
+                "plug-1",
+                organization,
+                "organizations/41/plugins/items/plug-1.json",
+                fileName,
+                "application/zip",
+                10L,
+                now(),
+                now(),
+                kind,
+                "custom-report");
     }
 
 }

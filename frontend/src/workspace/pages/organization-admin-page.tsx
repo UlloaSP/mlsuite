@@ -10,6 +10,7 @@ import { StatusBadge } from "../components/admin/StatusBadge";
 import { useWorkspaceContext } from "../../api/workspace/hooks";
 
 const tabs = [
+  { label: "Overview", value: "overview" },
   { label: "Teams", value: "teams" },
   { label: "Members", value: "members" },
   { label: "Roles & Templates", value: "roles" },
@@ -44,8 +45,14 @@ export function OrganizationAdminPage() {
         />
         <AppTabs
           items={tabs as unknown as Array<{ label: string; value: string }>}
-          value="teams"
-          onChange={(value) => void navigate(`/workspace/organizations/${id}/${value}`)}
+          value="overview"
+          onChange={(value) =>
+            void navigate(
+              value === "overview"
+                ? `/workspace/organizations/${id}`
+                : `/workspace/organizations/${id}/${value}`,
+            )
+          }
         />
         <div className="grid gap-4 md:grid-cols-5">
           <AdminStatCard

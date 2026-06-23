@@ -1,5 +1,17 @@
 # Lessons
 
+## 2026-06-23 - Sidebar shortcut and collapsed navigation correction
+
+- Correction: `Alt+Shift+1` did not navigate second-level items because browsers report shifted digit keys as symbols like `!`, not `"1"`.
+- Rule: shortcut digit helpers must normalize shifted digit symbols or use a physical-code strategy; tests need at least one `Shift+digit` symbol case.
+- Correction: collapsed sidebar still showed submenu chevrons/expanded-only hints, creating a broken visual rail.
+- Rule: collapsed sidebar rows must hide expanded-only affordances, including submenu chevrons, shortcut hint badges, and submenu containers.
+
+## 2026-06-23 - Workspace org navigation correction
+
+- Correction: Organizations was exposed from org-scoped `canViewOrganization`, but product intent is superadmin-only global org access.
+- Rule: distinguish current-workspace/org scoped navigation from global admin navigation; first-level `Organizations` belongs behind `SUPERADMIN` unless explicitly scoped to the active workspace.
+
 ## 2026-06-23 - Frontend dev runtime config correction
 
 - Correction: Vite dev loaded missing `/runtime-config.js` and `.env` forced cross-origin `https://localhost:8443`, so startup readiness failed with browser CORS before app UI rendered.
@@ -549,3 +561,5 @@
 - Rule: every frontend algorithm export and named internal helper needs TSDoc with purpose, params, return, throws, and side cases/effects; vague folders like `run-runtime` must be renamed to a domain action/name such as `runtime-assembly`.
 - Correction: schema-review and review were the same frontend domain, but keeping both folders split ownership and made architecture misleading.
 - Rule: when two frontend feature names represent one workflow, fuse UI, API, algorithms, routes, and tests under one domain folder; keep old backend endpoint names only when they are real server contracts.
+- Correction: notification count was described as a user badge, but intended placement was specifically on the avatar.
+- Rule: when placing user-notification counts in navigation, attach the numeric marker to the avatar itself, not a generic user/menu badge.

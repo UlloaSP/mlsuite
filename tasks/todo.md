@@ -1,3 +1,127 @@
+# Sidebar Keyboard Shortcuts
+
+## Goal
+
+- [x] Add keyboard shortcuts for sidebar Actions.
+- [x] Add `Alt+1..9` shortcuts for top-level sidebar navigation.
+- [x] Add `Alt+Shift+1..9` shortcuts for the visible second-level navigation.
+- [x] Show transient numeric hints while `Alt` is held.
+
+## Plan
+
+- [x] Add a small keyboard shortcut helper for typing-target and modifier checks.
+- [x] Wire top-level and active/open child navigation shortcuts into `SidebarNavigation`.
+- [x] Render compact numeric hint badges while `Alt` is pressed.
+- [x] Wire dark mode/fullscreen action shortcuts and show all action hints.
+- [x] Run focused/full frontend verification, line-count check, diff check, and graph update.
+
+## Review
+
+- `Alt+1..9` now navigates the visible top-level sidebar items.
+- `Alt+Shift+1..9` now navigates the children of the active/open sidebar group, including shifted digit key symbols like `!`.
+- Holding `Alt` shows compact number badges on top-level and second-level sidebar items only while the sidebar is expanded.
+- Collapsed sidebar hides submenu chevrons, shortcut hint badges, and submenu containers.
+- Actions now display shortcuts: `Ctrl/Cmd+K`, `Ctrl/Cmd+Shift+L`, `Ctrl/Cmd+Shift+F`, and `Ctrl/Cmd+B`.
+- Added shared keyboard shortcut helpers plus focused helper tests.
+- Captured the shifted-digit/collapsed-affordance correction in `tasks/lessons.md`.
+- Verification:
+  - `frontend`: `vp check --fix src/app/components/SidebarNavigation.tsx src/app/components/SidebarActions.tsx src/app/components/sidebar-navigation-support.ts src/app/utils/keyboard-shortcuts.ts test/keyboard-shortcuts.test.ts` passed.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/keyboard-shortcuts.test.ts` passed, 3 tests.
+  - `frontend`: `vp test` passed, 33 files / 114 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 249 existing warnings and no new warnings in touched files.
+  - Repo: touched source files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
+# Sidebar Submenu Dropdown Stability
+
+## Goal
+
+- [x] Make second-level sidebar navigation behave like a shadcn-style dropdown.
+- [x] Stop Overview from staying selected on deeper Workspace routes.
+- [x] Keep submenus from snapping open/closed during child navigation.
+
+## Plan
+
+- [x] Add explicit submenu open state seeded from the active route.
+- [x] Make parent rows with children toggle the submenu instead of always navigating.
+- [x] Tighten child active matching for exact, query, and nested child routes.
+- [x] Add smooth height/opacity transition using existing sidebar primitives and tokens.
+- [x] Run focused frontend verification, line-count check, diff check, and graph update.
+
+## Review
+
+- Sidebar parents with children now render as toggle buttons with chevrons; child links remain normal route links.
+- Open state is derived from active route unless the user toggles it, so child navigation no longer remounts the submenu abruptly.
+- Overview children use exact matching; query tab children match exact `pathname + search`; nested child pages still stay selected under their child item.
+- Verification:
+  - `frontend`: `vp check --fix src/app/components/SidebarNavigation.tsx` passed.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 249 existing warnings and no `SidebarNavigation` warning.
+  - Browser preview: Vite served `http://127.0.0.1:5173`; protected sidebar route redirected to auth because `/api/users/me` returned 401, so sidebar visual interaction was blocked by auth.
+  - Repo: `SidebarNavigation.tsx` has 227 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
+# Global Search Lightweight Token Matching
+
+## Goal
+
+- [x] Fix global search word separation without adding a search engine or runtime dependency.
+- [x] Keep database queries as scoped candidate prefilter.
+- [x] Rank results by token-aware matches across candidate fields.
+
+## Plan
+
+- [x] Add a small backend text matcher for normalization, tokenization, and scoring.
+- [x] Use the best query token for repository prefiltering, then require all query tokens in service ranking.
+- [x] Cover multi-word, separator, and camelCase searches in the existing search service test file.
+- [x] Run focused API tests, line-count check, diff check, and graph update.
+
+## Review
+
+- Added lightweight search text matching: lower-case, accent folding, camelCase splitting, separator tokenization, and all-token scoring.
+- Search repositories still act as scoped candidate prefilters using the longest query token; no runtime dependency or external search engine added.
+- Service ranking now matches tokens across candidate fields, so terms split across `RandomForest`, `audit-tool.zip`, and `Schema Report` behave consistently.
+- Verification so far:
+  - `api`: `mvn "-Dtest=SearchWorkspaceServiceTest,SearchControllerTest" test` passed, 6 tests.
+  - Repo: changed search source/test files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
+# Global Search Modal And User Notifications
+
+## Goal
+
+- [x] Restyle global search modal like the provided compact docs-search reference, with `rounded` max.
+- [x] Move notifications out of Actions into user dropdown and a dedicated page.
+- [x] Show pending notification count on the avatar.
+
+## Plan
+
+- [x] Adjust search modal/list geometry and corner radius.
+- [x] Remove notification mini-popover from Actions.
+- [x] Add notifications route/page using pending invitations.
+- [x] Add avatar count marker and dropdown link.
+- [x] Run focused frontend verification and graph update.
+
+## Review
+
+- Global search modal now uses compact docs-search geometry: flat header, integrated results, `rounded`, no pill shell.
+- Notifications are removed from sidebar Actions and added to the user dropdown as a link to `/notifications`.
+- Pending notification count is rendered on the avatar itself.
+- `/notifications` lists pending invitations with accept/decline actions and an empty state.
+- Captured avatar-count correction in `tasks/lessons.md`.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-version-selectors-and-search-shortcut.test.ts` passed, 4 tests.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: touched-file `vp fmt --check` passed.
+  - Repo: changed source files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
 # Modal Shell Overlay Fix
 
 ## Goal
@@ -914,6 +1038,72 @@
   - `frontend`: `vp test` passed, 30 files / 107 tests.
   - Repo: frontend source/test line-count passed, no file >300 non-comment lines.
   - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+
+# Global Search Modal Sidebar Entry
+
+## Goal
+
+- [x] Replace fixed header search with centered global search modal.
+- [x] Open same modal from sidebar Actions and `Ctrl+K`.
+- [x] Remove global app header chrome without breaking mobile sidebar access.
+
+## Plan
+
+- [x] Reuse existing search API, debounce, result panel, and shortcut guard.
+- [x] Add global search modal mounted in app shell.
+- [x] Add sidebar Actions search button and move notifications there.
+- [x] Replace header with a mobile-only floating sidebar trigger.
+- [x] Run frontend typecheck/check plus graph update.
+
+## Review
+
+- Header global removed from app shell; mobile keeps a floating sidebar trigger.
+- Global search now mounts once in shell as centered modal, opened by sidebar Actions or `Ctrl+K`.
+- Notifications moved into sidebar Actions and their panel uses fixed positioning so sidebar overflow does not clip it.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test test/schema-version-selectors-and-search-shortcut.test.ts` passed, 4 tests.
+  - `frontend`: `vp test` passed, 32 files / 111 tests.
+  - `frontend`: touched-file `vp fmt --check` passed.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 247 warnings.
+  - Repo: changed frontend files are under 300 non-comment lines; existing `frontend/src/admin/infrastructure/components/ServicesView.tsx` remains 302.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed.
+  - Browser: dev server returned 200; shell smoke blocked by unauthenticated `/api/users/me` 401 redirect to auth.
+
+# Workspace Navigation Cleanup
+
+## Goal
+
+- [ ] Make current workspace navigation direct from sidebar.
+- [ ] Expose organizations as a superadmin-only first-level sidebar destination.
+- [ ] Remove confusing duplicate/alternate workspace access paths where possible.
+
+## Plan
+
+- [x] Add Workspace second-level sidebar links for overview, teams, members, invitations, roles/templates, and settings.
+- [x] Add Organizations as a superadmin-only first-level sidebar item using existing `/workspace/organizations`.
+- [x] Keep Admin focused on system admin routes; avoid creating duplicate org pages.
+- [x] Normalize workspace breadcrumbs to match the new navigation model.
+- [x] Prefer canonical org-scoped team URLs and remove redundant route if unused.
+- [x] Run typecheck plus targeted navigation grep/line-count checks, then update graph.
+
+## Review
+
+- Sidebar now treats `Workspace` as the active organization area and exposes second-level links for overview, teams, members, invitations, roles/templates, and settings.
+- `Organizations` is a superadmin-only first-level sidebar destination using the existing `/workspace/organizations` page.
+- Workspace subpage breadcrumbs now match the sidebar hierarchy instead of routing back through organization admin.
+- Removed unused `/workspace/teams/:teamId`; team detail keeps canonical `/workspace/organizations/:organizationId/teams/:teamId`.
+- Organization admin overview tab now marks itself as `Overview` instead of falsely selecting `Teams`.
+- Verification:
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: touched-file `vp fmt --check ...` passed.
+  - `frontend`: full `vp fmt --check` remains blocked by pre-existing repo-wide formatting drift across 537 files.
+  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 249 warnings.
+  - Repo: touched frontend source files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Browser: dev server returned 200; preview reached auth landing, blocked from sidebar by unauthenticated `/api/users/me` 401.
   - Repo: `graphify update .` passed.
 
 # Schema Classifier Feedback And Input Display Fix
