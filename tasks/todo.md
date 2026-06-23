@@ -29,6 +29,8 @@
 - Restored the first shadcn-sidebar widths: `17rem` expanded and `4.25rem` collapsed; header/footer use normal padding again.
 - Centered collapsed org and user controls with `mx-auto` because those controls are fixed `size-9` instead of full-width menu rows.
 - Fixed the actual collapsed offset: hidden org/user labels and chevrons no longer reserve flex width, so the visible icon/avatar stays centered inside its button.
+- Added radial theme transition: dark/light toggle now uses `document.startViewTransition()` and expands from the clicked theme action; falls back to instant theme switch when unsupported or reduced motion is enabled.
+- Guarded radial theme transition against repeated clicks so overlapping `startViewTransition()` calls cannot flicker.
 - Removed duplicate frontend env files and runtime config script; frontend now reads build-time `import.meta.env.VITE_BACKEND_URL` only, with same-origin fallback.
 - Confirmed `docker-compose.dev.yml` passes global `.env` `VITE_BACKEND_URL` to the frontend Docker build through `build.args`; removed unused runtime `environment` entries.
 - No runtime dependencies added; used existing `radix-ui`, `lucide-react`, and app `cx`/tokens.
