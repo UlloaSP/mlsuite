@@ -17,8 +17,8 @@ import {
   getOrganizationMembers,
   transferOrganizationOwnership,
   updateOrganization,
-} from "../api/workspaceService";
-import { useWorkspaceContext } from "../hooks";
+} from "../../api/workspace/services";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 
 export function OrganizationSettingsPage() {
   const { organizationId = "" } = useParams();

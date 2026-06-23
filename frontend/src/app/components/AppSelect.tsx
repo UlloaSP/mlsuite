@@ -62,7 +62,10 @@ export function AppSelect({
             <SelectValue placeholder={placeholder} />
           </span>
           {widestLabel ? (
-            <span aria-hidden="true" className="invisible col-start-1 row-start-1 whitespace-nowrap">
+            <span
+              aria-hidden="true"
+              className="invisible col-start-1 row-start-1 whitespace-nowrap"
+            >
               {widestLabel}
             </span>
           ) : null}

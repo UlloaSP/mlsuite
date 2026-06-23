@@ -4,13 +4,13 @@ import {
   countHealthyServices,
   countProblemServices,
   getOverviewTimestamp,
-} from "../src/admin/infrastructure/dashboardSummary";
+} from "../src/algorithms/admin/infrastructure/dashboard-summary";
 import {
   appendLogLine,
   applyInfrastructureEvent,
   resolveSelectedService,
-} from "../src/admin/infrastructure/state";
-import type { InfrastructureOverviewDto } from "../src/admin/infrastructure/types";
+} from "../src/algorithms/admin/infrastructure/state";
+import type { InfrastructureOverviewDto } from "../src/api/infrastructure/dtos";
 import { buildWebSocketUrl } from "../src/admin/infrastructure/ws/infrastructureSocket";
 
 const overview: InfrastructureOverviewDto = {

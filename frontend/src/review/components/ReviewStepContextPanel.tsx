@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
-import type { ReviewFeedbackStep } from "./reviewCombinedQuestionnaire";
-import { REVIEW_STEP_CONTEXT_EVENT } from "./ReviewCombinedFeedbackForm";
+
+export const REVIEW_STEP_CONTEXT_EVENT = "mlsuite-review-step-context";
+
+type ReviewFeedbackStep = {
+  id: string;
+  title: string;
+  description: string;
+};
 
 const lines = (value: string) => {
   const seen = new Map<string, number>();

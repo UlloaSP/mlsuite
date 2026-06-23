@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AppCopy, AppPanel } from "../../app/components";
-import { formatDisplayValue } from "../schema-run-display";
-import type { JsonRecord } from "../types";
+import { formatDisplayValue } from "../../algorithms/schema/input-display";
+import type { JsonRecord } from "../../api/schemas/dtos";
 
 type Props = {
   label: string;
@@ -21,9 +21,6 @@ const probabilities = (payload?: JsonRecord): number[] =>
 
 const textContent = (payload?: JsonRecord): string[] => {
   if (typeof payload?.explanation === "string") return [payload.explanation];
-  if (Array.isArray(payload?.explanations)) {
-    return payload.explanations.filter((item): item is string => typeof item === "string");
-  }
   if (typeof payload?.text === "string") return [payload.text];
   return [];
 };

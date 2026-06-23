@@ -56,4 +56,7 @@ public class Schema {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
+
+    @Column(name = "archived_at", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime archivedAt;
 }

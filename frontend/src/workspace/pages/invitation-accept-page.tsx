@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
-import { acceptInvitation, declineInvitation } from "../api/workspaceService";
+import { acceptInvitation, declineInvitation } from "../../api/workspace/services";
 
 export function InvitationAcceptPage() {
   const navigate = useNavigate();

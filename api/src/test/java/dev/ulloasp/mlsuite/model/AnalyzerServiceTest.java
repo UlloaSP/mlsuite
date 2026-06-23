@@ -19,11 +19,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.mockito.ArgumentCaptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -131,6 +134,23 @@ class AnalyzerServiceTest {
 
         assertEquals(List.of(), result.get("models"));
         verify(restTemplate).postForObject(eq("http://py-analyzer:8000/match_artifacts"), any(), eq(Map.class));
+    }
+
+    @Test
+    void generateInputSchema_ForwardsOneHotSeparator() {
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
+        when(artifactFile.getResource()).thenReturn(new org.springframework.core.io.ByteArrayResource("x".getBytes()));
+        when(restTemplate.postForObject(eq("http://py-analyzer:8000/build_schema"), any(), eq(Map.class)))
+                .thenReturn(Map.of("fields", List.of()));
+
+        service.generateInputSchema(3L, artifactFile, null, "_");
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(restTemplate).postForObject(eq("http://py-analyzer:8000/build_schema"), captor.capture(), eq(Map.class));
+        HttpEntity<?> entity = (HttpEntity<?>) captor.getValue();
+        @SuppressWarnings("unchecked")
+        MultiValueMap<String, Object> body = (MultiValueMap<String, Object>) entity.getBody();
+        assertEquals("_", body.getFirst("onehot_separator"));
     }
 
     @Test

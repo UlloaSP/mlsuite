@@ -3,10 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
-import { ArrowLeft, ArrowRight, Save } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Save } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
   AppButton,
@@ -16,38 +15,21 @@ import {
   AppSurface,
   AppTextField,
 } from "../../app/components";
-import { isRecord } from "../../app/utils/mlform/shared";
-import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
-import { EditorWrapper } from "../../editor/components/EditorWrapper";
-import { useGetModels } from "../../models/hooks";
-import { createSchemaVersion } from "../api/schemaService";
+import { useGetModels } from "../../api/models/hooks";
+import { createSchemaVersion } from "../../api/schemas/services";
 import { SchemaModelSelector } from "../components/SchemaModelSelector";
-import { useCreateSchemaMutation, useSchema, useSchemaVersions } from "../hooks";
-import { countVisibleSchemaFields } from "../one-hot-schema";
-import { prepareSchemaVersionForSave } from "../schema-binding-rebase";
-import { composeSchemaVersion, type SelectedSchemaSignature } from "../schema-composer";
-import type { CreateSchemaVersionRequest } from "../types";
+import { useCreateSchemaMutation } from "../../api/schemas/hooks";
+import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
+import { prepareSchemaVersionForSave } from "../../algorithms/schema/binding-rebase";
+import { composeSchemaVersion, type SelectedSchemaModel } from "../../algorithms/schema/merge";
 
-type SelectedModel = SelectedSchemaSignature & {
-  signatureId: string;
-};
-
-type Step = "models" | "editor";
+type SelectedModel = SelectedSchemaModel;
 
 export function CreateSchemaPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const targetSchemaId = searchParams.get("schemaId") ?? "";
   const { data: models = [], isLoading } = useGetModels();
   const createSchema = useCreateSchemaMutation();
-  const [schema, setSchema] = useAtom(schemaAtom);
-  const [, setSchemaText] = useAtom(schemaTextAtom);
-  const [schemaErrors] = useAtom(schemaErrorsAtom);
-  const mode = targetSchemaId ? "version" : "schema";
-  const [step, setStep] = useState<Step>(searchParams.get("schemaId") ? "editor" : "models");
   const [name, setName] = useState("");
-  const { data: targetSchema } = useSchema(targetSchemaId);
-  const { data: existingVersions = [] } = useSchemaVersions(targetSchemaId);
   const [selected, setSelected] = useState<SelectedModel[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -55,71 +37,33 @@ export function CreateSchemaPage() {
     () =>
       composeSchemaVersion(
         "v1",
-        selected.map(({ modelId, signature }) => ({ modelId, signature })),
+        selected.map(({ modelId, modelName, model }) => ({ modelId, modelName, model })),
       ),
     [selected],
   );
-  const latestVersion = existingVersions[0];
-  const lockedVersion = useMemo<CreateSchemaVersionRequest | null>(() => {
-    if (!latestVersion) return null;
-    return {
-      name: "new version",
-      formSchema: latestVersion.formSchema,
-      bindings: latestVersion.bindings.map((binding) => ({
-        modelId: binding.modelId,
-        signatureId: binding.signatureId,
-        inputMapping: binding.inputMapping,
-        outputMapping: binding.outputMapping,
-        pluginPolicy: binding.pluginPolicy ?? undefined,
-      })),
-    };
-  }, [latestVersion]);
-  const activeVersionRequest = mode === "version" ? lockedVersion : composedVersion;
-  const hasEditor =
-    mode === "version" ? Boolean(lockedVersion) : step === "editor" && selected.length > 0;
-  const canContinue = mode === "schema" && name.trim().length > 0 && selected.length > 0;
-  const canSubmit =
-    hasEditor &&
-    Boolean(activeVersionRequest) &&
-    (mode === "schema" ? name.trim().length > 0 : targetSchemaId.trim().length > 0);
+  const canSubmit = name.trim().length > 0 && selected.length > 0;
   const busy = createSchema.isPending || saving;
-  const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;
-  const fieldCount = countVisibleSchemaFields(activeVersionRequest?.formSchema);
-  const reportCount = Array.isArray(activeVersionRequest?.formSchema.reports)
-    ? activeVersionRequest.formSchema.reports.length
+  const fieldCount = countVisibleSchemaFields(composedVersion.formSchema);
+  const reportCount = Array.isArray(composedVersion.formSchema.reports)
+    ? composedVersion.formSchema.reports.length
     : 0;
-  const activeModelCount =
-    mode === "version" ? (activeVersionRequest?.bindings.length ?? 0) : selected.length;
-
-  useEffect(() => {
-    if (!hasEditor || !activeVersionRequest) {
-      setSchema(null);
-      setSchemaText("");
-      return;
-    }
-    setSchema(activeVersionRequest.formSchema);
-    setSchemaText(JSON.stringify(activeVersionRequest.formSchema, null, 2));
-  }, [activeVersionRequest, hasEditor, setSchema, setSchemaText]);
+  const activeModelCount = selected.length;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (mode === "schema" && step === "models") {
-      if (canContinue) setStep("editor");
-      return;
-    }
     if (!canSubmit || busy) return;
     setSaving(true);
     try {
-      if (!activeVersionRequest) return;
-      const editedSchema = isRecord(schema) ? schema : activeVersionRequest.formSchema;
-      const preparedVersion = prepareSchemaVersionForSave(activeVersionRequest, editedSchema);
-      const schemaId =
-        mode === "schema" ? (await createSchema.mutateAsync({ name })).id : targetSchemaId;
+      const preparedVersion = prepareSchemaVersionForSave(
+        composedVersion,
+        composedVersion.formSchema,
+      );
+      const schemaId = (await createSchema.mutateAsync({ name })).id;
       await createSchemaVersion(schemaId, {
         ...preparedVersion,
-        name: mode === "schema" ? "v1" : "new version",
+        name: "v1",
       });
-      navigate(`/schemas/${schemaId}`);
+      void navigate(`/schemas/${schemaId}`);
     } catch (error) {
       toast.error("Schema create failed", {
         description: error instanceof Error ? error.message : String(error),
@@ -133,38 +77,20 @@ export function CreateSchemaPage() {
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
-          title={mode === "schema" ? "New schema" : "New schema version"}
-          description="Select model signatures, then edit the generated form snapshot."
-          breadcrumbs={[
-            { label: "Schemas", to: "/schemas" },
-            ...(mode === "version"
-              ? [{ label: targetSchema?.name ?? "Schema", to: `/schemas/${targetSchemaId}` }]
-              : []),
-            { label: mode === "schema" ? "New Schema" : "New Version" },
-          ]}
+          title="New schema"
+          description="Select one or more models to create the generated schema."
+          breadcrumbs={[{ label: "Schemas", to: "/schemas" }, { label: "New Schema" }]}
         />
         <form className="flex min-h-0 flex-1 flex-col gap-6" onSubmit={submit}>
           <AppPanel className="shrink-0 space-y-4">
             <div className="grid gap-4 xl:grid-cols-[minmax(260px,1fr)_auto_auto] xl:items-end">
-              {mode === "schema" ? (
-                <AppTextField
-                  value={name}
-                  placeholder="Schema name"
-                  required
-                  onChange={(event) => setName(event.target.value)}
-                  className="w-full"
-                />
-              ) : (
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">
-                    Locked model bindings
-                  </p>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    New version keeps {activeModelCount} model/signature pairs from v
-                    {latestVersion?.version ?? "-"}.
-                  </p>
-                </div>
-              )}
+              <AppTextField
+                value={name}
+                placeholder="Schema name"
+                required
+                onChange={(event) => setName(event.target.value)}
+                className="w-full"
+              />
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="min-w-20 rounded-[18px] bg-[var(--surface-muted)] p-3">
                   <p className="text-2xl font-semibold">{activeModelCount}</p>
@@ -180,46 +106,20 @@ export function CreateSchemaPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 xl:justify-end">
-                {mode === "schema" && step === "editor" ? (
-                  <AppButton type="button" variant="secondary" onClick={() => setStep("models")}>
-                    <ArrowLeft size={16} />
-                    Back
-                  </AppButton>
-                ) : null}
                 <AppButton
                   type="submit"
-                  disabled={
-                    mode === "schema" && step === "models"
-                      ? !canContinue || isLoading
-                      : !canSubmit || busy || isLoading || editorHasErrors
-                  }
+                  disabled={!canSubmit || busy || isLoading}
                   className="min-w-[220px]"
                 >
-                  {mode === "schema" && step === "models" ? (
-                    <>
-                      Continue
-                      <ArrowRight size={16} />
-                    </>
-                  ) : (
-                    <>
-                      <Save size={16} />
-                      {mode === "schema" ? "Create schema" : "Create version"}
-                    </>
-                  )}
+                  <Save size={16} />
+                  Create schema
                 </AppButton>
               </div>
             </div>
           </AppPanel>
-          {mode === "schema" && step === "models" ? (
-            <div className="min-h-0 flex-1 overflow-hidden">
-              <SchemaModelSelector models={models} value={selected} onChange={setSelected} />
-            </div>
-          ) : null}
-          {hasEditor ? (
-            <div className="flex min-h-0 flex-1 overflow-hidden rounded-[24px] border border-[var(--border-soft)]">
-              <EditorWrapper />
-            </div>
-          ) : null}
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <SchemaModelSelector models={models} value={selected} onChange={setSelected} />
+          </div>
         </form>
       </AppSurface>
     </AppPage>

@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
+import dev.ulloasp.mlsuite.model.application.dto.ModelPageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.service.ModelCreationService;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
@@ -44,16 +45,68 @@ public class ModelControllerImpl implements ModelController {
             Authentication authentication,
             @RequestParam String name,
             @RequestParam MultipartFile modelFile,
-            @RequestParam @Nullable MultipartFile dataframeFile) {
+            @RequestParam @Nullable MultipartFile dataframeFile,
+            @RequestParam(defaultValue = "__") String oneHotSeparator) {
         CurrentUser currentUser = currentUserResolver.resolve(authentication);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(modelCreationService.create(currentUser.userId(), name, modelFile, dataframeFile));
+                .body(modelCreationService.create(
+                        currentUser.userId(),
+                        name,
+                        modelFile,
+                        dataframeFile,
+                        oneHotSeparator));
+    }
+
+    @Override
+    public ResponseEntity<ModelPageDto> getModelPage(
+            Authentication authentication,
+            int page,
+            int size,
+            String search,
+            String sort,
+            String status) {
+        return ResponseEntity.ok(modelCatalogUseCase.getModelPage(
+                currentUserResolver.resolve(authentication).userId(),
+                page,
+                size,
+                search,
+                sort,
+                status));
     }
 
     @Override
     public ResponseEntity<List<ModelDto>> getAllModels(Authentication authentication) {
         List<Model> models = modelCatalogUseCase.getModels(currentUserResolver.resolve(authentication).userId());
         return ResponseEntity.ok(ModelDto.toDtoList(models));
+    }
+
+    @Override
+    public ResponseEntity<ModelDto> rename(Authentication authentication, Long modelId, String name) {
+        return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.renameModel(
+                currentUserResolver.resolve(authentication).userId(),
+                modelId,
+                name)));
+    }
+
+    @Override
+    public ResponseEntity<ModelDto> archive(Authentication authentication, Long modelId) {
+        return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.archiveModel(
+                currentUserResolver.resolve(authentication).userId(),
+                modelId)));
+    }
+
+    @Override
+    public ResponseEntity<ModelDto> duplicate(Authentication authentication, Long modelId, String name) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(ModelDto.toDto(modelCatalogUseCase.duplicateModel(
+                currentUserResolver.resolve(authentication).userId(),
+                modelId,
+                name)));
+    }
+
+    @Override
+    public ResponseEntity<Void> delete(Authentication authentication, Long modelId) {
+        modelCatalogUseCase.deleteModel(currentUserResolver.resolve(authentication).userId(), modelId);
+        return ResponseEntity.noContent().build();
     }
 }
 

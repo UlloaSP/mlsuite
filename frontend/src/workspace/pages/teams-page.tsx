@@ -12,12 +12,12 @@ import {
   AppSurface,
 } from "../../app/components";
 import { NotFoundError } from "../../app/pages/error-page";
-import { createTeam, getOrganizationMembers, getTeams } from "../api/workspaceService";
+import { createTeam, getOrganizationMembers, getTeams } from "../../api/workspace/services";
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
 import { AdminStatCard } from "../components/admin/AdminStatCard";
 import { QuotaBar } from "../components/admin/QuotaBar";
 import { StatusBadge } from "../components/admin/StatusBadge";
-import { useWorkspaceContext } from "../hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 
 export function TeamsPage() {
   const { organizationId = "" } = useParams();

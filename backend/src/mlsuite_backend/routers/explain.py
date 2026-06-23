@@ -10,5 +10,5 @@ async def explain_route(
     model_file: UploadFile = File(..., media_type="application/octet-stream"),
     data: str = Form(...),
     traces: str = Form(default="[]"),
-) -> dict[str, list[str]]:
+) -> dict[str, list[dict[str, str]]]:
     return await explain(model_file, data, traces)

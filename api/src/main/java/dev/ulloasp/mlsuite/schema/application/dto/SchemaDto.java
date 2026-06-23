@@ -11,7 +11,8 @@ public record SchemaDto(
         String name,
         String description,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt) {
+        OffsetDateTime updatedAt,
+        OffsetDateTime archivedAt) {
 
     public static SchemaDto from(Schema schema) {
         return new SchemaDto(
@@ -20,7 +21,8 @@ public record SchemaDto(
                 schema.getName(),
                 schema.getDescription(),
                 schema.getCreatedAt(),
-                schema.getUpdatedAt());
+                schema.getUpdatedAt(),
+                schema.getArchivedAt());
     }
 
     public static List<SchemaDto> fromList(List<Schema> schemas) {

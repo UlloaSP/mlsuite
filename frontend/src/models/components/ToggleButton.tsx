@@ -62,7 +62,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
           whileHover={!disabled ? { scale: 1.02 } : {}}
           whileTap={!disabled ? { scale: 0.98 } : {}}
           className={`
-              relative flex h-12 w-44 items-center overflow-hidden rounded-full border p-1 transition-all duration-200
+              relative flex h-12 w-44 items-center overflow-hidden rounded border p-1 transition-all duration-200
               ${
                 disabled
                   ? "cursor-not-allowed border-[var(--border-soft)] bg-[var(--surface-muted)]"
@@ -79,7 +79,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
               duration: 1,
               ease: isTransitioning ? "easeInOut" : "easeOut",
             }}
-            className={`absolute z-20 h-10 rounded-full ${
+            className={`absolute z-20 h-10 w-20 rounded ${
               disabled ? "bg-[var(--text-muted)]" : "bg-[var(--accent-primary)]"
             } shadow-[var(--shadow-card)]`}
             style={{
@@ -89,8 +89,6 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
             <div className="flex h-full w-full items-center justify-center text-white">
               <motion.div
                 key={isTransitioning ? "spinning" : isJsonActive ? "json" : "html"}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.2 }}
               >
                 {isTransitioning ? (
@@ -141,7 +139,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
             Processing…
           </span>
         ) : (
-          `${isJsonActive ? "JSON" : "HTML"} Mode`
+          `${isJsonActive ? "Schema" : "Form"}`
         )}
       </motion.div>
     </motion.div>

@@ -4,8 +4,8 @@ import {
   useAcceptInvitation,
   useDeclineInvitation,
   usePendingInvitations,
-} from "../../workspace/hooks";
-import type { InvitationDto } from "../../workspace/types";
+} from "../../api/workspace/hooks";
+import type { InvitationDto } from "../../api/workspace/dtos";
 import { AppPanel } from "./AppPanel";
 import { cx } from "./cx";
 import { FOCUS_RING } from "./focus-ring";

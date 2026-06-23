@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, TerminalSquare } from "lucide-react";
 import { cx } from "../../../app/components";
-import { buildDashboardAlerts } from "../dashboardSummary";
-import type { InfrastructureOverviewDto } from "../types";
+import { buildDashboardAlerts } from "../../../algorithms/admin/infrastructure/dashboard-summary";
+import type { InfrastructureOverviewDto } from "../../../api/infrastructure/dtos";
 
 type Props = {
   overview: InfrastructureOverviewDto;

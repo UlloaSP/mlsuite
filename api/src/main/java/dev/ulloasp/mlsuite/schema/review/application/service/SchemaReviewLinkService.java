@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import dev.ulloasp.mlsuite.review.application.dto.ReviewOrganizationDto;
-import dev.ulloasp.mlsuite.review.application.service.ReviewLinkUnavailableException;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -39,6 +37,7 @@ import dev.ulloasp.mlsuite.schema.review.application.dto.CreateSchemaReviewLinkR
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewLinkContextDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewLinkCreateResponse;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewLinkSummaryDto;
+import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewOrganizationDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewRunDetailDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewRunListItemDto;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewLink;
@@ -127,7 +126,7 @@ public class SchemaReviewLinkService {
     public void revoke(Long userId, Long id) {
         Long orgId = workspaceAccessService.requireCurrentOrganization(userId).getId();
         authorizationService.requireReviewLinkManagement(userId, orgId);
-        linkRepository.findByIdAndOrganizationId(id, orgId).orElseThrow(ReviewLinkUnavailableException::new)
+        linkRepository.findByIdAndOrganizationId(id, orgId).orElseThrow(SchemaReviewLinkUnavailableException::new)
                 .setRevokedAt(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
@@ -141,7 +140,7 @@ public class SchemaReviewLinkService {
                 .stream().filter(item -> !submissions.containsKey(item.getId()))
                 .map(item -> runItem(userId, item, submissions.get(item.getId()))).toList();
         return new SchemaReviewLinkContextDto(
-                ReviewOrganizationDto.from(link.getOrganization()),
+                SchemaReviewOrganizationDto.from(link.getOrganization()),
                 SchemaDto.from(link.getSchema()),
                 SchemaVersionDto.from(link.getSchemaVersion(),
                         bindingRepository.findBySchemaVersionId(link.getSchemaVersion().getId())),
@@ -164,7 +163,7 @@ public class SchemaReviewLinkService {
     public PredictionResultFeedbackDto createFeedback(Long userId, String token,
             CreatePredictionResultFeedbackRequest request) {
         SchemaReviewLink link = requireAccessible(userId, token);
-        PredictionResult result = resultRepository.findById(request.resultId()).orElseThrow(ReviewLinkUnavailableException::new);
+        PredictionResult result = resultRepository.findById(request.resultId()).orElseThrow(SchemaReviewLinkUnavailableException::new);
         SchemaReviewLinkRun selected = requireSelectedRun(link, result.getRun().getId());
         requireNotSubmitted(userId, selected);
         PredictionResultFeedback feedback = feedbackRepository
@@ -179,7 +178,7 @@ public class SchemaReviewLinkService {
             UpdatePredictionResultFeedbackRequest request) {
         SchemaReviewLink link = requireAccessible(userId, token);
         PredictionResultFeedback feedback = feedbackRepository.findById(request.feedbackId())
-                .orElseThrow(ReviewLinkUnavailableException::new);
+                .orElseThrow(SchemaReviewLinkUnavailableException::new);
         if (!userId.equals(feedback.getUser().getId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         SchemaReviewLinkRun selected = requireSelectedRun(link, feedback.getResult().getRun().getId());
         requireNotSubmitted(userId, selected);
@@ -212,10 +211,10 @@ public class SchemaReviewLinkService {
     private SchemaReviewLink requireAccessible(Long userId, String token) {
         SchemaReviewLinkTokenPayload payload = tokenService.decrypt(token);
         SchemaReviewLink link = linkRepository.findByTokenHash(tokenService.hash(token))
-                .orElseThrow(ReviewLinkUnavailableException::new);
+                .orElseThrow(SchemaReviewLinkUnavailableException::new);
         boolean invalid = !link.getId().equals(payload.linkId()) || link.getRevokedAt() != null
                 || link.getExpiresAt().isBefore(OffsetDateTime.now(ZoneOffset.UTC));
-        if (invalid) throw new ReviewLinkUnavailableException();
+        if (invalid) throw new SchemaReviewLinkUnavailableException();
         boolean allowed = authorizationService.canPreviewReviewLink(userId, payload.orgId())
                 || authorizationService.isExternalReviewer(userId, payload.orgId());
         if (!allowed) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
@@ -224,13 +223,13 @@ public class SchemaReviewLinkService {
 
     private SchemaReviewLinkRun requireSelectedRun(SchemaReviewLink link, Long runId) {
         return linkRunRepository.findByReviewLinkIdAndRunId(link.getId(), runId)
-                .orElseThrow(ReviewLinkUnavailableException::new);
+                .orElseThrow(SchemaReviewLinkUnavailableException::new);
     }
 
     private Long resolveRunId(SchemaReviewLink link, String runToken) {
         SchemaReviewRunTokenPayload payload = tokenService.decryptRun(runToken);
         if (!link.getId().equals(payload.linkId()) || payload.exp().isBefore(OffsetDateTime.now(ZoneOffset.UTC))) {
-            throw new ReviewLinkUnavailableException();
+            throw new SchemaReviewLinkUnavailableException();
         }
         return payload.runId();
     }
@@ -255,7 +254,7 @@ public class SchemaReviewLinkService {
 
     private void requireNotSubmitted(Long userId, SchemaReviewLinkRun selected) {
         if (submissionRepository.existsByReviewLinkRunIdAndUserId(selected.getId(), userId)) {
-            throw new ReviewLinkUnavailableException();
+            throw new SchemaReviewLinkUnavailableException();
         }
     }
 

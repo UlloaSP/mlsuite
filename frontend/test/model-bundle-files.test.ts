@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, it } from "vite-plus/test";
-import { applyInspectedBundleFiles } from "../src/models/bundle-planner";
-import { ALL_EXTS, DF_EXTS, isJoblibFile } from "../src/models/bundle-utils";
+import { applyInspectedBundleFiles } from "../src/algorithms/models/bundle-planner";
+import { ALL_EXTS, DF_EXTS, isJoblibFile } from "../src/algorithms/models/bundle-utils";
 
 const file = (name: string) => new File(["x"], name);
 

@@ -1,6 +1,6 @@
 import { AppPanel, AppCopy } from "../../app/components";
 import { SearchResultGroup } from "./SearchResultGroup";
-import type { SearchGroupDto } from "../types";
+import type { SearchGroupDto } from "../../api/search/dtos";
 
 export function SearchResultsPanel({
   groups,

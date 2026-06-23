@@ -9,11 +9,11 @@ import {
   getTeams,
   removeOrganizationMember,
   updateOrganizationMemberRole,
-} from "../api/workspaceService";
+} from "../../api/workspace/services";
 import { AdminDataPanel } from "../components/admin/AdminDataPanel";
 import { AdminStatCard } from "../components/admin/AdminStatCard";
 import { MemberTable } from "../components/MemberTable";
-import { useWorkspaceContext } from "../hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 
 export function MembersPage() {
   const { organizationId = "" } = useParams();

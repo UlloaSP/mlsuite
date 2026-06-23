@@ -7,21 +7,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
-import { invalidatePluginCatalog } from "../../plugin/mlform/plugin-catalog";
-import { isRecord } from "../../app/utils/mlform/shared";
+import { invalidatePluginCatalog } from "../../algorithms/plugin/catalog-loader";
+import { isRecord } from "../../algorithms/mlform/shared";
 import { SchemaRunForm } from "../components/SchemaRunForm";
 import { SchemaRunSaveModal } from "../components/SchemaRunSaveModal";
-import { createPredictionResultFeedback } from "../api/schemaService";
+import { createPredictionResultFeedback } from "../../api/schemas/services";
 import {
   useCreatePredictionRunMutation,
   usePredictionRun,
   useSchema,
   useSchemaVersion,
-} from "../hooks";
-import { prepareSchemaVersionDtoForUse } from "../schema-binding-rebase";
-import { mergeSchemaRunInputs } from "../schema-run-display";
-import type { PendingFeedback } from "../schema-run-save-feedback";
-import type { CreatePredictionRunRequest, JsonRecord } from "../types";
+} from "../../api/schemas/hooks";
+import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
+import type { PendingFeedback } from "../../algorithms/schema/pending-feedback";
+import type { CreatePredictionRunRequest, JsonRecord } from "../../api/schemas/dtos";
 
 export function CreateSchemaRunPage() {
   const [searchParams] = useSearchParams();
@@ -43,7 +42,7 @@ export function CreateSchemaRunPage() {
   const [defaultName] = useState(`run-${new Date().toISOString()}`);
   const initialInputsRef = useRef<JsonRecord | undefined>(undefined);
   if (!initialInputsRef.current && sourceRun) {
-    initialInputsRef.current = mergeSchemaRunInputs(sourceRun.inputData, sourceRun.results);
+    initialInputsRef.current = sourceRun.inputData;
   }
 
   useEffect(() => {
@@ -70,10 +69,7 @@ export function CreateSchemaRunPage() {
         const run = await createRun.mutateAsync(request);
         await Promise.all(
           feedback.map((item) => {
-            const result = run.results.find(
-              (candidate) =>
-                candidate.modelId === item.modelId && candidate.signatureId === item.signatureId,
-            );
+            const result = run.results.find((candidate) => candidate.modelId === item.modelId);
             if (!result) return Promise.resolve();
             return createPredictionResultFeedback({
               resultId: result.id,

@@ -76,7 +76,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.120.3" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.1" },
     { name = "joblib", specifier = ">=1.5.2" },
-    { name = "mlschema", specifier = "==0.2.0" },
+    { name = "mlschema", specifier = "==0.2.1" },
     { name = "pandas", specifier = ">=3.0.3,<4.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.1" },
     { name = "python-multipart", specifier = ">=0.0.6" },
@@ -301,15 +301,15 @@ wheels = [
 
 [[package]]
 name = "mlschema"
-version = "0.2.0"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pandas" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/12/167f360dd55ab9ad0bd6f24ca714b6a721e6f0e2cb72af2f33168fdeca4b/mlschema-0.2.0.tar.gz", hash = "sha256:041c9c771a319b1e786da46acae1ecc2f40939650121495486c95f10c736689f", size = 54145, upload-time = "2026-06-01T11:55:48.669Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/97/b3295985c4250525069b86bf0eee31c211b3d35cebee5b995f64a35dcb58/mlschema-0.2.1.tar.gz", hash = "sha256:59f819d677fa662f9c620938a6bef7fd093a11dad5872e507e5035da723cdb9e", size = 56763, upload-time = "2026-06-18T11:21:12.225Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/bb/07f1bc9ee55aa8abf68b907befcfe2b365b04d1aee08588d6b21599d6419/mlschema-0.2.0-py3-none-any.whl", hash = "sha256:1ecdc6b9dda6963873e35cd733c5e04755d4d19b93c13f6b84ccf6533a0106c5", size = 35085, upload-time = "2026-06-01T11:55:47.619Z" },
+    { url = "https://files.pythonhosted.org/packages/56/4a/c4b8f535f3ea8cb60af7ab65f30c8dd2a7363768465a63fcccee72cc265f/mlschema-0.2.1-py3-none-any.whl", hash = "sha256:26ae50b7861d7bd907c5117498d384d003d8e2925dcaa14335add3d0bd7101ba", size = 36852, upload-time = "2026-06-18T11:21:11.292Z" },
 ]
 
 [[package]]

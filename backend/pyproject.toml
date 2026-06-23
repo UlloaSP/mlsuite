@@ -14,7 +14,7 @@ dependencies = [
     "joblib>=1.5.2",
     "pandas>=3.0.3,<4.0.0",
     "scikit-learn>=1.7.2",
-    "mlschema==0.2.0",
+    "mlschema==0.2.1",
     "python-multipart>=0.0.6",
     "crystal-tree",
     "xclingo==2.0b12",

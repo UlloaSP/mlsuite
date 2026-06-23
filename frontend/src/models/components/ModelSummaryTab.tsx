@@ -4,28 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AppBadge, AppButton, AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
-import type { ModelDto, SignatureDto } from "../api/modelService";
-import {
-  formatTimestamp,
-  getLatestSignature,
-  getModelAlgorithmLabel,
-  getModelDerivedMetric,
-  getSignatureVersionLabel,
-} from "../utils";
+import type { ModelDto } from "../../api/models/services";
+import { formatTimestamp, getModelAlgorithmLabel } from "../../algorithms/models/utils";
 
 type ModelSummaryTabProps = {
   model: ModelDto;
-  signatures: SignatureDto[];
-  onOpenLatestSignature: (signatureId: string) => void;
+  onCreateSchema: () => void;
 };
 
-export function ModelSummaryTab({
-  model,
-  signatures,
-  onOpenLatestSignature,
-}: ModelSummaryTabProps) {
-  const latestSignature = getLatestSignature(signatures);
-
+export function ModelSummaryTab({ model, onCreateSchema }: ModelSummaryTabProps) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <AppPanel className="space-y-4">
@@ -49,10 +36,10 @@ export function ModelSummaryTab({
           </div>
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Derived Metric
+              Schema fields
             </p>
             <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
-              {getModelDerivedMetric(signatures)}
+              {Array.isArray(model.inputSchema.fields) ? model.inputSchema.fields.length : 0}
             </p>
           </div>
         </div>
@@ -65,29 +52,13 @@ export function ModelSummaryTab({
       </AppPanel>
 
       <AppPanel className="space-y-4 xl:col-span-2">
-        <AppSectionTitle>Latest Schema</AppSectionTitle>
-        {latestSignature ? (
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-[var(--text-primary)]">
-                {latestSignature.name} · {getSignatureVersionLabel(latestSignature)}
-              </p>
-              <AppCopy>
-                Created {formatTimestamp(latestSignature.createdAt)}
-                {latestSignature.origin ? " · Based on previous version" : " · Initial version"}
-              </AppCopy>
-            </div>
-            <AppButton
-              type="button"
-              variant="secondary"
-              onClick={() => onOpenLatestSignature(latestSignature.id)}
-            >
-              Open Schema
-            </AppButton>
-          </div>
-        ) : (
-          <AppCopy>No schemas registered for this model yet.</AppCopy>
-        )}
+        <AppSectionTitle>Schema</AppSectionTitle>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <AppCopy>Create a schema from this model snapshot.</AppCopy>
+          <AppButton type="button" variant="secondary" onClick={onCreateSchema}>
+            Create Schema
+          </AppButton>
+        </div>
       </AppPanel>
     </div>
   );

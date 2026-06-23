@@ -10,8 +10,8 @@ import {
   AppSurface,
 } from "../../app/components";
 import { OrganizationCard } from "../components/OrganizationCard";
-import { getOrganizations, createOrganization } from "../api/workspaceService";
-import { useWorkspaceContext } from "../hooks";
+import { getOrganizations, createOrganization } from "../../api/workspace/services";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 
 export function OrganizationsPage() {
   const navigate = useNavigate();

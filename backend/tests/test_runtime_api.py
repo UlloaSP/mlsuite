@@ -29,7 +29,10 @@ def test_health() -> None:
 
 
 def test_metadata_success() -> None:
-    response = client.post("/metadata", files={"model_file": serialize_joblib(make_classifier(), "model.joblib")})
+    response = client.post(
+        "/metadata",
+        files={"model_file": serialize_joblib(make_classifier(), "model.joblib")},
+    )
     payload = response.json()
     assert response.status_code == 200
     assert payload["fileName"] == "model.joblib"
@@ -39,7 +42,9 @@ def test_metadata_success() -> None:
 def test_metadata_supports_xgboost_classifier() -> None:
     response = client.post(
         "/metadata",
-        files={"model_file": serialize_joblib(make_xgboost_classifier(), "model.joblib")},
+        files={
+            "model_file": serialize_joblib(make_xgboost_classifier(), "model.joblib")
+        },
     )
     payload = response.json()
     assert response.status_code == 200
@@ -48,15 +53,23 @@ def test_metadata_supports_xgboost_classifier() -> None:
 
 
 def test_metadata_rejects_non_joblib() -> None:
-    response = client.post("/metadata", files={"model_file": ("model.txt", BytesIO(b"nope"), "text/plain")})
+    response = client.post(
+        "/metadata", files={"model_file": ("model.txt", BytesIO(b"nope"), "text/plain")}
+    )
     assert response.status_code == 400
     assert response.json()["detail"] == "File must be .joblib"
 
 
 def test_metadata_rejects_non_estimator() -> None:
-    response = client.post("/metadata", files={"model_file": serialize_joblib({"bad": "payload"}, "model.joblib")})
+    response = client.post(
+        "/metadata",
+        files={"model_file": serialize_joblib({"bad": "payload"}, "model.joblib")},
+    )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Model must be a supported classifier or regressor."
+    assert (
+        response.json()["detail"]
+        == "Model must be a supported classifier or regressor."
+    )
 
 
 def test_build_schema_success_with_optional_dataframe() -> None:
@@ -71,19 +84,24 @@ def test_build_schema_success_with_optional_dataframe() -> None:
     payload = response.json()
     assert response.status_code == 200
     assert [field["kind"] for field in payload["fields"]] == ["number", "number"]
+    assert [field["mappedTo"] for field in payload["fields"]] == ["age", "income"]
     assert payload["reports"][0]["kind"] == "classifier"
+    assert payload["reports"][0]["mappedTo"] == "classifier"
 
 
 def test_build_schema_generates_features_from_model_width() -> None:
     response = client.post(
         "/build_schema",
-        files={"model_file": serialize_joblib(make_positional_classifier(), "model.joblib")},
+        files={
+            "model_file": serialize_joblib(make_positional_classifier(), "model.joblib")
+        },
     )
     payload = response.json()
     assert response.status_code == 200
     labels = [field["label"] for field in payload["fields"]]
     kinds = [field["kind"] for field in payload["fields"]]
-    assert labels == ["feature_1", "feature_2"]
+    assert labels == ["feature_0", "feature_1"]
+    assert [field["mappedTo"] for field in payload["fields"]] == [0, 1]
     assert kinds == ["number", "number"]
 
 
@@ -100,6 +118,7 @@ def test_build_schema_adopts_dataframe_columns_for_positional_model() -> None:
     assert response.status_code == 200
     labels = [field["label"] for field in payload["fields"]]
     assert labels == ["height", "weight"]
+    assert [field["mappedTo"] for field in payload["fields"]] == [0, 1]
 
 
 def test_build_schema_rejects_dataframe_width_mismatch_for_positional_model() -> None:
@@ -107,7 +126,9 @@ def test_build_schema_rejects_dataframe_width_mismatch_for_positional_model() ->
     response = client.post(
         "/build_schema",
         files={
-            "model_file": serialize_joblib(make_positional_classifier(), "model.joblib"),
+            "model_file": serialize_joblib(
+                make_positional_classifier(), "model.joblib"
+            ),
             "df_file": serialize_joblib(frame, "data.joblib"),
         },
     )
@@ -130,10 +151,14 @@ def test_build_schema_supports_xgboost_regressor() -> None:
     assert response.status_code == 200
     assert [field["kind"] for field in payload["fields"]] == ["number", "number"]
     assert payload["reports"][0]["kind"] == "regressor"
+    assert payload["reports"][0]["mappedTo"] == "regressor"
 
 
 def test_build_schema_rejects_non_joblib_model() -> None:
-    response = client.post("/build_schema", files={"model_file": ("model.txt", BytesIO(b"nope"), "text/plain")})
+    response = client.post(
+        "/build_schema",
+        files={"model_file": ("model.txt", BytesIO(b"nope"), "text/plain")},
+    )
     assert response.status_code == 400
     assert response.json()["detail"] == "File must be .joblib"
 
@@ -141,7 +166,9 @@ def test_build_schema_rejects_non_joblib_model() -> None:
 def test_build_schema_rejects_missing_feature_names() -> None:
     response = client.post(
         "/build_schema",
-        files={"model_file": serialize_joblib(make_no_feature_classifier(), "model.joblib")},
+        files={
+            "model_file": serialize_joblib(make_no_feature_classifier(), "model.joblib")
+        },
     )
     assert response.status_code == 400
     assert response.json()["detail"] == "No feature names found in the model."
@@ -168,22 +195,24 @@ def test_predict_classifier_success() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["outputs"][0]["type"] == "classifier"
-    assert payload["outputs"][0]["showClassProbabilities"] is True
-    assert "execution_time" in payload["outputs"][0]
+    assert payload["reports"][0]["kind"] == "classifier"
+    assert payload["reports"][0]["showClassProbabilities"] is True
+    assert "execution_time" in payload["reports"][0]
 
 
 def test_predict_xgboost_classifier_success() -> None:
     response = client.post(
         "/predict",
-        files={"model_file": serialize_joblib(make_xgboost_classifier(), "model.joblib")},
+        files={
+            "model_file": serialize_joblib(make_xgboost_classifier(), "model.joblib")
+        },
         data={"data": json.dumps({"age": 40, "income": 55_000})},
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["outputs"][0]["type"] == "classifier"
-    assert payload["outputs"][0]["mapping"] == ["0", "1"]
-    assert payload["outputs"][0]["probabilities"]
+    assert payload["reports"][0]["kind"] == "classifier"
+    assert payload["reports"][0]["mapping"] == ["0", "1"]
+    assert payload["reports"][0]["probabilities"]
 
 
 def test_predict_regressor_success() -> None:
@@ -194,20 +223,22 @@ def test_predict_regressor_success() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["outputs"][0]["type"] == "regressor"
-    assert isinstance(payload["outputs"][0]["values"], list)
+    assert payload["reports"][0]["kind"] == "regressor"
+    assert isinstance(payload["reports"][0]["values"], list)
 
 
 def test_predict_xgboost_regressor_success() -> None:
     response = client.post(
         "/predict",
-        files={"model_file": serialize_joblib(make_xgboost_regressor(), "model.joblib")},
+        files={
+            "model_file": serialize_joblib(make_xgboost_regressor(), "model.joblib")
+        },
         data={"data": json.dumps({"rooms": 3, "area": 60})},
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["outputs"][0]["type"] == "regressor"
-    assert isinstance(payload["outputs"][0]["values"], list)
+    assert payload["reports"][0]["kind"] == "regressor"
+    assert isinstance(payload["reports"][0]["values"], list)
 
 
 def test_predict_rejects_invalid_json() -> None:
@@ -227,7 +258,10 @@ def test_predict_rejects_non_estimator() -> None:
         data={"data": json.dumps({"age": 1})},
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Model must be a supported classifier or regressor."
+    assert (
+        response.json()["detail"]
+        == "Model must be a supported classifier or regressor."
+    )
 
 
 def test_explain_success() -> None:
@@ -238,18 +272,25 @@ def test_explain_success() -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["explanations"]
+    assert payload["reports"][0]["explanation"]
 
 
 def test_explain_success_when_tree_does_not_use_tail_features() -> None:
     response = client.post(
         "/explain",
-        files={"model_file": serialize_joblib(make_tree_with_unused_tail_feature(), "model.joblib")},
-        data={"data": json.dumps({"age": 40, "income": 55_000, "unused": 7}), "traces": "[]"},
+        files={
+            "model_file": serialize_joblib(
+                make_tree_with_unused_tail_feature(), "model.joblib"
+            )
+        },
+        data={
+            "data": json.dumps({"age": 40, "income": 55_000, "unused": 7}),
+            "traces": "[]",
+        },
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["explanations"]
+    assert payload["reports"][0]["explanation"]
 
 
 def test_explain_rejects_non_tree_model() -> None:
@@ -297,4 +338,4 @@ def test_explain_falls_back_when_crystal_tree_returns_none(monkeypatch) -> None:
     )
     payload = response.json()
     assert response.status_code == 200
-    assert payload["explanations"][0].startswith("Prediction path")
+    assert payload["reports"][0]["explanation"].startswith("Prediction path")

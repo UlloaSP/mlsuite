@@ -10,7 +10,7 @@ export const createLocalQuestionnaireTransport = (): Transport => ({
     return {
       raw: request.serializedValues,
       meta: {},
-      reports: {},
+      reports: [],
     };
   },
 });

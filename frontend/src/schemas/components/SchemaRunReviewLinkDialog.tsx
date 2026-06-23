@@ -7,13 +7,13 @@ import { Copy, Link2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppButton, AppIconButton, AppTextField } from "../../app/components";
-import { formatTimestamp } from "../../models/utils";
+import { formatTimestamp } from "../../algorithms/models/utils";
 import {
   useCreateSchemaReviewLinkMutation,
   useRevokeSchemaReviewLinkMutation,
   useSchemaReviewLinks,
-} from "../../schema-review/hooks";
-import type { PredictionRunDto, SchemaVersionDto } from "../types";
+} from "../../api/review/hooks";
+import type { PredictionRunDto, SchemaVersionDto } from "../../api/schemas/dtos";
 
 type Props = {
   runs: PredictionRunDto[];
@@ -21,7 +21,7 @@ type Props = {
   onClose: () => void;
 };
 
-const reviewUrl = (token: string): string => `${window.location.origin}/schema-review/${token}`;
+const reviewUrl = (token: string): string => `${window.location.origin}/review/${token}`;
 
 const defaultExpiryDate = () => {
   const date = new Date();
@@ -48,7 +48,7 @@ export function SchemaRunReviewLinkDialog({ runs, version, onClose }: Props) {
   );
 
   useEffect(() => {
-    // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-derived-state, react-doctor/no-adjust-state-on-prop-change, react-doctor/no-pass-data-to-parent -- Modal selection resets when opening/changing visible inference set, matching signature share modal behavior.
+    // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-derived-state, react-doctor/no-adjust-state-on-prop-change, react-doctor/no-pass-data-to-parent -- Modal selection resets when opening/changing visible inference set, matching schema share modal behavior.
     setSelectedRunIds(new Set(runs.map((run) => run.id)));
   }, [runs]);
 

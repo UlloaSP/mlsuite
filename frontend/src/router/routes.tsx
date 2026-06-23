@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Suspense, type ReactNode } from "react";
-import { createBrowserRouter, type RouteObject } from "react-router";
+import type { ReactNode } from "react";
+import { createBrowserRouter, Outlet, type RouteObject } from "react-router";
 import { AdminUsersPage } from "../admin/pages/admin-users-page";
 import { AdminInfrastructurePage } from "../admin/infrastructure/pages/admin-infrastructure-page";
 import { AuthLandingPage } from "../app/pages/AuthLandingPage";
@@ -15,13 +15,9 @@ import { PublicLayout } from "../layout/PublicLayout";
 import { CreateModelPage } from "../models/pages/create-model-page";
 import { ModelDetailPage } from "../models/pages/model-detail-page";
 import { ModelsPage } from "../models/pages/models-page";
-import { PredictionDetailPage } from "../models/pages/prediction-detail-page";
-import { ReviewProtectedRoute } from "../review/components/ReviewProtectedRoute";
-import { ReviewLoginRoute } from "../review/components/ReviewLoginRoute";
-import { ReviewWorkspacePage } from "../review/pages/review-workspace-page";
-import { SchemaReviewLoginRoute } from "../schema-review/components/SchemaReviewLoginRoute";
-import { SchemaReviewProtectedRoute } from "../schema-review/components/SchemaReviewProtectedRoute";
-import { SchemaReviewWorkspacePage } from "../schema-review/pages/schema-review-workspace-page";
+import { SchemaReviewLoginRoute } from "../review/components/SchemaReviewLoginRoute";
+import { SchemaReviewProtectedRoute } from "../review/components/SchemaReviewProtectedRoute";
+import { SchemaReviewWorkspacePage } from "../review/pages/review-workspace-page";
 import { CreateSchemaPage } from "../schemas/pages/create-schema-page";
 import { CreateSchemaRunPage } from "../schemas/pages/create-schema-run-page";
 import { CreateSchemaVersionPage } from "../schemas/pages/create-schema-version-page";
@@ -29,7 +25,6 @@ import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-
 import { SchemaRunHistoryPage } from "../schemas/pages/schema-run-history-page";
 import { SchemaDetailPage } from "../schemas/pages/schema-detail-page";
 import { SchemasPage } from "../schemas/pages/schemas-page";
-import { SignatureDetailPage } from "../models/pages/signature-detail-page";
 import { ProfilePage } from "../user/pages/profilePage";
 import { CreateOrganizationPage } from "../workspace/pages/create-organization-page";
 import { InvitationAcceptPage } from "../workspace/pages/invitation-accept-page";
@@ -47,13 +42,8 @@ import {
   RequireSuperadmin,
   RequireWorkspacePermission,
 } from "../workspace/components/RequireWorkspacePermission";
-import type { WorkspacePermissionKey } from "../workspace/types";
-import {
-  CreatePredictionPage,
-  CreateSignaturePage,
-  EditorRouteFallback,
-  ProtectedRoute,
-} from "./route-components";
+import type { WorkspacePermissionKey } from "../api/workspace/dtos";
+import { ProtectedRoute } from "./route-components";
 import { enableViewTransitions } from "./view-transitions";
 
 function app(element: ReactNode) {
@@ -61,9 +51,7 @@ function app(element: ReactNode) {
 }
 
 function workspace(permission: WorkspacePermissionKey, element: ReactNode) {
-  return (
-    <RequireWorkspacePermission permission={permission}>{app(element)}</RequireWorkspacePermission>
-  );
+  return <RequireWorkspacePermission permission={permission}>{element}</RequireWorkspacePermission>;
 }
 
 const routes: RouteObject[] = [
@@ -83,184 +71,145 @@ const routes: RouteObject[] = [
         element: <ProtectedRoute />,
         children: [
           {
-            path: "workspace",
-            element: workspace("canViewWorkspace", <WorkspaceHomePage />),
-          },
-          {
-            path: "workspace/organizations",
-            element: workspace("canViewOrganization", <OrganizationsPage />),
-          },
-          {
-            path: "workspace/organizations/create",
-            element: workspace("canEditOrganization", <CreateOrganizationPage />),
-          },
-          {
-            path: "workspace/organizations/:organizationId",
-            element: workspace("canViewOrganization", <OrganizationAdminPage />),
-          },
-          {
-            path: "workspace/organizations/:organizationId/teams",
-            element: workspace("canViewTeams", <TeamsPage />),
-          },
-          {
-            path: "workspace/organizations/:organizationId/teams/:teamId",
-            element: (
-              <RequireTeamPermission permission="canViewTeam">
-                {app(<TeamDetailPage />)}
-              </RequireTeamPermission>
-            ),
-          },
-          {
-            path: "workspace/organizations/:organizationId/members",
-            element: workspace("canViewMembers", <MembersPage />),
-          },
-          {
-            path: "workspace/organizations/:organizationId/invitations",
-            element: workspace("canViewInvitations", <InvitationsPage />),
-          },
-          {
-            path: "workspace/organizations/:organizationId/roles",
-            element: workspace("canViewMembers", <RolesPage />),
-          },
-          {
-            path: "workspace/organizations/:organizationId/settings",
-            element: workspace("canViewOrganization", <OrganizationSettingsPage />),
-          },
-          {
-            path: "workspace/teams/:teamId",
-            element: (
-              <RequireTeamPermission permission="canViewTeam">
-                {app(<TeamDetailPage />)}
-              </RequireTeamPermission>
-            ),
-          },
-          {
-            path: "invite/:token",
-            element: app(<InvitationAcceptPage />),
-          },
-          {
-            path: "profile",
-            element: app(<ProfilePage />),
-          },
-          {
-            path: "admin/users",
-            element: <RequireSuperadmin>{app(<AdminUsersPage />)}</RequireSuperadmin>,
-          },
-          {
-            path: "admin/infrastructure",
-            element: <RequireSuperadmin>{app(<AdminInfrastructurePage />)}</RequireSuperadmin>,
-          },
-          {
-            path: "models",
-            element: workspace("canViewModels", <ModelsPage />),
-          },
-          {
-            path: "models/create",
-            element: workspace("canCreateModels", <CreateModelPage />),
-          },
-          {
-            path: "models/:modelId",
-            element: workspace("canViewModels", <ModelDetailPage />),
-          },
-          {
-            path: "plugins",
-            element: workspace("canViewPlugins", <PluginCatalogPage />),
-          },
-          {
-            path: "models/:modelId/signatures/:signatureId",
-            element: workspace("canViewModels", <SignatureDetailPage />),
-          },
-          {
-            path: "models/:modelId/signatures/create",
-            element: workspace(
-              "canEditModels",
-              <Suspense fallback={<EditorRouteFallback />}>
-                <CreateSignaturePage />
-              </Suspense>,
-            ),
-          },
-          {
-            path: "models/:modelId/signatures/:signatureId/predictions/:predictionId",
-            element: workspace("canViewModels", <PredictionDetailPage />),
-          },
-          {
-            path: "models/:modelId/signatures/:signatureId/predictions/create",
-            element: workspace(
-              "canRunPredictions",
-              <Suspense fallback={<EditorRouteFallback />}>
-                <CreatePredictionPage />
-              </Suspense>,
-            ),
-          },
-          {
-            path: "models/:modelId/signatures/:signatureId/predictions/create/:inputs",
-            element: workspace(
-              "canRunPredictions",
-              <Suspense fallback={<EditorRouteFallback />}>
-                <CreatePredictionPage />
-              </Suspense>,
-            ),
-          },
-          {
-            path: "schemas",
-            element: workspace("canViewModels", <SchemasPage />),
-          },
-          {
-            path: "schemas/create",
-            element: workspace("canEditModels", <CreateSchemaPage />),
-          },
-          {
-            path: "schemas/:schemaId",
-            element: workspace("canViewModels", <SchemaDetailPage />),
-          },
-          {
-            path: "schemas/:schemaId/versions/create",
-            element: workspace("canEditModels", <CreateSchemaVersionPage />),
-          },
-          {
-            path: "schemas/:schemaId/versions/:versionId/runs/create",
-            element: workspace("canRunPredictions", <CreateSchemaRunPage />),
-          },
-          {
-            path: "schemas/:schemaId/versions/:versionId/runs",
-            element: workspace("canViewModels", <SchemaRunHistoryPage />),
-          },
-          {
-            path: "schemas/:schemaId/versions/:versionId/runs/:runId",
-            element: workspace("canViewModels", <PredictionRunDetailPage />),
+            element: app(<Outlet />),
+            children: [
+              {
+                path: "workspace",
+                element: workspace("canViewWorkspace", <WorkspaceHomePage />),
+              },
+              {
+                path: "workspace/organizations",
+                element: workspace("canViewOrganization", <OrganizationsPage />),
+              },
+              {
+                path: "workspace/organizations/create",
+                element: workspace("canEditOrganization", <CreateOrganizationPage />),
+              },
+              {
+                path: "workspace/organizations/:organizationId",
+                element: workspace("canViewOrganization", <OrganizationAdminPage />),
+              },
+              {
+                path: "workspace/organizations/:organizationId/teams",
+                element: workspace("canViewTeams", <TeamsPage />),
+              },
+              {
+                path: "workspace/organizations/:organizationId/teams/:teamId",
+                element: (
+                  <RequireTeamPermission permission="canViewTeam">
+                    <TeamDetailPage />
+                  </RequireTeamPermission>
+                ),
+              },
+              {
+                path: "workspace/organizations/:organizationId/members",
+                element: workspace("canViewMembers", <MembersPage />),
+              },
+              {
+                path: "workspace/organizations/:organizationId/invitations",
+                element: workspace("canViewInvitations", <InvitationsPage />),
+              },
+              {
+                path: "workspace/organizations/:organizationId/roles",
+                element: workspace("canViewMembers", <RolesPage />),
+              },
+              {
+                path: "workspace/organizations/:organizationId/settings",
+                element: workspace("canViewOrganization", <OrganizationSettingsPage />),
+              },
+              {
+                path: "workspace/teams/:teamId",
+                element: (
+                  <RequireTeamPermission permission="canViewTeam">
+                    <TeamDetailPage />
+                  </RequireTeamPermission>
+                ),
+              },
+              {
+                path: "invite/:token",
+                element: <InvitationAcceptPage />,
+              },
+              {
+                path: "profile",
+                element: <ProfilePage />,
+              },
+              {
+                path: "admin/users",
+                element: (
+                  <RequireSuperadmin>
+                    <AdminUsersPage />
+                  </RequireSuperadmin>
+                ),
+              },
+              {
+                path: "admin/infrastructure",
+                element: (
+                  <RequireSuperadmin>
+                    <AdminInfrastructurePage />
+                  </RequireSuperadmin>
+                ),
+              },
+              {
+                path: "models",
+                element: workspace("canViewModels", <ModelsPage />),
+              },
+              {
+                path: "models/create",
+                element: workspace("canCreateModels", <CreateModelPage />),
+              },
+              {
+                path: "models/:modelId",
+                element: workspace("canViewModels", <ModelDetailPage />),
+              },
+              {
+                path: "plugins",
+                element: workspace("canViewPlugins", <PluginCatalogPage />),
+              },
+              {
+                path: "schemas",
+                element: workspace("canViewModels", <SchemasPage />),
+              },
+              {
+                path: "schemas/create",
+                element: workspace("canEditModels", <CreateSchemaPage />),
+              },
+              {
+                path: "schemas/:schemaId",
+                element: workspace("canViewModels", <SchemaDetailPage />),
+              },
+              {
+                path: "schemas/:schemaId/versions/create",
+                element: workspace("canEditModels", <CreateSchemaVersionPage />),
+              },
+              {
+                path: "schemas/:schemaId/versions/:versionId/runs/create",
+                element: workspace("canRunPredictions", <CreateSchemaRunPage />),
+              },
+              {
+                path: "schemas/:schemaId/versions/:versionId/runs",
+                element: workspace("canViewModels", <SchemaRunHistoryPage />),
+              },
+              {
+                path: "schemas/:schemaId/versions/:versionId/runs/:runId",
+                element: workspace("canViewModels", <PredictionRunDetailPage />),
+              },
+            ],
           },
         ],
       },
       {
         path: "review/:token/login",
-        element: <ReviewLoginRoute />,
-      },
-      {
-        path: "schema-review/:token/login",
         element: <SchemaReviewLoginRoute />,
-      },
-      {
-        element: <ReviewProtectedRoute />,
-        children: [
-          {
-            path: "review/:token",
-            element: <ReviewWorkspacePage />,
-          },
-          {
-            path: "review/:token/predictions/:predictionToken",
-            element: <ReviewWorkspacePage />,
-          },
-        ],
       },
       {
         element: <SchemaReviewProtectedRoute />,
         children: [
           {
-            path: "schema-review/:token",
+            path: "review/:token",
             element: <SchemaReviewWorkspacePage />,
           },
           {
-            path: "schema-review/:token/runs/:runToken",
+            path: "review/:token/runs/:runToken",
             element: <SchemaReviewWorkspacePage />,
           },
         ],

@@ -38,6 +38,18 @@ def make_classifier() -> LogisticRegression:
     return LogisticRegression().fit(features, labels)
 
 
+def make_onehot_classifier() -> LogisticRegression:
+    features = pd.DataFrame(
+        {
+            "color_red": [1, 0, 1, 0],
+            "color_blue": [0, 1, 0, 1],
+            "size": [10, 20, 12, 22],
+        }
+    )
+    labels = [0, 1, 0, 1]
+    return LogisticRegression().fit(features, labels)
+
+
 def make_regressor() -> LinearRegression:
     features = pd.DataFrame(
         {
@@ -103,7 +115,9 @@ def make_xgboost_classifier() -> XGBClassifier:
         }
     )
     labels = [0, 0, 1, 1, 1, 1]
-    return XGBClassifier(n_estimators=3, max_depth=2, eval_metric="logloss").fit(features, labels)
+    return XGBClassifier(n_estimators=3, max_depth=2, eval_metric="logloss").fit(
+        features, labels
+    )
 
 
 def make_xgboost_regressor() -> XGBRegressor:

@@ -24,7 +24,9 @@ def build_tree_path_explanation(
     instance = instance_df.iloc[0]
     node_indicator = model.decision_path(instance_df)
     leaf_id = model.apply(instance_df)[0]
-    node_indexes = node_indicator.indices[node_indicator.indptr[0]:node_indicator.indptr[1]]
+    node_indexes = node_indicator.indices[
+        node_indicator.indptr[0] : node_indicator.indptr[1]
+    ]
     lines = ["Prediction path"]
     for node_id in node_indexes:
         if node_id == leaf_id:
@@ -36,7 +38,9 @@ def build_tree_path_explanation(
         threshold = tree.threshold[node_id]
         value = instance.iloc[feature_index]
         operator = "<=" if value <= threshold else ">"
-        lines.append(f"|- {feature_name} {operator} {format_tree_threshold(threshold)} (value={value})")
+        lines.append(
+            f"|- {feature_name} {operator} {format_tree_threshold(threshold)} (value={value})"
+        )
     predicted = model.predict(instance_df)[0]
     label = "class" if isinstance(model, DecisionTreeClassifier) else "value"
     lines.append(f"\\- {label} = {predicted}")
@@ -45,13 +49,13 @@ def build_tree_path_explanation(
 
 def build_feature_value_alias_program(feature_names: list[str]) -> str:
     return "\n".join(
-        f'value(I,{json.dumps(str(name))},V) :- value(I,{index},V).'
+        f"value(I,{json.dumps(str(name))},V) :- value(I,{index},V)."
         for index, name in enumerate(feature_names)
     )
 
 
 def build_threshold_compatibility_program(model: object, factor: int) -> str:
-    multiplier = 10 ** factor
+    multiplier = 10**factor
     thresholds = []
     for threshold in model.tree_.threshold:
         if threshold == -2 or math.isinf(threshold) or math.isnan(threshold):
@@ -77,7 +81,9 @@ def parse_trace_definitions(raw_traces: list[object]) -> list[Trace]:
         text = item.get("text")
         feature = item.get("feature")
         if not isinstance(text, str) or not isinstance(feature, str):
-            raise bad_request("Invalid traces JSON: trace text and feature are required")
+            raise bad_request(
+                "Invalid traces JSON: trace text and feature are required"
+            )
         conditions = []
         for condition in item.get("conditions", []):
             if not isinstance(condition, dict):
@@ -86,7 +92,14 @@ def parse_trace_definitions(raw_traces: list[object]) -> list[Trace]:
             if not isinstance(operator, str):
                 raise bad_request("Invalid traces JSON: condition operator is required")
             conditions.append(Condition(operator, condition.get("value")))
-        traces.append(Trace(text, feature, conditions=conditions, target_class=item.get("targetClass")))
+        traces.append(
+            Trace(
+                text,
+                feature,
+                conditions=conditions,
+                target_class=item.get("targetClass"),
+            )
+        )
     return traces
 
 
@@ -109,14 +122,38 @@ def explain_with_feature_name_aliases(
         factor = crystal_tree.max_decimal_places(logic_instance_df)
     crystal_tree.set_logic_tree(feature_names=logic_feature_names, factor=factor)
     control = XclingoControl(n_solutions=1, n_explanations=1)
-    control.add("base", [], Dafacter(logic_instance_df, logic_feature_names, factor=factor).as_program_string())
+    control.add(
+        "base",
+        [],
+        Dafacter(
+            logic_instance_df, logic_feature_names, factor=factor
+        ).as_program_string(),
+    )
     control.add("base", [], build_feature_value_alias_program(logic_feature_names))
-    control.add("base", [], build_threshold_compatibility_program(crystal_tree._dt, factor))
+    control.add(
+        "base", [], build_threshold_compatibility_program(crystal_tree._dt, factor)
+    )
     control.add("base", [], crystal_tree._logic_tree.get_paths())
     control.add("base", [], crystal_tree._logic_tree.extra)
-    prediction_traces = crystal_tree.prediction_traces or crystal_tree._logic_tree.prediction_traces
-    feature_traces = crystal_tree.feature_traces or crystal_tree._logic_tree.feature_traces
-    control.add("base", [], render_traces(prediction_traces) if isinstance(prediction_traces, list) else prediction_traces)
-    control.add("base", [], render_traces(feature_traces) if isinstance(feature_traces, list) else feature_traces)
+    prediction_traces = (
+        crystal_tree.prediction_traces or crystal_tree._logic_tree.prediction_traces
+    )
+    feature_traces = (
+        crystal_tree.feature_traces or crystal_tree._logic_tree.feature_traces
+    )
+    control.add(
+        "base",
+        [],
+        render_traces(prediction_traces)
+        if isinstance(prediction_traces, list)
+        else prediction_traces,
+    )
+    control.add(
+        "base",
+        [],
+        render_traces(feature_traces)
+        if isinstance(feature_traces, list)
+        else feature_traces,
+    )
     control.ground([("base", [])], explainer_context=CrystalTreeContext(factor))
     return list(next(control.explain()))

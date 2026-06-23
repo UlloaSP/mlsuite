@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { NotFoundError } from "../../app/pages/error-page";
-import type { WorkspacePermissionKey } from "../types";
-import { useCan, useCurrentUserIsSuperadmin } from "../permissions/useWorkspacePermissions";
+import type { WorkspacePermissionKey } from "../../api/workspace/dtos";
+import { useCan, useCurrentUserIsSuperadmin } from "../../api/workspace/hooks";
 
 export function RequireWorkspacePermission({
   permission,

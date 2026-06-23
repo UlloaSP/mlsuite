@@ -10,7 +10,11 @@ import jakarta.annotation.Nullable;
 
 public interface AnalyzerUseCase {
 
-    Map<String, Object> generateInputSignature(Long userId, MultipartFile model, @Nullable MultipartFile dataframe);
+    Map<String, Object> generateInputSchema(
+            Long userId,
+            MultipartFile model,
+            @Nullable MultipartFile dataframe,
+            String oneHotSeparator);
 
     Map<String, Object> inspectArtifact(Long userId, MultipartFile artifact);
 

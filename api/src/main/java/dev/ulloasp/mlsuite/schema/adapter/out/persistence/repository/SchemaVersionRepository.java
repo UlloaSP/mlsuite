@@ -11,6 +11,8 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 public interface SchemaVersionRepository extends JpaRepository<SchemaVersion, Long> {
     List<SchemaVersion> findBySchemaIdOrderByVersionDesc(Long schemaId);
 
+    Optional<SchemaVersion> findTopBySchemaIdOrderByVersionDesc(Long schemaId);
+
     @Query("SELECT sv FROM SchemaVersion sv WHERE sv.id = :id AND sv.schema.organization.id = :organizationId")
     Optional<SchemaVersion> findByIdAndOrganizationId(Long id, Long organizationId);
 

@@ -11,23 +11,31 @@ import { toast } from "sonner";
 import {
   AppPage,
   AppPageHeader,
-  AppPanel,
   AppSurface,
   AppButton,
+  AppPanel,
   AppSelect,
   AppTextField,
 } from "../../app/components";
-import { isRecord } from "../../app/utils/mlform/shared";
+import { isRecord } from "../../algorithms/mlform/shared";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
-import { useCreateSchemaVersionMutation, useSchema, useSchemaVersions } from "../hooks";
-import { prepareSchemaVersionForSave } from "../schema-binding-rebase";
+import {
+  useCreateSchemaVersionMutation,
+  useSchema,
+  useSchemaVersions,
+} from "../../api/schemas/hooks";
+import { prepareSchemaVersionForSave } from "../../algorithms/schema/binding-rebase";
 import {
   schemaVersionId,
   selectSchemaVersion,
   sortSchemaVersions,
-} from "../schema-version-selection";
-import type { CreateSchemaVersionRequest } from "../types";
+} from "../../algorithms/schema/version-selection";
+import type { CreateSchemaVersionRequest } from "../../api/schemas/dtos";
+import { SchemaFormPreview } from "../components/SchemaFormPreview";
+import { ToggleButton } from "../../models/components/ToggleButton";
+
+type EditorView = "code" | "preview";
 
 export function CreateSchemaVersionPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
@@ -35,11 +43,12 @@ export function CreateSchemaVersionPage() {
   const { data: schemaDto } = useSchema(schemaId);
   const { data: versions = [] } = useSchemaVersions(schemaId);
   const mutation = useCreateSchemaVersionMutation(schemaId ?? "");
-  const [schema, setSchema] = useAtom(schemaAtom);
-  const [, setSchemaText] = useAtom(schemaTextAtom);
+  const [currentSchema, setSchema] = useAtom(schemaAtom);
+  const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [schemaErrors] = useAtom(schemaErrorsAtom);
   const [baseVersionId, setBaseVersionId] = useState("");
   const [versionName, setVersionName] = useState("");
+  const [editorView, setEditorView] = useState<EditorView>("code");
 
   const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
   const effectiveBaseId = baseVersionId || schemaVersionId(sortedVersions[0]);
@@ -55,23 +64,22 @@ export function CreateSchemaVersionPage() {
 
   const save = async () => {
     if (!schemaId || !baseVersion || !canSave) return;
-    const request: CreateSchemaVersionRequest = {
-      name: versionName,
-      formSchema: isRecord(schema) ? schema : baseVersion.formSchema,
-      bindings: baseVersion.bindings.map((binding) => ({
-        modelId: binding.modelId,
-        signatureId: binding.signatureId,
-        inputMapping: binding.inputMapping,
-        outputMapping: binding.outputMapping,
-        pluginPolicy: binding.pluginPolicy ?? undefined,
-      })),
-    };
-    const prepared = prepareSchemaVersionForSave(request, request.formSchema);
     try {
+      const currentSchema = JSON.parse(schemaText);
+      const request: CreateSchemaVersionRequest = {
+        name: versionName,
+        formSchema: isRecord(currentSchema) ? currentSchema : baseVersion.formSchema,
+        bindings: baseVersion.bindings.map((binding) => ({
+          modelId: binding.modelId,
+          modelName: binding.modelName,
+          pluginPolicy: binding.pluginPolicy ?? undefined,
+        })),
+      };
+      const prepared = prepareSchemaVersionForSave(request, request.formSchema);
       await mutation.mutateAsync({
         ...prepared,
       });
-      navigate(`/schemas/${schemaId}`);
+      void navigate(`/schemas/${schemaId}`);
     } catch (error) {
       toast.error("Schema version save failed", {
         description: error instanceof Error ? error.message : String(error),
@@ -93,71 +101,78 @@ export function CreateSchemaVersionPage() {
             { label: "New Version" },
           ]}
         />
-        <AppPanel className="shrink-0">
-          <div className="grid gap-4 xl:grid-cols-[minmax(240px,1fr)_minmax(260px,1fr)_auto]">
-            <div className="space-y-2">
-              <label
-                htmlFor="base-version"
-                className="text-sm font-semibold text-[var(--text-primary)]"
-              >
-                Base version
-              </label>
-              <AppSelect
-                id="base-version"
-                value={effectiveBaseId}
-                onValueChange={setBaseVersionId}
-                disabled={!sortedVersions.length}
-                className="w-full"
-                options={
-                  sortedVersions.length
-                    ? sortedVersions.map((version) => ({
-                        value: schemaVersionId(version),
-                        label: `${version.name} · v${version.version}`,
-                      }))
-                    : [{ value: "", label: "No versions available" }]
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="version-name"
-                className="text-sm font-semibold text-[var(--text-primary)]"
-              >
-                Version name
-              </label>
-              <AppTextField
-                id="version-name"
-                value={versionName}
-                placeholder="Schema refinement"
-                onChange={(event) => setVersionName(event.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="flex min-w-[180px] items-end">
-              <AppButton
-                onClick={save}
-                disabled={!canSave || mutation.isPending}
-                className="w-full"
-              >
-                {mutation.isPending ? (
-                  <>
-                    <span className="animate-spin">
-                      <RefreshCcw size={18} />
-                    </span>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save size={18} />
-                    Save version
-                  </>
-                )}
-              </AppButton>
-            </div>
+        <div className="grid gap-4 xl:grid-cols-[minmax(240px,1fr)_minmax(260px,1fr)_auto]">
+          <div className="space-y-2">
+            <label
+              htmlFor="base-version"
+              className="text-sm font-semibold text-[var(--text-primary)]"
+            >
+              Base version
+            </label>
+            <AppSelect
+              id="base-version"
+              value={effectiveBaseId}
+              onValueChange={setBaseVersionId}
+              disabled={!sortedVersions.length}
+              className="w-full"
+              options={
+                sortedVersions.length
+                  ? sortedVersions.map((version) => ({
+                      value: schemaVersionId(version),
+                      label: `${version.name} · v${version.version}`,
+                    }))
+                  : [{ value: "", label: "No versions available" }]
+              }
+            />
           </div>
-        </AppPanel>
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <EditorWrapper />
+          <div className="space-y-2">
+            <label
+              htmlFor="version-name"
+              className="text-sm font-semibold text-[var(--text-primary)]"
+            >
+              Version name
+            </label>
+            <AppTextField
+              id="version-name"
+              value={versionName}
+              placeholder="Schema refinement"
+              onChange={(event) => setVersionName(event.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="flex min-w-[180px] items-end">
+            <AppButton onClick={save} disabled={!canSave || mutation.isPending} className="w-full">
+              {mutation.isPending ? (
+                <>
+                  <span className="animate-spin">
+                    <RefreshCcw size={18} />
+                  </span>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  Save version
+                </>
+              )}
+            </AppButton>
+          </div>
+        </div>
+        <div className="flex relative min-h-0 flex-1 overflow-hidden">
+          <div className="absolute right-6 top-6 z-20">
+            <ToggleButton
+              isProcessing={false}
+              isJsonActive={editorView === "code"}
+              onToggleMode={() => setEditorView((view) => (view === "code" ? "preview" : "code"))}
+            />
+          </div>
+          {editorView === "code" ? (
+            <EditorWrapper />
+          ) : editorHasErrors ? (
+            <AppPanel>Fix schema errors to preview the form.</AppPanel>
+          ) : (
+            <SchemaFormPreview schema={currentSchema ?? baseVersion?.formSchema} />
+          )}
         </div>
       </AppSurface>
     </AppPage>

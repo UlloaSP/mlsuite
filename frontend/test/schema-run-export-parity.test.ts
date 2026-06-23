@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { buildSchemaRunExport } from "../src/schemas/schema-run-export";
+import { buildSchemaRunExport } from "../src/algorithms/schema/export";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
   SchemaVersionDto,
-} from "../src/schemas/types";
+} from "../src/api/schemas/dtos";
 
 const version: SchemaVersionDto = {
   id: "version-1",
@@ -17,31 +17,22 @@ const version: SchemaVersionDto = {
   version: 1,
   name: "Risk schema",
   createdAt: "2026-06-02T00:00:00Z",
-  bindings: [
-    {
-      id: "binding-1",
-      schemaVersionId: "version-1",
-      modelId: "model-1",
-      signatureId: "signature-1",
-      inputMapping: {},
-      outputMapping: { report_1: "predicted_class", crystal_1: "crystal" },
-    },
-  ],
+  bindings: [{ modelId: "model-1" }],
   formSchema: {
-    fields: [{ id: "age", label: "age", kind: "number" }],
+    fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
     reports: [
       {
         id: "report_1",
         label: "Predicted class",
         kind: "classifier",
-        source: "predicted_class",
+        mappedTo: { "model-1": "predicted_class" },
         labels: ["Low", "High"],
       },
       {
         id: "crystal_1",
         label: "Crystal Tree",
         kind: "Crystal Tree",
-        source: "crystal",
+        mappedTo: { "model-1": "crystal" },
         feedbackQuestionnaire: {
           steps: [
             {
@@ -68,13 +59,14 @@ const run: PredictionRunDto = {
       id: "result-1",
       runId: "run-1",
       modelId: "model-1",
-      signatureId: "signature-1",
       status: "SUCCESS",
       createdAt: "2026-06-02T10:00:00Z",
       modelInput: { age: 52 },
       output: {
-        outputs: [{ type: "classifier", prediction: 1, probabilities: [0.2, 0.8] }],
-        reports: { crystal: { explanation: "tree path" } },
+        reports: [
+          { mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] },
+          { mappedTo: "crystal", explanation: "tree path" },
+        ],
       },
     },
   ],

@@ -24,7 +24,9 @@ def feature_metadata(model: object) -> FeatureMetadata:
         return FeatureMetadata(names=names, source="model")
     count = getattr(model, "n_features_in_", None)
     if isinstance(count, int) and count > 0:
-        return FeatureMetadata(names=feature_names_from_count(count), source="generated")
+        return FeatureMetadata(
+            names=feature_names_from_count(count), source="generated"
+        )
     raise bad_request("No feature names found in the model.")
 
 
@@ -59,4 +61,3 @@ def _booster_feature_names(model: object) -> list[str]:
     if not isinstance(names, Iterable):
         return []
     return [str(item) for item in names if item is not None]
-

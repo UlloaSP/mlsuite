@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginStatsDto;
@@ -29,6 +30,7 @@ import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.UploadPluginUseCase;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
+import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginStoragePaths;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
@@ -62,6 +64,7 @@ public class PluginServiceImpl implements
     private final UserLookupService userLookupService;
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
+    private final PluginMetadataRepository pluginMetadataRepository;
 
     public PluginServiceImpl(
             ObjectStorageService objectStorageService,
@@ -69,13 +72,15 @@ public class PluginServiceImpl implements
             ObjectMapper objectMapper,
             UserLookupService userLookupService,
             WorkspaceAccessService workspaceAccessService,
-            WorkspaceAuthorizationService workspaceAuthorizationService) {
+            WorkspaceAuthorizationService workspaceAuthorizationService,
+            PluginMetadataRepository pluginMetadataRepository) {
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
         this.objectMapper = objectMapper;
         this.userLookupService = userLookupService;
         this.workspaceAccessService = workspaceAccessService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
+        this.pluginMetadataRepository = pluginMetadataRepository;
     }
 
     @Override
@@ -98,6 +103,7 @@ public class PluginServiceImpl implements
                     stored.fileName(),
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
+            persistMetadata(organization, stored);
             return toDto(stored);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
@@ -141,7 +147,10 @@ public class PluginServiceImpl implements
         readItems(itemsPrefix(organization.getId()))
                 .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         List<PluginDto> catalog = new ArrayList<>();
-        storedItems.values().forEach(item -> catalog.add(toDto(item)));
+        storedItems.values().forEach(item -> {
+            persistMetadata(organization, item);
+            catalog.add(toDto(item));
+        });
         catalog.sort(Comparator
                 .comparing(PluginDto::updatedAt, Comparator.reverseOrder())
                 .thenComparing(PluginDto::fileName, String.CASE_INSENSITIVE_ORDER));
@@ -155,6 +164,23 @@ public class PluginServiceImpl implements
         workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
         readStored(user, id);
         objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(organization.getId(), id));
+        pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId())
+                .ifPresent(pluginMetadataRepository::delete);
+    }
+
+    private void persistMetadata(Organization organization, StoredPlugin stored) {
+        PluginDescriptor descriptor = describe(stored.source());
+        pluginMetadataRepository.save(new PluginMetadata(
+                stored.id(),
+                organization,
+                itemObjectKey(organization.getId(), stored.id()),
+                stored.fileName(),
+                stored.contentType(),
+                stored.sizeBytes(),
+                stored.createdAt(),
+                stored.updatedAt(),
+                descriptor.type(),
+                descriptor.kind()));
     }
 
     private StoredPlugin readStored(User user, String id) {

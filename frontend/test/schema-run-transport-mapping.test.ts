@@ -4,10 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test, vi } from "vite-plus/test";
-import { createSchemaRunTransport } from "../src/app/utils/mlform/schema-run-transport";
+import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
 
 describe("schema run transport mapping", () => {
-  test("runs every binding when labels changed but input mappings keep old labels", async () => {
+  test("runs every binding when labels changed but mappedTo keeps model keys", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string, init?: RequestInit) => {
@@ -20,8 +20,13 @@ describe("schema run transport mapping", () => {
         const modelId = new URL(url).searchParams.get("modelId") ?? "";
         return new Response(
           JSON.stringify({
-            outputs: [{ type: "classifier", prediction: 0, probabilities: [0.8, 0.2] }],
-            reports: { predicted: { prediction: 0, probabilities: [0.8, 0.2] } },
+            reports: [
+              {
+                kind: "classifier",
+                prediction: 0,
+                probabilities: [0.8, 0.2],
+              },
+            ],
             meta: { modelId },
           }),
         );
@@ -29,19 +34,13 @@ describe("schema run transport mapping", () => {
     );
     const bindings = Array.from({ length: 6 }, (_, index) => ({
       modelId: `model-${index + 1}`,
-      signatureId: `sig-${index + 1}`,
-      inputMapping: { REC_UCI_HOURS: "rec_uci_hours" },
-      outputMapping:
-        index === 0
-          ? { "report-1": "predicted", "report-1-extra": "predicted" }
-          : { [`report-${index + 1}`]: "predicted" },
     }));
     const reports = bindings.flatMap((binding, index) => {
       const baseReport = {
         id: `report-${index + 1}`,
-        source: `report-${index + 1}`,
         label: `Predicted class · ${binding.modelId}`,
         kind: "classifier",
+        mappedTo: { [binding.modelId]: "predicted" },
       };
       if (index !== 0) {
         return [baseReport];
@@ -50,29 +49,38 @@ describe("schema run transport mapping", () => {
         baseReport,
         {
           id: "report-1-extra",
-          source: "report-1-extra",
           label: "Extra predicted class · model-1",
           kind: "classifier",
+          mappedTo: { "model-1": "predicted" },
         },
       ];
     });
     const transport = createSchemaRunTransport(bindings, [
-      { id: "rec_uci_hours", label: "TOTAL HORAS UCI", kind: "number" },
+      {
+        id: "rec_uci_hours",
+        label: "TOTAL HORAS UCI",
+        kind: "number",
+        displayKey: "icuHours",
+        mappedTo: "rec_uci_hours",
+      },
     ] as never);
 
     const result = await transport.submit({
+      modelValues: { rec_uci_hours: 36 },
+      displayValues: { icuHours: 36 },
+      fieldValues: { rec_uci_hours: 36 },
       serializedValues: { rec_uci_hours: 36 },
       reports,
     } as never);
     const raw = (result as { raw: { results: Array<{ status: string; modelInput: unknown }> } })
       .raw;
-    const reportPayloads = (result as { reports: Record<string, unknown> }).reports;
+    const reportPayloads = (result as { reports: Array<{ id?: string }> }).reports;
 
     expect(raw.results).toHaveLength(6);
     expect(raw.results.every((item) => item.status === "SUCCESS")).toBe(true);
     expect(raw.results.map((item) => item.modelInput)).toEqual(
       Array.from({ length: 6 }, () => ({ rec_uci_hours: 36 })),
     );
-    expect(Object.keys(reportPayloads)).toHaveLength(7);
+    expect(reportPayloads.filter((item) => item.id?.startsWith("report-"))).toHaveLength(7);
   });
 });

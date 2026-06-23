@@ -23,9 +23,10 @@ class XGBoostAdapter:
     def class_labels(self, model: object) -> list[str]:
         return list_class_labels(model)
 
-    def predict_classifier(self, model: object, frame: pd.DataFrame) -> list[list[float]]:
+    def predict_classifier(
+        self, model: object, frame: pd.DataFrame
+    ) -> list[list[float]]:
         return model.predict_proba(frame).tolist()
 
     def predict_regressor(self, model: object, frame: pd.DataFrame) -> list[object]:
         return model.predict(frame).tolist()
-

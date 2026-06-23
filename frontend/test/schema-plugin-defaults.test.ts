@@ -6,8 +6,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { describe, expect, test } from "vite-plus/test";
-import type { CatalogReportDefinition } from "../src/plugin/mlform/custom-report";
-import { createSchemaRunRuntime } from "../src/app/utils/mlform/schema-run-runtime";
+import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
+
+const findReport = (reports: readonly unknown[], id: string) =>
+  reports.find(
+    (report): report is { id?: string; payload?: unknown } =>
+      typeof report === "object" &&
+      report !== null &&
+      "id" in report &&
+      (report as { id?: unknown }).id === id,
+  );
 
 const definition = (): CatalogReportDefinition => ({
   id: "crystal",
@@ -26,7 +35,7 @@ const definition = (): CatalogReportDefinition => ({
       source: z.string().optional(),
       endpoint: z.string().min(1).default("/api/analyzer/explanations"),
     }),
-    resolve: ({ report, result }) => result.reports[report.id],
+    resolve: ({ report, result }) => findReport(result.reports, report.id)?.payload,
     fetch: ({ config }) => ({ submit: async () => ({ endpoint: config.endpoint }) }),
     render: { content: ({ payload }) => ({ type: "text", value: JSON.stringify(payload) }) },
   }),
@@ -35,7 +44,10 @@ const definition = (): CatalogReportDefinition => ({
 describe("schema plugin defaults", () => {
   test("custom report schema default endpoint is present after runtime normalization", () => {
     const runtime = createSchemaRunRuntime({
-      schema: { fields: [], reports: [{ id: "crystal", kind: "Crystal Tree" }] },
+      schema: {
+        fields: [],
+        reports: [{ id: "crystal", kind: "Crystal Tree", mappedTo: "crystal" }],
+      },
       bindings: [],
       customReportDefinitions: [definition()],
     });

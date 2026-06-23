@@ -117,8 +117,6 @@ services:
   frontend:
     image: ${REGISTRY:-ghcr.io}/${OWNER}/${FRONTEND_IMAGE:-mlsuite-frontend}:${FRONTEND_VERSION:-latest}
     container_name: web-frontend
-    environment:
-      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
     ports:
       - ${WEB_PORT}:5173
     depends_on:

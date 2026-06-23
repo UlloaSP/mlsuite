@@ -7,6 +7,7 @@ import { Save, X } from "lucide-react";
 import { AnimatePresence, m as motion } from "motion/react";
 import { useAtom } from "jotai";
 import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import {
   AppCopy,
@@ -16,15 +17,23 @@ import {
   AppIconButton,
   AppTextField,
 } from "../../app/components";
-import { buildCombinedFeedbackQuestionnaire } from "../../models/combined-feedback-questionnaire";
+import { buildCombinedFeedbackQuestionnaire } from "../../algorithms/models/combined-feedback-questionnaire";
 import {
   ReportQuestionnaireMount,
   type ReportQuestionnaireMountHandle,
 } from "../../models/components/ReportQuestionnaireMount";
-import type { CreatePredictionRunRequest, JsonRecord, SchemaVersionDto } from "../types";
-import { buildSchemaFeedbackSteps } from "../schema-feedback-steps";
-import { buildPendingSchemaRunFeedback, type PendingFeedback } from "../schema-run-save-feedback";
-import { mergeSchemaRunInputs } from "../schema-run-display";
+import type {
+  CreatePredictionRunRequest,
+  JsonRecord,
+  SchemaVersionDto,
+} from "../../api/schemas/dtos";
+import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
+import {
+  buildPendingSchemaRunFeedback,
+  type PendingFeedback,
+} from "../../algorithms/schema/pending-feedback";
+import { mergeSchemaRunInputs } from "../../algorithms/schema/input-display";
+import { schemaRunDebug } from "../../algorithms/schema/run-debug";
 import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 import { SchemaRunInputsPanel } from "./SchemaRunInputsPanel";
 import { SchemaRunReportsPanel } from "./SchemaRunReportsPanel";
@@ -69,7 +78,7 @@ export function SchemaRunSaveModal({
   const displayResults = useMemo(
     () =>
       results.map((result, index) => ({
-        id: `${result.modelId}-${result.signatureId}-${index}`,
+        id: `${result.modelId}-${index}`,
         runId: "pending",
         createdAt: "",
         ...result,
@@ -84,22 +93,41 @@ export function SchemaRunSaveModal({
     () => buildCombinedFeedbackQuestionnaire(feedbackSteps),
     [feedbackSteps],
   );
+  schemaRunDebug("save-modal.render", {
+    open,
+    pendingRun,
+    results,
+    displayInputData,
+    displayResults,
+    feedbackSteps,
+    pluginReports: catalog.data.reportDefinitions.map((definition) => definition.kind),
+  });
 
   const handleSave = async () => {
     if (!pendingRun) return;
     const values = feedbackSteps.length > 0 ? (questionnaireRef.current?.getValues() ?? {}) : {};
     const feedback = buildPendingSchemaRunFeedback(feedbackSteps, values, displayResults);
-    onSave({ name: name.trim(), inputData: pendingRun.inputData, results }, feedback);
+    const request = {
+      name: name.trim(),
+      inputData: displayInputData,
+      results,
+    };
+    schemaRunDebug("save-modal.save", { request, feedback, values });
+    onSave(request, feedback);
   };
 
-  return (
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <AnimatePresence>
       {open && pendingRun ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-x-0 bottom-0 top-[88px] z-40 flex bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[10000] flex bg-black/40 backdrop-blur-sm"
           onClick={onCancel}
         >
           <motion.div
@@ -107,7 +135,7 @@ export function SchemaRunSaveModal({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-            className="relative z-50 m-6 flex max-h-[calc(100dvh-136px)] flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
+            className="relative z-[10001] m-6 flex max-h-[calc(100dvh-3rem)] flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">
@@ -180,6 +208,7 @@ export function SchemaRunSaveModal({
           </motion.div>
         </motion.div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

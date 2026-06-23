@@ -8,6 +8,7 @@ export type Bundle = {
   modelFile: File | null;
   dfFile: File | null;
   name: string;
+  oneHotSeparator: string;
   saved: boolean;
   saving: boolean;
 };

@@ -9,7 +9,7 @@ import {
   AppPageHeader,
   AppSurface,
 } from "../../app/components";
-import { createOrganization } from "../api/workspaceService";
+import { createOrganization } from "../../api/workspace/services";
 
 export function CreateOrganizationPage() {
   const navigate = useNavigate();
