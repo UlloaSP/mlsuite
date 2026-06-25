@@ -37,7 +37,7 @@ export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: Mo
       type="button"
       onClick={onOpen}
       className={cx(
-        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 text-left transition",
+        "grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 text-left transition",
         "hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
       )}
     >

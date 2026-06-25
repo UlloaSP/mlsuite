@@ -27,7 +27,7 @@ export function SchemaListItem({
   return (
     <article className="group rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 transition hover:border-[var(--text-primary)]">
       <div className="flex items-start justify-between gap-3">
-        <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
+        <button type="button" onClick={onOpen} className="min-w-0 flex-1 cursor-pointer text-left">
           <div className="flex items-center gap-2">
             <FileJson size={16} className="shrink-0 text-[var(--text-muted)]" />
             <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">

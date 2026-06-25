@@ -107,6 +107,11 @@
         box-sizing: border-box;
       }
 
+      button:not(:disabled),
+      [role="button"]:not([aria-disabled="true"]) {
+        cursor: pointer;
+      }
+
       ::selection {
         background: color-mix(in srgb, var(--accent-primary) 24%, transparent);
       }

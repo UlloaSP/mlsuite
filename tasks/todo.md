@@ -1,3 +1,23 @@
+# Clickable Cursor Audit
+
+## Goal
+
+- [x] Make sidebar tiles and catalog items show pointer cursor when clickable.
+- [x] Keep fix small, shared, and under line limits.
+
+## Plan
+
+- [x] Inventory clickable sidebar/catalog components missing pointer affordance.
+- [x] Patch shared primitives and global interactive rule for real click targets.
+- [x] Run focused frontend verification, line-count check, diff check, graph update.
+
+## Review
+
+- Added a global interactive cursor rule for enabled native buttons and `role="button"` targets.
+- Added explicit cursor affordance to shared app buttons, sidebar menu buttons, catalog filters, tabs, model rows, and schema row opener.
+- Verification passed: focused `vp check --fix`, `vp exec tsc -b --pretty false`, line-count check, `git diff --check`, `vp dlx react-doctor@latest --verbose` with existing warnings, source-backed `5174` HTML rule probe, and `graphify update .`.
+- T3 preview/browser automation was blocked by `PreviewAutomationNoFocusedOwnerError`; npm Playwright package probe was blocked by `Cannot find module 'playwright'` from `npx -p playwright node -e`.
+
 # Admin Users Server Catalog And Catalog Cleanup
 
 # Theme Single Signal And Frame Capture

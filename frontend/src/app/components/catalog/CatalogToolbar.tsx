@@ -104,7 +104,7 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
 function getFilterClassName(segmented: boolean, active: boolean) {
   if (segmented) {
     return cx(
-      "rounded px-3 py-1.5 text-sm font-semibold transition",
+      "cursor-pointer rounded px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
       active
         ? "bg-[var(--surface-secondary)] text-[var(--text-primary)] shadow-[var(--shadow-card)]"
         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
@@ -112,7 +112,7 @@ function getFilterClassName(segmented: boolean, active: boolean) {
   }
 
   return cx(
-    "rounded border px-3 py-1.5 text-sm font-semibold transition",
+    "cursor-pointer rounded border px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
     active
       ? "border-[var(--accent-primary)] bg-[var(--accent-soft)] text-[var(--accent-strong)]"
       : "border-[var(--border-soft)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]",

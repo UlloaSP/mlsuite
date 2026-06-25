@@ -26,7 +26,7 @@ export function SidebarMenuSubButton({
     <Comp
       data-active={isActive}
       className={cx(
-        "flex min-h-8 w-full min-w-0 items-center gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition",
+        "flex min-h-8 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition",
         isActive
           ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
           : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
