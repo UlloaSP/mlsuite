@@ -1,3 +1,32 @@
+# Model Catalog Query Invalidation
+
+## Goal
+
+- [x] Make saved models appear in the catalog without browser refresh.
+- [x] Remove stale model query invalidation patterns with literal cache keys.
+- [x] Add a regression guard for model catalog cache invalidation.
+
+## Plan
+
+- [x] Reuse shared model invalidation in create-model mutation.
+- [x] Invalidate model catalog queries after selecting another organization.
+- [x] Add a focused architecture regression for literal `getModels` invalidations.
+- [x] Run focused frontend tests, typecheck, line-count, diff check, and graph update.
+
+## Review
+
+- `useCreateModelMutation` keeps the immediate `/api/models/all` cache prepend and now awaits the shared model invalidator, which also marks `modelCatalogPages` stale.
+- `useSelectOrganization` now invalidates model, schema, and plugin catalog caches after workspace context changes.
+- `api-architecture.test.ts` now fails if API hooks reintroduce literal `queryKey: ["getModels"]` invalidation.
+- Verification:
+  - `frontend`: `vp test test/api-architecture.test.ts` passed, 3 tests.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp check --fix src/api/models/hooks/use-create-model-mutation.ts src/api/workspace/hooks/use-select-organization.ts` passed.
+  - `frontend`: `vp test` passed, 33 files / 115 tests.
+  - Repo: touched source/test files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+
 # Sidebar Keyboard Shortcuts
 
 ## Goal
