@@ -10,7 +10,7 @@ export function AppPanel({ children, className, ...props }: HTMLAttributes<HTMLD
   return (
     <div
       className={cx(
-        "rounded-[24px] border p-5",
+        "rounded border p-5",
         "border-[var(--border-soft)] bg-[var(--surface-secondary)] text-[var(--text-primary)]",
         "shadow-[var(--shadow-card)]",
         className,

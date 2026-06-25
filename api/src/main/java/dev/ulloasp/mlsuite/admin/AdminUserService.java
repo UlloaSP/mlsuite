@@ -1,7 +1,9 @@
 package dev.ulloasp.mlsuite.admin;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,7 @@ import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
+import jakarta.persistence.criteria.Predicate;
 
 @Service
 @Transactional
@@ -30,8 +33,14 @@ public class AdminUserService {
         this.workspaceBootstrapService = workspaceBootstrapService;
     }
 
-    public List<AdminUserDto> list() {
-        return userRepository.findAll().stream().map(AdminUserDto::from).toList();
+    public AdminUserPageDto list(int page, int size, String search, String sort, String role) {
+        Page<User> users = userRepository.findAll(
+                filter(search, role),
+                PageRequest.of(Math.max(0, page), Math.max(1, Math.min(size, 100)), sort(sort)));
+        return new AdminUserPageDto(
+                users.getContent().stream().map(AdminUserDto::from).toList(),
+                users.getTotalElements(),
+                users.hasNext());
     }
 
     public AdminUserDto create(AdminCreateUserRequest request) {
@@ -98,5 +107,48 @@ public class AdminUserService {
 
     private String username(String username, String email) {
         return username == null || username.isBlank() ? email.substring(0, email.indexOf("@")) : username.trim();
+    }
+
+    private Specification<User> filter(String search, String role) {
+        return (root, query, criteriaBuilder) -> {
+            Predicate predicate = criteriaBuilder.conjunction();
+            SystemRole filterRole = filterRole(role);
+            if (filterRole != null) {
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("systemRole"), filterRole));
+            }
+            String term = search == null ? "" : search.trim().toLowerCase();
+            if (!term.isBlank()) {
+                String pattern = "%" + term + "%";
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.or(
+                                criteriaBuilder.like(criteriaBuilder.lower(root.get("fullName")), pattern),
+                                criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), pattern),
+                                criteriaBuilder.like(criteriaBuilder.lower(root.get("username")), pattern)));
+            }
+            return predicate;
+        };
+    }
+
+    private SystemRole filterRole(String role) {
+        if (role == null || role.isBlank() || "all".equalsIgnoreCase(role)) {
+            return null;
+        }
+        try {
+            return SystemRole.valueOf(role.trim().toUpperCase());
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private Sort sort(String sort) {
+        return switch (sort == null ? "current" : sort.trim().toLowerCase()) {
+            case "name" -> Sort.by(
+                    Sort.Order.asc("fullName").ignoreCase(),
+                    Sort.Order.asc("email").ignoreCase());
+            case "newest" -> Sort.by(Sort.Order.desc("createdAt"));
+            case "oldest" -> Sort.by(Sort.Order.asc("createdAt"));
+            default -> Sort.by(Sort.Order.asc("id"));
+        };
     }
 }

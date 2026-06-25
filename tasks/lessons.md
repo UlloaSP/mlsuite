@@ -1,5 +1,33 @@
 # Lessons
 
+## 2026-06-25 - Theme transition correction
+
+- Correction: removing flicker by deleting the theme transition also removed intentional gradual theme feedback.
+- Rule: when an animation flickers, isolate the unstable layer or snapshot boundary first; do not remove the whole interaction if the user valued the motion.
+- Correction: adding a separate sidebar view-transition layer fixed flicker but changed the intended shared reveal.
+- Rule: for global theme transitions, prefer one root snapshot; temporarily disable route-only named transition layers instead of creating separate element transitions for the same visual event.
+- Correction: inline theme boot compared raw `localStorage` to `dark`, but Jotai stores JSON like `"dark"`, causing light boot before React corrected to dark.
+- Rule: inline boot scripts must parse the exact persisted format used by state storage; for Jotai `atomWithStorage`, use JSON parse and `getOnInit: true`.
+- Correction: parsing storage fixed one real mismatch but did not explain the remaining post-toggle visual flash.
+- Rule: for animation bugs, build a browser-frame probe before declaring root cause; inspect View Transition pseudo animations (`group`, `image-pair`, `old`, `new`), not only DOM state.
+- Correction: `::view-transition-group(root)` authored in the processed Tailwind CSS block was stripped from served CSS, so the apparent CSS fix did not reach the browser.
+- Rule: after adding cutting-edge pseudo-element CSS, inspect `document.styleSheets` or served HTML; if the build transform strips it, inject the narrow raw rule or move it to an unprocessed stylesheet.
+- Correction: `class="dark"` and `data-theme`/`data-theme-mode` could be written through separate boot/runtime paths, leaving theme snapshots hard to reason about.
+- Rule: theme state on `<html>` must expose one durable signal only: `class="dark"` for styling, plus `localStorage` for persisted mode. Transient View Transition classes are animation state, not theme state.
+- Correction: port `5173` can be owned by Docker/WSL/T3 and serve stale HTML even after source edits, making browser diagnosis look like a failed fix.
+- Rule: when validating frontend fixes on a shared dev port, compare served HTML against source before trusting visual results; stale port ownership is a distinct bug source.
+- Correction: `theme-corner-reveal` lacked animation fill mode, so `::view-transition-new(root)` could return to its base `clip-path: circle(0)` for a paint after the animation completed.
+- Rule: View Transition pseudo animations that animate clipping must keep the final clip with `animation-fill-mode: both` or a final base value; otherwise the old snapshot can flash at the end.
+- Correction: adding `clip-path: circle(150vmax...) !important` to the raw pseudo override fixed the end flash but also overrode the keyframe, making the transition look instant.
+- Rule: raw View Transition overrides may force animation/fill-mode, but must not mark the animated property itself `!important` unless the intent is to disable the animation.
+
+## 2026-06-25 - Catalog wrapper correction
+
+- Correction: catalog refactor still left shallow per-page wrappers and public catalog internals where pages could pass data/config directly.
+- Rule: shared catalog abstractions should own shell composition (`toolbar`, `list`, `emptyState`) while pages own item rendering and query data; do not export pass-through internals or one-use wrappers.
+- Correction: even after wrapper removal, pages still repeated catalog query/result/error/empty/toolbar shaping and `CatalogPage` props became nested config plumbing.
+- Rule: when multiple pages share page-query and toolbar/list contracts, consolidate the page-model builder before deepening visual shell props; avoid nested prop bags that mirror child component internals.
+
 ## 2026-06-25 - Organization catalog dense card correction
 
 - Correction: organization catalog filtering used implementation-centric asset/empty states, and card actions were split between inline affordances and direct buttons while the item had too much information for a grid tile.

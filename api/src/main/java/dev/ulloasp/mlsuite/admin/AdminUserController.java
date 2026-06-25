@@ -1,7 +1,5 @@
 package dev.ulloasp.mlsuite.admin;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -28,8 +27,13 @@ public class AdminUserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AdminUserDto>> list() {
-        return ResponseEntity.ok(adminUserService.list());
+    public ResponseEntity<AdminUserPageDto> list(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "current") String sort,
+            @RequestParam(defaultValue = "all") String role) {
+        return ResponseEntity.ok(adminUserService.list(page, size, search, sort, role));
     }
 
     @PostMapping

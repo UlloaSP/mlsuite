@@ -3,68 +3,65 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useDeferredValue, useEffect, useState } from "react";
+import { Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { AppButton, AppPage, AppPageHeader, AppSurface } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import { useUser } from "../../api/user/hooks";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import type { ModelAction } from "../components/ModelActionsMenu";
-import { ModelsCatalogBrowser } from "../components/ModelsCatalogBrowser";
-import type { ModelSortMode, ModelStatusFilter } from "../components/ModelsCatalogToolbar";
 import {
+  MODEL_CATALOG_PAGE_SIZE,
   useArchiveModelMutation,
   useDeleteModelMutation,
   useDuplicateModelMutation,
+  useModelCatalogPageQuery,
   useRenameModelMutation,
 } from "../../api/models/hooks";
 import type { ModelDto } from "../../api/models/services";
+import { useUser } from "../../api/user/hooks";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "../../app/components";
+import { NotFoundError } from "../../app/pages/error-page";
+import type { ModelAction } from "../components/ModelActionsMenu";
+import { ModelListItem } from "../components/ModelListItem";
+
+type ModelSortMode = "updated" | "name" | "algorithm";
+type ModelStatusFilter = "active" | "archived" | "all";
+
+const STATUS_FILTERS: Array<{ value: ModelStatusFilter; label: string }> = [
+  { value: "active", label: "Active" },
+  { value: "archived", label: "Archived" },
+  { value: "all", label: "All" },
+];
+
+const SORT_OPTIONS: Array<{ value: ModelSortMode; label: string }> = [
+  { value: "updated", label: "Latest updated" },
+  { value: "name", label: "Name" },
+  { value: "algorithm", label: "Algorithm" },
+];
 
 export function ModelsPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query.trim());
-  const [sort, setSort] = useState<ModelSortMode>("updated");
-  const [status, setStatus] = useState<ModelStatusFilter>("active");
-  const [page, setPage] = useState(0);
+  const controls = useCatalogControls<ModelStatusFilter, ModelSortMode>({
+    initialFilter: "active",
+    initialSort: "updated",
+    resetKey: organizationId,
+  });
   const renameMutation = useRenameModelMutation();
   const archiveMutation = useArchiveModelMutation();
   const deleteMutation = useDeleteModelMutation();
   const duplicateMutation = useDuplicateModelMutation();
-
-  useEffect(() => {
-    setPage(0);
-  }, [organizationId]);
-
-  if (!user || error) {
-    return <NotFoundError />;
-  }
-  if (workspace && !workspace.permissions.canViewModels) {
-    return <NotFoundError />;
-  }
+  const pageQuery = useModelCatalogPageQuery(
+    organizationId,
+    controls.page,
+    controls.search,
+    controls.sort,
+    controls.filter,
+  );
 
   const canCreateModels = workspace?.permissions.canCreateModels ?? false;
   const canDeleteModels = workspace?.permissions.canDeleteModels ?? false;
   const canEditModels = workspace?.permissions.canEditModels ?? false;
-
-  const handleQueryChange = (value: string) => {
-    setPage(0);
-    setQuery(value);
-  };
-
-  const handleSortChange = (value: ModelSortMode) => {
-    setPage(0);
-    setSort(value);
-  };
-
-  const handleStatusChange = (value: ModelStatusFilter) => {
-    setPage(0);
-    setStatus(value);
-  };
 
   const handleAction = async (action: ModelAction, model: ModelDto) => {
     try {
@@ -98,50 +95,63 @@ export function ModelsPage() {
     duplicateMutation.isPending;
 
   return (
-    <AppPage>
-      <AppSurface className="flex flex-1 flex-col overflow-hidden">
-        <AppPageHeader
-          eyebrow="Models"
-          title="Models"
-          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Models" }]}
-          description={`Navigate models and inspect generated schema snapshots for ${workspace?.currentOrganization.name ?? "the current workspace"}.`}
-          actions={
-            canCreateModels ? (
-              <AppButton type="button" onClick={() => navigate("/models/create")}>
-                + New Model
-              </AppButton>
-            ) : null
-          }
-        />
-        <ModelsCatalogBrowser
-          toolbar={{
-            organizationId,
-            page,
-            query,
-            search: deferredQuery,
-            setQuery: handleQueryChange,
-            setSort: handleSortChange,
-            setStatus: handleStatusChange,
-            sort,
-            status,
+    <CatalogResourcePage
+      accessDenied={
+        !user || Boolean(error) || Boolean(workspace && !workspace.permissions.canViewModels)
+      }
+      accessFallback={<NotFoundError />}
+      controls={controls}
+      header={{
+        eyebrow: "Models",
+        title: "Models",
+        breadcrumbs: [{ label: "Workspace", to: "/workspace" }, { label: "Models" }],
+        description: `Navigate models and inspect generated schema snapshots for ${
+          workspace?.currentOrganization.name ?? "the current workspace"
+        }.`,
+        actions: canCreateModels ? (
+          <AppButton type="button" onClick={() => navigate("/models/create")}>
+            + New Model
+          </AppButton>
+        ) : null,
+      }}
+      isActionPending={isActionPending}
+      loadingLabel="Loading models..."
+      pageSize={MODEL_CATALOG_PAGE_SIZE}
+      filterLabel="Filter by model status"
+      filters={STATUS_FILTERS}
+      placeholder="Search by name, file, or algorithm"
+      query={pageQuery}
+      sortLabel="Sort models"
+      sortOptions={SORT_OPTIONS}
+      emptyIcon={<Search size={22} />}
+      emptyTitle="No models yet"
+      filteredEmptyTitle="No matching models"
+      emptyDescription="Create your first model to start building schemas."
+      filteredEmptyDescription="Try another search term or status."
+      emptyAction={
+        canCreateModels ? (
+          <AppButton type="button" onClick={() => navigate("/models/create")}>
+            + New Model
+          </AppButton>
+        ) : undefined
+      }
+      renderItem={(model) => (
+        <ModelListItem
+          key={model.id}
+          canDelete={canDeleteModels}
+          canEdit={canEditModels}
+          item={model}
+          schemaCount={hasSchema(model) ? 1 : 0}
+          onOpen={() => navigate(`/models/${model.id}`)}
+          onAction={(action) => {
+            void handleAction(action, model);
           }}
-          list={{
-            canCreateModels,
-            canDeleteModels,
-            canEditModels,
-            isActionPending,
-            onAction: handleAction,
-            onCreateModel: () => navigate("/models/create"),
-            onOpenModel: (model) => navigate(`/models/${model.id}`),
-            organizationId,
-            page,
-            search: deferredQuery,
-            setPage,
-            sort,
-            status,
-          }}
         />
-      </AppSurface>
-    </AppPage>
+      )}
+    />
   );
+}
+
+function hasSchema(model: ModelDto): boolean {
+  return typeof model.inputSchema === "object" && Array.isArray(model.inputSchema.fields);
 }

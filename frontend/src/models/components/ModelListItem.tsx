@@ -29,13 +29,7 @@ type ModelListItemProps = {
   onAction: (action: ModelAction, item: ModelDto) => void;
 };
 
-export function ModelListItem({
-  canDelete,
-  canEdit,
-  item,
-  onOpen,
-  onAction,
-}: ModelListItemProps) {
+export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: ModelListItemProps) {
   const Icon = getModelIcon(item.type);
 
   return (

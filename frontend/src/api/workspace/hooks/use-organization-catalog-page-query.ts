@@ -12,9 +12,11 @@ export const useOrganizationCatalogPageQuery = (
   search: string,
   sort: string,
   filter: string,
+  enabled = true,
 ) =>
   useQuery({
     queryKey: organizationCatalogPageQueryKey(page, search, sort, filter),
+    enabled,
     placeholderData: keepPreviousData,
     queryFn: () =>
       getOrganizationPage({

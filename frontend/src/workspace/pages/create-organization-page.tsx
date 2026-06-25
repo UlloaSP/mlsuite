@@ -26,7 +26,8 @@ import type { AdminUserDto } from "../../api/admin-users/dtos";
 export function CreateOrganizationPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
-  const { data: users = [] } = useAdminUsers();
+  const { data: usersPage } = useAdminUsers();
+  const users = usersPage?.items ?? [];
   const invalidateOrganizations = useInvalidateOrganizationQueries();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");

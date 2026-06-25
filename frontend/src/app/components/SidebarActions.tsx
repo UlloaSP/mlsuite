@@ -13,8 +13,7 @@ import {
   Sun,
 } from "lucide-react";
 import { useAtom } from "jotai";
-import type { MouseEvent } from "react";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "../atoms";
 import { isModShortcut, isTypingTarget } from "../utils/keyboard-shortcuts";
 import { Kbd, KbdGroup } from "./Kbd";
@@ -33,14 +32,20 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (callback: () => void) => { finished: Promise<void> };
 };
 
+const restoreRouteTransition = (element: HTMLElement, previousValue: string) => {
+  if (previousValue) {
+    element.style.viewTransitionName = previousValue;
+  } else {
+    element.style.removeProperty("view-transition-name");
+  }
+};
+
 const modifierLabel = /mac/i.test(navigator.platform) ? "⌘" : "Ctrl";
 
 export function SidebarActions() {
   const [theme, setTheme] = useAtom(themeWithHtmlAtom);
   const [isFullscreen, setIsFullscreen] = useAtom(fullscreenAtom);
   const [searchOpen, setSearchOpen] = useAtom(globalSearchOpenAtom);
-  const [themeTransitioning, setThemeTransitioning] = useState(false);
-  const themeTransitioningRef = useRef(false);
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const collapseLabel = collapsed ? "Expand" : "Collapse";
@@ -51,11 +56,7 @@ export function SidebarActions() {
       void document.exitFullscreen().then(() => setIsFullscreen(false));
     }
   };
-  const toggleTheme = (target?: HTMLElement | null) => {
-    if (themeTransitioningRef.current) {
-      return;
-    }
-
+  const toggleTheme = () => {
     const nextTheme = theme === "light" ? "dark" : "light";
     const transitionDocument = document as ViewTransitionDocument;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -65,35 +66,18 @@ export function SidebarActions() {
       return;
     }
 
-    themeTransitioningRef.current = true;
-    setThemeTransitioning(true);
-
-    const rect = target?.getBoundingClientRect();
-    const width = rect?.width ?? 0;
-    const height = rect?.height ?? 0;
-    const left = rect?.left ?? window.innerWidth / 2;
-    const top = rect?.top ?? window.innerHeight / 2;
-    const x = left + width / 2;
-    const y = top + height / 2;
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y),
-    );
     const root = document.documentElement;
+    const content = document.querySelector<HTMLElement>(".app-content-transition");
+    const previousContentTransition = content?.style.viewTransitionName ?? "";
+    if (content) content.style.viewTransitionName = "none";
 
-    root.style.setProperty("--theme-transition-x", `${x}px`);
-    root.style.setProperty("--theme-transition-y", `${y}px`);
-    root.style.setProperty("--theme-transition-radius", `${endRadius}px`);
-    root.classList.add("theme-radial-transition");
-
+    root.classList.add("theme-corner-transition");
     const transition = transitionDocument.startViewTransition(() => setTheme(nextTheme));
     void transition.finished.finally(() => {
-      themeTransitioningRef.current = false;
-      setThemeTransitioning(false);
-      root.classList.remove("theme-radial-transition");
-      root.style.removeProperty("--theme-transition-x");
-      root.style.removeProperty("--theme-transition-y");
-      root.style.removeProperty("--theme-transition-radius");
+      window.setTimeout(() => {
+        root.classList.remove("theme-corner-transition");
+        if (content) restoreRouteTransition(content, previousContentTransition);
+      }, 120);
     });
   };
   const handleWindowKeyDown = useEffectEvent((event: KeyboardEvent) => {
@@ -141,8 +125,7 @@ export function SidebarActions() {
             <SidebarMenuButton
               aria-keyshortcuts="Control+Shift+L Meta+Shift+L"
               title={theme === "light" ? "Dark Mode" : "Light Mode"}
-              disabled={themeTransitioning}
-              onClick={(event: MouseEvent<HTMLButtonElement>) => toggleTheme(event.currentTarget)}
+              onClick={toggleTheme}
             >
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
               <SidebarLabel className="truncate">

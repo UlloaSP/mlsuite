@@ -2,15 +2,24 @@ import { createStore } from "jotai";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 type MatchMediaResult = Pick<MediaQueryList, "matches">;
+type TestWindow = {
+  localStorage: Storage;
+  matchMedia: ReturnType<typeof vi.fn<() => MatchMediaResult>>;
+  __MLSUITE_APPLY_THEME__?: (mode: string) => string;
+};
 
 const createStorage = () => {
   const values = new Map<string, string>();
   return {
     clear: () => values.clear(),
     getItem: (key: string) => values.get(key) ?? null,
-    removeItem: (key: string) => values.delete(key),
-    setItem: (key: string, value: string) => values.set(key, value),
-  } as Storage;
+    removeItem: (key: string) => {
+      values.delete(key);
+    },
+    setItem: (key: string, value: string) => {
+      values.set(key, value);
+    },
+  } as unknown as Storage;
 };
 
 const createDocument = () => {
@@ -39,7 +48,7 @@ const createDocument = () => {
 const setSystemTheme = (matches: boolean) => {
   const storage = createStorage();
   const document = createDocument();
-  const window = {
+  const window: TestWindow = {
     localStorage: storage,
     matchMedia: vi.fn((): MatchMediaResult => ({ matches })),
   };
@@ -71,7 +80,7 @@ describe("theme persistence", () => {
 
     expect(store.get(themeAtom)).toBe("dark");
     expect(environment.document.documentElement.classList.contains("dark")).toBe(true);
-    expect(environment.document.documentElement.dataset.theme).toBe("dark");
+    expect(environment.document.documentElement.dataset).toEqual({});
 
     unsubscribe();
   });
@@ -86,8 +95,28 @@ describe("theme persistence", () => {
     expect(store.get(themeAtom)).toBe("system");
     expect(store.get(themeWithHtmlAtom)).toBe("dark");
     expect(environment.document.documentElement.classList.contains("dark")).toBe(true);
-    expect(environment.document.documentElement.dataset.themeMode).toBe("system");
+    expect(environment.document.documentElement.dataset).toEqual({});
 
     unsubscribe();
+  });
+
+  it("delegates html writes to the boot theme applier", async () => {
+    const environment = setSystemTheme(false);
+    const applied: string[] = [];
+    environment.window.__MLSUITE_APPLY_THEME__ = vi.fn((mode: string) => {
+      applied.push(mode);
+      const theme = mode === "system" ? "light" : mode;
+      environment.document.documentElement.classList.toggle("dark", theme === "dark");
+      return theme;
+    });
+
+    const { themeWithHtmlAtom } = await import("../src/app/atoms");
+    const store = createStore();
+
+    store.set(themeWithHtmlAtom, "dark");
+
+    expect(applied).toEqual(["dark"]);
+    expect(environment.document.documentElement.classList.contains("dark")).toBe(true);
+    expect(environment.document.documentElement.dataset).toEqual({});
   });
 });

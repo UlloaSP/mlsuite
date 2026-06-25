@@ -8,6 +8,7 @@ export { AppBreadcrumbs, type AppBreadcrumbItem } from "./AppBreadcrumbs";
 export * from "./breadcrumb";
 export { AppButton } from "./AppButton";
 export { AppCombobox, type AppComboboxItem } from "./AppCombobox";
+export * from "./catalog";
 export { AppCopy } from "./AppCopy";
 export { AppEmptyState } from "./AppEmptyState";
 export { AppEyebrow } from "./AppEyebrow";
