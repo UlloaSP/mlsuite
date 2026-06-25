@@ -124,7 +124,7 @@ export function SidebarNavigation() {
     ...(permissions?.canViewPlugins ? [{ to: "/plugins", icon: Blocks, label: "Plugins" }] : []),
     ...(user?.systemRole === "SUPERADMIN"
       ? [
-          { to: "/admin/users", icon: ShieldCheck, label: "Admin" },
+          { to: "/admin/users", icon: ShieldCheck, label: "Users" },
           {
             to: "/admin/infrastructure",
             icon: ServerCog,

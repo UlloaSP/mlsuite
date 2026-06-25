@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReactNode } from "react";
 import { createBrowserRouter, Outlet, type RouteObject } from "react-router";
 import { AdminUsersPage } from "../admin/pages/admin-users-page";
+import { CreateAdminUserPage } from "../admin/pages/create-admin-user-page";
 import { AdminInfrastructurePage } from "../admin/infrastructure/pages/admin-infrastructure-page";
 import { AuthLandingPage } from "../app/pages/AuthLandingPage";
 import { NotFoundError } from "../app/pages/error-page";
@@ -143,6 +144,14 @@ const routes: RouteObject[] = [
                 element: (
                   <RequireSuperadmin>
                     <AdminUsersPage />
+                  </RequireSuperadmin>
+                ),
+              },
+              {
+                path: "admin/users/create",
+                element: (
+                  <RequireSuperadmin>
+                    <CreateAdminUserPage />
                   </RequireSuperadmin>
                 ),
               },

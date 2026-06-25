@@ -1,260 +1,177 @@
-import { Check, KeyRound, Plus } from "lucide-react";
-import type { FormEvent } from "react";
-import { useMemo, useRef, useState } from "react";
-import { Navigate } from "react-router";
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import { Plus, Search } from "lucide-react";
+import { useDeferredValue, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
+import {
+  useAdminUsers,
+  useDeleteAdminUser,
+  useResetAdminUserPassword,
+  useUpdateAdminUser,
+} from "../../api/admin-users/hooks";
+import type { AdminUserDto } from "../../api/admin-users/dtos";
+import { useUser } from "../../api/user/hooks";
 import {
   AppButton,
-  AppSelect,
-  AppTextField,
+  AppEmptyState,
   AppPage,
   AppPageHeader,
   AppPanel,
   AppSurface,
 } from "../../app/components";
-import { useUser } from "../../api/user/hooks";
+import { NotFoundError } from "../../app/pages/error-page";
 import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
+import { UserCatalogPagination } from "../components/UserCatalogPagination";
+import { UserCatalogTile } from "../components/UserCatalogTile";
 import {
-  useAdminUsers,
-  useCreateAdminUser,
-  useResetAdminUserPassword,
-  useUpdateAdminUser,
-} from "../../api/admin-users/hooks";
+  UserCatalogToolbar,
+  type UserRoleFilter,
+  type UserSortMode,
+} from "../components/UserCatalogToolbar";
 
-type Role = "USER" | "SUPERADMIN";
-type UserSortMode = "current" | "name" | "newest" | "oldest" | "enabled" | "disabled";
+const PAGE_SIZE = 8;
 type ResetTarget = { id: number; fullName: string } | null;
-const ROLE_OPTIONS = [
-  { value: "USER", label: "USER" },
-  { value: "SUPERADMIN", label: "SUPERADMIN" },
-];
-const USER_SORT_OPTIONS = [
-  { value: "current", label: "Current order" },
-  { value: "name", label: "Name" },
-  { value: "newest", label: "Newest" },
-  { value: "oldest", label: "Oldest" },
-  { value: "enabled", label: "Enabled first" },
-  { value: "disabled", label: "Disabled first" },
-];
 
-// react-doctor-disable-next-line react-doctor/prefer-useReducer -- The create-user form fields and sort selector are independent controls.
 export function AdminUsersPage() {
-  const { data: user } = useUser();
-  const { data: users = [], isLoading } = useAdminUsers();
-  const createUser = useCreateAdminUser();
+  const navigate = useNavigate();
+  const { data: user, error } = useUser();
+  const { data: users = [], isLoading, error: loadError } = useAdminUsers();
   const updateUser = useUpdateAdminUser();
   const resetPassword = useResetAdminUserPassword();
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("USER");
-  const [sortMode, setSortMode] = useState<UserSortMode>("current");
+  const deleteUser = useDeleteAdminUser();
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query.trim().toLowerCase());
+  const [filter, setFilter] = useState<UserRoleFilter>("all");
+  const [sort, setSort] = useState<UserSortMode>("current");
+  const [page, setPage] = useState(0);
   const [resetTarget, setResetTarget] = useState<ResetTarget>(null);
-  const userOrderRef = useRef(new Map<number, number>());
 
-  const visibleUsers = useMemo(() => {
-    const order = userOrderRef.current;
-    const liveIds = new Set(users.map((row) => row.id));
-    users.forEach((row) => {
-      if (!order.has(row.id)) {
-        order.set(row.id, order.size);
-      }
-    });
-    for (const id of order.keys()) {
-      if (!liveIds.has(id)) {
-        order.delete(id);
-      }
+  const filteredUsers = useMemo(
+    () => sortUsers(filterUsers(users, deferredQuery, filter), sort),
+    [deferredQuery, filter, sort, users],
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages - 1);
+  const pageItems = filteredUsers.slice(
+    currentPage * PAGE_SIZE,
+    currentPage * PAGE_SIZE + PAGE_SIZE,
+  );
+  const isActionPending =
+    updateUser.isPending || resetPassword.isPending || deleteUser.isPending || isLoading;
+
+  if (!user || error) return <NotFoundError />;
+  if (user.systemRole !== "SUPERADMIN") return <NotFoundError />;
+
+  const resetPage = () => setPage(0);
+  const update = async (
+    row: AdminUserDto,
+    payload: { enabled?: boolean; systemRole?: AdminUserDto["systemRole"] },
+  ) => {
+    try {
+      await updateUser.mutateAsync({ id: row.id, payload });
+      toast.success("User updated.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
     }
-    const byCurrentOrder = (left: { id: number }, right: { id: number }) =>
-      (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0);
-    const sorted = [...users];
-
-    switch (sortMode) {
-      case "name":
-        return sorted.sort(
-          (left, right) =>
-            left.fullName.localeCompare(right.fullName, undefined, { sensitivity: "base" }) ||
-            byCurrentOrder(left, right),
-        );
-      case "newest":
-        return sorted.sort(
-          (left, right) =>
-            new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime() ||
-            byCurrentOrder(left, right),
-        );
-      case "oldest":
-        return sorted.sort(
-          (left, right) =>
-            new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime() ||
-            byCurrentOrder(left, right),
-        );
-      case "enabled":
-        return sorted.sort(
-          (left, right) =>
-            Number(right.enabled) - Number(left.enabled) || byCurrentOrder(left, right),
-        );
-      case "disabled":
-        return sorted.sort(
-          (left, right) =>
-            Number(left.enabled) - Number(right.enabled) || byCurrentOrder(left, right),
-        );
-      case "current":
-      default:
-        return sorted.sort(byCurrentOrder);
+  };
+  const remove = async (row: AdminUserDto) => {
+    try {
+      await deleteUser.mutateAsync(row.id);
+      toast.success("User deleted.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
     }
-  }, [sortMode, users]);
-
-  if (user?.systemRole !== "SUPERADMIN") {
-    return <Navigate to="/workspace" replace />;
-  }
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    createUser.mutate(
-      { email, fullName, password, systemRole: role },
-      {
-        onSuccess: () => {
-          setEmail("");
-          setFullName("");
-          setPassword("");
-          setRole("USER");
-        },
-      },
-    );
   };
   const submitResetPassword = (nextPassword: string) => {
     if (!resetTarget) return;
     resetPassword.mutate(
       { id: resetTarget.id, password: nextPassword },
-      { onSuccess: () => setResetTarget(null) },
+      {
+        onSuccess: () => {
+          toast.success("Password changed.");
+          setResetTarget(null);
+        },
+        onError: (actionError) => toast.error(actionError.message),
+      },
     );
   };
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto app-scroll">
+      <AppSurface className="flex flex-1 flex-col overflow-hidden">
         <AppPageHeader
-          eyebrow="Admin"
+          eyebrow="Superadmin"
           title="Users"
-          description="Create accounts, set global access, and reset passwords."
-          breadcrumbs={[{ label: "Admin" }, { label: "Users" }]}
-        />
-        <AppPanel>
-          <form onSubmit={submit} className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
-            <AppTextField
-              required
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-            />
-            <AppTextField
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Full name"
-            />
-            <AppTextField
-              required
-              type="password"
-              minLength={10}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-            />
-            <AppSelect
-              value={role}
-              onValueChange={(nextRole) => setRole(nextRole as Role)}
-              options={ROLE_OPTIONS}
-            />
-            <AppButton type="submit" disabled={createUser.isPending}>
+          description="Search, filter, and maintain platform users."
+          breadcrumbs={[{ label: "Users" }]}
+          actions={
+            <AppButton type="button" onClick={() => navigate("/admin/users/create")}>
               <Plus size={16} />
-              Create
+              New User
             </AppButton>
-          </form>
-        </AppPanel>
-        <AppPanel className="overflow-auto">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-              User order
-            </span>
-            <AppSelect
-              value={sortMode}
-              onValueChange={(nextSort) => setSortMode(nextSort as UserSortMode)}
-              className="min-w-[180px]"
-              aria-label="Sort users"
-              options={USER_SORT_OPTIONS}
-            />
+          }
+        />
+        <UserCatalogToolbar
+          filter={filter}
+          query={query}
+          resultCount={filteredUsers.length}
+          setFilter={(value) => {
+            resetPage();
+            setFilter(value);
+          }}
+          setQuery={(value) => {
+            resetPage();
+            setQuery(value);
+          }}
+          setSort={(value) => {
+            resetPage();
+            setSort(value);
+          }}
+          sort={sort}
+        />
+        <section className="min-h-0 flex-1 basis-0 overflow-y-auto py-4">
+          <div className="grid gap-3 pr-1">
+            {isLoading ? (
+              <AppPanel className="px-6 py-16 text-center text-sm text-[var(--text-secondary)]">
+                Loading users...
+              </AppPanel>
+            ) : null}
+            {loadError ? (
+              <AppPanel className="px-6 py-16 text-center text-sm text-[var(--danger-text)]">
+                {loadError instanceof Error ? loadError.message : String(loadError)}
+              </AppPanel>
+            ) : null}
+            {!isLoading && !loadError && pageItems.length === 0 ? (
+              <AppEmptyState
+                icon={<Search size={22} />}
+                title="No matching users"
+                description="Try another search term or role filter."
+              />
+            ) : null}
+            {pageItems.map((row) => (
+              <UserCatalogTile
+                key={row.id}
+                disabled={isActionPending}
+                item={row}
+                onDelete={() => remove(row)}
+                onResetPassword={() => setResetTarget({ id: row.id, fullName: row.fullName })}
+                onUpdate={(payload) => update(row, payload)}
+              />
+            ))}
           </div>
-          <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-              <tr>
-                <th className="p-3">User</th>
-                <th className="p-3">Role</th>
-                <th className="w-32 p-3 text-center">Enabled</th>
-                <th className="p-3">Password</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td className="px-3 py-5 text-[var(--text-secondary)]" colSpan={4}>
-                    Loading…
-                  </td>
-                </tr>
-              ) : (
-                visibleUsers.map((row) => (
-                  <tr key={row.id} className="border-t border-[var(--border-soft)]">
-                    <td className="px-3 py-4">
-                      <p className="font-semibold text-[var(--text-primary)]">{row.fullName}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">{row.email}</p>
-                    </td>
-                    <td className="px-3 py-4">
-                      <AppSelect
-                        value={row.systemRole}
-                        onValueChange={(nextRole) =>
-                          updateUser.mutate({
-                            id: row.id,
-                            payload: { systemRole: nextRole as Role },
-                          })
-                        }
-                        options={ROLE_OPTIONS}
-                      />
-                    </td>
-                    <td className="w-32 px-3 py-4 text-center">
-                      <label className="inline-grid size-9 place-items-center rounded-full transition hover:bg-[var(--surface-muted)]">
-                        <input
-                          type="checkbox"
-                          checked={row.enabled}
-                          onChange={(e) =>
-                            updateUser.mutate({
-                              id: row.id,
-                              payload: { enabled: e.target.checked },
-                            })
-                          }
-                          className="peer sr-only"
-                          aria-label={`${row.fullName} enabled`}
-                        />
-                        <span className="grid size-5 place-items-center rounded-[5px] border border-[var(--border-soft)] bg-[var(--surface-primary)] text-transparent transition peer-checked:border-[var(--accent-primary)] peer-checked:bg-[var(--accent-primary)] peer-checked:text-white">
-                          <Check size={14} strokeWidth={3} />
-                        </span>
-                      </label>
-                    </td>
-                    <td className="px-3 py-4">
-                      <AppButton
-                        type="button"
-                        variant="secondary"
-                        onClick={() => setResetTarget({ id: row.id, fullName: row.fullName })}
-                      >
-                        <KeyRound size={15} />
-                        Reset
-                      </AppButton>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </AppPanel>
+        </section>
+        <UserCatalogPagination
+          disabled={isActionPending}
+          page={currentPage}
+          setPage={setPage}
+          totalPages={totalPages}
+        />
         {resetTarget ? (
           <ResetPasswordDialog
             fullName={resetTarget.fullName}
@@ -266,4 +183,26 @@ export function AdminUsersPage() {
       </AppSurface>
     </AppPage>
   );
+}
+
+function filterUsers(users: AdminUserDto[], query: string, filter: UserRoleFilter) {
+  return users.filter((row) => {
+    const matchesRole = filter === "all" || row.systemRole === filter;
+    const haystack = `${row.fullName} ${row.email} ${row.username}`.toLowerCase();
+    return matchesRole && (!query || haystack.includes(query));
+  });
+}
+
+function sortUsers(users: AdminUserDto[], sort: UserSortMode) {
+  const sorted = [...users];
+  if (sort === "name") {
+    return sorted.sort((left, right) => left.fullName.localeCompare(right.fullName));
+  }
+  if (sort === "newest") {
+    return sorted.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+  }
+  if (sort === "oldest") {
+    return sorted.sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt));
+  }
+  return sorted;
 }

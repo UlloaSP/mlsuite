@@ -104,4 +104,25 @@ class ManualAuthServiceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> adminUserService.update(1L, new AdminUpdateUserRequest(null, null, "USER", true)));
     }
+
+    @Test
+    void adminDelete_RemovesNormalUser() {
+        User target = new User("user", "user@example.com", "hash", "User", SystemRole.USER);
+        target.setId(2L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(target));
+
+        adminUserService.delete(2L);
+
+        verify(userRepository).delete(target);
+    }
+
+    @Test
+    void adminDelete_RejectsLastEnabledSuperadmin() {
+        User root = new User("root", "root@example.com", "hash", "Root", SystemRole.SUPERADMIN);
+        root.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(root));
+        when(userRepository.countBySystemRoleAndEnabledTrue(SystemRole.SUPERADMIN)).thenReturn(1L);
+
+        assertThrows(IllegalArgumentException.class, () -> adminUserService.delete(1L));
+    }
 }

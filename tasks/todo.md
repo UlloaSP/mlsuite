@@ -1,3 +1,38 @@
+# Users Admin Catalog Redesign
+
+## Goal
+
+- [x] Rename sidebar Admin entry to Users.
+- [x] Rework admin users page as search/filter catalog with paginated full-width tiles.
+- [x] Move create user to a separate centered form page without gray AppPanel wrapper.
+- [x] Put reset password, role change, enable/disable, and delete under each tile's three-dot menu.
+- [x] Filter users by role and show avatar with name/email.
+
+## Plan
+
+- [x] Add backend delete endpoint/service guard for admin users.
+- [x] Add frontend delete service/hook and create user route.
+- [x] Split admin users UI into catalog page, create page, tile, toolbar, and dialogs.
+- [x] Rename sidebar/footer labels from Admin to Users.
+- [x] Run focused backend/frontend checks, line-count, diff check, graph update.
+
+## Review
+
+- Sidebar and account menu now show `Users` for `/admin/users`.
+- Admin users page is now a search + role filter catalog with full-width paginated user cards.
+- Cards show avatar, name, email, username, role, enabled state, and created date.
+- Card actions live under the three-dot menu: change password, change role, enable/disable, delete.
+- Create user moved to `/admin/users/create` with a centered form and no gray AppPanel wrapper.
+- Backend now exposes `DELETE /api/admin/users/{id}` and blocks deleting the last enabled superadmin.
+- Verification:
+  - `api`: `mvn "-Dtest=ManualAuthServiceTest" test` passed, 6 tests.
+  - `api`: `mvn -DskipTests package` passed.
+  - `frontend`: `vp check --fix ...` passed for touched user/admin/sidebar/route files.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 33 files / 115 tests.
+  - Repo: changed/new source and test files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
 # Organization Catalog Tile Metrics And Actions
 
 ## Goal

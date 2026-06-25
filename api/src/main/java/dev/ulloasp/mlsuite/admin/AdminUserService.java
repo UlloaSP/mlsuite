@@ -71,6 +71,12 @@ public class AdminUserService {
         user(id).setPasswordHash(passwordEncoder.encode(request.password()));
     }
 
+    public void delete(Long id) {
+        User user = user(id);
+        guardLastSuperadmin(user, SystemRole.USER, false);
+        userRepository.delete(user);
+    }
+
     private User user(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new UserDoesNotExistException(id));
     }
