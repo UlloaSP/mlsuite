@@ -14,8 +14,11 @@ export interface OrganizationCatalogItemDto {
   ownerName?: string | null;
   ownerEmail?: string | null;
   ownerAvatarUrl?: string | null;
+  teamCount: number;
   modelCount: number;
   schemaCount: number;
   pluginCount: number;
+  inferenceCount: number;
+  publicAccess: boolean;
   memberCount: number;
 }

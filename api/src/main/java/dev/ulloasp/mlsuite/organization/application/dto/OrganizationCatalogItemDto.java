@@ -15,9 +15,12 @@ public record OrganizationCatalogItemDto(
         String ownerName,
         String ownerEmail,
         String ownerAvatarUrl,
+        long teamCount,
         long modelCount,
         long schemaCount,
         long pluginCount,
+        long inferenceCount,
+        boolean publicAccess,
         long memberCount) {
 
     public static OrganizationCatalogItemDto from(
@@ -25,9 +28,12 @@ public record OrganizationCatalogItemDto(
             String ownerName,
             String ownerEmail,
             String ownerAvatarUrl,
+            long teamCount,
             long modelCount,
             long schemaCount,
             long pluginCount,
+            long inferenceCount,
+            boolean publicAccess,
             long memberCount) {
         return new OrganizationCatalogItemDto(
                 organization.getId(),
@@ -40,9 +46,12 @@ public record OrganizationCatalogItemDto(
                 ownerName,
                 ownerEmail,
                 ownerAvatarUrl,
+                teamCount,
                 modelCount,
                 schemaCount,
                 pluginCount,
+                inferenceCount,
+                publicAccess,
                 memberCount);
     }
 }

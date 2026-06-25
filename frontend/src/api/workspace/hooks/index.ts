@@ -9,6 +9,7 @@ export { useInvalidateOrganizationQueries } from "./use-invalidate-organization-
 export { useOrganizationCatalogPageQuery } from "./use-organization-catalog-page-query";
 export { useDeleteOrganizationMutation } from "./use-delete-organization-mutation";
 export { useRenameOrganizationMutation } from "./use-rename-organization-mutation";
+export { useTransferOrganizationOwnershipMutation } from "./use-transfer-organization-ownership-mutation";
 export { useWorkspacePermissions } from "./use-workspace-permissions";
 export { useCan } from "./use-can";
 export { useCurrentUserIsSuperadmin } from "./use-current-user-is-superadmin";

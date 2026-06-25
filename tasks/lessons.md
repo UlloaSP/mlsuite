@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-06-25 - Organization catalog dense card correction
+
+- Correction: organization catalog filtering used implementation-centric asset/empty states, and card actions were split between inline affordances and direct buttons while the item had too much information for a grid tile.
+- Rule: dense organization catalog items should be full-width cards; domain filters should use user-facing visibility terms such as public/private, and secondary edits/destructive/ownership actions belong under one overflow menu while editable primary fields remain clickable inline.
+
 ## 2026-06-25 - Organizations catalog UI correction
 
 - Correction: org catalog tiles were implemented as card-like panels, rename/delete were hidden in a menu, and create page kept a preview/help card instead of a direct form.

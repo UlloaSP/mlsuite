@@ -33,6 +33,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
@@ -49,6 +50,7 @@ class OrganizationCatalogServiceTest {
     @Mock private SchemaRepository schemaRepository;
     @Mock private PluginMetadataRepository pluginRepository;
     @Mock private TeamRepository teamRepository;
+    @Mock private PredictionRunRepository predictionRunRepository;
     @Mock private InvitationRepository invitationRepository;
     @Mock private RoleDefinitionRepository roleRepository;
     @Mock private SchemaReviewLinkRepository reviewLinkRepository;
@@ -67,6 +69,7 @@ class OrganizationCatalogServiceTest {
                 schemaRepository,
                 pluginRepository,
                 teamRepository,
+                predictionRunRepository,
                 invitationRepository,
                 roleRepository,
                 reviewLinkRepository,
@@ -86,6 +89,8 @@ class OrganizationCatalogServiceTest {
         when(modelRepository.countByOrganizationId(41L)).thenReturn(3L);
         when(schemaRepository.countByOrganizationId(41L)).thenReturn(4L);
         when(pluginRepository.countByOrganizationId(41L)).thenReturn(5L);
+        when(teamRepository.countByOrganizationId(41L)).thenReturn(2L);
+        when(predictionRunRepository.countByOrganizationId(41L)).thenReturn(7L);
         when(membershipRepository.countByOrganizationIdAndStatus(41L, MembershipStatus.ACTIVE)).thenReturn(6L);
 
         var page = service.getPage(1L, 0, 24, " north ", "all", "updated");
@@ -97,6 +102,8 @@ class OrganizationCatalogServiceTest {
         assertEquals(3L, item.modelCount());
         assertEquals(4L, item.schemaCount());
         assertEquals(5L, item.pluginCount());
+        assertEquals(7L, item.inferenceCount());
+        assertEquals(2L, item.teamCount());
         assertEquals(6L, item.memberCount());
     }
 

@@ -25,6 +25,7 @@ import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepositor
 import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
+import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationManagementService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
@@ -170,6 +171,35 @@ class OrganizationManagementServiceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.transferOwnership(7L, 41L, new TransferOrganizationOwnershipRequest(2L)));
+    }
+
+    @Test
+    void updateOrganization_UpdatesSlugWhenProvided() {
+        OrganizationMembership membership = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
+        Organization organization = membership.getOrganization();
+        when(workspaceAccessService.requireMembership(7L, 41L)).thenReturn(membership);
+        when(organizationRepository.save(organization)).thenReturn(organization);
+
+        var result = service.updateOrganization(
+                7L,
+                41L,
+                new UpdateOrganizationRequest("Acme Lab", "acme-lab", "Description"));
+
+        assertEquals("acme-lab", result.slug());
+        assertEquals("acme-lab", organization.getSlug());
+        verify(workspaceAuthorizationService).requireOrganizationEdit(7L, 41L);
+    }
+
+    @Test
+    void updateOrganization_PreservesSlugWhenOmitted() {
+        OrganizationMembership membership = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
+        Organization organization = membership.getOrganization();
+        when(workspaceAccessService.requireMembership(7L, 41L)).thenReturn(membership);
+        when(organizationRepository.save(organization)).thenReturn(organization);
+
+        service.updateOrganization(7L, 41L, new UpdateOrganizationRequest("Acme Lab", null, "Description"));
+
+        assertEquals("org", organization.getSlug());
     }
 
     @Test

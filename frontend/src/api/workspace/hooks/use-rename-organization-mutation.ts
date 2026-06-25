@@ -8,16 +8,17 @@ import { updateOrganization } from "../services";
 import { useInvalidateOrganizationQueries } from "./use-invalidate-organization-queries";
 
 type RenameOrganizationRequest = {
+  description?: string | null;
   id: number;
   name: string;
-  description?: string | null;
+  slug?: string;
 };
 
 export const useRenameOrganizationMutation = () => {
   const invalidate = useInvalidateOrganizationQueries();
   return useMutation({
-    mutationFn: ({ id, name, description }: RenameOrganizationRequest) =>
-      updateOrganization(id, { name, description: description ?? undefined }),
+    mutationFn: ({ id, name, slug, description }: RenameOrganizationRequest) =>
+      updateOrganization(id, { name, slug, description: description ?? undefined }),
     onSuccess: () => void invalidate(),
   });
 };

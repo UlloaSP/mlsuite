@@ -27,16 +27,8 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
             )
             AND (
                 :filter = 'all'
-                OR (:filter = 'with-assets' AND (
-                    EXISTS (SELECT 1 FROM Model m WHERE m.organization.id = o.id)
-                    OR EXISTS (SELECT 1 FROM Schema s WHERE s.organization.id = o.id)
-                    OR EXISTS (SELECT 1 FROM PluginMetadata p WHERE p.organization.id = o.id)
-                ))
-                OR (:filter = 'empty' AND NOT (
-                    EXISTS (SELECT 1 FROM Model m WHERE m.organization.id = o.id)
-                    OR EXISTS (SELECT 1 FROM Schema s WHERE s.organization.id = o.id)
-                    OR EXISTS (SELECT 1 FROM PluginMetadata p WHERE p.organization.id = o.id)
-                ))
+                OR :filter = 'public'
+                OR (:filter = 'private' AND o.id IS NULL)
             )
             """)
     Page<Organization> findCatalogPage(String search, String filter, Pageable pageable);

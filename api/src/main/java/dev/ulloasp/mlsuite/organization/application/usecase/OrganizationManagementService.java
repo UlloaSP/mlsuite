@@ -155,7 +155,14 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     public OrganizationDto updateOrganization(Long userId, Long organizationId, UpdateOrganizationRequest request) {
         workspaceAuthorizationService.requireOrganizationEdit(userId, organizationId);
         Organization organization = workspaceAccessService.requireMembership(userId, organizationId).getOrganization();
+        String slug = request.slug() == null || request.slug().isBlank()
+                ? organization.getSlug()
+                : normalizeSlug(request.slug(), request.name());
+        if (!slug.equals(organization.getSlug()) && organizationRepository.existsBySlug(slug)) {
+            throw new OrganizationAlreadyExistsException(slug);
+        }
         organization.setName(request.name().strip());
+        organization.setSlug(slug);
         organization.setDescription(request.description());
         return OrganizationDto.from(organizationRepository.save(organization));
     }

@@ -12,8 +12,10 @@ import { useUser } from "../../api/user/hooks";
 import {
   useDeleteOrganizationMutation,
   useRenameOrganizationMutation,
+  useTransferOrganizationOwnershipMutation,
 } from "../../api/workspace/hooks";
 import type { OrganizationCatalogItemDto } from "../../api/workspace/dtos";
+import type { OrganizationPatch } from "../components/OrganizationCatalogEditable";
 import { OrganizationsCatalogBrowser } from "../components/OrganizationsCatalogBrowser";
 import type {
   OrganizationFilterMode,
@@ -30,6 +32,7 @@ export function OrganizationsPage() {
   const [page, setPage] = useState(0);
   const renameMutation = useRenameOrganizationMutation();
   const deleteMutation = useDeleteOrganizationMutation();
+  const transferMutation = useTransferOrganizationOwnershipMutation();
 
   if (!user || error) return <NotFoundError />;
   if (user.systemRole !== "SUPERADMIN") return <NotFoundError />;
@@ -65,21 +68,39 @@ export function OrganizationsPage() {
     }
   };
 
-  const renameOrganization = async (organization: OrganizationCatalogItemDto, name: string) => {
+  const patchOrganization = async (
+    organization: OrganizationCatalogItemDto,
+    patch: OrganizationPatch,
+  ) => {
     try {
       await renameMutation.mutateAsync({
         id: organization.id,
-        name,
-        description: organization.description,
+        name: patch.name ?? organization.name,
+        slug: patch.slug ?? organization.slug,
+        description: patch.description ?? organization.description,
       });
-      toast.success("Organization renamed.");
+      toast.success("Organization updated.");
     } catch (actionError: unknown) {
       toast.error(actionError instanceof Error ? actionError.message : String(actionError));
       throw actionError;
     }
   };
 
-  const isActionPending = renameMutation.isPending || deleteMutation.isPending;
+  const transferOwner = async (organization: OrganizationCatalogItemDto, membershipId: number) => {
+    try {
+      await transferMutation.mutateAsync({
+        organizationId: organization.id,
+        nextOwnerMembershipId: membershipId,
+      });
+      toast.success("Owner transferred.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
+    }
+  };
+
+  const isActionPending =
+    renameMutation.isPending || deleteMutation.isPending || transferMutation.isPending;
 
   return (
     <AppPage>
@@ -111,7 +132,8 @@ export function OrganizationsPage() {
             isActionPending,
             onDelete: deleteOrganization,
             onCreate: () => navigate("/workspace/organizations/create"),
-            onRename: renameOrganization,
+            onPatch: patchOrganization,
+            onTransferOwner: transferOwner,
             page,
             search: deferredQuery,
             setPage: setCatalogPage,

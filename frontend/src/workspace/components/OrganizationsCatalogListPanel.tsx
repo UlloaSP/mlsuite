@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useQuery } from "@tanstack/react-query";
 import type { Dispatch, SetStateAction } from "react";
 import { Search } from "lucide-react";
 import {
@@ -22,7 +23,9 @@ import {
   useOrganizationCatalogPageQuery,
 } from "../../api/workspace/hooks";
 import type { OrganizationCatalogItemDto } from "../../api/workspace/dtos";
+import { getOrganizationMembers } from "../../api/workspace/services";
 import { OrganizationCatalogTile } from "./OrganizationCatalogTile";
+import type { OrganizationPatch } from "./OrganizationCatalogEditable";
 import type { OrganizationFilterMode, OrganizationSortMode } from "./OrganizationsCatalogToolbar";
 
 export type OrganizationsCatalogListPanelProps = {
@@ -30,7 +33,8 @@ export type OrganizationsCatalogListPanelProps = {
   isActionPending: boolean;
   onDelete: (item: OrganizationCatalogItemDto) => void | Promise<void>;
   onCreate: () => void;
-  onRename: (item: OrganizationCatalogItemDto, name: string) => void | Promise<void>;
+  onPatch: (item: OrganizationCatalogItemDto, patch: OrganizationPatch) => void | Promise<void>;
+  onTransferOwner: (item: OrganizationCatalogItemDto, membershipId: number) => void | Promise<void>;
   page: number;
   search: string;
   setPage: Dispatch<SetStateAction<number>>;
@@ -42,7 +46,8 @@ export function OrganizationsCatalogListPanel({
   isActionPending,
   onDelete,
   onCreate,
-  onRename,
+  onPatch,
+  onTransferOwner,
   page,
   search,
   setPage,
@@ -59,7 +64,7 @@ export function OrganizationsCatalogListPanel({
   return (
     <>
       <section className="min-h-0 flex-1 basis-0 overflow-y-auto py-4">
-        <div className="grid gap-3 pr-1 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 pr-1">
           {items.length === 0 && pageQuery.isLoading ? (
             <AppPanel className="px-6 py-16 text-center text-sm text-[var(--text-secondary)] md:col-span-2 xl:col-span-3">
               Loading organizations...
@@ -94,12 +99,13 @@ export function OrganizationsCatalogListPanel({
             </div>
           ) : null}
           {items.map((item) => (
-            <OrganizationCatalogTile
+            <OrganizationCatalogTileWithMembers
               key={item.id}
               disabled={isBusy}
               item={item}
               onDelete={() => onDelete(item)}
-              onRename={(name) => onRename(item, name)}
+              onPatch={(patch) => onPatch(item, patch)}
+              onTransferOwner={(membershipId) => onTransferOwner(item, membershipId)}
             />
           ))}
         </div>
@@ -112,6 +118,35 @@ export function OrganizationsCatalogListPanel({
         totalPages={totalPages}
       />
     </>
+  );
+}
+
+function OrganizationCatalogTileWithMembers({
+  disabled,
+  item,
+  onDelete,
+  onPatch,
+  onTransferOwner,
+}: {
+  disabled: boolean;
+  item: OrganizationCatalogItemDto;
+  onDelete: () => void | Promise<void>;
+  onPatch: (patch: OrganizationPatch) => void | Promise<void>;
+  onTransferOwner: (membershipId: number) => void | Promise<void>;
+}) {
+  const { data: members = [] } = useQuery({
+    queryKey: ["organization-members", item.id],
+    queryFn: () => getOrganizationMembers(item.id),
+  });
+  return (
+    <OrganizationCatalogTile
+      disabled={disabled}
+      item={item}
+      members={members}
+      onDelete={onDelete}
+      onPatch={onPatch}
+      onTransferOwner={onTransferOwner}
+    />
   );
 }
 

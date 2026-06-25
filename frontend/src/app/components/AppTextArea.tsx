@@ -10,7 +10,7 @@ export function AppTextArea({ className, ...props }: TextareaHTMLAttributes<HTML
   return (
     <label
       className={cx(
-        "inline-flex rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]",
+        "inline-flex rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]",
         className,
       )}
     >

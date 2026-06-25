@@ -1,3 +1,39 @@
+# Organization Catalog Tile Metrics And Actions
+
+## Goal
+
+- [x] Add inference and team counts to organization catalog cards.
+- [x] Replace grid tiles with full-width organization cards.
+- [x] Move edit/delete/transfer owner actions under a three-dot menu.
+- [x] Allow inline editing of name, slug, and description.
+- [x] Replace asset/empty filters with public/private filters, defaulting all orgs to public for now.
+
+## Plan
+
+- [x] Extend backend catalog DTO/service with team count, inference count, and public visibility.
+- [x] Allow organization slug updates through existing update endpoint.
+- [x] Add frontend DTO/service/hook support for slug and owner transfer.
+- [x] Rebuild organization catalog item as full-width card with inline editable fields and actions menu.
+- [x] Add transfer-owner modal using existing organization members endpoint.
+- [x] Update filters and run focused backend/frontend checks.
+
+## Review
+
+- Organization catalog now returns team count, inference run count, and public visibility. Inference count is based on persisted `PredictionRun` rows for the organization.
+- Catalog filters are now `all/public/private`; organizations are public by default for now, so `private` returns no rows until a real visibility field exists.
+- Organization rows are full-width cards with inline editable name, slug, and description.
+- Edit name, edit slug, edit description, transfer owner, and delete now live under the three-dot menu. Delete keeps a confirmation modal.
+- Ownership transfer uses active organization members from the existing members endpoint and invalidates organization catalog/member queries after transfer.
+- Backend update preserves the existing slug when older callers omit `slug`.
+- Verification:
+  - `api`: `mvn "-Dtest=OrganizationCatalogServiceTest,OrganizationManagementServiceTest" test` passed, 13 tests.
+  - `api`: `mvn -DskipTests package` passed.
+  - `frontend`: `vp check --fix ...` passed for touched organization files.
+  - `frontend`: `vp exec tsc -b --pretty false` passed.
+  - `frontend`: `vp test` passed, 33 files / 115 tests.
+  - Repo: changed/new source and test files are under 300 non-comment lines.
+  - Repo: `git diff --check` passed with CRLF warnings only.
+
 # Sidebar Keyboard Shortcut Fix
 
 ## Goal

@@ -22,6 +22,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
@@ -38,6 +39,7 @@ public class OrganizationCatalogService {
     private final SchemaRepository schemaRepository;
     private final PluginMetadataRepository pluginRepository;
     private final TeamRepository teamRepository;
+    private final PredictionRunRepository predictionRunRepository;
     private final InvitationRepository invitationRepository;
     private final RoleDefinitionRepository roleRepository;
     private final SchemaReviewLinkRepository reviewLinkRepository;
@@ -52,6 +54,7 @@ public class OrganizationCatalogService {
             SchemaRepository schemaRepository,
             PluginMetadataRepository pluginRepository,
             TeamRepository teamRepository,
+            PredictionRunRepository predictionRunRepository,
             InvitationRepository invitationRepository,
             RoleDefinitionRepository roleRepository,
             SchemaReviewLinkRepository reviewLinkRepository,
@@ -64,6 +67,7 @@ public class OrganizationCatalogService {
         this.schemaRepository = schemaRepository;
         this.pluginRepository = pluginRepository;
         this.teamRepository = teamRepository;
+        this.predictionRunRepository = predictionRunRepository;
         this.invitationRepository = invitationRepository;
         this.roleRepository = roleRepository;
         this.reviewLinkRepository = reviewLinkRepository;
@@ -110,9 +114,12 @@ public class OrganizationCatalogService {
                 owner != null ? owner.getUser().getFullName() : null,
                 owner != null ? owner.getUser().getEmail() : null,
                 owner != null ? owner.getUser().getAvatarUrl() : null,
+                teamRepository.countByOrganizationId(id),
                 modelRepository.countByOrganizationId(id),
                 schemaRepository.countByOrganizationId(id),
                 pluginRepository.countByOrganizationId(id),
+                predictionRunRepository.countByOrganizationId(id),
+                true,
                 membershipRepository.countByOrganizationIdAndStatus(id, MembershipStatus.ACTIVE));
     }
 
@@ -146,7 +153,7 @@ public class OrganizationCatalogService {
     }
 
     private String normalizeFilter(String filter) {
-        return "with-assets".equals(filter) || "empty".equals(filter) ? filter : "all";
+        return "public".equals(filter) || "private".equals(filter) ? filter : "all";
     }
 
     private int normalizePageSize(int size) {

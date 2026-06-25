@@ -8,7 +8,7 @@ import { AppSelect, AppTextField, cx } from "../../app/components";
 import { useOrganizationCatalogPageQuery } from "../../api/workspace/hooks";
 
 export type OrganizationSortMode = "updated" | "created" | "name";
-export type OrganizationFilterMode = "all" | "with-assets" | "empty";
+export type OrganizationFilterMode = "all" | "public" | "private";
 
 export type OrganizationsCatalogToolbarProps = {
   filter: OrganizationFilterMode;
@@ -23,8 +23,8 @@ export type OrganizationsCatalogToolbarProps = {
 
 const FILTERS: Array<{ value: OrganizationFilterMode; label: string }> = [
   { value: "all", label: "All" },
-  { value: "with-assets", label: "With assets" },
-  { value: "empty", label: "Empty" },
+  { value: "public", label: "Public" },
+  { value: "private", label: "Private" },
 ];
 
 const SORT_OPTIONS: Array<{ value: OrganizationSortMode; label: string }> = [
