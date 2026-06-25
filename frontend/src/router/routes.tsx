@@ -80,11 +80,19 @@ const routes: RouteObject[] = [
               },
               {
                 path: "workspace/organizations",
-                element: workspace("canViewOrganization", <OrganizationsPage />),
+                element: (
+                  <RequireSuperadmin>
+                    <OrganizationsPage />
+                  </RequireSuperadmin>
+                ),
               },
               {
                 path: "workspace/organizations/create",
-                element: workspace("canEditOrganization", <CreateOrganizationPage />),
+                element: (
+                  <RequireSuperadmin>
+                    <CreateOrganizationPage />
+                  </RequireSuperadmin>
+                ),
               },
               {
                 path: "workspace/organizations/:organizationId",

@@ -90,7 +90,8 @@ public class OrganizationManagementService implements OrganizationManagementUseC
 
     @Override
     public OrganizationDto createOrganization(Long userId, CreateOrganizationRequest request) {
-        User user = workspaceAccessService.requireUser(userId);
+        User actor = workspaceAccessService.requireUser(userId);
+        User owner = resolveOwner(actor, request.ownerUserId());
         String slug = normalizeSlug(request.slug(), request.name());
         if (organizationRepository.existsBySlug(slug)) {
             throw new OrganizationAlreadyExistsException(slug);
@@ -99,14 +100,14 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 slug,
                 request.name().strip(),
                 request.description(),
-                user.getAvatarUrl(),
-                user));
+                owner.getAvatarUrl(),
+                actor));
         roleSeedService.ensureOrganizationRoles(organization);
         roleSeedService.externalReviewerRole(organization);
-        OrganizationMembership membership = new OrganizationMembership(organization, user, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
+        OrganizationMembership membership = new OrganizationMembership(organization, owner, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
         membership.setRoleDefinition(roleSeedService.orgRole(organization, OrganizationRole.OWNER));
         membershipRepository.save(membership);
-        user.setCurrentOrganization(organization);
+        owner.setCurrentOrganization(organization);
         return OrganizationDto.from(organization);
     }
 
@@ -255,6 +256,16 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("(^-|-$)", "");
         return base.isBlank() ? "workspace" : base;
+    }
+
+    private User resolveOwner(User actor, Long ownerUserId) {
+        if (ownerUserId == null || ownerUserId.equals(actor.getId())) {
+            return actor;
+        }
+        if (!workspaceAccessService.isSuperadmin(actor.getId())) {
+            throw new IllegalArgumentException("Only superadmins can choose another owner.");
+        }
+        return workspaceAccessService.requireUser(ownerUserId);
     }
 
     private OrganizationRole legacyRole(RoleDefinition roleDefinition) {

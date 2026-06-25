@@ -27,6 +27,7 @@ import { useUser } from "../../api/user/hooks";
 import { useWorkspaceContext } from "../../api/workspace/hooks";
 import { isTypingTarget, shortcutDigit } from "../utils/keyboard-shortcuts";
 import { cx } from "./cx";
+import { Kbd } from "./Kbd";
 import { isChildActive, type NavigationItem } from "./sidebar-navigation-support";
 import {
   SidebarGroup,
@@ -53,7 +54,7 @@ const INFRA_CHILDREN: NavigationItem["children"] = [
 export function SidebarNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+  const [openItem, setOpenItem] = useState<string | null | undefined>(undefined);
   const [showShortcutHints, setShowShortcutHints] = useState(false);
   const { state } = useSidebar();
   const { data: user } = useUser();
@@ -84,21 +85,6 @@ export function SidebarNavigation() {
       : []),
   ];
   const navigation: NavigationItem[] = [
-    ...(permissions?.canViewWorkspace
-      ? [
-          {
-            to: "/workspace",
-            icon: Building2,
-            label: "Workspace",
-            children: workspaceChildren,
-            activeWhen: (pathname: string) =>
-              pathname === "/workspace" ||
-              Boolean(
-                currentOrganizationPath && pathname.startsWith(`${currentOrganizationPath}/`),
-              ),
-          },
-        ]
-      : []),
     ...(user?.systemRole === "SUPERADMIN"
       ? [
           {
@@ -112,6 +98,21 @@ export function SidebarNavigation() {
                 currentOrganizationPath &&
                 pathname.startsWith("/workspace/organizations/") &&
                 !pathname.startsWith(currentOrganizationPath),
+              ),
+          },
+        ]
+      : []),
+    ...(permissions?.canViewWorkspace
+      ? [
+          {
+            to: "/workspace",
+            icon: Building2,
+            label: "Workspace",
+            children: workspaceChildren,
+            activeWhen: (pathname: string) =>
+              pathname === "/workspace" ||
+              Boolean(
+                currentOrganizationPath && pathname.startsWith(`${currentOrganizationPath}/`),
               ),
           },
         ]
@@ -137,13 +138,11 @@ export function SidebarNavigation() {
     item.activeWhen?.(location.pathname) ??
     (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
   const getShortcutChildren = () => {
-    const activeOpenItem = navigation.find(
-      (item) => item.children?.length && isParentActive(item) && (openItems[item.to] ?? true),
-    );
-    const firstOpenItem = navigation.find(
-      (item) => item.children?.length && (openItems[item.to] ?? false),
-    );
-    return activeOpenItem?.children ?? firstOpenItem?.children ?? [];
+    const parent =
+      openItem === undefined
+        ? navigation.find((item) => item.children?.length && isParentActive(item))
+        : navigation.find((item) => item.to === openItem && item.children?.length);
+    return parent?.children ?? [];
   };
   const handleWindowKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (event.key === "Alt" && !collapsed && !isTypingTarget(event.target)) {
@@ -188,7 +187,7 @@ export function SidebarNavigation() {
           {navigation.map((item, index) => {
             const active = isParentActive(item);
             const hasChildren = Boolean(item.children?.length);
-            const open = openItems[item.to] ?? active;
+            const open = openItem === undefined ? active : openItem === item.to;
             const Icon = item.icon;
             const shortcut = String(index + 1);
 
@@ -199,21 +198,28 @@ export function SidebarNavigation() {
                     aria-expanded={open}
                     aria-keyshortcuts={`Alt+${shortcut}`}
                     isActive={active}
-                    onClick={() =>
-                      setOpenItems((current) => ({
-                        ...current,
-                        [item.to]: !(current[item.to] ?? active),
-                      }))
-                    }
+                    onClick={() => {
+                      if (collapsed) {
+                        void navigate(item.children?.[0]?.to ?? item.to, { viewTransition: true });
+                        return;
+                      }
+                      setOpenItem((current) => (current === item.to ? null : item.to));
+                    }}
                     title={item.label}
                     type="button"
                   >
                     <Icon size={18} className="shrink-0" />
                     <SidebarLabel className="truncate">{item.label}</SidebarLabel>
-                    {showExpandedShortcutHints ? (
-                      <span className="ml-auto grid size-5 shrink-0 place-items-center rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] text-[0.68rem] font-semibold text-[var(--text-muted)]">
+                    {!collapsed ? (
+                      <Kbd
+                        aria-hidden={!showExpandedShortcutHints}
+                        className={cx(
+                          "ml-auto shrink-0",
+                          !showExpandedShortcutHints && "invisible",
+                        )}
+                      >
                         {shortcut}
-                      </span>
+                      </Kbd>
                     ) : null}
                     {!collapsed ? (
                       <ChevronRight
@@ -231,10 +237,16 @@ export function SidebarNavigation() {
                     <Link aria-keyshortcuts={`Alt+${shortcut}`} to={item.to} viewTransition>
                       <Icon size={18} className="shrink-0" />
                       <SidebarLabel className="truncate">{item.label}</SidebarLabel>
-                      {showExpandedShortcutHints ? (
-                        <span className="ml-auto grid size-5 shrink-0 place-items-center rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] text-[0.68rem] font-semibold text-[var(--text-muted)]">
+                      {!collapsed ? (
+                        <Kbd
+                          aria-hidden={!showExpandedShortcutHints}
+                          className={cx(
+                            "ml-auto shrink-0",
+                            !showExpandedShortcutHints && "invisible",
+                          )}
+                        >
                           {shortcut}
-                        </span>
+                        </Kbd>
                       ) : null}
                     </Link>
                   </SidebarMenuButton>
@@ -263,11 +275,15 @@ export function SidebarNavigation() {
                                 >
                                   <ChildIcon size={14} className="shrink-0" />
                                   <span className="truncate">{child.label}</span>
-                                  {showExpandedShortcutHints ? (
-                                    <span className="ml-auto grid size-4 shrink-0 place-items-center rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] text-[0.62rem] font-semibold text-[var(--text-muted)]">
-                                      {childShortcut}
-                                    </span>
-                                  ) : null}
+                                  <Kbd
+                                    aria-hidden={!showExpandedShortcutHints}
+                                    className={cx(
+                                      "ml-auto h-4 min-w-4 shrink-0 text-[0.62rem]",
+                                      !showExpandedShortcutHints && "invisible",
+                                    )}
+                                  >
+                                    {childShortcut}
+                                  </Kbd>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>

@@ -16,4 +16,6 @@ public interface SchemaReviewLinkRepository extends JpaRepository<SchemaReviewLi
             Long schemaId, Long schemaVersionId, Long organizationId);
 
     boolean existsBySchemaId(Long schemaId);
+
+    long countByOrganizationId(Long organizationId);
 }

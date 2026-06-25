@@ -49,7 +49,7 @@ export function AppCombobox({
     <div className="relative">
       <label
         className={cx(
-          "inline-flex w-full items-center gap-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)]",
+          "inline-flex w-full items-center gap-3 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)]",
           disabled && "cursor-not-allowed opacity-50",
         )}
       >
@@ -96,7 +96,7 @@ export function AppCombobox({
       {open && !disabled ? (
         <div
           id={listboxId}
-          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-card)]"
+          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-card)]"
         >
           {filtered.length ? (
             filtered.map((item, index) => (
@@ -109,9 +109,9 @@ export function AppCombobox({
                   choose(item);
                 }}
                 className={cx(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition",
+                  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left transition",
                   index === activeIndex
-                    ? "bg-[var(--surface-muted)]"
+                    ? "rounded bg-[var(--surface-muted)]"
                     : "hover:bg-[var(--surface-muted)]",
                 )}
               >
@@ -119,10 +119,10 @@ export function AppCombobox({
                   <img
                     src={item.avatarUrl}
                     alt=""
-                    className="size-9 shrink-0 rounded-full object-cover"
+                    className="size-9 shrink-0 rounded object-cover"
                   />
                 ) : (
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent-quiet)] text-xs font-semibold text-[var(--accent-primary-strong)]">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded bg-[var(--accent-quiet)] text-xs font-semibold text-[var(--accent-primary-strong)]">
                     {item.label.slice(0, 1).toUpperCase()}
                   </span>
                 )}

@@ -40,4 +40,6 @@ public interface OrganizationMembershipRepository extends JpaRepository<Organiza
     long countByRoleDefinitionIdAndStatus(Long roleDefinitionId, MembershipStatus status);
 
     List<OrganizationMembership> findByRoleDefinitionIdAndStatus(Long roleDefinitionId, MembershipStatus status);
+
+    List<OrganizationMembership> findByOrganizationId(Long organizationId);
 }

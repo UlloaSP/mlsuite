@@ -12,10 +12,12 @@ import dev.ulloasp.mlsuite.organization.application.dto.OrganizationAdminDashboa
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipRowDto;
+import dev.ulloasp.mlsuite.organization.application.dto.OrganizationPageDto;
 import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.port.in.OrganizationManagementUseCase;
+import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationCatalogService;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 
 @RestController
@@ -23,17 +25,37 @@ public class OrganizationControllerImpl implements OrganizationController {
 
     private final CurrentUserResolver currentUserResolver;
     private final OrganizationManagementUseCase organizationManagementUseCase;
+    private final OrganizationCatalogService organizationCatalogService;
 
     public OrganizationControllerImpl(
             CurrentUserResolver currentUserResolver,
-            OrganizationManagementUseCase organizationManagementUseCase) {
+            OrganizationManagementUseCase organizationManagementUseCase,
+            OrganizationCatalogService organizationCatalogService) {
         this.currentUserResolver = currentUserResolver;
         this.organizationManagementUseCase = organizationManagementUseCase;
+        this.organizationCatalogService = organizationCatalogService;
     }
 
     @Override
     public ResponseEntity<List<OrganizationDto>> listOrganizations(Authentication authentication) {
         return ResponseEntity.ok(organizationManagementUseCase.listOrganizations(currentUserResolver.resolve(authentication).userId()));
+    }
+
+    @Override
+    public ResponseEntity<OrganizationPageDto> getOrganizationPage(
+            Authentication authentication,
+            int page,
+            int size,
+            String search,
+            String filter,
+            String sort) {
+        return ResponseEntity.ok(organizationCatalogService.getPage(
+                currentUserResolver.resolve(authentication).userId(),
+                page,
+                size,
+                search,
+                filter,
+                sort));
     }
 
     @Override
@@ -67,7 +89,7 @@ public class OrganizationControllerImpl implements OrganizationController {
 
     @Override
     public ResponseEntity<Void> deleteOrganization(Authentication authentication, Long organizationId) {
-        organizationManagementUseCase.deleteOrganization(currentUserResolver.resolve(authentication).userId(), organizationId);
+        organizationCatalogService.deleteOrganization(currentUserResolver.resolve(authentication).userId(), organizationId);
         return ResponseEntity.noContent().build();
     }
 

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 export type ShortcutEvent = {
   key: string;
+  code?: string;
   altKey?: boolean;
   ctrlKey?: boolean;
   metaKey?: boolean;
@@ -31,6 +32,10 @@ const SHIFT_DIGITS: Record<string, number> = {
 };
 
 export const shortcutDigit = (event: ShortcutEvent) => {
+  const codeMatch = /^(Digit|Numpad)([1-9])$/.exec(event.code ?? "");
+  if (codeMatch) {
+    return Number(codeMatch[2]);
+  }
   if (/^[1-9]$/.test(event.key)) {
     return Number(event.key);
   }

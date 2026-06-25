@@ -1,89 +1,123 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import { useDeferredValue, useState, type SetStateAction } from "react";
 import { useNavigate } from "react-router";
-import { useState } from "react";
+import { toast } from "sonner";
+import { AppButton, AppPage, AppPageHeader, AppSurface } from "../../app/components";
+import { NotFoundError } from "../../app/pages/error-page";
+import { useUser } from "../../api/user/hooks";
 import {
-  AppButton,
-  AppTextArea,
-  AppTextField,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-} from "../../app/components";
-import { OrganizationCard } from "../components/OrganizationCard";
-import { getOrganizations, createOrganization } from "../../api/workspace/services";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+  useDeleteOrganizationMutation,
+  useRenameOrganizationMutation,
+} from "../../api/workspace/hooks";
+import type { OrganizationCatalogItemDto } from "../../api/workspace/dtos";
+import { OrganizationsCatalogBrowser } from "../components/OrganizationsCatalogBrowser";
+import type {
+  OrganizationFilterMode,
+  OrganizationSortMode,
+} from "../components/OrganizationsCatalogToolbar";
 
 export function OrganizationsPage() {
   const navigate = useNavigate();
-  const qc = useQueryClient();
-  const { data: context } = useWorkspaceContext();
-  const { data: organizations = [] } = useQuery({
-    queryKey: ["organizations"],
-    queryFn: getOrganizations,
-  });
-  const memberships = context?.memberships ?? [];
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [description, setDescription] = useState("");
+  const { data: user, error } = useUser();
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query.trim());
+  const [sort, setSort] = useState<OrganizationSortMode>("updated");
+  const [filter, setFilter] = useState<OrganizationFilterMode>("all");
+  const [page, setPage] = useState(0);
+  const renameMutation = useRenameOrganizationMutation();
+  const deleteMutation = useDeleteOrganizationMutation();
 
-  async function submit() {
-    const organization = await createOrganization({ name, slug, description });
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ["organizations"] }),
-      qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
-    ]);
-    void navigate(`/workspace/organizations/${organization.id}`);
-  }
+  if (!user || error) return <NotFoundError />;
+  if (user.systemRole !== "SUPERADMIN") return <NotFoundError />;
+
+  const setCatalogPage = (nextPage: SetStateAction<number>) => {
+    setPage((current) =>
+      Math.max(0, typeof nextPage === "function" ? nextPage(current) : nextPage),
+    );
+  };
+
+  const handleQueryChange = (value: string) => {
+    setCatalogPage(0);
+    setQuery(value);
+  };
+
+  const handleSortChange = (value: OrganizationSortMode) => {
+    setCatalogPage(0);
+    setSort(value);
+  };
+
+  const handleFilterChange = (value: OrganizationFilterMode) => {
+    setCatalogPage(0);
+    setFilter(value);
+  };
+
+  const deleteOrganization = async (organization: OrganizationCatalogItemDto) => {
+    try {
+      await deleteMutation.mutateAsync(organization.id);
+      toast.success("Organization deleted.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
+    }
+  };
+
+  const renameOrganization = async (organization: OrganizationCatalogItemDto, name: string) => {
+    try {
+      await renameMutation.mutateAsync({
+        id: organization.id,
+        name,
+        description: organization.description,
+      });
+      toast.success("Organization renamed.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
+    }
+  };
+
+  const isActionPending = renameMutation.isPending || deleteMutation.isPending;
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
+      <AppSurface className="flex flex-1 flex-col overflow-hidden">
         <AppPageHeader
-          eyebrow="Workspace"
+          eyebrow="Superadmin"
           title="Organizations"
-          description="Choose the organization you want to operate in, or spin up a new workspace."
+          breadcrumbs={[{ label: "Organizations" }]}
+          description="Search, review, and maintain organization workspaces."
           actions={
             <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
-              New Org
+              + New Organization
             </AppButton>
           }
         />
-        <section className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
-          <div className="grid gap-4 md:grid-cols-2">
-            {organizations.map((organization) => (
-              <OrganizationCard
-                key={organization.id}
-                organization={organization}
-                membership={memberships.find((item) => item.organizationId === organization.id)}
-              />
-            ))}
-          </div>
-          <div className="rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-card)]">
-            <div className="space-y-3">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
-                Quick Create
-              </p>
-              <AppTextField
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Northwind AI"
-              />
-              <AppTextField
-                value={slug}
-                onChange={(event) => setSlug(event.target.value)}
-                placeholder="northwind-ai"
-              />
-              <AppTextArea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Short organization summary"
-              />
-              <AppButton type="button" onClick={() => void submit()} disabled={!name.trim()}>
-                Create Workspace
-              </AppButton>
-            </div>
-          </div>
-        </section>
+        <OrganizationsCatalogBrowser
+          toolbar={{
+            filter,
+            page,
+            query,
+            search: deferredQuery,
+            setFilter: handleFilterChange,
+            setQuery: handleQueryChange,
+            setSort: handleSortChange,
+            sort,
+          }}
+          list={{
+            filter,
+            isActionPending,
+            onDelete: deleteOrganization,
+            onCreate: () => navigate("/workspace/organizations/create"),
+            onRename: renameOrganization,
+            page,
+            search: deferredQuery,
+            setPage: setCatalogPage,
+            sort,
+          }}
+        />
       </AppSurface>
     </AppPage>
   );

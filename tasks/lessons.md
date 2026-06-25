@@ -1,5 +1,17 @@
 # Lessons
 
+## 2026-06-25 - Organizations catalog UI correction
+
+- Correction: org catalog tiles were implemented as card-like panels, rename/delete were hidden in a menu, and create page kept a preview/help card instead of a direct form.
+- Rule: when user asks for catalog tiles, keep tiles flat and direct; primary fields/actions should be inline, destructive actions need a real modal, and create forms should not include explanatory preview cards unless explicitly requested.
+
+## 2026-06-25 - Sidebar child shortcut correction
+
+- Correction: `Alt+Shift+number` depended on ambiguous open submenu state and keyboard layout-specific shifted characters.
+- Rule: child nav shortcuts need one deterministic submenu source and must read physical digit codes (`DigitN`/`NumpadN`) before layout-specific `event.key`.
+- Correction: collapsed collapsible sidebar parents toggled hidden state instead of navigating, and Alt hints resized rows.
+- Rule: collapsed parent rows with hidden children should navigate to their overview child; shortcut hints must reserve layout space or be absolutely positioned so showing hints does not resize navigation rows.
+
 ## 2026-06-23 - Sidebar shortcut and collapsed navigation correction
 
 - Correction: `Alt+Shift+1` did not navigate second-level items because browsers report shifted digit keys as symbols like `!`, not `"1"`.

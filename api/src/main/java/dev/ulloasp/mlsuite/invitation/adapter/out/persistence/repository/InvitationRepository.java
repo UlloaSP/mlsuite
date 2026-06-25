@@ -21,4 +21,6 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     List<Invitation> findByEmailAndStatusOrderByCreatedAtDesc(String email, InvitationStatus status);
 
     long countByOrganizationIdAndStatus(Long organizationId, InvitationStatus status);
+
+    long countByOrganizationId(Long organizationId);
 }

@@ -17,6 +17,7 @@ import type { MouseEvent } from "react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "../atoms";
 import { isModShortcut, isTypingTarget } from "../utils/keyboard-shortcuts";
+import { Kbd, KbdGroup } from "./Kbd";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -129,9 +130,10 @@ export function SidebarActions() {
               <Search size={18} />
               <SidebarLabel className="truncate">Global Search</SidebarLabel>
               {!collapsed ? (
-                <span className="ml-auto text-[0.68rem] font-semibold text-[var(--text-muted)]">
-                  {modifierLabel} K
-                </span>
+                <KbdGroup className="ml-auto">
+                  <Kbd>{modifierLabel}</Kbd>
+                  <Kbd>K</Kbd>
+                </KbdGroup>
               ) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -147,9 +149,11 @@ export function SidebarActions() {
                 {theme === "light" ? "Dark Mode" : "Light Mode"}
               </SidebarLabel>
               {!collapsed ? (
-                <span className="ml-auto text-[0.68rem] font-semibold text-[var(--text-muted)]">
-                  {modifierLabel} Shift L
-                </span>
+                <KbdGroup className="ml-auto">
+                  <Kbd>{modifierLabel}</Kbd>
+                  <Kbd>Shift</Kbd>
+                  <Kbd>L</Kbd>
+                </KbdGroup>
               ) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -164,9 +168,11 @@ export function SidebarActions() {
                 {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               </SidebarLabel>
               {!collapsed ? (
-                <span className="ml-auto text-[0.68rem] font-semibold text-[var(--text-muted)]">
-                  {modifierLabel} Shift F
-                </span>
+                <KbdGroup className="ml-auto">
+                  <Kbd>{modifierLabel}</Kbd>
+                  <Kbd>Shift</Kbd>
+                  <Kbd>F</Kbd>
+                </KbdGroup>
               ) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -180,9 +186,10 @@ export function SidebarActions() {
               {collapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
               <SidebarLabel className="truncate">{collapseLabel}</SidebarLabel>
               {!collapsed ? (
-                <span className="ml-auto text-[0.68rem] font-semibold text-[var(--text-muted)]">
-                  {modifierLabel} B
-                </span>
+                <KbdGroup className="ml-auto">
+                  <Kbd>{modifierLabel}</Kbd>
+                  <Kbd>B</Kbd>
+                </KbdGroup>
               ) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>

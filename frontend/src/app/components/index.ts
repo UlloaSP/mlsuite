@@ -28,3 +28,4 @@ export { AppTitle } from "./AppTitle";
 export { AppToolbar } from "./AppToolbar";
 export { cx } from "./cx";
 export { FOCUS_RING } from "./focus-ring";
+export { Kbd, KbdGroup } from "./Kbd";

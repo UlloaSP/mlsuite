@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -40,4 +41,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findEnabledUsersOutsideOrganization(
             @Param("organizationId") Long organizationId,
             @Param("status") MembershipStatus status);
+
+    @Modifying
+    @Query("UPDATE User u SET u.currentOrganization = null WHERE u.currentOrganization.id = :organizationId")
+    void clearCurrentOrganization(@Param("organizationId") Long organizationId);
 }
