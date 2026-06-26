@@ -3,11 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowRight, Database, TrendingUp } from "lucide-react";
-import { cx } from "../../app/components";
-import type { ModelDto } from "../../api/models/services";
-import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
+import { Database, TrendingUp } from "lucide-react";
 import { formatTimestamp, getModelAlgorithmLabel } from "../../algorithms/models/utils";
+import type { ModelDto } from "../../api/models/services";
+import { cx } from "../../app/components";
+import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
 
 const getModelIcon = (type: string) => {
   switch (type) {
@@ -59,7 +59,6 @@ export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: Mo
         </div>
       </div>
 
-      <div className="flex items-start gap-2">
         {canDelete || canEdit ? (
           <ModelActionsMenu
             canDelete={canDelete}
@@ -68,10 +67,6 @@ export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: Mo
             onAction={(action) => onAction(action, item)}
           />
         ) : null}
-        <div className="flex size-10 items-center justify-center rounded text-[var(--text-muted)]">
-          <ArrowRight size={16} />
-        </div>
-      </div>
     </button>
   );
 }
