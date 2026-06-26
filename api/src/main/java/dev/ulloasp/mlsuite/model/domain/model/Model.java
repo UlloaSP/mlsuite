@@ -59,6 +59,10 @@ public class Model {
     private User user;
 
     @ManyToOne
+    @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_model_updated_by"))
+    private User updatedBy;
+
+    @ManyToOne
     @JoinColumn(name = "organization_id", foreignKey = @ForeignKey(name = "fk_model_organization"))
     private Organization organization;
 

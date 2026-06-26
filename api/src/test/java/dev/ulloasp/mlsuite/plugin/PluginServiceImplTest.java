@@ -86,6 +86,7 @@ class PluginServiceImplTest {
         assertEquals(1, page.items().size());
         assertEquals("zeta-report", page.items().getFirst().kind());
         assertEquals("report", page.items().getFirst().pluginType());
+        assertEquals("Alice", page.items().getFirst().updatedByName());
         assertEquals(1, page.totalItems());
     }
 
@@ -110,7 +111,8 @@ class PluginServiceImplTest {
     }
 
     private StoredPlugin plugin(String id, String fileName, String source) {
-        return new StoredPlugin(id, fileName, "application/typescript", source.length(), now(), now(), source);
+        return new StoredPlugin(id, fileName, "application/typescript", source.length(), now(), now(),
+                "Alice", "alice@example.com", null, source);
     }
 
     private OffsetDateTime now() {

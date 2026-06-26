@@ -64,6 +64,7 @@ class PluginControllerTest {
         dto = new PluginDto("item-1", "plugin.ts", "application/typescript", 10,
                 OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC),
                 OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC),
+                "Alice", "alice@example.com", null,
                 "src", "field", "custom-field");
     }
 

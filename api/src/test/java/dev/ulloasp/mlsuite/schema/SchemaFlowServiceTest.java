@@ -62,28 +62,17 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 @ExtendWith(MockitoExtension.class)
 class SchemaFlowServiceTest {
 
-    @Mock
-    private UserLookupService userLookupService;
-    @Mock
-    private SchemaRepository schemaRepository;
-    @Mock
-    private SchemaVersionRepository versionRepository;
-    @Mock
-    private SchemaModelBindingRepository bindingRepository;
-    @Mock
-    private PredictionRunRepository runRepository;
-    @Mock
-    private PredictionResultRepository resultRepository;
-    @Mock
-    private PredictionResultFeedbackRepository feedbackRepository;
-    @Mock
-    private SchemaReviewLinkRepository reviewLinkRepository;
-    @Mock
-    private ModelRepository modelRepository;
-    @Mock
-    private WorkspaceAccessService workspaceAccessService;
-    @Mock
-    private WorkspaceAuthorizationService authorizationService;
+    @Mock private UserLookupService userLookupService;
+    @Mock private SchemaRepository schemaRepository;
+    @Mock private SchemaVersionRepository versionRepository;
+    @Mock private SchemaModelBindingRepository bindingRepository;
+    @Mock private PredictionRunRepository runRepository;
+    @Mock private PredictionResultRepository resultRepository;
+    @Mock private PredictionResultFeedbackRepository feedbackRepository;
+    @Mock private SchemaReviewLinkRepository reviewLinkRepository;
+    @Mock private ModelRepository modelRepository;
+    @Mock private WorkspaceAccessService workspaceAccessService;
+    @Mock private WorkspaceAuthorizationService authorizationService;
 
     private SchemaServiceImpl schemaService;
     private SchemaVersionServiceImpl versionService;
@@ -112,6 +101,8 @@ class SchemaFlowServiceTest {
         Schema result = schemaService.createSchema(7L, new CreateSchemaRequest("Risk", "Transplant risk"));
 
         assertEquals("Risk", result.getName());
+        assertEquals("Transplant risk", result.getDescription());
+        assertEquals(7L, result.getUpdatedBy().getId());
         assertEquals(41L, result.getOrganization().getId());
         verify(authorizationService).requireOrganizationOperate(7L, 41L);
     }
@@ -120,11 +111,16 @@ class SchemaFlowServiceTest {
     void getSchemaPage_ReturnsPagedSchemas() {
         when(schemaRepository.findCatalogPage(any(), any(), any(Boolean.class), any(Boolean.class), any()))
                 .thenReturn(new PageImpl<>(List.of(schema()), PageRequest.of(0, 24), 1));
+        when(versionRepository.findTopBySchemaIdOrderByVersionDesc(5L)).thenReturn(Optional.of(version()));
+        when(bindingRepository.countBySchemaVersionId(9L)).thenReturn(2L);
 
         SchemaPageDto page = schemaService.getSchemaPage(7L, 0, 24, "risk", "updated", "active");
 
         assertEquals(1, page.totalItems());
         assertEquals("Risk", page.items().get(0).name());
+        assertEquals(2L, page.items().get(0).modelCount());
+        assertEquals(1L, page.items().get(0).fieldCount());
+        assertEquals("Alice", page.items().get(0).updatedByName());
         verify(authorizationService).requireOrganizationRead(7L, 41L);
     }
 
@@ -336,7 +332,7 @@ class SchemaFlowServiceTest {
     }
 
     private Schema schema() {
-        Schema schema = new Schema(organization(), "Risk", null); schema.setId(5L); return schema;
+        Schema schema = new Schema(organization(), "Risk", null); schema.setId(5L); schema.setUpdatedBy(user()); return schema;
     }
 
     private Organization organization() {
@@ -346,7 +342,7 @@ class SchemaFlowServiceTest {
     }
 
     private User user() {
-        User user = new User(); user.setId(7L); user.setUsername("alice"); return user;
+        User user = new User(); user.setId(7L); user.setUsername("alice"); user.setFullName("Alice"); return user;
     }
 
     private WorkspacePermissionsDto permissions() {

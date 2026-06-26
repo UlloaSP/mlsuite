@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-06-26 - Catalog action placement correction
+
+- Correction: schema and organization overflow menus were visually inside content/metric flow instead of being the far-right action affordance.
+- Rule: catalog item overflow actions belong in a final `auto` column, `justify-self-end self-start`, so the three-dot trigger is the rightmost horizontal element of the tile.
+
 ## 2026-06-25 - Theme transition correction
 
 - Correction: removing flicker by deleting the theme transition also removed intentional gradual theme feedback.

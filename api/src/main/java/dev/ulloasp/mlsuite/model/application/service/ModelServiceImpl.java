@@ -138,6 +138,7 @@ public class ModelServiceImpl implements ModelService {
 
         Model model = new Model();
         model.setUser(user);
+        model.setUpdatedBy(user);
         model.setOrganization(organization);
         model.setName(name);
         model.setType(type);
@@ -192,6 +193,7 @@ public class ModelServiceImpl implements ModelService {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
         }
         model.setName(nextName);
+        model.setUpdatedBy(userLookupService.requireById(userId));
         return modelRepository.save(model);
     }
 
@@ -203,6 +205,7 @@ public class ModelServiceImpl implements ModelService {
         if (model.getArchivedAt() == null) {
             model.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
         }
+        model.setUpdatedBy(userLookupService.requireById(userId));
         return modelRepository.save(model);
     }
 
@@ -320,6 +323,7 @@ public class ModelServiceImpl implements ModelService {
     private Model copyModel(User user, Organization organization, Model source, String name, StoredObject stored) {
         Model copy = new Model();
         copy.setUser(user);
+        copy.setUpdatedBy(user);
         copy.setOrganization(organization);
         copy.setName(name);
         copy.setType(source.getType());

@@ -102,6 +102,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 request.description(),
                 owner.getAvatarUrl(),
                 actor));
+        organization.setUpdatedBy(actor);
         roleSeedService.ensureOrganizationRoles(organization);
         roleSeedService.externalReviewerRole(organization);
         OrganizationMembership membership = new OrganizationMembership(organization, owner, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
@@ -164,6 +165,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         organization.setName(request.name().strip());
         organization.setSlug(slug);
         organization.setDescription(request.description());
+        organization.setUpdatedBy(workspaceAccessService.requireUser(userId));
         return OrganizationDto.from(organizationRepository.save(organization));
     }
 
@@ -253,6 +255,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         roleSeedService.ensureOrganizationRoles(nextOwner.getOrganization());
         currentOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.ADMIN));
         nextOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.OWNER));
+        nextOwner.getOrganization().setUpdatedBy(workspaceAccessService.requireUser(userId));
         membershipRepository.save(currentOwner);
         return OrganizationMembershipDto.from(membershipRepository.save(nextOwner));
     }

@@ -19,6 +19,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModel
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaPageDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
@@ -27,6 +28,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
@@ -60,14 +62,17 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
 
     @Override
     public Schema createSchema(Long userId, CreateSchemaRequest request) {
-        userLookupService.requireById(userId);
+        User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         authorizationService.requireOrganizationOperate(userId, organization.getId());
         String name = normalizeName(request.name());
         if (schemaRepository.existsByNameAndOrganizationId(name, organization.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Schema name already exists");
         }
-        return schemaRepository.save(new Schema(organization, name, request.description()));
+        Schema schema = new Schema(organization, name, normalizeDescription(request.description()));
+        schema.setCreatedBy(user);
+        schema.setUpdatedBy(user);
+        return schemaRepository.save(schema);
     }
 
     @Override
@@ -90,7 +95,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
                 "archived".equals(status),
                 PageRequest.of(Math.max(page, 0), normalizePageSize(size), sort(sort)));
         return new SchemaPageDto(
-                SchemaDto.fromList(schemas.getContent()),
+                schemas.getContent().stream().map(this::catalogItem).toList(),
                 schemas.getNumber(),
                 schemas.getSize(),
                 schemas.getTotalElements(),
@@ -107,7 +112,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
 
     @Override
     public Schema renameSchema(Long userId, Long schemaId, String name) {
-        userLookupService.requireById(userId);
+        User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireEdit(userId, organization.getId());
         Schema schema = requireSchema(schemaId, organization.getId());
@@ -116,24 +121,26 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Schema name already exists");
         }
         schema.setName(nextName);
+        schema.setUpdatedBy(user);
         return schemaRepository.save(schema);
     }
 
     @Override
     public Schema archiveSchema(Long userId, Long schemaId) {
-        userLookupService.requireById(userId);
+        User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireEdit(userId, organization.getId());
         Schema schema = requireSchema(schemaId, organization.getId());
         if (schema.getArchivedAt() == null) {
             schema.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
         }
+        schema.setUpdatedBy(user);
         return schemaRepository.save(schema);
     }
 
     @Override
     public Schema duplicateSchema(Long userId, Long schemaId, String name) {
-        userLookupService.requireById(userId);
+        User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireCreate(userId, organization.getId());
         Schema source = requireSchema(schemaId, organization.getId());
@@ -141,9 +148,13 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         if (schemaRepository.existsByNameAndOrganizationId(nextName, organization.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Schema name already exists");
         }
-        Schema copy = schemaRepository.save(new Schema(organization, nextName, source.getDescription()));
-        versionRepository.findTopBySchemaIdOrderByVersionDesc(schemaId).ifPresent(version -> copyVersion(copy, version));
-        return copy;
+        Schema copy = new Schema(organization, nextName, source.getDescription());
+        copy.setCreatedBy(user);
+        copy.setUpdatedBy(user);
+        Schema savedCopy = schemaRepository.save(copy);
+        versionRepository.findTopBySchemaIdOrderByVersionDesc(schemaId)
+                .ifPresent(version -> copyVersion(savedCopy, version));
+        return savedCopy;
     }
 
     @Override
@@ -170,6 +181,15 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
             Map<String, Object> policy = binding.getPluginPolicy() == null ? Map.of() : binding.getPluginPolicy();
             bindingRepository.save(new SchemaModelBinding(version, binding.getModel(), policy));
         }
+    }
+
+    private SchemaCatalogItemDto catalogItem(Schema schema) {
+        return versionRepository.findTopBySchemaIdOrderByVersionDesc(schema.getId())
+                .map(version -> SchemaCatalogItemDto.from(
+                        schema,
+                        version,
+                        bindingRepository.countBySchemaVersionId(version.getId())))
+                .orElseGet(() -> SchemaCatalogItemDto.from(schema, null, 0));
     }
 
     private Schema requireSchema(Long schemaId, Long organizationId) {
@@ -200,6 +220,13 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schema name is required");
         }
         return name.strip();
+    }
+
+    private String normalizeDescription(String description) {
+        if (description == null || description.isBlank()) {
+            return null;
+        }
+        return description.strip();
     }
 
     private String normalizeSearch(String search) {

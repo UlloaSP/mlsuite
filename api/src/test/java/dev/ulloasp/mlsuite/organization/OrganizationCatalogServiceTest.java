@@ -99,6 +99,7 @@ class OrganizationCatalogServiceTest {
         var item = page.items().get(0);
         assertEquals("Northwind", item.name());
         assertEquals("Owner", item.ownerName());
+        assertEquals("Editor", item.updatedByName());
         assertEquals(3L, item.modelCount());
         assertEquals(4L, item.schemaCount());
         assertEquals(5L, item.pluginCount());
@@ -149,6 +150,8 @@ class OrganizationCatalogServiceTest {
         organization.setDescription("Ops workspace");
         organization.setCreatedAt(OffsetDateTime.parse("2025-01-01T00:00:00Z"));
         organization.setUpdatedAt(OffsetDateTime.parse("2025-01-02T00:00:00Z"));
+        organization.setCreatedBy(user(1L, "Creator"));
+        organization.setUpdatedBy(user(4L, "Editor"));
         return organization;
     }
 

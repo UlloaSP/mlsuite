@@ -3,14 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Trash2 } from "lucide-react";
+import { CalendarDays, Trash2 } from "lucide-react";
 import { m as motion } from "motion/react";
-import { AppBadge, AppButton } from "../../../app/components";
-import {
-  type PluginPageItem,
-  TYPE_META,
-  formatTimestamp,
-} from "../../../algorithms/plugin/catalog-page-model";
+import { modifierName } from "../../../algorithms/catalog/relative-time";
+import { type PluginPageItem, TYPE_META } from "../../../algorithms/plugin/catalog-page-model";
+import { AppBadge } from "../../../app/components/AppBadge";
+import { AppButton } from "../../../app/components/AppButton";
+import { LiveRelativeTime } from "../../../app/components/LiveRelativeTime";
 
 type PluginCatalogListItemProps = {
   canManage: boolean;
@@ -29,6 +28,7 @@ export function PluginCatalogListItem({
 }: PluginCatalogListItemProps) {
   const meta = TYPE_META[item.pluginType];
   const displayName = item.kind ?? item.fileName;
+  const modifier = modifierName(item.updatedByName, item.updatedByEmail);
 
   return (
     <motion.div
@@ -47,8 +47,12 @@ export function PluginCatalogListItem({
           </AppBadge>
         </div>
 
-        <p className="text-sm leading-5 text-[var(--text-secondary)]">
-          {`Updated ${formatTimestamp(item.updatedAt)}`}
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-5 text-[var(--text-secondary)]">
+          <span>By {modifier}</span>
+          <span className="inline-flex items-center gap-1">
+            <CalendarDays size={14} />
+            Updated <LiveRelativeTime value={item.updatedAt} />
+          </span>
         </p>
       </div>
 

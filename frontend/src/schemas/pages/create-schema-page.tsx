@@ -30,6 +30,7 @@ export function CreateSchemaPage() {
   const { data: models = [], isLoading } = useGetModels();
   const createSchema = useCreateSchemaMutation();
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [selected, setSelected] = useState<SelectedModel[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -58,7 +59,12 @@ export function CreateSchemaPage() {
         composedVersion,
         composedVersion.formSchema,
       );
-      const schemaId = (await createSchema.mutateAsync({ name })).id;
+      const schemaId = (
+        await createSchema.mutateAsync({
+          name,
+          description: description.trim() || undefined,
+        })
+      ).id;
       await createSchemaVersion(schemaId, {
         ...preparedVersion,
         name: "v1",
@@ -84,13 +90,22 @@ export function CreateSchemaPage() {
         <form className="flex min-h-0 flex-1 flex-col gap-6" onSubmit={submit}>
           <AppPanel className="shrink-0 space-y-4">
             <div className="grid gap-4 xl:grid-cols-[minmax(260px,1fr)_auto_auto] xl:items-end">
-              <AppTextField
-                value={name}
-                placeholder="Schema name"
-                required
-                onChange={(event) => setName(event.target.value)}
-                className="w-full"
-              />
+              <div className="space-y-3">
+                <AppTextField
+                  value={name}
+                  placeholder="Schema name"
+                  required
+                  onChange={(event) => setName(event.target.value)}
+                  className="w-full"
+                />
+                <textarea
+                  value={description}
+                  aria-label="Schema description"
+                  placeholder="Schema description"
+                  onChange={(event) => setDescription(event.target.value)}
+                  className="min-h-24 w-full resize-y rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+                />
+              </div>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="min-w-20 rounded-[18px] bg-[var(--surface-muted)] p-3">
                   <p className="text-2xl font-semibold">{activeModelCount}</p>

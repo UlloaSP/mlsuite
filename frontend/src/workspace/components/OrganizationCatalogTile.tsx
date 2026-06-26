@@ -3,12 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Blocks, BrainCircuit, ClipboardList, GitBranch, Users } from "lucide-react";
+import { Blocks, BrainCircuit, CalendarDays, ClipboardList, GitBranch, Users } from "lucide-react";
 import { useState } from "react";
 import type {
   OrganizationCatalogItemDto,
   OrganizationMembershipRowDto,
 } from "../../api/workspace/dtos";
+import { modifierName } from "../../algorithms/catalog/relative-time";
+import { LiveRelativeTime } from "../../app/components/LiveRelativeTime";
 import {
   DeleteDialog,
   OrganizationCardMenu,
@@ -45,9 +47,10 @@ export function OrganizationCatalogTile({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [editingField, setEditingField] = useState<keyof OrganizationPatch | null>(null);
+  const modifier = modifierName(item.updatedByName, item.updatedByEmail);
 
   return (
-    <article className="grid gap-5 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.9fr)]">
+    <article className="grid gap-5 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.9fr)_auto]">
       <div className="min-w-0 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-2">
@@ -69,16 +72,15 @@ export function OrganizationCatalogTile({
               onSubmit={(slug) => onPatch({ slug })}
             />
           </div>
-          <OrganizationCardMenu
-            disabled={disabled}
-            onDelete={() => setConfirmOpen(true)}
-            onEditDescription={() => setEditingField("description")}
-            onEditName={() => setEditingField("name")}
-            onEditSlug={() => setEditingField("slug")}
-            onTransferOwner={() => setTransferOpen(true)}
-          />
         </div>
         <OwnerButton item={item} />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
+          <span>By {modifier}</span>
+          <span className="inline-flex items-center gap-1">
+            <CalendarDays size={14} />
+            Updated <LiveRelativeTime value={item.updatedAt} />
+          </span>
+        </div>
         <EditableText
           as="description"
           disabled={disabled}
@@ -116,6 +118,17 @@ export function OrganizationCatalogTile({
             {item.publicAccess ? "Public" : "Private"}
           </p>
         </div>
+      </div>
+
+      <div className="justify-self-end self-start">
+        <OrganizationCardMenu
+          disabled={disabled}
+          onDelete={() => setConfirmOpen(true)}
+          onEditDescription={() => setEditingField("description")}
+          onEditName={() => setEditingField("name")}
+          onEditSlug={() => setEditingField("slug")}
+          onTransferOwner={() => setTransferOpen(true)}
+        />
       </div>
 
       {confirmOpen ? (

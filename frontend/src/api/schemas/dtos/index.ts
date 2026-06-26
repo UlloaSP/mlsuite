@@ -1,4 +1,5 @@
 export type { JsonRecord } from "./json-record";
+export type { SchemaCatalogItemDto } from "./schema-catalog-item-dto";
 export type { SchemaDto } from "./schema-dto";
 export type { SchemaNameRequest } from "./schema-name-request";
 export type { SchemaPageDto } from "./schema-page-dto";

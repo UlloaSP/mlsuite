@@ -104,6 +104,7 @@ class SearchWorkspaceServiceTest {
                 10L,
                 now(),
                 now(),
+                null,
                 "report",
                 "acme-plugin")));
 
@@ -288,6 +289,7 @@ class SearchWorkspaceServiceTest {
                 10L,
                 now(),
                 now(),
+                null,
                 kind,
                 "custom-report");
     }

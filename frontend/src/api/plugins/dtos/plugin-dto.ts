@@ -10,6 +10,9 @@ export interface PluginDto {
   sizeBytes: number;
   createdAt: string;
   updatedAt: string;
+  updatedByName?: string | null;
+  updatedByEmail?: string | null;
+  updatedByAvatarUrl?: string | null;
   source: string;
   pluginType: "field" | "report" | "invalid";
   kind: string | null;

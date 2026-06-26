@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +23,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
@@ -52,10 +55,12 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
 
     @Override
     public SchemaVersion createVersion(Long userId, Long schemaId, CreateSchemaVersionRequest request) {
+        User user = userLookupService.requireById(userId);
         Long organizationId = requireOperate(userId);
         validateFormSchema(request.formSchema());
         Schema schema = requireSchema(schemaId, organizationId);
         assertUniqueBindings(request.bindings());
+        touch(schema, user);
         int nextVersion = versionRepository.findMaxVersionBySchemaId(schemaId) + 1;
         SchemaVersion version = versionRepository.save(
                 new SchemaVersion(schema, nextVersion, request.name(), request.formSchema()));
@@ -78,11 +83,13 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
 
     @Override
     public SchemaModelBinding addBinding(Long userId, Long versionId, CreateSchemaModelBindingRequest request) {
+        User user = userLookupService.requireById(userId);
         Long organizationId = requireOperate(userId);
         SchemaVersion version = requireVersion(versionId, organizationId);
         if (bindingRepository.findBinding(versionId, request.modelId()).isPresent()) {
             throw badRequest("Binding already exists");
         }
+        touch(version.getSchema(), user);
         return saveBinding(organizationId, version, request);
     }
 
@@ -122,6 +129,11 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
                 .orElseThrow(() -> badRequest("Model unavailable"));
         return bindingRepository.save(new SchemaModelBinding(version, model,
                 req.pluginPolicy() == null ? Map.of() : req.pluginPolicy()));
+    }
+
+    private void touch(Schema schema, User user) {
+        schema.setUpdatedBy(user);
+        schema.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     private void validateFormSchema(Map<String, Object> formSchema) {
