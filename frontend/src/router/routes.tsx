@@ -23,6 +23,8 @@ import { CreateSchemaPage } from "../schemas/pages/create-schema-page";
 import { CreateSchemaRunPage } from "../schemas/pages/create-schema-run-page";
 import { CreateSchemaVersionPage } from "../schemas/pages/create-schema-version-page";
 import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-page";
+import { SchemaDraftConflictPage } from "../schemas/pages/schema-draft-conflict-page";
+import { SchemaDraftEditorPage } from "../schemas/pages/schema-draft-editor-page";
 import { SchemaRunHistoryPage } from "../schemas/pages/schema-run-history-page";
 import { SchemaDetailPage } from "../schemas/pages/schema-detail-page";
 import { SchemasPage } from "../schemas/pages/schemas-page";
@@ -194,6 +196,18 @@ const routes: RouteObject[] = [
               {
                 path: "schemas/:schemaId/versions/create",
                 element: workspace("canEditModels", <CreateSchemaVersionPage />),
+              },
+              {
+                path: "schemas/:schemaId/drafts/create",
+                element: workspace("canEditModels", <CreateSchemaVersionPage />),
+              },
+              {
+                path: "schemas/:schemaId/drafts/:draftId",
+                element: workspace("canEditModels", <SchemaDraftEditorPage />),
+              },
+              {
+                path: "schemas/:schemaId/drafts/:draftId/conflicts",
+                element: workspace("canEditModels", <SchemaDraftConflictPage />),
               },
               {
                 path: "schemas/:schemaId/versions/:versionId/runs/create",

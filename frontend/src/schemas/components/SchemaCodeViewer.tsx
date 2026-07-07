@@ -42,7 +42,7 @@ export function SchemaCodeViewer({ value }: Props) {
   }, [theme]);
 
   return (
-    <div className="h-[480px] overflow-hidden rounded-[20px] border border-[var(--border-soft)] bg-[var(--surface-primary)]">
+    <div className="h-[480px] overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]">
       <Suspense fallback={<div className="h-full bg-[var(--surface-primary)]" />}>
         <MonacoEditor
           className="h-full"

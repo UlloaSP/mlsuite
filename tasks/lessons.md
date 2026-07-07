@@ -1,5 +1,12 @@
 # Lessons
 
+## 2026-07-07 - Schema change base selection correction
+
+- Correction: schema change creation made the important base-version choice feel secondary, while editable metadata got equal weight.
+- Rule: when a create flow has one durable/irreversible choice and editable metadata, keep them together but make the durable choice inspectable with live preview before submit.
+- Correction: schema conflict review was a path table, but product expectation was a merge-style diff review.
+- Rule: stale draft publication flows should use merge language and visual diffs; path tables are supporting context, not the primary review surface.
+
 ## 2026-06-26 - Catalog action placement correction
 
 - Correction: schema and organization overflow menus were visually inside content/metric flow instead of being the far-right action affordance.
