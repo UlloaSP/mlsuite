@@ -5,12 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { CatalogResourcePage, useCatalogControls } from "../../app/components";
 import type { SchemaVersionDto } from "../../api/schemas/dtos";
 import {
   useCreateSchemaBookmarkMutation,
+  useCreateSchemaDraftMutation,
   useSchema,
   useSchemaBookmarks,
   useSchemaDrafts,
@@ -19,6 +20,7 @@ import {
 import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
 import { schemaVersionId, sortSchemaVersions } from "../../algorithms/schema/version-selection";
 import { SchemaBookmarkDialog } from "../components/SchemaBookmarkDialog";
+import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
 import { SchemaRepoNav } from "../components/SchemaRepoNav";
 import { SchemaSnapshotCatalogItem } from "../components/SchemaSnapshotCatalogItem";
 
@@ -39,12 +41,15 @@ const SORTS: Array<{ value: SnapshotSort; label: string }> = [
 
 export function SchemaSnapshotsPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
+  const navigate = useNavigate();
   const { data: schema } = useSchema(schemaId);
   const { data: drafts = [] } = useSchemaDrafts(schemaId);
   const { data: bookmarks = [] } = useSchemaBookmarks(schemaId);
   const versionsQuery = useSchemaVersions(schemaId);
-  const mutation = useCreateSchemaBookmarkMutation(schemaId ?? "");
+  const bookmarkMutation = useCreateSchemaBookmarkMutation(schemaId ?? "");
+  const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
   const [bookmarkTarget, setBookmarkTarget] = useState<SchemaVersionDto | null>(null);
+  const [changeTarget, setChangeTarget] = useState<SchemaVersionDto | null>(null);
   const controls = useCatalogControls<SnapshotFilter, SnapshotSort>({
     initialFilter: "all",
     initialSort: "created",
@@ -71,11 +76,27 @@ export function SchemaSnapshotsPage() {
   const createBookmark = async (name: string) => {
     if (!bookmarkTarget) return;
     try {
-      await mutation.mutateAsync({ name, versionId: schemaVersionId(bookmarkTarget) });
+      await bookmarkMutation.mutateAsync({ name, versionId: schemaVersionId(bookmarkTarget) });
       setBookmarkTarget(null);
       toast.success("Bookmark saved");
     } catch (error) {
       toast.error("Bookmark save failed", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
+  const createChange = async (name: string) => {
+    if (!schemaId || !changeTarget) return;
+    try {
+      const draft = await draftMutation.mutateAsync({
+        name,
+        baseVersionId: schemaVersionId(changeTarget),
+      });
+      setChangeTarget(null);
+      void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
+    } catch (error) {
+      toast.error("Schema change creation failed", {
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -136,6 +157,7 @@ export function SchemaSnapshotsPage() {
               schemaId={schemaId}
               version={version}
               onBookmark={setBookmarkTarget}
+              onCreateChange={setChangeTarget}
             />
           ) : null
         }
@@ -146,9 +168,21 @@ export function SchemaSnapshotsPage() {
         snapshotLabel={
           bookmarkTarget ? `${bookmarkTarget.name} · v${bookmarkTarget.version}` : "Snapshot"
         }
-        pending={mutation.isPending}
+        pending={bookmarkMutation.isPending}
         onClose={() => setBookmarkTarget(null)}
         onConfirm={(name) => void createBookmark(name)}
+      />
+      <SchemaChangeNameDialog
+        defaultName="Update schema"
+        description={
+          changeTarget ? `${changeTarget.name} · v${changeTarget.version}` : "Selected snapshot"
+        }
+        open={Boolean(changeTarget)}
+        pending={draftMutation.isPending}
+        submitLabel="Create change"
+        title="New change"
+        onClose={() => setChangeTarget(null)}
+        onConfirm={(name) => void createChange(name)}
       />
     </>
   );

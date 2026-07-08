@@ -17,7 +17,7 @@ export function SchemaBookmarkDetailPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex-1 space-y-6 overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title={bookmark?.name ?? "Bookmarked version"}
           description={

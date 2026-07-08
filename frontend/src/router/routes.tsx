@@ -21,7 +21,6 @@ import { SchemaReviewProtectedRoute } from "../review/components/SchemaReviewPro
 import { SchemaReviewWorkspacePage } from "../review/pages/review-workspace-page";
 import { CreateSchemaPage } from "../schemas/pages/create-schema-page";
 import { CreateSchemaRunPage } from "../schemas/pages/create-schema-run-page";
-import { CreateSchemaVersionPage } from "../schemas/pages/create-schema-version-page";
 import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-page";
 import { SchemaBookmarkDetailPage } from "../schemas/pages/schema-bookmark-detail-page";
 import { SchemaBookmarksPage } from "../schemas/pages/schema-bookmarks-page";
@@ -209,14 +208,6 @@ const routes: RouteObject[] = [
               {
                 path: "schemas/:schemaId/snapshots",
                 element: workspace("canViewModels", <SchemaSnapshotsPage />),
-              },
-              {
-                path: "schemas/:schemaId/versions/create",
-                element: workspace("canEditModels", <CreateSchemaVersionPage />),
-              },
-              {
-                path: "schemas/:schemaId/drafts/create",
-                element: workspace("canEditModels", <CreateSchemaVersionPage />),
               },
               {
                 path: "schemas/:schemaId/drafts/:draftId",

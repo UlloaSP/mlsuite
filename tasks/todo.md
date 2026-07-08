@@ -1,5 +1,39 @@
 # Schema Version Control Plan
 
+## Follow-up: Lean Snapshot Overview
+
+- [x] Remove duplicated latest snapshot overview card from schema detail.
+- [x] Remove open/bookmark actions from the overview snapshot preview.
+- [x] Remove the outer snapshot preview card frame from schema overview.
+- [x] Move form/json/bindings controls into the overview header action slot.
+- [x] Restyle form/json/bindings as a single segmented control with red selected state.
+- [x] Move indicator cards horizontally between snapshot title/metadata and segmented control.
+- [x] Increase preview height so the lower page does not feel like empty margin.
+- [x] Make snapshot preview height flex-driven instead of viewport-calc driven.
+- [x] Compact horizontal metric cards and show relative publish time with "ago".
+- [x] Make change cards open by clicking the tile content and remove redundant draft/edit UI.
+- [x] Simplify bookmark cards by removing version pill/id and using snapshot/version metadata plus relative updated time.
+- [x] Simplify snapshot cards by removing ids/metric pills/open action and moving actions into a three-dot menu.
+- [x] Remove the create-new-change page; create changes directly from overview/latest or snapshot row actions.
+- [x] Show schema description under overview title and simplify change base metadata.
+- [x] Prompt for change name in a modal before creation and move change rename/review into action menus.
+- [x] Make the snapshot panel title the published change name and show relative publish time.
+- [x] Keep the form preview mounted while switching form/json/bindings.
+- [x] Verify frontend typecheck/tests/build, line count, diff whitespace, and graphify update.
+
+### Lean Snapshot Overview Results
+
+- Schema overview now has one snapshot surface: nav plus the latest snapshot preview.
+- Snapshot preview title is the change/snapshot name, with version and relative publish time below it.
+- Overview snapshot actions and outer preview card frame were removed.
+- Form/json/bindings controls now sit in the header action slot that previously held snapshot actions.
+- Form/json/bindings now render as one segmented control with red selected state, with indicators horizontally between metadata and actions.
+- Snapshot preview now uses flex-driven height and clips the preview area instead of fixed viewport calc sizing.
+- Form preview stays mounted while toggling to JSON or bindings, so in-form state persists.
+- T3 preview reached the app shell, but `/schemas` redirects to auth because `/api/users/me` returns 401 without a session.
+- TypeScript app compile, tests, build, formatting, diff whitespace, line-count check, React Doctor, and graphify update completed.
+- `vp check` still fails on existing repo-wide lint/type debt outside this change.
+
 ## Follow-up: Focused Schema Overview And Catalog Lists
 
 - [x] Remove duplicated recent changes/bookmarks/snapshots from schema overview.

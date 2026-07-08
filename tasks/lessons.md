@@ -18,6 +18,14 @@
 - Rule: when internal nav owns related lists, overview should show the primary object state and preview; list discovery belongs to the nav destinations, not repeated below.
 - Correction: schema catalog cards only opened from the title/description area, so clicking metrics or most of the tile did nothing.
 - Rule: catalog cards should make the full primary content area clickable while keeping overflow/destructive actions as separate sibling controls.
+- Correction: schema overview kept a duplicated latest-snapshot summary above the actual snapshot preview.
+- Rule: schema overview should have one unframed snapshot metadata/preview surface; open/bookmark actions belong in dedicated snapshot/bookmark pages or catalog rows, not in overview.
+- Correction: after removing overview snapshot actions, local preview mode controls stayed lower in the content flow.
+- Rule: local mutually exclusive view controls should use one segmented control with one clear selected state, and snapshot metrics should sit horizontally between metadata and that mode switch when space allows.
+- Correction: unframed schema preview height felt like an accidental large bottom margin.
+- Rule: unframed document previews in overview should reserve enough viewport height to read as the main content, not as a short block followed by empty space.
+- Correction: switching snapshot tabs unmounted MLForm preview and lost entered form state.
+- Rule: preview mode switches must hide inactive long-lived form previews instead of conditionally unmounting them unless reset is intentional.
 
 ## 2026-06-26 - Catalog action placement correction
 
@@ -632,3 +640,19 @@
 - Rule: when two frontend feature names represent one workflow, fuse UI, API, algorithms, routes, and tests under one domain folder; keep old backend endpoint names only when they are real server contracts.
 - Correction: notification count was described as a user badge, but intended placement was specifically on the avatar.
 - Rule: when placing user-notification counts in navigation, attach the numeric marker to the avatar itself, not a generic user/menu badge.
+- Correction: snapshot preview height was fixed with viewport calc after user asked for adaptive layout, leaving extra page whitespace and nested scroll risk.
+- Rule: viewport-bound preview panels must use flex parent/child sizing (`flex flex-col`, `flex-1`, `min-h-0`, `overflow-hidden`) before adding calc-based heights.
+- Correction: snapshot overview metrics were visually heavier than the adjacent title and segmented control, and relative dates missed the expected "ago" suffix.
+- Rule: horizontal metadata strips need matched control heights and complete relative-time copy; compact metric cards should not dominate primary actions.
+- Correction: change cards duplicated their primary edit action with both a status pill and an Edit button.
+- Rule: catalog rows should make their primary content area the navigation target; reserve visible buttons for secondary actions like review.
+- Correction: bookmark cards showed bookmark ids and duplicated version as a pill instead of describing the target snapshot.
+- Rule: bookmark rows should read like tags pointing to snapshots: bookmark name first, then target snapshot name/version and relative updated time.
+- Correction: snapshot rows duplicated tile navigation with an Open button and hid primary snapshot actions among metric pills.
+- Rule: snapshot rows should use tile click for open, concise title/version/publish metadata, and a compact action menu for change/bookmark commands.
+- Correction: new change used an intermediate page even after base selection became implicit from latest snapshot or selected snapshot row.
+- Rule: when base version is already determined by context, create the draft directly and navigate to editor; avoid interstitial selector pages.
+- Correction: overview header lost schema description and change rows showed change ids instead of base snapshot context.
+- Rule: schema overview should preserve entity description, and change rows should show the source snapshot with icon/name/version plus relative update time.
+- Correction: direct change creation hardcoded a name, while inline editor rename kept a permanent side panel for rare metadata edits.
+- Rule: create flows that need a human name should ask in a small modal before creating; rename belongs in an action menu, not persistent page real estate.

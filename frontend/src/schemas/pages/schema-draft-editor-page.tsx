@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { AlertTriangle, GitCompareArrows, Save } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, GitCompareArrows, MoreHorizontal, PencilLine, Save } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { isRecord } from "../../algorithms/mlform/shared";
@@ -17,26 +17,20 @@ import {
   useUpdateSchemaDraftMutation,
 } from "../../api/schemas/hooks";
 import {
-  AppBadge,
   AppButton,
+  AppIconButton,
   AppPage,
   AppPageHeader,
   AppPanel,
   AppSurface,
-  AppTextField,
 } from "../../app/components";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
 import { EditorWrapper } from "../../editor/components/EditorWrapper";
 import { ToggleButton } from "../../models/components/ToggleButton";
+import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
 import { SchemaFormPreview } from "../components/SchemaFormPreview";
 
 type EditorView = "code" | "preview";
-
-const statusTone = (status?: string): "danger" | "success" | "warning" => {
-  if (status === "CONFLICT") return "danger";
-  if (status === "PUBLISHED") return "success";
-  return "warning";
-};
 
 export function SchemaDraftEditorPage() {
   const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
@@ -49,8 +43,10 @@ export function SchemaDraftEditorPage() {
   const [schema, setSchema] = useAtom(schemaAtom);
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [schemaErrors] = useAtom(schemaErrorsAtom);
-  const [name, setName] = useState("");
   const [editorView, setEditorView] = useState<EditorView>("code");
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsRef = useRef<HTMLDivElement | null>(null);
 
   const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;
   const conflictCount = diff?.changes.filter((change) => change.conflict).length ?? 0;
@@ -59,17 +55,24 @@ export function SchemaDraftEditorPage() {
 
   useEffect(() => {
     if (!draft) return;
-    setName(draft.name);
     setSchema(draft.formSchema);
     setSchemaText(JSON.stringify(draft.formSchema, null, 2));
   }, [draft, setSchema, setSchemaText]);
+
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      if (!actionsRef.current?.contains(event.target as Node)) setActionsOpen(false);
+    };
+    window.addEventListener("pointerdown", close);
+    return () => window.removeEventListener("pointerdown", close);
+  }, []);
 
   const save = async () => {
     if (!draftId || !draft) return false;
     try {
       const parsed = JSON.parse(schemaText);
       await updateMutation.mutateAsync({
-        name: name.trim() || draft.name,
+        name: draft.name,
         formSchema: isRecord(parsed) ? parsed : draft.formSchema,
         bindings: draft.bindings,
       });
@@ -90,11 +93,29 @@ export function SchemaDraftEditorPage() {
     void navigate(`/schemas/${schemaId}/drafts/${draftId}/conflicts`);
   };
 
+  const rename = async (nextName: string) => {
+    if (!draftId || !draft) return;
+    try {
+      const parsed = JSON.parse(schemaText);
+      await updateMutation.mutateAsync({
+        name: nextName,
+        formSchema: isRecord(parsed) ? parsed : draft.formSchema,
+        bindings: draft.bindings,
+      });
+      setRenameOpen(false);
+      toast.success("Change renamed");
+    } catch (error) {
+      toast.error("Change rename failed", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
   return (
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
         <AppPageHeader
-          title={name || "Schema change"}
+          title={draft?.name ?? "Schema change"}
           description={
             schemaDto ? `${schemaDto.name} · base v${draft?.baseVersion ?? "-"}` : undefined
           }
@@ -103,7 +124,7 @@ export function SchemaDraftEditorPage() {
             ...(schemaId
               ? [{ label: schemaDto?.name ?? "Schema", to: `/schemas/${schemaId}` }]
               : []),
-            { label: "Change" },
+            { label: draft?.name ?? "Change" },
           ]}
           actions={
             <div className="flex flex-wrap gap-2">
@@ -122,6 +143,30 @@ export function SchemaDraftEditorPage() {
                 <GitCompareArrows size={16} />
                 Review changes
               </AppButton>
+              <div ref={actionsRef} className="relative">
+                <AppIconButton
+                  type="button"
+                  aria-label="Open change actions"
+                  onClick={() => setActionsOpen((current) => !current)}
+                >
+                  <MoreHorizontal size={18} />
+                </AppIconButton>
+                {actionsOpen ? (
+                  <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[170px] rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
+                    <button
+                      type="button"
+                      className={menuItemClass}
+                      onClick={() => {
+                        setActionsOpen(false);
+                        setRenameOpen(true);
+                      }}
+                    >
+                      <PencilLine size={15} />
+                      Rename
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           }
         />
@@ -137,8 +182,8 @@ export function SchemaDraftEditorPage() {
             </AppButton>
           </AppPanel>
         ) : null}
-        <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="flex relative min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]">
+        <div className="min-h-0 flex-1">
+          <div className="relative flex size-full min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]">
             <div className="absolute right-4 top-4 z-20">
               <ToggleButton
                 isProcessing={false}
@@ -154,17 +199,21 @@ export function SchemaDraftEditorPage() {
               <SchemaFormPreview schema={previewSchema} />
             )}
           </div>
-          <aside className="min-h-0 space-y-4 overflow-auto">
-            <AppPanel className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-semibold text-[var(--text-primary)]">Change</h2>
-                <AppBadge tone={statusTone(draft?.status)}>{draft?.status ?? "DRAFT"}</AppBadge>
-              </div>
-              <AppTextField value={name} onChange={(event) => setName(event.target.value)} />
-            </AppPanel>
-          </aside>
         </div>
       </AppSurface>
+      <SchemaChangeNameDialog
+        defaultName={draft?.name ?? ""}
+        description={schemaDto ? `${schemaDto.name} · base v${draft?.baseVersion ?? "-"}` : ""}
+        open={renameOpen}
+        pending={updateMutation.isPending}
+        submitLabel="Rename"
+        title="Rename change"
+        onClose={() => setRenameOpen(false)}
+        onConfirm={(name) => void rename(name)}
+      />
     </AppPage>
   );
 }
+
+const menuItemClass =
+  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]";
