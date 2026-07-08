@@ -6,6 +6,5 @@ import jakarta.validation.constraints.Positive;
 
 public record CreateSchemaDraftRequest(
         @NotBlank String name,
-        @NotNull @Positive Long baseVersionId,
-        String bookmark) {
+        @NotNull @Positive Long baseVersionId) {
 }

@@ -27,6 +27,7 @@ Hard constraints override convenience. If a requested change conflicts with them
 ## Hard Constraints
 
 - Always use the `ponytail` and `caveman` skills in `ultra` mode.
+- Do not do a visual check if not asked explicitly.
 - No source file may exceed 300 lines (comments not included).
 - If an edit would exceed 300 lines (comments not included), split the file first.
 - Prefer new modules over growing existing files.

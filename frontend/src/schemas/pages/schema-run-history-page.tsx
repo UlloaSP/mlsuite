@@ -24,15 +24,18 @@ import {
 } from "../components/SchemaRunHistoryToolbar";
 import { SchemaRunBulkUploadButton } from "../components/SchemaRunBulkUploadButton";
 import {
-  usePredictionRuns,
+  usePredictionRunsForBookmark,
   usePredictionRunsFeedback,
   useSchema,
+  useSchemaBookmark,
   useSchemaVersion,
 } from "../../api/schemas/hooks";
 import { isSchemaFeedbackComplete } from "../../algorithms/schema/feedback-state";
 import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
 import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
 import type { PredictionRunDto } from "../../api/schemas/dtos";
+
+const EMPTY_RUNS: PredictionRunDto[] = [];
 
 const inRange = (run: PredictionRunDto, range: SchemaRunDateRangeFilter): boolean => {
   if (range === "all") return true;
@@ -48,20 +51,27 @@ const inRange = (run: PredictionRunDto, range: SchemaRunDateRangeFilter): boolea
 
 export function SchemaRunHistoryPage() {
   const navigate = useNavigate();
-  const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();
+  const { schemaId, bookmarkId } = useParams<{
+    schemaId: string;
+    bookmarkId: string;
+  }>();
   const { data: schema } = useSchema(schemaId);
-  const { data: version } = useSchemaVersion(versionId);
+  const { data: bookmark } = useSchemaBookmark(bookmarkId);
+  const effectiveVersionId = bookmark?.versionId;
+  const { data: version } = useSchemaVersion(effectiveVersionId);
   const executableVersion = useMemo(
     () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
     [version],
   );
-  const { data: runs = [], isLoading } = usePredictionRuns(versionId);
+  const bookmarkRuns = usePredictionRunsForBookmark(bookmarkId);
+  const runs = bookmarkRuns.data ?? EMPTY_RUNS;
+  const isLoading = bookmarkRuns.isLoading;
   const runFeedback = usePredictionRunsFeedback(runs);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<SchemaRunStatusFilter>("all");
   const [feedbackStatus, setFeedbackStatus] = useState<SchemaRunFeedbackStatusFilter>("all");
   const [dateRange, setDateRange] = useState<SchemaRunDateRangeFilter>("all");
-  const runHref = (runId: string) => `/schemas/${schemaId}/versions/${versionId}/runs/${runId}`;
+  const runHref = (runId: string) => `/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/${runId}`;
   const feedbackStatusByRunId = useMemo(() => {
     if (!executableVersion) return new Map<string, "COMPLETED" | "PENDING">();
     return new Map(
@@ -98,22 +108,25 @@ export function SchemaRunHistoryPage() {
             { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
             {
               label: executableVersion
-                ? `${executableVersion.name} v${executableVersion.version}`
+                ? `${bookmark?.name ?? executableVersion.name} · v${executableVersion.version}`
                 : "Version",
             },
             { label: "Inference History" },
           ]}
           description={
             executableVersion
-              ? `${executableVersion.name} · v${executableVersion.version}`
+              ? `${bookmark?.name ?? executableVersion.name} · v${executableVersion.version}`
               : undefined
           }
           actions={
             executableVersion ? (
               <>
                 <SchemaRunShareButton runs={runs} version={executableVersion} />
-                <SchemaRunBulkUploadButton version={executableVersion} versionId={versionId} />
-                <Link to={`/schemas/${schemaId}/versions/${versionId}/runs/create`}>
+                <SchemaRunBulkUploadButton
+                  version={executableVersion}
+                  bookmarkId={bookmarkId ?? ""}
+                />
+                <Link to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}>
                   <AppButton>
                     <Play size={16} />
                     Run
@@ -147,9 +160,9 @@ export function SchemaRunHistoryPage() {
         ) : !isLoading ? (
           <AppEmptyState
             title="No inferences yet"
-            description="Run this schema version to populate inference history."
+            description="Run this bookmark to populate inference history."
             action={
-              <Link to={`/schemas/${schemaId}/versions/${versionId}/runs/create`}>
+              <Link to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}>
                 <AppButton>
                   <Play size={16} />
                   Run schema

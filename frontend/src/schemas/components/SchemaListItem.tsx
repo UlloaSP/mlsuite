@@ -33,8 +33,12 @@ export function SchemaListItem({
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
   return (
     <article className="group grid gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 transition hover:border-[var(--text-primary)] lg:grid-cols-[minmax(0,1fr)_minmax(300px,auto)_auto]">
-      <div className="min-w-0">
-        <button type="button" onClick={onOpen} className="min-w-0 flex-1 cursor-pointer text-left">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="grid min-w-0 cursor-pointer gap-4 text-left lg:col-span-2 lg:grid-cols-[minmax(0,1fr)_minmax(300px,auto)]"
+      >
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <FileJson size={16} className="shrink-0 text-[var(--text-muted)]" />
             <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">
@@ -65,25 +69,25 @@ export function SchemaListItem({
               Updated <LiveRelativeTime value={item.updatedAt} />
             </span>
           </div>
-        </button>
-      </div>
+        </div>
 
-      <div className="grid grid-cols-3 gap-2 lg:min-w-[300px]">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <div key={metric.key} className="rounded bg-[var(--surface-secondary)] px-3 py-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
-                <Icon size={14} />
-                {metric.label}
+        <div className="grid grid-cols-3 gap-2 lg:min-w-[300px]">
+          {metrics.map((metric) => {
+            const Icon = metric.icon;
+            return (
+              <div key={metric.key} className="rounded bg-[var(--surface-secondary)] px-3 py-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+                  <Icon size={14} />
+                  {metric.label}
+                </div>
+                <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
+                  {item[metric.key]}
+                </p>
               </div>
-              <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
-                {item[metric.key]}
-              </p>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </button>
       <div className="justify-self-end self-start">
         <SchemaActionsMenu
           canDelete={canDelete}

@@ -23,10 +23,15 @@ import { CreateSchemaPage } from "../schemas/pages/create-schema-page";
 import { CreateSchemaRunPage } from "../schemas/pages/create-schema-run-page";
 import { CreateSchemaVersionPage } from "../schemas/pages/create-schema-version-page";
 import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-page";
+import { SchemaBookmarkDetailPage } from "../schemas/pages/schema-bookmark-detail-page";
+import { SchemaBookmarksPage } from "../schemas/pages/schema-bookmarks-page";
+import { SchemaChangesPage } from "../schemas/pages/schema-changes-page";
 import { SchemaDraftConflictPage } from "../schemas/pages/schema-draft-conflict-page";
 import { SchemaDraftEditorPage } from "../schemas/pages/schema-draft-editor-page";
 import { SchemaRunHistoryPage } from "../schemas/pages/schema-run-history-page";
 import { SchemaDetailPage } from "../schemas/pages/schema-detail-page";
+import { SchemaSnapshotDetailPage } from "../schemas/pages/schema-snapshot-detail-page";
+import { SchemaSnapshotsPage } from "../schemas/pages/schema-snapshots-page";
 import { SchemasPage } from "../schemas/pages/schemas-page";
 import { NotificationsPage } from "../user/pages/notifications-page";
 import { ProfilePage } from "../user/pages/profilePage";
@@ -194,6 +199,18 @@ const routes: RouteObject[] = [
                 element: workspace("canViewModels", <SchemaDetailPage />),
               },
               {
+                path: "schemas/:schemaId/changes",
+                element: workspace("canViewModels", <SchemaChangesPage />),
+              },
+              {
+                path: "schemas/:schemaId/bookmarks",
+                element: workspace("canViewModels", <SchemaBookmarksPage />),
+              },
+              {
+                path: "schemas/:schemaId/snapshots",
+                element: workspace("canViewModels", <SchemaSnapshotsPage />),
+              },
+              {
                 path: "schemas/:schemaId/versions/create",
                 element: workspace("canEditModels", <CreateSchemaVersionPage />),
               },
@@ -210,15 +227,23 @@ const routes: RouteObject[] = [
                 element: workspace("canEditModels", <SchemaDraftConflictPage />),
               },
               {
-                path: "schemas/:schemaId/versions/:versionId/runs/create",
+                path: "schemas/:schemaId/versions/:versionId",
+                element: workspace("canViewModels", <SchemaSnapshotDetailPage />),
+              },
+              {
+                path: "schemas/:schemaId/bookmarks/:bookmarkId",
+                element: workspace("canViewModels", <SchemaBookmarkDetailPage />),
+              },
+              {
+                path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/create",
                 element: workspace("canRunPredictions", <CreateSchemaRunPage />),
               },
               {
-                path: "schemas/:schemaId/versions/:versionId/runs",
+                path: "schemas/:schemaId/bookmarks/:bookmarkId/runs",
                 element: workspace("canViewModels", <SchemaRunHistoryPage />),
               },
               {
-                path: "schemas/:schemaId/versions/:versionId/runs/:runId",
+                path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/:runId",
                 element: workspace("canViewModels", <PredictionRunDetailPage />),
               },
             ],

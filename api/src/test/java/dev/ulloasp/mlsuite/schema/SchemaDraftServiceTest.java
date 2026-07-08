@@ -54,8 +54,8 @@ class SchemaDraftServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaDraftServiceImpl(userLookupService, schemaRepository, versionRepository,
-                draftRepository, versionUseCase, new SchemaDraftDiffService(),
-                workspaceAccessService, authorizationService);
+                draftRepository, versionUseCase, new SchemaDraftDiffService(), workspaceAccessService,
+                authorizationService);
         when(userLookupService.requireById(7L)).thenReturn(user());
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization());
     }
@@ -69,10 +69,9 @@ class SchemaDraftServiceTest {
         when(draftRepository.save(any(SchemaDraft.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SchemaDraft draft = service.createDraft(7L, 5L,
-                new CreateSchemaDraftRequest("Rename age", 9L, "schema/age"));
+                new CreateSchemaDraftRequest("Rename age", 9L));
 
         assertEquals("Rename age", draft.getName());
-        assertEquals("schema/age", draft.getBookmark());
         assertEquals(SchemaDraftStatus.DRAFT, draft.getStatus());
         assertEquals("Age", draft.getFormSchema().get("label"));
         assertEquals(11L, draft.getBindings().get(0).get("modelId"));
@@ -86,7 +85,7 @@ class SchemaDraftServiceTest {
         when(versionRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(base));
 
         assertThrows(ResponseStatusException.class, () -> service.createDraft(7L, 5L,
-                new CreateSchemaDraftRequest("Bad base", 9L, null)));
+                new CreateSchemaDraftRequest("Bad base", 9L)));
     }
 
     @Test
@@ -96,7 +95,7 @@ class SchemaDraftServiceTest {
         when(draftRepository.findByIdAndOrganizationId(30L, 41L)).thenReturn(Optional.of(draft));
 
         assertThrows(ResponseStatusException.class, () -> service.updateDraft(7L, 30L,
-                new UpdateSchemaDraftRequest("Done", null, formSchema("Age"), List.of())));
+                new UpdateSchemaDraftRequest("Done", formSchema("Age"), List.of())));
     }
 
     @Test

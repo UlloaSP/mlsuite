@@ -32,6 +32,7 @@ type CatalogPageProps<TFilter extends string, TSort extends string> = {
   emptyWrapperClassName?: string;
   header: CatalogHeader;
   list: Omit<CatalogListPanelProps, "children" | "emptyState" | "emptyWrapperClassName">;
+  navigation?: ReactNode;
   toolbar: CatalogToolbarProps<TFilter, TSort>;
 };
 
@@ -43,6 +44,7 @@ export function CatalogPage<TFilter extends string, TSort extends string>({
   emptyWrapperClassName,
   header,
   list,
+  navigation,
   toolbar,
 }: CatalogPageProps<TFilter, TSort>) {
   if (accessDenied) return accessFallback;
@@ -51,6 +53,7 @@ export function CatalogPage<TFilter extends string, TSort extends string>({
     <AppPage>
       <AppSurface className="flex flex-1 flex-col overflow-hidden">
         <AppPageHeader {...header} />
+        {navigation}
         <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded">
           <CatalogToolbar {...toolbar} />
           <CatalogListPanel

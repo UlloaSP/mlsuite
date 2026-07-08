@@ -4,16 +4,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { AlertTriangle, GitCompareArrows, RefreshCcw, Save, Tag } from "lucide-react";
+import { AlertTriangle, GitCompareArrows, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { isRecord } from "../../algorithms/mlform/shared";
 import {
-  usePublishSchemaDraftMutation,
   useSchema,
   useSchemaDraft,
   useSchemaDraftDiff,
+  useSchemaVersion,
   useUpdateSchemaDraftMutation,
 } from "../../api/schemas/hooks";
 import {
@@ -38,32 +38,28 @@ const statusTone = (status?: string): "danger" | "success" | "warning" => {
   return "warning";
 };
 
-const displayValue = (value: unknown) =>
-  value === undefined ? "missing" : typeof value === "string" ? value : JSON.stringify(value);
-
 export function SchemaDraftEditorPage() {
   const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
   const navigate = useNavigate();
   const { data: schemaDto } = useSchema(schemaId);
   const { data: draft } = useSchemaDraft(draftId);
   const { data: diff } = useSchemaDraftDiff(draftId);
+  const { data: baseVersion } = useSchemaVersion(draft?.baseVersionId);
   const updateMutation = useUpdateSchemaDraftMutation(draftId ?? "");
-  const publishMutation = usePublishSchemaDraftMutation(draftId ?? "", schemaId ?? "");
   const [schema, setSchema] = useAtom(schemaAtom);
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [schemaErrors] = useAtom(schemaErrorsAtom);
   const [name, setName] = useState("");
-  const [bookmark, setBookmark] = useState("");
   const [editorView, setEditorView] = useState<EditorView>("code");
 
   const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;
   const conflictCount = diff?.changes.filter((change) => change.conflict).length ?? 0;
   const previewSchema = useMemo(() => schema ?? draft?.formSchema, [draft?.formSchema, schema]);
+  const baseText = baseVersion ? JSON.stringify(baseVersion.formSchema, null, 2) : undefined;
 
   useEffect(() => {
     if (!draft) return;
     setName(draft.name);
-    setBookmark(draft.bookmark ?? "");
     setSchema(draft.formSchema);
     setSchemaText(JSON.stringify(draft.formSchema, null, 2));
   }, [draft, setSchema, setSchemaText]);
@@ -74,7 +70,6 @@ export function SchemaDraftEditorPage() {
       const parsed = JSON.parse(schemaText);
       await updateMutation.mutateAsync({
         name: name.trim() || draft.name,
-        bookmark: bookmark.trim() || undefined,
         formSchema: isRecord(parsed) ? parsed : draft.formSchema,
         bindings: draft.bindings,
       });
@@ -88,15 +83,10 @@ export function SchemaDraftEditorPage() {
     }
   };
 
-  const publish = async () => {
+  const review = async () => {
     if (!schemaId || !draftId) return;
     const saved = await save();
     if (!saved) return;
-    const result = await publishMutation.mutateAsync();
-    if (result.status === "published") {
-      void navigate(`/schemas/${schemaId}`);
-      return;
-    }
     void navigate(`/schemas/${schemaId}/drafts/${draftId}/conflicts`);
   };
 
@@ -126,15 +116,11 @@ export function SchemaDraftEditorPage() {
                 Save
               </AppButton>
               <AppButton
-                onClick={publish}
-                disabled={!draft || editorHasErrors || publishMutation.isPending}
+                onClick={review}
+                disabled={!draft || editorHasErrors || updateMutation.isPending}
               >
-                {publishMutation.isPending ? (
-                  <RefreshCcw className="animate-spin" size={16} />
-                ) : (
-                  <Tag size={16} />
-                )}
-                Publish
+                <GitCompareArrows size={16} />
+                Review changes
               </AppButton>
             </div>
           }
@@ -145,14 +131,10 @@ export function SchemaDraftEditorPage() {
               <AlertTriangle size={18} />
               Publishing is blocked until this change is recreated from the current version.
             </div>
-            {schemaId && draftId ? (
-              <Link to={`/schemas/${schemaId}/drafts/${draftId}/conflicts`}>
-                <AppButton variant="secondary">
-                  <GitCompareArrows size={16} />
-                  Review
-                </AppButton>
-              </Link>
-            ) : null}
+            <AppButton variant="secondary" onClick={review}>
+              <GitCompareArrows size={16} />
+              Review
+            </AppButton>
           </AppPanel>
         ) : null}
         <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -165,7 +147,7 @@ export function SchemaDraftEditorPage() {
               />
             </div>
             {editorView === "code" ? (
-              <EditorWrapper />
+              <EditorWrapper diffBaseText={baseText} />
             ) : editorHasErrors ? (
               <AppPanel className="m-4">Fix schema errors to preview the form.</AppPanel>
             ) : (
@@ -179,41 +161,6 @@ export function SchemaDraftEditorPage() {
                 <AppBadge tone={statusTone(draft?.status)}>{draft?.status ?? "DRAFT"}</AppBadge>
               </div>
               <AppTextField value={name} onChange={(event) => setName(event.target.value)} />
-              <AppTextField
-                value={bookmark}
-                placeholder="bookmark"
-                onChange={(event) => setBookmark(event.target.value)}
-              />
-            </AppPanel>
-            <AppPanel className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-semibold text-[var(--text-primary)]">Semantic delta</h2>
-                <AppBadge tone={conflictCount ? "danger" : "neutral"}>
-                  {conflictCount
-                    ? `${conflictCount} conflicts`
-                    : `${diff?.changes.length ?? 0} changes`}
-                </AppBadge>
-              </div>
-              <div className="space-y-2">
-                {(diff?.changes ?? []).slice(0, 6).map((change) => (
-                  <div
-                    key={change.path}
-                    className="rounded border border-[var(--border-soft)] p-3 text-sm"
-                  >
-                    <div className="font-mono text-xs text-[var(--text-secondary)]">
-                      {change.path}
-                    </div>
-                    <div className="mt-1 truncate text-[var(--text-primary)]">
-                      {displayValue(change.draftValue)}
-                    </div>
-                  </div>
-                ))}
-                {!diff?.changes.length ? (
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    No saved schema changes yet.
-                  </p>
-                ) : null}
-              </div>
             </AppPanel>
           </aside>
         </div>

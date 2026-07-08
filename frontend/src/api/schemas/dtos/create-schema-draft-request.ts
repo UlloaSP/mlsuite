@@ -6,5 +6,4 @@ Copyright (c) 2025 Pablo Ulloa Santin
 export type CreateSchemaDraftRequest = {
   name: string;
   baseVersionId: string | number;
-  bookmark?: string;
 };

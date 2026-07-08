@@ -36,16 +36,17 @@ public class PredictionRunController {
         this.resultRepository = resultRepository;
     }
 
-    @PostMapping("/schema-versions/{versionId}/runs")
-    public ResponseEntity<PredictionRunDto> create(Authentication authentication, @PathVariable Long versionId,
-            @Valid @RequestBody CreatePredictionRunRequest request) {
-        PredictionRun run = predictionRunUseCase.createRun(userId(authentication), versionId, request);
+    @PostMapping("/schema-bookmarks/{bookmarkId}/runs")
+    public ResponseEntity<PredictionRunDto> createForBookmark(Authentication authentication,
+            @PathVariable Long bookmarkId, @Valid @RequestBody CreatePredictionRunRequest request) {
+        PredictionRun run = predictionRunUseCase.createRunForBookmark(userId(authentication), bookmarkId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(toDto(run));
     }
 
-    @GetMapping("/schema-versions/{versionId}/runs")
-    public ResponseEntity<List<PredictionRunDto>> list(Authentication authentication, @PathVariable Long versionId) {
-        return ResponseEntity.ok(predictionRunUseCase.listRuns(userId(authentication), versionId).stream()
+    @GetMapping("/schema-bookmarks/{bookmarkId}/runs")
+    public ResponseEntity<List<PredictionRunDto>> listForBookmark(Authentication authentication,
+            @PathVariable Long bookmarkId) {
+        return ResponseEntity.ok(predictionRunUseCase.listRunsForBookmark(userId(authentication), bookmarkId).stream()
                 .map(this::toDto)
                 .toList());
     }

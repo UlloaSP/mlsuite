@@ -77,7 +77,6 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         if (!base.getSchema().getId().equals(schemaId)) throw badRequest("Base version outside schema");
         SchemaDraft draft = new SchemaDraft(schema, base, request.name(), base.getFormSchema(),
                 bindingJson(versionUseCase.listBindings(userId, base.getId())));
-        draft.setBookmark(blankToNull(request.bookmark()));
         touch(schema, draft, user);
         return draftRepository.save(draft);
     }
@@ -95,7 +94,6 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         SchemaDraft draft = requireDraft(draftId, orgId);
         if (draft.getStatus() == SchemaDraftStatus.PUBLISHED) throw badRequest("Draft already published");
         draft.setName(request.name());
-        draft.setBookmark(blankToNull(request.bookmark()));
         draft.setFormSchema(request.formSchema());
         draft.setBindings(request.bindings());
         draft.setStatus(SchemaDraftStatus.DRAFT);
@@ -195,11 +193,6 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         schema.setUpdatedBy(user);
         schema.setUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC));
         draft.setUpdatedBy(user);
-    }
-
-    private String blankToNull(String value) {
-        if (value == null || value.isBlank()) return null;
-        return value.trim();
     }
 
     private ResponseStatusException badRequest(String message) {

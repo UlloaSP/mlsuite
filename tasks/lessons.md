@@ -6,6 +6,18 @@
 - Rule: when a create flow has one durable/irreversible choice and editable metadata, keep them together but make the durable choice inspectable with live preview before submit.
 - Correction: schema conflict review was a path table, but product expectation was a merge-style diff review.
 - Rule: stale draft publication flows should use merge language and visual diffs; path tables are supporting context, not the primary review surface.
+- Correction: published schema versions were treated as directly runnable entries with inference history.
+- Rule: published versions are immutable snapshots only; run and inference-history affordances belong to bookmarked schema changes or active bookmarked pointers, not to every published version.
+- Correction: bookmark fields stayed in new-change/editor flows after bookmarks became snapshot-only.
+- Rule: change/draft forms must collect only mutable change metadata; bookmark metadata belongs only to published snapshot actions.
+- Correction: schema detail still behaved like an inspector when the user wanted an index.
+- Rule: schema detail should list workflow entry points; schema document previews belong to change, snapshot, or bookmark detail pages.
+- Correction: schema overview became three equally weighted management lists, hiding the latest published schema state.
+- Rule: schema detail should behave like a repository overview: latest snapshot first, counts/navigation second, full changes/bookmarks/snapshots in dedicated list pages.
+- Correction: schema overview duplicated its internal nav as recent panels and used fake file rows for a single-document schema.
+- Rule: when internal nav owns related lists, overview should show the primary object state and preview; list discovery belongs to the nav destinations, not repeated below.
+- Correction: schema catalog cards only opened from the title/description area, so clicking metrics or most of the tile did nothing.
+- Rule: catalog cards should make the full primary content area clickable while keeping overflow/destructive actions as separate sibling controls.
 
 ## 2026-06-26 - Catalog action placement correction
 

@@ -13,7 +13,6 @@ export type SchemaDraftDto = {
   baseVersionId: string;
   baseVersion: number;
   name: string;
-  bookmark?: string | null;
   formSchema: JsonRecord;
   bindings: SchemaDraftBindingDto[];
   status: SchemaDraftStatus;

@@ -43,7 +43,6 @@ export function CreateSchemaVersionPage() {
   const mutation = useCreateSchemaDraftMutation(schemaId ?? "");
   const [baseVersionId, setBaseVersionId] = useState("");
   const [name, setName] = useState("Update schema");
-  const [bookmark, setBookmark] = useState("");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("form");
 
   const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
@@ -64,7 +63,6 @@ export function CreateSchemaVersionPage() {
       const draft = await mutation.mutateAsync({
         name: name.trim(),
         baseVersionId: schemaVersionId(baseVersion),
-        bookmark: bookmark.trim() || undefined,
       });
       void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
     } catch (error) {
@@ -134,21 +132,6 @@ export function CreateSchemaVersionPage() {
                 value={name}
                 placeholder="Normalize ICU hours"
                 onChange={(event) => setName(event.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="bookmark"
-                className="text-sm font-semibold text-[var(--text-primary)]"
-              >
-                Bookmark
-              </label>
-              <AppTextField
-                id="bookmark"
-                value={bookmark}
-                placeholder="schema/icu-hours"
-                onChange={(event) => setBookmark(event.target.value)}
                 className="w-full"
               />
             </div>

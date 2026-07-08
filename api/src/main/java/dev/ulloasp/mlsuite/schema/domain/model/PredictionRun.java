@@ -35,6 +35,12 @@ public class PredictionRun {
 
     public PredictionRun(SchemaVersion schemaVersion, String name, Map<String, Object> inputData,
             PredictionRunStatus status) {
+        this(null, schemaVersion, name, inputData, status);
+    }
+
+    public PredictionRun(SchemaBookmark schemaBookmark, SchemaVersion schemaVersion, String name,
+            Map<String, Object> inputData, PredictionRunStatus status) {
+        this.schemaBookmark = schemaBookmark;
         this.schemaVersion = schemaVersion;
         this.name = name;
         this.inputData = inputData;
@@ -48,6 +54,10 @@ public class PredictionRun {
     @ManyToOne(optional = false)
     @JoinColumn(name = "schema_version_id", nullable = false, foreignKey = @ForeignKey(name = "fk_prediction_run_version"))
     private SchemaVersion schemaVersion;
+
+    @ManyToOne
+    @JoinColumn(name = "schema_bookmark_id", foreignKey = @ForeignKey(name = "fk_prediction_run_bookmark"))
+    private SchemaBookmark schemaBookmark;
 
     @Column(name = "name", nullable = false, length = 255)
     private String name;

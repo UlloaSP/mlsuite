@@ -8,7 +8,6 @@ import type { SchemaDraftBindingDto } from "./schema-draft-binding-dto";
 
 export type UpdateSchemaDraftRequest = {
   name: string;
-  bookmark?: string;
   formSchema: JsonRecord;
   bindings: SchemaDraftBindingDto[];
 };

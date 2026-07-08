@@ -57,9 +57,6 @@ public class SchemaDraft {
     @Column(name = "name", nullable = false, length = 180)
     private String name;
 
-    @Column(name = "bookmark", length = 180)
-    private String bookmark;
-
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "form_schema_json", nullable = false)
     private Map<String, Object> formSchema;

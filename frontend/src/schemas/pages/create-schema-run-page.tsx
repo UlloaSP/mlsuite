@@ -13,9 +13,10 @@ import { SchemaRunForm } from "../components/SchemaRunForm";
 import { SchemaRunSaveModal } from "../components/SchemaRunSaveModal";
 import { createPredictionResultFeedback } from "../../api/schemas/services";
 import {
-  useCreatePredictionRunMutation,
+  useCreatePredictionRunForBookmarkMutation,
   usePredictionRun,
   useSchema,
+  useSchemaBookmark,
   useSchemaVersion,
 } from "../../api/schemas/hooks";
 import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
@@ -24,16 +25,21 @@ import type { CreatePredictionRunRequest, JsonRecord } from "../../api/schemas/d
 
 export function CreateSchemaRunPage() {
   const [searchParams] = useSearchParams();
-  const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();
+  const { schemaId, bookmarkId } = useParams<{
+    schemaId: string;
+    bookmarkId: string;
+  }>();
   const { data: schema } = useSchema(schemaId);
-  const { data: version, isLoading } = useSchemaVersion(versionId);
+  const { data: bookmark } = useSchemaBookmark(bookmarkId);
+  const effectiveVersionId = bookmark?.versionId;
+  const { data: version, isLoading } = useSchemaVersion(effectiveVersionId);
   const executableVersion = useMemo(
     () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
     [version],
   );
   const fromRunId = searchParams.get("fromRunId") ?? undefined;
   const { data: sourceRun } = usePredictionRun(fromRunId);
-  const createRun = useCreatePredictionRunMutation(versionId ?? "");
+  const createBookmarkRun = useCreatePredictionRunForBookmarkMutation(bookmarkId ?? "");
   const [pendingRun, setPendingRun] = useState<{
     inputData: JsonRecord;
     raw: JsonRecord;
@@ -66,7 +72,7 @@ export function CreateSchemaRunPage() {
   const handleSave = useCallback(
     async (request: CreatePredictionRunRequest, feedback: PendingFeedback[]) => {
       try {
-        const run = await createRun.mutateAsync(request);
+        const run = await createBookmarkRun.mutateAsync(request);
         await Promise.all(
           feedback.map((item) => {
             const result = run.results.find((candidate) => candidate.modelId === item.modelId);
@@ -87,7 +93,7 @@ export function CreateSchemaRunPage() {
         });
       }
     },
-    [createRun],
+    [createBookmarkRun],
   );
 
   return (
@@ -103,7 +109,7 @@ export function CreateSchemaRunPage() {
                 ? [
                     {
                       label: `${executableVersion.name} v${executableVersion.version}`,
-                      to: `/schemas/${schemaId}/versions/${versionId}/runs`,
+                      to: `/schemas/${schemaId}/bookmarks/${bookmarkId}/runs`,
                     },
                   ]
                 : []),
@@ -128,7 +134,7 @@ export function CreateSchemaRunPage() {
             pendingRun={pendingRun}
             defaultName={defaultName}
             version={executableVersion}
-            isSaving={createRun.isPending}
+            isSaving={createBookmarkRun.isPending}
             onCancel={() => setPendingRun(null)}
             onSave={handleSave}
           />

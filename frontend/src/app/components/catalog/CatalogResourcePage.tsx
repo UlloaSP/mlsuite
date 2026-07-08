@@ -53,6 +53,7 @@ type CatalogResourcePageProps<TItem, TFilter extends string, TSort extends strin
   isActionPending?: boolean;
   layout?: "grid" | "list";
   loadingLabel: string;
+  navigation?: ReactNode;
   pageSize: number;
   placeholder: string;
   query: CatalogQuery<TItem>;
@@ -80,6 +81,7 @@ export function CatalogResourcePage<TItem, TFilter extends string, TSort extends
   isActionPending = false,
   layout,
   loadingLabel,
+  navigation,
   pageSize,
   placeholder,
   query,
@@ -98,6 +100,7 @@ export function CatalogResourcePage<TItem, TFilter extends string, TSort extends
       accessDenied={accessDenied}
       accessFallback={accessFallback}
       header={header}
+      navigation={navigation}
       toolbar={{
         children: toolbarChildren,
         filter: controls.filter,

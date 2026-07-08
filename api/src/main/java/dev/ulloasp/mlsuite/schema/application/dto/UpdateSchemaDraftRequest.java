@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotEmpty;
 
 public record UpdateSchemaDraftRequest(
         @NotBlank String name,
-        String bookmark,
         @NotEmpty Map<String, Object> formSchema,
         @NotEmpty List<Map<String, Object>> bindings) {
 }

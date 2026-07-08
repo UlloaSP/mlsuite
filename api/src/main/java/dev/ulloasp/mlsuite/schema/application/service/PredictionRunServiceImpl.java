@@ -13,8 +13,8 @@ import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelReposit
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
-import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
@@ -22,6 +22,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
@@ -34,7 +35,7 @@ import jakarta.transaction.Transactional;
 public class PredictionRunServiceImpl implements PredictionRunUseCase {
 
     private final UserLookupService userLookupService;
-    private final SchemaVersionRepository versionRepository;
+    private final SchemaBookmarkRepository bookmarkRepository;
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
     private final PredictionResultRepository resultRepository;
@@ -42,13 +43,13 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
 
-    public PredictionRunServiceImpl(UserLookupService userLookupService, SchemaVersionRepository versionRepository,
-            SchemaModelBindingRepository bindingRepository, PredictionRunRepository runRepository,
-            PredictionResultRepository resultRepository, ModelRepository modelRepository,
-            WorkspaceAccessService workspaceAccessService,
+    public PredictionRunServiceImpl(UserLookupService userLookupService, SchemaBookmarkRepository bookmarkRepository,
+            SchemaModelBindingRepository bindingRepository,
+            PredictionRunRepository runRepository, PredictionResultRepository resultRepository,
+            ModelRepository modelRepository, WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService authorizationService) {
         this.userLookupService = userLookupService;
-        this.versionRepository = versionRepository;
+        this.bookmarkRepository = bookmarkRepository;
         this.bindingRepository = bindingRepository;
         this.runRepository = runRepository;
         this.resultRepository = resultRepository;
@@ -58,25 +59,17 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     }
 
     @Override
-    public PredictionRun createRun(Long userId, Long schemaVersionId, CreatePredictionRunRequest request) {
+    public PredictionRun createRunForBookmark(Long userId, Long schemaBookmarkId, CreatePredictionRunRequest request) {
         Long organizationId = requireOperate(userId);
-        SchemaVersion version = requireVersion(schemaVersionId, organizationId);
-        if (runRepository.existsBySchemaVersionIdAndName(schemaVersionId, request.name())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prediction run name already exists");
-        }
-        List<SchemaModelBinding> bindings = bindingRepository.findBySchemaVersionId(schemaVersionId);
-        validateResults(bindings, request.results());
-        PredictionRun run = runRepository.save(new PredictionRun(version, request.name(), request.inputData(),
-                aggregateStatus(request.results())));
-        request.results().forEach(result -> saveResult(organizationId, run, result));
-        return run;
+        SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
+        return createRun(organizationId, bookmark, bookmark.getVersion(), request);
     }
 
     @Override
-    public List<PredictionRun> listRuns(Long userId, Long schemaVersionId) {
+    public List<PredictionRun> listRunsForBookmark(Long userId, Long schemaBookmarkId) {
         Long organizationId = requireRead(userId);
-        requireVersion(schemaVersionId, organizationId);
-        return runRepository.findBySchemaVersionIdAndOrganizationId(schemaVersionId, organizationId);
+        requireBookmark(schemaBookmarkId, organizationId);
+        return runRepository.findBySchemaBookmarkIdAndOrganizationId(schemaBookmarkId, organizationId);
     }
 
     @Override
@@ -106,9 +99,22 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         return organizationId;
     }
 
-    private SchemaVersion requireVersion(Long schemaVersionId, Long organizationId) {
-        return versionRepository.findByIdAndOrganizationId(schemaVersionId, organizationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema version not found"));
+    private SchemaBookmark requireBookmark(Long schemaBookmarkId, Long organizationId) {
+        return bookmarkRepository.findByIdAndOrganizationId(schemaBookmarkId, organizationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
+    }
+
+    private PredictionRun createRun(Long organizationId, SchemaBookmark bookmark, SchemaVersion version,
+            CreatePredictionRunRequest request) {
+        if (runRepository.existsBySchemaVersionIdAndName(version.getId(), request.name())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Prediction run name already exists");
+        }
+        List<SchemaModelBinding> bindings = bindingRepository.findBySchemaVersionId(version.getId());
+        validateResults(bindings, request.results());
+        PredictionRun run = runRepository.save(new PredictionRun(bookmark, version, request.name(),
+                request.inputData(), aggregateStatus(request.results())));
+        request.results().forEach(result -> saveResult(organizationId, run, result));
+        return run;
     }
 
     private void validateResults(List<SchemaModelBinding> bindings, List<CreatePredictionResultRequest> results) {
