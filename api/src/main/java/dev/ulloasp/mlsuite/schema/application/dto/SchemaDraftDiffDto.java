@@ -5,6 +5,7 @@ import java.util.List;
 public record SchemaDraftDiffDto(
         Long baseVersionId,
         Long currentVersionId,
+        String currentDocumentHash,
         boolean hasConflicts,
         List<SchemaDraftChangeDto> changes) {
 }

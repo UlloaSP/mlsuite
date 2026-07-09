@@ -86,6 +86,7 @@ export function SchemaChangesPage() {
     if (!renameTarget) return;
     try {
       await renameMutation.mutateAsync({
+        expectedDraftRevision: renameTarget.revision,
         name,
         formSchema: renameTarget.formSchema,
         bindings: renameTarget.bindings,

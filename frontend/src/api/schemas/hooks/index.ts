@@ -20,6 +20,7 @@ export { useCreateSchemaVersionMutation } from "./use-create-schema-version-muta
 export { useCreateSchemaBookmarkMutation } from "./use-create-schema-bookmark-mutation";
 export { useCreateSchemaDraftMutation } from "./use-create-schema-draft-mutation";
 export { useUpdateSchemaDraftMutation } from "./use-update-schema-draft-mutation";
+export { useMergeSchemaDraftMutation } from "./use-merge-schema-draft-mutation";
 export { usePublishSchemaDraftMutation } from "./use-publish-schema-draft-mutation";
 export { useCreatePredictionRunForBookmarkMutation } from "./use-create-prediction-run-for-bookmark-mutation";
 export { usePredictionRunsForBookmark } from "./use-prediction-runs-for-bookmark";

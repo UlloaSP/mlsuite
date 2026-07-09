@@ -16,6 +16,7 @@ export type SchemaDraftDto = {
   formSchema: JsonRecord;
   bindings: SchemaDraftBindingDto[];
   status: SchemaDraftStatus;
+  revision: number;
   createdAt: string;
   updatedAt: string;
 };

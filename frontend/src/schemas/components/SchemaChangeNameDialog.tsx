@@ -58,6 +58,7 @@ export function SchemaChangeNameDialog({
               </label>
               <AppTextField
                 id="change-name"
+                key={defaultName}
                 name="name"
                 defaultValue={defaultName}
                 placeholder="Update schema"

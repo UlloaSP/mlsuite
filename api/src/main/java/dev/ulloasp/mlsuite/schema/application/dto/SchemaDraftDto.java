@@ -15,6 +15,7 @@ public record SchemaDraftDto(
         String name,
         Map<String, Object> formSchema,
         List<Map<String, Object>> bindings,
+        long revision,
         SchemaDraftStatus status,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
@@ -28,6 +29,7 @@ public record SchemaDraftDto(
                 draft.getName(),
                 draft.getFormSchema(),
                 draft.getBindings(),
+                draft.currentRevision(),
                 draft.getStatus(),
                 draft.getCreatedAt(),
                 draft.getUpdatedAt());

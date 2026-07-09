@@ -16,8 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaDraftRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftDiffDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftMergeRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftMergeResultDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftPublishResultDto;
 import dev.ulloasp.mlsuite.schema.application.dto.UpdateSchemaDraftRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PublishSchemaDraftRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaDraftUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import jakarta.validation.Valid;
@@ -65,10 +68,16 @@ public class SchemaDraftController {
         return ResponseEntity.ok(draftUseCase.diffDraft(userId(authentication), draftId));
     }
 
+    @PostMapping("/schema-drafts/{draftId}/merge")
+    public ResponseEntity<SchemaDraftMergeResultDto> merge(Authentication authentication,
+            @PathVariable Long draftId, @Valid @RequestBody SchemaDraftMergeRequest request) {
+        return ResponseEntity.ok(draftUseCase.mergeDraft(userId(authentication), draftId, request));
+    }
+
     @PostMapping("/schema-drafts/{draftId}/publish")
     public ResponseEntity<SchemaDraftPublishResultDto> publish(Authentication authentication,
-            @PathVariable Long draftId) {
-        return ResponseEntity.ok(draftUseCase.publishDraft(userId(authentication), draftId));
+            @PathVariable Long draftId, @Valid @RequestBody PublishSchemaDraftRequest request) {
+        return ResponseEntity.ok(draftUseCase.publishDraft(userId(authentication), draftId, request));
     }
 
     private Long userId(Authentication authentication) {

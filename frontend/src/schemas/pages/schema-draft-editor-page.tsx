@@ -72,6 +72,7 @@ export function SchemaDraftEditorPage() {
     try {
       const parsed = JSON.parse(schemaText);
       await updateMutation.mutateAsync({
+        expectedDraftRevision: draft.revision,
         name: draft.name,
         formSchema: isRecord(parsed) ? parsed : draft.formSchema,
         bindings: draft.bindings,
@@ -96,10 +97,10 @@ export function SchemaDraftEditorPage() {
   const rename = async (nextName: string) => {
     if (!draftId || !draft) return;
     try {
-      const parsed = JSON.parse(schemaText);
       await updateMutation.mutateAsync({
+        expectedDraftRevision: draft.revision,
         name: nextName,
-        formSchema: isRecord(parsed) ? parsed : draft.formSchema,
+        formSchema: draft.formSchema,
         bindings: draft.bindings,
       });
       setRenameOpen(false);
@@ -174,7 +175,7 @@ export function SchemaDraftEditorPage() {
           <AppPanel className="flex items-center justify-between gap-3 p-4">
             <div className="flex items-center gap-3 text-sm text-[var(--danger-text)]">
               <AlertTriangle size={18} />
-              Publishing is blocked until this change is recreated from the current version.
+              Publishing is blocked until conflicting changes are reviewed and resolved.
             </div>
             <AppButton variant="secondary" onClick={review}>
               <GitCompareArrows size={16} />

@@ -17,6 +17,7 @@ export { getSchemaDrafts } from "./get-schema-drafts";
 export { getSchemaDraft } from "./get-schema-draft";
 export { updateSchemaDraft } from "./update-schema-draft";
 export { getSchemaDraftDiff } from "./get-schema-draft-diff";
+export { mergeSchemaDraft } from "./merge-schema-draft";
 export { publishSchemaDraft } from "./publish-schema-draft";
 export { createPredictionRunForBookmark } from "./create-prediction-run-for-bookmark";
 export { getPredictionRun } from "./get-prediction-run";

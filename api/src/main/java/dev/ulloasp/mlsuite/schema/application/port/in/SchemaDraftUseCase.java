@@ -4,8 +4,11 @@ import java.util.List;
 
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaDraftRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftDiffDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftMergeRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftMergeResultDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftPublishResultDto;
 import dev.ulloasp.mlsuite.schema.application.dto.UpdateSchemaDraftRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PublishSchemaDraftRequest;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraft;
 
 public interface SchemaDraftUseCase {
@@ -19,5 +22,7 @@ public interface SchemaDraftUseCase {
 
     SchemaDraftDiffDto diffDraft(Long userId, Long draftId);
 
-    SchemaDraftPublishResultDto publishDraft(Long userId, Long draftId);
+    SchemaDraftMergeResultDto mergeDraft(Long userId, Long draftId, SchemaDraftMergeRequest request);
+
+    SchemaDraftPublishResultDto publishDraft(Long userId, Long draftId, PublishSchemaDraftRequest request);
 }

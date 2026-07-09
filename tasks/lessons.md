@@ -656,3 +656,17 @@
 - Rule: schema overview should preserve entity description, and change rows should show the source snapshot with icon/name/version plus relative update time.
 - Correction: direct change creation hardcoded a name, while inline editor rename kept a permanent side panel for rare metadata edits.
 - Rule: create flows that need a human name should ask in a small modal before creating; rename belongs in an action menu, not persistent page real estate.
+- Correction: merge review showed a redundant wrapper card and did not let users choose current/incoming per changed part.
+- Rule: merge review must be the merge surface: diff viewer for context, path-level choices for actual resolution, and server-side latest-base validation at publish/apply time.
+- Correction: current/incoming choices were below the diff as a separate review panel, so it still did not feel like a merge editor.
+- Rule: merge choices should live inside the diff viewer surface; page-level review panels are only acceptable when the diff library cannot host or visually own the decision UI.
+- Correction: Pierre's own unresolved merge UI was missed even though the product wants a real merge editor.
+- Rule: before custom-building merge controls on top of a diff library, inspect and prefer the library's native conflict-resolution component; adapt data into its model unless that breaks the backend source of truth.
+- Correction: the Pierre merge viewer still had a custom explanatory header, synthetic path comments, and generic current/incoming labels.
+- Rule: when using a native merge UI, let the dependency own the surface; conflict text should look like code and labels should name real domain refs such as snapshot/change.
+- Correction: schema merge blocks were isolated value snippets, so Pierre could not show real file context or multiple change blocks like its own demo.
+- Rule: merge UIs should feed diff libraries full contextual files with conflict markers at real semantic paths; do not reduce code-review surfaces to extracted values.
+- Correction: merge review exposed conflict blocks, but selections were not obvious and the editor height grew with content.
+- Rule: merge editors need fixed scrollable viewports and explicit per-change actions wired through the diff library resolution API; unresolved counts must match every selectable block.
+- Correction: fixed-pixel merge editor height ignored theme/layout changes and left the page with the wrong scroll owner.
+- Rule: full-page merge editors should resolve theme from app state and use parent flex sizing with `min-h-0` plus internal diff scrolling, not pixel heights.

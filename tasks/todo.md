@@ -1,5 +1,37 @@
 # Schema Version Control Plan
 
+## Follow-up: Adaptive Merge Editor Viewport
+
+- [x] Replace fixed pixel merge-editor height with flex-based available height.
+- [x] Keep page scroll external disabled and diff scroll internal.
+- [x] Bind Pierre diff themes to the app's resolved light/dark theme.
+- [x] Verify frontend TypeScript/tests/build, line count, and graphify update.
+
+### Adaptive Merge Editor Viewport Results
+
+- Removed fixed `680px` merge viewer height; conflict review now uses `flex-1`, `min-h-0`, and internal diff scrolling.
+- Review page now keeps external page scrolling disabled so the editor owns overflow.
+- Pierre themes now follow `themeWithHtmlAtom` for live light/dark mode.
+- Frontend format, app TypeScript, tests, build, line count, diff whitespace, and graphify update completed.
+- `vp check` and React Doctor still fail on existing repo-wide issues outside this change.
+
+## Follow-up: Fixed Selectable Merge Editor
+
+- [x] Make Pierre merge review selections explicit per changed block.
+- [x] Count every selectable schema change as unresolved until the user picks current or incoming.
+- [x] Give the merge editor a fixed height with internal scrolling.
+- [x] Keep Pierre hunk context collapse/expand controls active for long files.
+- [x] Verify frontend TypeScript/tests/build, backend focused merge test, line count, diff whitespace, and graphify update.
+
+### Fixed Selectable Merge Editor Results
+
+- Pierre merge review now shows the semantic JSON path in each action row, so individual changed blocks are visible and selectable.
+- Merge apply stays disabled until every changed path has an explicit `current` or `incoming` choice.
+- Merge viewer is a fixed `680px` viewport with internal scroll.
+- Context collapse/expand remains enabled through Pierre metadata hunk separators with tighter context thresholds.
+- Frontend TypeScript, tests, build, backend focused merge tests, line counts, diff whitespace, and graphify update passed.
+- `vp check` and React Doctor still fail on existing repo-wide issues outside this merge editor change.
+
 ## Follow-up: Lean Snapshot Overview
 
 - [x] Remove duplicated latest snapshot overview card from schema detail.
@@ -270,3 +302,131 @@
 - `react-doctor` completed with existing repo-wide warnings.
 - Visual browser check reached the app shell, but backend readiness returned 502 without the backend running.
 - `vp check --fix` formatted files but still fails on existing repo-wide lint/type debt.
+
+## Follow-up: Selective Merge Review Analysis
+
+- [x] Inspect current review page, Pierre diff capabilities, and backend stale-base guard.
+- [x] Remove redundant outer "Current vs incoming" card when implementing.
+- [x] Add path-level current/incoming resolution choices for merge review.
+- [x] Keep publish protected against latest snapshot drift after review starts.
+- [x] Verify backend merge semantics with stale-base and conflict cases.
+
+## Follow-up: Inline Merge Diff Selection
+
+- [x] Move current/incoming choices from separate review panel into the diff viewer surface.
+- [x] Keep `@pierre/diffs`; use Monaco only if inline selection cannot be made cleanly.
+- [x] Remove review-page ownership of choice row rendering.
+- [x] Preserve server-side latest snapshot guard with `expectedCurrentVersionId`.
+- [x] Verify TypeScript, focused tests, line counts, diff whitespace, and graphify update.
+
+### Inline Merge Diff Selection Results
+
+- Merge decisions now live inside `SchemaMergeDiffViewer`, directly below the Pierre split diff and inside the same bordered surface.
+- The review page only owns merge state and server actions; row rendering moved out of the page.
+- Monaco was not needed because `@pierre/diffs` plus semantic path choices covers the merge UX without adding another editor.
+- Latest snapshot drift remains guarded server-side through `expectedCurrentVersionId`; a `409` refreshes the review.
+- Frontend TypeScript, tests, build, backend focused tests, line counts, and diff whitespace passed.
+- `vp check` and React Doctor still fail on existing repo-wide issues outside this change.
+
+## Follow-up: Native Pierre Merge Resolution
+
+- [x] Replace custom changed-path selector UI with Pierre `UnresolvedFile` merge conflict UI.
+- [x] Generate a temporary merge-conflict file from semantic backend conflicts.
+- [x] Sync Pierre current/incoming clicks back into backend merge resolutions.
+- [x] Keep server-side merge and latest-snapshot guard as source of truth.
+- [x] Verify TypeScript, frontend tests/build, focused backend test, line counts, diff whitespace, and graphify update.
+
+### Native Pierre Merge Resolution Results
+
+- Merge conflicts now render through Pierre `UnresolvedFile`, not a custom selector panel.
+- Backend semantic conflicts are adapted into a temporary JSON merge-conflict file.
+- Pierre's current/incoming conflict controls update frontend merge resolutions for the backend request.
+- Backend merge remains authoritative and still rejects stale reviews when latest snapshot changes.
+- Frontend TypeScript, tests, build, formatting, backend focused tests, line counts, and diff whitespace passed.
+- `vp check` and React Doctor still report existing repo-wide issues outside this merge work.
+
+## Follow-up: Cleaner Pierre Merge Header
+
+- [x] Remove custom merge header/copy from the Pierre conflict viewer.
+- [x] Remove synthetic path comments and base blocks from generated conflict text.
+- [x] Use actual latest snapshot and change names as conflict labels.
+- [x] Keep Pierre conflict controls as the only selection UI.
+- [x] Verify TypeScript, frontend tests/build, focused backend test, line counts, diff whitespace, and graphify update.
+
+### Cleaner Pierre Merge Header Results
+
+- Removed the custom `Merge conflicts` header, explanatory copy, and `latest changed` pill from the diff surface.
+- Generated conflict text now uses two-way markers only: `snapshot/<name>@vN` versus `change/<name>`.
+- Removed synthetic `// path` comments and the diff3 `base` block from the merge file.
+- Pierre `UnresolvedFile` remains the only conflict selection UI, while backend merge stays authoritative.
+- Frontend TypeScript, tests, build, backend focused tests, line count, diff whitespace, and graphify update passed.
+- `vp check` still fails on existing repo-wide lint/type debt outside this change.
+
+## Follow-up: Contextual Pierre Schema Merge UI
+
+- [x] Render schema merge as a full JSON file with context, not isolated changed values.
+- [x] Preserve multiple conflict blocks so Pierre can select individual changes.
+- [x] Use Pierre features: unresolved conflict UI, hunk context, word diff, line selection, compact header.
+- [x] Keep backend semantic merge and latest snapshot guard authoritative.
+- [x] Verify TypeScript, frontend tests/build, focused backend test, line counts, diff whitespace, and graphify update.
+
+### Contextual Pierre Schema Merge UI Results
+
+- Schema merge review now feeds Pierre a full `schema.merge.json` with conflict markers inserted at semantic JSON paths.
+- Multiple changed paths render as individual Pierre conflict blocks with surrounding JSON context.
+- Merge review uses Pierre unresolved-file controls, metadata hunk separators, word-alt diffing, line selection, Pierre themes, and built-in header metadata.
+- Non-stale publish review stays as normal diff; stale merge review makes every changed path selectable.
+- Added focused frontend test for contextual merge-file generation and visual conflict-path ordering.
+- Frontend TypeScript, tests, build, backend focused tests, line counts, and diff whitespace passed.
+
+## Audit: Schema Conflict Resolution And Pierre Diffs
+
+- [x] Trace schema diff/conflict/merge flow across API and frontend.
+- [x] Validate merge semantics, stale-review protection, and JSON path edge cases.
+- [x] Compare installed `@pierre/diffs` API/capabilities with actual usage.
+- [x] Run focused backend/frontend verification and inspect test coverage gaps.
+- [x] Record severity-ranked findings and final review evidence.
+
+### Audit Review
+
+- Verdict: scalar happy path works, but merge is not safe for approval yet.
+- High-risk gaps: delete/null/array semantics, container type changes, overlapping visual conflict ranges, stale Pierre cache keys, omitted binding merges, repeated publish, and DB races.
+- Pierre 1.2.12 is correctly chosen for normal and unresolved diffs; optional annotations, patch rendering, SSR, and CodeView are out of scope. Workers/virtualization matter only if schema size becomes large.
+- Focused backend tests pass 7/7; full backend suite has one unrelated architecture failure.
+- Focused frontend test passes 1/1; frontend production build passes with existing chunk warnings.
+- Existing tests cover only leaf-string success and latest-version drift; required error/structural cases remain uncovered.
+
+## Fix: Safe Schema Merge And Pierre Integration
+
+- [x] Add failing regression coverage before implementation:
+  - [x] missing vs `null`, object deletion, array deletion/reorder, and container type changes.
+  - [x] binding three-way merge and stale draft/latest concurrency.
+  - [x] duplicate, unknown, missing, null, and invalid resolutions.
+  - [x] overlapping/missing visual paths, exact Pierre remount key, action mapping, and accessible labels.
+- [x] Replace flattened mutation with structural three-way merge:
+  - [x] RFC 6901 JSON Pointer paths.
+  - [x] explicit missing state and real add/replace/remove operations.
+  - [x] disjoint changes; arrays merge by stable identity or same length by index, otherwise atomically.
+  - [x] include form schema and model bindings in one authoritative merge document.
+- [x] Harden persisted workflow:
+  - [x] preserve binding baseline across draft creation/rebase.
+  - [x] validate exact resolution set with typed side enum.
+  - [x] reject repeated publish without changing state.
+  - [x] serialize draft/schema writes and detect stale draft/current document drift.
+  - [x] keep service files below 300 lines.
+- [x] Harden Pierre/frontend flow:
+  - [x] group overlapping or missing paths into valid contextual conflict blocks.
+  - [x] remount on exact content change.
+  - [x] synchronize grouped choices and unresolved count.
+  - [x] remove ignored/dead options, fix accessible names and stale copy.
+- [x] Verify narrow tests, API suite, frontend suite/build/check, React Doctor, line limits, diff whitespace, and `graphify update .`.
+
+### Safe Merge Review
+
+- Fixed inflated merge diff blocks: same-length arrays without identity now diff by index, so small `fields`/`reports` edits produce leaf paths instead of whole-array `-711/+711` blocks.
+- Backend merge now uses structural three-way merge over `{formSchema, bindings}`, missing/null-aware RFC 6901 paths, typed exact conflict resolutions, draft revision checks, pessimistic schema/draft locks, and current document SHA-256 drift detection.
+- Binding baselines are snapshotted on draft create and frozen for legacy drafts before `addBinding` mutates an old version.
+- Legacy `PUBLISHED` drafts with `published_version_id = null` now backfill only when exactly one published version matches name, form schema, and semantic bindings.
+- Pierre usage remains through `UnresolvedFile` for conflicts and `MultiFileDiff` for non-conflict diffs, with exact-content cache keys, custom conflict actions, native current/incoming data attributes, and no extra Monaco layer.
+- Verification passed: `mvn -Dtest=SchemaDraftServiceTest test`, `mvn -Dtest=SchemaFlowServiceTest test`, `vp test`, `vp build`, line-count check, `git diff --check HEAD`, and `graphify update .`.
+- Known existing blockers remain: full `mvn test` fails only `WebAdapterArchitectureTest` with 13 pre-existing web-adapter/service violations; `vp check --fix` formats but still reports 14 errors/41 warnings outside this change; React Doctor reports 2 existing performance errors and 236 warnings.

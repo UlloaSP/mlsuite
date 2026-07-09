@@ -180,7 +180,7 @@ class SchemaFlowServiceTest {
 
     @Test
     void createVersion_RejectsDuplicateModelBinding() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
 
         CreateSchemaVersionRequest request = new CreateSchemaVersionRequest("v1", formSchema(),
                 List.of(new CreateSchemaModelBindingRequest(11L, Map.of()),
@@ -191,7 +191,7 @@ class SchemaFlowServiceTest {
 
     @Test
     void createVersion_PersistsMultipleModelBindings() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
         when(versionRepository.findMaxVersionBySchemaId(5L)).thenReturn(0);
         when(versionRepository.save(any(SchemaVersion.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(bindingRepository.save(any(SchemaModelBinding.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -209,7 +209,7 @@ class SchemaFlowServiceTest {
 
     @Test
     void createVersion_RejectsEmptyModelBindings() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
 
         CreateSchemaVersionRequest request = new CreateSchemaVersionRequest("v1", formSchema(), List.of());
 

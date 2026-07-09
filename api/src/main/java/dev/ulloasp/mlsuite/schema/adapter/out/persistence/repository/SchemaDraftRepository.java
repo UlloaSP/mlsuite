@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraft;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
@@ -15,4 +17,11 @@ public interface SchemaDraftRepository extends JpaRepository<SchemaDraft, Long> 
 
     @Query("SELECT d FROM SchemaDraft d WHERE d.id = :id AND d.schema.organization.id = :organizationId")
     Optional<SchemaDraft> findByIdAndOrganizationId(Long id, Long organizationId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT d FROM SchemaDraft d WHERE d.id = :id AND d.schema.organization.id = :organizationId")
+    Optional<SchemaDraft> findForUpdate(Long id, Long organizationId);
+
+    @Query("SELECT d FROM SchemaDraft d WHERE d.baseVersion.id = :baseVersionId AND d.baseBindings IS NULL")
+    List<SchemaDraft> findByBaseVersionIdAndBaseBindingsIsNull(Long baseVersionId);
 }

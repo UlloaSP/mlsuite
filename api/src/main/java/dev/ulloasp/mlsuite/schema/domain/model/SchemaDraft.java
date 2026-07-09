@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.schema.domain.model;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -37,8 +38,9 @@ public class SchemaDraft {
         this.schema = schema;
         this.baseVersion = baseVersion;
         this.name = name;
-        this.formSchema = formSchema;
-        this.bindings = bindings;
+        this.formSchema = copyMap(formSchema);
+        this.bindings = copyBindings(bindings);
+        this.baseBindings = copyBindings(bindings);
         this.status = SchemaDraftStatus.DRAFT;
     }
 
@@ -64,6 +66,53 @@ public class SchemaDraft {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "bindings_json", nullable = false)
     private List<Map<String, Object>> bindings;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "base_bindings_json")
+    private List<Map<String, Object>> baseBindings;
+
+    @ManyToOne
+    @JoinColumn(name = "published_version_id", foreignKey = @ForeignKey(name = "fk_schema_draft_published"))
+    private SchemaVersion publishedVersion;
+
+    @Column(name = "revision")
+    private Long revision = 0L;
+
+    public long currentRevision() {
+        return revision == null ? 0L : revision;
+    }
+
+    public void advanceRevision() {
+        revision = currentRevision() + 1;
+    }
+
+    public void setFormSchema(Map<String, Object> formSchema) {
+        this.formSchema = copyMap(formSchema);
+    }
+
+    public void setBindings(List<Map<String, Object>> bindings) {
+        this.bindings = copyBindings(bindings);
+    }
+
+    public void setBaseBindings(List<Map<String, Object>> bindings) {
+        this.baseBindings = bindings == null ? null : copyBindings(bindings);
+    }
+
+    private static List<Map<String, Object>> copyBindings(List<Map<String, Object>> bindings) {
+        return bindings.stream().map(SchemaDraft::copyMap).toList();
+    }
+
+    private static Map<String, Object> copyMap(Map<?, ?> source) {
+        Map<String, Object> copy = new LinkedHashMap<>();
+        source.forEach((key, value) -> copy.put(String.valueOf(key), copyValue(value)));
+        return copy;
+    }
+
+    private static Object copyValue(Object value) {
+        if (value instanceof Map<?, ?> map) return copyMap(map);
+        if (value instanceof List<?> list) return list.stream().map(SchemaDraft::copyValue).toList();
+        return value;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)
