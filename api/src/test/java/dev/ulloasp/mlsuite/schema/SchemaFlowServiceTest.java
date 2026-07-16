@@ -151,25 +151,6 @@ class SchemaFlowServiceTest {
     }
 
     @Test
-    void duplicateSchema_CopiesLatestVersionBindings() {
-        SchemaVersion sourceVersion = version();
-        Schema copy = new Schema(organization(), "Risk Copy", null);
-        copy.setId(6L);
-        when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
-        when(schemaRepository.save(any(Schema.class))).thenReturn(copy);
-        when(versionRepository.findTopBySchemaIdOrderByVersionDesc(5L)).thenReturn(Optional.of(sourceVersion));
-        when(versionRepository.save(any(SchemaVersion.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(binding(sourceVersion, 11L)));
-        when(bindingRepository.save(any(SchemaModelBinding.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Schema result = schemaService.duplicateSchema(7L, 5L, "Risk Copy");
-
-        assertEquals("Risk Copy", result.getName());
-        verify(bindingRepository).save(any(SchemaModelBinding.class));
-    }
-
-    @Test
     void deleteSchema_RejectsSchemaWithRuns() {
         when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
         when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));

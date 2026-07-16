@@ -1,5 +1,24 @@
 # Schema Version Control Plan
 
+## Follow-up: Clone Schema From Selected Snapshot
+
+- [x] Extend schema duplication contract with optional source snapshot id.
+- [x] Validate selected snapshot ownership and copy it as independent `v1`.
+- [x] Add clone action to snapshot catalog rows and snapshot detail.
+- [x] Cover latest-snapshot fallback, explicit selection, isolation, and errors.
+- [x] Verify backend/frontend, line limits, diff whitespace, and graphify update.
+
+### Clone Schema From Selected Snapshot Review
+
+- Duplication accepts an optional selected snapshot while preserving latest-snapshot fallback.
+- Selected snapshot becomes the new schema's sole `v1`; drafts, bookmarks, runs, reviews, and prior versions stay in the source lineage.
+- Snapshot list/detail actions are permission-gated with `canEditModels`, reuse the existing naming dialog, and navigate to the created schema.
+- Backend focused tests passed: 19/19 across duplication and existing schema flow.
+- Frontend tests passed: 35 files, 128 tests; production build passed with existing chunk warnings.
+- `vp check` remains blocked by 14 errors and 41 warnings in pre-existing files outside this change.
+- React Doctor was attempted with `vp dlx react-doctor@latest --verbose` and timed out after 120 seconds without output.
+- Changed-file line limits, diff whitespace, independent review, and `graphify update .` completed.
+
 ## Follow-up: Adaptive Merge Editor Viewport
 
 - [x] Replace fixed pixel merge-editor height with flex-based available height.

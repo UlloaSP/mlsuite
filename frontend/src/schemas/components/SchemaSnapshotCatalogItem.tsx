@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { GitCommitHorizontal, MoreHorizontal, PencilLine, Tag } from "lucide-react";
+import { Copy, GitCommitHorizontal, MoreHorizontal, PencilLine, Tag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import type { SchemaVersionDto } from "../../api/schemas/dtos";
@@ -13,6 +13,7 @@ import { LiveRelativeTime } from "../../app/components/LiveRelativeTime";
 
 type Props = {
   onBookmark: (version: SchemaVersionDto) => void;
+  onClone?: (version: SchemaVersionDto) => void;
   onCreateChange: (version: SchemaVersionDto) => void;
   schemaId: string;
   version: SchemaVersionDto;
@@ -20,6 +21,7 @@ type Props = {
 
 export function SchemaSnapshotCatalogItem({
   onBookmark,
+  onClone,
   onCreateChange,
   schemaId,
   version,
@@ -91,6 +93,19 @@ export function SchemaSnapshotCatalogItem({
               <Tag size={15} />
               Bookmark
             </button>
+            {onClone ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onClone(version);
+                }}
+                className={menuItemClass}
+              >
+                <Copy size={15} />
+                Create schema from snapshot
+              </button>
+            ) : null}
           </div>
         ) : null}
       </div>

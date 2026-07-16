@@ -2,6 +2,7 @@ export type { JsonRecord } from "./json-record";
 export type { SchemaCatalogItemDto } from "./schema-catalog-item-dto";
 export type { SchemaDto } from "./schema-dto";
 export type { SchemaNameRequest } from "./schema-name-request";
+export type { DuplicateSchemaRequest } from "./duplicate-schema-request";
 export type { SchemaPageDto } from "./schema-page-dto";
 export type { SchemaPageRequest } from "./schema-page-request";
 export type { SchemaModelBindingDto } from "./schema-model-binding-dto";

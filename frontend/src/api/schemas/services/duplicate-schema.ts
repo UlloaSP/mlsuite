@@ -4,10 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { appFetch } from "../../core/services/app-fetch";
-import type { SchemaDto, SchemaNameRequest } from "../dtos";
+import type { DuplicateSchemaRequest, SchemaDto } from "../dtos";
 
-export const duplicateSchema = ({ id, name }: SchemaNameRequest): Promise<SchemaDto> => {
+export const duplicateSchema = ({
+  id,
+  name,
+  versionId,
+}: DuplicateSchemaRequest): Promise<SchemaDto> => {
   const params = new URLSearchParams({ name });
+  if (versionId) params.set("versionId", versionId);
   return appFetch<SchemaDto>(
     `/api/schemas/${encodeURIComponent(id)}/duplicate?${params.toString()}`,
     { method: "POST" },

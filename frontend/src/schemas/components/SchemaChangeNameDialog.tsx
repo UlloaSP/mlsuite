@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Dialog } from "radix-ui";
-import { PencilLine, RefreshCcw } from "lucide-react";
+import { Copy, PencilLine, RefreshCcw } from "lucide-react";
 import type { FormEvent } from "react";
 import { AppButton, AppCopy, AppTextField } from "../../app/components";
 
@@ -15,6 +15,9 @@ type Props = {
   pending: boolean;
   submitLabel: string;
   title: string;
+  fieldLabel?: string;
+  placeholder?: string;
+  submitIcon?: "copy" | "edit";
   onClose: () => void;
   onConfirm: (name: string) => void;
 };
@@ -26,6 +29,9 @@ export function SchemaChangeNameDialog({
   pending,
   submitLabel,
   title,
+  fieldLabel = "Change name",
+  placeholder = "Update schema",
+  submitIcon = "edit",
   onClose,
   onConfirm,
 }: Props) {
@@ -54,14 +60,14 @@ export function SchemaChangeNameDialog({
                 htmlFor="change-name"
                 className="text-sm font-semibold text-[var(--text-primary)]"
               >
-                Change name
+                {fieldLabel}
               </label>
               <AppTextField
                 id="change-name"
                 key={defaultName}
                 name="name"
                 defaultValue={defaultName}
-                placeholder="Update schema"
+                placeholder={placeholder}
                 required
               />
             </div>
@@ -72,6 +78,8 @@ export function SchemaChangeNameDialog({
               <AppButton disabled={pending} type="submit">
                 {pending ? (
                   <RefreshCcw className="animate-spin" size={16} />
+                ) : submitIcon === "copy" ? (
+                  <Copy size={16} />
                 ) : (
                   <PencilLine size={16} />
                 )}

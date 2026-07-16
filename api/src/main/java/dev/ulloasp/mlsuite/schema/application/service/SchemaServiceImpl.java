@@ -139,7 +139,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     }
 
     @Override
-    public Schema duplicateSchema(Long userId, Long schemaId, String name) {
+    public Schema duplicateSchema(Long userId, Long schemaId, Long sourceVersionId, String name) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireCreate(userId, organization.getId());
@@ -151,9 +151,9 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         Schema copy = new Schema(organization, nextName, source.getDescription());
         copy.setCreatedBy(user);
         copy.setUpdatedBy(user);
+        SchemaVersion sourceVersion = resolveSourceVersion(schemaId, organization.getId(), sourceVersionId);
         Schema savedCopy = schemaRepository.save(copy);
-        versionRepository.findTopBySchemaIdOrderByVersionDesc(schemaId)
-                .ifPresent(version -> copyVersion(savedCopy, version));
+        if (sourceVersion != null) copyVersion(savedCopy, sourceVersion);
         return savedCopy;
     }
 
@@ -181,6 +181,18 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
             Map<String, Object> policy = binding.getPluginPolicy() == null ? Map.of() : binding.getPluginPolicy();
             bindingRepository.save(new SchemaModelBinding(version, binding.getModel(), policy));
         }
+    }
+
+    private SchemaVersion resolveSourceVersion(Long schemaId, Long organizationId, Long sourceVersionId) {
+        if (sourceVersionId == null) {
+            return versionRepository.findTopBySchemaIdOrderByVersionDesc(schemaId).orElse(null);
+        }
+        SchemaVersion version = versionRepository.findByIdAndOrganizationId(sourceVersionId, organizationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema snapshot not found"));
+        if (!version.getSchema().getId().equals(schemaId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Snapshot outside schema");
+        }
+        return version;
     }
 
     private SchemaCatalogItemDto catalogItem(Schema schema) {

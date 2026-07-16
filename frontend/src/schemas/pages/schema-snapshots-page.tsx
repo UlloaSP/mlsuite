@@ -12,6 +12,7 @@ import type { SchemaVersionDto } from "../../api/schemas/dtos";
 import {
   useCreateSchemaBookmarkMutation,
   useCreateSchemaDraftMutation,
+  useDuplicateSchemaMutation,
   useSchema,
   useSchemaBookmarks,
   useSchemaDrafts,
@@ -19,6 +20,7 @@ import {
 } from "../../api/schemas/hooks";
 import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
 import { schemaVersionId, sortSchemaVersions } from "../../algorithms/schema/version-selection";
+import { useWorkspaceContext } from "../../api/workspace/hooks";
 import { SchemaBookmarkDialog } from "../components/SchemaBookmarkDialog";
 import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
 import { SchemaRepoNav } from "../components/SchemaRepoNav";
@@ -43,13 +45,16 @@ export function SchemaSnapshotsPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const navigate = useNavigate();
   const { data: schema } = useSchema(schemaId);
+  const { data: workspace } = useWorkspaceContext();
   const { data: drafts = [] } = useSchemaDrafts(schemaId);
   const { data: bookmarks = [] } = useSchemaBookmarks(schemaId);
   const versionsQuery = useSchemaVersions(schemaId);
   const bookmarkMutation = useCreateSchemaBookmarkMutation(schemaId ?? "");
   const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
+  const duplicateMutation = useDuplicateSchemaMutation();
   const [bookmarkTarget, setBookmarkTarget] = useState<SchemaVersionDto | null>(null);
   const [changeTarget, setChangeTarget] = useState<SchemaVersionDto | null>(null);
+  const [cloneTarget, setCloneTarget] = useState<SchemaVersionDto | null>(null);
   const controls = useCatalogControls<SnapshotFilter, SnapshotSort>({
     initialFilter: "all",
     initialSort: "created",
@@ -97,6 +102,24 @@ export function SchemaSnapshotsPage() {
       void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
     } catch (error) {
       toast.error("Schema change creation failed", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
+  const cloneSchema = async (name: string) => {
+    if (!schemaId || !cloneTarget) return;
+    try {
+      const copy = await duplicateMutation.mutateAsync({
+        id: schemaId,
+        name,
+        versionId: schemaVersionId(cloneTarget),
+      });
+      setCloneTarget(null);
+      toast.success("Schema created from snapshot");
+      void navigate(`/schemas/${copy.id}`);
+    } catch (error) {
+      toast.error("Schema creation failed", {
         description: error instanceof Error ? error.message : String(error),
       });
     }
@@ -157,6 +180,7 @@ export function SchemaSnapshotsPage() {
               schemaId={schemaId}
               version={version}
               onBookmark={setBookmarkTarget}
+              onClone={workspace?.permissions.canEditModels ? setCloneTarget : undefined}
               onCreateChange={setChangeTarget}
             />
           ) : null
@@ -183,6 +207,23 @@ export function SchemaSnapshotsPage() {
         title="New change"
         onClose={() => setChangeTarget(null)}
         onConfirm={(name) => void createChange(name)}
+      />
+      <SchemaChangeNameDialog
+        defaultName={`${schema?.name ?? "Schema"} Copy`}
+        description={
+          cloneTarget
+            ? `Create an independent schema with ${cloneTarget.name} · v${cloneTarget.version} as its first snapshot.`
+            : "Selected snapshot"
+        }
+        fieldLabel="Schema name"
+        open={Boolean(cloneTarget)}
+        pending={duplicateMutation.isPending}
+        placeholder="New schema"
+        submitIcon="copy"
+        submitLabel="Create schema"
+        title="Create schema from snapshot"
+        onClose={() => setCloneTarget(null)}
+        onConfirm={(name) => void cloneSchema(name)}
       />
     </>
   );
