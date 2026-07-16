@@ -25,4 +25,6 @@ public interface RoleDefinitionRepository extends JpaRepository<RoleDefinition, 
     Optional<RoleDefinition> findByIdAndTeamId(Long id, Long teamId);
 
     boolean existsByOrganizationIdAndScopeAndSlug(Long organizationId, RoleScope scope, String slug);
+
+    List<RoleDefinition> findByOrganizationId(Long organizationId);
 }

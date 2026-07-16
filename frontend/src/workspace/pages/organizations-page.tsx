@@ -1,90 +1,146 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import { Search } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useState } from "react";
+import { toast } from "sonner";
+import type { OrganizationCatalogItemDto } from "../../api/workspace/dtos";
 import {
-  AppButton,
-  AppTextArea,
-  AppTextField,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-} from "../../app/components";
-import { OrganizationCard } from "../components/OrganizationCard";
-import { getOrganizations, createOrganization } from "../../api/workspace/services";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+  ORGANIZATION_CATALOG_PAGE_SIZE,
+  useDeleteOrganizationMutation,
+  useOrganizationCatalogPageQuery,
+  useRenameOrganizationMutation,
+  useTransferOrganizationOwnershipMutation,
+} from "../../api/workspace/hooks";
+import { useUser } from "../../api/user/hooks";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "../../app/components";
+import { NotFoundError } from "../../app/pages/error-page";
+import type { OrganizationPatch } from "../components/OrganizationCatalogEditable";
+import { OrganizationCatalogTileWithMembers } from "../components/OrganizationCatalogTileWithMembers";
+
+type OrganizationSortMode = "updated" | "created" | "name";
+type OrganizationFilterMode = "all" | "public" | "private";
+
+const FILTERS: Array<{ value: OrganizationFilterMode; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "public", label: "Public" },
+  { value: "private", label: "Private" },
+];
+
+const SORT_OPTIONS: Array<{ value: OrganizationSortMode; label: string }> = [
+  { value: "updated", label: "Latest updated" },
+  { value: "created", label: "Latest created" },
+  { value: "name", label: "Name" },
+];
 
 export function OrganizationsPage() {
   const navigate = useNavigate();
-  const qc = useQueryClient();
-  const { data: context } = useWorkspaceContext();
-  const { data: organizations = [] } = useQuery({
-    queryKey: ["organizations"],
-    queryFn: getOrganizations,
+  const { data: user, error } = useUser();
+  const controls = useCatalogControls<OrganizationFilterMode, OrganizationSortMode>({
+    initialFilter: "all",
+    initialSort: "updated",
   });
-  const memberships = context?.memberships ?? [];
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [description, setDescription] = useState("");
+  const renameMutation = useRenameOrganizationMutation();
+  const deleteMutation = useDeleteOrganizationMutation();
+  const transferMutation = useTransferOrganizationOwnershipMutation();
+  const canView = user?.systemRole === "SUPERADMIN";
+  const pageQuery = useOrganizationCatalogPageQuery(
+    controls.page,
+    controls.search,
+    controls.sort,
+    controls.filter,
+    canView,
+  );
+  const deleteOrganization = async (organization: OrganizationCatalogItemDto) => {
+    try {
+      await deleteMutation.mutateAsync(organization.id);
+      toast.success("Organization deleted.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
+    }
+  };
+  const patchOrganization = async (
+    organization: OrganizationCatalogItemDto,
+    patch: OrganizationPatch,
+  ) => {
+    try {
+      await renameMutation.mutateAsync({
+        id: organization.id,
+        name: patch.name ?? organization.name,
+        slug: patch.slug ?? organization.slug,
+        description: patch.description ?? organization.description,
+      });
+      toast.success("Organization updated.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
+    }
+  };
+  const transferOwner = async (organization: OrganizationCatalogItemDto, membershipId: number) => {
+    try {
+      await transferMutation.mutateAsync({
+        organizationId: organization.id,
+        nextOwnerMembershipId: membershipId,
+      });
+      toast.success("Owner transferred.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
+    }
+  };
 
-  async function submit() {
-    const organization = await createOrganization({ name, slug, description });
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ["organizations"] }),
-      qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
-    ]);
-    void navigate(`/workspace/organizations/${organization.id}`);
-  }
+  const isActionPending =
+    renameMutation.isPending || deleteMutation.isPending || transferMutation.isPending;
+  const isBusy = pageQuery.isLoading || pageQuery.isFetching || isActionPending;
 
   return (
-    <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
-        <AppPageHeader
-          eyebrow="Workspace"
-          title="Organizations"
-          description="Choose the organization you want to operate in, or spin up a new workspace."
-          actions={
-            <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
-              New Org
-            </AppButton>
-          }
+    <CatalogResourcePage
+      accessDenied={!canView || Boolean(error)}
+      accessFallback={<NotFoundError />}
+      controls={controls}
+      header={{
+        eyebrow: "Superadmin",
+        title: "Organizations",
+        breadcrumbs: [{ label: "Organizations" }],
+        description: "Search, review, and maintain organization workspaces.",
+        actions: (
+          <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
+            + New Organization
+          </AppButton>
+        ),
+      }}
+      isActionPending={isActionPending}
+      loadingLabel="Loading organizations..."
+      pageSize={ORGANIZATION_CATALOG_PAGE_SIZE}
+      filterLabel="Filter organizations"
+      filters={FILTERS}
+      placeholder="Search by name, slug, or description"
+      query={pageQuery}
+      sortLabel="Sort organizations"
+      sortOptions={SORT_OPTIONS}
+      emptyIcon={<Search size={22} />}
+      emptyTitle="No organizations yet"
+      filteredEmptyTitle="No matching organizations"
+      emptyDescription="Create the first organization for models, schemas, plugins, and members."
+      filteredEmptyDescription="Try another search term or filter."
+      emptyAction={
+        <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
+          + New Organization
+        </AppButton>
+      }
+      renderItem={(item) => (
+        <OrganizationCatalogTileWithMembers
+          key={item.id}
+          disabled={isBusy}
+          item={item}
+          onDelete={() => deleteOrganization(item)}
+          onPatch={(patch) => patchOrganization(item, patch)}
+          onTransferOwner={(membershipId) => transferOwner(item, membershipId)}
         />
-        <section className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
-          <div className="grid gap-4 md:grid-cols-2">
-            {organizations.map((organization) => (
-              <OrganizationCard
-                key={organization.id}
-                organization={organization}
-                membership={memberships.find((item) => item.organizationId === organization.id)}
-              />
-            ))}
-          </div>
-          <div className="rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-card)]">
-            <div className="space-y-3">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
-                Quick Create
-              </p>
-              <AppTextField
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Northwind AI"
-              />
-              <AppTextField
-                value={slug}
-                onChange={(event) => setSlug(event.target.value)}
-                placeholder="northwind-ai"
-              />
-              <AppTextArea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Short organization summary"
-              />
-              <AppButton type="button" onClick={() => void submit()} disabled={!name.trim()}>
-                Create Workspace
-              </AppButton>
-            </div>
-          </div>
-        </section>
-      </AppSurface>
-    </AppPage>
+      )}
+    />
   );
 }

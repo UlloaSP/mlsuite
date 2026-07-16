@@ -35,7 +35,7 @@ export function AppTabs<TValue extends string>({
             aria-selected={active}
             onClick={() => onChange(item.value)}
             className={cx(
-              "rounded-full px-4 py-2.5 text-sm font-medium transition",
+              "cursor-pointer rounded-full px-4 py-2.5 text-sm font-medium transition",
               active
                 ? "bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-[var(--shadow-card)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-primary)] hover:text-[var(--text-primary)]",

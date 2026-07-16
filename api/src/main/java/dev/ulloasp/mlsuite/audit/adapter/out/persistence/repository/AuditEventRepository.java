@@ -11,4 +11,6 @@ import dev.ulloasp.mlsuite.audit.domain.model.AuditEvent;
 public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
 
     List<AuditEvent> findTop20ByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
+
+    long countByOrganizationId(Long organizationId);
 }

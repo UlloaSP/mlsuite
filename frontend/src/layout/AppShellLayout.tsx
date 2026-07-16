@@ -19,7 +19,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
       <div className="flex h-screen w-screen overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)]">
         <SidebarInset>
           <MobileSidebarTrigger />
-          <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden [view-transition-name:app-content]">
+          <div className="app-content-transition relative min-h-0 min-w-0 flex-1 overflow-hidden [view-transition-name:app-content]">
             {children}
           </div>
         </SidebarInset>

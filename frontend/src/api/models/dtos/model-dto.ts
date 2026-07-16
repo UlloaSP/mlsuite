@@ -13,4 +13,9 @@ export interface ModelDto {
   createdAt: string;
   updatedAt: string;
   archivedAt: string | null;
+  updatedByName?: string | null;
+  updatedByEmail?: string | null;
+  updatedByAvatarUrl?: string | null;
+  fieldCount: number;
+  reportCount: number;
 }

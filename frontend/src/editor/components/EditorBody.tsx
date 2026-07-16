@@ -26,15 +26,19 @@ import {
   getMarkerMessage,
   pathToPos,
 } from "../../algorithms/editor/schema-diagnostics";
+import { getLineChangeMarkers } from "../../algorithms/editor/line-change-markers";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
 import { editorDarkTheme, editorLightTheme, editorOptions } from "../utils/editorConfig";
 
 type MonacoNamespace = typeof import("monaco-editor");
+type Props = {
+  diffBaseText?: string;
+};
 const MonacoEditor = lazy(() =>
   import("@monaco-editor/react").then((module) => ({ default: module.Editor })),
 );
 
-export function EditorBody() {
+export function EditorBody({ diffBaseText }: Props) {
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [, setSchema] = useAtom(schemaAtom);
   const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
@@ -44,10 +48,35 @@ export function EditorBody() {
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<MonacoNamespace | null>(null);
   const compatCardsRef = useRef<EditorErrorCard[]>([]);
+  const changeDecorationIdsRef = useRef<string[]>([]);
   const validationSequenceRef = useRef(0);
   const catalogFieldDefinitionsRef = useRef<readonly CatalogFieldDefinition[]>([]);
   const catalogReportDefinitionsRef = useRef<readonly CatalogReportDefinition[]>([]);
   const catalogWarningRef = useRef<EditorErrorCard | null>(null);
+  const applyChangeDecorations = useCallback(
+    (text: string) => {
+      if (!editorRef.current) return;
+      const decorations = getLineChangeMarkers(diffBaseText ?? "", text).map((marker) => ({
+        range: {
+          startLineNumber: marker.line,
+          startColumn: 1,
+          endLineNumber: marker.line,
+          endColumn: 1,
+        },
+        options: {
+          isWholeLine: true,
+          className: `schema-editor-line-${marker.kind}`,
+          glyphMarginClassName: `schema-editor-glyph-${marker.kind}`,
+          linesDecorationsClassName: `schema-editor-gutter-${marker.kind}`,
+        },
+      }));
+      changeDecorationIdsRef.current = editorRef.current.deltaDecorations(
+        changeDecorationIdsRef.current,
+        decorations,
+      );
+    },
+    [diffBaseText],
+  );
   const applyCompatValidation = useCallback(
     (
       text: string,
@@ -174,11 +203,13 @@ export function EditorBody() {
       catalogFieldDefinitionsRef.current,
       catalogReportDefinitionsRef.current,
     );
+    applyChangeDecorations(editor.getValue());
   };
 
   const handleOnChange = (value?: string) => {
     const text = value ?? "";
     setSchemaText(text);
+    applyChangeDecorations(text);
     applyCompatValidation(
       text,
       catalogFieldDefinitionsRef.current,
@@ -275,6 +306,10 @@ export function EditorBody() {
     }
   }, [theme]);
 
+  useEffect(() => {
+    applyChangeDecorations(editorRef.current?.getValue() ?? schemaText);
+  }, [applyChangeDecorations, schemaText]);
+
   return (
     <Suspense fallback={<div className="h-full w-full bg-[var(--surface-primary)]" />}>
       <MonacoEditor
@@ -284,7 +319,7 @@ export function EditorBody() {
         onChange={handleOnChange}
         onMount={handleOnMount}
         onValidate={handleOnValidate}
-        options={editorOptions}
+        options={{ ...editorOptions, glyphMargin: Boolean(diffBaseText) }}
       />
     </Suspense>
   );

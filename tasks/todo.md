@@ -1,1176 +1,451 @@
-# Sidebar Keyboard Shortcuts
+# Schema Version Control Plan
+
+## Follow-up: Clone Schema From Selected Snapshot
+
+- [x] Extend schema duplication contract with optional source snapshot id.
+- [x] Validate selected snapshot ownership and copy it as independent `v1`.
+- [x] Add clone action to snapshot catalog rows and snapshot detail.
+- [x] Cover latest-snapshot fallback, explicit selection, isolation, and errors.
+- [x] Verify backend/frontend, line limits, diff whitespace, and graphify update.
+
+### Clone Schema From Selected Snapshot Review
+
+- Duplication accepts an optional selected snapshot while preserving latest-snapshot fallback.
+- Selected snapshot becomes the new schema's sole `v1`; drafts, bookmarks, runs, reviews, and prior versions stay in the source lineage.
+- Snapshot list/detail actions are permission-gated with `canEditModels`, reuse the existing naming dialog, and navigate to the created schema.
+- Backend focused tests passed: 19/19 across duplication and existing schema flow.
+- Frontend tests passed: 35 files, 128 tests; production build passed with existing chunk warnings.
+- `vp check` remains blocked by 14 errors and 41 warnings in pre-existing files outside this change.
+- React Doctor was attempted with `vp dlx react-doctor@latest --verbose` and timed out after 120 seconds without output.
+- Changed-file line limits, diff whitespace, independent review, and `graphify update .` completed.
+
+## Follow-up: Adaptive Merge Editor Viewport
+
+- [x] Replace fixed pixel merge-editor height with flex-based available height.
+- [x] Keep page scroll external disabled and diff scroll internal.
+- [x] Bind Pierre diff themes to the app's resolved light/dark theme.
+- [x] Verify frontend TypeScript/tests/build, line count, and graphify update.
+
+### Adaptive Merge Editor Viewport Results
+
+- Removed fixed `680px` merge viewer height; conflict review now uses `flex-1`, `min-h-0`, and internal diff scrolling.
+- Review page now keeps external page scrolling disabled so the editor owns overflow.
+- Pierre themes now follow `themeWithHtmlAtom` for live light/dark mode.
+- Frontend format, app TypeScript, tests, build, line count, diff whitespace, and graphify update completed.
+- `vp check` and React Doctor still fail on existing repo-wide issues outside this change.
+
+## Follow-up: Fixed Selectable Merge Editor
+
+- [x] Make Pierre merge review selections explicit per changed block.
+- [x] Count every selectable schema change as unresolved until the user picks current or incoming.
+- [x] Give the merge editor a fixed height with internal scrolling.
+- [x] Keep Pierre hunk context collapse/expand controls active for long files.
+- [x] Verify frontend TypeScript/tests/build, backend focused merge test, line count, diff whitespace, and graphify update.
+
+### Fixed Selectable Merge Editor Results
+
+- Pierre merge review now shows the semantic JSON path in each action row, so individual changed blocks are visible and selectable.
+- Merge apply stays disabled until every changed path has an explicit `current` or `incoming` choice.
+- Merge viewer is a fixed `680px` viewport with internal scroll.
+- Context collapse/expand remains enabled through Pierre metadata hunk separators with tighter context thresholds.
+- Frontend TypeScript, tests, build, backend focused merge tests, line counts, diff whitespace, and graphify update passed.
+- `vp check` and React Doctor still fail on existing repo-wide issues outside this merge editor change.
+
+## Follow-up: Lean Snapshot Overview
+
+- [x] Remove duplicated latest snapshot overview card from schema detail.
+- [x] Remove open/bookmark actions from the overview snapshot preview.
+- [x] Remove the outer snapshot preview card frame from schema overview.
+- [x] Move form/json/bindings controls into the overview header action slot.
+- [x] Restyle form/json/bindings as a single segmented control with red selected state.
+- [x] Move indicator cards horizontally between snapshot title/metadata and segmented control.
+- [x] Increase preview height so the lower page does not feel like empty margin.
+- [x] Make snapshot preview height flex-driven instead of viewport-calc driven.
+- [x] Compact horizontal metric cards and show relative publish time with "ago".
+- [x] Make change cards open by clicking the tile content and remove redundant draft/edit UI.
+- [x] Simplify bookmark cards by removing version pill/id and using snapshot/version metadata plus relative updated time.
+- [x] Simplify snapshot cards by removing ids/metric pills/open action and moving actions into a three-dot menu.
+- [x] Remove the create-new-change page; create changes directly from overview/latest or snapshot row actions.
+- [x] Show schema description under overview title and simplify change base metadata.
+- [x] Prompt for change name in a modal before creation and move change rename/review into action menus.
+- [x] Make the snapshot panel title the published change name and show relative publish time.
+- [x] Keep the form preview mounted while switching form/json/bindings.
+- [x] Verify frontend typecheck/tests/build, line count, diff whitespace, and graphify update.
+
+### Lean Snapshot Overview Results
+
+- Schema overview now has one snapshot surface: nav plus the latest snapshot preview.
+- Snapshot preview title is the change/snapshot name, with version and relative publish time below it.
+- Overview snapshot actions and outer preview card frame were removed.
+- Form/json/bindings controls now sit in the header action slot that previously held snapshot actions.
+- Form/json/bindings now render as one segmented control with red selected state, with indicators horizontally between metadata and actions.
+- Snapshot preview now uses flex-driven height and clips the preview area instead of fixed viewport calc sizing.
+- Form preview stays mounted while toggling to JSON or bindings, so in-form state persists.
+- T3 preview reached the app shell, but `/schemas` redirects to auth because `/api/users/me` returns 401 without a session.
+- TypeScript app compile, tests, build, formatting, diff whitespace, line-count check, React Doctor, and graphify update completed.
+- `vp check` still fails on existing repo-wide lint/type debt outside this change.
+
+## Follow-up: Focused Schema Overview And Catalog Lists
+
+- [x] Remove duplicated recent changes/bookmarks/snapshots from schema overview.
+- [x] Replace fake repo file rows with latest snapshot metadata plus real schema preview.
+- [x] Make schema sidebar contextual inside `/schemas/:schemaId`.
+- [x] Rebuild changes/bookmarks/snapshots pages with the same catalog search/filter/sort/pagination shell as `/schemas`.
+- [x] Keep bookmark actions only on published snapshots.
+- [x] Verify frontend TypeScript/tests/build, line count, and graphify update.
+
+### Focused Schema Overview And Catalog Lists Results
+
+- Schema overview now shows latest snapshot state and the real schema preview instead of repeated list summaries.
+- Schema sidebar now expands into Overview, Changes, Bookmarks, Snapshots, and All schemas for active schema routes.
+- Changes, bookmarks, and snapshots now use the catalog shell with search, filters, sort, and pagination.
+- Removed obsolete schema-specific list pager/panel components.
+- Frontend TypeScript, tests, build, diff whitespace, line-count check, React Doctor, and graphify update completed.
+- `vp check` still fails on existing repo-wide lint/type debt outside this change.
+
+## Follow-up: Repo-Like Schema Navigation
+
+- [x] Make schema detail an overview page centered on latest published snapshot.
+- [x] Add schema internal navigation with counts: Overview, Changes, Bookmarks, Snapshots.
+- [x] Move full unpublished changes list to `/schemas/:schemaId/changes`.
+- [x] Move full bookmark/tag list to `/schemas/:schemaId/bookmarks`.
+- [x] Move full published snapshot history to `/schemas/:schemaId/snapshots`.
+- [x] Show ids, dates, counts, and direct actions in list rows.
+- [x] Keep bookmark creation only on published snapshots/latest snapshot.
+- [x] Verify frontend TypeScript/tests/build, line count, and graphify update.
+
+### Repo-Like Schema Navigation Results
+
+- Schema detail now behaves as a repository overview: latest published snapshot first, then compact recent activity.
+- Dedicated list pages now own full unpublished changes, bookmark/tag pointers, and snapshot history.
+- Schema navigation exposes counts and keeps primary movement one level below the schema.
+- Bookmark creation remains tied to published snapshots, including the latest snapshot overview action.
+- Frontend TypeScript, tests, build, diff whitespace, line-count check, backend focused tests, and graphify update completed.
+- `vp check` still fails on existing repo-wide lint/type debt outside the schema navigation changes.
+
+## Follow-up: Snapshot-Only Bookmarks And Publish Review
+
+- [x] Remove bookmarks from draft/change creation and update contracts.
+- [x] Make publish happen from a merge/diff review page, not directly from the editor.
+- [x] Remove semantic delta and same-path conflict tables from change UI.
+- [x] Add editor line decorations for changed JSON lines where Monaco supports it.
+- [x] Replace schema detail document preview with paginated indexes only.
+- [x] Add snapshot/bookmark detail screens where schema preview belongs.
+- [x] Replace ad hoc prev/next controls with existing shadcn-style pagination primitives.
+- [x] Replace browser prompt bookmark creation with a custom modal.
+- [x] Verify backend focused tests, frontend typecheck/tests/build where practical, line count, and graphify update.
+
+### Snapshot-Only Bookmarks And Publish Review Results
+
+- Draft/create/update contracts no longer carry bookmark fields.
+- Publish is reached through the merge diff review page.
+- Direct version run endpoints and frontend direct-version run routes were removed; runs now go through schema bookmarks.
+- Schema detail is index-only: bookmarked versions, unpublished changes, published snapshots.
+- `vp check` still fails on existing repo-wide lint/type debt unrelated to this change.
+
+## Bookmark-Gated Schema Execution Plan
+
+- [x] Add backend bookmark contract:
+  - [x] `SchemaBookmark` entity and repository.
+  - [x] bookmark DTO plus create/move request.
+  - [x] bookmark use-case/service/controller endpoints.
+  - [x] bookmarks are created separately from published snapshots.
+- [x] Gate runs through bookmarks:
+  - [x] add optional bookmark relation to `PredictionRun`.
+  - [x] add bookmark run create/list endpoints that resolve bookmark -> exact version.
+  - [x] keep version id stored on every run for audit.
+- [x] Update frontend API:
+  - [x] bookmark DTOs/services/hooks/query keys.
+  - [x] bookmark-based run services/hooks.
+- [x] Update schema UI:
+  - [x] schema detail first shows bookmarked versions with `Play` and `History`.
+  - [x] published snapshots keep only inspect/change/bookmark actions.
+  - [x] bookmark copy treats bookmarks as operational pointers, not snapshot history rows.
+  - [x] run/history links use `/bookmarks/:bookmarkId/runs`.
+- [x] Verify:
+  - [x] focused backend tests.
+  - [x] frontend TypeScript/tests/build where supported.
+  - [x] line-count and rounded scans.
+  - [x] `graphify update .`.
+
+### Bookmark-Gated Schema Execution Review
+
+- Backend focused tests passed: `SchemaDraftServiceTest`, `SchemaFlowServiceTest`.
+- Backend package passed with `mvn -DskipTests package`.
+- Frontend TypeScript, tests, and build passed.
+- `vp check --fix` formatted files but still fails on existing repo-wide lint/type debt.
+- `react-doctor` completed; warnings left are existing repo-wide issues, not the new bookmark flow.
+- Preview opened `/schemas/1` successfully against a temporary frontend dev server; backend data was not available.
+- `graphify update .` completed.
 
 ## Goal
 
-- [x] Add keyboard shortcuts for sidebar Actions.
-- [x] Add `Alt+1..9` shortcuts for top-level sidebar navigation.
-- [x] Add `Alt+Shift+1..9` shortcuts for the visible second-level navigation.
-- [x] Show transient numeric hints while `Alt` is held.
+- [x] Add jj-like schema change workflow: mutable changes, snapshot bookmarks, immutable published versions.
+- [x] Keep existing `schema_version` as production source of truth.
+- [x] Avoid dense UI: separate pages, paginated lists, one main task per screen.
+- [x] Reuse existing MLSuite app components and schema editor/preview components.
 
-## Plan
+## Current State
 
-- [x] Add a small keyboard shortcut helper for typing-target and modifier checks.
-- [x] Wire top-level and active/open child navigation shortcuts into `SidebarNavigation`.
-- [x] Render compact numeric hint badges while `Alt` is pressed.
-- [x] Wire dark mode/fullscreen action shortcuts and show all action hints.
-- [x] Run focused/full frontend verification, line-count check, diff check, and graph update.
+- [x] Root, `api/`, and `frontend/` agent rules reviewed.
+- [x] `graphify-out/GRAPH_REPORT.md` reviewed before source inspection.
+- [x] Graph result checked, but current working tree has no persisted schema draft implementation.
+- [x] Current backend creates immutable `SchemaVersion` directly through `POST /api/schemas/{schemaId}/versions`.
+- [x] Current frontend creates a new version directly from `CreateSchemaVersionPage`.
 
-## Review
+## Product Model
 
-- `Alt+1..9` now navigates the visible top-level sidebar items.
-- `Alt+Shift+1..9` now navigates the children of the active/open sidebar group, including shifted digit key symbols like `!`.
-- Holding `Alt` shows compact number badges on top-level and second-level sidebar items only while the sidebar is expanded.
-- Collapsed sidebar hides submenu chevrons, shortcut hint badges, and submenu containers.
-- Actions now display shortcuts: `Ctrl/Cmd+K`, `Ctrl/Cmd+Shift+L`, `Ctrl/Cmd+Shift+F`, and `Ctrl/Cmd+B`.
-- Added shared keyboard shortcut helpers plus focused helper tests.
-- Captured the shifted-digit/collapsed-affordance correction in `tasks/lessons.md`.
-- Verification:
-  - `frontend`: `vp check --fix src/app/components/SidebarNavigation.tsx src/app/components/SidebarActions.tsx src/app/components/sidebar-navigation-support.ts src/app/utils/keyboard-shortcuts.ts test/keyboard-shortcuts.test.ts` passed.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/keyboard-shortcuts.test.ts` passed, 3 tests.
-  - `frontend`: `vp test` passed, 33 files / 114 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 249 existing warnings and no new warnings in touched files.
-  - Repo: touched source files are under 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
+- [x] `Schema` = lineage/repository.
+- [x] `SchemaVersion` = immutable published snapshot, executable by production runs.
+- [x] `SchemaChange`/draft = mutable unpublished work based on one base version.
+- [x] Bookmark = operational pointer to a published snapshot; no full branch system in MVP.
+- [x] Current published version = highest `version_number` for the schema unless a later backend field is explicitly added.
+- [x] Production runs stay version-bound only; draft validation must not create production history.
 
-# Sidebar Submenu Dropdown Stability
+## Backend Plan
 
-## Goal
+- [x] Add `SchemaDraft` entity/table with schema, base version, name, form schema JSON, status, timestamps, updater.
+- [x] Add draft bindings as JSON on draft or child table; prefer child table only if existing binding reuse stays small.
+- [x] Add DTOs/requests in small files: create draft, update draft, draft dto, draft diff, publish result.
+- [x] Add `SchemaDraftRepository`, service, port, controller.
+- [x] Endpoints:
+  - [x] `GET /api/schemas/{schemaId}/drafts`
+  - [x] `POST /api/schemas/{schemaId}/drafts`
+  - [x] `GET /api/schema-drafts/{draftId}`
+  - [x] `PUT /api/schema-drafts/{draftId}`
+  - [x] `GET /api/schema-drafts/{draftId}/diff`
+  - [x] `POST /api/schema-drafts/{draftId}/publish`
+  - [x] Rebase endpoint deferred until merge semantics are explicit.
+- [x] Publish flow:
+  - [x] Validate form schema using same backend rules as version creation.
+  - [x] If base is latest, create next `SchemaVersion`, copy draft bindings, mark draft published.
+  - [x] If base is stale, return conflict result instead of creating a version.
+- [x] Diff/conflict MVP:
+  - [x] Compare normalized JSON maps by semantic path.
+  - [x] Conflict when draft and current both changed same path since base.
+  - [x] No raw line diff dependency.
+- [x] Keep `SchemaVersionServiceImpl.createVersion` for creation/bootstrap, but route normal edits through drafts.
 
-- [x] Make second-level sidebar navigation behave like a shadcn-style dropdown.
-- [x] Stop Overview from staying selected on deeper Workspace routes.
-- [x] Keep submenus from snapping open/closed during child navigation.
+## Frontend Plan
 
-## Plan
+- [x] Add schema draft API services/hooks/query keys beside existing schema version hooks.
+- [x] Convert version creation route into change editor flow, reusing:
+  - [x] `EditorWrapper`
+  - [x] `SchemaFormPreview`
+  - [x] `SchemaCodeViewer`
+  - [x] `ToggleButton`
+  - [x] `AppPage`, `AppSurface`, `AppPanel`, `AppButton`, `AppSelect`, `AppBadge`, pagination primitives.
+- [x] Schema detail page layout:
+  - [x] Top: schema title, current version, primary actions.
+  - [x] Page 1 block: current published version summary and run actions.
+  - [x] Page 2 block: unpublished changes, paginated.
+  - [x] Page 3 block: version history, paginated.
+  - [x] Secondary audit/runs remain separate pages, not side panels.
+- [x] Draft editor page:
+  - [x] Header shows change name, base version, and status badge.
+  - [x] Main area toggles JSON editor and preview.
+  - [x] Side/secondary area shows compact semantic delta and validation state.
+  - [x] Actions: save, validate, publish.
+- [x] Conflict page:
+  - [x] Separate route, paginated conflict rows.
+  - [x] Show path, base/current/draft values, resolution action.
+  - [x] Keep manual JSON resolution as explicit editor path, not hidden auto-merge.
+- [x] Style constraints:
+  - [x] Use `rounded`, not `rounded-[18px]` or larger one-off radii.
+  - [x] No nested cards.
+  - [x] No dense all-in-one dashboard.
+  - [x] Icons from `lucide-react` in actions.
+  - [x] Copy must match backend contract: "change", "bookmark", "published version", not fake git terms.
 
-- [x] Add explicit submenu open state seeded from the active route.
-- [x] Make parent rows with children toggle the submenu instead of always navigating.
-- [x] Tighten child active matching for exact, query, and nested child routes.
-- [x] Add smooth height/opacity transition using existing sidebar primitives and tokens.
-- [x] Run focused frontend verification, line-count check, diff check, and graph update.
+## Testing Plan
 
-## Review
+- [x] Backend service test in one file covers create/update/publish success and stale publish conflict.
+- [x] Controller contract tests deferred; endpoint mapping is thin and covered by service semantics.
+- [x] Frontend API contracts covered by architecture tests and TypeScript compile.
+- [x] Preserve existing schema run/version tests.
 
-- Sidebar parents with children now render as toggle buttons with chevrons; child links remain normal route links.
-- Open state is derived from active route unless the user toggles it, so child navigation no longer remounts the submenu abruptly.
-- Overview children use exact matching; query tab children match exact `pathname + search`; nested child pages still stay selected under their child item.
-- Verification:
-  - `frontend`: `vp check --fix src/app/components/SidebarNavigation.tsx` passed.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 249 existing warnings and no `SidebarNavigation` warning.
-  - Browser preview: Vite served `http://127.0.0.1:5173`; protected sidebar route redirected to auth because `/api/users/me` returned 401, so sidebar visual interaction was blocked by auth.
-  - Repo: `SidebarNavigation.tsx` has 227 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
+## Verification Plan
 
-# Global Search Lightweight Token Matching
+- [x] `mvn -Dtest=SchemaDraftServiceTest test` from `api/`.
+- [x] `mvn -DskipTests package` from `api/`.
+- [x] `vp check` from `frontend/` attempted; blocked by existing repo-wide lint/type debt unrelated to this change.
+- [x] `vp test` from `frontend/`.
+- [x] Visual browser check attempted; app shell loads, API readiness fails without backend and T3 preview automation is unavailable.
+- [x] Source file line-count check before final.
+- [x] `graphify update .` after code changes.
 
-## Goal
+## Open Decisions
 
-- [x] Fix global search word separation without adding a search engine or runtime dependency.
-- [x] Keep database queries as scoped candidate prefilter.
-- [x] Rank results by token-aware matches across candidate fields.
-
-## Plan
-
-- [x] Add a small backend text matcher for normalization, tokenization, and scoring.
-- [x] Use the best query token for repository prefiltering, then require all query tokens in service ranking.
-- [x] Cover multi-word, separator, and camelCase searches in the existing search service test file.
-- [x] Run focused API tests, line-count check, diff check, and graph update.
-
-## Review
-
-- Added lightweight search text matching: lower-case, accent folding, camelCase splitting, separator tokenization, and all-token scoring.
-- Search repositories still act as scoped candidate prefilters using the longest query token; no runtime dependency or external search engine added.
-- Service ranking now matches tokens across candidate fields, so terms split across `RandomForest`, `audit-tool.zip`, and `Schema Report` behave consistently.
-- Verification so far:
-  - `api`: `mvn "-Dtest=SearchWorkspaceServiceTest,SearchControllerTest" test` passed, 6 tests.
-  - Repo: changed search source/test files are under 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
-
-# Global Search Modal And User Notifications
-
-## Goal
-
-- [x] Restyle global search modal like the provided compact docs-search reference, with `rounded` max.
-- [x] Move notifications out of Actions into user dropdown and a dedicated page.
-- [x] Show pending notification count on the avatar.
-
-## Plan
-
-- [x] Adjust search modal/list geometry and corner radius.
-- [x] Remove notification mini-popover from Actions.
-- [x] Add notifications route/page using pending invitations.
-- [x] Add avatar count marker and dropdown link.
-- [x] Run focused frontend verification and graph update.
+- [x] Bookmark storage: separate bookmark table for snapshot pointers.
+- [x] Draft validation runs: backend shape validation first; draft-bound ML runtime execution only if product needs runnable unpublished schemas.
+- [x] Rebase behavior: defer auto-rebase; stale publish blocks first to avoid data loss.
 
 ## Review
 
-- Global search modal now uses compact docs-search geometry: flat header, integrated results, `rounded`, no pill shell.
-- Notifications are removed from sidebar Actions and added to the user dropdown as a link to `/notifications`.
-- Pending notification count is rendered on the avatar itself.
-- `/notifications` lists pending invitations with accept/decline actions and an empty state.
-- Captured avatar-count correction in `tasks/lessons.md`.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/schema-version-selectors-and-search-shortcut.test.ts` passed, 4 tests.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: touched-file `vp fmt --check` passed.
-  - Repo: changed source files are under 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
-
-# Modal Shell Overlay Fix
-
-## Goal
-
-- [x] Make schema save modal cover persistent sidebar/header chrome.
-- [x] Preserve existing save modal content and animations.
-
-## Plan
-
-- [x] Move schema save modal overlay into a document-body portal with shell-safe z-index.
-- [x] Run focused frontend checks, line-count, diff check, graph update.
-
-## Review
-
-- `SchemaRunSaveModal` now renders through `createPortal(..., document.body)` so it is not constrained by the app content/shell stacking context.
-- Overlay now uses full viewport `fixed inset-0` and `z-[10000]`, above sidebar/header and existing portal popovers.
-- Existing content, save flow, feedback questionnaire, and slide animation are unchanged.
-- Captured sidebar/modal lesson in `tasks/lessons.md`.
-- Verification:
-  - `frontend`: `vp check --fix src/schemas/components/SchemaRunSaveModal.tsx` passed.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 247 existing warnings.
-  - Repo: touched source line-count passed; `SchemaRunSaveModal.tsx` has 201 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
-
-# Global Search Postgres Phase 1
-
-## Goal
-
-- [x] Move global search filtering from in-memory scans to scoped DB queries.
-- [x] Include schemas and prediction runs in global search.
-- [x] Persist plugin metadata in DB while keeping plugin source in object storage.
-- [x] Add PostgreSQL `pg_trgm` indexes for phase 1.5 without adding a migration tool.
-- [x] Keep frontend search result contract aligned with backend result types.
-
-## Plan
-
-- [x] Add plugin metadata entity/repository and write/delete metadata from plugin service.
-- [x] Add repository search queries for organizations, teams, models, schemas, prediction runs, and plugin metadata.
-- [x] Refactor `SearchWorkspaceService` to use DB-filtered candidates and preserve existing ranking/group shape.
-- [x] Add PostgreSQL-only trigram index initializer.
-- [x] Update frontend search result type/icons.
-- [x] Update focused backend tests, run focused API/frontend checks, line-count check, diff check, graph update.
-
-## Review
-
-- Global search now uses DB-filtered repository queries for organizations, teams, models, schemas, prediction runs, and persisted plugin metadata.
-- Added `plugin_metadata` JPA entity/repository. Plugin upload writes metadata, catalog reads backfill existing object-storage plugins, and delete removes metadata.
-- Added PostgreSQL-only `pg_trgm` initializer with idempotent extension/index statements; non-PostgreSQL test DBs no-op.
-- Frontend search result types/icons now include schema and prediction run results.
-- Verification:
-  - `api`: `mvn "-Dtest=SearchWorkspaceServiceTest,SearchControllerTest,PluginServiceImplTest,PluginControllerTest" test` passed, 9 tests.
-  - `api`: `mvn -DskipTests package` passed.
-  - `api`: full `mvn test` blocked by existing stale `dev.ulloasp.mlsuite.prediction.ExplanationFeedbackControllerTest` requiring missing `dev/ulloasp/mlsuite/prediction/domain/model/ExplanationFeedback`.
-  - `frontend`: `vp check --fix src/api/search/dtos/search-result-type.ts src/search/components/SearchResultItem.tsx` passed.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 247 existing warnings.
-  - Repo: changed/new source line-count check passed, no changed source file over 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed; `graph.html` skipped because graph exceeds viz node limit.
-
-# Shadcn Radix Sidebar Migration
-
-## Goal
-
-- [x] Replace current custom right sidebar with shadcn/Radix-style composable sidebar.
-- [x] Move organization switcher into sidebar header with shadcn example layout.
-- [x] Move user account control into sidebar footer with shadcn example layout.
-- [x] Preserve Actions section and make collapse one action inside it.
-- [x] Avoid new runtime dependencies unless local Radix package cannot cover a primitive.
-
-## Plan
-
-- [x] Add small sidebar primitives under app design-system layer, split below 300 lines.
-- [x] Add sidebar organization header matching shadcn demo shape.
-- [x] Add sidebar user footer matching shadcn demo shape.
-- [x] Rebuild app sidebar content/actions/navigation on those primitives.
-- [x] Update shell/header so org/user move out of header without losing mobile access.
-- [x] Run typecheck, frontend checks, line-count check, browser verification, graph update.
-
-## Review
-
-- Added local shadcn/Radix-style sidebar primitives under `src/app/components/app-sidebar`.
-- Rebuilt app sidebar as left rail with organization header, navigation/content, preserved Actions group, and user footer.
-- Removed old header org/user menus and old tile/section sidebar helpers.
-- Shell now uses `SidebarProvider` + `SidebarInset`; mobile header has a sidebar trigger.
-- Corrected sidebar regression after review: sidebar stays on the right, uses previous 260px/52px widths, and collapse shows text inside Actions when expanded.
-- Corrected sidebar placement/transition feedback: Actions are fixed at the bottom above the user footer, and sidebar links opt into route view transitions.
-- Corrected transition feedback: protected routes now share one persistent `AppShellFrame`, route view transitions target only page content, and sidebar labels animate during collapse/expand instead of mounting abruptly.
-- Restored the first shadcn-sidebar widths: `17rem` expanded and `4.25rem` collapsed; header/footer use normal padding again.
-- Centered collapsed org and user controls with `mx-auto` because those controls are fixed `size-9` instead of full-width menu rows.
-- Fixed the actual collapsed offset: hidden org/user labels and chevrons no longer reserve flex width, so the visible icon/avatar stays centered inside its button.
-- Added radial theme transition: dark/light toggle now uses `document.startViewTransition()` and expands from the clicked theme action; falls back to instant theme switch when unsupported or reduced motion is enabled.
-- Guarded radial theme transition against repeated clicks so overlapping `startViewTransition()` calls cannot flicker.
-- Removed duplicate frontend env files and runtime config script; frontend now reads build-time `import.meta.env.VITE_BACKEND_URL` only, with same-origin fallback.
-- Confirmed `docker-compose.dev.yml` passes global `.env` `VITE_BACKEND_URL` to the frontend Docker build through `build.args`; removed unused runtime `environment` entries.
-- No runtime dependencies added; used existing `radix-ui`, `lucide-react`, and app `cx`/tokens.
-- Verification:
-  - `frontend`: `vp check --fix ...` passed for touched sidebar/header/shell files.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: protected-route shell persistence and smoother sidebar transition changes also passed `vp check --fix ...`, `vp exec tsc -b --pretty false`, `vp test`, and `vp build`.
-  - `frontend/config`: `runtime-config.js` references removed; `docker compose -f docker-compose.dev.yml config` shows `VITE_BACKEND_URL` only under frontend `build.args`, and no frontend runtime environment entry.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 247 existing warnings and no errors.
-  - `frontend`: `vp build` passed with existing chunk/dynamic-import warnings.
-  - Browser preview: Vite dev server on `http://127.0.0.1:5176`; `/workspace` returned 200. Browser calls same-origin `/api/readiness`; remaining `502` is backend unavailable at `http://localhost:8080`, not script 404 or CORS.
-  - Repo: changed source line-count check passed, no changed source file over 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed; `graph.html` skipped because graph has 11134 nodes over graphify viz limit.
-
-# Schemas Catalog Pagination And Actions
-
-## Goal
-
-- [ ] Rework Schemas page like Plugins/Models: paginated backend data, compact borders, fixed pagination footer.
-- [ ] Add schema rename, archive, delete, duplicate from catalog actions.
-- [ ] Keep schema runs/review history safe: archive by default, block unsafe delete.
-
-## Plan
-
-- [x] Add backend schema page DTO, repo page query, archived state, and catalog actions.
-- [x] Copy latest schema version and bindings when duplicating a schema.
-- [x] Add focused backend tests for page/actions success and error cases.
-- [x] Add frontend schema page DTO/services/hooks/mutations.
-- [x] Split Schemas page into catalog browser/toolbar/list/actions components.
-- [x] Run focused API/frontend verification, line-count check, and graph update.
-
-## Review
-
-- Backend `GET /api/schemas` now returns a paged `SchemaPageDto`; active unpaged list moved to `GET /api/schemas/all`.
-- Added schema `archivedAt`, active/archive/all filters, backend search/sort, rename, archive, duplicate, and delete endpoints.
-- Delete blocks schemas referenced by prediction runs or review links; archive remains the safe removal path.
-- Duplicate copies the latest schema version as v1 plus its model bindings; run/review history is not copied.
-- Schemas frontend now uses paginated TanStack Query hooks, plugin/model-style toolbar/list/footer pagination, compact borders, and real action mutations.
-- Verification:
-  - `api`: `mvn "-Dtest=SchemaFlowServiceTest" test` passed, 15 tests.
-  - `api`: full `mvn test` blocked by existing stale test `dev.ulloasp.mlsuite.prediction.ExplanationFeedbackControllerTest` referencing missing `dev/ulloasp/mlsuite/prediction/domain/model/ExplanationFeedback`.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: `vp check --fix ...` passed with existing warnings in schema-run files.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 243 warnings; new accepted warning mirrors Models boolean-heavy catalog list props.
-  - Browser preview: Vite dev server is on `http://127.0.0.1:5175`; navigation to `/schemas` loaded, but T3 snapshot was blocked by `PreviewAutomationNoFocusedOwnerError`.
-  - Repo: changed source/test line-count check passed, no changed source file over 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Models Catalog Pagination And Actions
-
-## Goal
-
-- [ ] Rework Models catalog UI to match Plugins: backend pagination, compact borders, fixed pagination footer.
-- [ ] Rename sidebar `Catalog` to `Models`.
-- [ ] Add model rename, archive, delete, duplicate from catalog actions.
-- [ ] Keep schema/model flows using active models only.
-
-## Plan
-
-- [x] Add backend model page DTO, request params, repo queries, and service actions.
-- [x] Add API tests for paginated list plus rename/archive/delete/duplicate success and error cases.
-- [x] Add frontend model page DTO/services/hooks/mutations using TanStack Query.
-- [x] Split Models catalog UI into small components patterned after Plugins.
-- [x] Wire sidebar label and keep create/detail/schema selectors using active model list.
-- [x] Run narrow API/frontend checks, line-count check, graph update.
-
-## Review
-
-- Backend `GET /api/models` now returns a paged `ModelPageDto`; active model selector data moved to `GET /api/models/all`.
-- Added model `archivedAt`, active/archive/all filters, backend search/sort, rename, archive, duplicate, and delete endpoints.
-- Delete blocks models referenced by schema bindings or prediction results; archive is the safe removal path.
-- Duplicate copies stored model bytes into a new storage object.
-- Models frontend now uses paginated TanStack Query hooks, plugin-style toolbar/list/footer pagination, compact borders, and real action mutations.
-- Sidebar label changed from `Catalog` to `Models`.
-- Verification:
-  - `api`: `mvn "-Dtest=SchemaFlowServiceTest,ModelServiceTest,ModelControllerTest" test` passed, 26 tests.
-  - `api`: full `mvn test` blocked by pre-existing stale test `dev.ulloasp.mlsuite.prediction.ExplanationFeedbackControllerTest` referencing missing `dev/ulloasp/mlsuite/prediction/domain/model/ExplanationFeedback`.
-  - `frontend`: `vp check --fix ...` passed on touched files.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 228 warnings; remaining new notable warning is boolean-heavy `ModelsCatalogListPanel`, accepted for now to keep component split minimal.
-  - Browser preview: Vite dev server is on `http://127.0.0.1:5174`; `/models` bundle loaded, but page data/render verification was blocked by missing backend/auth (`/api/users/me` 401, readiness `https://localhost:8443` connection refused).
-  - Repo: touched source line-count check passed, no touched source file over 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-
-# Schema Create Direct Flow And Split Preview
-
-## Goal
-
-- [x] Keep schema editor previews in MLForm split layout.
-- [x] Make first-time schema creation save the generated schema automatically.
-- [x] Remove form preview from first-time schema creation.
-- [x] Keep mutable schema editing available for new schema versions.
-
-## Plan
-
-- [x] Restore preview mount to MLForm split layout.
-- [x] Remove JSON editor/toggle/preview dependence from the first schema creation flow.
-- [x] Save initial `composedVersion.formSchema` directly instead of parsing editor text.
-- [x] Keep `CreateSchemaVersionPage` using the editor plus split preview.
-- [x] Update focused preview/create tests and run frontend verification.
-
-## Review
-
-- Schema preview now mounts MLForm with split layout and always-visible report pane.
-- Initial schema creation no longer exposes the JSON editor, floating Code/Preview toggle, or generated form preview; it saves generated `composedVersion.formSchema` directly.
-- New schema versions keep the editable editor/toggle flow and inherit the split preview through `SchemaFormPreview`.
-- Preview report expansion still generates MLForm-normalized ids for expanded multi-target reports.
-- Verification:
-  - `frontend`: `vp test test/schema-form-preview.test.tsx` passed, 3 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp check --fix src/algorithms/schema/preview-transport/index.ts src/schemas/components/SchemaFormPreview.tsx src/schemas/pages/create-schema-page.tsx src/schemas/pages/create-schema-version-page.tsx test/schema-form-preview.test.tsx` passed.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 216 existing warnings, 0 errors.
-  - Repo: touched file line-count passed; largest touched source file 171 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Schema Preview Report Expansion And Floating Toggle
-
-## Goal
-
-- [x] Render one preview report per `mappedTo` entry in schema reports.
-- [x] Use the existing `models/components/ToggleButton.tsx` as a floating Code/Preview switch.
-- [x] Keep preview local: no real model calls, no persistence, no new runtime deps.
-
-## Plan
-
-- [x] Expand compact schema reports before MLForm mount so MLForm creates one report frame per target.
-- [x] Make preview transport return fake built-in payloads for every mapped report target.
-- [x] Replace top tabs with an absolutely positioned `ToggleButton`.
-- [x] Add regression for a report with two `mappedTo` entries.
-- [x] Run focused and full frontend verification, line-count, graph update.
-
-## Review
-
-- Preview now expands compact schema reports with multi-entry `mappedTo` before MLForm mount, so MLForm creates one report frame per mapped target.
-- Preview transport now returns fake built-in classifier/regressor payloads for every preview report target.
-- Create schema and create schema version pages now use the existing animated `models/components/ToggleButton.tsx` as an absolute floating switch.
-- Added mounted regression for one classifier report mapped to two targets rendering two report frames.
-- Verification:
-  - `frontend`: `vp check --fix src/algorithms/schema/preview-transport/index.ts src/schemas/components/SchemaFormPreview.tsx src/schemas/pages/create-schema-page.tsx src/schemas/pages/create-schema-version-page.tsx test/schema-form-preview.test.tsx src/models/components/ToggleButton.tsx` passed.
-  - `frontend`: `vp test test/schema-form-preview.test.tsx` passed, 3 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 216 existing warnings, 0 errors.
-  - Repo: touched file line-count passed; largest touched source file 237 non-comment lines.
-  - Repo: `git diff --check` passed for touched files with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Schema Editor Form Preview
-
-## Goal
-
-- [x] Add a Code/Preview switch while creating or editing schema versions.
-- [x] Render the current valid schema as an MLForm form preview without calling real models.
-- [x] Keep report preview local and visibly non-persistent; no floating controls or new runtime deps.
-
-## Plan
-
-- [x] Add a local schema preview transport that returns fake built-in report payloads.
-- [x] Add a schema-owned preview component that mounts MLForm with existing design system and plugin catalog.
-- [x] Wire Code/Preview tabs into create schema and create schema version pages using the validated editor schema.
-- [x] Add focused mounted preview test, then run TypeScript/tests/line-count/graph update.
-
-## Review
-
-- Added Code/Preview tabs to schema creation and schema-version creation pages.
-- Preview mounts the current validated editor schema through MLForm with the existing prediction design system.
-- Preview uses local fake report transport for built-in classifier/regressor reports; it does not call real models or persist runs.
-- Plugin-backed field/report definitions still load through the existing schema plugin catalog.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/schema-form-preview.test.tsx` passed, 2 tests.
-  - `frontend`: `vp test` passed, 32 files / 110 tests.
-  - `frontend`: `vp check --fix src/algorithms/schema/preview-transport/index.ts src/schemas/components/SchemaFormPreview.tsx src/schemas/pages/create-schema-page.tsx src/schemas/pages/create-schema-version-page.tsx test/schema-form-preview.test.tsx` passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 217 existing warnings, 0 errors.
-  - Repo: touched file line-count passed; largest touched source file 238 non-comment lines.
-  - Repo: `git diff --check` passed for touched files with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Schema Detail Readonly Editor
-
-## Goal
-
-- [x] Replace schema detail gray `<pre>` JSON block with a read-only Monaco editor.
-- [x] Keep `Ctrl+F`, selection, `Ctrl+A`, and `Ctrl+C` available through Monaco.
-- [x] Avoid extra copy button or new runtime dependencies.
-
-## Plan
-
-- [x] Add a small schema-owned readonly JSON viewer component using existing Monaco config.
-- [x] Replace the schema detail `<pre>` renderer with that component.
-- [x] Run focused frontend verification, line-count check, and graph update.
-
-## Review
-
-- Added `SchemaCodeViewer` using existing Monaco dependency, editor config, and light/dark themes.
-- Schema detail now renders the selected schema JSON in Monaco readonly mode instead of a gray `<pre>`.
-- No copy button was added; native editor selection, `Ctrl+F`, `Ctrl+A`, and `Ctrl+C` cover that workflow.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 31 files / 108 tests.
-  - `frontend`: `vp check --fix src/schemas/pages/schema-detail-page.tsx src/schemas/components/SchemaCodeViewer.tsx` passed for touched frontend files.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing warnings, 217 issues.
-  - Repo: touched file line-count passed; largest touched source file 128 non-comment lines.
-  - Repo: `git diff --check` passed for touched files.
-  - Repo: `graphify update .` passed.
-  - Browser preview blocked: T3 preview returned `PreviewAutomationNoFocusedOwnerError`.
-
-# Analyzer Reports Contract Cleanup
-
-# Multi-Model Plugin Report Expansion
-
-## Goal
-
-- [x] Render one plugin report per bound model when schema report uses multi-model `mappedTo`.
-- [x] Ensure modal/persist receives fetched plugin payloads for every successful model.
-- [x] Verify focused plugin lifecycle, mounted run, TypeScript, full frontend tests, graph update.
-
-## Plan
-
-- [x] Add regression for one Crystal Tree schema report mapped to multiple models.
-- [x] Expand multi-model report configs into per-model runtime report instances before MLForm mount.
-- [x] Keep persisted schema contract unchanged; expansion is runtime-only.
-
-## Review
-
-- Root cause: MLForm saw one report controller for one schema report id, while `reportContextById` is per report instance. Multi-model contexts collapsed to one runtime report.
-- Runtime now expands report `mappedTo` records into per-binding report instances with stable ids like `crystal-model-1`, each retaining one backend-specific `mappedTo` record.
-- Verification:
-  - `frontend`: `vp test test/schema-run-mounted-render.test.ts test/schema-plugin-lifecycle.test.ts test/schema-run-multi-plugin-report.test.ts` passed, 10 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 31 files / 108 tests.
-  - `frontend`: touched source/test line-count passed; max touched test 293 non-comment lines.
-  - Repo: `git diff --check` passed for touched MLSuite files.
-  - Repo: `graphify update .` passed.
-
-## Goal
-
-- [x] Remove MLSuite frontend legacy analyzer `outputs` compatibility for model reports.
-- [x] Normalize current backend `reports: []` payloads into MLForm keyed reports by schema `mappedTo`.
-- [x] Cover current classifier/regressor report array contract.
-
-## Plan
-
-- [x] Replace legacy `outputs/type` report extraction with current `reports/kind` extraction.
-- [x] Rename frontend normalization helper away from legacy wording.
-- [x] Update regressions to use backend-current payload shape.
-- [x] Run focused tests, TypeScript, full frontend tests, line-count, graph update.
-
-## Review
-
-- Removed analyzer `outputs[]/type` report normalization. MLSuite now reads backend `reports[]/kind` directly and hydrates MLForm keyed reports from current analyzer payloads.
-- Updated classifier/regressor consumers, schema export, output feedback, target derivation, and runtime tests to use report-array payloads.
-- Kept unrelated legacy contracts alone: old prediction-form naming, architecture tests, and historical explanation formatter fallbacks are outside analyzer model-report normalization.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/schema-report-renderer.test.ts test/schema-run-transport-mapping.test.ts test/schema-one-hot-select-values.test.ts test/schema-run-mounted-render.test.ts test/output-feedback-questionnaire.test.ts` passed, 14 tests.
-  - `frontend`: `vp test` passed, 30 files / 107 tests.
-  - `backend`: `uv run pytest tests/test_runtime_api.py` passed, 25 tests.
-  - Repo: touched source/test line-count passed, no file >300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 214 warnings.
-  - Repo: `graphify update .` passed.
-
-# Schema Run Submit Instrumentation
-
-## Goal
-
-- [x] Log every frontend schema-run submit normalization step from MLForm submit to save modal.
-- [x] Keep behavior unchanged; only add diagnostic `console.log` traces.
-- [x] Verify TypeScript/tests, line-count, graph update.
-
-## Plan
-
-- [x] Add `[schema-plugin-debug]` traces at submit event, transport, analyzer normalization, report target mapping, result-state merge, report display, renderer, and save modal.
-- [x] Run focused frontend tests and TypeScript.
-- [x] Document verification and usage.
-
-## Review
-
-- Added exhaustive frontend diagnostics under `[schema-plugin-debug]` for MLForm submit event detail, raw merge, model request/response normalization, report target resolution, result-state merge, display filtering, renderer descriptor creation, and save payload.
-- No runtime contract changed; logs only.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/schema-run-mounted-render.test.ts test/schema-report-renderer.test.ts` passed, 9 tests.
-  - `frontend`: `vp test` passed, 30 files / 107 tests.
-  - Repo: touched file line-count passed; largest touched file 265 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 214 warnings.
-  - Repo: `graphify update .` passed.
-
-# OneHot Parent mappedTo Composer Fix
-
-## Goal
-
-- [x] Fix schema selection when analyzer returns `onehot-category` fields without parent `mappedTo`.
-- [x] Keep MLSchema 0.2.1 contract: one-hot option mappings own model targets.
-- [x] Verify focused frontend tests, TypeScript, line-count, diff check, graph update.
-
-## Plan
-
-- [x] Add composer regression for analyzer `onehot-category` output with no parent `mappedTo`.
-- [x] Update schema merge to merge/wrap `options[].mappedTo` per model binding.
-- [x] Run narrow frontend verification and repo checks.
-
-## Review
-
-- Fixed schema composition for analyzer-produced `onehot-category` fields that intentionally lack parent `mappedTo`.
-- Composer now wraps/merges `options[].mappedTo` per selected model binding and leaves the parent as UI-only.
-- Added regression for MLSchema 0.2.1 analyzer output: parent no `mappedTo`, options mapped to concrete model features.
-- Verification:
-  - `frontend`: `vp test test/schema-composer.test.ts test/builtin-registry.test.ts` passed, 12 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - Repo: touched source/test line-count passed: merge 205, composer test 165 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# MLSchema 0.2.1 Backend Update
-
-## Goal
-
-- [x] Bump Python analyzer to `mlschema==0.2.1`.
-- [x] Let MLSchema own `mappedTo` and `onehot-category` generation.
-- [x] Preserve model/dataframe feature-name behavior for named and positional models.
-- [x] Pass one-hot separator from UI/API to analyzer.
-
-## Plan
-
-- [x] Remove backend schema mappedTo shim and use `infer_schema(..., onehot_separator=...)`.
-- [x] Use named DataFrame columns only when model exposes feature names.
-- [x] Use positional DataFrame columns for models without feature names, restoring display labels from original dataframe columns by `mappedTo` position.
-- [x] Add optional `oneHotSeparator` through frontend create-model request and Java API/analyzer service.
-- [x] Cover success/error cases in existing backend/API/frontend tests.
-- [x] Run narrow verification, then graph update.
-
-## Review
-
-- Updated backend analyzer dependency and lockfile from `mlschema==0.2.0` to `0.2.1`.
-- Removed app-side mappedTo injection; MLSchema now emits `mappedTo` and `onehot-category`.
-- Positional models now infer against positional DataFrame columns; when user supplies a dataframe, labels are restored from original column names via integer `mappedTo`.
-- Added `oneHotSeparator` frontend create-model field and propagated it through Spring API as analyzer `onehot_separator`.
-- Verification:
-  - `backend`: `uv run pytest tests/test_runtime_api.py -k build_schema tests/test_schema_api.py` passed, 10 tests.
-  - `api`: `mvn "-Dtest=AnalyzerServiceTest,AnalyzerControllerTest,ModelCreationServiceTest,ModelControllerTest" test` passed, 21 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/artifact-inspection-service.test.ts` passed, 4 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing warnings.
-  - Repo: touched file line-count passed; all checked files under 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Blocked broader backend runtime check: `uv run pytest tests/test_runtime_api.py` fails 4 prediction tests that still expect `outputs`, while current service returns `reports`.
-
-# Review Domain Merge
-
-## Goal
-
-- [x] Merge `frontend/src/schema-review` into `frontend/src/review`.
-- [x] Move `frontend/src/api/schema-review` into `frontend/src/api/review`.
-- [x] Move `frontend/src/algorithms/schema-review` into `frontend/src/algorithms/review`.
-- [x] Leave no stale `schema-review` source folder or import path.
-
-## Plan
-
-- [x] Move files/directories with same names first, no behavior rewrite.
-- [x] Rewrite imports from `schema-review` paths to `review` paths.
-- [x] Keep URLs/tokens/backend endpoint strings unchanged unless they are frontend ownership names.
-- [x] Run TypeScript, tests, line-count, react-doctor, graph update.
-
-## Review
-
-- Moved feature UI from `frontend/src/schema-review` to `frontend/src/review`.
-- Moved API domain from `frontend/src/api/schema-review` to `frontend/src/api/review`.
-- Moved algorithms from `frontend/src/algorithms/schema-review` to `frontend/src/algorithms/review`.
-- Updated frontend route ownership and generated links from `/schema-review/...` to `/review/...`.
-- Kept backend endpoint strings as `/api/schema-review-links` because that is the server contract.
-- Removed old `schema-review` source directories; stale-path grep has no matches.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 29 files / 100 tests.
-  - Repo: frontend source/test line-count passed, no file >300 lines.
-  - Repo: old `frontend/src/schema-review`, `frontend/src/api/schema-review`, and `frontend/src/algorithms/schema-review` paths are absent.
-  - Repo: stale path grep passed for old imports/routes and accidental `/api/review-links`.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 214 warnings.
-  - Repo: `graphify update .` passed.
-
-# Frontend API Architecture Move
-
-## Goal
-
-- [x] Move frontend API contracts into `frontend/src/api`.
-- [x] Organize by domain first: `dtos/`, `services/`, `hooks/`.
-- [x] Enforce max one DTO/service/hook export per file with arch tests.
-- [x] Leave feature folders using API only, not owning API contracts.
-
-## Plan
-
-- [x] Audit current `*/api/*Service.ts`, `*/hooks.ts`, `*/types.ts`, and API-like hook files.
-- [x] Create `src/api/<domain>/{dtos,services,hooks}` and move files with semantic names.
-- [x] Split DTO/service/hook files so each file owns one DTO, service fn, or TanStack hook.
-- [x] Rewrite imports in app and tests.
-- [x] Add one architecture test that fails on misplaced API files or multi-symbol API files.
-- [x] Run TypeScript, tests, line-count, react-doctor, graph update.
-
-## Review
-
-- Created `frontend/src/api/{admin-users,core,infrastructure,models,plugins,schema-review,schemas,search,user,workspace}`.
-- Split API into 100 DTO files, 79 service files, and 62 hook files; barrels only re-export.
-- Removed legacy feature-owned API files such as `schemas/types.ts`, `models/api/*`, `workspace/api/*`, `user/hooks.ts`, and similar.
-- Added `frontend/test/api-architecture.test.ts` to enforce API location and max one DTO/service/hook owner per file.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 29 files / 100 tests.
-  - Repo: no frontend source/test file over 300 lines.
-  - Repo: no legacy `*/api/` files outside `src/api`.
-  - Repo: no stale imports to removed API/type paths.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 214 warnings.
-  - Repo: `graphify update .` passed.
-
-# Frontend Algorithms TSDoc Audit
-
-## Goal
-
-- [x] Ensure every frontend algorithm lives under `frontend/src/algorithms` or is explicitly non-algorithm wiring/UI/API/hook/type/config.
-- [x] Rename vague algorithm folders to semantic names.
-- [x] Add detailed TSDoc to algorithm exports and named internal helpers: purpose, args, return, throws, side cases/side effects.
-
-## Plan
-
-- [x] Audit exported algorithm symbols and missing TSDoc.
-- [x] Rename vague runtime folder to semantic domain name.
-- [x] Add/upgrade TSDoc on exported algorithm functions/constants/types and named internal helpers.
-- [x] Run TypeScript, tests, line-count, react-doctor, graph update.
-
-## Review
-
-- Renamed `frontend/src/algorithms/schema/run-runtime` to `frontend/src/algorithms/schema/runtime-assembly`.
-- Added TSDoc to all 463 named algorithm symbols under `frontend/src/algorithms`; audit reports 0 missing blocks.
-- Export audit covers all 223 exported algorithm symbols; reports 0 missing and 0 malformed blocks.
-- TSDoc covers purpose, params when present, return behavior, throws, and side cases/effects via `@param`, `@returns`, `@throws`, and `@remarks`.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 28 files / 98 tests.
-  - Repo: frontend source/test line-count passed, no file >300 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 158 warnings.
-  - Repo: `graphify update .` passed.
-
-# Frontend Algorithms Full Move
-
-## Goal
-
-- [x] Move remaining non-schema frontend algorithms under `frontend/src/algorithms`.
-- [x] Leave feature folders for UI, hooks, API, DTO/types, runtime wiring only.
-- [x] Keep behavior unchanged.
-
-## Plan
-
-- [x] Audit pure helpers outside `src/algorithms`.
-- [x] Move pure model, MLForm, admin infra, plugin, review, editor, search helpers by domain.
-- [x] Update imports/tests.
-- [x] Run TypeScript, focused tests, line-count, react-doctor, graph update.
-
-## Review
-
-- Moved non-schema pure algorithms into `frontend/src/algorithms/{admin,editor,mlform,models,plugin,review,schema-review,search,workspace}`.
-- Moved remaining schema runtime/report algorithms into `frontend/src/algorithms/schema/{run-transport,custom-report-fetch,report-plugin-context,run-debug}`.
-- Left hooks, API clients, DTO/types, atoms, runtime mount/registry wiring, plugin loaders/renderers, and route/UI files in feature folders.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 28 files / 98 tests.
-  - Repo: frontend source/test line-count check passed, no file >300 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 158 warnings.
-  - Repo: `graphify update .` passed.
-
-# Frontend Algorithms Final Audit
-
-## Goal
-
-- [x] Audit remaining exported logic outside `frontend/src/algorithms`.
-- [x] Move remaining algorithm-like plugin/catalog/runtime helpers with semantic names.
-- [x] Leave only wiring, API, hooks, UI, atoms, DTO/types, config.
-
-## Plan
-
-- [x] Classify non-algorithm files outside `src/algorithms`.
-- [x] Move plugin source runtime/detection/catalog helpers.
-- [x] Move MLForm runtime mapping helpers if separable without churn.
-- [x] Update imports, tests, TypeScript, full tests, line-count, react-doctor, graph update.
-
-## Review
-
-- Moved final algorithm-like leftovers:
-  - `plugin/custom-field-source-runtime`
-  - `plugin/custom-report-source-runtime`
-  - `plugin/catalog-loader`
-  - `plugin/catalog-page-model`
-  - `plugin/custom-field-catalog`
-  - `plugin/custom-report-catalog`
-  - `mlform/builtin-registry`
-  - `models/prediction-catalog-definitions`
-  - `schema/runtime-assembly`
-- Remaining non-`algorithms` exported logic is wiring/UI/API/hooks/types/config only: startup gate/readiness, error sink, MLForm mount/headless/primitive registry, renderers, atoms, editor config, local questionnaire transport, hooks.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 28 files / 98 tests.
-  - Repo: frontend source/test line-count check passed, no file >300 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with 158 warnings.
-  - Repo: `graphify update .` passed.
-
-# Frontend Schema Algorithms Move
-
-## Goal
-
-- [x] Move schema-touching frontend algorithms under `frontend/src/algorithms/schema`.
-- [x] Keep old feature folders as usage/wiring only, not algorithm homes.
-- [x] Preserve schema merge, one-hot category, visible input reconstruction, bulk upload, export, and transport payload behavior.
-
-## Plan
-
-- [x] Identify pure schema algorithms and current callers.
-- [x] Create screaming architecture folders:
-  - `schema/merge` for multi-model schema composition.
-  - `schema/one-hot-category` for one-hot field collapse/counting.
-  - `schema/input-display` for visible input reconstruction, prefill, mapped input reconstruction, and input merging.
-  - `schema/report-display` for result report normalization/renderability.
-  - `schema/bulk-upload` for model-facing bulk schema and serialized value reconstruction.
-  - `schema/export` for CSV export build/download.
-  - `schema/runtime-payload` for MLForm serialized values -> canonical/field/visible payload.
-  - `schema/model-input-mapping` for per-binding model input mapping.
-- [x] Move code, update imports, delete obsolete algorithm files.
-- [x] Run focused schema tests, TypeScript, line-count, `graphify update .`.
-
-## Review
-
-- Created `frontend/src/algorithms/schema/{merge,one-hot-category,input-display,report-display,bulk-upload,export,runtime-payload,model-input-mapping}`.
-- Follow-up audit moved remaining pure schema helpers to `binding-rebase`, `feedback-steps`, `feedback-state`, `pending-feedback`, `report-descriptor`, `version-selection`, and `run-cache`.
-- Removed old algorithm homes from `src/schemas` and `src/app/utils/mlform`; callers now import algorithms directly where used.
-- Split former `schema-run-display.ts` into input reconstruction and report display modules.
-- Made schema export helper `getSchemaRunModelInputColumns` internal after `react-doctor` flagged it unused.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/schema-composer.test.ts test/one-hot-schema.test.ts test/schema-bulk-mapped-to.test.ts test/schema-one-hot-select-values.test.ts test/schema-run-display.test.ts test/schema-run-export-parity.test.ts test/schema-run-history.test.ts test/schema-bulk-label-mapping.test.ts` passed, 6 files / 21 tests.
-  - `frontend`: `vp test test/schema-binding-rebase.test.ts test/schema-feedback-state.test.ts test/schema-version-selectors-and-search-shortcut.test.ts test/schema-run-save-modal.test.ts test/schema-run-bulk-refresh.test.ts test/schema-review-output-context.test.ts test/schema-report-renderer.test.ts test/schema-feedback-steps.test.ts` passed, 8 files / 28 tests.
-  - Repo: frontend source/test line-count check passed, no file >300 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 161 warnings.
-  - Repo: `graphify update .` passed.
-
-# Schema Plugin Explanation Input Mapping Fix
-
-## Goal
-
-- [x] Explanation report fetch sends only target model features.
-- [x] Multi-model schema fields do not leak other-model mapped keys into `/api/analyzer/explanations`.
-- [x] Keep save-modal pending/error behavior from previous fix.
-
-## Plan
-
-- [x] Make custom report fetch request values model-scoped, using per-binding `modelInput`.
-- [x] Add regression that inspects explanation request bodies for each model.
-- [x] Run focused schema plugin tests, TS, line counts, react-doctor, graph update.
-
-## Review
-
-- Custom report fetch now sends per-model `modelInput` as `values`, `fieldValues`, `serializedValues`, `serializedFieldValues`, and `meta.backendFieldValues`.
-- Schema report wrapper now prefers per-report `modelInput` for `backendFieldValues`, avoiding stale/global meta payloads.
-- Transport regression checks `/api/analyzer/explanations` bodies: model-1 gets `{ age, rec }`, model-2 gets `{ years, don }`.
-- Verification:
-  - `frontend`: `vp test test/schema-plugin-transport.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-policy.test.ts` passed, 14 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - Repo: touched source/test line-count check passed; largest touched test 294 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 161 warnings.
-  - Repo: `graphify update .` passed.
-
-# Schema Plugin Error Regression Guard
-
-## Goal
-
-- [x] Add regression coverage for strict custom-report payload schema.
-- [x] Prove mounted-style schema submit does not turn unsupported custom reports into MLForm `ERROR`.
-- [x] Keep test change inside existing schema plugin lifecycle coverage.
-
-## Plan
-
-- [x] Make fake Crystal Tree report validate payload shape with `payloadSchema`.
-- [x] Assert unsupported mapped report remains non-error after mounted-style `form.submit()`.
-- [x] Assert unsupported mapped report no longer keeps schema run pending forever.
-- [x] Run focused tests, TS, line-count check, graph update.
-
-## Review
-
-- Added strict `payloadSchema` to lifecycle fake Crystal Tree report so sentinel/placeholder payloads fail like real plugin payload validation.
-- Mounted-style submit regression now asserts unsupported mapped custom report remains `idle` with `error === null`.
-- Unsupported custom reports now write only an internal `skippedReportIds` raw marker; MLForm `reports` stays clean, and `reportsPending` ignores those ids.
-- Verification:
-  - `frontend`: `vp test test/schema-plugin-lifecycle.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts` passed, 14 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - Repo: touched source/test line-count check passed: largest touched test 294 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 161 warnings.
-  - Repo: `graphify update .` passed.
-
-# Schema MLForm Mounted Fetch Fix
-
-## Goal
-
-- [x] Mounted schema form fetches custom reports after submit.
-- [x] Report cards no longer show error solely because fetch was not executed.
-- [x] Keep transport report fetch scoped to schema custom reports only.
-
-## Plan
-
-- [x] Reproduce mounted/UI fetch path with narrow test or runtime inspection.
-- [x] Patch smallest path that makes MLForm report fetch execute for mounted form.
-- [x] Verify focused tests, TS, line count, graph update.
-
-## Review
-
-- Restored schema custom report prefetch in transport, scoped to reports with custom fetch definitions and successful model context.
-- Kept MLForm runtime fetch support for headless pipeline, but mounted schema UI no longer depends on report-pane/lifecycle lazy fetch.
-- Removed second mounted `executeReportFetches()` pass; transport prefetch is single fetch path for mounted schema UI.
-- Failed/unsupported per-model custom report fetch is omitted from MLForm `reports`, avoiding invalid plugin payload/schema error cards.
-- Verification:
-  - `frontend`: `vp test test/schema-plugin-transport.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-policy.test.ts` passed, 14 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: touched file line-count check passed; all touched source/test files <300 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx react-doctor@latest --verbose` completed with existing 161 warnings.
-  - Repo: `graphify update .` passed.
-
-# Schema MLForm Report Fetch Cleanup
-
-## Goal
-
-- [x] Remove MLSuite manual custom-report prefetch from schema transport.
-- [x] Use MLForm report fetch orchestration for custom report payloads.
-- [x] Keep schema report context/model binding behavior intact.
-
-## Plan
-
-- [x] Move post-submit custom report fetching to MLForm runtime APIs.
-- [x] Delete the app-owned custom-report fetch helper and unused transport dependency.
-- [x] Update schema plugin regressions to use upstream pipeline/fetch behavior.
-- [x] Run focused frontend tests, typecheck, line-count check, graph update.
-
-## Review
-
-- Removed `schema-run-custom-report-fetch.ts`; schema transport now only submits predictions.
-- Schema custom reports now fetch through MLForm runtime orchestration: tests use `executeFormPipeline()`, mounted UI uses upstream `executeReportFetches()` after submit because MLForm kit submit does not expose pipeline mode.
-- Kept MLSuite-only context patching for mapped model report fetches; no model context still returns skipped payload and does not call analyzer fetch.
-- Verification:
-  - `frontend`: `vp test test/schema-plugin-transport.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-policy.test.ts` passed, 13 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: touched file line-count check passed; all touched source/test files <300 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx react-doctor@latest --verbose` completed with existing 161 warnings.
-  - Repo: `graphify update .` passed; graph rebuilt.
-
-# MLForm Linked API Adaptation
-
-## Goal
-
-- [x] Adapt MLSuite frontend to current linked MLForm API.
-- [x] Remove old compatibility paths instead of preserving legacy API shims.
-
-## Plan
-
-- [x] Inspect linked MLForm public API and current frontend failures.
-- [x] Patch MLSuite integration to current API, allowing breaking cleanup where needed.
-- [x] Run focused frontend verification and line-count checks.
-- [x] Update review with exact commands and blockers.
-
-## Review
-
-- MLSuite schema-run now consumes MLForm submission records directly: `displayValues` for UI/display input data, `modelValues`/`fieldValues` for model mapping.
-- Removed old MLSuite custom-report prefetch and runtime-payload modules; report fetching now goes through MLForm pipeline/report fetch orchestration.
-- Mounted schema forms use `reportFetchMode: "all"` and listen to MLForm submit success instead of `afterSubmit`.
-- Preserved schema-run config (`mappedTo`, `displayKey`, one-hot option mappings) through MLForm/Zod normalization, and added a unique single-target report default only where MLForm needs one to resolve built-in reports.
-- Rebuilt linked `../mlform` dist and refreshed frontend local package link so tests use the changed API.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 29 files / 99 tests.
-  - Repo: frontend source/test line-count check passed, no file >300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# MLForm Display Fields Regression
-
-## Goal
-
-- [x] Restore schema form field rendering in MLSuite with linked MLForm.
-- [x] Restore displayed user inputs outside the form.
-- [x] Keep plugin reports rendered through MLForm pipeline, no old prefetch compat.
-
-## Plan
-
-- [x] Compare MLSuite field/report rendering against `../prueba-mlform`.
-- [x] Reproduce missing display fields/inputs with focused tests.
-- [x] Patch smallest MLSuite integration seam.
-- [x] Run focused tests, full frontend tests, line-count, graph update.
-
-## Review
-
-- Added `jsdom` to frontend dev dependencies for mounted MLForm regression coverage.
-- Added mounted schema-run test that verifies fields render in MLForm shadow DOM, reports render after submit, and display inputs are emitted.
-- Restored visible-input fallback: display key, field id, label, mapped model targets, and one-hot target reconstruction.
-- Restored prefill/default fallback for schemas that do not persist explicit `displayKey`.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 30 files / 100 tests.
-  - Repo: frontend source/test line-count check passed, no file >300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-
-# MLForm Plugin Report Mounted Regression
-
-## Goal
-
-- [x] Restore mounted schema plugin report fetch with `mlform@0.1.16`.
-- [x] Stop schema runs from waiting forever when plugin report fetch is skipped.
-
-## Plan
-
-- [x] Add mounted regression that model request is followed by plugin fetch.
-- [x] Locate why report context/pipeline skip happens only in mounted UI.
-- [x] Patch smallest integration seam.
-- [x] Run focused tests, full frontend tests, line-count, graph update.
-
-## Review
-
-- Mounted submit now reads MLForm `pipelineResult.reportFetchResults`, not only model submit raw.
-- Schema report contexts now store resolved report target, so reports still alias to mapped targets when MLForm report controllers omit MLSuite `mappedTo`.
-- Result-state merge treats raw fetched reports as completed and hydrates normalized id, raw id, and mapped target aliases.
-- Regression verifies mounted UI dispatch makes analyzer prediction request, plugin explanation request, and emits `raw.reports.crystal` plus `raw.reports.crystal-tree` with `reportsPending=false`.
-- Verification:
-  - `frontend`: `vp test test/schema-run-mounted-render.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts` passed, 16 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 30 files / 101 tests.
-  - Repo: touched file line-count passed; max touched source/test file 236 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Crystal Tree Real Plugin Regression
-
-## Goal
-
-- [x] Reproduce real Crystal Tree plugin id/context mismatch.
-- [x] Restore plugin explanation fetch in mounted multi-model schema runs.
-- [x] Stop save modal from waiting when plugin report is skipped or completed.
-
-## Plan
-
-- [x] Add regression using real plugin shape: catalog id `crystal-tree`, runtime schema report id like `report-2`.
-- [x] Inspect report context keys from transport and MLForm fetch request ids.
-- [x] Patch smallest id/context resolution seam.
-- [x] Verify focused tests, TypeScript, full frontend suite, line-count, graph update.
-
-## Review
-
-- Real blocker was numeric backend model ids: strict Crystal Tree plugin checks `typeof request.meta.modelId === "string"` and threw before analyzer explanation fetch.
-- Schema report plugin context now passes string `meta.modelId` to fetch/render contexts while preserving raw model ids elsewhere.
-- Mounted regression covers numeric `modelId: 1` with strict plugin and verifies `/api/analyzer/explanations?modelId=1` is called and `reportsPending=false`.
-- Also covered schema report id differing from plugin catalog id (`report-2` vs `crystal-tree`).
-- Verification:
-  - `frontend`: `vp test test/schema-run-mounted-render.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts` passed, 18 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 30 files / 103 tests.
-  - Repo: frontend source/test line-count passed, no file >300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 214 warnings.
-  - Repo: `graphify update .` passed.
-
-# Schema Model Reports Render Regression
-
-## Goal
-
-- [x] Render model reports after prediction requests complete.
-- [x] Keep plugin reports rendered.
-- [x] Avoid waiting/empty save modal when model reports exist.
-- [x] Render classifier reports when analyzer returns `mapping` as an object.
-- [x] Prove whether remaining non-render is MLForm report pane or MLSuite save-modal/result extraction.
-
-## Plan
-
-- [x] Reproduce display path with model report payloads plus plugin report.
-- [x] Locate report-display filtering/alias mismatch.
-- [x] Patch smallest normalization seam.
-- [x] Run focused tests, TypeScript, full frontend suite, line-count, graph update.
-- [x] Add regression for analyzer classifier payload shape: `mapping: { "0": "1" }`.
-- [x] Normalize mapping object labels and scalar report payloads.
-- [x] Re-run focused/full frontend verification.
-- [x] Add mounted/save-modal-style regression that model reports appear in emitted raw results.
-- [x] Patch the actual missing boundary, not another payload-shape guess.
-
-## Review
-
-- Model reports were present in result payloads, but display dropped them in multi-model schemas when binding ids were strings and result ids were numbers.
-- `getSchemaResultReports` now matches binding/result model ids by normalized scalar string value.
-- Regression covers multi-model `mappedTo` records with binding ids `"1"`/`"2"` and result id `1`, proving target report payload renders.
-- Analyzer classifier outputs with `mapping` as an object now normalize into labels, keep numeric-string labels as labels instead of indices, and still render probabilities.
-- Report display now wraps scalar report payloads as `{ value }` instead of dropping them.
-- Remaining bug was not MLForm: MLSuite could not resolve built-in report `mappedTo` keyed by model name when `binding.modelName` was absent and the runtime adapter had added a duplicate `default` target.
-- Built-in model report paths now allow a single-target fallback; custom/plugin reports keep strict per-binding routing so Crystal Tree context does not collapse across models.
-- Verification:
-  - `frontend`: `vp test test/schema-report-renderer.test.ts test/schema-run-mounted-render.test.ts test/schema-plugin-lifecycle.test.ts test/schema-plugin-transport.test.ts test/schema-plugin-policy.test.ts` passed, 23 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 30 files / 107 tests.
-  - Repo: frontend source/test line-count passed, no file >300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-
-# Global Search Modal Sidebar Entry
-
-## Goal
-
-- [x] Replace fixed header search with centered global search modal.
-- [x] Open same modal from sidebar Actions and `Ctrl+K`.
-- [x] Remove global app header chrome without breaking mobile sidebar access.
-
-## Plan
-
-- [x] Reuse existing search API, debounce, result panel, and shortcut guard.
-- [x] Add global search modal mounted in app shell.
-- [x] Add sidebar Actions search button and move notifications there.
-- [x] Replace header with a mobile-only floating sidebar trigger.
-- [x] Run frontend typecheck/check plus graph update.
-
-## Review
-
-- Header global removed from app shell; mobile keeps a floating sidebar trigger.
-- Global search now mounts once in shell as centered modal, opened by sidebar Actions or `Ctrl+K`.
-- Notifications moved into sidebar Actions and their panel uses fixed positioning so sidebar overflow does not clip it.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test test/schema-version-selectors-and-search-shortcut.test.ts` passed, 4 tests.
-  - `frontend`: `vp test` passed, 32 files / 111 tests.
-  - `frontend`: touched-file `vp fmt --check` passed.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 247 warnings.
-  - Repo: changed frontend files are under 300 non-comment lines; existing `frontend/src/admin/infrastructure/components/ServicesView.tsx` remains 302.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-  - Browser: dev server returned 200; shell smoke blocked by unauthenticated `/api/users/me` 401 redirect to auth.
-
-# Workspace Navigation Cleanup
-
-## Goal
-
-- [ ] Make current workspace navigation direct from sidebar.
-- [ ] Expose organizations as a superadmin-only first-level sidebar destination.
-- [ ] Remove confusing duplicate/alternate workspace access paths where possible.
-
-## Plan
-
-- [x] Add Workspace second-level sidebar links for overview, teams, members, invitations, roles/templates, and settings.
-- [x] Add Organizations as a superadmin-only first-level sidebar item using existing `/workspace/organizations`.
-- [x] Keep Admin focused on system admin routes; avoid creating duplicate org pages.
-- [x] Normalize workspace breadcrumbs to match the new navigation model.
-- [x] Prefer canonical org-scoped team URLs and remove redundant route if unused.
-- [x] Run typecheck plus targeted navigation grep/line-count checks, then update graph.
-
-## Review
-
-- Sidebar now treats `Workspace` as the active organization area and exposes second-level links for overview, teams, members, invitations, roles/templates, and settings.
-- `Organizations` is a superadmin-only first-level sidebar destination using the existing `/workspace/organizations` page.
-- Workspace subpage breadcrumbs now match the sidebar hierarchy instead of routing back through organization admin.
-- Removed unused `/workspace/teams/:teamId`; team detail keeps canonical `/workspace/organizations/:organizationId/teams/:teamId`.
-- Organization admin overview tab now marks itself as `Overview` instead of falsely selecting `Teams`.
-- Verification:
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: touched-file `vp fmt --check ...` passed.
-  - `frontend`: full `vp fmt --check` remains blocked by pre-existing repo-wide formatting drift across 537 files.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 249 warnings.
-  - Repo: touched frontend source files are under 300 non-comment lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Browser: dev server returned 200; preview reached auth landing, blocked from sidebar by unauthenticated `/api/users/me` 401.
-  - Repo: `graphify update .` passed.
-
-# Schema Classifier Feedback And Input Display Fix
-
-## Goal
-
-- [x] Classifier assessment renders as category when report labels/mapping come from mapped classifier payload.
-- [x] Saved schema-run inputs render from mapped records, no `N/A` for valid values.
-
-## Plan
-
-- [x] Add focused regression for classifier feedback kind with mapped classifier report payload.
-- [x] Add focused regression for visible inputs using per-model `mappedTo` records.
-- [x] Patch the smallest source helper(s) shared by modal/history/review.
-- [x] Run focused tests, typecheck, graph update.
-
-## Review
-
-- `buildSchemaFeedbackSteps` now uses the resolved display report config when the original schema report has no runtime `id`, so classifier assessment stays `category`.
-- Schema input display reads label as UI alias again, but `getMappedSchemaInputRecord` still persists mapped target keys, not label keys.
-- Regression covers no-id classifier mapped report feedback and label-backed visible input display/save.
-- Verification:
-  - `frontend`: `vp test test/schema-feedback-steps.test.ts test/schema-run-display.test.ts test/schema-run-save-modal.test.ts` passed, 16 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp test` passed, 28 files / 98 tests.
-  - `frontend`: `npx.cmd react-doctor@latest --verbose` completed with existing 162 warnings.
-  - Repo: line-count check passed, no frontend source/test file >300 lines.
-  - Repo: `git diff --check` passed with CRLF warnings only.
-  - Repo: `graphify update .` passed.
-# Remove Legacy Report Contracts
-
-## Goal
-
-- [x] Use `mappedTo` as the only schema field/report binding contract.
-- [x] Remove keyed report payloads from active MLForm/MLSuite schema-run flow.
-- [x] Replace legacy `explanations` payloads with report items.
-- [x] Remove `inputMapping`/`outputMapping` active usage where schema `mappedTo` now owns mapping.
-
-## Plan
-
-- [x] Change MLForm result/transport/report-fetch types to `reports: unknown[]`.
-- [x] Make MLForm built-in report resolution read report items by `mappedTo`, no keyed/outputs fallback.
-- [x] Change MLSuite analyzer/schema-run normalization to keep report arrays and enrich items with `id/kind/mappedTo`.
-- [x] Store plugin fetch payloads back into the same schema `reports: []` array.
-- [x] Update schema display/review/save paths to resolve from report arrays.
-- [x] Change Crystal Tree/backend explanation response to report-item payload, no `explanations`.
-- [x] Update focused tests and run narrow verification first, then broader checks.
-
-## Review
-
-- MLForm now treats `reports` as an array contract in submit results, transport responses, report contexts, report fetch requests, primitives, fanout, stream updates, and built-in report payload lookup.
-- MLForm report resolution uses `mappedTo` only; keyed report maps, exact report-id fallback, `outputs` fallback, and alias migration support were removed.
-- MLSuite schema-run keeps backend/model/plugin report payloads in `reports[]`, enriches report items with `id/kind/mappedTo`, and resolves display/review/save/export payloads from arrays.
-- Removed single-target fallback for per-model `mappedTo` records in MLSuite report routing; direct `mappedTo` must be used when no binding key applies.
-- Crystal Tree/backend explanation payloads now return report items under `reports[]`; the old `explanations` payload field is gone.
-- Temporary `[schema-plugin-debug]` console output was disabled after diagnosis.
-- Verification:
-  - `mlform`: `vp test` passed, 27 files / 270 tests.
-  - `mlform`: `vp exec tsc -b --pretty false` passed.
-  - `mlform`: `vp build` passed.
-  - `frontend`: `vp test` passed, 30 files / 107 tests.
-  - `frontend`: `vp exec tsc -b --pretty false` passed.
-  - `backend`: `uv run pytest tests/test_runtime_api.py` passed, 25 tests.
-  - `api`: `mvn -Dtest=SchemaFlowServiceTest test` passed, 10 tests.
-  - `models/plugins`: `vp exec tsc -b --pretty false` passed.
-  - `frontend`: `vp fmt` passed.
-  - `mlform`: `vp fmt` passed.
-  - `mlform`: `graphify update .` passed.
-  - Repo: `graphify update .` passed.
-  - Line count: changed production files are under 300 non-comment lines except pre-existing unrelated `frontend/src/admin/infrastructure/components/ServicesView.tsx` at 302 non-comment lines.
+- Implemented backend draft model, endpoints, semantic diff, stale publish conflict handling, and publish-through-existing-version-service.
+- Implemented frontend draft API/hooks, change creation, schema detail pagination, draft editor, and conflict page.
+- Verification passed: backend package, backend focused test, frontend tests, frontend TypeScript compile, diff whitespace check, line-count check, rounded scan.
+- Known blocker: full `vp check` still fails on pre-existing frontend lint/type issues outside this change.
+
+## Follow-up: Inspectable Base Selection
+
+- [x] Keep base version selector, change name, and create action on one page.
+- [x] Add live preview for selected base version on the same page.
+- [x] Include compact selected-version metrics: fields, reports, bindings.
+- [x] Add form/json/bindings preview modes without `rounded-full` controls.
+- [x] Verify TypeScript, line count, rounded scan, and graphify update.
+
+### Follow-up Review
+
+- TypeScript app compile passed.
+- Frontend tests passed: 33 files, 116 tests.
+- `react-doctor` completed with existing repo-wide warnings; no new blocking error from this page.
+- Visual browser check reached app shell, but backend readiness returned 502 without backend.
+- `vp check --fix` formatted files but still fails on existing repo-wide lint/type debt.
+
+## Follow-up: Pierre Merge Diff Review
+
+- [x] Add `@pierre/diffs` as explicit runtime dependency for schema merge review.
+- [x] Create one-file `SchemaMergeDiffViewer` using Pierre React `MultiFileDiff`.
+- [x] Change conflict page copy/layout to `Merge review`.
+- [x] Show full JSON diff: current published vs incoming draft.
+- [x] Keep paginated same-path conflicts as review context.
+- [x] Verify TypeScript, tests, build, line-count, rounded scan, react-doctor, graphify.
+
+### Pierre Merge Diff Review Results
+
+- TypeScript app compile passed.
+- Frontend tests passed: 33 files, 116 tests.
+- Frontend build passed; Vite reports large chunks after adding the diff/Monaco stack.
+- Line-count and rounded scans passed for the changed schema merge files.
+- `react-doctor` completed with existing repo-wide warnings.
+- Visual browser check reached the app shell, but backend readiness returned 502 without the backend running.
+- `vp check --fix` formatted files but still fails on existing repo-wide lint/type debt.
+
+## Follow-up: Selective Merge Review Analysis
+
+- [x] Inspect current review page, Pierre diff capabilities, and backend stale-base guard.
+- [x] Remove redundant outer "Current vs incoming" card when implementing.
+- [x] Add path-level current/incoming resolution choices for merge review.
+- [x] Keep publish protected against latest snapshot drift after review starts.
+- [x] Verify backend merge semantics with stale-base and conflict cases.
+
+## Follow-up: Inline Merge Diff Selection
+
+- [x] Move current/incoming choices from separate review panel into the diff viewer surface.
+- [x] Keep `@pierre/diffs`; use Monaco only if inline selection cannot be made cleanly.
+- [x] Remove review-page ownership of choice row rendering.
+- [x] Preserve server-side latest snapshot guard with `expectedCurrentVersionId`.
+- [x] Verify TypeScript, focused tests, line counts, diff whitespace, and graphify update.
+
+### Inline Merge Diff Selection Results
+
+- Merge decisions now live inside `SchemaMergeDiffViewer`, directly below the Pierre split diff and inside the same bordered surface.
+- The review page only owns merge state and server actions; row rendering moved out of the page.
+- Monaco was not needed because `@pierre/diffs` plus semantic path choices covers the merge UX without adding another editor.
+- Latest snapshot drift remains guarded server-side through `expectedCurrentVersionId`; a `409` refreshes the review.
+- Frontend TypeScript, tests, build, backend focused tests, line counts, and diff whitespace passed.
+- `vp check` and React Doctor still fail on existing repo-wide issues outside this change.
+
+## Follow-up: Native Pierre Merge Resolution
+
+- [x] Replace custom changed-path selector UI with Pierre `UnresolvedFile` merge conflict UI.
+- [x] Generate a temporary merge-conflict file from semantic backend conflicts.
+- [x] Sync Pierre current/incoming clicks back into backend merge resolutions.
+- [x] Keep server-side merge and latest-snapshot guard as source of truth.
+- [x] Verify TypeScript, frontend tests/build, focused backend test, line counts, diff whitespace, and graphify update.
+
+### Native Pierre Merge Resolution Results
+
+- Merge conflicts now render through Pierre `UnresolvedFile`, not a custom selector panel.
+- Backend semantic conflicts are adapted into a temporary JSON merge-conflict file.
+- Pierre's current/incoming conflict controls update frontend merge resolutions for the backend request.
+- Backend merge remains authoritative and still rejects stale reviews when latest snapshot changes.
+- Frontend TypeScript, tests, build, formatting, backend focused tests, line counts, and diff whitespace passed.
+- `vp check` and React Doctor still report existing repo-wide issues outside this merge work.
+
+## Follow-up: Cleaner Pierre Merge Header
+
+- [x] Remove custom merge header/copy from the Pierre conflict viewer.
+- [x] Remove synthetic path comments and base blocks from generated conflict text.
+- [x] Use actual latest snapshot and change names as conflict labels.
+- [x] Keep Pierre conflict controls as the only selection UI.
+- [x] Verify TypeScript, frontend tests/build, focused backend test, line counts, diff whitespace, and graphify update.
+
+### Cleaner Pierre Merge Header Results
+
+- Removed the custom `Merge conflicts` header, explanatory copy, and `latest changed` pill from the diff surface.
+- Generated conflict text now uses two-way markers only: `snapshot/<name>@vN` versus `change/<name>`.
+- Removed synthetic `// path` comments and the diff3 `base` block from the merge file.
+- Pierre `UnresolvedFile` remains the only conflict selection UI, while backend merge stays authoritative.
+- Frontend TypeScript, tests, build, backend focused tests, line count, diff whitespace, and graphify update passed.
+- `vp check` still fails on existing repo-wide lint/type debt outside this change.
+
+## Follow-up: Contextual Pierre Schema Merge UI
+
+- [x] Render schema merge as a full JSON file with context, not isolated changed values.
+- [x] Preserve multiple conflict blocks so Pierre can select individual changes.
+- [x] Use Pierre features: unresolved conflict UI, hunk context, word diff, line selection, compact header.
+- [x] Keep backend semantic merge and latest snapshot guard authoritative.
+- [x] Verify TypeScript, frontend tests/build, focused backend test, line counts, diff whitespace, and graphify update.
+
+### Contextual Pierre Schema Merge UI Results
+
+- Schema merge review now feeds Pierre a full `schema.merge.json` with conflict markers inserted at semantic JSON paths.
+- Multiple changed paths render as individual Pierre conflict blocks with surrounding JSON context.
+- Merge review uses Pierre unresolved-file controls, metadata hunk separators, word-alt diffing, line selection, Pierre themes, and built-in header metadata.
+- Non-stale publish review stays as normal diff; stale merge review makes every changed path selectable.
+- Added focused frontend test for contextual merge-file generation and visual conflict-path ordering.
+- Frontend TypeScript, tests, build, backend focused tests, line counts, and diff whitespace passed.
+
+## Audit: Schema Conflict Resolution And Pierre Diffs
+
+- [x] Trace schema diff/conflict/merge flow across API and frontend.
+- [x] Validate merge semantics, stale-review protection, and JSON path edge cases.
+- [x] Compare installed `@pierre/diffs` API/capabilities with actual usage.
+- [x] Run focused backend/frontend verification and inspect test coverage gaps.
+- [x] Record severity-ranked findings and final review evidence.
+
+### Audit Review
+
+- Verdict: scalar happy path works, but merge is not safe for approval yet.
+- High-risk gaps: delete/null/array semantics, container type changes, overlapping visual conflict ranges, stale Pierre cache keys, omitted binding merges, repeated publish, and DB races.
+- Pierre 1.2.12 is correctly chosen for normal and unresolved diffs; optional annotations, patch rendering, SSR, and CodeView are out of scope. Workers/virtualization matter only if schema size becomes large.
+- Focused backend tests pass 7/7; full backend suite has one unrelated architecture failure.
+- Focused frontend test passes 1/1; frontend production build passes with existing chunk warnings.
+- Existing tests cover only leaf-string success and latest-version drift; required error/structural cases remain uncovered.
+
+## Fix: Safe Schema Merge And Pierre Integration
+
+- [x] Add failing regression coverage before implementation:
+  - [x] missing vs `null`, object deletion, array deletion/reorder, and container type changes.
+  - [x] binding three-way merge and stale draft/latest concurrency.
+  - [x] duplicate, unknown, missing, null, and invalid resolutions.
+  - [x] overlapping/missing visual paths, exact Pierre remount key, action mapping, and accessible labels.
+- [x] Replace flattened mutation with structural three-way merge:
+  - [x] RFC 6901 JSON Pointer paths.
+  - [x] explicit missing state and real add/replace/remove operations.
+  - [x] disjoint changes; arrays merge by stable identity or same length by index, otherwise atomically.
+  - [x] include form schema and model bindings in one authoritative merge document.
+- [x] Harden persisted workflow:
+  - [x] preserve binding baseline across draft creation/rebase.
+  - [x] validate exact resolution set with typed side enum.
+  - [x] reject repeated publish without changing state.
+  - [x] serialize draft/schema writes and detect stale draft/current document drift.
+  - [x] keep service files below 300 lines.
+- [x] Harden Pierre/frontend flow:
+  - [x] group overlapping or missing paths into valid contextual conflict blocks.
+  - [x] remount on exact content change.
+  - [x] synchronize grouped choices and unresolved count.
+  - [x] remove ignored/dead options, fix accessible names and stale copy.
+- [x] Verify narrow tests, API suite, frontend suite/build/check, React Doctor, line limits, diff whitespace, and `graphify update .`.
+
+### Safe Merge Review
+
+- Fixed inflated merge diff blocks: same-length arrays without identity now diff by index, so small `fields`/`reports` edits produce leaf paths instead of whole-array `-711/+711` blocks.
+- Backend merge now uses structural three-way merge over `{formSchema, bindings}`, missing/null-aware RFC 6901 paths, typed exact conflict resolutions, draft revision checks, pessimistic schema/draft locks, and current document SHA-256 drift detection.
+- Binding baselines are snapshotted on draft create and frozen for legacy drafts before `addBinding` mutates an old version.
+- Legacy `PUBLISHED` drafts with `published_version_id = null` now backfill only when exactly one published version matches name, form schema, and semantic bindings.
+- Pierre usage remains through `UnresolvedFile` for conflicts and `MultiFileDiff` for non-conflict diffs, with exact-content cache keys, custom conflict actions, native current/incoming data attributes, and no extra Monaco layer.
+- Verification passed: `mvn -Dtest=SchemaDraftServiceTest test`, `mvn -Dtest=SchemaFlowServiceTest test`, `vp test`, `vp build`, line-count check, `git diff --check HEAD`, and `graphify update .`.
+- Known existing blockers remain: full `mvn test` fails only `WebAdapterArchitectureTest` with 13 pre-existing web-adapter/service violations; `vp check --fix` formats but still reports 14 errors/41 warnings outside this change; React Doctor reports 2 existing performance errors and 236 warnings.

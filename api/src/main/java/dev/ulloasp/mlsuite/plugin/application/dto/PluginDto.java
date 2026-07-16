@@ -9,6 +9,9 @@ public record PluginDto(
         long sizeBytes,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
+        String updatedByName,
+        String updatedByEmail,
+        String updatedByAvatarUrl,
         String source,
         String pluginType,
         String kind) {

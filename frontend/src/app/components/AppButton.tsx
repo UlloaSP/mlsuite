@@ -31,7 +31,7 @@ export function AppButton({
       {...props}
       type={type}
       className={cx(
-        "inline-flex items-center justify-center gap-2 rounded px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45",
+        "inline-flex cursor-pointer items-center justify-center gap-2 rounded px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45",
         variants[variant],
         className,
       )}

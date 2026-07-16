@@ -123,7 +123,7 @@ export function SidebarUserFooter() {
                     className="flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium outline-none hover:bg-[var(--surface-muted)] focus:bg-[var(--surface-muted)]"
                   >
                     <ShieldCheck size={16} />
-                    Admin
+                    Users
                   </Link>
                 </DropdownMenu.Item>
               ) : null}

@@ -13,6 +13,8 @@ export type { RoleScope } from "./role-scope";
 export type { RoleSummaryDto } from "./role-summary-dto";
 export type { MembershipRowActionsDto } from "./membership-row-actions-dto";
 export type { OrganizationDto } from "./organization-dto";
+export type { OrganizationCatalogItemDto } from "./organization-catalog-item-dto";
+export type { OrganizationPageDto } from "./organization-page-dto";
 export type { OrganizationMembershipDto } from "./organization-membership-dto";
 export type { OrganizationMembershipRowDto } from "./organization-membership-row-dto";
 export type { TeamDto } from "./team-dto";

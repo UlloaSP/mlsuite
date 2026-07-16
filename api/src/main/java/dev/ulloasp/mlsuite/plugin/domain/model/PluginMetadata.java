@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.plugin.domain.model;
 import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -30,6 +31,7 @@ public class PluginMetadata {
             long sizeBytes,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt,
+            User updatedBy,
             String pluginType,
             String kind) {
         this.id = id;
@@ -40,6 +42,7 @@ public class PluginMetadata {
         this.sizeBytes = sizeBytes;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.updatedBy = updatedBy;
         this.pluginType = pluginType;
         this.kind = kind;
     }
@@ -69,6 +72,10 @@ public class PluginMetadata {
 
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_plugin_metadata_updated_by"))
+    private User updatedBy;
 
     @Column(name = "plugin_type", nullable = false, length = 32)
     private String pluginType;

@@ -11,6 +11,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 public record PredictionRunDto(
         Long id,
         Long schemaVersionId,
+        Long schemaBookmarkId,
         String name,
         Map<String, Object> inputData,
         PredictionRunStatus status,
@@ -22,6 +23,7 @@ public record PredictionRunDto(
         return new PredictionRunDto(
                 run.getId(),
                 run.getSchemaVersion().getId(),
+                run.getSchemaBookmark() == null ? null : run.getSchemaBookmark().getId(),
                 run.getName(),
                 run.getInputData(),
                 run.getStatus(),

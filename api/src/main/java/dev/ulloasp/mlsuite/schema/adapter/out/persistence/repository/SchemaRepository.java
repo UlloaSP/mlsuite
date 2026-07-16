@@ -7,6 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 
@@ -46,7 +48,13 @@ public interface SchemaRepository extends JpaRepository<Schema, Long> {
 
     Optional<Schema> findByIdAndOrganizationId(Long id, Long organizationId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Schema s WHERE s.id = :id AND s.organization.id = :organizationId")
+    Optional<Schema> findForUpdate(Long id, Long organizationId);
+
     boolean existsByNameAndOrganizationId(String name, Long organizationId);
 
     boolean existsByNameAndOrganizationIdAndIdNot(String name, Long organizationId, Long id);
+
+    long countByOrganizationId(Long organizationId);
 }

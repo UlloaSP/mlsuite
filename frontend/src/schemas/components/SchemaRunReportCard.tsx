@@ -63,9 +63,9 @@ export function SchemaRunReportCard({ label, kind, payload, labels = [] }: Props
                     </span>
                     <span>{(probability * 100).toFixed(1)}%</span>
                   </div>
-                  <div className="h-2 rounded-full bg-[var(--surface-muted)]">
+                  <div className="h-2 rounded bg-[var(--surface-muted)]">
                     <div
-                      className="h-2 rounded-full bg-[var(--accent-primary)]"
+                      className="h-2 rounded bg-[var(--accent-primary)]"
                       style={{ width: `${Math.max(0, Math.min(100, probability * 100))}%` }}
                     />
                   </div>

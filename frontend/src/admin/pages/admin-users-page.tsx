@@ -1,269 +1,154 @@
-import { Check, KeyRound, Plus } from "lucide-react";
-import type { FormEvent } from "react";
-import { useMemo, useRef, useState } from "react";
-import { Navigate } from "react-router";
-import {
-  AppButton,
-  AppSelect,
-  AppTextField,
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSurface,
-} from "../../app/components";
-import { useUser } from "../../api/user/hooks";
-import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import { Plus, Search } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
+import type { AdminUserDto } from "../../api/admin-users/dtos";
 import {
   useAdminUsers,
-  useCreateAdminUser,
+  useDeleteAdminUser,
   useResetAdminUserPassword,
   useUpdateAdminUser,
 } from "../../api/admin-users/hooks";
+import { useUser } from "../../api/user/hooks";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "../../app/components";
+import { NotFoundError } from "../../app/pages/error-page";
+import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
+import { UserCatalogTile } from "../components/UserCatalogTile";
 
-type Role = "USER" | "SUPERADMIN";
-type UserSortMode = "current" | "name" | "newest" | "oldest" | "enabled" | "disabled";
+const PAGE_SIZE = 8;
 type ResetTarget = { id: number; fullName: string } | null;
-const ROLE_OPTIONS = [
-  { value: "USER", label: "USER" },
-  { value: "SUPERADMIN", label: "SUPERADMIN" },
+type UserRoleFilter = "all" | "USER" | "SUPERADMIN";
+type UserSortMode = "current" | "name" | "newest" | "oldest";
+
+const FILTERS: Array<{ value: UserRoleFilter; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "USER", label: "User" },
+  { value: "SUPERADMIN", label: "Superadmin" },
 ];
-const USER_SORT_OPTIONS = [
+
+const SORT_OPTIONS: Array<{ value: UserSortMode; label: string }> = [
   { value: "current", label: "Current order" },
   { value: "name", label: "Name" },
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },
-  { value: "enabled", label: "Enabled first" },
-  { value: "disabled", label: "Disabled first" },
 ];
 
-// react-doctor-disable-next-line react-doctor/prefer-useReducer -- The create-user form fields and sort selector are independent controls.
 export function AdminUsersPage() {
-  const { data: user } = useUser();
-  const { data: users = [], isLoading } = useAdminUsers();
-  const createUser = useCreateAdminUser();
+  const navigate = useNavigate();
+  const { data: user, error } = useUser();
+  const controls = useCatalogControls<UserRoleFilter, UserSortMode>({
+    initialFilter: "all",
+    initialSort: "current",
+  });
+  const pageQuery = useAdminUsers({
+    page: controls.page,
+    role: controls.filter,
+    search: controls.search,
+    size: PAGE_SIZE,
+    sort: controls.sort,
+  });
   const updateUser = useUpdateAdminUser();
   const resetPassword = useResetAdminUserPassword();
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("USER");
-  const [sortMode, setSortMode] = useState<UserSortMode>("current");
+  const deleteUser = useDeleteAdminUser();
   const [resetTarget, setResetTarget] = useState<ResetTarget>(null);
-  const userOrderRef = useRef(new Map<number, number>());
+  const pageItems = pageQuery.data?.items ?? [];
+  const isActionPending =
+    updateUser.isPending || resetPassword.isPending || deleteUser.isPending || pageQuery.isLoading;
 
-  const visibleUsers = useMemo(() => {
-    const order = userOrderRef.current;
-    const liveIds = new Set(users.map((row) => row.id));
-    users.forEach((row) => {
-      if (!order.has(row.id)) {
-        order.set(row.id, order.size);
-      }
-    });
-    for (const id of order.keys()) {
-      if (!liveIds.has(id)) {
-        order.delete(id);
-      }
+  const update = async (
+    row: AdminUserDto,
+    payload: { enabled?: boolean; systemRole?: AdminUserDto["systemRole"] },
+  ) => {
+    try {
+      await updateUser.mutateAsync({ id: row.id, payload });
+      toast.success("User updated.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
     }
-    const byCurrentOrder = (left: { id: number }, right: { id: number }) =>
-      (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0);
-    const sorted = [...users];
-
-    switch (sortMode) {
-      case "name":
-        return sorted.sort(
-          (left, right) =>
-            left.fullName.localeCompare(right.fullName, undefined, { sensitivity: "base" }) ||
-            byCurrentOrder(left, right),
-        );
-      case "newest":
-        return sorted.sort(
-          (left, right) =>
-            new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime() ||
-            byCurrentOrder(left, right),
-        );
-      case "oldest":
-        return sorted.sort(
-          (left, right) =>
-            new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime() ||
-            byCurrentOrder(left, right),
-        );
-      case "enabled":
-        return sorted.sort(
-          (left, right) =>
-            Number(right.enabled) - Number(left.enabled) || byCurrentOrder(left, right),
-        );
-      case "disabled":
-        return sorted.sort(
-          (left, right) =>
-            Number(left.enabled) - Number(right.enabled) || byCurrentOrder(left, right),
-        );
-      case "current":
-      default:
-        return sorted.sort(byCurrentOrder);
+  };
+  const remove = async (row: AdminUserDto) => {
+    try {
+      await deleteUser.mutateAsync(row.id);
+      if (pageItems.length === 1 && controls.page > 0) {
+        controls.setPage((current) => current - 1);
+      }
+      toast.success("User deleted.");
+    } catch (actionError: unknown) {
+      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      throw actionError;
     }
-  }, [sortMode, users]);
-
-  if (user?.systemRole !== "SUPERADMIN") {
-    return <Navigate to="/workspace" replace />;
-  }
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    createUser.mutate(
-      { email, fullName, password, systemRole: role },
-      {
-        onSuccess: () => {
-          setEmail("");
-          setFullName("");
-          setPassword("");
-          setRole("USER");
-        },
-      },
-    );
   };
   const submitResetPassword = (nextPassword: string) => {
     if (!resetTarget) return;
     resetPassword.mutate(
       { id: resetTarget.id, password: nextPassword },
-      { onSuccess: () => setResetTarget(null) },
+      {
+        onSuccess: () => {
+          toast.success("Password changed.");
+          setResetTarget(null);
+        },
+        onError: (actionError) => toast.error(actionError.message),
+      },
     );
   };
 
   return (
-    <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto app-scroll">
-        <AppPageHeader
-          eyebrow="Admin"
-          title="Users"
-          description="Create accounts, set global access, and reset passwords."
-          breadcrumbs={[{ label: "Admin" }, { label: "Users" }]}
-        />
-        <AppPanel>
-          <form onSubmit={submit} className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto_auto]">
-            <AppTextField
-              required
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-            />
-            <AppTextField
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Full name"
-            />
-            <AppTextField
-              required
-              type="password"
-              minLength={10}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-            />
-            <AppSelect
-              value={role}
-              onValueChange={(nextRole) => setRole(nextRole as Role)}
-              options={ROLE_OPTIONS}
-            />
-            <AppButton type="submit" disabled={createUser.isPending}>
+    <>
+      <CatalogResourcePage
+        accessDenied={!user || Boolean(error) || user.systemRole !== "SUPERADMIN"}
+        accessFallback={<NotFoundError />}
+        controls={controls}
+        header={{
+          eyebrow: "Superadmin",
+          title: "Users",
+          description: "Search, filter, and maintain platform users.",
+          breadcrumbs: [{ label: "Users" }],
+          actions: (
+            <AppButton type="button" onClick={() => navigate("/admin/users/create")}>
               <Plus size={16} />
-              Create
+              New User
             </AppButton>
-          </form>
-        </AppPanel>
-        <AppPanel className="overflow-auto">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)]">
-              User order
-            </span>
-            <AppSelect
-              value={sortMode}
-              onValueChange={(nextSort) => setSortMode(nextSort as UserSortMode)}
-              className="min-w-[180px]"
-              aria-label="Sort users"
-              options={USER_SORT_OPTIONS}
-            />
-          </div>
-          <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-              <tr>
-                <th className="p-3">User</th>
-                <th className="p-3">Role</th>
-                <th className="w-32 p-3 text-center">Enabled</th>
-                <th className="p-3">Password</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td className="px-3 py-5 text-[var(--text-secondary)]" colSpan={4}>
-                    Loading…
-                  </td>
-                </tr>
-              ) : (
-                visibleUsers.map((row) => (
-                  <tr key={row.id} className="border-t border-[var(--border-soft)]">
-                    <td className="px-3 py-4">
-                      <p className="font-semibold text-[var(--text-primary)]">{row.fullName}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">{row.email}</p>
-                    </td>
-                    <td className="px-3 py-4">
-                      <AppSelect
-                        value={row.systemRole}
-                        onValueChange={(nextRole) =>
-                          updateUser.mutate({
-                            id: row.id,
-                            payload: { systemRole: nextRole as Role },
-                          })
-                        }
-                        options={ROLE_OPTIONS}
-                      />
-                    </td>
-                    <td className="w-32 px-3 py-4 text-center">
-                      <label className="inline-grid size-9 place-items-center rounded-full transition hover:bg-[var(--surface-muted)]">
-                        <input
-                          type="checkbox"
-                          checked={row.enabled}
-                          onChange={(e) =>
-                            updateUser.mutate({
-                              id: row.id,
-                              payload: { enabled: e.target.checked },
-                            })
-                          }
-                          className="peer sr-only"
-                          aria-label={`${row.fullName} enabled`}
-                        />
-                        <span className="grid size-5 place-items-center rounded-[5px] border border-[var(--border-soft)] bg-[var(--surface-primary)] text-transparent transition peer-checked:border-[var(--accent-primary)] peer-checked:bg-[var(--accent-primary)] peer-checked:text-white">
-                          <Check size={14} strokeWidth={3} />
-                        </span>
-                      </label>
-                    </td>
-                    <td className="px-3 py-4">
-                      <AppButton
-                        type="button"
-                        variant="secondary"
-                        onClick={() => setResetTarget({ id: row.id, fullName: row.fullName })}
-                      >
-                        <KeyRound size={15} />
-                        Reset
-                      </AppButton>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </AppPanel>
-        {resetTarget ? (
-          <ResetPasswordDialog
-            fullName={resetTarget.fullName}
-            isPending={resetPassword.isPending}
-            onClose={() => setResetTarget(null)}
-            onSubmit={submitResetPassword}
+          ),
+        }}
+        isActionPending={isActionPending || pageQuery.isFetching}
+        loadingLabel="Loading users..."
+        pageSize={PAGE_SIZE}
+        filterLabel="Filter users by role"
+        filters={FILTERS}
+        placeholder="Search by name or email"
+        query={pageQuery}
+        sortLabel="Sort users"
+        sortOptions={SORT_OPTIONS}
+        emptyIcon={<Search size={22} />}
+        emptyTitle="No users yet"
+        filteredEmptyTitle="No matching users"
+        emptyDescription="Create the first user to manage platform access."
+        filteredEmptyDescription="Try another search term or role filter."
+        renderItem={(row) => (
+          <UserCatalogTile
+            key={row.id}
+            disabled={isActionPending}
+            item={row}
+            onDelete={() => remove(row)}
+            onResetPassword={() => setResetTarget({ id: row.id, fullName: row.fullName })}
+            onUpdate={(payload) => update(row, payload)}
           />
-        ) : null}
-      </AppSurface>
-    </AppPage>
+        )}
+      />
+      {resetTarget ? (
+        <ResetPasswordDialog
+          fullName={resetTarget.fullName}
+          isPending={resetPassword.isPending}
+          onClose={() => setResetTarget(null)}
+          onSubmit={submitResetPassword}
+        />
+      ) : null}
+    </>
   );
 }

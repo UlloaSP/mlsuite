@@ -57,6 +57,10 @@ public class Organization {
     @JoinColumn(name = "created_by_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_organization_creator"))
     private User createdBy;
 
+    @ManyToOne
+    @JoinColumn(name = "updated_by_user_id", foreignKey = @ForeignKey(name = "fk_organization_updated_by"))
+    private User updatedBy;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;

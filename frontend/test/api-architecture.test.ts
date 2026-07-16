@@ -67,4 +67,17 @@ describe("frontend API architecture", () => {
 
     expect(failures).toEqual([]);
   });
+
+  test("keeps model catalog invalidation on shared query keys", () => {
+    const apiFiles = tsFiles(API);
+    const literalGetModelsInvalidations = apiFiles
+      .filter((file) => source(file).includes('queryKey: ["getModels"]'))
+      .map(rel);
+    const createModelMutation = source(
+      join(API, "models", "hooks", "use-create-model-mutation.ts"),
+    );
+
+    expect(literalGetModelsInvalidations).toEqual([]);
+    expect(createModelMutation).toContain("useInvalidateModelQueries");
+  });
 });

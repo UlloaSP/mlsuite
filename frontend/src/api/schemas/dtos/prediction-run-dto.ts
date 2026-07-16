@@ -8,6 +8,7 @@ import type { JsonRecord, PredictionRunStatus, PredictionResultDto } from "./ind
 export type PredictionRunDto = {
   id: string;
   schemaVersionId: string;
+  schemaBookmarkId?: string | null;
   name: string;
   inputData: JsonRecord;
   status: PredictionRunStatus;

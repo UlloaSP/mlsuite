@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
@@ -22,7 +23,9 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
+import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
+import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationManagementService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
@@ -36,6 +39,7 @@ import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -91,6 +95,38 @@ class OrganizationManagementServiceTest {
     }
 
     @Test
+    void createOrganization_AllowsSuperadminToPickOwner() {
+        User actor = user(7L);
+        actor.setSystemRole(SystemRole.SUPERADMIN);
+        User owner = user(8L);
+        Organization saved = organization();
+        RoleDefinition ownerRole = orgRole(OrganizationRole.OWNER);
+        when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
+        when(workspaceAccessService.isSuperadmin(7L)).thenReturn(true);
+        when(workspaceAccessService.requireUser(8L)).thenReturn(owner);
+        when(organizationRepository.save(org.mockito.ArgumentMatchers.any(Organization.class)))
+                .thenReturn(saved);
+        when(roleSeedService.orgRole(saved, OrganizationRole.OWNER)).thenReturn(ownerRole);
+
+        service.createOrganization(7L, new CreateOrganizationRequest("Acme", "acme", null, 8L));
+
+        ArgumentCaptor<OrganizationMembership> captor = ArgumentCaptor.forClass(OrganizationMembership.class);
+        verify(membershipRepository).save(captor.capture());
+        assertEquals(owner, captor.getValue().getUser());
+        assertEquals(OrganizationRole.OWNER, captor.getValue().getRole());
+    }
+
+    @Test
+    void createOrganization_RejectsPickedOwnerWhenActorIsNotSuperadmin() {
+        User actor = user(7L);
+        when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
+        when(workspaceAccessService.isSuperadmin(7L)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.createOrganization(7L, new CreateOrganizationRequest("Acme", "acme", null, 8L)));
+    }
+
+    @Test
     void transferOwnership_MovesOwnerToTargetActiveMember() {
         OrganizationMembership owner = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
@@ -135,6 +171,35 @@ class OrganizationManagementServiceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.transferOwnership(7L, 41L, new TransferOrganizationOwnershipRequest(2L)));
+    }
+
+    @Test
+    void updateOrganization_UpdatesSlugWhenProvided() {
+        OrganizationMembership membership = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
+        Organization organization = membership.getOrganization();
+        when(workspaceAccessService.requireMembership(7L, 41L)).thenReturn(membership);
+        when(organizationRepository.save(organization)).thenReturn(organization);
+
+        var result = service.updateOrganization(
+                7L,
+                41L,
+                new UpdateOrganizationRequest("Acme Lab", "acme-lab", "Description"));
+
+        assertEquals("acme-lab", result.slug());
+        assertEquals("acme-lab", organization.getSlug());
+        verify(workspaceAuthorizationService).requireOrganizationEdit(7L, 41L);
+    }
+
+    @Test
+    void updateOrganization_PreservesSlugWhenOmitted() {
+        OrganizationMembership membership = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
+        Organization organization = membership.getOrganization();
+        when(workspaceAccessService.requireMembership(7L, 41L)).thenReturn(membership);
+        when(organizationRepository.save(organization)).thenReturn(organization);
+
+        service.updateOrganization(7L, 41L, new UpdateOrganizationRequest("Acme Lab", null, "Description"));
+
+        assertEquals("org", organization.getSlug());
     }
 
     @Test
@@ -189,11 +254,16 @@ class OrganizationManagementServiceTest {
         return role;
     }
 
+    private RoleDefinition orgRole(OrganizationRole role) {
+        return new RoleDefinition(organization(), null, RoleScope.ORGANIZATION, role.name(), role.name(), role.name());
+    }
+
     private User user(Long id) {
         User user = new User();
         user.setId(id);
         user.setEmail("user" + id + "@example.com");
         user.setFullName("User " + id);
+        user.setSystemRole(SystemRole.USER);
         return user;
     }
 }

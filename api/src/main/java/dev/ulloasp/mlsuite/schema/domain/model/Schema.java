@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -48,6 +49,14 @@ public class Schema {
 
     @Column(name = "description", length = 800)
     private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_schema_artifact_created_by"))
+    private User createdBy;
+
+    @ManyToOne
+    @JoinColumn(name = "updated_by", foreignKey = @ForeignKey(name = "fk_schema_artifact_updated_by"))
+    private User updatedBy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")

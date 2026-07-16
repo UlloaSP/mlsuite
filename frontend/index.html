@@ -107,6 +107,11 @@
         box-sizing: border-box;
       }
 
+      button:not(:disabled),
+      [role="button"]:not([aria-disabled="true"]) {
+        cursor: pointer;
+      }
+
       ::selection {
         background: color-mix(in srgb, var(--accent-primary) 24%, transparent);
       }
@@ -117,13 +122,13 @@
         mix-blend-mode: normal;
       }
 
-      .theme-radial-transition::view-transition-new(root) {
-        animation: theme-radial-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1);
-        clip-path: circle(0 at var(--theme-transition-x, 100%) var(--theme-transition-y, 100%));
+      .theme-corner-transition::view-transition-new(root) {
+        animation: theme-corner-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        clip-path: circle(150vmax at 0 0);
         mix-blend-mode: normal;
       }
 
-      .theme-radial-transition::view-transition-old(root) {
+      .theme-corner-transition::view-transition-old(root) {
         animation: none;
         mix-blend-mode: normal;
       }
@@ -165,16 +170,13 @@
         }
       }
 
-      @keyframes theme-radial-reveal {
+      @keyframes theme-corner-reveal {
         from {
-          clip-path: circle(0 at var(--theme-transition-x, 100%) var(--theme-transition-y, 100%));
+          clip-path: circle(0 at 0 0);
         }
 
         to {
-          clip-path: circle(
-            var(--theme-transition-radius, 150vmax) at var(--theme-transition-x, 100%)
-              var(--theme-transition-y, 100%)
-          );
+          clip-path: circle(150vmax at 0 0);
         }
       }
 
@@ -193,6 +195,33 @@
         background: color-mix(in srgb, var(--border-strong) 82%, transparent);
         border: 2px solid transparent;
         background-clip: padding-box;
+      }
+
+      .schema-editor-line-added {
+        background: color-mix(in srgb, var(--success-text) 14%, transparent);
+      }
+
+      .schema-editor-line-modified {
+        background: color-mix(in srgb, var(--warning-text) 14%, transparent);
+      }
+
+      .schema-editor-line-deleted {
+        background: color-mix(in srgb, var(--danger-text) 14%, transparent);
+      }
+
+      .schema-editor-gutter-added,
+      .schema-editor-glyph-added {
+        border-left: 3px solid var(--success-text);
+      }
+
+      .schema-editor-gutter-modified,
+      .schema-editor-glyph-modified {
+        border-left: 3px solid var(--warning-text);
+      }
+
+      .schema-editor-gutter-deleted,
+      .schema-editor-glyph-deleted {
+        border-left: 3px solid var(--danger-text);
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -216,16 +245,38 @@
     <script>
       (function () {
         const KEY = "ui/theme";
-        const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
-        const saved = localStorage.getItem(KEY);
-        const theme = saved ?? (sysDark ? "dark" : "light");
+        const modes = ["dark", "light", "system"];
+        const resolveTheme = (mode) =>
+          mode === "system"
+            ? matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+            : mode;
+        const applyTheme = (mode) => {
+          const safeMode = modes.includes(mode) ? mode : "system";
+          const theme = resolveTheme(safeMode);
 
-        document.documentElement.classList.toggle("dark", theme === "dark");
-        document.documentElement.dataset.theme = theme;
+          document.documentElement.classList.toggle("dark", theme === "dark");
 
-        /* opcional: sincronizar <meta name="theme-color"> en caliente */
-        const meta = document.querySelector('meta[name="theme-color"][media*="color-scheme"]');
-        if (meta) meta.setAttribute("content", theme === "dark" ? "#101418" : "#f7f7f7");
+          const meta = document.querySelector('meta[name="theme-color"][media*="color-scheme"]');
+          if (meta) meta.setAttribute("content", theme === "dark" ? "#101418" : "#f7f7f7");
+          return theme;
+        };
+        const raw = localStorage.getItem(KEY);
+        let saved = null;
+        try {
+          saved = raw ? JSON.parse(raw) : null;
+        } catch {
+          saved = raw;
+        }
+        window.__MLSUITE_APPLY_THEME__ = applyTheme;
+        applyTheme(saved);
+
+        const transitionStyle = document.createElement("style");
+        transitionStyle.textContent =
+          ":root.theme-corner-transition::view-transition-group(root){animation:none!important;}" +
+          ":root.theme-corner-transition::view-transition-new(root){animation:theme-corner-reveal 520ms cubic-bezier(0.22,1,0.36,1) both!important;}";
+        document.head.append(transitionStyle);
       })();
     </script>
   </head>

@@ -135,7 +135,7 @@ export function SchemaRunSaveModal({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-            className="relative z-[10001] m-6 flex max-h-[calc(100dvh-3rem)] flex-1 flex-col overflow-hidden rounded-[32px] border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
+            className="relative z-[10001] m-6 flex max-h-[calc(100dvh-3rem)] flex-1 flex-col overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">

@@ -19,4 +19,6 @@ public interface SchemaModelBindingRepository extends JpaRepository<SchemaModelB
     Optional<SchemaModelBinding> findBinding(Long schemaVersionId, Long modelId);
 
     boolean existsByModelId(Long modelId);
+
+    long countBySchemaVersionId(Long schemaVersionId);
 }

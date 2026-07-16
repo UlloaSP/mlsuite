@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReactNode } from "react";
 import { createBrowserRouter, Outlet, type RouteObject } from "react-router";
 import { AdminUsersPage } from "../admin/pages/admin-users-page";
+import { CreateAdminUserPage } from "../admin/pages/create-admin-user-page";
 import { AdminInfrastructurePage } from "../admin/infrastructure/pages/admin-infrastructure-page";
 import { AuthLandingPage } from "../app/pages/AuthLandingPage";
 import { NotFoundError } from "../app/pages/error-page";
@@ -20,10 +21,16 @@ import { SchemaReviewProtectedRoute } from "../review/components/SchemaReviewPro
 import { SchemaReviewWorkspacePage } from "../review/pages/review-workspace-page";
 import { CreateSchemaPage } from "../schemas/pages/create-schema-page";
 import { CreateSchemaRunPage } from "../schemas/pages/create-schema-run-page";
-import { CreateSchemaVersionPage } from "../schemas/pages/create-schema-version-page";
 import { PredictionRunDetailPage } from "../schemas/pages/prediction-run-detail-page";
+import { SchemaBookmarkDetailPage } from "../schemas/pages/schema-bookmark-detail-page";
+import { SchemaBookmarksPage } from "../schemas/pages/schema-bookmarks-page";
+import { SchemaChangesPage } from "../schemas/pages/schema-changes-page";
+import { SchemaDraftConflictPage } from "../schemas/pages/schema-draft-conflict-page";
+import { SchemaDraftEditorPage } from "../schemas/pages/schema-draft-editor-page";
 import { SchemaRunHistoryPage } from "../schemas/pages/schema-run-history-page";
 import { SchemaDetailPage } from "../schemas/pages/schema-detail-page";
+import { SchemaSnapshotDetailPage } from "../schemas/pages/schema-snapshot-detail-page";
+import { SchemaSnapshotsPage } from "../schemas/pages/schema-snapshots-page";
 import { SchemasPage } from "../schemas/pages/schemas-page";
 import { NotificationsPage } from "../user/pages/notifications-page";
 import { ProfilePage } from "../user/pages/profilePage";
@@ -80,11 +87,19 @@ const routes: RouteObject[] = [
               },
               {
                 path: "workspace/organizations",
-                element: workspace("canViewOrganization", <OrganizationsPage />),
+                element: (
+                  <RequireSuperadmin>
+                    <OrganizationsPage />
+                  </RequireSuperadmin>
+                ),
               },
               {
                 path: "workspace/organizations/create",
-                element: workspace("canEditOrganization", <CreateOrganizationPage />),
+                element: (
+                  <RequireSuperadmin>
+                    <CreateOrganizationPage />
+                  </RequireSuperadmin>
+                ),
               },
               {
                 path: "workspace/organizations/:organizationId",
@@ -139,6 +154,14 @@ const routes: RouteObject[] = [
                 ),
               },
               {
+                path: "admin/users/create",
+                element: (
+                  <RequireSuperadmin>
+                    <CreateAdminUserPage />
+                  </RequireSuperadmin>
+                ),
+              },
+              {
                 path: "admin/infrastructure",
                 element: (
                   <RequireSuperadmin>
@@ -175,19 +198,43 @@ const routes: RouteObject[] = [
                 element: workspace("canViewModels", <SchemaDetailPage />),
               },
               {
-                path: "schemas/:schemaId/versions/create",
-                element: workspace("canEditModels", <CreateSchemaVersionPage />),
+                path: "schemas/:schemaId/changes",
+                element: workspace("canViewModels", <SchemaChangesPage />),
               },
               {
-                path: "schemas/:schemaId/versions/:versionId/runs/create",
+                path: "schemas/:schemaId/bookmarks",
+                element: workspace("canViewModels", <SchemaBookmarksPage />),
+              },
+              {
+                path: "schemas/:schemaId/snapshots",
+                element: workspace("canViewModels", <SchemaSnapshotsPage />),
+              },
+              {
+                path: "schemas/:schemaId/drafts/:draftId",
+                element: workspace("canEditModels", <SchemaDraftEditorPage />),
+              },
+              {
+                path: "schemas/:schemaId/drafts/:draftId/conflicts",
+                element: workspace("canEditModels", <SchemaDraftConflictPage />),
+              },
+              {
+                path: "schemas/:schemaId/versions/:versionId",
+                element: workspace("canViewModels", <SchemaSnapshotDetailPage />),
+              },
+              {
+                path: "schemas/:schemaId/bookmarks/:bookmarkId",
+                element: workspace("canViewModels", <SchemaBookmarkDetailPage />),
+              },
+              {
+                path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/create",
                 element: workspace("canRunPredictions", <CreateSchemaRunPage />),
               },
               {
-                path: "schemas/:schemaId/versions/:versionId/runs",
+                path: "schemas/:schemaId/bookmarks/:bookmarkId/runs",
                 element: workspace("canViewModels", <SchemaRunHistoryPage />),
               },
               {
-                path: "schemas/:schemaId/versions/:versionId/runs/:runId",
+                path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/:runId",
                 element: workspace("canViewModels", <PredictionRunDetailPage />),
               },
             ],

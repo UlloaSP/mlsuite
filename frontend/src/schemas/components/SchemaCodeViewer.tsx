@@ -7,6 +7,7 @@ import { useAtom } from "jotai";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only Monaco import is erased from runtime.
 import type * as Monaco from "monaco-editor";
 import { lazy, Suspense, useEffect, useRef } from "react";
+import { cx } from "../../app/components/cx";
 import { themeWithHtmlAtom } from "../../app/atoms";
 import { editorDarkTheme, editorLightTheme, editorOptions } from "../../editor/utils/editorConfig";
 
@@ -14,13 +15,14 @@ type MonacoNamespace = typeof import("monaco-editor");
 
 type Props = {
   value: string;
+  className?: string;
 };
 
 const MonacoEditor = lazy(() =>
   import("@monaco-editor/react").then((module) => ({ default: module.Editor })),
 );
 
-export function SchemaCodeViewer({ value }: Props) {
+export function SchemaCodeViewer({ value, className }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
   const monacoRef = useRef<MonacoNamespace | null>(null);
 
@@ -42,7 +44,12 @@ export function SchemaCodeViewer({ value }: Props) {
   }, [theme]);
 
   return (
-    <div className="h-[480px] overflow-hidden rounded-[20px] border border-[var(--border-soft)] bg-[var(--surface-primary)]">
+    <div
+      className={cx(
+        className ?? "h-[480px]",
+        "overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]",
+      )}
+    >
       <Suspense fallback={<div className="h-full bg-[var(--surface-primary)]" />}>
         <MonacoEditor
           className="h-full"

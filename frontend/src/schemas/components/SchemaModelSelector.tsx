@@ -52,7 +52,7 @@ export function SchemaModelSelector({ models, value, onChange }: Props) {
               <div
                 key={model.id}
                 className={cx(
-                  "grid min-h-24 w-full gap-3 rounded-[22px] border p-4 shadow-[var(--shadow-card)] transition",
+                  "grid min-h-24 w-full gap-3 rounded border p-4 shadow-[var(--shadow-card)] transition",
                   selected
                     ? "border-[var(--accent-primary)] bg-[var(--accent-quiet)]"
                     : "border-[var(--border-soft)] bg-[var(--surface-primary)] hover:border-[var(--text-primary)]",
@@ -79,7 +79,7 @@ export function SchemaModelSelector({ models, value, onChange }: Props) {
                   </div>
                   <span
                     className={cx(
-                      "grid size-8 place-items-center rounded-full border",
+                      "grid size-8 place-items-center rounded border",
                       selected
                         ? "border-transparent bg-[var(--accent-primary)] text-[var(--text-inverse)]"
                         : "border-[var(--border-soft)] text-transparent",

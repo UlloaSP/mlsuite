@@ -1,10 +1,12 @@
 export { getWorkspaceContext } from "./get-workspace-context";
 export { selectOrganization } from "./select-organization";
 export { getOrganizations } from "./get-organizations";
+export { getOrganizationPage } from "./get-organization-page";
 export { createOrganization } from "./create-organization";
 export { getOrganization } from "./get-organization";
 export { getOrganizationAdminDashboard } from "./get-organization-admin-dashboard";
 export { updateOrganization } from "./update-organization";
+export { deleteOrganization } from "./delete-organization";
 export { getOrganizationMembers } from "./get-organization-members";
 export { updateOrganizationMemberRole } from "./update-organization-member-role";
 export { removeOrganizationMember } from "./remove-organization-member";

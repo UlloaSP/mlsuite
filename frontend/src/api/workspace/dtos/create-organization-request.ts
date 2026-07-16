@@ -7,4 +7,5 @@ export interface CreateOrganizationRequest {
   name: string;
   slug?: string;
   description?: string;
+  ownerUserId?: number;
 }

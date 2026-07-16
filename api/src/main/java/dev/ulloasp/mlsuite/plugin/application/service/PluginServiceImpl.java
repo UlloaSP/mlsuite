@@ -85,6 +85,7 @@ public class PluginServiceImpl implements
 
     @Override
     public PluginDto upload(Long userId, MultipartFile file) {
+        User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
         try {
@@ -97,13 +98,16 @@ public class PluginServiceImpl implements
                     file.getSize(),
                     now,
                     now,
+                    user.getFullName(),
+                    user.getEmail(),
+                    user.getAvatarUrl(),
                     new String(file.getBytes(), StandardCharsets.UTF_8));
             objectStorageService.store(
                     itemObjectKey(organization.getId(), id),
                     stored.fileName(),
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
-            persistMetadata(organization, stored);
+            persistMetadata(organization, stored, user);
             return toDto(stored);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
@@ -148,7 +152,7 @@ public class PluginServiceImpl implements
                 .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         List<PluginDto> catalog = new ArrayList<>();
         storedItems.values().forEach(item -> {
-            persistMetadata(organization, item);
+            persistMetadata(organization, item, null);
             catalog.add(toDto(item));
         });
         catalog.sort(Comparator
@@ -168,7 +172,7 @@ public class PluginServiceImpl implements
                 .ifPresent(pluginMetadataRepository::delete);
     }
 
-    private void persistMetadata(Organization organization, StoredPlugin stored) {
+    private void persistMetadata(Organization organization, StoredPlugin stored, User updatedBy) {
         PluginDescriptor descriptor = describe(stored.source());
         pluginMetadataRepository.save(new PluginMetadata(
                 stored.id(),
@@ -179,6 +183,7 @@ public class PluginServiceImpl implements
                 stored.sizeBytes(),
                 stored.createdAt(),
                 stored.updatedAt(),
+                updatedBy,
                 descriptor.type(),
                 descriptor.kind()));
     }
@@ -236,6 +241,9 @@ public class PluginServiceImpl implements
                 stored.sizeBytes(),
                 stored.createdAt(),
                 stored.updatedAt(),
+                stored.updatedByName(),
+                stored.updatedByEmail(),
+                stored.updatedByAvatarUrl(),
                 stored.source(),
                 descriptor.type(),
                 descriptor.kind());

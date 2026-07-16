@@ -104,6 +104,8 @@ class ModelServiceTest {
 
         assertEquals(1, page.items().size());
         assertEquals("demo", page.items().getFirst().name());
+        assertEquals(1L, page.items().getFirst().fieldCount());
+        assertEquals(1L, page.items().getFirst().reportCount());
     }
 
     @Test
@@ -120,9 +122,11 @@ class ModelServiceTest {
         when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
         when(modelRepository.existsByNameAndOrganizationIdAndIdNot("new", 41L, 9L)).thenReturn(false);
+        when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
         assertEquals("new", service.renameModel(3L, 9L, " new ").getName());
+        assertEquals("Alice", model.getUpdatedBy().getFullName());
     }
 
     @Test
@@ -130,6 +134,7 @@ class ModelServiceTest {
         Model model = model("demo");
         when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
+        when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
         service.archiveModel(3L, 9L);
@@ -165,6 +170,7 @@ class ModelServiceTest {
 
         assertEquals("copy", copy.getName());
         assertEquals("new-key", copy.getStorageObjectKey());
+        assertEquals("Alice", copy.getUpdatedBy().getFullName());
     }
 
     @Test
@@ -210,6 +216,8 @@ class ModelServiceTest {
         User user = new User();
         user.setId(3L);
         user.setUsername("alice");
+        user.setFullName("Alice");
+        user.setEmail("alice@example.com");
         return user;
     }
 
@@ -229,7 +237,10 @@ class ModelServiceTest {
         model.setType("classifier");
         model.setSpecificType("random_forest");
         model.setFileName("model.pkl");
-        model.setInputSchema(Map.of());
+        model.setUser(user());
+        model.setInputSchema(Map.of(
+                "fields", List.of(Map.of("id", "age")),
+                "reports", List.of(Map.of("id", "prediction"))));
         model.setCreatedAt(OffsetDateTime.now());
         model.setUpdatedAt(OffsetDateTime.now());
         return model;

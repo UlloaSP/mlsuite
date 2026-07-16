@@ -72,10 +72,7 @@ const reportBaseId = (report: Record<string, unknown>, index: number): string =>
       ? report.label
       : `report-${index + 1}`;
 
-const reportLabel = (
-  report: Record<string, unknown>,
-  binding: Binding,
-): string | undefined => {
+const reportLabel = (report: Record<string, unknown>, binding: Binding): string | undefined => {
   const label = typeof report.label === "string" ? report.label : undefined;
   const model = binding.modelName ?? binding.modelId;
   return label && model ? `${label} ${model}` : label;

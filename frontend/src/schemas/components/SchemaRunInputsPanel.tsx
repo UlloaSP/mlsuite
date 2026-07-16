@@ -33,7 +33,7 @@ export function SchemaRunInputsPanel({ schema, inputData, open = true, onToggle 
       {open ? (
         <div className="grid gap-3 md:grid-cols-2">
           {inputs.map((input) => (
-            <div key={input.key} className="rounded-[18px] bg-[var(--surface-muted)] px-4 py-3">
+            <div key={input.key} className="rounded bg-[var(--surface-muted)] px-4 py-3">
               <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 {input.label}
               </p>

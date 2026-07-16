@@ -6,6 +6,8 @@ describe("keyboard shortcut helpers", () => {
     expect(shortcutDigit({ key: "1", altKey: true })).toBe(1);
     expect(shortcutDigit({ key: "9", altKey: true, shiftKey: true })).toBe(9);
     expect(shortcutDigit({ key: "!", altKey: true, shiftKey: true })).toBe(1);
+    expect(shortcutDigit({ key: ")", code: "Digit9", altKey: true, shiftKey: true })).toBe(9);
+    expect(shortcutDigit({ key: "End", code: "Numpad1", altKey: true })).toBe(1);
   });
 
   it("rejects non-navigation digit keys", () => {

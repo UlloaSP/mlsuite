@@ -11,12 +11,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationAdminDashboardDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipRowDto;
+import dev.ulloasp.mlsuite.organization.application.dto.OrganizationPageDto;
 import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
@@ -27,6 +29,15 @@ public interface OrganizationController {
 
     @GetMapping
     ResponseEntity<List<OrganizationDto>> listOrganizations(Authentication authentication);
+
+    @GetMapping("/catalog")
+    ResponseEntity<OrganizationPageDto> getOrganizationPage(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "24") int size,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "all") String filter,
+            @RequestParam(defaultValue = "updated") String sort);
 
     @PostMapping
     ResponseEntity<OrganizationDto> createOrganization(

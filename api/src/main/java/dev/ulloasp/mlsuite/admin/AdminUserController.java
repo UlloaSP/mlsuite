@@ -1,16 +1,16 @@
 package dev.ulloasp.mlsuite.admin;
 
-import java.util.List;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -27,8 +27,13 @@ public class AdminUserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AdminUserDto>> list() {
-        return ResponseEntity.ok(adminUserService.list());
+    public ResponseEntity<AdminUserPageDto> list(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "current") String sort,
+            @RequestParam(defaultValue = "all") String role) {
+        return ResponseEntity.ok(adminUserService.list(page, size, search, sort, role));
     }
 
     @PostMapping
@@ -48,6 +53,12 @@ public class AdminUserController {
             @PathVariable Long id,
             @Valid @RequestBody AdminPasswordRequest request) {
         adminUserService.resetPassword(id, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        adminUserService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

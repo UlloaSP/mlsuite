@@ -30,6 +30,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
@@ -51,6 +52,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
@@ -62,28 +64,18 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 @ExtendWith(MockitoExtension.class)
 class SchemaFlowServiceTest {
 
-    @Mock
-    private UserLookupService userLookupService;
-    @Mock
-    private SchemaRepository schemaRepository;
-    @Mock
-    private SchemaVersionRepository versionRepository;
-    @Mock
-    private SchemaModelBindingRepository bindingRepository;
-    @Mock
-    private PredictionRunRepository runRepository;
-    @Mock
-    private PredictionResultRepository resultRepository;
-    @Mock
-    private PredictionResultFeedbackRepository feedbackRepository;
-    @Mock
-    private SchemaReviewLinkRepository reviewLinkRepository;
-    @Mock
-    private ModelRepository modelRepository;
-    @Mock
-    private WorkspaceAccessService workspaceAccessService;
-    @Mock
-    private WorkspaceAuthorizationService authorizationService;
+    @Mock private UserLookupService userLookupService;
+    @Mock private SchemaRepository schemaRepository;
+    @Mock private SchemaVersionRepository versionRepository;
+    @Mock private SchemaBookmarkRepository bookmarkRepository;
+    @Mock private SchemaModelBindingRepository bindingRepository;
+    @Mock private PredictionRunRepository runRepository;
+    @Mock private PredictionResultRepository resultRepository;
+    @Mock private PredictionResultFeedbackRepository feedbackRepository;
+    @Mock private SchemaReviewLinkRepository reviewLinkRepository;
+    @Mock private ModelRepository modelRepository;
+    @Mock private WorkspaceAccessService workspaceAccessService;
+    @Mock private WorkspaceAuthorizationService authorizationService;
 
     private SchemaServiceImpl schemaService;
     private SchemaVersionServiceImpl versionService;
@@ -97,8 +89,9 @@ class SchemaFlowServiceTest {
                 workspaceAccessService, authorizationService);
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, modelRepository, workspaceAccessService, authorizationService);
-        runService = new PredictionRunServiceImpl(userLookupService, versionRepository, bindingRepository,
-                runRepository, resultRepository, modelRepository, workspaceAccessService, authorizationService);
+        runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, bindingRepository,
+                runRepository, resultRepository, modelRepository,
+                workspaceAccessService, authorizationService);
         feedbackService = new PredictionResultFeedbackService(userLookupService, workspaceAccessService,
                 authorizationService, resultRepository, feedbackRepository);
         when(userLookupService.requireById(7L)).thenReturn(user());
@@ -112,6 +105,8 @@ class SchemaFlowServiceTest {
         Schema result = schemaService.createSchema(7L, new CreateSchemaRequest("Risk", "Transplant risk"));
 
         assertEquals("Risk", result.getName());
+        assertEquals("Transplant risk", result.getDescription());
+        assertEquals(7L, result.getUpdatedBy().getId());
         assertEquals(41L, result.getOrganization().getId());
         verify(authorizationService).requireOrganizationOperate(7L, 41L);
     }
@@ -120,11 +115,16 @@ class SchemaFlowServiceTest {
     void getSchemaPage_ReturnsPagedSchemas() {
         when(schemaRepository.findCatalogPage(any(), any(), any(Boolean.class), any(Boolean.class), any()))
                 .thenReturn(new PageImpl<>(List.of(schema()), PageRequest.of(0, 24), 1));
+        when(versionRepository.findTopBySchemaIdOrderByVersionDesc(5L)).thenReturn(Optional.of(version()));
+        when(bindingRepository.countBySchemaVersionId(9L)).thenReturn(2L);
 
         SchemaPageDto page = schemaService.getSchemaPage(7L, 0, 24, "risk", "updated", "active");
 
         assertEquals(1, page.totalItems());
         assertEquals("Risk", page.items().get(0).name());
+        assertEquals(2L, page.items().get(0).modelCount());
+        assertEquals(1L, page.items().get(0).fieldCount());
+        assertEquals("Alice", page.items().get(0).updatedByName());
         verify(authorizationService).requireOrganizationRead(7L, 41L);
     }
 
@@ -151,25 +151,6 @@ class SchemaFlowServiceTest {
     }
 
     @Test
-    void duplicateSchema_CopiesLatestVersionBindings() {
-        SchemaVersion sourceVersion = version();
-        Schema copy = new Schema(organization(), "Risk Copy", null);
-        copy.setId(6L);
-        when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
-        when(schemaRepository.save(any(Schema.class))).thenReturn(copy);
-        when(versionRepository.findTopBySchemaIdOrderByVersionDesc(5L)).thenReturn(Optional.of(sourceVersion));
-        when(versionRepository.save(any(SchemaVersion.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(binding(sourceVersion, 11L)));
-        when(bindingRepository.save(any(SchemaModelBinding.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Schema result = schemaService.duplicateSchema(7L, 5L, "Risk Copy");
-
-        assertEquals("Risk Copy", result.getName());
-        verify(bindingRepository).save(any(SchemaModelBinding.class));
-    }
-
-    @Test
     void deleteSchema_RejectsSchemaWithRuns() {
         when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
         when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
@@ -180,11 +161,10 @@ class SchemaFlowServiceTest {
 
     @Test
     void createVersion_RejectsDuplicateModelBinding() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
 
         CreateSchemaVersionRequest request = new CreateSchemaVersionRequest("v1", formSchema(),
-                List.of(
-                        new CreateSchemaModelBindingRequest(11L, Map.of()),
+                List.of(new CreateSchemaModelBindingRequest(11L, Map.of()),
                         new CreateSchemaModelBindingRequest(11L, Map.of())));
 
         assertThrows(ResponseStatusException.class, () -> versionService.createVersion(7L, 5L, request));
@@ -192,18 +172,17 @@ class SchemaFlowServiceTest {
 
     @Test
     void createVersion_PersistsMultipleModelBindings() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
         when(versionRepository.findMaxVersionBySchemaId(5L)).thenReturn(0);
         when(versionRepository.save(any(SchemaVersion.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(bindingRepository.save(any(SchemaModelBinding.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(model(11L)));
         when(modelRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(model(12L)));
 
-        SchemaVersion version = versionService.createVersion(7L, 5L, new CreateSchemaVersionRequest("v1",
-                formSchema(),
-                List.of(
-                        new CreateSchemaModelBindingRequest(11L, Map.of()),
-                        new CreateSchemaModelBindingRequest(12L, Map.of()))));
+        SchemaVersion version = versionService.createVersion(7L, 5L,
+                new CreateSchemaVersionRequest("v1", formSchema(),
+                        List.of(new CreateSchemaModelBindingRequest(11L, Map.of()),
+                                new CreateSchemaModelBindingRequest(12L, Map.of()))));
 
         assertEquals("v1", version.getName());
         verify(bindingRepository, times(2)).save(any());
@@ -211,7 +190,7 @@ class SchemaFlowServiceTest {
 
     @Test
     void createVersion_RejectsEmptyModelBindings() {
-        when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
+        when(schemaRepository.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
 
         CreateSchemaVersionRequest request = new CreateSchemaVersionRequest("v1", formSchema(), List.of());
 
@@ -220,20 +199,19 @@ class SchemaFlowServiceTest {
 
     @Test
     void createRun_PersistsPartialSuccessWhenEachBindingHasAResult() {
-        SchemaVersion version = version();
-        when(versionRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(version));
-        when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(
-                binding(version, 11L),
-                binding(version, 12L)));
+        SchemaBookmark bookmark = bookmark();
+        SchemaVersion version = bookmark.getVersion();
+        when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark));
+        when(bindingRepository.findBySchemaVersionId(9L))
+                .thenReturn(List.of(binding(version, 11L), binding(version, 12L)));
         when(runRepository.save(any(PredictionRun.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(modelRepository.findByIdAndOrganizationId(11L, 41L)).thenReturn(Optional.of(model(11L)));
         when(modelRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(model(12L)));
 
-        PredictionRun run = runService.createRun(7L, 9L, new CreatePredictionRunRequest("case-1",
-                Map.of("age", 52),
-                List.of(
-                        result(11L, PredictionResultStatus.SUCCESS),
-                        result(12L, PredictionResultStatus.FAILED))));
+        PredictionRun run = runService.createRunForBookmark(7L, 70L,
+                new CreatePredictionRunRequest("case-1", Map.of("age", 52),
+                        List.of(result(11L, PredictionResultStatus.SUCCESS),
+                                result(12L, PredictionResultStatus.FAILED))));
 
         assertEquals(PredictionRunStatus.PARTIAL_SUCCESS, run.getStatus());
         verify(resultRepository, times(2)).save(any());
@@ -241,20 +219,22 @@ class SchemaFlowServiceTest {
 
     @Test
     void createRun_RejectsUnboundResult() {
-        SchemaVersion version = version();
-        when(versionRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(version));
+        SchemaBookmark bookmark = bookmark();
+        SchemaVersion version = bookmark.getVersion();
+        when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark));
         when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(binding(version, 11L)));
 
         CreatePredictionRunRequest request = new CreatePredictionRunRequest("case-1", Map.of("age", 52),
                 List.of(result(12L, PredictionResultStatus.SUCCESS)));
 
-        assertThrows(ResponseStatusException.class, () -> runService.createRun(7L, 9L, request));
+        assertThrows(ResponseStatusException.class, () -> runService.createRunForBookmark(7L, 70L, request));
     }
 
     @Test
     void createRun_RejectsMissingBoundResult() {
-        SchemaVersion version = version();
-        when(versionRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(version));
+        SchemaBookmark bookmark = bookmark();
+        SchemaVersion version = bookmark.getVersion();
+        when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark));
         when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(
                 binding(version, 11L),
                 binding(version, 12L)));
@@ -262,7 +242,7 @@ class SchemaFlowServiceTest {
         CreatePredictionRunRequest request = new CreatePredictionRunRequest("case-1", Map.of("age", 52),
                 List.of(result(11L, PredictionResultStatus.SUCCESS)));
 
-        assertThrows(ResponseStatusException.class, () -> runService.createRun(7L, 9L, request));
+        assertThrows(ResponseStatusException.class, () -> runService.createRunForBookmark(7L, 70L, request));
     }
 
     @Test
@@ -322,6 +302,12 @@ class SchemaFlowServiceTest {
         return version;
     }
 
+    private SchemaBookmark bookmark() {
+        SchemaBookmark bookmark = new SchemaBookmark(schema(), version(), "production");
+        bookmark.setId(70L);
+        return bookmark;
+    }
+
     private PredictionResult predictionResult() {
         PredictionRun run = new PredictionRun(version(), "case", Map.of(), PredictionRunStatus.SUCCESS);
         PredictionResult result = new PredictionResult(run, model(11L),
@@ -336,7 +322,7 @@ class SchemaFlowServiceTest {
     }
 
     private Schema schema() {
-        Schema schema = new Schema(organization(), "Risk", null); schema.setId(5L); return schema;
+        Schema schema = new Schema(organization(), "Risk", null); schema.setId(5L); schema.setUpdatedBy(user()); return schema;
     }
 
     private Organization organization() {
@@ -346,12 +332,11 @@ class SchemaFlowServiceTest {
     }
 
     private User user() {
-        User user = new User(); user.setId(7L); user.setUsername("alice"); return user;
+        User user = new User(); user.setId(7L); user.setUsername("alice"); user.setFullName("Alice"); return user;
     }
 
     private WorkspacePermissionsDto permissions() {
-        return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true);
+        return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true,
+                true, true, true, true, true, true, true, true, true, true, true, true);
     }
 }
