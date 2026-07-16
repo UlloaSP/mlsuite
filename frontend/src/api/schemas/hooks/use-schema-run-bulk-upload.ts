@@ -6,9 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { createPredictionRun, getLastPredictionRunId } from "../services";
+import { createPredictionRunForBookmark, getLastPredictionRunId } from "../services";
 import type { SchemaVersionDto, PredictionRunDto, CreatePredictionRunRequest } from "../dtos";
-import { PREDICTION_RUNS_QUERY_KEY } from "./query-keys";
+import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "./query-keys";
 import { createSchemaRunRuntime } from "../../../algorithms/schema/runtime-assembly";
 import { isRecord } from "../../../algorithms/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "../../../algorithms/models/prediction-catalog-definitions";
@@ -32,11 +32,11 @@ const INITIAL = {
 };
 const MAX_RECORDS = 10000;
 
-export function useSchemaRunBulkUpload(version: SchemaVersionDto, historyVersionId = version.id) {
+export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: string) {
   const [state, setState] = useState(INITIAL);
   const abortRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
-  const runsQueryKey = PREDICTION_RUNS_QUERY_KEY(historyVersionId);
+  const runsQueryKey = BOOKMARK_PREDICTION_RUNS_QUERY_KEY(bookmarkId);
 
   const cancel = () => abortRef.current?.abort();
   const reset = () => setState(INITIAL);
@@ -98,7 +98,7 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, historyVersion
             inputData: isRecord(raw.inputData) ? raw.inputData : record.inputs,
             results: Array.isArray(raw.results) ? raw.results : [],
           };
-          const savedRun = await createPredictionRun(version.id, request);
+          const savedRun = await createPredictionRunForBookmark(bookmarkId, request);
           savedRuns.push(savedRun);
           saved += 1;
         } catch (error) {
@@ -117,7 +117,7 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, historyVersion
           prependMissingPredictionRuns(current, savedRuns),
         );
       }
-      queryClient.invalidateQueries({ queryKey: runsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: runsQueryKey });
     } catch (error) {
       setState(INITIAL);
       toast.error("Bulk upload could not start", {

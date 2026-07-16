@@ -1,5 +1,32 @@
 # Lessons
 
+## 2026-07-07 - Schema change base selection correction
+
+- Correction: schema change creation made the important base-version choice feel secondary, while editable metadata got equal weight.
+- Rule: when a create flow has one durable/irreversible choice and editable metadata, keep them together but make the durable choice inspectable with live preview before submit.
+- Correction: schema conflict review was a path table, but product expectation was a merge-style diff review.
+- Rule: stale draft publication flows should use merge language and visual diffs; path tables are supporting context, not the primary review surface.
+- Correction: published schema versions were treated as directly runnable entries with inference history.
+- Rule: published versions are immutable snapshots only; run and inference-history affordances belong to bookmarked schema changes or active bookmarked pointers, not to every published version.
+- Correction: bookmark fields stayed in new-change/editor flows after bookmarks became snapshot-only.
+- Rule: change/draft forms must collect only mutable change metadata; bookmark metadata belongs only to published snapshot actions.
+- Correction: schema detail still behaved like an inspector when the user wanted an index.
+- Rule: schema detail should list workflow entry points; schema document previews belong to change, snapshot, or bookmark detail pages.
+- Correction: schema overview became three equally weighted management lists, hiding the latest published schema state.
+- Rule: schema detail should behave like a repository overview: latest snapshot first, counts/navigation second, full changes/bookmarks/snapshots in dedicated list pages.
+- Correction: schema overview duplicated its internal nav as recent panels and used fake file rows for a single-document schema.
+- Rule: when internal nav owns related lists, overview should show the primary object state and preview; list discovery belongs to the nav destinations, not repeated below.
+- Correction: schema catalog cards only opened from the title/description area, so clicking metrics or most of the tile did nothing.
+- Rule: catalog cards should make the full primary content area clickable while keeping overflow/destructive actions as separate sibling controls.
+- Correction: schema overview kept a duplicated latest-snapshot summary above the actual snapshot preview.
+- Rule: schema overview should have one unframed snapshot metadata/preview surface; open/bookmark actions belong in dedicated snapshot/bookmark pages or catalog rows, not in overview.
+- Correction: after removing overview snapshot actions, local preview mode controls stayed lower in the content flow.
+- Rule: local mutually exclusive view controls should use one segmented control with one clear selected state, and snapshot metrics should sit horizontally between metadata and that mode switch when space allows.
+- Correction: unframed schema preview height felt like an accidental large bottom margin.
+- Rule: unframed document previews in overview should reserve enough viewport height to read as the main content, not as a short block followed by empty space.
+- Correction: switching snapshot tabs unmounted MLForm preview and lost entered form state.
+- Rule: preview mode switches must hide inactive long-lived form previews instead of conditionally unmounting them unless reset is intentional.
+
 ## 2026-06-26 - Catalog action placement correction
 
 - Correction: schema and organization overflow menus were visually inside content/metric flow instead of being the far-right action affordance.
@@ -613,3 +640,33 @@
 - Rule: when two frontend feature names represent one workflow, fuse UI, API, algorithms, routes, and tests under one domain folder; keep old backend endpoint names only when they are real server contracts.
 - Correction: notification count was described as a user badge, but intended placement was specifically on the avatar.
 - Rule: when placing user-notification counts in navigation, attach the numeric marker to the avatar itself, not a generic user/menu badge.
+- Correction: snapshot preview height was fixed with viewport calc after user asked for adaptive layout, leaving extra page whitespace and nested scroll risk.
+- Rule: viewport-bound preview panels must use flex parent/child sizing (`flex flex-col`, `flex-1`, `min-h-0`, `overflow-hidden`) before adding calc-based heights.
+- Correction: snapshot overview metrics were visually heavier than the adjacent title and segmented control, and relative dates missed the expected "ago" suffix.
+- Rule: horizontal metadata strips need matched control heights and complete relative-time copy; compact metric cards should not dominate primary actions.
+- Correction: change cards duplicated their primary edit action with both a status pill and an Edit button.
+- Rule: catalog rows should make their primary content area the navigation target; reserve visible buttons for secondary actions like review.
+- Correction: bookmark cards showed bookmark ids and duplicated version as a pill instead of describing the target snapshot.
+- Rule: bookmark rows should read like tags pointing to snapshots: bookmark name first, then target snapshot name/version and relative updated time.
+- Correction: snapshot rows duplicated tile navigation with an Open button and hid primary snapshot actions among metric pills.
+- Rule: snapshot rows should use tile click for open, concise title/version/publish metadata, and a compact action menu for change/bookmark commands.
+- Correction: new change used an intermediate page even after base selection became implicit from latest snapshot or selected snapshot row.
+- Rule: when base version is already determined by context, create the draft directly and navigate to editor; avoid interstitial selector pages.
+- Correction: overview header lost schema description and change rows showed change ids instead of base snapshot context.
+- Rule: schema overview should preserve entity description, and change rows should show the source snapshot with icon/name/version plus relative update time.
+- Correction: direct change creation hardcoded a name, while inline editor rename kept a permanent side panel for rare metadata edits.
+- Rule: create flows that need a human name should ask in a small modal before creating; rename belongs in an action menu, not persistent page real estate.
+- Correction: merge review showed a redundant wrapper card and did not let users choose current/incoming per changed part.
+- Rule: merge review must be the merge surface: diff viewer for context, path-level choices for actual resolution, and server-side latest-base validation at publish/apply time.
+- Correction: current/incoming choices were below the diff as a separate review panel, so it still did not feel like a merge editor.
+- Rule: merge choices should live inside the diff viewer surface; page-level review panels are only acceptable when the diff library cannot host or visually own the decision UI.
+- Correction: Pierre's own unresolved merge UI was missed even though the product wants a real merge editor.
+- Rule: before custom-building merge controls on top of a diff library, inspect and prefer the library's native conflict-resolution component; adapt data into its model unless that breaks the backend source of truth.
+- Correction: the Pierre merge viewer still had a custom explanatory header, synthetic path comments, and generic current/incoming labels.
+- Rule: when using a native merge UI, let the dependency own the surface; conflict text should look like code and labels should name real domain refs such as snapshot/change.
+- Correction: schema merge blocks were isolated value snippets, so Pierre could not show real file context or multiple change blocks like its own demo.
+- Rule: merge UIs should feed diff libraries full contextual files with conflict markers at real semantic paths; do not reduce code-review surfaces to extracted values.
+- Correction: merge review exposed conflict blocks, but selections were not obvious and the editor height grew with content.
+- Rule: merge editors need fixed scrollable viewports and explicit per-change actions wired through the diff library resolution API; unresolved counts must match every selectable block.
+- Correction: fixed-pixel merge editor height ignored theme/layout changes and left the page with the wrong scroll owner.
+- Rule: full-page merge editors should resolve theme from app state and use parent flex sizing with `min-h-0` plus internal diff scrolling, not pixel heights.

@@ -28,6 +28,7 @@ import { useWorkspaceContext } from "../../api/workspace/hooks";
 import { isTypingTarget, shortcutDigit } from "../utils/keyboard-shortcuts";
 import { cx } from "./cx";
 import { Kbd } from "./Kbd";
+import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
 import { isChildActive, type NavigationItem } from "./sidebar-navigation-support";
 import {
   SidebarGroup,
@@ -61,6 +62,7 @@ export function SidebarNavigation() {
   const { data: workspace } = useWorkspaceContext();
   const permissions = workspace?.permissions;
   const currentPath = `${location.pathname}${location.search}`;
+  const activeSchemaPath = getActiveSchemaPath(location.pathname);
   const collapsed = state === "collapsed";
   const showExpandedShortcutHints = showShortcutHints && !collapsed;
   const currentOrganizationPath = workspace
@@ -84,6 +86,7 @@ export function SidebarNavigation() {
       ? [{ to: `${currentOrganizationPath}/settings`, icon: Settings, label: "Settings" }]
       : []),
   ];
+  const schemaChildren = getSchemaNavigationChildren(activeSchemaPath);
   const navigation: NavigationItem[] = [
     ...(user?.systemRole === "SUPERADMIN"
       ? [
@@ -119,7 +122,14 @@ export function SidebarNavigation() {
       : []),
     ...(permissions?.canViewModels ? [{ to: "/models", icon: BrainCircuit, label: "Models" }] : []),
     ...(permissions?.canViewModels
-      ? [{ to: "/schemas", icon: ClipboardList, label: "Schemas" }]
+      ? [
+          {
+            to: activeSchemaPath ?? "/schemas",
+            icon: ClipboardList,
+            label: "Schemas",
+            children: schemaChildren,
+          },
+        ]
       : []),
     ...(permissions?.canViewPlugins ? [{ to: "/plugins", icon: Blocks, label: "Plugins" }] : []),
     ...(user?.systemRole === "SUPERADMIN"

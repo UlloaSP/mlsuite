@@ -107,15 +107,15 @@ export function CreateSchemaPage() {
                 />
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="min-w-20 rounded-[18px] bg-[var(--surface-muted)] p-3">
+                <div className="min-w-20 rounded bg-[var(--surface-muted)] p-3">
                   <p className="text-2xl font-semibold">{activeModelCount}</p>
                   <p className="text-xs text-[var(--text-secondary)]">Models</p>
                 </div>
-                <div className="min-w-20 rounded-[18px] bg-[var(--surface-muted)] p-3">
+                <div className="min-w-20 rounded bg-[var(--surface-muted)] p-3">
                   <p className="text-2xl font-semibold">{fieldCount}</p>
                   <p className="text-xs text-[var(--text-secondary)]">Fields</p>
                 </div>
-                <div className="min-w-20 rounded-[18px] bg-[var(--surface-muted)] p-3">
+                <div className="min-w-20 rounded bg-[var(--surface-muted)] p-3">
                   <p className="text-2xl font-semibold">{reportCount}</p>
                   <p className="text-xs text-[var(--text-secondary)]">Reports</p>
                 </div>

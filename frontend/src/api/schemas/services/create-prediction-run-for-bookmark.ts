@@ -5,13 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { appFetch } from "../../core/services/app-fetch";
 import { json } from "../../core/services/json";
-import type { PredictionRunDto, CreatePredictionRunRequest } from "../dtos";
+import type { CreatePredictionRunRequest, PredictionRunDto } from "../dtos";
 
-export const createPredictionRun = (
-  versionId: string,
+export const createPredictionRunForBookmark = (
+  bookmarkId: string,
   req: CreatePredictionRunRequest,
 ): Promise<PredictionRunDto> =>
   appFetch<PredictionRunDto>(
-    `/api/schema-versions/${encodeURIComponent(versionId)}/runs`,
+    `/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/runs`,
     json("POST", req),
   );

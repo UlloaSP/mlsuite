@@ -23,11 +23,18 @@ import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
 import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
 
 export function PredictionRunDetailPage() {
-  const { schemaId, runId } = useParams<{ schemaId: string; runId: string }>();
+  const { schemaId, runId, bookmarkId } = useParams<{
+    schemaId: string;
+    runId: string;
+    bookmarkId: string;
+  }>();
   const { versionId } = useParams<{ versionId: string }>();
   const { data: schema } = useSchema(schemaId);
   const { data: run, isLoading } = usePredictionRun(runId);
-  const { data: version } = useSchemaVersion(versionId);
+  const effectiveVersionId = versionId ?? run?.schemaVersionId;
+  const historyHref = `/schemas/${schemaId}/bookmarks/${bookmarkId}/runs`;
+  const rerunHref = `/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create?fromRunId=${runId}`;
+  const { data: version } = useSchemaVersion(effectiveVersionId);
   const executableVersion = useMemo(
     () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
     [version],
@@ -52,12 +59,12 @@ export function PredictionRunDetailPage() {
             { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
             {
               label: "Inference History",
-              to: `/schemas/${schemaId}/versions/${versionId}/runs`,
+              to: historyHref,
             },
             { label: run?.name ?? "Prediction run" },
           ]}
           actions={
-            <Link to={`/schemas/${schemaId}/versions/${versionId}/runs/create?fromRunId=${runId}`}>
+            <Link to={rerunHref}>
               <AppButton>
                 <RotateCcw size={16} />
                 Predict again

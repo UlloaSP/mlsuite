@@ -11,12 +11,12 @@ import type { SchemaVersionDto } from "../../api/schemas/dtos";
 
 type Props = {
   version: SchemaVersionDto;
-  versionId?: string;
+  bookmarkId: string;
 };
 
-export function SchemaRunBulkUploadButton({ version, versionId }: Props) {
+export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const bulk = useSchemaRunBulkUpload(version, versionId);
+  const bulk = useSchemaRunBulkUpload(version, bookmarkId);
   const processing = bulk.status === "processing" || bulk.status === "parsing";
   const label =
     bulk.status === "parsing"

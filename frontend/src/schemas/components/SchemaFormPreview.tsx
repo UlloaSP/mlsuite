@@ -121,7 +121,7 @@ export function SchemaFormPreview({ schema }: Props) {
   }
 
   return (
-    <div className="size-full min-h-0 overflow-hidden rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-primary)]">
+    <div className="size-full min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]">
       {resolvedSchema.status === "error" ? (
         <AppPanel className="m-4">{resolvedSchema.message}</AppPanel>
       ) : (

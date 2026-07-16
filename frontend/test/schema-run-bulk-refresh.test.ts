@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { PREDICTION_RUNS_QUERY_KEY } from "../src/api/schemas/hooks";
+import { describe, expect, it } from "vite-plus/test";
+import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "../src/api/schemas/hooks";
 import { prependMissingPredictionRuns } from "../src/algorithms/schema/run-cache";
 import type { PredictionRunDto } from "../src/api/schemas/dtos";
 
@@ -15,7 +15,9 @@ const run = (id: string): PredictionRunDto => ({
 
 describe("schema run bulk refresh", () => {
   it("normalizes prediction-runs query keys across route and dto id shapes", () => {
-    expect(PREDICTION_RUNS_QUERY_KEY("42")).toEqual(PREDICTION_RUNS_QUERY_KEY(42));
+    expect(BOOKMARK_PREDICTION_RUNS_QUERY_KEY("42")).toEqual(
+      BOOKMARK_PREDICTION_RUNS_QUERY_KEY(42),
+    );
   });
 
   it("prepends newly saved bulk runs without duplicating existing cache rows", () => {

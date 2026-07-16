@@ -11,9 +11,18 @@ export const SCHEMA_VERSIONS_QUERY_KEY = (schemaId: string) =>
   ["schemaVersions", { schemaId }] as const;
 export const SCHEMA_VERSION_QUERY_KEY = (versionId: string) =>
   ["schemaVersion", { versionId }] as const;
+export const SCHEMA_BOOKMARKS_QUERY_KEY = (schemaId: string) =>
+  ["schemaBookmarks", { schemaId }] as const;
+export const SCHEMA_BOOKMARK_QUERY_KEY = (bookmarkId: string) =>
+  ["schemaBookmark", { bookmarkId }] as const;
+export const SCHEMA_DRAFTS_QUERY_KEY = (schemaId: string) =>
+  ["schemaDrafts", { schemaId }] as const;
+export const SCHEMA_DRAFT_QUERY_KEY = (draftId: string) => ["schemaDraft", { draftId }] as const;
+export const SCHEMA_DRAFT_DIFF_QUERY_KEY = (draftId: string) =>
+  ["schemaDraftDiff", { draftId }] as const;
 export const PREDICTION_RUN_QUERY_KEY = (runId: string) => ["predictionRun", { runId }] as const;
-export const PREDICTION_RUNS_QUERY_KEY = (versionId: string | number) =>
-  ["predictionRuns", { versionId: String(versionId) }] as const;
+export const BOOKMARK_PREDICTION_RUNS_QUERY_KEY = (bookmarkId: string | number) =>
+  ["bookmarkPredictionRuns", { bookmarkId: String(bookmarkId) }] as const;
 export const PREDICTION_RESULT_FEEDBACK_QUERY_KEY = (resultId: string) =>
   ["predictionResultFeedback", { resultId }] as const;
 

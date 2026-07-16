@@ -77,9 +77,9 @@ public class SchemaController {
 
     @PostMapping("/{schemaId}/duplicate")
     public ResponseEntity<SchemaDto> duplicate(Authentication authentication, @PathVariable Long schemaId,
-            @RequestParam String name) {
+            @RequestParam(required = false) Long versionId, @RequestParam String name) {
         return ResponseEntity.status(HttpStatus.CREATED).body(SchemaDto.from(schemaCatalogUseCase.duplicateSchema(
-                userId(authentication), schemaId, name)));
+                userId(authentication), schemaId, versionId, name)));
     }
 
     @DeleteMapping("/{schemaId}")

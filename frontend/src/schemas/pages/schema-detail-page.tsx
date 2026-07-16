@@ -3,131 +3,111 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { History, Play, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
+import { AppButton } from "../../app/components/AppButton";
+import { AppPage } from "../../app/components/AppPage";
+import { AppPanel } from "../../app/components/AppPanel";
+import { AppSectionTitle } from "../../app/components/AppSectionTitle";
+import { AppSurface } from "../../app/components/AppSurface";
+import { AppPageHeader } from "../../app/components/PageHeader";
 import {
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSectionTitle,
-  AppSurface,
-  AppButton,
-  AppSelect,
-} from "../../app/components";
-import { useSchema, useSchemaVersions } from "../../api/schemas/hooks";
-import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
-import {
-  schemaVersionId,
-  selectSchemaVersion,
-  sortSchemaVersions,
-} from "../../algorithms/schema/version-selection";
-import { SchemaCodeViewer } from "../components/SchemaCodeViewer";
+  useSchema,
+  useSchemaBookmarks,
+  useCreateSchemaDraftMutation,
+  useSchemaDrafts,
+  useSchemaVersions,
+} from "../../api/schemas/hooks";
+import { schemaVersionId, sortSchemaVersions } from "../../algorithms/schema/version-selection";
+import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
+import { SchemaRepoNav } from "../components/SchemaRepoNav";
+import { SchemaSnapshotPreviewPanel } from "../components/SchemaSnapshotPreviewPanel";
 
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
+  const navigate = useNavigate();
   const { data: schema } = useSchema(schemaId);
   const { data: versions = [] } = useSchemaVersions(schemaId);
-  const [selectedVersionId, setSelectedVersionId] = useState("");
+  const { data: bookmarks = [] } = useSchemaBookmarks(schemaId);
+  const { data: drafts = [] } = useSchemaDrafts(schemaId);
+  const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
+  const [changeDialogOpen, setChangeDialogOpen] = useState(false);
   const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
-  const selectedVersion = selectSchemaVersion(sortedVersions, selectedVersionId);
-  const inputCount = countVisibleSchemaFields(selectedVersion?.formSchema);
-  const reportCount = Array.isArray(selectedVersion?.formSchema.reports)
-    ? selectedVersion.formSchema.reports.length
-    : 0;
-  const schemaCode = selectedVersion ? JSON.stringify(selectedVersion.formSchema, null, 2) : "{}";
+  const latestVersion = sortedVersions[0];
+
+  const createChange = async (name: string) => {
+    if (!schemaId || !latestVersion) return;
+    try {
+      const draft = await draftMutation.mutateAsync({
+        name,
+        baseVersionId: schemaVersionId(latestVersion),
+      });
+      setChangeDialogOpen(false);
+      void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
+    } catch (error) {
+      toast.error("Schema change creation failed", {
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
 
   return (
     <AppPage>
-      <AppSurface className="flex-1 space-y-6 overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title={schema?.name ?? "Schema"}
+          description={schema?.description}
           breadcrumbs={[{ label: "Schemas", to: "/schemas" }, { label: schema?.name ?? "Schema" }]}
           actions={
             schemaId ? (
-              <Link to={`/schemas/${encodeURIComponent(schemaId)}/versions/create`}>
-                <AppButton>
-                  <Plus size={16} />
-                  New version
-                </AppButton>
-              </Link>
+              <AppButton
+                disabled={!latestVersion || draftMutation.isPending}
+                onClick={() => setChangeDialogOpen(true)}
+              >
+                <Plus size={16} />
+                New change
+              </AppButton>
             ) : null
           }
         />
-        {selectedVersion ? (
-          <AppPanel className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <AppSectionTitle>Schema code</AppSectionTitle>
+        {schemaId ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-6">
+            <SchemaRepoNav
+              active="overview"
+              schemaId={schemaId}
+              changes={drafts.length}
+              bookmarks={bookmarks.length}
+              snapshots={versions.length}
+            />
+            {latestVersion ? (
+              <SchemaSnapshotPreviewPanel version={latestVersion} />
+            ) : (
+              <AppPanel className="flex flex-col gap-3">
+                <AppSectionTitle>No published snapshots</AppSectionTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  {selectedVersion.name} · v{selectedVersion.version}
+                  Create a change and publish it to establish the schema document.
                 </p>
-              </div>
-              <AppSelect
-                value={schemaVersionId(selectedVersion)}
-                onValueChange={setSelectedVersionId}
-                options={sortedVersions.map((version) => ({
-                  value: schemaVersionId(version),
-                  label: `${version.name} · v${version.version}`,
-                }))}
-              />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[18px] bg-[var(--surface-muted)] p-4">
-                <p className="text-2xl font-semibold text-[var(--text-primary)]">{inputCount}</p>
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                  Fields
-                </p>
-              </div>
-              <div className="rounded-[18px] bg-[var(--surface-muted)] p-4">
-                <p className="text-2xl font-semibold text-[var(--text-primary)]">{reportCount}</p>
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                  Reports
-                </p>
-              </div>
-              <div className="rounded-[18px] bg-[var(--surface-muted)] p-4">
-                <p className="text-2xl font-semibold text-[var(--text-primary)]">
-                  {selectedVersion.bindings.length}
-                </p>
-                <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
-                  Models
-                </p>
-              </div>
-            </div>
-            <SchemaCodeViewer value={schemaCode} />
-          </AppPanel>
+              </AppPanel>
+            )}
+          </div>
         ) : null}
-        <div className="space-y-4">
-          <AppSectionTitle>Versions</AppSectionTitle>
-          {sortedVersions.map((version) => (
-            <AppPanel key={version.id} className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                    {version.name} · v{version.version}
-                  </h2>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    {version.bindings.length} bindings
-                  </p>
-                </div>
-                <Link to={`/schemas/${schemaId}/versions/${schemaVersionId(version)}/runs/create`}>
-                  <AppButton>
-                    <Play size={16} />
-                    Run
-                  </AppButton>
-                </Link>
-                <Link to={`/schemas/${schemaId}/versions/${schemaVersionId(version)}/runs`}>
-                  <AppButton variant="secondary">
-                    <History size={16} />
-                    Inference history
-                  </AppButton>
-                </Link>
-              </div>
-            </AppPanel>
-          ))}
-          {versions.length === 0 ? <AppPanel>No versions yet.</AppPanel> : null}
-        </div>
       </AppSurface>
+      <SchemaChangeNameDialog
+        defaultName="Update schema"
+        description={
+          latestVersion
+            ? `${latestVersion.name} · v${latestVersion.version}`
+            : "Latest published snapshot"
+        }
+        open={changeDialogOpen}
+        pending={draftMutation.isPending}
+        submitLabel="Create change"
+        title="New change"
+        onClose={() => setChangeDialogOpen(false)}
+        onConfirm={(name) => void createChange(name)}
+      />
     </AppPage>
   );
 }
