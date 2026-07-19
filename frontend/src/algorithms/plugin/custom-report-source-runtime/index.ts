@@ -5,9 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { defineReportKind, type DefinedReportKind } from "mlform/kit";
 import type { ReportConfig } from "mlform/runtime";
+import * as zod from "zod";
 
 type TypeScriptModule = typeof import("typescript");
-type ZodModule = typeof import("zod");
+type ZodModule = typeof zod;
 
 declare global {
   interface Window {
@@ -31,7 +32,6 @@ type CustomReportKind = DefinedReportKind<ReportConfig, unknown>;
 /** definitionCache: internal constant/cache for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const definitionCache = new Map<string, Promise<CustomReportKind>>();
 let typescriptPromise: Promise<TypeScriptModule> | null = null;
-let zodPromise: Promise<ZodModule> | null = null;
 /** zodGlobalPrefix: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const zodGlobalPrefix = "__MLSUITE_CUSTOM_REPORT_ZOD__";
 
@@ -55,12 +55,6 @@ const getZodGlobalKey = (source: string): string => `${zodGlobalPrefix}_${hashSt
 const loadTypeScript = async (): Promise<TypeScriptModule> => {
   typescriptPromise ??= import("typescript");
   return typescriptPromise;
-};
-
-/** loadZod: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const loadZod = async (): Promise<ZodModule> => {
-  zodPromise ??= import("zod");
-  return zodPromise;
 };
 
 /** formatDiagnostics: internal normalization helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
@@ -139,7 +133,7 @@ function assertReportDefinition(value: unknown): asserts value is CustomReportKi
 
 /** importDefinitionFromSource: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const importDefinitionFromSource = async (source: string): Promise<CustomReportKind> => {
-  const [outputText, zod] = await Promise.all([transpileSource(source), loadZod()]);
+  const outputText = await transpileSource(source);
   const blob = new Blob([outputText], { type: "text/javascript" });
   const url = URL.createObjectURL(blob);
   const zodGlobalKey = getZodGlobalKey(source);

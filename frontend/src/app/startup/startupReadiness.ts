@@ -48,9 +48,6 @@ function preloadClientRuntime(): Promise<void> {
     import("typescript"),
     import("monaco-editor"),
     import("@monaco-editor/react"),
-    import("mlform/runtime"),
-    import("mlform/kit"),
-    import("mlform/builtins"),
   ]).then(() => undefined);
 
   return clientRuntimePromise;

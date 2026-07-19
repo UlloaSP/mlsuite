@@ -513,3 +513,16 @@
 - Pierre usage remains through `UnresolvedFile` for conflicts and `MultiFileDiff` for non-conflict diffs, with exact-content cache keys, custom conflict actions, native current/incoming data attributes, and no extra Monaco layer.
 - Verification passed: `mvn -Dtest=SchemaDraftServiceTest test`, `mvn -Dtest=SchemaFlowServiceTest test`, `vp test`, `vp build`, line-count check, `git diff --check HEAD`, and `graphify update .`.
 - Known existing blockers remain: full `mvn test` fails only `WebAdapterArchitectureTest` with 13 pre-existing web-adapter/service violations; `vp check --fix` formats but still reports 14 errors/41 warnings outside this change; React Doctor reports 2 existing performance errors and 236 warnings.
+# Frontend Ineffective Dynamic Imports
+
+- [x] Reproduce each `INEFFECTIVE_DYNAMIC_IMPORT` warning.
+- [x] Replace only lazy imports already forced into eager chunks.
+- [x] Verify focused checks and production build emit no matching warnings.
+- [x] Update graphify and record review results.
+
+## Review
+
+- Replaced plugin runtime `zod` dynamic imports with the already-eager namespace import and removed redundant promise loaders.
+- Removed MLForm runtime/kit/builtins from startup preloading because application imports already load them eagerly; TypeScript and Monaco remain lazy readiness dependencies.
+- Passed changed-file `vp check`, focused tests (15/15), full frontend tests (135/135), production build, zero-warning log assertion, line limits, diff whitespace check, and `graphify update .`.
+- Full `vp check` remains blocked by 188 pre-existing formatting violations. React Doctor produced no output for 60 seconds and was terminated.
