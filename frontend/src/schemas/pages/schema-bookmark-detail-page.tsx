@@ -5,9 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { History, Play } from "lucide-react";
 import { Link, useParams } from "react-router";
-import { AppButton, AppPage, AppPageHeader, AppSurface } from "../../app/components";
-import { useSchema, useSchemaBookmark, useSchemaVersion } from "../../api/schemas/hooks";
-import { SchemaSnapshotPreviewPanel } from "../components/SchemaSnapshotPreviewPanel";
+import { AppButton, AppPage, AppPageHeader, AppSurface } from "@/app/components";
+import { useSchema, useSchemaBookmark, useSchemaVersion } from "@/api/schemas/hooks";
+import { SchemaSnapshotPreviewPanel } from "@/schemas/components/SchemaSnapshotPreviewPanel";
 
 export function SchemaBookmarkDetailPage() {
   const { schemaId, bookmarkId } = useParams<{ schemaId: string; bookmarkId: string }>();

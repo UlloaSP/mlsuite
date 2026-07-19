@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import {
   getCustomFieldDefinitions,
   type CatalogFieldDefinition,
-} from "../../plugin/custom-field-catalog";
+} from "@/algorithms/plugin/custom-field-catalog";
 import {
   getCustomReportDefinitions,
   type CatalogReportDefinition,
-} from "../../plugin/custom-report-catalog";
+} from "@/algorithms/plugin/custom-report-catalog";
 
 /**
  * PredictionCatalogDefinitions: describes the public data contract consumed or returned by this algorithm.

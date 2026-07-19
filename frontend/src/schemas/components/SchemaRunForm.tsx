@@ -6,19 +6,19 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppCopy, AppPanel, AppButton } from "../../app/components";
-import { applyPredictionInputsToSchema } from "../../algorithms/mlform/schema-compat";
-import { mountSchemaRunForm } from "../../app/utils/mlform/schema-run-mount";
+import { themeWithHtmlAtom } from "@/app/atoms";
+import { AppCopy, AppPanel, AppButton } from "@/app/components";
+import { applyPredictionInputsToSchema } from "@/algorithms/mlform/schema-compat";
+import { mountSchemaRunForm } from "@/app/utils/mlform/schema-run-mount";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
-} from "../../algorithms/mlform/schema-run-result-state";
-import { isRecord } from "../../algorithms/mlform/shared";
-import { schemaRunDebug, schemaRunDebugError } from "../../algorithms/schema/run-debug";
-import type { JsonRecord, SchemaVersionDto } from "../../api/schemas/dtos";
-import { getSchemaRunPrefillInputs } from "../../algorithms/schema/input-display";
-import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
+} from "@/algorithms/mlform/schema-run-result-state";
+import { isRecord } from "@/algorithms/mlform/shared";
+import { schemaRunDebug, schemaRunDebugError } from "@/algorithms/schema/run-debug";
+import type { JsonRecord, SchemaVersionDto } from "@/api/schemas/dtos";
+import { getSchemaRunPrefillInputs } from "@/algorithms/schema/input-display";
+import { useSchemaPluginCatalog } from "@/schemas/useSchemaPluginCatalog";
 
 type Props = {
   version: SchemaVersionDto;

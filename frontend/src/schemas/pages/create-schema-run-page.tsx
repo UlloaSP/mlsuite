@@ -6,22 +6,22 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
-import { invalidatePluginCatalog } from "../../algorithms/plugin/catalog-loader";
-import { isRecord } from "../../algorithms/mlform/shared";
-import { SchemaRunForm } from "../components/SchemaRunForm";
-import { SchemaRunSaveModal } from "../components/SchemaRunSaveModal";
-import { createPredictionResultFeedback } from "../../api/schemas/services";
+import { AppPage, AppPageHeader, AppPanel, AppSurface } from "@/app/components";
+import { invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
+import { isRecord } from "@/algorithms/mlform/shared";
+import { SchemaRunForm } from "@/schemas/components/SchemaRunForm";
+import { SchemaRunSaveModal } from "@/schemas/components/SchemaRunSaveModal";
+import { createPredictionResultFeedback } from "@/api/schemas/services";
 import {
   useCreatePredictionRunForBookmarkMutation,
   usePredictionRun,
   useSchema,
   useSchemaBookmark,
   useSchemaVersion,
-} from "../../api/schemas/hooks";
-import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
-import type { PendingFeedback } from "../../algorithms/schema/pending-feedback";
-import type { CreatePredictionRunRequest, JsonRecord } from "../../api/schemas/dtos";
+} from "@/api/schemas/hooks";
+import { prepareSchemaVersionDtoForUse } from "@/algorithms/schema/binding-rebase";
+import type { PendingFeedback } from "@/algorithms/schema/pending-feedback";
+import type { CreatePredictionRunRequest, JsonRecord } from "@/api/schemas/dtos";
 
 export function CreateSchemaRunPage() {
   const [searchParams] = useSearchParams();

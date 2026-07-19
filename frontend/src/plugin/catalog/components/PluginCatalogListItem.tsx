@@ -5,11 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { CalendarDays, Trash2 } from "lucide-react";
 import { m as motion } from "motion/react";
-import { modifierName } from "../../../algorithms/catalog/relative-time";
-import { type PluginPageItem, TYPE_META } from "../../../algorithms/plugin/catalog-page-model";
-import { AppBadge } from "../../../app/components/AppBadge";
-import { AppButton } from "../../../app/components/AppButton";
-import { LiveRelativeTime } from "../../../app/components/LiveRelativeTime";
+import { modifierName } from "@/algorithms/catalog/relative-time";
+import { type PluginPageItem, TYPE_META } from "@/algorithms/plugin/catalog-page-model";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppButton } from "@/app/components/AppButton";
+import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 
 type PluginCatalogListItemProps = {
   canManage: boolean;

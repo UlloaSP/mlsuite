@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import * as modelApi from "../services";
+import * as modelApi from "@/api/models/services";
 import { GET_MODELS_QUERY_KEY } from "./query-keys";
 
 /** -------------------- Reads -------------------- */

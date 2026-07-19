@@ -7,8 +7,8 @@ import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { useCreateAdminUser } from "../../api/admin-users/hooks";
-import { useUser } from "../../api/user/hooks";
+import { useCreateAdminUser } from "@/api/admin-users/hooks";
+import { useUser } from "@/api/user/hooks";
 import {
   AppButton,
   AppIconButton,
@@ -17,8 +17,8 @@ import {
   AppSelect,
   AppSurface,
   AppTextField,
-} from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
+} from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
 
 type Role = "USER" | "SUPERADMIN";
 

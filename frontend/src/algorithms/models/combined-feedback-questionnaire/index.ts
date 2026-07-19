@@ -1,5 +1,5 @@
 import type { FieldConfig, SubmitRequest, Transport } from "mlform/runtime";
-import { buildQuestionnaireFormSchema, type QuestionnaireSchema } from "../questionnaire-schema";
+import { buildQuestionnaireFormSchema, type QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
 
 /**
  * CombinedFeedbackStep: describes the public data contract consumed or returned by this algorithm.

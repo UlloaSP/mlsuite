@@ -3,10 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getString, isRecord, toUniqueId } from "../../../algorithms/mlform/shared";
-import type { ModelDto } from "../../../api/models/services";
-import { applyOneHotCategories } from "../one-hot-category";
-import type { CreateSchemaVersionRequest, JsonRecord } from "../../../api/schemas/dtos";
+import { getString, isRecord, toUniqueId } from "@/algorithms/mlform/shared";
+import type { ModelDto } from "@/api/models/services";
+import { applyOneHotCategories } from "@/algorithms/schema/one-hot-category";
+import type { CreateSchemaVersionRequest, JsonRecord } from "@/api/schemas/dtos";
 
 /**
  * SelectedSchemaModel: describes the public data contract consumed or returned by this algorithm.

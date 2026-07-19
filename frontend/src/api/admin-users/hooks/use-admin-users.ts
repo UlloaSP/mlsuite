@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { AdminUserPageRequest } from "../dtos";
-import * as adminApi from "../services";
+import type { AdminUserPageRequest } from "@/api/admin-users/dtos";
+import * as adminApi from "@/api/admin-users/services";
 import { adminUsersPageQueryKey } from "./query-keys";
 
 const DEFAULT_ADMIN_USERS_PAGE: AdminUserPageRequest = {

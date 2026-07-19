@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useEffect, useState } from "react";
-import { formatCompactRelativeTime } from "../../algorithms/catalog/relative-time";
+import { formatCompactRelativeTime } from "@/algorithms/catalog/relative-time";
 
 type LiveRelativeTimeProps = {
   value?: string;

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronRight } from "lucide-react";
 import type { ComponentProps } from "react";
-import { cx } from "../cx";
+import { cx } from "@/app/components/cx";
 
 export function BreadcrumbSeparator({ children, className, ...props }: ComponentProps<"li">) {
   return (

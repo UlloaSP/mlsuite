@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Dialog } from "radix-ui";
 import { type ComponentProps } from "react";
-import { cx } from "../cx";
+import { cx } from "@/app/components/cx";
 import { useSidebar } from "./SidebarContext";
 
 type SidebarProps = ComponentProps<"aside"> & {

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getSchemaPage } from "../services";
+import { getSchemaPage } from "@/api/schemas/services";
 import { SCHEMA_CATALOG_PAGE_SIZE, schemaCatalogPageQueryKey } from "./query-keys";
 
 export const useSchemaCatalogPageQuery = (

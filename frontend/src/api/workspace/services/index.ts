@@ -33,4 +33,4 @@ export { createRoleFromTemplate } from "./create-role-from-template";
 export { updateRole } from "./update-role";
 export { duplicateRole } from "./duplicate-role";
 export { deleteRole } from "./delete-role";
-export type * from "../dtos";
+export type * from "@/api/workspace/dtos";

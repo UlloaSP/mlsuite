@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, Mail, Plus, Settings, Shield, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
-import { AppButton, AppPage, AppPageHeader, AppSurface, AppTabs } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import { getOrganizationAdminDashboard } from "../../api/workspace/services";
-import { AdminDataPanel } from "../components/admin/AdminDataPanel";
-import { AdminStatCard } from "../components/admin/AdminStatCard";
-import { StatusBadge } from "../components/admin/StatusBadge";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+import { AppButton, AppPage, AppPageHeader, AppSurface, AppTabs } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import { getOrganizationAdminDashboard } from "@/api/workspace/services";
+import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
+import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
+import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 
 const tabs = [
   { label: "Overview", value: "overview" },

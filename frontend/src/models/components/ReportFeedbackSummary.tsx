@@ -3,13 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
+import { AppCopy, AppPanel, AppSectionTitle } from "@/app/components";
 import {
   formatFeedbackValue,
   getQuestionnaireFieldDescriptors,
   type QuestionnaireFieldDescriptor,
-} from "../../algorithms/models/questionnaire-feedback";
-import type { QuestionnaireSchema } from "../../algorithms/models/questionnaire-schema";
+} from "@/algorithms/models/questionnaire-feedback";
+import type { QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
 
 type ReportFeedbackSummaryProps = {
   schema?: QuestionnaireSchema;

@@ -9,20 +9,20 @@ import { useEffect, useMemo, useRef } from "react";
 import { createMlRegistryPack } from "mlform/builtins";
 import { mountForm, registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { MountedForm } from "mlform/kit";
-import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppButton } from "../../app/components/AppButton";
-import { AppCopy } from "../../app/components/AppCopy";
-import { AppPanel } from "../../app/components/AppPanel";
-import { toMlformSchema } from "../../algorithms/mlform/schema-validation";
-import { toMlformRuntimeSchema } from "../../algorithms/mlform/schema-runtime-adapter";
-import { wrapSchemaReportDefinitions } from "../../algorithms/schema/report-plugin-context";
+import { themeWithHtmlAtom } from "@/app/atoms";
+import { AppButton } from "@/app/components/AppButton";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPanel } from "@/app/components/AppPanel";
+import { toMlformSchema } from "@/algorithms/mlform/schema-validation";
+import { toMlformRuntimeSchema } from "@/algorithms/mlform/schema-runtime-adapter";
+import { wrapSchemaReportDefinitions } from "@/algorithms/schema/report-plugin-context";
 import {
   createSchemaPreviewTransport,
   expandSchemaPreviewReports,
-} from "../../algorithms/schema/preview-transport";
-import { createPredictionPrimitiveRegistry } from "../../app/utils/mlform/primitive-registry";
-import { getPredictionDesignSystem } from "../../app/utils/mlform/headless-prediction";
-import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
+} from "@/algorithms/schema/preview-transport";
+import { createPredictionPrimitiveRegistry } from "@/app/utils/mlform/primitive-registry";
+import { getPredictionDesignSystem } from "@/app/utils/mlform/headless-prediction";
+import { useSchemaPluginCatalog } from "@/schemas/useSchemaPluginCatalog";
 
 type Props = {
   schema: unknown;

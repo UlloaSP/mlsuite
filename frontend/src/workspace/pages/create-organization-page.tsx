@@ -15,13 +15,13 @@ import {
   AppSurface,
   AppTextArea,
   AppTextField,
-} from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import { useAdminUsers } from "../../api/admin-users/hooks";
-import { useUser } from "../../api/user/hooks";
-import { useInvalidateOrganizationQueries } from "../../api/workspace/hooks";
-import { createOrganization } from "../../api/workspace/services";
-import type { AdminUserDto } from "../../api/admin-users/dtos";
+} from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import { useAdminUsers } from "@/api/admin-users/hooks";
+import { useUser } from "@/api/user/hooks";
+import { useInvalidateOrganizationQueries } from "@/api/workspace/hooks";
+import { createOrganization } from "@/api/workspace/services";
+import type { AdminUserDto } from "@/api/admin-users/dtos";
 
 export function CreateOrganizationPage() {
   const navigate = useNavigate();

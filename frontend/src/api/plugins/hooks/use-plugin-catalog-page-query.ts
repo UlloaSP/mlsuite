@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getPluginPage } from "../services";
+import { getPluginPage } from "@/api/plugins/services";
 import { PLUGIN_CATALOG_PAGE_SIZE, pluginCatalogPageQueryKey } from "./query-keys";
-import type { SortMode, TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
+import type { SortMode, TypeFilter } from "@/algorithms/plugin/catalog-page-model";
 
 export const usePluginCatalogPageQuery = (
   organizationId: number | string | undefined,

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { EditorAssemblyLoader } from "../../router/EditorAssemblyLoader";
+import { EditorAssemblyLoader } from "@/router/EditorAssemblyLoader";
 import { getStartupReadiness } from "./startupReadiness";
 
 const STARTUP_QUERY_KEY = ["startup", "readiness"] as const;

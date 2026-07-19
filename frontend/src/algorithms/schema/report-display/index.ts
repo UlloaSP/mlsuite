@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig } from "mlform/runtime";
-import { isBuiltinReportKind } from "../../mlform/builtin-registry";
-import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
-import { isSkippedSchemaReportPayload } from "../report-plugin-context";
-import { reportTargetForBinding } from "../../mlform/schema-run-report-mapping";
-import type { PredictionResultDto, SchemaVersionDto } from "../../../api/schemas/dtos";
-import { schemaRunDebug } from "../run-debug";
+import { isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
+import { isRecord, type JsonRecord } from "@/algorithms/mlform/shared";
+import { isSkippedSchemaReportPayload } from "@/algorithms/schema/report-plugin-context";
+import { reportTargetForBinding } from "@/algorithms/mlform/schema-run-report-mapping";
+import type { PredictionResultDto, SchemaVersionDto } from "@/api/schemas/dtos";
+import { schemaRunDebug } from "@/algorithms/schema/run-debug";
 
 /**
  * SchemaDisplayReport: describes the public data contract consumed or returned by this algorithm.

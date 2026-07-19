@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getPredictionReports } from "../utils";
-import { getOutputReports } from "../report-contract";
+import { getPredictionReports } from "@/algorithms/models/utils";
+import { getOutputReports } from "@/algorithms/models/report-contract";
 
 /** isRecord: internal predicate for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isRecord = (value: unknown): value is Record<string, unknown> =>

@@ -2,9 +2,9 @@ import { Laptop, LogOut, Moon, Sun } from "lucide-react";
 import { useAtom } from "jotai";
 import type { ReactNode } from "react";
 import { useParams } from "react-router";
-import { themeAtom, themeWithHtmlAtom, type ThemeMode } from "../../app/atoms";
-import { AppButton } from "../../app/components";
-import { useLogout } from "../../api/user/hooks";
+import { themeAtom, themeWithHtmlAtom, type ThemeMode } from "@/app/atoms";
+import { AppButton } from "@/app/components";
+import { useLogout } from "@/api/user/hooks";
 
 type ReviewShellProps = {
   title?: string;

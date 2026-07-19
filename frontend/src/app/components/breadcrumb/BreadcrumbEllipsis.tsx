@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { MoreHorizontal } from "lucide-react";
 import type { ComponentProps } from "react";
-import { cx } from "../cx";
+import { cx } from "@/app/components/cx";
 
 export function BreadcrumbEllipsis({ className, ...props }: ComponentProps<"span">) {
   return (

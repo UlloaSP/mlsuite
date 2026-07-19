@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router";
-import { FOCUS_RING } from "../focus-ring";
-import { cx } from "../cx";
+import { FOCUS_RING } from "@/app/components/focus-ring";
+import { cx } from "@/app/components/cx";
 import { BreadcrumbEllipsis } from "./BreadcrumbEllipsis";
 
 export type BreadcrumbCollapsedMenuItem = {

@@ -2,18 +2,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Shield, UserCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { AppPage, AppPageHeader, AppSelect, AppSurface } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
+import { AppPage, AppPageHeader, AppSelect, AppSurface } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
 import {
   getOrganizationMembers,
   getTeams,
   removeOrganizationMember,
   updateOrganizationMemberRole,
-} from "../../api/workspace/services";
-import { AdminDataPanel } from "../components/admin/AdminDataPanel";
-import { AdminStatCard } from "../components/admin/AdminStatCard";
-import { MemberTable } from "../components/MemberTable";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+} from "@/api/workspace/services";
+import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
+import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
+import { MemberTable } from "@/workspace/components/MemberTable";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 
 export function MembersPage() {
   const { organizationId = "" } = useParams();

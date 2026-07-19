@@ -8,9 +8,9 @@ import { useState } from "react";
 import type {
   OrganizationCatalogItemDto,
   OrganizationMembershipRowDto,
-} from "../../api/workspace/dtos";
-import { modifierName } from "../../algorithms/catalog/relative-time";
-import { LiveRelativeTime } from "../../app/components/LiveRelativeTime";
+} from "@/api/workspace/dtos";
+import { modifierName } from "@/algorithms/catalog/relative-time";
+import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 import {
   DeleteDialog,
   OrganizationCardMenu,

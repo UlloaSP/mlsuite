@@ -5,19 +5,19 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMemo } from "react";
 import type { PrimitiveSubmitResult } from "mlform/primitives";
-import type { CatalogReportDefinition } from "../../algorithms/plugin/custom-report-catalog";
-import { AppCopy, AppPanel } from "../../app/components";
-import { getBackendBaseUrl } from "../../app/config/runtimeConfig";
-import { createPredictionPrimitiveRegistry } from "../../app/utils/mlform/primitive-registry";
-import { isBuiltinReportKind } from "../../algorithms/mlform/builtin-registry";
-import { patchSchemaReportContext } from "../../algorithms/schema/report-plugin-context";
-import type { SchemaDisplayReport } from "../../algorithms/schema/report-display";
-import type { PredictionResultDto, SchemaVersionDto } from "../../api/schemas/dtos";
-import { isRecord } from "../../algorithms/mlform/shared";
-import { describeSchemaCustomReport } from "../../algorithms/schema/report-descriptor";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import { AppCopy, AppPanel } from "@/app/components";
+import { getBackendBaseUrl } from "@/app/config/runtimeConfig";
+import { createPredictionPrimitiveRegistry } from "@/app/utils/mlform/primitive-registry";
+import { isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
+import { patchSchemaReportContext } from "@/algorithms/schema/report-plugin-context";
+import type { SchemaDisplayReport } from "@/algorithms/schema/report-display";
+import type { PredictionResultDto, SchemaVersionDto } from "@/api/schemas/dtos";
+import { isRecord } from "@/algorithms/mlform/shared";
+import { describeSchemaCustomReport } from "@/algorithms/schema/report-descriptor";
 import { SchemaPrimitiveReport } from "./SchemaPrimitiveReport";
 import { SchemaRunReportCard } from "./SchemaRunReportCard";
-import { schemaRunDebug } from "../../algorithms/schema/run-debug";
+import { schemaRunDebug } from "@/algorithms/schema/run-debug";
 
 type Props = {
   version: SchemaVersionDto;

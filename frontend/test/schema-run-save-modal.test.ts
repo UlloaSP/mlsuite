@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { buildPendingSchemaRunFeedback } from "../src/algorithms/schema/pending-feedback";
-import type { SchemaFeedbackStep } from "../src/algorithms/schema/feedback-steps";
+import { buildPendingSchemaRunFeedback } from "@/algorithms/schema/pending-feedback";
+import type { SchemaFeedbackStep } from "@/algorithms/schema/feedback-steps";
 
 const feedbackStep = (
   id: string,
@@ -22,7 +22,13 @@ const feedbackStep = (
   title: id,
   description: id,
   schema: {
-    steps: [{ id: `${id}-step`, fields: [{ id: fieldId, kind: "text", label: fieldId }] }],
+    steps: [
+      {
+        id: `${id}-step`,
+        title: id,
+        fields: [{ id: fieldId, kind: "text", label: fieldId }],
+      },
+    ],
   },
   initialValues: {},
 });

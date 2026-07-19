@@ -23,9 +23,9 @@ import {
 } from "lucide-react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { useUser } from "../../api/user/hooks";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import { isTypingTarget, shortcutDigit } from "../utils/keyboard-shortcuts";
+import { useUser } from "@/api/user/hooks";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { isTypingTarget, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
 import { cx } from "./cx";
 import { Kbd } from "./Kbd";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";

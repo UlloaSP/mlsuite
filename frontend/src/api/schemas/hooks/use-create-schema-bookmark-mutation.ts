@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as schemaApi from "../services";
-import type { CreateSchemaBookmarkRequest } from "../dtos";
+import * as schemaApi from "@/api/schemas/services";
+import type { CreateSchemaBookmarkRequest } from "@/api/schemas/dtos";
 import { SCHEMA_BOOKMARKS_QUERY_KEY, SCHEMA_BOOKMARK_QUERY_KEY } from "./query-keys";
 
 export function useCreateSchemaBookmarkMutation(schemaId: string) {

@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as schemaApi from "../services";
-import type { UpdatePredictionResultFeedbackRequest } from "../dtos";
+import * as schemaApi from "@/api/schemas/services";
+import type { UpdatePredictionResultFeedbackRequest } from "@/api/schemas/dtos";
 import { PREDICTION_RESULT_FEEDBACK_QUERY_KEY } from "./query-keys";
 
 export function useUpdatePredictionResultFeedbackMutation(resultId: string) {

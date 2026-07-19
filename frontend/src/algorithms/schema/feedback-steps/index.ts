@@ -3,19 +3,19 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { CombinedFeedbackStep } from "../../../algorithms/models/combined-feedback-questionnaire";
-import { createOutputFeedbackQuestionnaire } from "../../../algorithms/models/output-feedback-questionnaire";
-import { getEffectiveFeedbackValues } from "../../models/questionnaire-feedback";
-import type { QuestionnaireSchema } from "../../models/questionnaire-schema";
-import { isBuiltinReportKind } from "../../mlform/builtin-registry";
-import { getFormattedReportContent } from "../../models/report-feedback-utils";
-import { getSchemaResultReports } from "../report-display";
+import type { CombinedFeedbackStep } from "@/algorithms/models/combined-feedback-questionnaire";
+import { createOutputFeedbackQuestionnaire } from "@/algorithms/models/output-feedback-questionnaire";
+import { getEffectiveFeedbackValues } from "@/algorithms/models/questionnaire-feedback";
+import type { QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
+import { isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
+import { getFormattedReportContent } from "@/algorithms/models/report-feedback-utils";
+import { getSchemaResultReports } from "@/algorithms/schema/report-display";
 import type {
   PredictionResultDto,
   PredictionResultFeedbackDto,
   PredictionResultFeedbackType,
   SchemaVersionDto,
-} from "../../../api/schemas/dtos";
+} from "@/api/schemas/dtos";
 
 type FeedbackKind = "OUTPUT" | "EXPLANATION";
 

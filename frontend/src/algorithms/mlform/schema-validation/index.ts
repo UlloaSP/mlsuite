@@ -4,16 +4,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FormSchema } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
-import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
-import { isBuiltinFieldKind, isBuiltinReportKind } from "../builtin-registry";
+import type { CatalogFieldDefinition } from "@/algorithms/plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import { isBuiltinFieldKind, isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
 import {
   mlformJsonSchema,
   validateMlformSchema as validateBaseMlformSchema,
-} from "../../../algorithms/mlform/schema-compat";
-import { toMlformRuntimeSchema } from "../schema-runtime-adapter";
-import type { CompatIssue, CompatValidationResult } from "../../../algorithms/mlform/shared";
-import { hasBlockingIssues, isRecord } from "../../../algorithms/mlform/shared";
+} from "@/algorithms/mlform/schema-compat";
+import { toMlformRuntimeSchema } from "@/algorithms/mlform/schema-runtime-adapter";
+import type { CompatIssue, CompatValidationResult } from "@/algorithms/mlform/shared";
+import { hasBlockingIssues, isRecord } from "@/algorithms/mlform/shared";
 
 type ValidateMlformSchemaOptions = {
   customFieldDefinitions?: readonly CatalogFieldDefinition[];

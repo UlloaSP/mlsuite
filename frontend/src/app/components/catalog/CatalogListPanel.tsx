@@ -5,10 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 
-import { AppButton } from "../AppButton";
-import { AppEmptyState } from "../AppEmptyState";
-import { AppPanel } from "../AppPanel";
-import { cx } from "../cx";
+import { AppButton } from "@/app/components/AppButton";
+import { AppEmptyState } from "@/app/components/AppEmptyState";
+import { AppPanel } from "@/app/components/AppPanel";
+import { cx } from "@/app/components/cx";
 import { CatalogPaginationFooter } from "./CatalogPaginationFooter";
 
 export type CatalogEmptyState = {

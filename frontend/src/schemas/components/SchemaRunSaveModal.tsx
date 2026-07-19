@@ -8,7 +8,7 @@ import { AnimatePresence, m as motion } from "motion/react";
 import { useAtom } from "jotai";
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { themeWithHtmlAtom } from "../../app/atoms";
+import { themeWithHtmlAtom } from "@/app/atoms";
 import {
   AppCopy,
   AppPanel,
@@ -16,25 +16,25 @@ import {
   AppButton,
   AppIconButton,
   AppTextField,
-} from "../../app/components";
-import { buildCombinedFeedbackQuestionnaire } from "../../algorithms/models/combined-feedback-questionnaire";
+} from "@/app/components";
+import { buildCombinedFeedbackQuestionnaire } from "@/algorithms/models/combined-feedback-questionnaire";
 import {
   ReportQuestionnaireMount,
   type ReportQuestionnaireMountHandle,
-} from "../../models/components/ReportQuestionnaireMount";
+} from "@/models/components/ReportQuestionnaireMount";
 import type {
   CreatePredictionRunRequest,
   JsonRecord,
   SchemaVersionDto,
-} from "../../api/schemas/dtos";
-import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
+} from "@/api/schemas/dtos";
+import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
 import {
   buildPendingSchemaRunFeedback,
   type PendingFeedback,
-} from "../../algorithms/schema/pending-feedback";
-import { mergeSchemaRunInputs } from "../../algorithms/schema/input-display";
-import { schemaRunDebug } from "../../algorithms/schema/run-debug";
-import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
+} from "@/algorithms/schema/pending-feedback";
+import { mergeSchemaRunInputs } from "@/algorithms/schema/input-display";
+import { schemaRunDebug } from "@/algorithms/schema/run-debug";
+import { useSchemaPluginCatalog } from "@/schemas/useSchemaPluginCatalog";
 import { SchemaRunInputsPanel } from "./SchemaRunInputsPanel";
 import { SchemaRunReportsPanel } from "./SchemaRunReportsPanel";
 

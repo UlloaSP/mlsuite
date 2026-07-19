@@ -1,4 +1,4 @@
-import type { SchemaReviewRunListItemDto } from "../../../api/review/services";
+import type { SchemaReviewRunListItemDto } from "@/api/review/services";
 
 /**
  * reviewRunToken: performs the exported transformation for this algorithm.

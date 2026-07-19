@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { searchWorkspace } from "../services";
+import { searchWorkspace } from "@/api/search/services";
 
 export const useSearchResults = (query: string) =>
   useQuery({

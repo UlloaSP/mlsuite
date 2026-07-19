@@ -13,14 +13,14 @@ import {
   type Registry,
   type Transport,
 } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "../../../algorithms/plugin/custom-field-catalog";
-import type { CatalogReportDefinition } from "../../../algorithms/plugin/custom-report-catalog";
-import { toMlformSchema } from "../../../algorithms/mlform/schema-validation";
+import type { CatalogFieldDefinition } from "@/algorithms/plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import { toMlformSchema } from "@/algorithms/mlform/schema-validation";
 import {
   type PredictionPayloadField,
   type PredictionTheme,
-} from "../../../algorithms/mlform/shared";
-import { createPredictionTransport } from "../../../algorithms/mlform/prediction-transport";
+} from "@/algorithms/mlform/shared";
+import { createPredictionTransport } from "@/algorithms/mlform/prediction-transport";
 
 const createPredictionEngineRegistry = (
   customFieldDefinitions: readonly CatalogFieldDefinition[],

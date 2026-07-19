@@ -10,14 +10,14 @@ import {
   AppPage,
   AppPageHeader,
   AppSurface,
-} from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import { createTeam, getOrganizationMembers, getTeams } from "../../api/workspace/services";
-import { AdminDataPanel } from "../components/admin/AdminDataPanel";
-import { AdminStatCard } from "../components/admin/AdminStatCard";
-import { QuotaBar } from "../components/admin/QuotaBar";
-import { StatusBadge } from "../components/admin/StatusBadge";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+} from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import { createTeam, getOrganizationMembers, getTeams } from "@/api/workspace/services";
+import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
+import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
+import { QuotaBar } from "@/workspace/components/admin/QuotaBar";
+import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 
 export function TeamsPage() {
   const { organizationId = "" } = useParams();

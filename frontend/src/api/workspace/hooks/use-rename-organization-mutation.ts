@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation } from "@tanstack/react-query";
-import { updateOrganization } from "../services";
+import { updateOrganization } from "@/api/workspace/services";
 import { useInvalidateOrganizationQueries } from "./use-invalidate-organization-queries";
 
 type RenameOrganizationRequest = {

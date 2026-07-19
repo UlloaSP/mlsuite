@@ -13,14 +13,14 @@ import {
   useDuplicateModelMutation,
   useModelCatalogPageQuery,
   useRenameModelMutation,
-} from "../../api/models/hooks";
-import type { ModelDto } from "../../api/models/services";
-import { useUser } from "../../api/user/hooks";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import type { ModelAction } from "../components/ModelActionsMenu";
-import { ModelListItem } from "../components/ModelListItem";
+} from "@/api/models/hooks";
+import type { ModelDto } from "@/api/models/services";
+import { useUser } from "@/api/user/hooks";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import type { ModelAction } from "@/models/components/ModelActionsMenu";
+import { ModelListItem } from "@/models/components/ModelListItem";
 
 type ModelSortMode = "updated" | "name" | "algorithm";
 type ModelStatusFilter = "active" | "archived" | "all";

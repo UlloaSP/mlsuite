@@ -14,14 +14,14 @@ import {
   AppPanel,
   AppSurface,
   AppTextField,
-} from "../../app/components";
-import { useGetModels } from "../../api/models/hooks";
-import { createSchemaVersion } from "../../api/schemas/services";
-import { SchemaModelSelector } from "../components/SchemaModelSelector";
-import { useCreateSchemaMutation } from "../../api/schemas/hooks";
-import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
-import { prepareSchemaVersionForSave } from "../../algorithms/schema/binding-rebase";
-import { composeSchemaVersion, type SelectedSchemaModel } from "../../algorithms/schema/merge";
+} from "@/app/components";
+import { useGetModels } from "@/api/models/hooks";
+import { createSchemaVersion } from "@/api/schemas/services";
+import { SchemaModelSelector } from "@/schemas/components/SchemaModelSelector";
+import { useCreateSchemaMutation } from "@/api/schemas/hooks";
+import { countVisibleSchemaFields } from "@/algorithms/schema/one-hot-category";
+import { prepareSchemaVersionForSave } from "@/algorithms/schema/binding-rebase";
+import { composeSchemaVersion, type SelectedSchemaModel } from "@/algorithms/schema/merge";
 
 type SelectedModel = SelectedSchemaModel;
 

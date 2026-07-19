@@ -16,19 +16,19 @@ import {
   YAxis,
 } from "recharts";
 import { Download } from "lucide-react";
-import { AppBadge, AppSelect } from "../../../app/components";
-import { formatTimestamp } from "../../../algorithms/admin/infrastructure/formatters";
-import type { InfrastructureOverviewDto } from "../../../api/infrastructure/dtos";
+import { AppBadge, AppSelect } from "@/app/components";
+import { formatTimestamp } from "@/algorithms/admin/infrastructure/formatters";
+import type { InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
 import type {
   ChartLayer,
   ChartValueKey,
-} from "../../../algorithms/admin/infrastructure/overview-metrics";
+} from "@/algorithms/admin/infrastructure/overview-metrics";
 import {
   LAYER_CONFIG,
   chartPointForService,
   formatChartValue,
   yAxisMode,
-} from "../../../algorithms/admin/infrastructure/overview-metrics";
+} from "@/algorithms/admin/infrastructure/overview-metrics";
 
 export function OverviewChartPanel({
   overview,

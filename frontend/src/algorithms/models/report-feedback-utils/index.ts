@@ -3,12 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { normalizeCustomReportResult } from "../../plugin/custom-report-result";
-import { toMlformSchema } from "../../mlform/schema-validation";
+import { normalizeCustomReportResult } from "@/algorithms/plugin/custom-report-result";
+import { toMlformSchema } from "@/algorithms/mlform/schema-validation";
 import { DEFAULT_REPORT_FEEDBACK_QUESTIONNAIRE } from "./default-report-feedback-questionnaire";
 import type { ReportConfig } from "mlform/runtime";
-import type { PredictionReportDescriptor } from "../questionnaire-feedback";
-import type { QuestionnaireSchema } from "../questionnaire-schema";
+import type { PredictionReportDescriptor } from "@/algorithms/models/questionnaire-feedback";
+import type { QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
 
 type JsonRecord = Record<string, unknown>;
 

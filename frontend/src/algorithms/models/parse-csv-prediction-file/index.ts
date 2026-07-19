@@ -8,7 +8,7 @@ import {
   type ParseBulkPredictionResult,
   type SkippedRecord,
   type TabularPredictionRow,
-} from "../parse-tabular-prediction-records";
+} from "@/algorithms/models/parse-tabular-prediction-records";
 
 /**
  * ParseCsvPredictionResult: describes the public data contract consumed or returned by this algorithm.

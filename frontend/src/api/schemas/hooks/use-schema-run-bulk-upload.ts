@@ -6,18 +6,18 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { createPredictionRunForBookmark, getLastPredictionRunId } from "../services";
-import type { SchemaVersionDto, PredictionRunDto, CreatePredictionRunRequest } from "../dtos";
+import { createPredictionRunForBookmark, getLastPredictionRunId } from "@/api/schemas/services";
+import type { SchemaVersionDto, PredictionRunDto, CreatePredictionRunRequest } from "@/api/schemas/dtos";
 import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "./query-keys";
-import { createSchemaRunRuntime } from "../../../algorithms/schema/runtime-assembly";
-import { isRecord } from "../../../algorithms/mlform/shared";
-import { loadPredictionCatalogDefinitions } from "../../../algorithms/models/prediction-catalog-definitions";
-import { parseSpreadsheetPredictionFile } from "../../../algorithms/models/parse-spreadsheet-prediction-file";
-import { prependMissingPredictionRuns } from "../../../algorithms/schema/run-cache";
+import { createSchemaRunRuntime } from "@/algorithms/schema/runtime-assembly";
+import { isRecord } from "@/algorithms/mlform/shared";
+import { loadPredictionCatalogDefinitions } from "@/algorithms/models/prediction-catalog-definitions";
+import { parseSpreadsheetPredictionFile } from "@/algorithms/models/parse-spreadsheet-prediction-file";
+import { prependMissingPredictionRuns } from "@/algorithms/schema/run-cache";
 import {
   getModelInputBulkSchema,
   toSchemaRunSerializedValues,
-} from "../../../algorithms/schema/bulk-upload";
+} from "@/algorithms/schema/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
 
 type Status = "idle" | "parsing" | "processing" | "done";

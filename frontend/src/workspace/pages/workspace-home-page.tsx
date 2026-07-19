@@ -8,9 +8,9 @@ import {
   AppPanel,
   AppSectionTitle,
   AppSurface,
-} from "../../app/components";
-import { useGetModels } from "../../api/models/hooks";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+} from "@/app/components";
+import { useGetModels } from "@/api/models/hooks";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 
 export function WorkspaceHomePage() {
   const { data: context } = useWorkspaceContext();

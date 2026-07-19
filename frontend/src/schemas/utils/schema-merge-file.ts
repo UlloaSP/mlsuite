@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { SchemaDraftChangeDto } from "../../api/schemas/dtos";
+import type { SchemaDraftChangeDto } from "@/api/schemas/dtos";
 
 type Range = { end: number; start: number };
 type PrintResult = { lines: string[]; ranges: Map<string, Range> };

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as adminApi from "../services";
+import * as adminApi from "@/api/admin-users/services";
 import { ADMIN_USERS_QUERY_KEY } from "./query-keys";
 
 export const useDeleteAdminUser = () => {

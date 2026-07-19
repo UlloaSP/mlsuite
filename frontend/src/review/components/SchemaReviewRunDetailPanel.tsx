@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react";
-import { AppEmptyState } from "../../app/components";
-import { isBuiltinReportKind } from "../../algorithms/mlform/builtin-registry";
-import { ReviewAccordionSection } from "../../review/components/ReviewAccordionSection";
-import { ReviewInputsSection } from "../../review/components/ReviewInputsSection";
-import { ReviewOutputsSection, type TargetDto } from "../../review/components/ReviewOutputsSection";
-import { getFormattedReportContent } from "../../algorithms/models/report-feedback-utils";
-import { getVisibleSchemaInputRecord } from "../../algorithms/schema/input-display";
-import { getSchemaResultReports } from "../../algorithms/schema/report-display";
-import type { SchemaVersionDto } from "../../api/schemas/dtos";
-import { useSchemaReviewRun } from "../../api/review/hooks";
+import { AppEmptyState } from "@/app/components";
+import { isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
+import { ReviewAccordionSection } from "@/review/components/ReviewAccordionSection";
+import { ReviewInputsSection } from "@/review/components/ReviewInputsSection";
+import { ReviewOutputsSection, type TargetDto } from "@/review/components/ReviewOutputsSection";
+import { getFormattedReportContent } from "@/algorithms/models/report-feedback-utils";
+import { getVisibleSchemaInputRecord } from "@/algorithms/schema/input-display";
+import { getSchemaResultReports } from "@/algorithms/schema/report-display";
+import type { SchemaVersionDto } from "@/api/schemas/dtos";
+import { useSchemaReviewRun } from "@/api/review/hooks";
 import { SchemaReviewCombinedFeedbackForm } from "./SchemaReviewCombinedFeedbackForm";
 
 type Props = {

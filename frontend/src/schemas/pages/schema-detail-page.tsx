@@ -7,23 +7,23 @@ import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { AppButton } from "../../app/components/AppButton";
-import { AppPage } from "../../app/components/AppPage";
-import { AppPanel } from "../../app/components/AppPanel";
-import { AppSectionTitle } from "../../app/components/AppSectionTitle";
-import { AppSurface } from "../../app/components/AppSurface";
-import { AppPageHeader } from "../../app/components/PageHeader";
+import { AppButton } from "@/app/components/AppButton";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSectionTitle } from "@/app/components/AppSectionTitle";
+import { AppSurface } from "@/app/components/AppSurface";
+import { AppPageHeader } from "@/app/components/PageHeader";
 import {
   useSchema,
   useSchemaBookmarks,
   useCreateSchemaDraftMutation,
   useSchemaDrafts,
   useSchemaVersions,
-} from "../../api/schemas/hooks";
-import { schemaVersionId, sortSchemaVersions } from "../../algorithms/schema/version-selection";
-import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
-import { SchemaRepoNav } from "../components/SchemaRepoNav";
-import { SchemaSnapshotPreviewPanel } from "../components/SchemaSnapshotPreviewPanel";
+} from "@/api/schemas/hooks";
+import { schemaVersionId, sortSchemaVersions } from "@/algorithms/schema/version-selection";
+import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
+import { SchemaRepoNav } from "@/schemas/components/SchemaRepoNav";
+import { SchemaSnapshotPreviewPanel } from "@/schemas/components/SchemaSnapshotPreviewPanel";
 
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();

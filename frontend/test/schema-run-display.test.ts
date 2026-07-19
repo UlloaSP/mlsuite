@@ -9,8 +9,8 @@ import {
   getVisibleSchemaInputRecord,
   getVisibleSchemaInputs,
   mergeSchemaRunInputs,
-} from "../src/algorithms/schema/input-display";
-import { getSchemaResultReports } from "../src/algorithms/schema/report-display";
+} from "@/algorithms/schema/input-display";
+import { getSchemaResultReports } from "@/algorithms/schema/report-display";
 
 const schema = {
   fields: [

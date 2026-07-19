@@ -3,9 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getAllPlugins, type PluginDto } from "../../../api/plugins/services";
-import { validateCustomFieldSource } from "../custom-field-source-runtime";
-import { validateCustomReportSource } from "../custom-report-source-runtime";
+import { getAllPlugins, type PluginDto } from "@/api/plugins/services";
+import { validateCustomFieldSource } from "@/algorithms/plugin/custom-field-source-runtime";
+import { validateCustomReportSource } from "@/algorithms/plugin/custom-report-source-runtime";
 
 /**
  * DetectedPluginType: describes the public data contract consumed or returned by this algorithm.

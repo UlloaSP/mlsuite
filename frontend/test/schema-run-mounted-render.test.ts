@@ -8,8 +8,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { mountSchemaRunForm } from "../src/app/utils/mlform/schema-run-mount";
-import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+import { mountSchemaRunForm } from "@/app/utils/mlform/schema-run-mount";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -33,10 +33,11 @@ const crystal = (id = "crystal"): CatalogReportDefinition => ({
     payloadSchema: z.object({ explanation: z.string() }),
     resolve: ({ report, result }) => {
       const item = result.reports.find(
-        (value): value is Record<string, unknown> =>
+        (value: unknown): value is Record<string, unknown> =>
           typeof value === "object" &&
           value !== null &&
           !Array.isArray(value) &&
+          "id" in value &&
           value.id === report.id,
       );
       return item && "payload" in item ? item.payload : item;

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import * as userApi from "../services";
+import * as userApi from "@/api/user/services";
 
 export const useLogout = (redirectTo = "/") => {
   const qc = useQueryClient();

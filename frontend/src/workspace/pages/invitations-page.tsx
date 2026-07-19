@@ -10,9 +10,9 @@ import {
   AppPageHeader,
   AppSectionTitle,
   AppSurface,
-} from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import { getRoles } from "../../api/workspace/services";
+} from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import { getRoles } from "@/api/workspace/services";
 import {
   bulkRevokeInvitations,
   createInvitation,
@@ -21,15 +21,15 @@ import {
   getTeams,
   resendInvitation,
   revokeInvitation,
-} from "../../api/workspace/services";
-import { AdminDataPanel } from "../components/admin/AdminDataPanel";
-import { AdminStatCard } from "../components/admin/AdminStatCard";
-import { StatusBadge } from "../components/admin/StatusBadge";
-import { InviteForm } from "../components/InviteForm";
-import { RoleBadge } from "../components/RoleBadge";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import { invitationRoleOptions } from "../../algorithms/workspace/invitation-role-options";
-import type { InvitationStatus } from "../../api/workspace/dtos";
+} from "@/api/workspace/services";
+import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
+import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
+import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
+import { InviteForm } from "@/workspace/components/InviteForm";
+import { RoleBadge } from "@/workspace/components/RoleBadge";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { invitationRoleOptions } from "@/algorithms/workspace/invitation-role-options";
+import type { InvitationStatus } from "@/api/workspace/dtos";
 
 const statuses: Array<InvitationStatus | "ALL"> = [
   "ALL",

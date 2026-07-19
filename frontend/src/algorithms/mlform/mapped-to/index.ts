@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
+import { isRecord, type JsonRecord } from "@/algorithms/mlform/shared";
 
 /**
  * BindingIdentity: describes the public data contract consumed or returned by this algorithm.

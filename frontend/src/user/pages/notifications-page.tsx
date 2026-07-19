@@ -1,12 +1,12 @@
 import { Bell } from "lucide-react";
-import { AppCopy } from "../../app/components/AppCopy";
-import { AppEmptyState } from "../../app/components/AppEmptyState";
-import { AppPage } from "../../app/components/AppPage";
-import { AppPageHeader } from "../../app/components/PageHeader";
-import { AppPanel } from "../../app/components/AppPanel";
-import { AppSurface } from "../../app/components/AppSurface";
-import { usePendingInvitations } from "../../api/workspace/hooks";
-import { NotificationInvitationItem } from "../components/NotificationInvitationItem";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppEmptyState } from "@/app/components/AppEmptyState";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSurface } from "@/app/components/AppSurface";
+import { usePendingInvitations } from "@/api/workspace/hooks";
+import { NotificationInvitationItem } from "@/user/components/NotificationInvitationItem";
 
 export function NotificationsPage() {
   const { data: invitations = [], isLoading } = usePendingInvitations();

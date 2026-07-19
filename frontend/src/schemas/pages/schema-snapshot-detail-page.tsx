@@ -7,17 +7,17 @@ import { Copy, Tag } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { AppButton, AppPage, AppPageHeader, AppSurface } from "../../app/components";
+import { AppButton, AppPage, AppPageHeader, AppSurface } from "@/app/components";
 import {
   useCreateSchemaBookmarkMutation,
   useDuplicateSchemaMutation,
   useSchema,
   useSchemaVersion,
-} from "../../api/schemas/hooks";
-import { SchemaBookmarkDialog } from "../components/SchemaBookmarkDialog";
-import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
-import { SchemaSnapshotPreviewPanel } from "../components/SchemaSnapshotPreviewPanel";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+} from "@/api/schemas/hooks";
+import { SchemaBookmarkDialog } from "@/schemas/components/SchemaBookmarkDialog";
+import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
+import { SchemaSnapshotPreviewPanel } from "@/schemas/components/SchemaSnapshotPreviewPanel";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 
 export function SchemaSnapshotDetailPage() {
   const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();

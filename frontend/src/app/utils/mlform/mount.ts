@@ -11,8 +11,8 @@ import {
   type MountedPredictionForm,
   type MountPredictionFormOptions,
   isRecord,
-} from "../../../algorithms/mlform/shared";
-import { toAnalyzerPayload } from "../../../algorithms/mlform/prediction-transport";
+} from "@/algorithms/mlform/shared";
+import { toAnalyzerPayload } from "@/algorithms/mlform/prediction-transport";
 
 export const mountPredictionForm = ({
   container,

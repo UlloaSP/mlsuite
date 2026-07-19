@@ -11,7 +11,7 @@ If this file conflicts with root, this file wins for `frontend/`.
 
 ## Frontend Rules
 
-- Use `npx react-doctor@latest --verbose` to find bugs, error and dead code.
+- Use `vp dlx react-doctor@latest --verbose` to find bugs, errors, and dead code.
 - For any visual frontend change, always use the `frontend-design` skill and review `../DESIGN.md` before editing.
 - UI must reflect backend contract, not historical assumptions.
 - Do not label items as `system`, `builtin`, or special unless backend model explicitly supports it.
@@ -22,6 +22,7 @@ If this file conflicts with root, this file wins for `frontend/`.
 
 ## Frontend Architecture Rules
 
+- Read and follow [`ARCHITECTURE.md`](./ARCHITECTURE.md) before creating, moving, or substantially changing frontend code. It is the mandatory contract for module ownership, dependency direction, placement, state, routing, and migration.
 - Max 1 component per file.
 - Do not hardcode design decisions into feature components.
 - Reusable visual primitives, tokens, variants, and interaction states must live in a design-system layer.
@@ -34,6 +35,7 @@ If this file conflicts with root, this file wins for `frontend/`.
 ## Frontend Testing Rules
 
 - Prefer frontend tests for visible behavior over implementation details.
+- Keep `test/frontend-architecture.test.ts` passing. Architecture exceptions are migration debt: remove them when resolved and never replace them with new exceptions.
 
 <!--VITE PLUS START-->
 

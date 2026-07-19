@@ -12,18 +12,18 @@ import {
   type MountedForm,
 } from "mlform/kit";
 import type { FormState, Transport } from "mlform/runtime";
-import type { QuestionnaireSchema } from "../../algorithms/models/questionnaire-schema";
+import type { QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
 import {
   buildQuestionnaireFormSchema,
   buildQuestionnaireWizardLayout,
-} from "../../algorithms/models/questionnaire-schema";
-import { AppSectionTitle } from "../../app/components";
-import { createLocalQuestionnaireTransport } from "../local-questionnaire-transport";
+} from "@/algorithms/models/questionnaire-schema";
+import { AppSectionTitle } from "@/app/components";
+import { createLocalQuestionnaireTransport } from "@/models/local-questionnaire-transport";
 import {
   getQuestionnaireValues,
   submitQuestionnaire,
   toQuestionnaireSchema,
-} from "../../algorithms/models/questionnaire-feedback";
+} from "@/algorithms/models/questionnaire-feedback";
 
 export type ReportQuestionnaireMountHandle = {
   submit(): Promise<Record<string, unknown>>;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "../src/api/schemas/hooks";
-import { prependMissingPredictionRuns } from "../src/algorithms/schema/run-cache";
-import type { PredictionRunDto } from "../src/api/schemas/dtos";
+import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/api/schemas/hooks";
+import { prependMissingPredictionRuns } from "@/algorithms/schema/run-cache";
+import type { PredictionRunDto } from "@/api/schemas/dtos";
 
 const run = (id: string): PredictionRunDto => ({
   id,

@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useEffect } from "react";
 import { useSetAtom } from "jotai";
 import { useWorkspaceContext } from "./use-workspace-context";
-import { syncCurrentOrganizationAtom } from "../../../workspace/atoms";
+import { syncCurrentOrganizationAtom } from "@/workspace/atoms";
 
 export const useWorkspaceContextSync = (enabled = true) => {
   const syncCurrentOrganization = useSetAtom(syncCurrentOrganizationAtom);

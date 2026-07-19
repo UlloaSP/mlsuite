@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { type FieldConfig } from "mlform/runtime";
-import { buildQuestionnaireFormSchema, type QuestionnaireSchema } from "../questionnaire-schema";
+import { buildQuestionnaireFormSchema, type QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
 import type { MountedForm } from "mlform/kit";
 
 type JsonRecord = Record<string, unknown>;

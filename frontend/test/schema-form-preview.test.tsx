@@ -7,7 +7,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { createRoot, type Root } from "react-dom/client";
-import { SchemaFormPreview } from "../src/schemas/components/SchemaFormPreview";
+import { SchemaFormPreview } from "@/schemas/components/SchemaFormPreview";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 

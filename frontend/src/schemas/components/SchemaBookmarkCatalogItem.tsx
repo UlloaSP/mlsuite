@@ -5,9 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal, History, Play, Tag } from "lucide-react";
 import { Link } from "react-router";
-import type { SchemaBookmarkDto } from "../../api/schemas/dtos";
-import { AppButton } from "../../app/components";
-import { LiveRelativeTime } from "../../app/components/LiveRelativeTime";
+import type { SchemaBookmarkDto } from "@/api/schemas/dtos";
+import { AppButton } from "@/app/components";
+import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 
 type Props = {
   bookmark: SchemaBookmarkDto;

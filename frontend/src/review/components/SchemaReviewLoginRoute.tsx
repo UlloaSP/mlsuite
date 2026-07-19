@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useParams } from "react-router";
-import { AuthLandingPage } from "../../app/pages/AuthLandingPage";
-import * as userApi from "../../api/user/services";
-import { useUser } from "../../api/user/hooks";
+import { AuthLandingPage } from "@/app/pages/AuthLandingPage";
+import * as userApi from "@/api/user/services";
+import { useUser } from "@/api/user/hooks";
 
 export function SchemaReviewLoginRoute() {
   const { token = "" } = useParams<{ token: string }>();

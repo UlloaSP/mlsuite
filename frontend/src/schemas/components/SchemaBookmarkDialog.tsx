@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Dialog } from "radix-ui";
 import { RefreshCcw, Tag } from "lucide-react";
 import type { FormEvent } from "react";
-import { AppButton, AppCopy, AppTextField } from "../../app/components";
+import { AppButton, AppCopy, AppTextField } from "@/app/components";
 
 type Props = {
   open: boolean;

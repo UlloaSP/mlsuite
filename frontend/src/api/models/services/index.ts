@@ -7,4 +7,4 @@ export { getModels } from "./get-models";
 export { inspectArtifact } from "./inspect-artifact";
 export { matchArtifacts } from "./match-artifacts";
 export { renameModel } from "./rename-model";
-export type * from "../dtos";
+export type * from "@/api/models/dtos";

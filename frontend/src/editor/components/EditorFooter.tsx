@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { m as motion } from "motion/react";
 import { useAtomValue } from "jotai";
 import { useState } from "react";
-import { schemaErrorsAtom } from "../atoms";
+import { schemaErrorsAtom } from "@/editor/atoms";
 import { EditorErrorBar } from "./EditorErrorBar";
 import { EditorErrorPanel } from "./EditorErrorPanel";
 

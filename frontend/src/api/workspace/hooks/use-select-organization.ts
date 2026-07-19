@@ -4,10 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useInvalidateModelQueries } from "../../models/hooks";
-import { useInvalidatePluginQueries } from "../../plugins/hooks";
-import { useInvalidateSchemaQueries } from "../../schemas/hooks";
-import * as workspaceApi from "../services";
+import { useInvalidateModelQueries } from "@/api/models/hooks";
+import { useInvalidatePluginQueries } from "@/api/plugins/hooks";
+import { useInvalidateSchemaQueries } from "@/api/schemas/hooks";
+import * as workspaceApi from "@/api/workspace/services";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "./query-keys";
 
 export const useSelectOrganization = () => {

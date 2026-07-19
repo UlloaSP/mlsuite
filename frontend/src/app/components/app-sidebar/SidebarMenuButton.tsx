@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Slot } from "radix-ui";
 import { type ComponentProps } from "react";
-import { cx } from "../cx";
-import { FOCUS_RING } from "../focus-ring";
+import { cx } from "@/app/components/cx";
+import { FOCUS_RING } from "@/app/components/focus-ring";
 import { useSidebar } from "./SidebarContext";
 
 type SidebarMenuButtonProps = ComponentProps<"button"> & {

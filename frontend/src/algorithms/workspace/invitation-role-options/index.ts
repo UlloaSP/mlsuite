@@ -1,4 +1,4 @@
-import type { RoleDefinitionDto } from "../../../api/workspace/dtos";
+import type { RoleDefinitionDto } from "@/api/workspace/dtos";
 
 /**
  * invitationRoleOptions: performs the exported transformation for this algorithm.

@@ -74,7 +74,7 @@ describe("theme persistence", () => {
     const environment = setSystemTheme(false);
     environment.storage.setItem("ui/theme", JSON.stringify("dark"));
 
-    const { themeAtom } = await import("../src/app/atoms");
+    const { themeAtom } = await import("@/app/atoms");
     const store = createStore();
     const unsubscribe = store.sub(themeAtom, () => undefined);
 
@@ -88,7 +88,7 @@ describe("theme persistence", () => {
   it("defaults to system theme and resolves from media preference", async () => {
     const environment = setSystemTheme(true);
 
-    const { themeAtom, themeWithHtmlAtom } = await import("../src/app/atoms");
+    const { themeAtom, themeWithHtmlAtom } = await import("@/app/atoms");
     const store = createStore();
     const unsubscribe = store.sub(themeAtom, () => undefined);
 
@@ -110,7 +110,7 @@ describe("theme persistence", () => {
       return theme;
     });
 
-    const { themeWithHtmlAtom } = await import("../src/app/atoms");
+    const { themeWithHtmlAtom } = await import("@/app/atoms");
     const store = createStore();
 
     store.set(themeWithHtmlAtom, "dark");

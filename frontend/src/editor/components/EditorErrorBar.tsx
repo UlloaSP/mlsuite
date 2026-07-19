@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { AlertCircle, CheckCircle, ChevronUp } from "lucide-react";
 import { m as motion } from "motion/react";
-import { schemaErrorsAtom } from "../atoms";
+import { schemaErrorsAtom } from "@/editor/atoms";
 
 type EditorErrorBarProps = {
   expanded: boolean;

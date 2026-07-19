@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQuery } from "@tanstack/react-query";
 
-import type { OrganizationCatalogItemDto } from "../../api/workspace/dtos";
-import { getOrganizationMembers } from "../../api/workspace/services";
+import type { OrganizationCatalogItemDto } from "@/api/workspace/dtos";
+import { getOrganizationMembers } from "@/api/workspace/services";
 import { OrganizationCatalogTile } from "./OrganizationCatalogTile";
 import type { OrganizationPatch } from "./OrganizationCatalogEditable";
 

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReactNode } from "react";
-import type { AppBreadcrumbItem } from "../AppBreadcrumbs";
+import type { AppBreadcrumbItem } from "@/app/components/AppBreadcrumbs";
 import { CatalogPage } from "./CatalogPage";
 import type { CatalogOption } from "./CatalogToolbar";
 import { getCatalogErrorMessage, getCatalogTotalPages } from "./catalogPageUtils";

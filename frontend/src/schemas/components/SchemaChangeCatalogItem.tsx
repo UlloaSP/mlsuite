@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import type { SchemaDraftDto } from "../../api/schemas/dtos";
-import { AppIconButton, cx } from "../../app/components";
-import { LiveRelativeTime } from "../../app/components/LiveRelativeTime";
+import type { SchemaDraftDto } from "@/api/schemas/dtos";
+import { AppIconButton, cx } from "@/app/components";
+import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 
 type Props = {
   baseSnapshotName?: string;

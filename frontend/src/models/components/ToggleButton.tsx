@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { Braces, Code, RefreshCw } from "lucide-react";
 import { m as motion } from "motion/react";
-import { schemaErrorsAtom } from "../../editor/atoms";
+import { schemaErrorsAtom } from "@/editor/atoms";
 
 interface ToggleButtonProps {
   isProcessing: boolean;

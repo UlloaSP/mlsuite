@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { isModShortcut, shortcutDigit } from "../src/app/utils/keyboard-shortcuts";
+import { isModShortcut, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
 
 describe("keyboard shortcut helpers", () => {
   it("reads Alt navigation digits from 1 through 9", () => {

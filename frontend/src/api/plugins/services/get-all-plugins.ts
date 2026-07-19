@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PluginDto } from "../dtos";
+import type { PluginDto } from "@/api/plugins/dtos";
 import { getPluginPage } from "./get-plugin-page";
 
 export const getAllPlugins = async (size = 100): Promise<PluginDto[]> => {

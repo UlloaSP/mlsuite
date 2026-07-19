@@ -4,10 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { normalizeAnalyzerPredictionResult } from "../src/algorithms/mlform/analyzer-result-normalization";
-import { describeSchemaCustomReport } from "../src/algorithms/schema/report-descriptor";
-import { getSchemaResultReports } from "../src/algorithms/schema/report-display";
-import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+import { normalizeAnalyzerPredictionResult } from "@/algorithms/mlform/analyzer-result-normalization";
+import { describeSchemaCustomReport } from "@/algorithms/schema/report-descriptor";
+import { getSchemaResultReports } from "@/algorithms/schema/report-display";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
 
 const catalogReport = (): CatalogReportDefinition =>
   ({
@@ -36,7 +36,8 @@ describe("schema report renderer", () => {
       {
         id: "version-1",
         schemaId: "schema-1",
-        version: "1",
+        version: 1,
+        name: "Version 1",
         formSchema: {
           fields: [],
           reports: [
@@ -93,7 +94,8 @@ describe("schema report renderer", () => {
       {
         id: "version-1",
         schemaId: "schema-1",
-        version: "1",
+        version: 1,
+        name: "Version 1",
         formSchema: {
           fields: [],
           reports: [
@@ -131,7 +133,8 @@ describe("schema report renderer", () => {
       {
         id: "version-1",
         schemaId: "schema-1",
-        version: "1",
+        version: 1,
+        name: "Version 1",
         formSchema: {
           fields: [],
           reports: [

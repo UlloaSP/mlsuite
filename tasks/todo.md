@@ -1,3 +1,48 @@
+# Frontend Source Alias Migration
+
+- [x] Configure `@/*` for TypeScript and `@` for Vite without another dependency.
+- [x] Make the architecture contract and fitness test require `@/` for parent source imports.
+- [x] Rewrite only real `../` module specifiers under `frontend/src` and `frontend/test` using an AST codemod.
+- [x] Verify changed files, focused/full tests, typecheck/build, and graphify.
+
+## Review
+
+- Added one `@/` alias shared by TypeScript, Vite, Vitest, and the architecture resolver; `./` remains valid for same-module imports.
+- AST codemod changed 1,259 parent module specifiers across 468 source/test files. Diff audit found 2,518 changed lines, all limited to `../` -> `@/`; no parent imports remain.
+- Fitness test rejects future `../` module specifiers and resolves `@/` before applying dependency-direction and barrel rules.
+- Focused architecture suite passed: 10/10. Full frontend suite passed: 35 files, 135 tests. `vp run build` passed, including `tsc -b`, with existing chunk warnings.
+- Targeted `vp check` passed for Vite config and architecture test. Full-repository formatting debt remains outside this mechanical migration.
+
+### Test TypeScript Configuration Correction
+
+- [x] Reproduce unresolved `@/` warnings with static checking on a representative test.
+- [x] Add a dedicated test TypeScript project inheriting the application alias.
+- [x] Verify representative/all tests, solution build, and graphify after the correction.
+
+#### Correction Review
+
+- Added `tsconfig.test.json`, referenced by the solution build, so `test/` inherits the `@/*` mapping and Vite/Node ambient types.
+- Static test checking exposed and fixed stale fixtures and implicit `any` values instead of suppressing diagnostics.
+- Verification passed: test TypeScript compile, targeted zero-warning check, 35/35 test files (135/135 tests), production build, and graphify update.
+
+# Frontend Architecture Contract And Fitness Tests
+
+- [x] Document target frontend structure, module ownership, dependency direction, state/data rules, routing, tests, and migration policy.
+- [x] Link the architecture contract from `frontend/AGENTS.md` as mandatory implementation guidance.
+- [x] Replace the legacy horizontal API architecture test with one transitional frontend architecture fitness test.
+- [x] Enforce allowed roots, target-layer direction, feature isolation, internal-barrel rules, source types, and line limits without hiding legacy debt.
+- [x] Prove focused RED/GREEN behavior, then run the full frontend suite and available static checks.
+- [x] Review independently, update graphify, and record exact verification results.
+
+## Review
+
+- Added `frontend/ARCHITECTURE.md` as the mandatory target contract: vertical features, shared/capability seams, dependency direction, Query/Router/state ownership, MLForm boundaries, tests, and incremental migration.
+- Replaced the contradictory horizontal API fitness suite with one AST-based architecture suite. It checks all source roots, static/re-export/dynamic imports, exact legacy edges, feature isolation, barrels, algorithms extensions, contract linkage, and non-growing line debt.
+- Focused architecture suite passed: 10/10. Full frontend suite passed: 35 files, 135 tests. `vp build` passed with existing large-chunk and ineffective-dynamic-import warnings.
+- Changed-file `vp check test/frontend-architecture.test.ts` passed. Full `vp check` remains blocked by formatting debt in 168 existing files; no repository-wide fix was applied.
+- React Doctor was attempted with `vp dlx react-doctor@latest --verbose` and timed out after 120 seconds without output.
+- Independent review tightened exact API destinations, all-extension root scanning, alias policy, DTO/session ownership, Router QueryClient injection, and stale migration baselines. Three pre-existing source files remain over 300 lines at fixed ceilings; the suite forbids growth and requires removing each baseline once refactored.
+
 # Schema Version Control Plan
 
 ## Follow-up: Clone Schema From Selected Snapshot

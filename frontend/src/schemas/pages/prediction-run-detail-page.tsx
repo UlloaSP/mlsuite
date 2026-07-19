@@ -6,21 +6,21 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "../../app/components";
+import { AppButton, AppPage, AppPageHeader, AppPanel, AppSurface } from "@/app/components";
 import {
   usePredictionRun,
   usePredictionRunFeedback,
   useSchema,
   useSchemaVersion,
-} from "../../api/schemas/hooks";
-import { SchemaRunInputsPanel } from "../components/SchemaRunInputsPanel";
-import { SchemaRunFeedbackQuestionnaire } from "../components/SchemaRunFeedbackQuestionnaire";
-import { SchemaRunDetailMetrics } from "../components/SchemaRunDetailMetrics";
-import { SchemaRunReportsPanel } from "../components/SchemaRunReportsPanel";
-import { isSchemaFeedbackComplete } from "../../algorithms/schema/feedback-state";
-import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
-import { useSchemaPluginCatalog } from "../useSchemaPluginCatalog";
-import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
+} from "@/api/schemas/hooks";
+import { SchemaRunInputsPanel } from "@/schemas/components/SchemaRunInputsPanel";
+import { SchemaRunFeedbackQuestionnaire } from "@/schemas/components/SchemaRunFeedbackQuestionnaire";
+import { SchemaRunDetailMetrics } from "@/schemas/components/SchemaRunDetailMetrics";
+import { SchemaRunReportsPanel } from "@/schemas/components/SchemaRunReportsPanel";
+import { isSchemaFeedbackComplete } from "@/algorithms/schema/feedback-state";
+import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
+import { useSchemaPluginCatalog } from "@/schemas/useSchemaPluginCatalog";
+import { prepareSchemaVersionDtoForUse } from "@/algorithms/schema/binding-rebase";
 
 export function PredictionRunDetailPage() {
   const { schemaId, runId, bookmarkId } = useParams<{

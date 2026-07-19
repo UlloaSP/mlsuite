@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { m as motion } from "motion/react";
-import { AppBadge, AppPage, AppPanel, AppSurface } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import { ProfileBody } from "../components/ProfileBody";
-import { ProfileHeader } from "../components/ProfileHeader";
-import { useUser } from "../../api/user/hooks"; // Adjust the import path as necessary
+import { AppBadge, AppPage, AppPanel, AppSurface } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { ProfileBody } from "@/user/components/ProfileBody";
+import { ProfileHeader } from "@/user/components/ProfileHeader";
+import { useUser } from "@/api/user/hooks"; // Adjust the import path as necessary
 
 export function ProfilePage() {
   const { data: user, isError } = useUser();

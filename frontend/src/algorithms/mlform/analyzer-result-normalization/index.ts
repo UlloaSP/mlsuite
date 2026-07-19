@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig } from "mlform/runtime";
-import { getBackendBaseUrl } from "../../../app/config/runtimeConfig";
-import { toAnalyzerReportPayload } from "../../../algorithms/mlform/report-normalization";
-import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
-import { mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
-import { reportTargetForBinding } from "../schema-run-report-mapping";
-import { schemaRunDebug } from "../../schema/run-debug";
+import { getBackendBaseUrl } from "@/app/config/runtimeConfig";
+import { toAnalyzerReportPayload } from "@/algorithms/mlform/report-normalization";
+import { isRecord, type JsonRecord } from "@/algorithms/mlform/shared";
+import { mappedTarget, targetKey } from "@/algorithms/mlform/mapped-to";
+import { reportTargetForBinding } from "@/algorithms/mlform/schema-run-report-mapping";
+import { schemaRunDebug } from "@/algorithms/schema/run-debug";
 
 type Options = {
   parsed: unknown;

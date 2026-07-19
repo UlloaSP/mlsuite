@@ -26,4 +26,4 @@ export { getLastPredictionRunId } from "./get-last-prediction-run-id";
 export { createPredictionResultFeedback } from "./create-prediction-result-feedback";
 export { updatePredictionResultFeedback } from "./update-prediction-result-feedback";
 export { getPredictionResultFeedback } from "./get-prediction-result-feedback";
-export type * from "../dtos";
+export type * from "@/api/schemas/dtos";

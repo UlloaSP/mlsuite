@@ -5,11 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import type { PropsWithChildren } from "react";
-import { sidebarCollapsedAtom } from "../app/atoms";
-import { AppGlobalSearch } from "../app/components/AppGlobalSearch";
-import { MobileSidebarTrigger } from "../app/components/MobileSidebarTrigger";
-import { Sidebar } from "../app/components/Sidebar";
-import { SidebarInset, SidebarProvider } from "../app/components/app-sidebar";
+import { sidebarCollapsedAtom } from "@/app/atoms";
+import { AppGlobalSearch } from "@/app/components/AppGlobalSearch";
+import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
+import { Sidebar } from "@/app/components/Sidebar";
+import { SidebarInset, SidebarProvider } from "@/app/components/app-sidebar";
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);

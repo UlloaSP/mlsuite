@@ -3,12 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { appFetch } from "../../core/services/app-fetch";
-import { json } from "../../core/services/json";
+import { appFetch } from "@/api/core/services/app-fetch";
+import { json } from "@/api/core/services/json";
 import type {
   PredictionResultFeedbackDto,
   CreatePredictionResultFeedbackRequest,
-} from "../../schemas/dtos";
+} from "@/api/schemas/dtos";
 
 export const createSchemaReviewFeedback = (
   token: string,

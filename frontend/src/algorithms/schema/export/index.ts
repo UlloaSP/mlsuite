@@ -3,19 +3,19 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { isBuiltinReportKind } from "../../mlform/builtin-registry";
-import { csvEscape, toCell } from "../../../algorithms/models/export-csv";
-import { getOutputFeedbackFieldIds } from "../../../algorithms/models/output-feedback-questionnaire";
-import { getQuestionnaireFieldIds } from "../../models/questionnaire-feedback";
-import type { QuestionnaireSchema } from "../../models/questionnaire-schema";
-import { getFormattedReportContent } from "../../models/report-feedback-utils";
-import { formatTimestamp } from "../../models/utils";
-import { getSchemaResultReports, type SchemaDisplayReport } from "../report-display";
+import { isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
+import { csvEscape, toCell } from "@/algorithms/models/export-csv";
+import { getOutputFeedbackFieldIds } from "@/algorithms/models/output-feedback-questionnaire";
+import { getQuestionnaireFieldIds } from "@/algorithms/models/questionnaire-feedback";
+import type { QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
+import { getFormattedReportContent } from "@/algorithms/models/report-feedback-utils";
+import { formatTimestamp } from "@/algorithms/models/utils";
+import { getSchemaResultReports, type SchemaDisplayReport } from "@/algorithms/schema/report-display";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
   SchemaVersionDto,
-} from "../../../api/schemas/dtos";
+} from "@/api/schemas/dtos";
 
 /** safeFilePart: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const safeFilePart = (value: string): string =>

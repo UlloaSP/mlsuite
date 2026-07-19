@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation } from "@tanstack/react-query";
-import { archiveSchema } from "../services";
+import { archiveSchema } from "@/api/schemas/services";
 import { useInvalidateSchemaQueries } from "./use-invalidate-schema-queries";
 
 export const useArchiveSchemaMutation = () => {

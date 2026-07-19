@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { SortMode, TypeFilter } from "../../../algorithms/plugin/catalog-page-model";
+import type { SortMode, TypeFilter } from "@/algorithms/plugin/catalog-page-model";
 
 export const PLUGIN_CATALOG_PAGE_SIZE = 24;
 export const PLUGIN_CATALOG_PAGE_QUERY_KEY = ["pluginCatalogPages"] as const;

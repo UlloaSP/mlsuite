@@ -6,4 +6,4 @@ export { getSchemaReviewRunDetail } from "./get-schema-review-run-detail";
 export { createSchemaReviewFeedback } from "./create-schema-review-feedback";
 export { updateSchemaReviewFeedback } from "./update-schema-review-feedback";
 export { submitSchemaReviewRuns } from "./submit-schema-review-runs";
-export type * from "../dtos";
+export type * from "@/api/review/dtos";

@@ -6,9 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 
-import { AppSelect } from "../AppSelect";
-import { AppTextField } from "../AppTextField";
-import { cx } from "../cx";
+import { AppSelect } from "@/app/components/AppSelect";
+import { AppTextField } from "@/app/components/AppTextField";
+import { cx } from "@/app/components/cx";
 
 export type CatalogOption<TValue extends string> = {
   disabled?: boolean;

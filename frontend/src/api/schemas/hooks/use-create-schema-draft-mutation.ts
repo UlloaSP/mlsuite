@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as schemaApi from "../services";
-import type { CreateSchemaDraftRequest } from "../dtos";
+import * as schemaApi from "@/api/schemas/services";
+import type { CreateSchemaDraftRequest } from "@/api/schemas/dtos";
 import { SCHEMA_DRAFTS_QUERY_KEY } from "./query-keys";
 
 export function useCreateSchemaDraftMutation(schemaId: string) {

@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { formatTimestamp } from "../../algorithms/models/utils";
+import { formatTimestamp } from "@/algorithms/models/utils";
 import {
   isSchemaRunReviewSelected,
   schemaRunReviewerKey,

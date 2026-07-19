@@ -10,15 +10,15 @@ import {
   AppPageHeader,
   AppPanel,
   AppSurface,
-} from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
+} from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
 import {
   getOrganization,
   getOrganizationMembers,
   transferOrganizationOwnership,
   updateOrganization,
-} from "../../api/workspace/services";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+} from "@/api/workspace/services";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 
 export function OrganizationSettingsPage() {
   const { organizationId = "" } = useParams();

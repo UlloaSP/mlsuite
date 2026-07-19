@@ -8,8 +8,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { mountSchemaRunForm } from "../src/app/utils/mlform/schema-run-mount";
-import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+import { mountSchemaRunForm } from "@/app/utils/mlform/schema-run-mount";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -33,7 +33,7 @@ const crystal = (): CatalogReportDefinition => ({
     payloadSchema: z.object({ explanation: z.string() }),
     resolve: ({ report, result }) =>
       result.reports.find(
-        (value): value is { id: string; payload: unknown } =>
+        (value: unknown): value is { id: string; payload: unknown } =>
           typeof value === "object" &&
           value !== null &&
           "id" in value &&
@@ -41,7 +41,8 @@ const crystal = (): CatalogReportDefinition => ({
       )?.payload,
     fetch: ({ config }: { config: { endpoint: string } }) => ({
       submit: async (request: { meta?: Record<string, unknown> }) => {
-        const modelId = String(request.meta?.modelId ?? "");
+        const rawModelId = request.meta?.modelId;
+        const modelId = typeof rawModelId === "string" ? rawModelId : "";
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, { method: "POST" });
         return response.json();
       },

@@ -8,16 +8,16 @@ import {
   AppPage,
   AppPageHeader,
   AppSurface,
-} from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
+} from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
 import {
   getTeam,
   getTeamMembers,
   removeTeamMember,
   updateTeam,
   updateTeamMemberRole,
-} from "../../api/workspace/services";
-import { MemberTable } from "../components/MemberTable";
+} from "@/api/workspace/services";
+import { MemberTable } from "@/workspace/components/MemberTable";
 
 export function TeamDetailPage() {
   const { teamId = "" } = useParams();

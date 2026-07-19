@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { getServiceLogsSnapshot } from "../services";
+import { getServiceLogsSnapshot } from "@/api/infrastructure/services";
 
 export function useServiceLogsSnapshot(serviceName: string | null) {
   return useQuery({

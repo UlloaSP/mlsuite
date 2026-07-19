@@ -1,7 +1,7 @@
 import type {
   InfrastructureOverviewDto,
   ServiceStatusDto,
-} from "../../../../api/infrastructure/dtos";
+} from "@/api/infrastructure/dtos";
 
 /**
  * DashboardAlert: describes the public data contract consumed or returned by this algorithm.

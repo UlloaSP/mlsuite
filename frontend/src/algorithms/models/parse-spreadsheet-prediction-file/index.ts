@@ -4,14 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { readSheet } from "read-excel-file/browser";
-import { parseCsvPredictionFile } from "../parse-csv-prediction-file";
+import { parseCsvPredictionFile } from "@/algorithms/models/parse-csv-prediction-file";
 import {
   parseTabularPredictionRecords,
   type BulkPredictionRecord,
   type ParseBulkPredictionResult,
   type SkippedRecord,
   type TabularPredictionRow,
-} from "../parse-tabular-prediction-records";
+} from "@/algorithms/models/parse-tabular-prediction-records";
 
 export type { BulkPredictionRecord, SkippedRecord };
 /**

@@ -6,19 +6,19 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import type { OrganizationCatalogItemDto } from "../../api/workspace/dtos";
+import type { OrganizationCatalogItemDto } from "@/api/workspace/dtos";
 import {
   ORGANIZATION_CATALOG_PAGE_SIZE,
   useDeleteOrganizationMutation,
   useOrganizationCatalogPageQuery,
   useRenameOrganizationMutation,
   useTransferOrganizationOwnershipMutation,
-} from "../../api/workspace/hooks";
-import { useUser } from "../../api/user/hooks";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import type { OrganizationPatch } from "../components/OrganizationCatalogEditable";
-import { OrganizationCatalogTileWithMembers } from "../components/OrganizationCatalogTileWithMembers";
+} from "@/api/workspace/hooks";
+import { useUser } from "@/api/user/hooks";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import type { OrganizationPatch } from "@/workspace/components/OrganizationCatalogEditable";
+import { OrganizationCatalogTileWithMembers } from "@/workspace/components/OrganizationCatalogTileWithMembers";
 
 type OrganizationSortMode = "updated" | "created" | "name";
 type OrganizationFilterMode = "all" | "public" | "private";

@@ -3,17 +3,17 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { isRecord, type JsonRecord } from "../../../algorithms/mlform/shared";
+import { isRecord, type JsonRecord } from "@/algorithms/mlform/shared";
 import {
   isSkippedSchemaReportPayload,
   skippedReportIdsKey,
-} from "../../schema/report-plugin-context";
+} from "@/algorithms/schema/report-plugin-context";
 import {
   readReportContext,
   reportTargetForBinding,
   reportContextKey,
-} from "../../../algorithms/mlform/schema-run-report-mapping";
-import { schemaRunDebug } from "../../schema/run-debug";
+} from "@/algorithms/mlform/schema-run-report-mapping";
+import { schemaRunDebug } from "@/algorithms/schema/run-debug";
 
 type ReportState = {
   status?: string;

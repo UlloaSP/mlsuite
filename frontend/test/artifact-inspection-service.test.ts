@@ -15,7 +15,7 @@ describe("artifact inspection service", () => {
   });
 
   it("posts artifact file to analyzer inspection endpoint", async () => {
-    const { inspectArtifact } = await import("../src/api/models/services");
+    const { inspectArtifact } = await import("@/api/models/services");
     const file = new File(["x"], "artifact.joblib");
     (appFetch as Mock).mockResolvedValue({ kind: "dataframe", fileName: "artifact.joblib" });
 
@@ -29,7 +29,7 @@ describe("artifact inspection service", () => {
   });
 
   it("propagates inspection errors", async () => {
-    const { inspectArtifact } = await import("../src/api/models/services");
+    const { inspectArtifact } = await import("@/api/models/services");
     const error = new Error("bad artifact");
     (appFetch as Mock).mockRejectedValue(error);
 
@@ -37,7 +37,7 @@ describe("artifact inspection service", () => {
   });
 
   it("posts model and dataframe files to artifact match endpoint", async () => {
-    const { matchArtifacts } = await import("../src/api/models/services");
+    const { matchArtifacts } = await import("@/api/models/services");
     (appFetch as Mock).mockResolvedValue({ models: [], dataframes: [] });
 
     await matchArtifacts({
@@ -52,7 +52,7 @@ describe("artifact inspection service", () => {
   });
 
   it("posts one-hot separator when creating a model", async () => {
-    const { createModel } = await import("../src/api/models/services");
+    const { createModel } = await import("@/api/models/services");
     (appFetch as Mock).mockResolvedValue({ model: { id: 1, name: "demo" } });
 
     await createModel({

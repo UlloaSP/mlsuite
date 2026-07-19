@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { QuestionnaireSchema } from "../questionnaire-schema";
+import type { QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
 
 /**
  * DEFAULT_REPORT_FEEDBACK_QUESTIONNAIRE: provides legacy fallback report feedback fields.

@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useState } from "react";
-import type { AdminUserDto } from "../../api/admin-users/dtos";
-import { AppButton, AppSelect } from "../../app/components";
+import type { AdminUserDto } from "@/api/admin-users/dtos";
+import { AppButton, AppSelect } from "@/app/components";
 
 type Role = AdminUserDto["systemRole"];
 

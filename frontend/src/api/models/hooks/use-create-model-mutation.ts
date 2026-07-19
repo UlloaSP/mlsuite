@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as modelApi from "../services";
-import type { ModelDto } from "../dtos";
+import * as modelApi from "@/api/models/services";
+import type { ModelDto } from "@/api/models/dtos";
 import { CREATE_MODEL_QUERY_KEY, GET_MODELS_QUERY_KEY } from "./query-keys";
 import { useInvalidateModelQueries } from "./use-invalidate-model-queries";
 

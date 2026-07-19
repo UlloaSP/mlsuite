@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
-import type { JsonRecord, SchemaVersionDto } from "../../../api/schemas/dtos";
+import { mappedTarget, targetKey } from "@/algorithms/mlform/mapped-to";
+import type { JsonRecord, SchemaVersionDto } from "@/api/schemas/dtos";
 
 type FieldRecord = JsonRecord & {
   id?: string;

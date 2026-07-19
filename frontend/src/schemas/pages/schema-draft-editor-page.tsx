@@ -8,14 +8,14 @@ import { AlertTriangle, GitCompareArrows, MoreHorizontal, PencilLine, Save } fro
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { isRecord } from "../../algorithms/mlform/shared";
+import { isRecord } from "@/algorithms/mlform/shared";
 import {
   useSchema,
   useSchemaDraft,
   useSchemaDraftDiff,
   useSchemaVersion,
   useUpdateSchemaDraftMutation,
-} from "../../api/schemas/hooks";
+} from "@/api/schemas/hooks";
 import {
   AppButton,
   AppIconButton,
@@ -23,12 +23,12 @@ import {
   AppPageHeader,
   AppPanel,
   AppSurface,
-} from "../../app/components";
-import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../../editor/atoms";
-import { EditorWrapper } from "../../editor/components/EditorWrapper";
-import { ToggleButton } from "../../models/components/ToggleButton";
-import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
-import { SchemaFormPreview } from "../components/SchemaFormPreview";
+} from "@/app/components";
+import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/editor/atoms";
+import { EditorWrapper } from "@/editor/components/EditorWrapper";
+import { ToggleButton } from "@/models/components/ToggleButton";
+import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
+import { SchemaFormPreview } from "@/schemas/components/SchemaFormPreview";
 
 type EditorView = "code" | "preview";
 

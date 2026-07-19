@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import * as api from "../services";
+import * as api from "@/api/review/services";
 import { SCHEMA_REVIEW_RUN_QUERY_KEY } from "./query-keys";
 
 export const useSchemaReviewRun = (token: string, runToken: string) =>

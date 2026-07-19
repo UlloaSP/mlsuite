@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { AnimatePresence, m as motion } from "motion/react";
-import { schemaErrorsAtom } from "../atoms";
+import { schemaErrorsAtom } from "@/editor/atoms";
 import { EditorErrorCard } from "./EditorErrorCard";
 
 export function EditorErrorPanel() {

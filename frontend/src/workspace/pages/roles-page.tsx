@@ -9,8 +9,8 @@ import {
   AppPageHeader,
   AppSurface,
   AppTabs,
-} from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
+} from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
 import {
   createRole,
   createRoleFromTemplate,
@@ -18,12 +18,12 @@ import {
   duplicateRole,
   getRoles,
   updateRole,
-} from "../../api/workspace/services";
-import { AdminDataPanel } from "../components/admin/AdminDataPanel";
-import { RoleDrawer } from "../components/RoleDrawer";
-import { RoleForm } from "../components/RoleForm";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import type { PermissionKey, RoleDefinitionDto, RoleTemplateDto } from "../../api/workspace/dtos";
+} from "@/api/workspace/services";
+import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
+import { RoleDrawer } from "@/workspace/components/RoleDrawer";
+import { RoleForm } from "@/workspace/components/RoleForm";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
+import type { PermissionKey, RoleDefinitionDto, RoleTemplateDto } from "@/api/workspace/dtos";
 
 type Tab = "roles" | "templates" | "permissions";
 

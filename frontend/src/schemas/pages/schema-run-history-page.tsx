@@ -13,27 +13,27 @@ import {
   AppPageHeader,
   AppPanel,
   AppSurface,
-} from "../../app/components";
-import { SchemaRunHistoryTable } from "../components/SchemaRunHistoryTable";
-import { SchemaRunShareButton } from "../components/SchemaRunShareButton";
+} from "@/app/components";
+import { SchemaRunHistoryTable } from "@/schemas/components/SchemaRunHistoryTable";
+import { SchemaRunShareButton } from "@/schemas/components/SchemaRunShareButton";
 import {
   SchemaRunHistoryToolbar,
   type SchemaRunDateRangeFilter,
   type SchemaRunFeedbackStatusFilter,
   type SchemaRunStatusFilter,
-} from "../components/SchemaRunHistoryToolbar";
-import { SchemaRunBulkUploadButton } from "../components/SchemaRunBulkUploadButton";
+} from "@/schemas/components/SchemaRunHistoryToolbar";
+import { SchemaRunBulkUploadButton } from "@/schemas/components/SchemaRunBulkUploadButton";
 import {
   usePredictionRunsForBookmark,
   usePredictionRunsFeedback,
   useSchema,
   useSchemaBookmark,
   useSchemaVersion,
-} from "../../api/schemas/hooks";
-import { isSchemaFeedbackComplete } from "../../algorithms/schema/feedback-state";
-import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
-import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
-import type { PredictionRunDto } from "../../api/schemas/dtos";
+} from "@/api/schemas/hooks";
+import { isSchemaFeedbackComplete } from "@/algorithms/schema/feedback-state";
+import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
+import { prepareSchemaVersionDtoForUse } from "@/algorithms/schema/binding-rebase";
+import type { PredictionRunDto } from "@/api/schemas/dtos";
 
 const EMPTY_RUNS: PredictionRunDto[] = [];
 

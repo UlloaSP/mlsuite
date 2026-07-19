@@ -8,8 +8,8 @@ import {
   mappedTarget,
   setMappedValue,
   targetKey,
-} from "../../../algorithms/mlform/mapped-to";
-import type { JsonRecord, PredictionPayloadField } from "../../../algorithms/mlform/shared";
+} from "@/algorithms/mlform/mapped-to";
+import type { JsonRecord, PredictionPayloadField } from "@/algorithms/mlform/shared";
 
 /**
  * applySchemaRunInputMapping: applies a deterministic transformation to the supplied data

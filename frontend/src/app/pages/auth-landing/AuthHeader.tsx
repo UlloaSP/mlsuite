@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { APP_NAME, DATE_FORMATTER, ISSUE_LABEL } from "./authLandingCopy";
 import { AuthRule } from "./AuthRule";
-import { MLSuiteMark } from "../../components/MLSuiteMark";
+import { MLSuiteMark } from "@/app/components/MLSuiteMark";
 
 export function AuthHeader() {
   const now = new Date();

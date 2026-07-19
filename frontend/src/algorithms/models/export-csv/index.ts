@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig } from "mlform/runtime";
-import { toMlformSchema } from "../../mlform/schema-validation";
-import { getQuestionnaireFieldIds } from "../questionnaire-feedback";
-import type { QuestionnaireSchema } from "../questionnaire-schema";
+import { toMlformSchema } from "@/algorithms/mlform/schema-validation";
+import { getQuestionnaireFieldIds } from "@/algorithms/models/questionnaire-feedback";
+import type { QuestionnaireSchema } from "@/algorithms/models/questionnaire-schema";
 
 /** isPlainObject: internal predicate for model prediction, feedback, upload, and export data shaping. @remarks Args: value; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const isPlainObject = (value: unknown) =>

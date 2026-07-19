@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as workspaceApi from "../services";
+import * as workspaceApi from "@/api/workspace/services";
 import { PENDING_INVITATIONS_QUERY_KEY } from "./query-keys";
 
 export const useDeclineInvitation = () => {

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { isBuiltinFieldKind, isBuiltinReportKind } from "../../mlform/builtin-registry";
+import { isBuiltinFieldKind, isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
 
 /**
  * schemaNeedsPluginCatalog: performs the exported transformation for this algorithm.

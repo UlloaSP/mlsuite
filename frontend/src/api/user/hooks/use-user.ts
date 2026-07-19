@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import * as userApi from "../services";
+import * as userApi from "@/api/user/services";
 import { USER_QUERY_KEY } from "./query-keys";
 
 export const useUser = () =>

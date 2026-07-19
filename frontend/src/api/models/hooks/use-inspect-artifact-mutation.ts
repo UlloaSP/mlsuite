@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation } from "@tanstack/react-query";
-import * as artifactApi from "../services";
+import * as artifactApi from "@/api/models/services";
 import { INSPECT_ARTIFACT_QUERY_KEY } from "./query-keys";
 
 export function useInspectArtifactMutation() {

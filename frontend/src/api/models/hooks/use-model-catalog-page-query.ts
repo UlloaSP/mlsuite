@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getModelPage } from "../services";
+import { getModelPage } from "@/api/models/services";
 import { MODEL_CATALOG_PAGE_SIZE, modelCatalogPageQueryKey } from "./query-keys";
 
 export const useModelCatalogPageQuery = (

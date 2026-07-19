@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PredictionRunDto } from "../../schemas/dtos";
+import type { PredictionRunDto } from "@/api/schemas/dtos";
 
 export type SchemaReviewRunListItemDto = {
   selectionToken: string;

@@ -5,10 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReactNode } from "react";
 
-import { AppPage } from "../AppPage";
-import { AppSurface } from "../AppSurface";
-import { AppPageHeader } from "../PageHeader";
-import type { AppBreadcrumbItem } from "../AppBreadcrumbs";
+import { AppPage } from "@/app/components/AppPage";
+import { AppSurface } from "@/app/components/AppSurface";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import type { AppBreadcrumbItem } from "@/app/components/AppBreadcrumbs";
 import {
   CatalogListPanel,
   type CatalogEmptyState,

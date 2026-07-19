@@ -7,9 +7,9 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
-} from "../src/algorithms/schema/feedback-state";
-import { buildCombinedFeedbackQuestionnaire } from "../src/algorithms/models/combined-feedback-questionnaire";
-import type { SchemaFeedbackStep } from "../src/algorithms/schema/feedback-steps";
+} from "@/algorithms/schema/feedback-state";
+import { buildCombinedFeedbackQuestionnaire } from "@/algorithms/models/combined-feedback-questionnaire";
+import type { SchemaFeedbackStep } from "@/algorithms/schema/feedback-steps";
 
 const step = (
   value?: Record<string, unknown>,
@@ -26,6 +26,7 @@ const step = (
     steps: [
       {
         id: "output-feedback",
+        title: "Output feedback",
         fields,
       },
     ],

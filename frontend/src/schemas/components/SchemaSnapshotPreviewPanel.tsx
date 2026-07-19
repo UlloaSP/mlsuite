@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useState } from "react";
-import type { SchemaVersionDto } from "../../api/schemas/dtos";
-import { LiveRelativeTime } from "../../app/components/LiveRelativeTime";
-import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
+import type { SchemaVersionDto } from "@/api/schemas/dtos";
+import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
+import { countVisibleSchemaFields } from "@/algorithms/schema/one-hot-category";
 import { SchemaCodeViewer } from "./SchemaCodeViewer";
 import { SchemaFormPreview } from "./SchemaFormPreview";
 

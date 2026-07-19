@@ -3,9 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { AppCopy, AppPanel } from "../../app/components";
-import { formatDisplayValue } from "../../algorithms/schema/input-display";
-import type { JsonRecord } from "../../api/schemas/dtos";
+import { AppCopy, AppPanel } from "@/app/components";
+import { formatDisplayValue } from "@/algorithms/schema/input-display";
+import type { JsonRecord } from "@/api/schemas/dtos";
 
 type Props = {
   label: string;

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import * as schemaApi from "../services";
+import * as schemaApi from "@/api/schemas/services";
 import { SCHEMA_VERSION_QUERY_KEY } from "./query-keys";
 
 export const useSchemaVersion = (versionId?: string) =>

@@ -7,29 +7,29 @@ import { Edit3 } from "lucide-react";
 import { useAtom } from "jotai";
 import { useMemo, useReducer, useState } from "react";
 import { toast } from "sonner";
-import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppCopy, AppPanel, AppButton } from "../../app/components";
+import { themeWithHtmlAtom } from "@/app/atoms";
+import { AppCopy, AppPanel, AppButton } from "@/app/components";
 import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
-} from "../../algorithms/models/combined-feedback-questionnaire";
-import { ReportFeedbackSummary } from "../../models/components/ReportFeedbackSummary";
-import { ReportQuestionnaireMount } from "../../models/components/ReportQuestionnaireMount";
+} from "@/algorithms/models/combined-feedback-questionnaire";
+import { ReportFeedbackSummary } from "@/models/components/ReportFeedbackSummary";
+import { ReportQuestionnaireMount } from "@/models/components/ReportQuestionnaireMount";
 import {
   useCreatePredictionResultFeedbackMutation,
   useUpdatePredictionResultFeedbackMutation,
-} from "../../api/schemas/hooks";
+} from "@/api/schemas/hooks";
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
-} from "../../algorithms/schema/feedback-state";
-import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
+} from "@/algorithms/schema/feedback-state";
+import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
   SchemaVersionDto,
-} from "../../api/schemas/dtos";
+} from "@/api/schemas/dtos";
 
 type Props = {
   run: PredictionRunDto;

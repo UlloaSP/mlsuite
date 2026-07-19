@@ -7,15 +7,15 @@ import { createMlRegistryPack } from "mlform/builtins";
 import { registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { PrimitiveDescriptorRegistry } from "mlform/primitives";
 import type { FormSchema, Registry, ReportConfig, Transport } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
-import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
-import { toMlformSchema } from "../../../algorithms/mlform/schema-validation";
-import { isRecord, type PredictionPayloadField } from "../../../algorithms/mlform/shared";
-import { createSchemaRunTransport } from "../../../algorithms/schema/run-transport";
-import { wrapSchemaReportDefinitions } from "../../../algorithms/schema/report-plugin-context";
-import { schemaRunDebug } from "../../../algorithms/schema/run-debug";
-import { toMlformRuntimeSchema } from "../../../algorithms/mlform/schema-runtime-adapter";
-import { mappedTarget, targetKey } from "../../../algorithms/mlform/mapped-to";
+import type { CatalogFieldDefinition } from "@/algorithms/plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import { toMlformSchema } from "@/algorithms/mlform/schema-validation";
+import { isRecord, type PredictionPayloadField } from "@/algorithms/mlform/shared";
+import { createSchemaRunTransport } from "@/algorithms/schema/run-transport";
+import { wrapSchemaReportDefinitions } from "@/algorithms/schema/report-plugin-context";
+import { schemaRunDebug } from "@/algorithms/schema/run-debug";
+import { toMlformRuntimeSchema } from "@/algorithms/mlform/schema-runtime-adapter";
+import { mappedTarget, targetKey } from "@/algorithms/mlform/mapped-to";
 
 type Binding = {
   modelId: string;

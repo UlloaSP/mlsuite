@@ -1,28 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
-import { AppEmptyState, AppPage, AppSurface } from "../../../app/components";
-import { useUser } from "../../../api/user/hooks";
-import { AlertsView } from "../components/AlertsView";
-import { LogsView } from "../components/LogsView";
-import { OverviewView } from "../components/OverviewView";
-import { ServicesView } from "../components/ServicesView";
-import { TerminalView } from "../components/TerminalView";
+import { AppEmptyState, AppPage, AppSurface } from "@/app/components";
+import { useUser } from "@/api/user/hooks";
+import { AlertsView } from "@/admin/infrastructure/components/AlertsView";
+import { LogsView } from "@/admin/infrastructure/components/LogsView";
+import { OverviewView } from "@/admin/infrastructure/components/OverviewView";
+import { ServicesView } from "@/admin/infrastructure/components/ServicesView";
+import { TerminalView } from "@/admin/infrastructure/components/TerminalView";
 import {
   useInfrastructureOverview,
   useServiceAction,
   useServiceLogsSnapshot,
-} from "../../../api/infrastructure/hooks";
+} from "@/api/infrastructure/hooks";
 import {
   appendLogLine,
   applyInfrastructureEvent,
   resolveSelectedService,
-} from "../../../algorithms/admin/infrastructure/state";
-import { isOverviewSnapshotEvent, isServiceLogEvent } from "../../../api/infrastructure/dtos";
+} from "@/algorithms/admin/infrastructure/state";
+import { isOverviewSnapshotEvent, isServiceLogEvent } from "@/api/infrastructure/dtos";
 import type {
   InfrastructureEvent,
   InfrastructureOverviewDto,
-} from "../../../api/infrastructure/dtos";
-import { openInfrastructureSocket, subscribeToServiceLogs } from "../ws/infrastructureSocket";
+} from "@/api/infrastructure/dtos";
+import { openInfrastructureSocket, subscribeToServiceLogs } from "@/admin/infrastructure/ws/infrastructureSocket";
 
 type InfraTab = "overview" | "services" | "logs" | "terminal" | "alerts";
 

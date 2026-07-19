@@ -7,7 +7,7 @@ import {
   AppCopy,
   AppPanel,
   AppSectionTitle,
-} from "../../app/components";
+} from "@/app/components";
 
 export function ResetPasswordDialog({
   fullName,

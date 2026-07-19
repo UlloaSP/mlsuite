@@ -7,18 +7,18 @@ import { Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import type { AdminUserDto } from "../../api/admin-users/dtos";
+import type { AdminUserDto } from "@/api/admin-users/dtos";
 import {
   useAdminUsers,
   useDeleteAdminUser,
   useResetAdminUserPassword,
   useUpdateAdminUser,
-} from "../../api/admin-users/hooks";
-import { useUser } from "../../api/user/hooks";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import { ResetPasswordDialog } from "../components/ResetPasswordDialog";
-import { UserCatalogTile } from "../components/UserCatalogTile";
+} from "@/api/admin-users/hooks";
+import { useUser } from "@/api/user/hooks";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import { ResetPasswordDialog } from "@/admin/components/ResetPasswordDialog";
+import { UserCatalogTile } from "@/admin/components/UserCatalogTile";
 
 const PAGE_SIZE = 8;
 type ResetTarget = { id: number; fullName: string } | null;

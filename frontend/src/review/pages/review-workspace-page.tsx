@@ -1,15 +1,15 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { HttpError } from "../../api/core/services";
-import { AppEmptyState } from "../../app/components";
-import { ReviewShell } from "../../review/components/ReviewShell";
-import { ReviewStepContextPanel } from "../../review/components/ReviewStepContextPanel";
-import { ReviewUnavailable } from "../../review/components/ReviewUnavailable";
-import { useSchemaReviewContext, useSubmitSchemaReviewRunsMutation } from "../../api/review/hooks";
-import { firstReviewRunToken, hasReviewRunToken } from "../../algorithms/review/run-selection";
-import { SchemaReviewRunDetailPanel } from "../components/SchemaReviewRunDetailPanel";
-import { SchemaReviewRunRail } from "../components/SchemaReviewRunRail";
-import { prepareSchemaVersionDtoForUse } from "../../algorithms/schema/binding-rebase";
+import { HttpError } from "@/api/core/services";
+import { AppEmptyState } from "@/app/components";
+import { ReviewShell } from "@/review/components/ReviewShell";
+import { ReviewStepContextPanel } from "@/review/components/ReviewStepContextPanel";
+import { ReviewUnavailable } from "@/review/components/ReviewUnavailable";
+import { useSchemaReviewContext, useSubmitSchemaReviewRunsMutation } from "@/api/review/hooks";
+import { firstReviewRunToken, hasReviewRunToken } from "@/algorithms/review/run-selection";
+import { SchemaReviewRunDetailPanel } from "@/review/components/SchemaReviewRunDetailPanel";
+import { SchemaReviewRunRail } from "@/review/components/SchemaReviewRunRail";
+import { prepareSchemaVersionDtoForUse } from "@/algorithms/schema/binding-rebase";
 
 export function SchemaReviewWorkspacePage() {
   const { token = "", runToken } = useParams<{ token: string; runToken?: string }>();

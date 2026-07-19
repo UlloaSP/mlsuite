@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import { useAtom } from "jotai";
 import { useEffect, useEffectEvent } from "react";
-import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "../atoms";
-import { isModShortcut, isTypingTarget } from "../utils/keyboard-shortcuts";
+import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "@/app/atoms";
+import { isModShortcut, isTypingTarget } from "@/app/utils/keyboard-shortcuts";
 import { Kbd, KbdGroup } from "./Kbd";
 import {
   SidebarGroup,

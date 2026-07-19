@@ -6,10 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Copy, GitCommitHorizontal, MoreHorizontal, PencilLine, Tag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import type { SchemaVersionDto } from "../../api/schemas/dtos";
-import { schemaVersionId } from "../../algorithms/schema/version-selection";
-import { AppIconButton, cx } from "../../app/components";
-import { LiveRelativeTime } from "../../app/components/LiveRelativeTime";
+import type { SchemaVersionDto } from "@/api/schemas/dtos";
+import { schemaVersionId } from "@/algorithms/schema/version-selection";
+import { AppIconButton, cx } from "@/app/components";
+import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 
 type Props = {
   onBookmark: (version: SchemaVersionDto) => void;

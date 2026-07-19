@@ -5,16 +5,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
-import { AppPage, AppPageHeader } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import { emitErrorFromUnknown } from "../../app/utils/error-sink";
-import { useUser } from "../../api/user/hooks";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
+import { AppPage, AppPageHeader } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import { emitErrorFromUnknown } from "@/app/utils/error-sink";
+import { useUser } from "@/api/user/hooks";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 import {
   applyInspectedBundleFiles,
   type InspectedBundleFile,
-} from "../../algorithms/models/bundle-planner";
-import type { Bundle } from "../bundle-types";
+} from "@/algorithms/models/bundle-planner";
+import type { Bundle } from "@/models/bundle-types";
 import {
   DF_EXTS,
   getStem,
@@ -22,16 +22,16 @@ import {
   isJoblibFile,
   isModelFile,
   slugToTitle,
-} from "../../algorithms/models/bundle-utils";
-import { BundleCard } from "../components/BundleCard";
-import { BundleDropZone } from "../components/BundleDropZone";
-import { BundleEmptyState } from "../components/BundleEmptyState";
-import { BundleSummaryPanel } from "../components/BundleSummaryPanel";
+} from "@/algorithms/models/bundle-utils";
+import { BundleCard } from "@/models/components/BundleCard";
+import { BundleDropZone } from "@/models/components/BundleDropZone";
+import { BundleEmptyState } from "@/models/components/BundleEmptyState";
+import { BundleSummaryPanel } from "@/models/components/BundleSummaryPanel";
 import {
   useCreateModelMutation,
   useInspectArtifactMutation,
   useMatchArtifactsMutation,
-} from "../../api/models/hooks";
+} from "@/api/models/hooks";
 
 let _nextId = 1;
 

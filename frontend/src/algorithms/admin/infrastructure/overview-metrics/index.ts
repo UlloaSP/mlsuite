@@ -1,5 +1,5 @@
-import { formatBytes, formatPercent } from "../formatters";
-import type { MetricPointDto } from "../../../../api/infrastructure/dtos";
+import { formatBytes, formatPercent } from "@/algorithms/admin/infrastructure/formatters";
+import type { MetricPointDto } from "@/api/infrastructure/dtos";
 
 /**
  * ChartLayer: describes the public data contract consumed or returned by this algorithm.

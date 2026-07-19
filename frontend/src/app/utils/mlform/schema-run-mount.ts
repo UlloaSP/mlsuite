@@ -6,21 +6,21 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { mountForm } from "mlform/kit";
 import type { SubmitErrorContext } from "mlform/runtime";
 import { createPredictionPrimitiveRegistry } from "./primitive-registry";
-import { createSchemaRunRuntime } from "../../../algorithms/schema/runtime-assembly";
+import { createSchemaRunRuntime } from "@/algorithms/schema/runtime-assembly";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
   type JsonRecord,
   type MountedPredictionForm,
   type PredictionTheme,
   isRecord,
-} from "../../../algorithms/mlform/shared";
-import type { CatalogFieldDefinition } from "../../../algorithms/plugin/custom-field-catalog";
-import type { CatalogReportDefinition } from "../../../algorithms/plugin/custom-report-catalog";
-import { schemaRunDebug, schemaRunDebugError } from "../../../algorithms/schema/run-debug";
+} from "@/algorithms/mlform/shared";
+import type { CatalogFieldDefinition } from "@/algorithms/plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import { schemaRunDebug, schemaRunDebugError } from "@/algorithms/schema/run-debug";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
-} from "../../../algorithms/mlform/schema-run-result-state";
+} from "@/algorithms/mlform/schema-run-result-state";
 
 type Options = {
   container: HTMLElement;

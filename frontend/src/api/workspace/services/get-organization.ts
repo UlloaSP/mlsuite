@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { appFetch } from "../../core/services/app-fetch";
-import type { OrganizationDto } from "../dtos";
+import { appFetch } from "@/api/core/services/app-fetch";
+import type { OrganizationDto } from "@/api/workspace/dtos";
 
 export const getOrganization = (organizationId: number): Promise<OrganizationDto> =>
   appFetch<OrganizationDto>(`/api/organizations/${organizationId}`);

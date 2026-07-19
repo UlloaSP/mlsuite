@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { mappedTarget, targetKey } from "../../mlform/mapped-to";
+import { mappedTarget, targetKey } from "@/algorithms/mlform/mapped-to";
 
 /**
  * BulkPredictionRecord: describes the public data contract consumed or returned by this algorithm.

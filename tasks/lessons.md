@@ -670,3 +670,6 @@
 - Rule: merge editors need fixed scrollable viewports and explicit per-change actions wired through the diff library resolution API; unresolved counts must match every selectable block.
 - Correction: fixed-pixel merge editor height ignored theme/layout changes and left the page with the wrong scroll owner.
 - Rule: full-page merge editors should resolve theme from app state and use parent flex sizing with `min-h-0` plus internal diff scrolling, not pixel heights.
+# Test Alias Typechecking
+
+- When introducing frontend source aliases, verify a representative test with static TypeScript checking, not only Vitest. Tests outside the application `tsconfig` can execute through Vite while editors still report unresolved aliases. Add a dedicated test `tsconfig` and reference it from the solution config.

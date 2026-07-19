@@ -1,8 +1,8 @@
 import { Building2 } from "lucide-react";
 import { Link } from "react-router";
-import { AppCopy, AppPanel, AppSectionTitle } from "../../app/components";
+import { AppCopy, AppPanel, AppSectionTitle } from "@/app/components";
 import { RoleBadge } from "./RoleBadge";
-import type { OrganizationDto, OrganizationMembershipDto } from "../../api/workspace/dtos";
+import type { OrganizationDto, OrganizationMembershipDto } from "@/api/workspace/dtos";
 
 export function OrganizationCard({
   organization,

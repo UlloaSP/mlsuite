@@ -13,26 +13,26 @@ import {
   usePluginCatalogPageQuery,
   usePluginCatalogStatsQuery,
   useUploadPluginMutation,
-} from "../../../api/plugins/hooks";
-import { useUser } from "../../../api/user/hooks";
-import { useWorkspaceContext } from "../../../api/workspace/hooks";
+} from "@/api/plugins/hooks";
+import { useUser } from "@/api/user/hooks";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 import {
   SORT_LABELS,
   TYPE_META,
   type SortMode,
   type TypeFilter,
   readFileText,
-} from "../../../algorithms/plugin/catalog-page-model";
+} from "@/algorithms/plugin/catalog-page-model";
 import {
   detectPluginType,
   invalidatePluginCatalog,
-} from "../../../algorithms/plugin/catalog-loader";
-import { invalidateCustomFieldDefinitions } from "../../../algorithms/plugin/custom-field-catalog";
-import { invalidateCustomReportDefinitions } from "../../../algorithms/plugin/custom-report-catalog";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "../../../app/components";
-import { NotFoundError } from "../../../app/pages/error-page";
-import { PluginCatalogListItem } from "../components/PluginCatalogListItem";
-import { bumpPluginCatalogVersionAtom } from "../../mlform/plugin-catalog-state";
+} from "@/algorithms/plugin/catalog-loader";
+import { invalidateCustomFieldDefinitions } from "@/algorithms/plugin/custom-field-catalog";
+import { invalidateCustomReportDefinitions } from "@/algorithms/plugin/custom-report-catalog";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import { PluginCatalogListItem } from "@/plugin/catalog/components/PluginCatalogListItem";
+import { bumpPluginCatalogVersionAtom } from "@/plugin/mlform/plugin-catalog-state";
 
 const TYPE_FILTERS: Array<{ value: TypeFilter; label: string }> = [
   { value: "all", label: "All" },

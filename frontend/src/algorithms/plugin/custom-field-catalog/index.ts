@@ -5,12 +5,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { FieldConfig } from "mlform/runtime";
 import type { DefinedFieldKind } from "mlform/kit";
-import type { PluginDto } from "../../../api/plugins/services";
-import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "../catalog-loader";
+import type { PluginDto } from "@/api/plugins/services";
+import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "@/algorithms/plugin/catalog-loader";
 import {
   CUSTOM_FIELD_COMPONENT,
   resolveCustomFieldDefinition,
-} from "../custom-field-source-runtime";
+} from "@/algorithms/plugin/custom-field-source-runtime";
 
 export { CUSTOM_FIELD_COMPONENT };
 

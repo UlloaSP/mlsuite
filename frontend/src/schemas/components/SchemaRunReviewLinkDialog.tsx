@@ -6,14 +6,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Copy, Link2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AppButton, AppIconButton, AppTextField } from "../../app/components";
-import { formatTimestamp } from "../../algorithms/models/utils";
+import { AppButton, AppIconButton, AppTextField } from "@/app/components";
+import { formatTimestamp } from "@/algorithms/models/utils";
 import {
   useCreateSchemaReviewLinkMutation,
   useRevokeSchemaReviewLinkMutation,
   useSchemaReviewLinks,
-} from "../../api/review/hooks";
-import type { PredictionRunDto, SchemaVersionDto } from "../../api/schemas/dtos";
+} from "@/api/review/hooks";
+import type { PredictionRunDto, SchemaVersionDto } from "@/api/schemas/dtos";
 
 type Props = {
   runs: PredictionRunDto[];

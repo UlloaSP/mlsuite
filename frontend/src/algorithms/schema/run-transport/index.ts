@@ -4,13 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig, SubmitRequest, Transport } from "mlform/runtime";
-import { getBackendBaseUrl } from "../../../app/config/runtimeConfig";
-import { type JsonRecord, type PredictionPayloadField, isRecord } from "../../mlform/shared";
-import { normalizeAnalyzerPredictionResult } from "../../mlform/analyzer-result-normalization";
-import { skippedReportIdsKey } from "../report-plugin-context";
-import { schemaRunDebug, schemaRunDebugError } from "../run-debug";
-import { applySchemaRunInputMapping } from "../model-input-mapping";
-import { reportTargetForBinding, reportContextKey } from "../../mlform/schema-run-report-mapping";
+import { getBackendBaseUrl } from "@/app/config/runtimeConfig";
+import { type JsonRecord, type PredictionPayloadField, isRecord } from "@/algorithms/mlform/shared";
+import { normalizeAnalyzerPredictionResult } from "@/algorithms/mlform/analyzer-result-normalization";
+import { skippedReportIdsKey } from "@/algorithms/schema/report-plugin-context";
+import { schemaRunDebug, schemaRunDebugError } from "@/algorithms/schema/run-debug";
+import { applySchemaRunInputMapping } from "@/algorithms/schema/model-input-mapping";
+import { reportTargetForBinding, reportContextKey } from "@/algorithms/mlform/schema-run-report-mapping";
 
 type SchemaRunBinding = {
   modelId: string;

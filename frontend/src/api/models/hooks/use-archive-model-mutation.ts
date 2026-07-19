@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation } from "@tanstack/react-query";
-import { archiveModel } from "../services";
+import { archiveModel } from "@/api/models/services";
 import { useInvalidateModelQueries } from "./use-invalidate-model-queries";
 
 export const useArchiveModelMutation = () => {

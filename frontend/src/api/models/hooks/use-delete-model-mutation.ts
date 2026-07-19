@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation } from "@tanstack/react-query";
-import { deleteModel } from "../services";
+import { deleteModel } from "@/api/models/services";
 import { useInvalidateModelQueries } from "./use-invalidate-model-queries";
 
 export const useDeleteModelMutation = () => {

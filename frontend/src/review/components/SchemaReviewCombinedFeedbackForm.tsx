@@ -2,23 +2,23 @@ import { useAtom } from "jotai";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { FieldConfig } from "mlform/runtime";
-import { themeWithHtmlAtom } from "../../app/atoms";
-import { AppCopy, AppButton } from "../../app/components";
+import { themeWithHtmlAtom } from "@/app/atoms";
+import { AppCopy, AppButton } from "@/app/components";
 import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
-} from "../../algorithms/models/combined-feedback-questionnaire";
-import { ReportQuestionnaireMount } from "../../models/components/ReportQuestionnaireMount";
-import { buildQuestionnaireFormSchema } from "../../algorithms/models/questionnaire-schema";
-import { buildSchemaFeedbackSteps } from "../../algorithms/schema/feedback-steps";
+} from "@/algorithms/models/combined-feedback-questionnaire";
+import { ReportQuestionnaireMount } from "@/models/components/ReportQuestionnaireMount";
+import { buildQuestionnaireFormSchema } from "@/algorithms/models/questionnaire-schema";
+import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
   SchemaVersionDto,
-} from "../../api/schemas/dtos";
-import { REVIEW_STEP_CONTEXT_EVENT } from "../../review/components/ReviewStepContextPanel";
-import * as api from "../../api/review/services";
+} from "@/api/schemas/dtos";
+import { REVIEW_STEP_CONTEXT_EVENT } from "@/review/components/ReviewStepContextPanel";
+import * as api from "@/api/review/services";
 
 type Props = {
   token: string;

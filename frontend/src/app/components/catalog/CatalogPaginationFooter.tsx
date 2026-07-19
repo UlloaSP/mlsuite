@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { Dispatch, SetStateAction } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { AppButton } from "../AppButton";
-import { cx } from "../cx";
+import { AppButton } from "@/app/components/AppButton";
+import { cx } from "@/app/components/cx";
 
 type PaginationPageItem = number | "ellipsis";
 

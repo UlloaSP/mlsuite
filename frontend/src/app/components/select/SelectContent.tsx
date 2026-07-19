@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Select as SelectPrimitive } from "radix-ui";
 import { type ComponentPropsWithoutRef } from "react";
-import { cx } from "../cx";
+import { cx } from "@/app/components/cx";
 
 type SelectContentProps = ComponentPropsWithoutRef<typeof SelectPrimitive.Content>;
 

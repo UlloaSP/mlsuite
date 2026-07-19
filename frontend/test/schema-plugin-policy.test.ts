@@ -7,15 +7,15 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
-import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
-import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
-import { buildSchemaRunRawFromSubmitResult } from "../src/algorithms/mlform/schema-run-result-state";
+import { createSchemaRunTransport } from "@/algorithms/schema/run-transport";
+import { createSchemaRunRuntime } from "@/algorithms/schema/runtime-assembly";
+import { buildSchemaRunRawFromSubmitResult } from "@/algorithms/mlform/schema-run-result-state";
 import {
   isSkippedSchemaReportPayload,
   wrapSchemaReportDefinitions,
-} from "../src/algorithms/schema/report-plugin-context";
-import { readReportContext } from "../src/algorithms/mlform/schema-run-report-mapping";
-import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+} from "@/algorithms/schema/report-plugin-context";
+import { readReportContext } from "@/algorithms/mlform/schema-run-report-mapping";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
 
 const stringMeta = (value: unknown, fallback = ""): string =>
   typeof value === "string" ? value : fallback;

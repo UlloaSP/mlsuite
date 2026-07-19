@@ -6,9 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { FormEvent } from "react";
 import { useAtom } from "jotai";
 import { useState } from "react";
-import { themeWithHtmlAtom } from "../atoms";
-import type { LoginPayload, RegisterPayload } from "../../api/user/services";
-import { useLogin, useRegister } from "../../api/user/hooks";
+import { themeWithHtmlAtom } from "@/app/atoms";
+import type { LoginPayload, RegisterPayload } from "@/api/user/services";
+import { useLogin, useRegister } from "@/api/user/hooks";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
 import { AuthHeader } from "./auth-landing/AuthHeader";
 import { AuthHero } from "./auth-landing/AuthHero";

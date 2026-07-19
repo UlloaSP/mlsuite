@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { SchemaReviewRunListItemDto } from "./index";
-import type { SchemaDto, SchemaVersionDto } from "../../schemas/dtos";
+import type { SchemaDto, SchemaVersionDto } from "@/api/schemas/dtos";
 
 export type SchemaReviewLinkContextDto = {
   organization: { id: number; name: string };

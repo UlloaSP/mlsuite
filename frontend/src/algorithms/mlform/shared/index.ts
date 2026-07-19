@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FormController, FormSchema, NormalizedFieldConfig } from "mlform/runtime";
-import type { CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
-import type { CatalogReportDefinition } from "../../plugin/custom-report-catalog";
+import type { CatalogFieldDefinition } from "@/algorithms/plugin/custom-field-catalog";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
 
 /**
  * JsonRecord: describes the public data contract consumed or returned by this algorithm.

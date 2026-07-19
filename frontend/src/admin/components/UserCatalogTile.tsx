@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { CalendarDays, Mail, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import type { AdminUserDto } from "../../api/admin-users/dtos";
-import { AppBadge } from "../../app/components";
+import type { AdminUserDto } from "@/api/admin-users/dtos";
+import { AppBadge } from "@/app/components";
 import { UserActionsMenu } from "./UserActionsMenu";
 import { ChangeRoleDialog, DeleteUserDialog } from "./UserCatalogDialogs";
 

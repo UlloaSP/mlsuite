@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ChevronDown } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
 import { type ComponentPropsWithoutRef } from "react";
-import { cx } from "../cx";
-import { FOCUS_RING } from "../focus-ring";
+import { cx } from "@/app/components/cx";
+import { FOCUS_RING } from "@/app/components/focus-ring";
 
 type SelectTriggerProps = ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>;
 

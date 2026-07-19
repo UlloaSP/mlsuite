@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { describe, expect, test } from "vite-plus/test";
-import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
-import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
+import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import { createSchemaRunRuntime } from "@/algorithms/schema/runtime-assembly";
 
 const findReport = (reports: readonly unknown[], id: string) =>
   reports.find(
@@ -36,7 +36,9 @@ const definition = (): CatalogReportDefinition => ({
       endpoint: z.string().min(1).default("/api/analyzer/explanations"),
     }),
     resolve: ({ report, result }) => findReport(result.reports, report.id)?.payload,
-    fetch: ({ config }) => ({ submit: async () => ({ endpoint: config.endpoint }) }),
+    fetch: ({ config }: { config: { endpoint: string } }) => ({
+      submit: async () => ({ endpoint: config.endpoint }),
+    }),
     render: { content: ({ payload }) => ({ type: "text", value: JSON.stringify(payload) }) },
   }),
 });

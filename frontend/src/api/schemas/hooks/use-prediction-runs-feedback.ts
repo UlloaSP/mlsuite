@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQueries } from "@tanstack/react-query";
-import * as schemaApi from "../services";
-import type { PredictionRunDto } from "../dtos";
+import * as schemaApi from "@/api/schemas/services";
+import type { PredictionRunDto } from "@/api/schemas/dtos";
 import { PREDICTION_RESULT_FEEDBACK_QUERY_KEY } from "./query-keys";
 
 export const usePredictionRunsFeedback = (runs: readonly PredictionRunDto[]) => {

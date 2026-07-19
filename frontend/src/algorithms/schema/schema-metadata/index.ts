@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { JsonRecord } from "../../../api/schemas/dtos";
+import type { JsonRecord } from "@/api/schemas/dtos";
 
 const formatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",

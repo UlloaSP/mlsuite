@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getString, isRecord } from "../../../algorithms/mlform/shared";
-import type { JsonRecord } from "../../../api/schemas/dtos";
+import { getString, isRecord } from "@/algorithms/mlform/shared";
+import type { JsonRecord } from "@/api/schemas/dtos";
 
 type Candidate = {
   base: string;

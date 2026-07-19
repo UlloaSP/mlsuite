@@ -6,10 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { MultiFileDiff, UnresolvedFile, type FileContents } from "@pierre/diffs/react";
 import { useAtomValue } from "jotai";
 import { useMemo } from "react";
-import { themeWithHtmlAtom } from "../../app/atoms";
-import { cx } from "../../app/components/cx";
-import type { SchemaDraftChangeDto, SchemaDraftMergeSide } from "../../api/schemas/dtos";
-import { buildSchemaMergeFile } from "../utils/schema-merge-file";
+import { themeWithHtmlAtom } from "@/app/atoms";
+import { cx } from "@/app/components/cx";
+import type { SchemaDraftChangeDto, SchemaDraftMergeSide } from "@/api/schemas/dtos";
+import { buildSchemaMergeFile } from "@/schemas/utils/schema-merge-file";
 
 type Props = {
   currentLabel: string;

@@ -6,17 +6,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Tags } from "lucide-react";
 import { useMemo } from "react";
 import { useParams } from "react-router";
-import { CatalogResourcePage, useCatalogControls } from "../../app/components";
-import type { SchemaBookmarkDto } from "../../api/schemas/dtos";
+import { CatalogResourcePage, useCatalogControls } from "@/app/components";
+import type { SchemaBookmarkDto } from "@/api/schemas/dtos";
 import {
   useSchema,
   useSchemaBookmarks,
   useSchemaDrafts,
   useSchemaVersions,
-} from "../../api/schemas/hooks";
-import { sortSchemaVersions } from "../../algorithms/schema/version-selection";
-import { SchemaBookmarkCatalogItem } from "../components/SchemaBookmarkCatalogItem";
-import { SchemaRepoNav } from "../components/SchemaRepoNav";
+} from "@/api/schemas/hooks";
+import { sortSchemaVersions } from "@/algorithms/schema/version-selection";
+import { SchemaBookmarkCatalogItem } from "@/schemas/components/SchemaBookmarkCatalogItem";
+import { SchemaRepoNav } from "@/schemas/components/SchemaRepoNav";
 
 const EMPTY_BOOKMARKS: never[] = [];
 const EMPTY_DRAFTS: never[] = [];

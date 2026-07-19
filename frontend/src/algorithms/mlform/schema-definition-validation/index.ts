@@ -4,10 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FieldConfig, Registry, ReportConfig } from "mlform/runtime";
-import { type CatalogFieldDefinition } from "../../plugin/custom-field-catalog";
-import { type CatalogReportDefinition } from "../../plugin/custom-report-catalog";
-import type { CompatIssue } from "../../../algorithms/mlform/shared";
-import { normalizeIssuePath } from "../../../algorithms/mlform/shared";
+import { type CatalogFieldDefinition } from "@/algorithms/plugin/custom-field-catalog";
+import { type CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import type { CompatIssue } from "@/algorithms/mlform/shared";
+import { normalizeIssuePath } from "@/algorithms/mlform/shared";
 
 /** pushIssue: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const pushIssue = (

@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useParams } from "react-router";
-import { useUser } from "../../api/user/hooks";
-import { ReviewShell } from "../../review/components/ReviewShell";
+import { useUser } from "@/api/user/hooks";
+import { ReviewShell } from "@/review/components/ReviewShell";
 
 export function SchemaReviewProtectedRoute() {
   const { token = "" } = useParams<{ token: string }>();

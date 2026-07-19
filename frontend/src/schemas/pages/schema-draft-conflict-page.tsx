@@ -7,14 +7,14 @@ import { CheckCircle2, GitMerge, PencilLine, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { AppButton, AppCopy, AppPage, AppPageHeader, AppSurface } from "../../app/components";
-import { isHttpError } from "../../api/core/services/app-fetch";
+import { AppButton, AppCopy, AppPage, AppPageHeader, AppSurface } from "@/app/components";
+import { isHttpError } from "@/api/core/services/app-fetch";
 import type {
   SchemaDraftBindingDto,
   SchemaDraftChangeDto,
   SchemaDraftMergeSide,
   SchemaModelBindingDto,
-} from "../../api/schemas/dtos";
+} from "@/api/schemas/dtos";
 import {
   useMergeSchemaDraftMutation,
   usePublishSchemaDraftMutation,
@@ -22,8 +22,8 @@ import {
   useSchemaDraft,
   useSchemaDraftDiff,
   useSchemaVersion,
-} from "../../api/schemas/hooks";
-import { SchemaMergeDiffViewer } from "../components/SchemaMergeDiffViewer";
+} from "@/api/schemas/hooks";
+import { SchemaMergeDiffViewer } from "@/schemas/components/SchemaMergeDiffViewer";
 
 export function SchemaDraftConflictPage() {
   const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getOrganizationPage } from "../services";
+import { getOrganizationPage } from "@/api/workspace/services";
 import { ORGANIZATION_CATALOG_PAGE_SIZE, organizationCatalogPageQueryKey } from "./query-keys";
 
 export const useOrganizationCatalogPageQuery = (

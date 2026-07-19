@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig, SubmitRequest, Transport } from "mlform/runtime";
-import { isRecord, type JsonRecord } from "../../mlform/shared";
+import { isRecord, type JsonRecord } from "@/algorithms/mlform/shared";
 
 type PreviewTarget = {
   key: string;

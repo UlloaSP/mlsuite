@@ -7,28 +7,28 @@ import { useAtom } from "jotai";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only import; editor component is lazy-loaded below.
 import type * as Monaco from "monaco-editor";
 import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
-import { themeWithHtmlAtom } from "../../app/atoms";
+import { themeWithHtmlAtom } from "@/app/atoms";
 import {
   getCustomFieldDefinitions,
   type CatalogFieldDefinition,
-} from "../../algorithms/plugin/custom-field-catalog";
+} from "@/algorithms/plugin/custom-field-catalog";
 import {
   getCustomReportDefinitions,
   type CatalogReportDefinition,
-} from "../../algorithms/plugin/custom-report-catalog";
-import { invalidatePluginCatalog } from "../../algorithms/plugin/catalog-loader";
-import { pluginCatalogVersionAtom } from "../../plugin/mlform/plugin-catalog-state";
-import { schemaNeedsPluginCatalog } from "../../algorithms/plugin/schema-needs-plugin-catalog";
-import { mlformJsonSchema, validateMlformSchema } from "../../algorithms/mlform/schema-validation";
+} from "@/algorithms/plugin/custom-report-catalog";
+import { invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
+import { pluginCatalogVersionAtom } from "@/plugin/mlform/plugin-catalog-state";
+import { schemaNeedsPluginCatalog } from "@/algorithms/plugin/schema-needs-plugin-catalog";
+import { mlformJsonSchema, validateMlformSchema } from "@/algorithms/mlform/schema-validation";
 import {
   type EditorErrorCard,
   getCompatMarkerStartColumn,
   getMarkerMessage,
   pathToPos,
-} from "../../algorithms/editor/schema-diagnostics";
-import { getLineChangeMarkers } from "../../algorithms/editor/line-change-markers";
-import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "../atoms";
-import { editorDarkTheme, editorLightTheme, editorOptions } from "../utils/editorConfig";
+} from "@/algorithms/editor/schema-diagnostics";
+import { getLineChangeMarkers } from "@/algorithms/editor/line-change-markers";
+import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/editor/atoms";
+import { editorDarkTheme, editorLightTheme, editorOptions } from "@/editor/utils/editorConfig";
 
 type MonacoNamespace = typeof import("monaco-editor");
 type Props = {

@@ -14,15 +14,15 @@ import {
   useDuplicateSchemaMutation,
   useRenameSchemaMutation,
   useSchemaCatalogPageQuery,
-} from "../../api/schemas/hooks";
-import type { SchemaCatalogItemDto } from "../../api/schemas/dtos";
-import { useUser } from "../../api/user/hooks";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "../../app/components";
-import { NotFoundError } from "../../app/pages/error-page";
-import type { SchemaAction } from "../components/SchemaActionsMenu";
-import { SchemaActionDialog } from "../components/SchemaActionDialog";
-import { SchemaListItem } from "../components/SchemaListItem";
+} from "@/api/schemas/hooks";
+import type { SchemaCatalogItemDto } from "@/api/schemas/dtos";
+import { useUser } from "@/api/user/hooks";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { NotFoundError } from "@/app/pages/error-page";
+import type { SchemaAction } from "@/schemas/components/SchemaActionsMenu";
+import { SchemaActionDialog } from "@/schemas/components/SchemaActionDialog";
+import { SchemaListItem } from "@/schemas/components/SchemaListItem";
 
 type SchemaSortMode = "updated" | "created" | "name";
 type SchemaStatusFilter = "active" | "archived" | "all";

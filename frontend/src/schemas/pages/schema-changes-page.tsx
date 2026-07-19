@@ -7,8 +7,8 @@ import { GitCompareArrows, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "../../app/components";
-import type { SchemaDraftDto } from "../../api/schemas/dtos";
+import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import type { SchemaDraftDto } from "@/api/schemas/dtos";
 import {
   useSchema,
   useSchemaBookmarks,
@@ -16,11 +16,11 @@ import {
   useSchemaDrafts,
   useUpdateSchemaDraftMutation,
   useSchemaVersions,
-} from "../../api/schemas/hooks";
-import { schemaVersionId, sortSchemaVersions } from "../../algorithms/schema/version-selection";
-import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
-import { SchemaChangeCatalogItem } from "../components/SchemaChangeCatalogItem";
-import { SchemaRepoNav } from "../components/SchemaRepoNav";
+} from "@/api/schemas/hooks";
+import { schemaVersionId, sortSchemaVersions } from "@/algorithms/schema/version-selection";
+import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
+import { SchemaChangeCatalogItem } from "@/schemas/components/SchemaChangeCatalogItem";
+import { SchemaRepoNav } from "@/schemas/components/SchemaRepoNav";
 
 const EMPTY_BOOKMARKS: never[] = [];
 const EMPTY_DRAFTS: never[] = [];

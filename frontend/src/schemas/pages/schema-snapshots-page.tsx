@@ -7,8 +7,8 @@ import { GitCommitHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { CatalogResourcePage, useCatalogControls } from "../../app/components";
-import type { SchemaVersionDto } from "../../api/schemas/dtos";
+import { CatalogResourcePage, useCatalogControls } from "@/app/components";
+import type { SchemaVersionDto } from "@/api/schemas/dtos";
 import {
   useCreateSchemaBookmarkMutation,
   useCreateSchemaDraftMutation,
@@ -17,14 +17,14 @@ import {
   useSchemaBookmarks,
   useSchemaDrafts,
   useSchemaVersions,
-} from "../../api/schemas/hooks";
-import { countVisibleSchemaFields } from "../../algorithms/schema/one-hot-category";
-import { schemaVersionId, sortSchemaVersions } from "../../algorithms/schema/version-selection";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import { SchemaBookmarkDialog } from "../components/SchemaBookmarkDialog";
-import { SchemaChangeNameDialog } from "../components/SchemaChangeNameDialog";
-import { SchemaRepoNav } from "../components/SchemaRepoNav";
-import { SchemaSnapshotCatalogItem } from "../components/SchemaSnapshotCatalogItem";
+} from "@/api/schemas/hooks";
+import { countVisibleSchemaFields } from "@/algorithms/schema/one-hot-category";
+import { schemaVersionId, sortSchemaVersions } from "@/algorithms/schema/version-selection";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { SchemaBookmarkDialog } from "@/schemas/components/SchemaBookmarkDialog";
+import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
+import { SchemaRepoNav } from "@/schemas/components/SchemaRepoNav";
+import { SchemaSnapshotCatalogItem } from "@/schemas/components/SchemaSnapshotCatalogItem";
 
 type SnapshotFilter = "all" | "latest" | "withBindings";
 type SnapshotSort = "created" | "version" | "name";

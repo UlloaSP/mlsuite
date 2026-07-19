@@ -5,11 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { CalendarDays, Database, Rows3, ScrollText, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
-import { getModelAlgorithmLabel } from "../../algorithms/models/utils";
-import { modifierName } from "../../algorithms/catalog/relative-time";
-import type { ModelDto } from "../../api/models/services";
-import { cx } from "../../app/components/cx";
-import { LiveRelativeTime } from "../../app/components/LiveRelativeTime";
+import { getModelAlgorithmLabel } from "@/algorithms/models/utils";
+import { modifierName } from "@/algorithms/catalog/relative-time";
+import type { ModelDto } from "@/api/models/services";
+import { cx } from "@/app/components/cx";
+import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
 
 const getModelIcon = (type: string) => {

@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { appFetch } from "../../core/services/app-fetch";
-import type { DuplicateSchemaRequest, SchemaDto } from "../dtos";
+import { appFetch } from "@/api/core/services/app-fetch";
+import type { DuplicateSchemaRequest, SchemaDto } from "@/api/schemas/dtos";
 
 export const duplicateSchema = ({
   id,

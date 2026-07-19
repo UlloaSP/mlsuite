@@ -3,9 +3,9 @@ import {
   schemaVersionId,
   selectSchemaVersion,
   sortSchemaVersions,
-} from "../src/algorithms/schema/version-selection";
-import type { SchemaVersionDto } from "../src/api/schemas/dtos";
-import { isGlobalSearchShortcut } from "../src/algorithms/search/shortcut";
+} from "@/algorithms/schema/version-selection";
+import type { SchemaVersionDto } from "@/api/schemas/dtos";
+import { isGlobalSearchShortcut } from "@/algorithms/search/shortcut";
 
 const version = (id: string | number, versionNumber: number): SchemaVersionDto =>
   ({

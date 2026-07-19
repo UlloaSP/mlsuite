@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as schemaApi from "../services";
-import type { CreatePredictionRunRequest } from "../dtos";
+import * as schemaApi from "@/api/schemas/services";
+import type { CreatePredictionRunRequest } from "@/api/schemas/dtos";
 import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY, PREDICTION_RUN_QUERY_KEY } from "./query-keys";
 
 export function useCreatePredictionRunForBookmarkMutation(bookmarkId: string) {
