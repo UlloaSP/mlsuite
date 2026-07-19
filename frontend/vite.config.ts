@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 import { defineConfig } from "vite-plus";
 
@@ -21,16 +21,9 @@ export default defineConfig({
       },
     },
   },
-  plugins: [
-    react({
-      plugins: [],
-      disableOxcRecommendation: true,
-    }),
-    tailwindcss(),
-  ],
+  plugins: [react(), tailwindcss()],
   build: {
     outDir: "./dist",
-    emptyOutDir: false,
     rolldownOptions: {
       output: {
         codeSplitting: {

@@ -1,3 +1,22 @@
+# Frontend Reproducible Vite+ Build
+
+- [x] Replace SWC React plugin with Oxc-compatible React plugin and remove obsolete suppression.
+- [x] Restore clean Vite output behavior and remove unused Space Grotesk download.
+- [x] Pin Vite+ packages and make Docker dependency install frozen/reproducible.
+- [x] Cache hashed assets immutably in Nginx without weakening security headers.
+- [x] Refresh lockfile; verify targeted checks, tests, production build, output cleanup, and graphify.
+- [ ] Run Docker image/Nginx runtime verification when Docker Desktop daemon is available.
+
+## Review
+
+- Replaced SWC plugin/config suppression with `@vitejs/plugin-react@6.0.3` and the native Oxc path.
+- Pinned Vite+ CLI/core to existing lock version `0.2.2`, pinned test override, and made Docker use the same CLI plus `--frozen-lockfile`.
+- Vite now clears `dist`; measured output fell from 422 files/190,292,398 bytes to 326 files/~29.7 MB.
+- `/assets/` receives one-year immutable caching and repeats server security headers because nested Nginx `add_header` directives override inheritance.
+- Removed only unused Space Grotesk; retained DM Mono because terminal configuration consumes it.
+- Passed: frozen install, targeted zero-warning check, 35/35 test files (135/135 tests), `vp run build`, static config contract, and diff whitespace check.
+- Existing full `vp check` formatting debt remains (186 files). Docker verification blocked: Docker Desktop Linux daemon pipe unavailable.
+
 # Frontend Source Alias Migration
 
 - [x] Configure `@/*` for TypeScript and `@` for Vite without another dependency.

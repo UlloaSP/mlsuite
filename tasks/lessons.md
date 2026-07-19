@@ -673,3 +673,8 @@
 # Test Alias Typechecking
 
 - When introducing frontend source aliases, verify a representative test with static TypeScript checking, not only Vitest. Tests outside the application `tsconfig` can execute through Vite while editors still report unresolved aliases. Add a dedicated test `tsconfig` and reference it from the solution config.
+
+# Reproducible Frontend Builds
+
+- Correction: frontend build used floating Vite+ versions, non-frozen Docker installs, preserved stale output, and suppressed the toolchain's preferred React transform.
+- Rule: pin build-tool versions across package metadata and containers, enforce the lockfile in Docker, accept clean output defaults, and never suppress migration guidance without a measured incompatibility.
