@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { appFetch, HttpError } from "@/shared/api/http";
 import { schemaReviewLinksQueryOptions } from "@/api/review/review-queries";
-import { searchQueryOptions } from "@/api/search/search-queries";
+import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { organizationTeamsQueryOptions } from "@/api/workspace/workspace-queries";
 
 const { getTeams } = vi.hoisted(() => ({ getTeams: vi.fn() }));

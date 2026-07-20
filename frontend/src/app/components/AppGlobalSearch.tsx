@@ -1,12 +1,14 @@
 import { Search } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog } from "radix-ui";
 import { useAtom } from "jotai";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
-import { useSearchResults } from "@/api/search/hooks";
+import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 import { isGlobalSearchShortcut } from "@/algorithms/search/shortcut";
-import { SearchResultGroup } from "@/search/components/SearchResultGroup";
-import { useDebouncedValue } from "@/search/hooks";
+import { searchQueryOptions } from "@/features/search/api/search.queries";
+import { SearchResultGroup } from "@/features/search/components/SearchResultGroup";
+import { useDebouncedValue } from "@/features/search/lib/use-debounced-value";
 import { globalSearchOpenAtom } from "@/app/atoms";
 import { AppCopy } from "./AppCopy";
 import { cx } from "./cx";
@@ -40,7 +42,8 @@ export function AppGlobalSearch() {
     activeIndex: 0,
   });
   const debouncedQuery = useDebouncedValue(query);
-  const { data, isFetching } = useSearchResults(debouncedQuery);
+  const organizationId = useCurrentOrganizationId();
+  const { data, isFetching } = useQuery(searchQueryOptions(organizationId, debouncedQuery));
 
   const flatResults = useMemo(
     () => (data?.groups ?? []).flatMap((group) => group.results),

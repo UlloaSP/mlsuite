@@ -11,7 +11,7 @@ const CONTRACT = join(ROOT, "ARCHITECTURE.md");
 const AGENTS = join(ROOT, "AGENTS.md");
 const TARGET_ROOTS = new Set(["app", "shared", "capabilities", "features"]);
 const LEGACY_ROOTS = new Set(
-  "admin algorithms api editor models plugin review schemas search user workspace".split(" "),
+  "admin algorithms api editor models plugin review schemas user workspace".split(" "),
 );
 const ALLOWED_ROOTS = new Set([...TARGET_ROOTS, ...LEGACY_ROOTS]);
 const ALLOWED_ROOT_FILES = new Set(["vite-env.d.ts"]);

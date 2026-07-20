@@ -623,3 +623,24 @@
 - `graphify update .` completed: 11,025 nodes, 31,321 edges, 365 communities.
 - `vp check` remains blocked by 13 pre-existing formatting violations outside this slice.
 - React Doctor remains at 67/100 with 94 existing findings (4 errors, 90 warnings); no visual check was run because it was not requested.
+
+# Frontend Search Vertical Slice
+
+- [x] Read architecture contract, Graphify report, agent rules, and relevant lessons.
+- [x] Audit search transport, query ownership, UI consumers, and target-layer dependencies.
+- [x] Move the search transport, contracts, tenant-aware keys, and query options into `features/search/api`.
+- [x] Move active search UI/behavior into `features/search`, delete unused search surface, and remove both legacy search trees.
+- [x] Keep class-name composition local to migrated search UI; defer the unrelated 86-consumer `cx` move.
+- [x] Remove `search` from architecture legacy roots and update source/test imports.
+- [x] Run focused architecture/search tests, TypeScript, full tests/build/check, React Doctor, line/diff checks, and `graphify update .`.
+- [x] Record final review and exact blockers.
+
+## Review
+
+- Search now owns its transport, contracts, tenant-aware keys, query options, behavior, and result UI under `features/search`; both legacy search trees were deleted without forwarding files.
+- `AppGlobalSearch` composes the active legacy workspace id with the feature query interface from `app`, preserving dependency direction and the existing query-key/HTTP contracts.
+- Removed the unused `SearchResultsPanel`; kept class composition local instead of expanding the slice into an unrelated 86-consumer utility move.
+- Passed focused architecture/query tests (16/16), TypeScript, full frontend tests (153/153), release build, old-path audit, line limits, and diff whitespace check.
+- `graphify update .` completed: 11,004 nodes, 31,281 edges, 353 communities.
+- `vp check` remains blocked by the same 13 pre-existing formatting violations outside this slice.
+- React Doctor improved from 94 to 92 findings at 67/100 (4 errors, 88 warnings); no visual check was run because it was not requested.
