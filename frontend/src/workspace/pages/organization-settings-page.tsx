@@ -1,8 +1,10 @@
 import {
+  ORGANIZATIONS_QUERY_KEY,
+  WORKSPACE_CONTEXT_QUERY_KEY,
+  organizationDetailsQueryKey,
   organizationMembersQueryKey,
-  organizationResourceQueryKey,
 } from "@/api/workspace/hooks/query-keys";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
 import {
@@ -16,29 +18,23 @@ import {
   AppSurface,
 } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
+import { transferOrganizationOwnership, updateOrganization } from "@/api/workspace/services";
 import {
-  getOrganization,
-  getOrganizationMembers,
-  transferOrganizationOwnership,
-  updateOrganization,
-} from "@/api/workspace/services";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+  useOrganizationDetailsQuery,
+  useOrganizationMembersQuery,
+  useWorkspaceContext,
+} from "@/api/workspace/hooks";
 
 export function OrganizationSettingsPage() {
   const { organizationId = "" } = useParams();
   const qc = useQueryClient();
   const id = Number(organizationId);
   const { data: workspace } = useWorkspaceContext();
-  const { data: organization } = useQuery({
-    queryKey: organizationResourceQueryKey(id, "organization"),
-    queryFn: () => getOrganization(id),
-    enabled: Boolean(id),
-  });
-  const { data: members = [] } = useQuery({
-    queryKey: organizationMembersQueryKey(id),
-    queryFn: () => getOrganizationMembers(id),
-    enabled: Boolean(id) && Boolean(workspace?.permissions.canTransferOwnership),
-  });
+  const { data: organization } = useOrganizationDetailsQuery(id);
+  const { data: members = [] } = useOrganizationMembersQuery(
+    id,
+    Boolean(workspace?.permissions.canTransferOwnership),
+  );
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nextOwnerMembershipId, setNextOwnerMembershipId] = useState("");
@@ -52,9 +48,9 @@ export function OrganizationSettingsPage() {
       description: effectiveDescription,
     });
     await Promise.all([
-      qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "organization") }),
-      qc.invalidateQueries({ queryKey: ["organizations"] }),
-      qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
+      qc.invalidateQueries({ queryKey: organizationDetailsQueryKey(id) }),
+      qc.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
+      qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
     ]);
   }
 
@@ -66,9 +62,9 @@ export function OrganizationSettingsPage() {
     await transferOrganizationOwnership(id, membershipId);
     setNextOwnerMembershipId("");
     await Promise.all([
-      qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
+      qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
       qc.invalidateQueries({ queryKey: organizationMembersQueryKey(id) }),
-      qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "organization") }),
+      qc.invalidateQueries({ queryKey: organizationDetailsQueryKey(id) }),
     ]);
   }
 

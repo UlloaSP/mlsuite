@@ -563,3 +563,20 @@
 - Team permission and route failures now render explicit loading, 403, 404, network, or unexpected-error states. Contextual mutations opt out of the global toast through metadata.
 - Passed changed-file `vp check`, full frontend tests (146/146), production build, architecture/line limits, diff whitespace check, and `graphify update .`.
 - Full-repository `vp check` remains blocked by 161 pre-existing formatting violations. React Doctor reports 96 existing issues (4 errors, 92 warnings); the one changed-dialog accessibility finding was fixed.
+
+# TanStack Query Resource Contracts
+
+- [x] Inventory query ownership, duplicate/manual keys, tenant scope, cancellation, and parallel caches.
+- [x] Add reusable `queryOptions()` contracts per queried resource without adding dependencies or moving unrelated UI.
+- [x] Move page-level queries behind resource options/hooks and replace manual cache keys with factories.
+- [x] Propagate `AbortSignal` through query functions and HTTP transport while preserving abort errors.
+- [x] Add focused success, HTTP-error, and cancellation coverage plus architecture regression checks.
+- [x] Run focused checks, full frontend verification, line limits, diff checks, React Doctor, and `graphify update .`.
+
+## Review
+
+- Added typed `queryOptions()` contracts for workspace, schemas, models, plugins, reviews, search, users, admin users, infrastructure, and startup; page components now consume resource hooks instead of defining GET queries.
+- Organization-owned search and review-link keys now share the tenant prefix. Query functions forward TanStack's `AbortSignal`, and the HTTP transport preserves cancellation instead of converting it to a network error.
+- Plugin mutations now invalidate both TanStack server-state queries and the organization-scoped derived runtime cache from one owner.
+- Passed focused contracts (25/25), full frontend tests (152/152), production build, architecture/line limits, changed-file formatting/type checks, diff whitespace checks, and `graphify update .`.
+- Full `vp check` remains blocked by 22 pre-existing formatting violations. React Doctor remains at 67/100 with 100 pre-existing findings (4 errors, 96 warnings); none targets the new Query contracts.

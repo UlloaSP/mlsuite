@@ -31,7 +31,7 @@ export const isHttpError = (e: unknown): e is HttpError => e instanceof HttpErro
 const buildInit = (init?: RequestInit): RequestInit => ({
   credentials: "include",
   ...init,
-  headers: { ...init?.headers },
+  headers: new Headers(init?.headers),
 });
 const toUrl = (path: string) => new URL(path, getBackendBaseUrl()).toString();
 const isJson = (res: Response) =>
@@ -67,6 +67,7 @@ export async function appFetch<T = unknown>(path: string, init?: RequestInit): P
     throw new HttpError(fabricateDto(res, path, res.statusText || "Request error"));
   } catch (e) {
     if (isHttpError(e)) throw e;
+    if (init?.signal?.aborted) throw e;
     throw new HttpError(fabricateNetworkDto(path));
   }
 }

@@ -6,5 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { appFetch } from "@/api/core/services/app-fetch";
 import type { OrganizationDto } from "@/api/workspace/dtos";
 
-export const getOrganization = (organizationId: number): Promise<OrganizationDto> =>
-  appFetch<OrganizationDto>(`/api/organizations/${organizationId}`);
+export const getOrganization = (
+  organizationId: number,
+  signal?: AbortSignal,
+): Promise<OrganizationDto> =>
+  appFetch<OrganizationDto>(`/api/organizations/${organizationId}`, { signal });

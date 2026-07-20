@@ -4,13 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { getServiceLogsSnapshot } from "@/api/infrastructure/services";
+import { serviceLogsQueryOptions } from "@/api/infrastructure/infrastructure-queries";
 
 export function useServiceLogsSnapshot(serviceName: string | null) {
-  return useQuery({
-    queryKey: ["adminInfrastructureLogs", serviceName],
-    queryFn: () => getServiceLogsSnapshot(serviceName ?? ""),
-    enabled: Boolean(serviceName),
-    refetchInterval: 5000,
-  });
+  return useQuery(serviceLogsQueryOptions(serviceName));
 }

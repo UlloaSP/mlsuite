@@ -8,5 +8,8 @@ import type { OrganizationAdminDashboardDto } from "@/api/workspace/dtos";
 
 export const getOrganizationAdminDashboard = (
   organizationId: number,
+  signal?: AbortSignal,
 ): Promise<OrganizationAdminDashboardDto> =>
-  appFetch<OrganizationAdminDashboardDto>(`/api/organizations/${organizationId}/admin-dashboard`);
+  appFetch<OrganizationAdminDashboardDto>(`/api/organizations/${organizationId}/admin-dashboard`, {
+    signal,
+  });

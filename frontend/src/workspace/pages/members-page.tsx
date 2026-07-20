@@ -1,23 +1,22 @@
 import {
+  WORKSPACE_CONTEXT_QUERY_KEY,
   organizationMembersQueryKey,
-  organizationResourceQueryKey,
 } from "@/api/workspace/hooks/query-keys";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Search, Shield, UserCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { AppPage, AppPageHeader, AppSelect, AppSurface } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
-import {
-  getOrganizationMembers,
-  getTeams,
-  removeOrganizationMember,
-  updateOrganizationMemberRole,
-} from "@/api/workspace/services";
+import { removeOrganizationMember, updateOrganizationMemberRole } from "@/api/workspace/services";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
 import { MemberTable } from "@/workspace/components/MemberTable";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import {
+  useOrganizationMembersQuery,
+  useOrganizationTeamsQuery,
+  useWorkspaceContext,
+} from "@/api/workspace/hooks";
 
 export function MembersPage() {
   const { organizationId = "" } = useParams();
@@ -26,16 +25,8 @@ export function MembersPage() {
   const { data: workspace } = useWorkspaceContext();
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("ALL");
-  const { data: members = [] } = useQuery({
-    queryKey: organizationMembersQueryKey(id),
-    queryFn: () => getOrganizationMembers(id),
-    enabled: Boolean(id),
-  });
-  useQuery({
-    queryKey: organizationResourceQueryKey(id, "teams"),
-    queryFn: () => getTeams(id),
-    enabled: Boolean(id),
-  });
+  const { data: members = [] } = useOrganizationMembersQuery(id);
+  useOrganizationTeamsQuery(id);
   const filtered = useMemo(
     () =>
       members.filter((member) => {
@@ -112,7 +103,7 @@ export function MembersPage() {
                 void updateOrganizationMemberRole(id, membershipId, roleDefinitionId).then(() =>
                   Promise.all([
                     qc.invalidateQueries({ queryKey: organizationMembersQueryKey(id) }),
-                    qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
+                    qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
                   ]),
                 );
               }}

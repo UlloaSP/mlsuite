@@ -1,5 +1,5 @@
-import { organizationResourceQueryKey } from "@/api/workspace/hooks/query-keys";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { organizationRolesQueryKey } from "@/api/workspace/hooks/query-keys";
+import { useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Lock, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
@@ -10,13 +10,12 @@ import {
   createRoleFromTemplate,
   deleteRole,
   duplicateRole,
-  getRoles,
   updateRole,
 } from "@/api/workspace/services";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { RoleDrawer } from "@/workspace/components/RoleDrawer";
 import { RoleForm } from "@/workspace/components/RoleForm";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useOrganizationRolesQuery, useWorkspaceContext } from "@/api/workspace/hooks";
 import type { PermissionKey, RoleDefinitionDto, RoleTemplateDto } from "@/api/workspace/dtos";
 
 type Tab = "roles" | "templates" | "permissions";
@@ -27,18 +26,13 @@ export function RolesPage() {
   const id = Number(organizationId);
   const qc = useQueryClient();
   const { data: workspace } = useWorkspaceContext();
-  const { data } = useQuery({
-    queryKey: organizationResourceQueryKey(id, "roles"),
-    queryFn: () => getRoles(id),
-    enabled: Boolean(id),
-  });
+  const { data } = useOrganizationRolesQuery(id);
   const [tab, setTab] = useState<Tab>("roles");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<RoleDefinitionDto | null>(null);
   const [editing, setEditing] = useState<RoleDefinitionDto | null>(null);
   const [template, setTemplate] = useState<RoleTemplateDto | null>(null);
-  const invalidate = () =>
-    qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "roles") });
+  const invalidate = () => qc.invalidateQueries({ queryKey: organizationRolesQueryKey(id) });
   const roles = useMemo(
     () =>
       (data?.roles ?? []).filter((role) =>

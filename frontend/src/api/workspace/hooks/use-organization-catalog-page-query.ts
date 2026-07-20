@@ -3,9 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getOrganizationPage } from "@/api/workspace/services";
-import { ORGANIZATION_CATALOG_PAGE_SIZE, organizationCatalogPageQueryKey } from "./query-keys";
+import { useQuery } from "@tanstack/react-query";
+import { organizationCatalogPageQueryOptions } from "@/api/workspace/workspace-queries";
 
 export const useOrganizationCatalogPageQuery = (
   page: number,
@@ -15,15 +14,6 @@ export const useOrganizationCatalogPageQuery = (
   enabled = true,
 ) =>
   useQuery({
-    queryKey: organizationCatalogPageQueryKey(page, search, sort, filter),
+    ...organizationCatalogPageQueryOptions(page, search, sort, filter),
     enabled,
-    placeholderData: keepPreviousData,
-    queryFn: () =>
-      getOrganizationPage({
-        page,
-        search,
-        size: ORGANIZATION_CATALOG_PAGE_SIZE,
-        sort,
-        filter,
-      }),
   });

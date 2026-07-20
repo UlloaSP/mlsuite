@@ -5,17 +5,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 import { useQueries } from "@tanstack/react-query";
-import * as schemaApi from "@/api/schemas/services";
 import type { PredictionRunDto } from "@/api/schemas/dtos";
-import { PREDICTION_RESULT_FEEDBACK_QUERY_KEY } from "./query-keys";
+import { predictionResultFeedbackQueryOptions } from "@/api/schemas/schema-queries";
 
 export const usePredictionRunFeedback = (run?: PredictionRunDto) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const queries = useQueries({
     queries: (run?.results ?? []).map((result) => ({
-      queryKey: PREDICTION_RESULT_FEEDBACK_QUERY_KEY(organizationId, result.id),
-      queryFn: () => schemaApi.getPredictionResultFeedback(result.id),
-      enabled: Boolean(run),
+      ...predictionResultFeedbackQueryOptions(organizationId, result.id),
       placeholderData: [],
     })),
   });

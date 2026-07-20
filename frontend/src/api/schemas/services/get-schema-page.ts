@@ -6,13 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { appFetch } from "@/api/core/services/app-fetch";
 import type { SchemaPageDto, SchemaPageRequest } from "@/api/schemas/dtos";
 
-export const getSchemaPage = ({
-  page,
-  search = "",
-  size,
-  sort = "updated",
-  status = "active",
-}: SchemaPageRequest): Promise<SchemaPageDto> => {
+export const getSchemaPage = (
+  { page, search = "", size, sort = "updated", status = "active" }: SchemaPageRequest,
+  signal?: AbortSignal,
+): Promise<SchemaPageDto> => {
   const params = new URLSearchParams({
     page: String(page),
     search,
@@ -20,5 +17,5 @@ export const getSchemaPage = ({
     sort,
     status,
   });
-  return appFetch<SchemaPageDto>(`/api/schemas?${params.toString()}`);
+  return appFetch<SchemaPageDto>(`/api/schemas?${params.toString()}`, { signal });
 };

@@ -3,9 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { getModelPage } from "@/api/models/services";
-import { MODEL_CATALOG_PAGE_SIZE, modelCatalogPageQueryKey } from "./query-keys";
+import { useQuery } from "@tanstack/react-query";
+import { modelCatalogPageQueryOptions } from "@/api/models/model-queries";
 
 export const useModelCatalogPageQuery = (
   organizationId: number | string | undefined,
@@ -14,10 +13,5 @@ export const useModelCatalogPageQuery = (
   sort: string,
   status: string,
 ) => {
-  return useQuery({
-    queryKey: modelCatalogPageQueryKey(organizationId, page, search, sort, status),
-    enabled: Boolean(organizationId),
-    placeholderData: keepPreviousData,
-    queryFn: () => getModelPage({ page, search, size: MODEL_CATALOG_PAGE_SIZE, sort, status }),
-  });
+  return useQuery(modelCatalogPageQueryOptions(organizationId, page, search, sort, status));
 };

@@ -5,15 +5,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 import { useQuery } from "@tanstack/react-query";
-import * as schemaApi from "@/api/schemas/services";
-import { SCHEMA_VERSIONS_QUERY_KEY } from "./query-keys";
+import { schemaVersionsQueryOptions } from "@/api/schemas/schema-queries";
 
 export const useSchemaVersions = (schemaId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery({
-    queryKey: SCHEMA_VERSIONS_QUERY_KEY(organizationId, schemaId ?? ""),
-    queryFn: () => schemaApi.getSchemaVersions(schemaId ?? ""),
-    enabled: Boolean(schemaId),
+    ...schemaVersionsQueryOptions(organizationId, schemaId),
     placeholderData: [],
   });
 };

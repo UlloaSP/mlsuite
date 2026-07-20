@@ -1,5 +1,8 @@
-import { organizationResourceQueryKey } from "@/api/workspace/hooks/query-keys";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  organizationInvitationCandidatesQueryKey,
+  organizationInvitationsQueryKey,
+} from "@/api/workspace/hooks/query-keys";
+import { useQueryClient } from "@tanstack/react-query";
 import { Mail, RotateCcw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
@@ -13,13 +16,9 @@ import {
   AppSurface,
 } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
-import { getRoles } from "@/api/workspace/services";
 import {
   bulkRevokeInvitations,
   createInvitation,
-  getInvitationCandidates,
-  getInvitations,
-  getTeams,
   resendInvitation,
   revokeInvitation,
 } from "@/api/workspace/services";
@@ -28,7 +27,13 @@ import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
 import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
 import { InviteForm } from "@/workspace/components/InviteForm";
 import { RoleBadge } from "@/workspace/components/RoleBadge";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import {
+  useOrganizationInvitationCandidatesQuery,
+  useOrganizationInvitationsQuery,
+  useOrganizationRolesQuery,
+  useOrganizationTeamsQuery,
+  useWorkspaceContext,
+} from "@/api/workspace/hooks";
 import { invitationRoleOptions } from "@/algorithms/workspace/invitation-role-options";
 import type { InvitationStatus } from "@/api/workspace/dtos";
 
@@ -49,26 +54,11 @@ export function InvitationsPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<InvitationStatus | "ALL">("PENDING");
   const [selected, setSelected] = useState<number[]>([]);
-  const { data: invitations = [] } = useQuery({
-    queryKey: organizationResourceQueryKey(id, "invitations"),
-    queryFn: () => getInvitations(id),
-    enabled: Boolean(id),
-  });
-  const { data: teams = [] } = useQuery({
-    queryKey: organizationResourceQueryKey(id, "teams"),
-    queryFn: () => getTeams(id),
-    enabled: Boolean(id),
-  });
-  const { data: roles } = useQuery({
-    queryKey: organizationResourceQueryKey(id, "roles"),
-    queryFn: () => getRoles(id),
-    enabled: Boolean(id && workspace?.permissions.canManageInvitations),
-  });
-  const { data: candidates = [] } = useQuery({
-    queryKey: organizationResourceQueryKey(id, "invitation-candidates"),
-    queryFn: () => getInvitationCandidates(id),
-    enabled: Boolean(id && workspace?.permissions.canManageInvitations),
-  });
+  const { data: invitations = [] } = useOrganizationInvitationsQuery(id);
+  const { data: teams = [] } = useOrganizationTeamsQuery(id);
+  const canManage = Boolean(workspace?.permissions.canManageInvitations);
+  const { data: roles } = useOrganizationRolesQuery(id, canManage);
+  const { data: candidates = [] } = useOrganizationInvitationCandidatesQuery(id, canManage);
   const filtered = useMemo(
     () =>
       invitations.filter(
@@ -112,10 +102,10 @@ export function InvitationsPage() {
                   await createInvitation(id, payload);
                   await Promise.all([
                     qc.invalidateQueries({
-                      queryKey: organizationResourceQueryKey(id, "invitations"),
+                      queryKey: organizationInvitationsQueryKey(id),
                     }),
                     qc.invalidateQueries({
-                      queryKey: organizationResourceQueryKey(id, "invitation-candidates"),
+                      queryKey: organizationInvitationCandidatesQueryKey(id),
                     }),
                   ]);
                 }}
@@ -154,7 +144,7 @@ export function InvitationsPage() {
                     void bulkRevokeInvitations(id, selected).then(() => {
                       setSelected([]);
                       return qc.invalidateQueries({
-                        queryKey: organizationResourceQueryKey(id, "invitations"),
+                        queryKey: organizationInvitationsQueryKey(id),
                       });
                     })
                   }
@@ -209,7 +199,7 @@ export function InvitationsPage() {
                       onClick={() =>
                         void resendInvitation(id, invite.id).then(() =>
                           qc.invalidateQueries({
-                            queryKey: organizationResourceQueryKey(id, "invitations"),
+                            queryKey: organizationInvitationsQueryKey(id),
                           }),
                         )
                       }
@@ -233,7 +223,7 @@ export function InvitationsPage() {
                         onClick={() =>
                           void revokeInvitation(id, invite.id).then(() =>
                             qc.invalidateQueries({
-                              queryKey: organizationResourceQueryKey(id, "invitations"),
+                              queryKey: organizationInvitationsQueryKey(id),
                             }),
                           )
                         }

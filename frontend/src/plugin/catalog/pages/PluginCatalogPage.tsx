@@ -23,7 +23,7 @@ import {
   type TypeFilter,
   readFileText,
 } from "@/algorithms/plugin/catalog-page-model";
-import { detectPluginType, invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
+import { detectPluginType } from "@/algorithms/plugin/catalog-loader";
 import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
 import { PluginCatalogListItem } from "@/plugin/catalog/components/PluginCatalogListItem";
@@ -63,8 +63,7 @@ export function PluginCatalogPage() {
   );
   const items = pageQuery.data?.items ?? [];
 
-  const refreshPluginRuntime = async () => {
-    invalidatePluginCatalog(organizationId);
+  const refreshPluginRuntime = () => {
     bumpPluginCatalogVersion();
   };
   const handleFileSelection = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
@@ -75,7 +74,7 @@ export function PluginCatalogPage() {
       const detected = await detectPluginType(organizationId ?? "none", source);
       await uploadMutation.mutateAsync(file);
       controls.setPage(0);
-      await refreshPluginRuntime();
+      refreshPluginRuntime();
       toast.success(
         `${file.name} uploaded as ${TYPE_META[detected.pluginType].shortLabel} "${detected.kind}".`,
       );
@@ -91,7 +90,7 @@ export function PluginCatalogPage() {
       if (items.length === 1 && controls.page > 0) {
         controls.setPage((current) => current - 1);
       }
-      await refreshPluginRuntime();
+      refreshPluginRuntime();
       toast.success(
         `${item.fileName} (${TYPE_META[item.pluginType].shortLabel}) deleted from catalog.`,
       );

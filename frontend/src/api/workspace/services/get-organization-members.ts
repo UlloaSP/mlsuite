@@ -8,5 +8,8 @@ import type { OrganizationMembershipRowDto } from "@/api/workspace/dtos";
 
 export const getOrganizationMembers = (
   organizationId: number,
+  signal?: AbortSignal,
 ): Promise<OrganizationMembershipRowDto[]> =>
-  appFetch<OrganizationMembershipRowDto[]>(`/api/organizations/${organizationId}/members`);
+  appFetch<OrganizationMembershipRowDto[]>(`/api/organizations/${organizationId}/members`, {
+    signal,
+  });

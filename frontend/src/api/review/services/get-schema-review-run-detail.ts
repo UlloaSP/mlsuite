@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { appFetch } from "@/api/core/services/app-fetch";
 import type { SchemaReviewRunDetailDto } from "@/api/review/dtos";
 
-export const getSchemaReviewRunDetail = (token: string, runToken: string) =>
+export const getSchemaReviewRunDetail = (token: string, runToken: string, signal?: AbortSignal) =>
   appFetch<SchemaReviewRunDetailDto>(
     `/api/schema-review-links/token/${encodeURIComponent(token)}/runs/${encodeURIComponent(runToken)}`,
+    { signal },
   );

@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { appFetch } from "@/api/core/services/app-fetch";
 import type { SchemaReviewLinkSummaryDto } from "@/api/review/dtos";
 
-export const listSchemaReviewLinks = (schemaId: string, versionId: string) =>
+export const listSchemaReviewLinks = (schemaId: string, versionId: string, signal?: AbortSignal) =>
   appFetch<SchemaReviewLinkSummaryDto[]>(
     `/api/schema-review-links?schemaId=${encodeURIComponent(schemaId)}&versionId=${encodeURIComponent(versionId)}`,
+    { signal },
   );

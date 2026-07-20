@@ -6,5 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { appFetch } from "@/api/core/services/app-fetch";
 import type { SchemaDraftDiffDto } from "@/api/schemas/dtos";
 
-export const getSchemaDraftDiff = (draftId: string): Promise<SchemaDraftDiffDto> =>
-  appFetch<SchemaDraftDiffDto>(`/api/schema-drafts/${encodeURIComponent(draftId)}/diff`);
+export const getSchemaDraftDiff = (
+  draftId: string,
+  signal?: AbortSignal,
+): Promise<SchemaDraftDiffDto> =>
+  appFetch<SchemaDraftDiffDto>(`/api/schema-drafts/${encodeURIComponent(draftId)}/diff`, {
+    signal,
+  });

@@ -8,7 +8,7 @@ import { useNavigate } from "react-router";
 import * as userApi from "@/api/user/services";
 import { USER_QUERY_KEY } from "./query-keys";
 
-export const useLogin = () => {
+export const useLogin = (destination = "/workspace") => {
   const qc = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
@@ -17,7 +17,7 @@ export const useLogin = () => {
     onSuccess: (user) => {
       qc.setQueryData(USER_QUERY_KEY, user);
       void qc.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      void navigate("/workspace", { replace: true });
+      void navigate(destination, { replace: true });
     },
   });
 };

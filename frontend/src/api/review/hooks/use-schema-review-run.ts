@@ -4,12 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import * as api from "@/api/review/services";
-import { SCHEMA_REVIEW_RUN_QUERY_KEY } from "./query-keys";
+import { schemaReviewRunQueryOptions } from "@/api/review/review-queries";
 
 export const useSchemaReviewRun = (token: string, runToken: string) =>
-  useQuery({
-    queryKey: SCHEMA_REVIEW_RUN_QUERY_KEY(token, runToken),
-    queryFn: () => api.getSchemaReviewRunDetail(token, runToken),
-    enabled: Boolean(token && runToken),
-  });
+  useQuery(schemaReviewRunQueryOptions(token, runToken));

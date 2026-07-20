@@ -6,5 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { appFetch } from "@/api/core/services/app-fetch";
 import type { SchemaVersionDto } from "@/api/schemas/dtos";
 
-export const getSchemaVersions = (schemaId: string): Promise<SchemaVersionDto[]> =>
-  appFetch<SchemaVersionDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/versions`);
+export const getSchemaVersions = (
+  schemaId: string,
+  signal?: AbortSignal,
+): Promise<SchemaVersionDto[]> =>
+  appFetch<SchemaVersionDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/versions`, {
+    signal,
+  });

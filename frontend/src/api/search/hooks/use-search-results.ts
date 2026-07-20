@@ -4,12 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useQuery } from "@tanstack/react-query";
-import { searchWorkspace } from "@/api/search/services";
+import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
+import { searchQueryOptions } from "@/api/search/search-queries";
 
-export const useSearchResults = (query: string) =>
-  useQuery({
-    queryKey: ["search", query],
-    queryFn: () => searchWorkspace(query),
-    enabled: query.trim().length >= 2,
-    staleTime: 30_000,
-  });
+export const useSearchResults = (query: string) => {
+  const organizationId = useCurrentOrganizationId();
+  return useQuery(searchQueryOptions(organizationId, query));
+};

@@ -6,13 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { appFetch } from "@/api/core/services/app-fetch";
 import type { ModelPageDto, ModelPageRequest } from "@/api/models/dtos";
 
-export const getModelPage = async ({
-  page,
-  search = "",
-  size,
-  sort = "updated",
-  status = "active",
-}: ModelPageRequest): Promise<ModelPageDto> => {
+export const getModelPage = async (
+  { page, search = "", size, sort = "updated", status = "active" }: ModelPageRequest,
+  signal?: AbortSignal,
+): Promise<ModelPageDto> => {
   const params = new URLSearchParams({
     page: String(page),
     search,
@@ -20,5 +17,5 @@ export const getModelPage = async ({
     sort,
     status,
   });
-  return appFetch<ModelPageDto>(`/api/models?${params.toString()}`);
+  return appFetch<ModelPageDto>(`/api/models?${params.toString()}`, { signal });
 };

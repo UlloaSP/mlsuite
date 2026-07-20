@@ -1,8 +1,9 @@
 import {
-  organizationMembersQueryKey,
-  organizationResourceQueryKey,
+  WORKSPACE_CONTEXT_QUERY_KEY,
+  organizationAdminDashboardQueryKey,
+  organizationTeamsQueryKey,
 } from "@/api/workspace/hooks/query-keys";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Box, MoreHorizontal, Plus, Users, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
@@ -16,12 +17,16 @@ import {
   AppSurface,
 } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
-import { createTeam, getOrganizationMembers, getTeams } from "@/api/workspace/services";
+import { createTeam } from "@/api/workspace/services";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
 import { QuotaBar } from "@/workspace/components/admin/QuotaBar";
 import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import {
+  useOrganizationMembersQuery,
+  useOrganizationTeamsQuery,
+  useWorkspaceContext,
+} from "@/api/workspace/hooks";
 
 export function TeamsPage() {
   const { organizationId = "" } = useParams();
@@ -31,24 +36,19 @@ export function TeamsPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
   const [open, setOpen] = useState(false);
-  const { data: teams = [] } = useQuery({
-    queryKey: organizationResourceQueryKey(id, "teams"),
-    queryFn: () => getTeams(id),
-    enabled: Boolean(id),
-  });
-  const { data: members = [] } = useQuery({
-    queryKey: organizationMembersQueryKey(id),
-    queryFn: () => getOrganizationMembers(id),
-    enabled: Boolean(id) && Boolean(workspace?.permissions.canCreateTeams),
-  });
+  const { data: teams = [] } = useOrganizationTeamsQuery(id);
+  const { data: members = [] } = useOrganizationMembersQuery(
+    id,
+    Boolean(workspace?.permissions.canCreateTeams),
+  );
   const mutation = useMutation({
     mutationFn: (payload: Parameters<typeof createTeam>[1]) => createTeam(id, payload),
     onSuccess: async () => {
       setOpen(false);
       await Promise.all([
-        qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "teams") }),
-        qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "admin-dashboard") }),
-        qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
+        qc.invalidateQueries({ queryKey: organizationTeamsQueryKey(id) }),
+        qc.invalidateQueries({ queryKey: organizationAdminDashboardQueryKey(id) }),
+        qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
       ]);
     },
   });

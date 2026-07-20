@@ -1,14 +1,11 @@
-import { organizationResourceQueryKey } from "@/api/workspace/hooks/query-keys";
-import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, Mail, Plus, Settings, Shield, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
 import { AppButton, AppPage, AppPageHeader, AppSurface, AppTabs } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
-import { getOrganizationAdminDashboard } from "@/api/workspace/services";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
 import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useOrganizationAdminDashboardQuery, useWorkspaceContext } from "@/api/workspace/hooks";
 
 const tabs = [
   { label: "Overview", value: "overview" },
@@ -24,11 +21,7 @@ export function OrganizationAdminPage() {
   const id = Number(organizationId);
   const navigate = useNavigate();
   const { data: workspace } = useWorkspaceContext();
-  const { data } = useQuery({
-    queryKey: organizationResourceQueryKey(id, "admin-dashboard"),
-    queryFn: () => getOrganizationAdminDashboard(id),
-    enabled: Boolean(id),
-  });
+  const { data } = useOrganizationAdminDashboardQuery(id);
 
   if (workspace && !workspace.permissions.canViewOrganization) return <NotFoundError />;
 

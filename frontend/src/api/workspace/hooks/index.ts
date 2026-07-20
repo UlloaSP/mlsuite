@@ -8,7 +8,17 @@ export { useDeclineInvitation } from "./use-decline-invitation";
 export { useSelectOrganization } from "./use-select-organization";
 export { useInvalidateOrganizationQueries } from "./use-invalidate-organization-queries";
 export { useOrganizationCatalogPageQuery } from "./use-organization-catalog-page-query";
-export { useOrganizationMembersQuery } from "./use-organization-members-query";
+export {
+  useOrganizationAdminDashboardQuery,
+  useOrganizationDetailsQuery,
+  useOrganizationInvitationCandidatesQuery,
+  useOrganizationInvitationsQuery,
+  useOrganizationMembersQuery,
+  useOrganizationRolesQuery,
+  useOrganizationTeamMembersQuery,
+  useOrganizationTeamQuery,
+  useOrganizationTeamsQuery,
+} from "./use-workspace-resource-queries";
 export { useDeleteOrganizationMutation } from "./use-delete-organization-mutation";
 export { useRenameOrganizationMutation } from "./use-rename-organization-mutation";
 export { useTransferOrganizationOwnershipMutation } from "./use-transfer-organization-ownership-mutation";

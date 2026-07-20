@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
 import {
@@ -10,33 +10,20 @@ import {
   AppSurface,
 } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
-import {
-  getTeam,
-  getTeamMembers,
-  removeTeamMember,
-  updateTeam,
-  updateTeamMemberRole,
-} from "@/api/workspace/services";
+import { removeTeamMember, updateTeam, updateTeamMemberRole } from "@/api/workspace/services";
 import { MemberTable } from "@/workspace/components/MemberTable";
 import {
-  organizationResourceQueryKey,
+  organizationTeamMembersQueryKey,
   organizationTeamQueryKey,
 } from "@/api/workspace/hooks/query-keys";
+import { useOrganizationTeamMembersQuery, useOrganizationTeamQuery } from "@/api/workspace/hooks";
 
 export function TeamDetailPage() {
   const { organizationId = "", teamId = "" } = useParams();
   const qc = useQueryClient();
   const id = Number(teamId);
-  const { data: team } = useQuery({
-    queryKey: organizationTeamQueryKey(organizationId, id),
-    queryFn: () => getTeam(id),
-    enabled: Boolean(id),
-  });
-  const { data: members = [] } = useQuery({
-    queryKey: organizationResourceQueryKey(organizationId, "team-members", id),
-    queryFn: () => getTeamMembers(id),
-    enabled: Boolean(id),
-  });
+  const { data: team } = useOrganizationTeamQuery(organizationId, id);
+  const { data: members = [] } = useOrganizationTeamMembersQuery(organizationId, id);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -98,14 +85,14 @@ export function TeamDetailPage() {
             onRoleChange={(membershipId, roleDefinitionId) => {
               void updateTeamMemberRole(id, membershipId, roleDefinitionId).then(() =>
                 qc.invalidateQueries({
-                  queryKey: organizationResourceQueryKey(organizationId, "team-members", id),
+                  queryKey: organizationTeamMembersQueryKey(organizationId, id),
                 }),
               );
             }}
             onRemove={(membershipId) => {
               void removeTeamMember(id, membershipId).then(() =>
                 qc.invalidateQueries({
-                  queryKey: organizationResourceQueryKey(organizationId, "team-members", id),
+                  queryKey: organizationTeamMembersQueryKey(organizationId, id),
                 }),
               );
             }}
