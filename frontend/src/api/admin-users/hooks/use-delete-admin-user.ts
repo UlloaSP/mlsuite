@@ -10,6 +10,7 @@ import { ADMIN_USERS_QUERY_KEY } from "./query-keys";
 export const useDeleteAdminUser = () => {
   const qc = useQueryClient();
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationFn: adminApi.deleteUser,
     onSuccess: () => qc.invalidateQueries({ queryKey: ADMIN_USERS_QUERY_KEY }),
   });

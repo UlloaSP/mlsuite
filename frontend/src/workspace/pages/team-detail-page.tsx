@@ -18,18 +18,22 @@ import {
   updateTeamMemberRole,
 } from "@/api/workspace/services";
 import { MemberTable } from "@/workspace/components/MemberTable";
+import {
+  organizationResourceQueryKey,
+  organizationTeamQueryKey,
+} from "@/api/workspace/hooks/query-keys";
 
 export function TeamDetailPage() {
-  const { teamId = "" } = useParams();
+  const { organizationId = "", teamId = "" } = useParams();
   const qc = useQueryClient();
   const id = Number(teamId);
   const { data: team } = useQuery({
-    queryKey: ["team", id],
+    queryKey: organizationTeamQueryKey(organizationId, id),
     queryFn: () => getTeam(id),
     enabled: Boolean(id),
   });
   const { data: members = [] } = useQuery({
-    queryKey: ["teamMembers", id],
+    queryKey: organizationResourceQueryKey(organizationId, "team-members", id),
     queryFn: () => getTeamMembers(id),
     enabled: Boolean(id),
   });
@@ -44,7 +48,7 @@ export function TeamDetailPage() {
       name: name || team.name,
       description: description || team.description || "",
     });
-    await qc.invalidateQueries({ queryKey: ["team", id] });
+    await qc.invalidateQueries({ queryKey: organizationTeamQueryKey(organizationId, id) });
   }
 
   if (!team) {
@@ -93,12 +97,16 @@ export function TeamDetailPage() {
             rows={members}
             onRoleChange={(membershipId, roleDefinitionId) => {
               void updateTeamMemberRole(id, membershipId, roleDefinitionId).then(() =>
-                qc.invalidateQueries({ queryKey: ["teamMembers", id] }),
+                qc.invalidateQueries({
+                  queryKey: organizationResourceQueryKey(organizationId, "team-members", id),
+                }),
               );
             }}
             onRemove={(membershipId) => {
               void removeTeamMember(id, membershipId).then(() =>
-                qc.invalidateQueries({ queryKey: ["teamMembers", id] }),
+                qc.invalidateQueries({
+                  queryKey: organizationResourceQueryKey(organizationId, "team-members", id),
+                }),
               );
             }}
           />

@@ -17,6 +17,7 @@ type RenameOrganizationRequest = {
 export const useRenameOrganizationMutation = () => {
   const invalidate = useInvalidateOrganizationQueries();
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationFn: ({ id, name, slug, description }: RenameOrganizationRequest) =>
       updateOrganization(id, { name, slug, description: description ?? undefined }),
     onSuccess: () => void invalidate(),

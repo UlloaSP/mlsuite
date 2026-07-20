@@ -1,3 +1,7 @@
+import {
+  organizationMembersQueryKey,
+  organizationResourceQueryKey,
+} from "@/api/workspace/hooks/query-keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Shield, UserCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -23,11 +27,15 @@ export function MembersPage() {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("ALL");
   const { data: members = [] } = useQuery({
-    queryKey: ["organizationMembers", id],
+    queryKey: organizationMembersQueryKey(id),
     queryFn: () => getOrganizationMembers(id),
     enabled: Boolean(id),
   });
-  useQuery({ queryKey: ["teams", id], queryFn: () => getTeams(id), enabled: Boolean(id) });
+  useQuery({
+    queryKey: organizationResourceQueryKey(id, "teams"),
+    queryFn: () => getTeams(id),
+    enabled: Boolean(id),
+  });
   const filtered = useMemo(
     () =>
       members.filter((member) => {
@@ -103,14 +111,14 @@ export function MembersPage() {
               onRoleChange={(membershipId, roleDefinitionId) => {
                 void updateOrganizationMemberRole(id, membershipId, roleDefinitionId).then(() =>
                   Promise.all([
-                    qc.invalidateQueries({ queryKey: ["organizationMembers", id] }),
+                    qc.invalidateQueries({ queryKey: organizationMembersQueryKey(id) }),
                     qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
                   ]),
                 );
               }}
               onRemove={(membershipId) => {
                 void removeOrganizationMember(id, membershipId).then(() =>
-                  qc.invalidateQueries({ queryKey: ["organizationMembers", id] }),
+                  qc.invalidateQueries({ queryKey: organizationMembersQueryKey(id) }),
                 );
               }}
             />

@@ -9,5 +9,9 @@ import { useInvalidateSchemaQueries } from "./use-invalidate-schema-queries";
 
 export const useDuplicateSchemaMutation = () => {
   const invalidate = useInvalidateSchemaQueries();
-  return useMutation({ mutationFn: duplicateSchema, onSuccess: () => void invalidate() });
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: duplicateSchema,
+    onSuccess: () => void invalidate(),
+  });
 };

@@ -9,5 +9,9 @@ import { useInvalidateOrganizationQueries } from "./use-invalidate-organization-
 
 export const useDeleteOrganizationMutation = () => {
   const invalidate = useInvalidateOrganizationQueries();
-  return useMutation({ mutationFn: deleteOrganization, onSuccess: () => void invalidate() });
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: deleteOrganization,
+    onSuccess: () => void invalidate(),
+  });
 };

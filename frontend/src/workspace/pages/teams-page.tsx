@@ -1,3 +1,7 @@
+import {
+  organizationMembersQueryKey,
+  organizationResourceQueryKey,
+} from "@/api/workspace/hooks/query-keys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box, MoreHorizontal, Plus, Users, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -28,12 +32,12 @@ export function TeamsPage() {
   const [status, setStatus] = useState("ALL");
   const [open, setOpen] = useState(false);
   const { data: teams = [] } = useQuery({
-    queryKey: ["teams", id],
+    queryKey: organizationResourceQueryKey(id, "teams"),
     queryFn: () => getTeams(id),
     enabled: Boolean(id),
   });
   const { data: members = [] } = useQuery({
-    queryKey: ["organizationMembers", id],
+    queryKey: organizationMembersQueryKey(id),
     queryFn: () => getOrganizationMembers(id),
     enabled: Boolean(id) && Boolean(workspace?.permissions.canCreateTeams),
   });
@@ -42,8 +46,8 @@ export function TeamsPage() {
     onSuccess: async () => {
       setOpen(false);
       await Promise.all([
-        qc.invalidateQueries({ queryKey: ["teams", id] }),
-        qc.invalidateQueries({ queryKey: ["orgAdminDashboard", id] }),
+        qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "teams") }),
+        qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "admin-dashboard") }),
         qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
       ]);
     },

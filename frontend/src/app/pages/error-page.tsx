@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ArrowLeft, Check, Home, X } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
 import { m as motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { useUser } from "@/api/user/hooks";
@@ -20,10 +20,21 @@ const gridLines = [1, 2, 3, 4, 5, 6, 7].map((value) => ({
   left: `${value * (100 / 8)}%`,
 }));
 
-export function NotFoundError() {
+const errorContent = {
+  0: ["Network unavailable", "Check your connection and try this route again."],
+  403: ["Access denied", "Your account does not have permission to open this route."],
+  404: ["Route not found", "The requested page may have moved, been deleted, or never existed."],
+  500: [
+    "Something went wrong",
+    "An unexpected route error occurred. Try again or return to the workspace.",
+  ],
+} as const;
+
+export function RouteStatusPage({ status = 404 }: { status?: 0 | 403 | 404 | 500 }) {
   const navigate = useNavigate();
   const { data: user } = useUser();
   const currentDate = errorDateFormatter.format(Date.now());
+  const [heading, description] = errorContent[status];
 
   return (
     <AppPage className="min-h-dvh bg-[#fdfcf8] text-[#111111]">
@@ -60,19 +71,12 @@ export function NotFoundError() {
         <main className="relative z-10 flex flex-1 flex-col justify-between px-6 pb-10 sm:px-11 lg:flex-row lg:items-end lg:justify-start">
           <section className="border-black/10 pt-6 lg:flex-[0_0_58%] lg:border-r lg:pr-10">
             <p className="mb-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[#ff385c]">
-              HTTP 404 - Page Not Found
+              {status === 0 ? "Network error" : `HTTP ${status}`}
             </p>
             <h1 className="m-0 text-[4.4rem] font-semibold leading-[0.93] tracking-[-0.05em] sm:text-[5.6rem] lg:text-[5.25rem] xl:text-[6rem]">
-              This route
-              <br />
-              could not
-              <br />
-              <span className="text-transparent [-webkit-text-stroke:2px_#111]">be found.</span>
+              {heading}
             </h1>
-            <p className="mt-4 max-w-[720px] text-xs leading-7 text-[#777]">
-              The page you requested may have moved, been deleted, or never existed. Check the URL
-              or return to a valid MLSuite entry point.
-            </p>
+            <p className="mt-4 max-w-[720px] text-xs leading-7 text-[#777]">{description}</p>
           </section>
 
           <section className="mt-10 lg:mt-0 lg:flex-1 lg:pl-10">
@@ -98,23 +102,12 @@ export function NotFoundError() {
               </button>
             </div>
 
-            <div className="mt-6 rounded-md border border-[#ff385c]/20 bg-[#ff385c]/[0.04] px-4 py-3.5">
-              <p className="flex items-center gap-2 font-mono text-[11px] leading-7 text-[#aaa]">
-                <Check className="size-3.5 text-[#22c55e]" />
-                API services operational
-              </p>
-              <p className="flex items-center gap-2 font-mono text-[11px] leading-7 text-[#aaa]">
-                <Check className="size-3.5 text-[#22c55e]" />
-                Manual auth services reachable
-              </p>
-              <p className="flex items-center gap-2 font-mono text-[11px] leading-7 text-[#aaa]">
-                <X className="size-3.5 text-[#ff385c]" />
-                Requested route: not found
-              </p>
-            </div>
+            <p className="mt-6 font-mono text-[11px] text-[#aaa]">Status: {status || "offline"}</p>
           </section>
         </main>
       </motion.div>
     </AppPage>
   );
 }
+
+export { RouteStatusPage as NotFoundError };

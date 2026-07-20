@@ -1,3 +1,7 @@
+import {
+  organizationMembersQueryKey,
+  organizationResourceQueryKey,
+} from "@/api/workspace/hooks/query-keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
@@ -26,12 +30,12 @@ export function OrganizationSettingsPage() {
   const id = Number(organizationId);
   const { data: workspace } = useWorkspaceContext();
   const { data: organization } = useQuery({
-    queryKey: ["organization", id],
+    queryKey: organizationResourceQueryKey(id, "organization"),
     queryFn: () => getOrganization(id),
     enabled: Boolean(id),
   });
   const { data: members = [] } = useQuery({
-    queryKey: ["organizationMembers", id],
+    queryKey: organizationMembersQueryKey(id),
     queryFn: () => getOrganizationMembers(id),
     enabled: Boolean(id) && Boolean(workspace?.permissions.canTransferOwnership),
   });
@@ -48,7 +52,7 @@ export function OrganizationSettingsPage() {
       description: effectiveDescription,
     });
     await Promise.all([
-      qc.invalidateQueries({ queryKey: ["organization", id] }),
+      qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "organization") }),
       qc.invalidateQueries({ queryKey: ["organizations"] }),
       qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
     ]);
@@ -63,8 +67,8 @@ export function OrganizationSettingsPage() {
     setNextOwnerMembershipId("");
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["workspaceContext"] }),
-      qc.invalidateQueries({ queryKey: ["organizationMembers", id] }),
-      qc.invalidateQueries({ queryKey: ["organization", id] }),
+      qc.invalidateQueries({ queryKey: organizationMembersQueryKey(id) }),
+      qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "organization") }),
     ]);
   }
 

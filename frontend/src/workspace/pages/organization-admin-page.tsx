@@ -1,3 +1,4 @@
+import { organizationResourceQueryKey } from "@/api/workspace/hooks/query-keys";
 import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, Mail, Plus, Settings, Shield, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -24,7 +25,7 @@ export function OrganizationAdminPage() {
   const navigate = useNavigate();
   const { data: workspace } = useWorkspaceContext();
   const { data } = useQuery({
-    queryKey: ["orgAdminDashboard", id],
+    queryKey: organizationResourceQueryKey(id, "admin-dashboard"),
     queryFn: () => getOrganizationAdminDashboard(id),
     enabled: Boolean(id),
   });

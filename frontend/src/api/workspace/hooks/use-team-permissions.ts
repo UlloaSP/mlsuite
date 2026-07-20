@@ -5,14 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useQuery } from "@tanstack/react-query";
 import { getTeam } from "@/api/workspace/services";
-import type { TeamPermissionsDto } from "@/api/workspace/dtos";
+import { organizationTeamQueryKey } from "./query-keys";
 
-export function useTeamPermissions(teamId: number): TeamPermissionsDto | null {
-  return (
-    useQuery({
-      queryKey: ["team", teamId],
-      queryFn: () => getTeam(teamId),
-      enabled: Boolean(teamId),
-    }).data?.permissions ?? null
-  );
-}
+export const useTeamPermissions = (organizationId: number, teamId: number) =>
+  useQuery({
+    queryKey: organizationTeamQueryKey(organizationId, teamId),
+    queryFn: () => getTeam(teamId),
+    enabled: Boolean(organizationId && teamId),
+  });

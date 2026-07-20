@@ -6,11 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQuery } from "@tanstack/react-query";
 import * as modelApi from "@/api/models/services";
 import { GET_MODELS_QUERY_KEY } from "./query-keys";
+import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 
 /** -------------------- Reads -------------------- */
-export const useGetModels = () =>
-  useQuery({
-    queryKey: GET_MODELS_QUERY_KEY,
+export const useGetModels = () => {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  return useQuery({
+    queryKey: GET_MODELS_QUERY_KEY(organizationId),
     queryFn: modelApi.getModels,
     gcTime: 10 * 60_000,
     retry: (count, err: any) => {
@@ -19,3 +21,4 @@ export const useGetModels = () =>
       return count < 2;
     },
   });
+};

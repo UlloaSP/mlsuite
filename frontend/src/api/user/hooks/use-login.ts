@@ -12,11 +12,12 @@ export const useLogin = () => {
   const qc = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationFn: userApi.login,
     onSuccess: (user) => {
       qc.setQueryData(USER_QUERY_KEY, user);
       void qc.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      navigate("/workspace", { replace: true });
+      void navigate("/workspace", { replace: true });
     },
   });
 };

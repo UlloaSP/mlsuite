@@ -9,6 +9,7 @@ import { INSPECT_ARTIFACT_QUERY_KEY } from "./query-keys";
 
 export function useInspectArtifactMutation() {
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationKey: INSPECT_ARTIFACT_QUERY_KEY,
     mutationFn: (artifact: File) => artifactApi.inspectArtifact(artifact),
   });

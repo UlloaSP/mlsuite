@@ -11,16 +11,8 @@ export type StartupReadinessDto = {
   dependencies: StartupDependencyDto[];
 };
 
-let clientRuntimePromise: Promise<void> | null = null;
-
 export async function getStartupReadiness(): Promise<StartupReadinessDto> {
-  const [server, client] = await Promise.all([readServerReadiness(), readClientReadiness()]);
-  const dependencies = [...server.dependencies, client];
-
-  return {
-    ready: server.ready && client.ready,
-    dependencies,
-  };
+  return readServerReadiness();
 }
 
 async function readServerReadiness(): Promise<StartupReadinessDto> {
@@ -32,19 +24,4 @@ async function readServerReadiness(): Promise<StartupReadinessDto> {
       dependencies: [{ name: "api", ready: false, message: "unavailable" }],
     };
   }
-}
-
-async function readClientReadiness(): Promise<StartupDependencyDto> {
-  try {
-    await preloadClientRuntime();
-    return { name: "client-runtime", ready: true, message: "ready" };
-  } catch {
-    return { name: "client-runtime", ready: false, message: "unavailable" };
-  }
-}
-
-function preloadClientRuntime(): Promise<void> {
-  clientRuntimePromise ??= import("typescript").then(() => undefined);
-
-  return clientRuntimePromise;
 }

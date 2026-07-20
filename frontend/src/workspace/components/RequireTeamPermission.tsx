@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { useParams } from "react-router";
 import { NotFoundError } from "@/app/pages/error-page";
+import { EditorRouteFallback } from "@/router/route-components";
 import type { TeamPermissionsDto } from "@/api/workspace/dtos";
 import { useTeamPermissions } from "@/api/workspace/hooks";
 
@@ -8,12 +9,14 @@ export function RequireTeamPermission({
   permission,
   children,
 }: PropsWithChildren<{ permission: keyof TeamPermissionsDto }>) {
-  const { teamId = "" } = useParams();
-  const permissions = useTeamPermissions(Number(teamId));
+  const { organizationId = "", teamId = "" } = useParams();
+  const query = useTeamPermissions(Number(organizationId), Number(teamId));
 
-  if (!permissions) {
-    return null;
+  if (!organizationId || !teamId) {
+    return <NotFoundError />;
   }
+  if (query.isLoading) return <EditorRouteFallback />;
+  if (query.error) throw query.error;
 
-  return permissions[permission] ? <>{children}</> : <NotFoundError />;
+  return query.data?.permissions[permission] ? <>{children}</> : <NotFoundError status={403} />;
 }

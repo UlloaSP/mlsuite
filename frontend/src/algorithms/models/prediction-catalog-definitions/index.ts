@@ -33,10 +33,12 @@ export type PredictionCatalogDefinitions = {
  * @throws Propagates browser/API/runtime failures from the called platform APIs.
  * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
  */
-export const loadPredictionCatalogDefinitions = async (): Promise<PredictionCatalogDefinitions> => {
+export const loadPredictionCatalogDefinitions = async (
+  organizationId: number | string,
+): Promise<PredictionCatalogDefinitions> => {
   const [fieldDefinitions, reportDefinitions] = await Promise.all([
-    getCustomFieldDefinitions(),
-    getCustomReportDefinitions(),
+    getCustomFieldDefinitions(organizationId),
+    getCustomReportDefinitions(organizationId),
   ]);
   return {
     fieldDefinitions,

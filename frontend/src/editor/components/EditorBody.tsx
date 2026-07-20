@@ -17,6 +17,7 @@ import {
   type CatalogReportDefinition,
 } from "@/algorithms/plugin/custom-report-catalog";
 import { invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
+import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 import { pluginCatalogVersionAtom } from "@/plugin/mlform/plugin-catalog-state";
 import { schemaNeedsPluginCatalog } from "@/algorithms/plugin/schema-needs-plugin-catalog";
 import { mlformJsonSchema, validateMlformSchema } from "@/algorithms/mlform/schema-validation";
@@ -39,6 +40,7 @@ type Props = {
 const MonacoEditor = lazy(loadLocalMonacoEditor);
 
 export function EditorBody({ diffBaseText }: Props) {
+  const organizationId = useCurrentOrganizationId() ?? "none";
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [, setSchema] = useAtom(schemaAtom);
   const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
@@ -241,8 +243,8 @@ export function EditorBody({ diffBaseText }: Props) {
     void (async () => {
       try {
         const [customFieldDefinitions, customReportDefinitions] = await Promise.all([
-          getCustomFieldDefinitions(),
-          getCustomReportDefinitions(),
+          getCustomFieldDefinitions(organizationId),
+          getCustomReportDefinitions(organizationId),
         ]);
         if (cancelled) {
           return;
@@ -280,11 +282,11 @@ export function EditorBody({ diffBaseText }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [applyCompatValidation, pluginCatalogVersion, schemaText]);
+  }, [applyCompatValidation, organizationId, pluginCatalogVersion, schemaText]);
 
   useEffect(() => {
-    invalidatePluginCatalog();
-  }, [pluginCatalogVersion]);
+    invalidatePluginCatalog(organizationId);
+  }, [organizationId, pluginCatalogVersion]);
 
   useEffect(() => {
     if (monacoRef.current) {

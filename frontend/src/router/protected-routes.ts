@@ -1,0 +1,285 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import type { RouteObject } from "react-router";
+import { lazyPage, superadmin, team, workspacePage } from "./lazy-route";
+
+export const protectedPages: RouteObject[] = [
+  {
+    path: "workspace",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/workspace-home-page"),
+        "WorkspaceHomePage",
+        workspacePage("canViewWorkspace"),
+      ),
+  },
+  {
+    path: "workspace/organizations",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/organizations-page"),
+        "OrganizationsPage",
+        superadmin,
+      ),
+  },
+  {
+    path: "workspace/organizations/create",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/create-organization-page"),
+        "CreateOrganizationPage",
+        superadmin,
+      ),
+  },
+  {
+    path: "workspace/organizations/:organizationId",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/organization-admin-page"),
+        "OrganizationAdminPage",
+        workspacePage("canViewOrganization"),
+      ),
+  },
+  {
+    path: "workspace/organizations/:organizationId/teams",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/teams-page"),
+        "TeamsPage",
+        workspacePage("canViewTeams"),
+      ),
+  },
+  {
+    path: "workspace/organizations/:organizationId/teams/:teamId",
+    lazy: () =>
+      lazyPage(() => import("@/workspace/pages/team-detail-page"), "TeamDetailPage", team),
+  },
+  {
+    path: "workspace/organizations/:organizationId/members",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/members-page"),
+        "MembersPage",
+        workspacePage("canViewMembers"),
+      ),
+  },
+  {
+    path: "workspace/organizations/:organizationId/invitations",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/invitations-page"),
+        "InvitationsPage",
+        workspacePage("canViewInvitations"),
+      ),
+  },
+  {
+    path: "workspace/organizations/:organizationId/roles",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/roles-page"),
+        "RolesPage",
+        workspacePage("canViewMembers"),
+      ),
+  },
+  {
+    path: "workspace/organizations/:organizationId/settings",
+    lazy: () =>
+      lazyPage(
+        () => import("@/workspace/pages/organization-settings-page"),
+        "OrganizationSettingsPage",
+        workspacePage("canViewOrganization"),
+      ),
+  },
+  {
+    path: "invite/:token",
+    lazy: () =>
+      lazyPage(() => import("@/workspace/pages/invitation-accept-page"), "InvitationAcceptPage"),
+  },
+  {
+    path: "profile",
+    lazy: () => lazyPage(() => import("@/user/pages/profilePage"), "ProfilePage"),
+  },
+  {
+    path: "notifications",
+    lazy: () => lazyPage(() => import("@/user/pages/notifications-page"), "NotificationsPage"),
+  },
+  {
+    path: "admin/users",
+    lazy: () =>
+      lazyPage(() => import("@/admin/pages/admin-users-page"), "AdminUsersPage", superadmin),
+  },
+  {
+    path: "admin/users/create",
+    lazy: () =>
+      lazyPage(
+        () => import("@/admin/pages/create-admin-user-page"),
+        "CreateAdminUserPage",
+        superadmin,
+      ),
+  },
+  {
+    path: "admin/infrastructure",
+    lazy: () =>
+      lazyPage(
+        () => import("@/admin/infrastructure/pages/admin-infrastructure-page"),
+        "AdminInfrastructurePage",
+        superadmin,
+      ),
+  },
+  {
+    path: "models",
+    lazy: () =>
+      lazyPage(
+        () => import("@/models/pages/models-page"),
+        "ModelsPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "models/create",
+    lazy: () =>
+      lazyPage(
+        () => import("@/models/pages/create-model-page"),
+        "CreateModelPage",
+        workspacePage("canCreateModels"),
+      ),
+  },
+  {
+    path: "models/:modelId",
+    lazy: () =>
+      lazyPage(
+        () => import("@/models/pages/model-detail-page"),
+        "ModelDetailPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "plugins",
+    lazy: () =>
+      lazyPage(
+        () => import("@/plugin/catalog/pages/PluginCatalogPage"),
+        "PluginCatalogPage",
+        workspacePage("canViewPlugins"),
+      ),
+  },
+  {
+    path: "schemas",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schemas-page"),
+        "SchemasPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "schemas/create",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/create-schema-page"),
+        "CreateSchemaPage",
+        workspacePage("canEditModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-detail-page"),
+        "SchemaDetailPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/changes",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-changes-page"),
+        "SchemaChangesPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/bookmarks",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-bookmarks-page"),
+        "SchemaBookmarksPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/snapshots",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-snapshots-page"),
+        "SchemaSnapshotsPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/drafts/:draftId",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-draft-editor-page"),
+        "SchemaDraftEditorPage",
+        workspacePage("canEditModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/drafts/:draftId/conflicts",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-draft-conflict-page"),
+        "SchemaDraftConflictPage",
+        workspacePage("canEditModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/versions/:versionId",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-snapshot-detail-page"),
+        "SchemaSnapshotDetailPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/bookmarks/:bookmarkId",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-bookmark-detail-page"),
+        "SchemaBookmarkDetailPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/create",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/create-schema-run-page"),
+        "CreateSchemaRunPage",
+        workspacePage("canRunPredictions"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/bookmarks/:bookmarkId/runs",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/schema-run-history-page"),
+        "SchemaRunHistoryPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/:runId",
+    lazy: () =>
+      lazyPage(
+        () => import("@/schemas/pages/prediction-run-detail-page"),
+        "PredictionRunDetailPage",
+        workspacePage("canViewModels"),
+      ),
+  },
+];

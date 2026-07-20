@@ -9,5 +9,9 @@ import { useInvalidateSchemaQueries } from "./use-invalidate-schema-queries";
 
 export const useArchiveSchemaMutation = () => {
   const invalidate = useInvalidateSchemaQueries();
-  return useMutation({ mutationFn: archiveSchema, onSuccess: () => void invalidate() });
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: archiveSchema,
+    onSuccess: () => void invalidate(),
+  });
 };

@@ -9,5 +9,9 @@ import { useInvalidateModelQueries } from "./use-invalidate-model-queries";
 
 export const useArchiveModelMutation = () => {
   const invalidate = useInvalidateModelQueries();
-  return useMutation({ mutationFn: archiveModel, onSuccess: () => void invalidate() });
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: archiveModel,
+    onSuccess: () => void invalidate(),
+  });
 };

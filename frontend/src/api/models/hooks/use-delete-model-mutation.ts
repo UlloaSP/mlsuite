@@ -9,5 +9,9 @@ import { useInvalidateModelQueries } from "./use-invalidate-model-queries";
 
 export const useDeleteModelMutation = () => {
   const invalidate = useInvalidateModelQueries();
-  return useMutation({ mutationFn: deleteModel, onSuccess: () => void invalidate() });
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: deleteModel,
+    onSuccess: () => void invalidate(),
+  });
 };

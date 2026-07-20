@@ -1,5 +1,6 @@
 export * from "./query-keys";
 export { useWorkspaceContext } from "./use-workspace-context";
+export { useCurrentOrganizationId } from "./use-current-organization-id";
 export { useWorkspaceContextSync } from "./use-workspace-context-sync";
 export { usePendingInvitations } from "./use-pending-invitations";
 export { useAcceptInvitation } from "./use-accept-invitation";
@@ -7,6 +8,7 @@ export { useDeclineInvitation } from "./use-decline-invitation";
 export { useSelectOrganization } from "./use-select-organization";
 export { useInvalidateOrganizationQueries } from "./use-invalidate-organization-queries";
 export { useOrganizationCatalogPageQuery } from "./use-organization-catalog-page-query";
+export { useOrganizationMembersQuery } from "./use-organization-members-query";
 export { useDeleteOrganizationMutation } from "./use-delete-organization-mutation";
 export { useRenameOrganizationMutation } from "./use-rename-organization-mutation";
 export { useTransferOrganizationOwnershipMutation } from "./use-transfer-organization-ownership-mutation";

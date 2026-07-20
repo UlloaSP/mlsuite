@@ -10,6 +10,7 @@ import { SCHEMA_REVIEW_LINKS_QUERY_KEY } from "./query-keys";
 export function useCreateSchemaReviewLinkMutation(schemaId: string, versionId: string) {
   const qc = useQueryClient();
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationFn: api.createSchemaReviewLink,
     onSuccess: () =>
       qc.invalidateQueries({ queryKey: SCHEMA_REVIEW_LINKS_QUERY_KEY(schemaId, versionId) }),

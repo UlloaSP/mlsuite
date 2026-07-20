@@ -18,7 +18,7 @@ import { useUser } from "@/api/user/hooks";
 import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
 import type { OrganizationPatch } from "@/workspace/components/OrganizationCatalogEditable";
-import { OrganizationCatalogTileWithMembers } from "@/workspace/components/OrganizationCatalogTileWithMembers";
+import { OrganizationCatalogTile } from "@/workspace/components/OrganizationCatalogTile";
 
 type OrganizationSortMode = "updated" | "created" | "name";
 type OrganizationFilterMode = "all" | "public" | "private";
@@ -132,7 +132,7 @@ export function OrganizationsPage() {
         </AppButton>
       }
       renderItem={(item) => (
-        <OrganizationCatalogTileWithMembers
+        <OrganizationCatalogTile
           key={item.id}
           disabled={isBusy}
           item={item}

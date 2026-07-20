@@ -9,6 +9,7 @@ import { schemaNeedsPluginCatalog } from "@/algorithms/plugin/schema-needs-plugi
 import { loadPredictionCatalogDefinitions } from "@/algorithms/models/prediction-catalog-definitions";
 import type { PredictionCatalogDefinitions } from "@/algorithms/models/prediction-catalog-definitions";
 import { schemaRunDebug, schemaRunDebugError } from "@/algorithms/schema/run-debug";
+import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 
 const emptyCatalog: PredictionCatalogDefinitions = {
   fieldDefinitions: [],
@@ -21,6 +22,7 @@ type CatalogState =
   | { status: "error"; data: PredictionCatalogDefinitions; error: string };
 
 export const useSchemaPluginCatalog = (schema: unknown) => {
+  const organizationId = useCurrentOrganizationId() ?? "none";
   const needsPlugins = useMemo(() => schemaNeedsPluginCatalog(schema), [schema]);
   const [state, setState] = useState<CatalogState>({
     status: needsPlugins ? "loading" : "ready",
@@ -37,7 +39,7 @@ export const useSchemaPluginCatalog = (schema: unknown) => {
     schemaRunDebug("catalog.load.start");
     setState({ status: "loading", data: emptyCatalog, error: null });
     try {
-      const definitions = await loadPredictionCatalogDefinitions();
+      const definitions = await loadPredictionCatalogDefinitions(organizationId);
       schemaRunDebug("catalog.load.ready", {
         fields: definitions.fieldDefinitions.map((definition) => definition.kind),
         reports: definitions.reportDefinitions.map((definition) => definition.kind),
@@ -49,7 +51,7 @@ export const useSchemaPluginCatalog = (schema: unknown) => {
       toast.error("Plugin catalog unavailable", { description: message });
       setState({ status: "error", data: emptyCatalog, error: message });
     }
-  }, [needsPlugins]);
+  }, [needsPlugins, organizationId]);
 
   useEffect(() => {
     void retry();

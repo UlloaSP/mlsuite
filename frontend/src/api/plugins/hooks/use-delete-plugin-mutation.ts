@@ -10,6 +10,7 @@ import { useInvalidatePluginQueries } from "./use-invalidate-plugin-queries";
 export const useDeletePluginMutation = () => {
   const invalidatePluginQueries = useInvalidatePluginQueries();
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationFn: deletePlugin,
     onSuccess: invalidatePluginQueries,
   });

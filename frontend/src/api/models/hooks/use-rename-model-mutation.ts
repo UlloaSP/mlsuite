@@ -9,5 +9,9 @@ import { useInvalidateModelQueries } from "./use-invalidate-model-queries";
 
 export const useRenameModelMutation = () => {
   const invalidate = useInvalidateModelQueries();
-  return useMutation({ mutationFn: renameModel, onSuccess: () => void invalidate() });
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: renameModel,
+    onSuccess: () => void invalidate(),
+  });
 };

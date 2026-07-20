@@ -15,8 +15,8 @@ const run = (id: string): PredictionRunDto => ({
 
 describe("schema run bulk refresh", () => {
   it("normalizes prediction-runs query keys across route and dto id shapes", () => {
-    expect(BOOKMARK_PREDICTION_RUNS_QUERY_KEY("42")).toEqual(
-      BOOKMARK_PREDICTION_RUNS_QUERY_KEY(42),
+    expect(BOOKMARK_PREDICTION_RUNS_QUERY_KEY(7, "42")).toEqual(
+      BOOKMARK_PREDICTION_RUNS_QUERY_KEY(7, 42),
     );
   });
 

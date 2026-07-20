@@ -16,6 +16,9 @@ vi.mock("../src/algorithms/models/prediction-catalog-definitions", () => ({
     throw new Error("catalog failed");
   }),
 }));
+vi.mock("../src/api/workspace/hooks/use-current-organization-id", () => ({
+  useCurrentOrganizationId: () => 1,
+}));
 
 describe("schema form preview", () => {
   let root: Root | null = null;

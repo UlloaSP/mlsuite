@@ -8,6 +8,7 @@ import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppPage, AppPageHeader, AppPanel, AppSurface } from "@/app/components";
 import { invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
+import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 import { isRecord } from "@/algorithms/mlform/shared";
 import { SchemaRunForm } from "@/schemas/components/SchemaRunForm";
 import { SchemaRunSaveModal } from "@/schemas/components/SchemaRunSaveModal";
@@ -24,6 +25,7 @@ import type { PendingFeedback } from "@/algorithms/schema/pending-feedback";
 import type { CreatePredictionRunRequest, JsonRecord } from "@/api/schemas/dtos";
 
 export function CreateSchemaRunPage() {
+  const organizationId = useCurrentOrganizationId() ?? "none";
   const [searchParams] = useSearchParams();
   const { schemaId, bookmarkId } = useParams<{
     schemaId: string;
@@ -52,8 +54,8 @@ export function CreateSchemaRunPage() {
   }
 
   useEffect(() => {
-    invalidatePluginCatalog();
-  }, []);
+    invalidatePluginCatalog(organizationId);
+  }, [organizationId]);
 
   const handleSubmit = useCallback(
     (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => {

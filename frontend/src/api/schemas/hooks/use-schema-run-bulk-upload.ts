@@ -3,11 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { createPredictionRunForBookmark, getLastPredictionRunId } from "@/api/schemas/services";
-import type { SchemaVersionDto, PredictionRunDto, CreatePredictionRunRequest } from "@/api/schemas/dtos";
+import type {
+  SchemaVersionDto,
+  PredictionRunDto,
+  CreatePredictionRunRequest,
+} from "@/api/schemas/dtos";
 import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "./query-keys";
 import { createSchemaRunRuntime } from "@/algorithms/schema/runtime-assembly";
 import { isRecord } from "@/algorithms/mlform/shared";
@@ -33,10 +38,11 @@ const INITIAL = {
 const MAX_RECORDS = 10000;
 
 export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: string) {
+  const organizationId = useCurrentOrganizationId() ?? "none";
   const [state, setState] = useState(INITIAL);
   const abortRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
-  const runsQueryKey = BOOKMARK_PREDICTION_RUNS_QUERY_KEY(bookmarkId);
+  const runsQueryKey = BOOKMARK_PREDICTION_RUNS_QUERY_KEY(organizationId, bookmarkId);
 
   const cancel = () => abortRef.current?.abort();
   const reset = () => setState(INITIAL);
@@ -63,7 +69,7 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
 
       const controller = new AbortController();
       abortRef.current = controller;
-      const catalog = await loadPredictionCatalogDefinitions();
+      const catalog = await loadPredictionCatalogDefinitions(organizationId);
       const runtime = createSchemaRunRuntime({
         schema: version.formSchema,
         bindings: version.bindings,

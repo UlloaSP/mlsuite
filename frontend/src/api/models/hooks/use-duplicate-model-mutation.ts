@@ -9,5 +9,9 @@ import { useInvalidateModelQueries } from "./use-invalidate-model-queries";
 
 export const useDuplicateModelMutation = () => {
   const invalidate = useInvalidateModelQueries();
-  return useMutation({ mutationFn: duplicateModel, onSuccess: () => void invalidate() });
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: duplicateModel,
+    onSuccess: () => void invalidate(),
+  });
 };

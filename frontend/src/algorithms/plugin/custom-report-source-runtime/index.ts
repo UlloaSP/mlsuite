@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { defineReportKind, type DefinedReportKind } from "mlform/kit";
 import type { ReportConfig } from "mlform/runtime";
 import * as zod from "zod";
+import { memoizePluginRuntime } from "@/api/plugins/runtime-cache";
 
 type TypeScriptModule = typeof import("typescript");
 type ZodModule = typeof zod;
@@ -29,9 +30,6 @@ export const CUSTOM_REPORT_COMPONENT = "mlsuite-custom-report";
 
 type CustomReportKind = DefinedReportKind<ReportConfig, unknown>;
 
-/** definitionCache: internal constant/cache for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const definitionCache = new Map<string, Promise<CustomReportKind>>();
-let typescriptPromise: Promise<TypeScriptModule> | null = null;
 /** zodGlobalPrefix: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const zodGlobalPrefix = "__MLSUITE_CUSTOM_REPORT_ZOD__";
 
@@ -53,8 +51,7 @@ const getZodGlobalKey = (source: string): string => `${zodGlobalPrefix}_${hashSt
 
 /** loadTypeScript: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const loadTypeScript = async (): Promise<TypeScriptModule> => {
-  typescriptPromise ??= import("typescript");
-  return typescriptPromise;
+  return memoizePluginRuntime("shared", "typescript", () => import("typescript"));
 };
 
 /** formatDiagnostics: internal normalization helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
@@ -164,14 +161,14 @@ const importDefinitionFromSource = async (source: string): Promise<CustomReportK
  * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
  * @remarks Side cases/effects: Uses dynamic import Blob URLs and temporary globals; cleanup revokes URLs and deletes globals.
  */
-export const resolveCustomReportDefinition = async (source: string): Promise<CustomReportKind> => {
+export const resolveCustomReportDefinition = (
+  organizationId: number | string,
+  source: string,
+): Promise<CustomReportKind> => {
   const cacheKey = hashString(source);
-  let cachedModule = definitionCache.get(cacheKey);
-  if (!cachedModule) {
-    cachedModule = importDefinitionFromSource(source);
-    definitionCache.set(cacheKey, cachedModule);
-  }
-  return cachedModule;
+  return memoizePluginRuntime(organizationId, `report-source:${cacheKey}`, () =>
+    importDefinitionFromSource(source),
+  );
 };
 
 /**
@@ -182,8 +179,11 @@ export const resolveCustomReportDefinition = async (source: string): Promise<Cus
  * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
  * @remarks Side cases/effects: Uses dynamic import Blob URLs and temporary globals; cleanup revokes URLs and deletes globals.
  */
-export const validateCustomReportSource = async (source: string): Promise<CustomReportKind> => {
-  const definition = await resolveCustomReportDefinition(source);
+export const validateCustomReportSource = async (
+  organizationId: number | string,
+  source: string,
+): Promise<CustomReportKind> => {
+  const definition = await resolveCustomReportDefinition(organizationId, source);
   const probe = definition.schema.safeParse({ kind: definition.kind, label: "Preview report" });
   if (probe.success && definition.describe) {
     definition.describe(

@@ -9,7 +9,7 @@ import { PLUGIN_CATALOG_STATS_QUERY_KEY } from "./query-keys";
 
 export const usePluginCatalogStatsQuery = (organizationId: number | string | undefined) =>
   useQuery({
-    queryKey: [...PLUGIN_CATALOG_STATS_QUERY_KEY, organizationId ?? "none"],
+    queryKey: PLUGIN_CATALOG_STATS_QUERY_KEY(organizationId ?? "none"),
     enabled: Boolean(organizationId),
     placeholderData: keepPreviousData,
     queryFn: getPluginStats,

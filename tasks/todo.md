@@ -542,3 +542,24 @@
 - Split editor decorations and theme setup into focused utilities, bringing `EditorBody.tsx` below 300 lines and removing its legacy line-limit exception.
 - Passed changed-file `vp check`, full tests (137/137), production build, runtime resource probe, architecture limits, and diff whitespace check.
 - Full `vp check` remains blocked by 185 pre-existing formatting violations. React Doctor reports 96 existing issues (4 errors, 92 warnings), none in changed files.
+
+# Frontend Organization Isolation And Startup Reliability
+
+- [x] Establish failing regression coverage for tenant-scoped detail keys, organization switching, plugin runtime cache isolation, member loading, permission states, route errors, and mutation error ownership.
+- [x] Scope every organization-owned Query key as `["org", organizationId, ...]`; remove the previous organization scope during selection changes.
+- [x] Consolidate plugin-derived runtime caches behind one organization-scoped invalidation owner.
+- [x] Use one organization-members key and defer member requests until the related catalog action opens.
+- [x] Convert application routes to React Router lazy route modules; remove editor/MLForm/TypeScript startup preloads unrelated to the current route.
+- [x] Make team permission guards render explicit loading, denied/not-found, and failure states.
+- [x] Add a root route error boundary that distinguishes 404, 403, network, and unexpected failures.
+- [x] Reserve global mutation toasts for mutations explicitly marked as locally handled; keep unhandled errors global.
+- [x] Run focused tests, `vp check`, `vp test`, `vp build`, React Doctor, line-limit/diff checks, and `graphify update .`.
+
+## Review
+
+- Organization-owned Query data now shares one tenant prefix, and organization switching cancels/removes the previous scope plus its plugin runtime cache.
+- Plugin catalogs use one organization-scoped cache owner; organization member data uses one key and loads only when the transfer action opens.
+- Routes use `route.lazy`; startup no longer downloads TypeScript, Monaco, or MLForm before unrelated pages. The production entry chunk is about 360 KB raw; heavy editor/admin chunks remain separate.
+- Team permission and route failures now render explicit loading, 403, 404, network, or unexpected-error states. Contextual mutations opt out of the global toast through metadata.
+- Passed changed-file `vp check`, full frontend tests (146/146), production build, architecture/line limits, diff whitespace check, and `graphify update .`.
+- Full-repository `vp check` remains blocked by 161 pre-existing formatting violations. React Doctor reports 96 existing issues (4 errors, 92 warnings); the one changed-dialog accessibility finding was fixed.

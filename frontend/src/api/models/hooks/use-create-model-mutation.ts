@@ -8,15 +8,17 @@ import * as modelApi from "@/api/models/services";
 import type { ModelDto } from "@/api/models/dtos";
 import { CREATE_MODEL_QUERY_KEY, GET_MODELS_QUERY_KEY } from "./query-keys";
 import { useInvalidateModelQueries } from "./use-invalidate-model-queries";
+import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 
 export function useCreateModelMutation() {
   const qc = useQueryClient();
+  const organizationId = useCurrentOrganizationId() ?? "none";
   const invalidate = useInvalidateModelQueries();
   return useMutation({
     mutationKey: CREATE_MODEL_QUERY_KEY,
     mutationFn: (data: modelApi.CreateModelRequest) => modelApi.createModel(data),
     onSuccess: async (created: modelApi.CreateModelDto) => {
-      qc.setQueryData<ModelDto[]>(GET_MODELS_QUERY_KEY, (prev) =>
+      qc.setQueryData<ModelDto[]>(GET_MODELS_QUERY_KEY(organizationId), (prev) =>
         prev ? [created.model, ...prev] : [created.model],
       );
       await invalidate();

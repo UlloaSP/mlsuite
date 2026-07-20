@@ -15,6 +15,7 @@ type TransferOrganizationOwnershipRequest = {
 export const useTransferOrganizationOwnershipMutation = () => {
   const invalidate = useInvalidateOrganizationQueries();
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationFn: ({ organizationId, nextOwnerMembershipId }: TransferOrganizationOwnershipRequest) =>
       transferOrganizationOwnership(organizationId, nextOwnerMembershipId),
     onSuccess: () => void invalidate(),

@@ -1,3 +1,4 @@
+import { organizationResourceQueryKey } from "@/api/workspace/hooks/query-keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Mail, RotateCcw, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -49,22 +50,22 @@ export function InvitationsPage() {
   const [status, setStatus] = useState<InvitationStatus | "ALL">("PENDING");
   const [selected, setSelected] = useState<number[]>([]);
   const { data: invitations = [] } = useQuery({
-    queryKey: ["invitations", id],
+    queryKey: organizationResourceQueryKey(id, "invitations"),
     queryFn: () => getInvitations(id),
     enabled: Boolean(id),
   });
   const { data: teams = [] } = useQuery({
-    queryKey: ["teams", id],
+    queryKey: organizationResourceQueryKey(id, "teams"),
     queryFn: () => getTeams(id),
     enabled: Boolean(id),
   });
   const { data: roles } = useQuery({
-    queryKey: ["roles", id],
+    queryKey: organizationResourceQueryKey(id, "roles"),
     queryFn: () => getRoles(id),
     enabled: Boolean(id && workspace?.permissions.canManageInvitations),
   });
   const { data: candidates = [] } = useQuery({
-    queryKey: ["invitation-candidates", id],
+    queryKey: organizationResourceQueryKey(id, "invitation-candidates"),
     queryFn: () => getInvitationCandidates(id),
     enabled: Boolean(id && workspace?.permissions.canManageInvitations),
   });
@@ -110,8 +111,12 @@ export function InvitationsPage() {
                 onSubmit={async (payload) => {
                   await createInvitation(id, payload);
                   await Promise.all([
-                    qc.invalidateQueries({ queryKey: ["invitations", id] }),
-                    qc.invalidateQueries({ queryKey: ["invitation-candidates", id] }),
+                    qc.invalidateQueries({
+                      queryKey: organizationResourceQueryKey(id, "invitations"),
+                    }),
+                    qc.invalidateQueries({
+                      queryKey: organizationResourceQueryKey(id, "invitation-candidates"),
+                    }),
                   ]);
                 }}
               />
@@ -148,7 +153,9 @@ export function InvitationsPage() {
                   onClick={() =>
                     void bulkRevokeInvitations(id, selected).then(() => {
                       setSelected([]);
-                      return qc.invalidateQueries({ queryKey: ["invitations", id] });
+                      return qc.invalidateQueries({
+                        queryKey: organizationResourceQueryKey(id, "invitations"),
+                      });
                     })
                   }
                 >
@@ -201,7 +208,9 @@ export function InvitationsPage() {
                       variant="secondary"
                       onClick={() =>
                         void resendInvitation(id, invite.id).then(() =>
-                          qc.invalidateQueries({ queryKey: ["invitations", id] }),
+                          qc.invalidateQueries({
+                            queryKey: organizationResourceQueryKey(id, "invitations"),
+                          }),
                         )
                       }
                     >
@@ -223,7 +232,9 @@ export function InvitationsPage() {
                         variant="danger"
                         onClick={() =>
                           void revokeInvitation(id, invite.id).then(() =>
-                            qc.invalidateQueries({ queryKey: ["invitations", id] }),
+                            qc.invalidateQueries({
+                              queryKey: organizationResourceQueryKey(id, "invitations"),
+                            }),
                           )
                         }
                       >

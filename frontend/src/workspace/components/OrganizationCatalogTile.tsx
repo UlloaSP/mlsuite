@@ -5,10 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Blocks, BrainCircuit, CalendarDays, ClipboardList, GitBranch, Users } from "lucide-react";
 import { useState } from "react";
-import type {
-  OrganizationCatalogItemDto,
-  OrganizationMembershipRowDto,
-} from "@/api/workspace/dtos";
+import type { OrganizationCatalogItemDto } from "@/api/workspace/dtos";
+import { useOrganizationMembersQuery } from "@/api/workspace/hooks";
 import { modifierName } from "@/algorithms/catalog/relative-time";
 import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 import {
@@ -21,7 +19,6 @@ import { EditableText, OwnerButton, type OrganizationPatch } from "./Organizatio
 type OrganizationCatalogTileProps = {
   disabled: boolean;
   item: OrganizationCatalogItemDto;
-  members: OrganizationMembershipRowDto[];
   onDelete: () => Promise<void> | void;
   onPatch: (patch: OrganizationPatch) => Promise<void> | void;
   onTransferOwner: (membershipId: number) => Promise<void> | void;
@@ -39,7 +36,6 @@ const dashboardItems = [
 export function OrganizationCatalogTile({
   disabled,
   item,
-  members,
   onDelete,
   onPatch,
   onTransferOwner,
@@ -47,6 +43,7 @@ export function OrganizationCatalogTile({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [editingField, setEditingField] = useState<keyof OrganizationPatch | null>(null);
+  const membersQuery = useOrganizationMembersQuery(item.id, transferOpen);
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
 
   return (
@@ -145,7 +142,9 @@ export function OrganizationCatalogTile({
       {transferOpen ? (
         <TransferOwnerDialog
           disabled={disabled}
-          members={members}
+          members={membersQuery.data ?? []}
+          loading={membersQuery.isLoading}
+          error={membersQuery.error}
           onCancel={() => setTransferOpen(false)}
           onConfirm={async (membershipId) => {
             await onTransferOwner(membershipId);

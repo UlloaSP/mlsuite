@@ -10,6 +10,7 @@ import { useInvalidatePluginQueries } from "./use-invalidate-plugin-queries";
 export const useUploadPluginMutation = () => {
   const invalidatePluginQueries = useInvalidatePluginQueries();
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationFn: uploadPlugin,
     onSuccess: invalidatePluginQueries,
   });

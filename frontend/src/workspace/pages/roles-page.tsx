@@ -1,15 +1,9 @@
+import { organizationResourceQueryKey } from "@/api/workspace/hooks/query-keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Lock, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import {
-  AppBadge,
-  AppButton,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-  AppTabs,
-} from "@/app/components";
+import { AppBadge, AppButton, AppPage, AppPageHeader, AppSurface, AppTabs } from "@/app/components";
 import { NotFoundError } from "@/app/pages/error-page";
 import {
   createRole,
@@ -34,7 +28,7 @@ export function RolesPage() {
   const qc = useQueryClient();
   const { data: workspace } = useWorkspaceContext();
   const { data } = useQuery({
-    queryKey: ["roles", id],
+    queryKey: organizationResourceQueryKey(id, "roles"),
     queryFn: () => getRoles(id),
     enabled: Boolean(id),
   });
@@ -43,7 +37,8 @@ export function RolesPage() {
   const [selected, setSelected] = useState<RoleDefinitionDto | null>(null);
   const [editing, setEditing] = useState<RoleDefinitionDto | null>(null);
   const [template, setTemplate] = useState<RoleTemplateDto | null>(null);
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["roles", id] });
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: organizationResourceQueryKey(id, "roles") });
   const roles = useMemo(
     () =>
       (data?.roles ?? []).filter((role) =>

@@ -10,6 +10,7 @@ import { useInvalidateSchemaQueries } from "./use-invalidate-schema-queries";
 export function useCreateSchemaMutation() {
   const invalidate = useInvalidateSchemaQueries();
   return useMutation({
+    meta: { errorHandledLocally: true },
     mutationFn: schemaApi.createSchema,
     onSuccess: () => void invalidate(),
   });

@@ -6,11 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { FieldConfig } from "mlform/runtime";
 import type { DefinedFieldKind } from "mlform/kit";
 import type { PluginDto } from "@/api/plugins/services";
-import { detectPluginType, invalidatePluginCatalog, loadPlugins } from "@/algorithms/plugin/catalog-loader";
+import { detectPluginType, loadPlugins } from "@/algorithms/plugin/catalog-loader";
 import {
   CUSTOM_FIELD_COMPONENT,
   resolveCustomFieldDefinition,
 } from "@/algorithms/plugin/custom-field-source-runtime";
+import { memoizePluginRuntime } from "@/api/plugins/runtime-cache";
 
 export { CUSTOM_FIELD_COMPONENT };
 
@@ -30,8 +31,6 @@ export type CatalogFieldDefinition = Pick<
   definition: DefinedFieldKind<FieldConfig, unknown>;
 };
 
-let catalogDefinitionsPromise: Promise<CatalogFieldDefinition[]> | null = null;
-
 /** assertUniqueKinds: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const assertUniqueKinds = (definitions: readonly CatalogFieldDefinition[]): void => {
   const seenKinds = new Map<string, string>();
@@ -47,8 +46,11 @@ const assertUniqueKinds = (definitions: readonly CatalogFieldDefinition[]): void
 };
 
 /** toCatalogDefinition: internal normalization helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const toCatalogDefinition = async (item: PluginDto): Promise<CatalogFieldDefinition | null> => {
-  const detected = await detectPluginType(item.source);
+const toCatalogDefinition = async (
+  organizationId: number | string,
+  item: PluginDto,
+): Promise<CatalogFieldDefinition | null> => {
+  const detected = await detectPluginType(organizationId, item.source);
   if (detected.pluginType !== "field") {
     return null;
   }
@@ -61,21 +63,8 @@ const toCatalogDefinition = async (item: PluginDto): Promise<CatalogFieldDefinit
     contentType: item.contentType,
     sizeBytes: item.sizeBytes,
     kind: detected.kind,
-    definition: await resolveCustomFieldDefinition(item.source),
+    definition: await resolveCustomFieldDefinition(organizationId, item.source),
   };
-};
-
-/**
- * invalidateCustomFieldDefinitions: clears cached state so next read reloads source data
- *
- * Purpose: materializes custom field definitions from plugin catalog source rows.
- * @returns void after cache invalidation.
- * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
- * @remarks Side cases/effects: Mutates in-memory cache only; next read recomputes from source data.
- */
-export const invalidateCustomFieldDefinitions = (): void => {
-  catalogDefinitionsPromise = null;
-  invalidatePluginCatalog();
 };
 
 /**
@@ -87,13 +76,15 @@ export const invalidateCustomFieldDefinitions = (): void => {
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export const getCustomFieldDefinitions = async (): Promise<readonly CatalogFieldDefinition[]> => {
-  catalogDefinitionsPromise ??= loadPlugins().then(async (items) => {
-    const definitions = (await Promise.all(items.map((item) => toCatalogDefinition(item)))).filter(
-      (definition): definition is CatalogFieldDefinition => definition !== null,
-    );
-    assertUniqueKinds(definitions);
-    return definitions;
-  });
-  return catalogDefinitionsPromise;
-};
+export const getCustomFieldDefinitions = (
+  organizationId: number | string,
+): Promise<readonly CatalogFieldDefinition[]> =>
+  memoizePluginRuntime(organizationId, "field-definitions", () =>
+    loadPlugins(organizationId).then(async (items) => {
+      const definitions = (
+        await Promise.all(items.map((item) => toCatalogDefinition(organizationId, item)))
+      ).filter((definition): definition is CatalogFieldDefinition => definition !== null);
+      assertUniqueKinds(definitions);
+      return definitions;
+    }),
+  );
