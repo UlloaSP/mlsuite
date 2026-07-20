@@ -32,7 +32,6 @@ const LEGACY_APP_BARRELS = new Set(
 const LEGACY_LINE_LIMITS = new Map([
   ["admin/infrastructure/components/ServicesView.tsx", 302],
   ["app/components/SidebarNavigation.tsx", 306],
-  ["editor/components/EditorBody.tsx", 317],
 ]);
 
 type SourceImport = {

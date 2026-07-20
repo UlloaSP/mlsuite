@@ -29,10 +29,6 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             {
-              name: "monaco",
-              test: /node_modules[\\/](?:@monaco-editor[\\/]react|monaco-editor)(?:[\\/]|$)/,
-            },
-            {
               name: "typescript",
               test: /node_modules[\\/]typescript(?:[\\/]|$)/,
             },

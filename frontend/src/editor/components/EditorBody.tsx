@@ -26,17 +26,17 @@ import {
   getMarkerMessage,
   pathToPos,
 } from "@/algorithms/editor/schema-diagnostics";
-import { getLineChangeMarkers } from "@/algorithms/editor/line-change-markers";
+import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/editor/atoms";
-import { editorDarkTheme, editorLightTheme, editorOptions } from "@/editor/utils/editorConfig";
+import { applyLineChangeDecorations as updateLineChangeDecorations } from "@/editor/utils/apply-line-change-decorations";
+import { defineEditorThemes, setEditorTheme } from "@/editor/utils/configure-editor-theme";
+import { editorOptions } from "@/editor/utils/editorConfig";
 
 type MonacoNamespace = typeof import("monaco-editor");
 type Props = {
   diffBaseText?: string;
 };
-const MonacoEditor = lazy(() =>
-  import("@monaco-editor/react").then((module) => ({ default: module.Editor })),
-);
+const MonacoEditor = lazy(loadLocalMonacoEditor);
 
 export function EditorBody({ diffBaseText }: Props) {
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
@@ -56,23 +56,11 @@ export function EditorBody({ diffBaseText }: Props) {
   const applyChangeDecorations = useCallback(
     (text: string) => {
       if (!editorRef.current) return;
-      const decorations = getLineChangeMarkers(diffBaseText ?? "", text).map((marker) => ({
-        range: {
-          startLineNumber: marker.line,
-          startColumn: 1,
-          endLineNumber: marker.line,
-          endColumn: 1,
-        },
-        options: {
-          isWholeLine: true,
-          className: `schema-editor-line-${marker.kind}`,
-          glyphMarginClassName: `schema-editor-glyph-${marker.kind}`,
-          linesDecorationsClassName: `schema-editor-gutter-${marker.kind}`,
-        },
-      }));
-      changeDecorationIdsRef.current = editorRef.current.deltaDecorations(
+      changeDecorationIdsRef.current = updateLineChangeDecorations(
+        editorRef.current,
         changeDecorationIdsRef.current,
-        decorations,
+        diffBaseText ?? "",
+        text,
       );
     },
     [diffBaseText],
@@ -168,15 +156,8 @@ export function EditorBody({ diffBaseText }: Props) {
     editorRef.current = editor;
     monacoRef.current = monacoNs;
 
-    monacoNs.editor.defineTheme(
-      "corporate-light",
-      editorLightTheme as Monaco.editor.IStandaloneThemeData,
-    );
-    monacoNs.editor.defineTheme(
-      "corporate-dark",
-      editorDarkTheme as Monaco.editor.IStandaloneThemeData,
-    );
-    monacoNs.editor.setTheme(theme === "dark" ? "corporate-dark" : "corporate-light");
+    defineEditorThemes(monacoNs);
+    setEditorTheme(monacoNs, theme === "dark");
 
     (
       monacoNs.languages as typeof Monaco.languages & {
@@ -219,10 +200,11 @@ export function EditorBody({ diffBaseText }: Props) {
 
   const handleOnValidate = useCallback(
     (markers: Monaco.editor.IMarker[]) => {
-      if (!editorRef.current) {
+      if (!editorRef.current || !monacoRef.current) {
         return;
       }
 
+      const monacoNs = monacoRef.current;
       const model = editorRef.current.getModel();
       if (!model) {
         return;
@@ -232,13 +214,17 @@ export function EditorBody({ diffBaseText }: Props) {
       const workerCards = markers.reduce<EditorErrorCard[]>((cards, marker) => {
         if (marker.source !== "mlform-compat") {
           cards.push(
-            getMarkerMessage(content, {
-              ...marker,
-              startOffset: model.getOffsetAt({
-                lineNumber: marker.startLineNumber,
-                column: marker.startColumn,
-              }),
-            }),
+            getMarkerMessage(
+              content,
+              {
+                ...marker,
+                startOffset: model.getOffsetAt({
+                  lineNumber: marker.startLineNumber,
+                  column: marker.startColumn,
+                }),
+              },
+              monacoNs.MarkerSeverity.Warning,
+            ),
           );
         }
         return cards;
@@ -302,7 +288,7 @@ export function EditorBody({ diffBaseText }: Props) {
 
   useEffect(() => {
     if (monacoRef.current) {
-      monacoRef.current.editor.setTheme(theme === "dark" ? "corporate-dark" : "corporate-light");
+      setEditorTheme(monacoRef.current, theme === "dark");
     }
   }, [theme]);
 

@@ -44,11 +44,7 @@ async function readClientReadiness(): Promise<StartupDependencyDto> {
 }
 
 function preloadClientRuntime(): Promise<void> {
-  clientRuntimePromise ??= Promise.all([
-    import("typescript"),
-    import("monaco-editor"),
-    import("@monaco-editor/react"),
-  ]).then(() => undefined);
+  clientRuntimePromise ??= import("typescript").then(() => undefined);
 
   return clientRuntimePromise;
 }

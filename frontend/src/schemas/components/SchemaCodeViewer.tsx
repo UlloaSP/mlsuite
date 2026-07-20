@@ -9,7 +9,9 @@ import type * as Monaco from "monaco-editor";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { cx } from "@/app/components/cx";
 import { themeWithHtmlAtom } from "@/app/atoms";
-import { editorDarkTheme, editorLightTheme, editorOptions } from "@/editor/utils/editorConfig";
+import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
+import { defineEditorThemes, setEditorTheme } from "@/editor/utils/configure-editor-theme";
+import { editorOptions } from "@/editor/utils/editorConfig";
 
 type MonacoNamespace = typeof import("monaco-editor");
 
@@ -18,9 +20,7 @@ type Props = {
   className?: string;
 };
 
-const MonacoEditor = lazy(() =>
-  import("@monaco-editor/react").then((module) => ({ default: module.Editor })),
-);
+const MonacoEditor = lazy(loadLocalMonacoEditor);
 
 export function SchemaCodeViewer({ value, className }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
@@ -28,19 +28,14 @@ export function SchemaCodeViewer({ value, className }: Props) {
 
   const mount = (_editor: Monaco.editor.IStandaloneCodeEditor, monacoNs: MonacoNamespace) => {
     monacoRef.current = monacoNs;
-    monacoNs.editor.defineTheme(
-      "corporate-light",
-      editorLightTheme as Monaco.editor.IStandaloneThemeData,
-    );
-    monacoNs.editor.defineTheme(
-      "corporate-dark",
-      editorDarkTheme as Monaco.editor.IStandaloneThemeData,
-    );
-    monacoNs.editor.setTheme(theme === "dark" ? "corporate-dark" : "corporate-light");
+    defineEditorThemes(monacoNs);
+    setEditorTheme(monacoNs, theme === "dark");
   };
 
   useEffect(() => {
-    monacoRef.current?.editor.setTheme(theme === "dark" ? "corporate-dark" : "corporate-light");
+    if (monacoRef.current) {
+      setEditorTheme(monacoRef.current, theme === "dark");
+    }
   }, [theme]);
 
   return (

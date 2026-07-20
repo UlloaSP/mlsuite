@@ -526,3 +526,19 @@
 - Removed MLForm runtime/kit/builtins from startup preloading because application imports already load them eagerly; TypeScript and Monaco remain lazy readiness dependencies.
 - Passed changed-file `vp check`, focused tests (15/15), full frontend tests (135/135), production build, zero-warning log assertion, line limits, diff whitespace check, and `graphify update .`.
 - Full `vp check` remains blocked by 188 pre-existing formatting violations. React Doctor produced no output for 60 seconds and was terminated.
+# Local Lazy Monaco Runtime
+
+- [x] Record current bundle/runtime baseline.
+- [x] Add regression coverage for local Monaco loader success and failure.
+- [x] Configure `@monaco-editor/react` with bundled `monaco-editor` through one lazy loader.
+- [x] Remove Monaco from global startup readiness while preserving required runtime readiness.
+- [x] Run focused/full checks, compare build output, update graphify, and review diff.
+
+## Review
+
+- `@monaco-editor/react` now receives the bundled local `monaco-editor` instance and local editor/JSON workers through one cached lazy loader; no CDN fetch is needed.
+- Removed Monaco from startup readiness, eliminated the last eager runtime enum import, and removed the manual Monaco chunk group that pulled shared code into the entry graph.
+- Production startup now requests zero Monaco/worker/CDN resources. Monaco remains available on first editor render.
+- Split editor decorations and theme setup into focused utilities, bringing `EditorBody.tsx` below 300 lines and removing its legacy line-limit exception.
+- Passed changed-file `vp check`, full tests (137/137), production build, runtime resource probe, architecture limits, and diff whitespace check.
+- Full `vp check` remains blocked by 185 pre-existing formatting violations. React Doctor reports 96 existing issues (4 errors, 92 warnings), none in changed files.

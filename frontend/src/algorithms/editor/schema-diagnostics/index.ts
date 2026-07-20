@@ -5,8 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { parse as parseWithSourceMap } from "json-source-map";
 import { getLocation } from "jsonc-parser";
-// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- MarkerSeverity enum is tiny and needed by synchronous marker formatting.
-import { MarkerSeverity } from "monaco-editor";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only Monaco import is erased from runtime.
 import type * as Monaco from "monaco-editor";
 import { builtinFieldKindsDisplay } from "@/algorithms/mlform/builtin-registry";
@@ -35,6 +33,7 @@ const isFieldKindPath = (p: (string | number)[]) =>
  * pathToPos: performs the exported transformation for this algorithm.
  *
  * Purpose: turns schema validation paths and editor markers into user-facing editor diagnostics.
+ * @param warningSeverity - Monaco runtime value representing warning markers.
  * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
@@ -65,6 +64,7 @@ const getBuiltinFieldKindsMessage = (): string =>
 export const getMarkerMessage = (
   content: string,
   marker: Monaco.editor.IMarker & { startOffset: number },
+  warningSeverity: number,
 ): EditorErrorCard => {
   const pathArr = getLocation(content, marker.startOffset).path;
 
@@ -73,7 +73,7 @@ export const getMarkerMessage = (
     column: marker.startColumn,
     path: pathArr.length ? pathArr.join(".") : "root",
     message: isFieldKindPath(pathArr) ? getBuiltinFieldKindsMessage() : marker.message,
-    severity: marker.severity === MarkerSeverity.Warning ? "warning" : "error",
+    severity: marker.severity === warningSeverity ? "warning" : "error",
   };
 };
 
