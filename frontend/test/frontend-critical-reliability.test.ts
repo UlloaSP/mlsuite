@@ -12,18 +12,15 @@ import {
   SCHEMA_QUERY_KEY,
   SCHEMA_VERSION_QUERY_KEY,
 } from "@/api/schemas/hooks/query-keys";
-import { createAppQueryClient } from "@/app/query-client";
-import { HttpError } from "@/api/core/services";
+import { createAppQueryClient } from "@/app/providers/query-client";
+import { HttpError } from "@/shared/api/http";
 import {
   organizationMembersQueryKey,
   organizationQueryKey,
 } from "@/api/workspace/hooks/query-keys";
 import { removeOrganizationCache } from "@/api/workspace/hooks/organization-cache";
-import {
-  invalidatePluginRuntimeCache,
-  memoizePluginRuntime,
-} from "@/api/plugins/runtime-cache";
-import { classifyRouteError } from "@/router/route-error";
+import { invalidatePluginRuntimeCache, memoizePluginRuntime } from "@/api/plugins/runtime-cache";
+import { classifyRouteError } from "@/app/router/route-error";
 
 type TenantDetailKey = (organizationId: number, resourceId: string) => readonly unknown[];
 
@@ -101,4 +98,3 @@ describe("frontend critical reliability", () => {
     expect(classifyRouteError(error)).toBe(status);
   });
 });
-

@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vite-plus/test"
 
 const appFetch = vi.fn();
 
-vi.mock("../src/api/core/services/app-fetch", () => ({ appFetch }));
+vi.mock("../src/shared/api/http", () => ({ appFetch }));
 
 describe("artifact inspection service", () => {
   beforeEach(() => {

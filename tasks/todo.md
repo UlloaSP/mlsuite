@@ -602,3 +602,24 @@
 - `graphify update .` completed: 11,044 nodes, 31,359 edges, 351 communities.
 - `vp check` remains blocked by 15 pre-existing formatting violations outside this change.
 - React Doctor completed at 67/100 with 94 existing findings (4 errors, 90 warnings); no visual check was run because it was not requested.
+
+# Frontend Shared API And Composition Root
+
+- [x] Read architecture contract, Graphify report, agent rules, and relevant lessons.
+- [x] Inventory HTTP transport consumers and legacy router/layout composition.
+- [x] Consolidate `appFetch`, JSON requests, typed errors, and `ErrorDto` in `shared/api/http.ts`.
+- [x] Remove the empty legacy `api/core` tree and update source/test imports without forwarding files.
+- [x] Move root `main.tsx`, legacy router, and legacy layouts into `app/{main,router,layouts}`.
+- [x] Remove the root-main architecture allowance and update the Vite HTML entry.
+- [x] Run focused architecture/HTTP/router tests, TypeScript, full tests/build/check, React Doctor, line/diff checks, and `graphify update .`.
+- [x] Record final review and exact blockers.
+
+## Review
+
+- Consolidated the complete HTTP contract in `shared/api/http.ts`; removed `api/core` and rewired all source and test consumers without compatibility forwarding files.
+- Established `app` as the composition root: entry point, providers, router, and layouts now live below `app`; the reusable editor loader moved to `shared/ui`.
+- Removed `router` and `layout` from the legacy-root list and removed the `main.tsx` root exception from the architecture fitness test.
+- Passed focused tests (35/35), TypeScript, full frontend tests (153/153), production build, old-path audit, and diff whitespace check.
+- `graphify update .` completed: 11,025 nodes, 31,321 edges, 365 communities.
+- `vp check` remains blocked by 13 pre-existing formatting violations outside this slice.
+- React Doctor remains at 67/100 with 94 existing findings (4 errors, 90 warnings); no visual check was run because it was not requested.

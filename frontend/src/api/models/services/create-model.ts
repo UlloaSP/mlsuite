@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { appFetch } from "@/api/core/services/app-fetch";
+import { appFetch } from "@/shared/api/http";
 import type { CreateModelRequest, CreateModelDto } from "@/api/models/dtos";
 
 /** ---------- services ---------- */

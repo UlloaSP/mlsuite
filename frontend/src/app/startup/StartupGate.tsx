@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { EditorAssemblyLoader } from "@/router/EditorAssemblyLoader";
+import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
 import { useStartupReadinessQuery } from "./startup-query";
 
 type StartupGateProps = {

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { appFetch } from "@/api/core/services/app-fetch";
+import { appFetch } from "@/shared/api/http";
 import type { UserDTO, LoginPayload } from "@/api/user/dtos";
 
 export const login = (payload: LoginPayload): Promise<UserDTO> =>

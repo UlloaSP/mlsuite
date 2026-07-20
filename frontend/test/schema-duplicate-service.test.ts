@@ -8,7 +8,7 @@ import { duplicateSchema } from "@/api/schemas/services/duplicate-schema";
 
 const { appFetch } = vi.hoisted(() => ({ appFetch: vi.fn() }));
 
-vi.mock("../src/api/core/services/app-fetch", () => ({ appFetch }));
+vi.mock("../src/shared/api/http", () => ({ appFetch }));
 
 describe("schema duplicate service", () => {
   beforeEach(() => {

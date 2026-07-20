@@ -5,11 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReactNode } from "react";
 import { createBrowserRouter, Outlet, type RouteObject } from "react-router";
-import { AppShellFrame } from "@/layout/AppShellLayout";
-import { PublicLayout } from "@/layout/PublicLayout";
+import { AppShellFrame } from "@/app/layouts/AppShellLayout";
+import { PublicLayout } from "@/app/layouts/PublicLayout";
 import { lazyPage } from "./lazy-route";
 import { protectedPages } from "./protected-routes";
-import { ProtectedRoute } from "./route-components";
+import { ProtectedRoute } from "./ProtectedRoute";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { enableViewTransitions } from "./view-transitions";
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { createBrowserRouter } from "react-router";
-import { enableViewTransitions } from "@/router/view-transitions";
+import { enableViewTransitions } from "@/app/router/view-transitions";
 
 type AppRouter = ReturnType<typeof createBrowserRouter>;
 

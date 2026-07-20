@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { appFetch } from "@/api/core/services/app-fetch";
-import { json } from "@/api/core/services/json";
+import { appFetch } from "@/shared/api/http";
+import { json } from "@/shared/api/http";
 import type { TeamDto, UpdateTeamRequest } from "@/api/workspace/dtos";
 
 export const updateTeam = (teamId: number, payload: UpdateTeamRequest): Promise<TeamDto> =>

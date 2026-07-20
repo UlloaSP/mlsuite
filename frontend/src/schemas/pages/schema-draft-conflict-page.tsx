@@ -12,7 +12,7 @@ import { AppCopy } from "@/app/components/AppCopy";
 import { AppPage } from "@/app/components/AppPage";
 import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppSurface } from "@/app/components/AppSurface";
-import { isHttpError } from "@/api/core/services/app-fetch";
+import { isHttpError } from "@/shared/api/http";
 import type {
   SchemaDraftBindingDto,
   SchemaDraftChangeDto,

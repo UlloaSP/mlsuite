@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
-import { emitErrorFromUnknown } from "./utils/error-sink";
+import { emitErrorFromUnknown } from "@/app/utils/error-sink";
 
 export const createAppQueryClient = (
   reportError: (error: unknown) => void = emitErrorFromUnknown,

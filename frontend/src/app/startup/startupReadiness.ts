@@ -1,4 +1,4 @@
-import { appFetch } from "@/api/core/services";
+import { appFetch } from "@/shared/api/http";
 
 export type StartupDependencyDto = {
   name: string;
