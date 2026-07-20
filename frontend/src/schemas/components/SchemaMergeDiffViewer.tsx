@@ -8,7 +8,10 @@ import { useAtomValue } from "jotai";
 import { useMemo } from "react";
 import { themeWithHtmlAtom } from "@/app/atoms";
 import { cx } from "@/app/components/cx";
-import type { SchemaDraftChangeDto, SchemaDraftMergeSide } from "@/api/schemas/dtos";
+import type {
+  SchemaDraftChangeDto,
+  SchemaDraftMergeSide,
+} from "@/features/schemas/api/draft-types";
 import { buildSchemaMergeFile } from "@/schemas/utils/schema-merge-file";
 
 type Props = {

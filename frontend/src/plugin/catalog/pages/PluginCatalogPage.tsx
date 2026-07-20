@@ -8,14 +8,16 @@ import { useSetAtom } from "jotai";
 import { useRef, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import {
-  PLUGIN_CATALOG_PAGE_SIZE,
   useDeletePluginMutation,
+  useUploadPluginMutation,
+} from "@/features/plugins/api/plugin.mutations";
+import { PLUGIN_CATALOG_PAGE_SIZE } from "@/features/plugins/api/plugin.keys";
+import {
   usePluginCatalogPageQuery,
   usePluginCatalogStatsQuery,
-  useUploadPluginMutation,
-} from "@/api/plugins/hooks";
-import { useUser } from "@/api/user/hooks";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+} from "@/features/plugins/api/plugin.queries";
+import { useUser } from "@/features/user/api/user-session";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import {
   SORT_LABELS,
   TYPE_META,

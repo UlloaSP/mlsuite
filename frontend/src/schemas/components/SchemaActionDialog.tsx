@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useState } from "react";
 import { AppButton } from "@/app/components/AppButton";
 import { AppTextField } from "@/app/components/AppTextField";
-import type { SchemaCatalogItemDto } from "@/api/schemas/dtos";
+import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import type { SchemaAction } from "./SchemaActionsMenu";
 
 type Props = {

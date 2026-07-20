@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { BrainCircuit, CalendarDays, FileJson, Rows3, ScrollText } from "lucide-react";
-import type { SchemaCatalogItemDto } from "@/api/schemas/dtos";
+import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import { modifierName } from "@/algorithms/catalog/relative-time";
 import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 import { SchemaActionsMenu, type SchemaAction } from "./SchemaActionsMenu";

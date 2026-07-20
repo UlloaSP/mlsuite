@@ -14,13 +14,12 @@ import { AppSurface } from "@/app/components/AppSurface";
 import {
   useCreateSchemaBookmarkMutation,
   useDuplicateSchemaMutation,
-  useSchema,
-  useSchemaVersion,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-mutations";
+import { useSchema, useSchemaVersion } from "@/features/schemas/api/schema-queries";
 import { SchemaBookmarkDialog } from "@/schemas/components/SchemaBookmarkDialog";
 import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
 import { SchemaSnapshotPreviewPanel } from "@/schemas/components/SchemaSnapshotPreviewPanel";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 
 export function SchemaSnapshotDetailPage() {
   const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();

@@ -27,11 +27,11 @@ import {
   useSchema,
   useSchemaBookmark,
   useSchemaVersion,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
 import { isSchemaFeedbackComplete } from "@/algorithms/schema/feedback-state";
 import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
 import { prepareSchemaVersionDtoForUse } from "@/algorithms/schema/binding-rebase";
-import type { PredictionRunDto } from "@/api/schemas/dtos";
+import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 
 const EMPTY_RUNS: PredictionRunDto[] = [];
 

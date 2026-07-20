@@ -7,8 +7,8 @@ import { ReviewOutputsSection, type TargetDto } from "@/review/components/Review
 import { getFormattedReportContent } from "@/algorithms/models/report-feedback-utils";
 import { getVisibleSchemaInputRecord } from "@/algorithms/schema/input-display";
 import { getSchemaResultReports } from "@/algorithms/schema/report-display";
-import type { SchemaVersionDto } from "@/api/schemas/dtos";
-import { useSchemaReviewRun } from "@/api/review/hooks";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { useSchemaReviewRun } from "@/features/reviews/api/review-queries";
 import { SchemaReviewCombinedFeedbackForm } from "./SchemaReviewCombinedFeedbackForm";
 
 type Props = {

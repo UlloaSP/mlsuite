@@ -14,8 +14,8 @@ import {
   useSchemaDraft,
   useSchemaDraftDiff,
   useSchemaVersion,
-  useUpdateSchemaDraftMutation,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
+import { useUpdateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import { AppButton } from "@/app/components/AppButton";
 import { AppIconButton } from "@/app/components/AppIconButton";
 import { AppPage } from "@/app/components/AppPage";

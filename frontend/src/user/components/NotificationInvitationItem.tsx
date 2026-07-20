@@ -1,6 +1,9 @@
 import { Building2, Check, X } from "lucide-react";
-import type { InvitationDto } from "@/api/workspace/dtos";
-import { useAcceptInvitation, useDeclineInvitation } from "@/api/workspace/hooks";
+import type { InvitationDto } from "@/capabilities/workspace-context/workspace-context.types";
+import {
+  useAcceptInvitation,
+  useDeclineInvitation,
+} from "@/features/workspace/api/workspace.mutations";
 import { AppButton } from "@/app/components/AppButton";
 
 export function NotificationInvitationItem({ invitation }: { invitation: InvitationDto }) {

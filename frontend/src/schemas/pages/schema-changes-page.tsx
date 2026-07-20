@@ -10,15 +10,17 @@ import { toast } from "sonner";
 import { AppButton } from "@/app/components/AppButton";
 import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
-import type { SchemaDraftDto } from "@/api/schemas/dtos";
+import type { SchemaDraftDto } from "@/features/schemas/api/draft-types";
+import {
+  useCreateSchemaDraftMutation,
+  useUpdateSchemaDraftMutation,
+} from "@/features/schemas/api/schema-draft-mutations";
 import {
   useSchema,
   useSchemaBookmarks,
-  useCreateSchemaDraftMutation,
   useSchemaDrafts,
-  useUpdateSchemaDraftMutation,
   useSchemaVersions,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
 import { schemaVersionId, sortSchemaVersions } from "@/algorithms/schema/version-selection";
 import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
 import { SchemaChangeCatalogItem } from "@/schemas/components/SchemaChangeCatalogItem";

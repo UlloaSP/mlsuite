@@ -16,10 +16,10 @@ import { AppPageHeader } from "@/app/components/PageHeader";
 import {
   useSchema,
   useSchemaBookmarks,
-  useCreateSchemaDraftMutation,
   useSchemaDrafts,
   useSchemaVersions,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
+import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import { schemaVersionId, sortSchemaVersions } from "@/algorithms/schema/version-selection";
 import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
 import { SchemaRepoNav } from "@/schemas/components/SchemaRepoNav";

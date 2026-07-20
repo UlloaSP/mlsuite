@@ -8,13 +8,13 @@ import { useMemo } from "react";
 import { useParams } from "react-router";
 import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
-import type { SchemaBookmarkDto } from "@/api/schemas/dtos";
+import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import {
   useSchema,
   useSchemaBookmarks,
   useSchemaDrafts,
   useSchemaVersions,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
 import { sortSchemaVersions } from "@/algorithms/schema/version-selection";
 import { SchemaBookmarkCatalogItem } from "@/schemas/components/SchemaBookmarkCatalogItem";
 import { SchemaRepoNav } from "@/schemas/components/SchemaRepoNav";

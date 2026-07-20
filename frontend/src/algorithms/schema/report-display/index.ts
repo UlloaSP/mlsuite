@@ -8,7 +8,8 @@ import { isBuiltinReportKind } from "@/capabilities/mlform/builtin-registry";
 import { isRecord, type JsonRecord } from "@/algorithms/mlform/shared";
 import { isSkippedSchemaReportPayload } from "@/algorithms/schema/report-plugin-context";
 import { reportTargetForBinding } from "@/algorithms/mlform/schema-run-report-mapping";
-import type { PredictionResultDto, SchemaVersionDto } from "@/api/schemas/dtos";
+import type { PredictionResultDto } from "@/features/schemas/api/prediction-types";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { schemaRunDebug } from "@/algorithms/schema/run-debug";
 
 /**

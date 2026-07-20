@@ -8,7 +8,7 @@ import { AppCopy } from "@/app/components/AppCopy";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSectionTitle } from "@/app/components/AppSectionTitle";
 import { formatDisplayValue, getVisibleSchemaInputs } from "@/algorithms/schema/input-display";
-import type { JsonRecord } from "@/api/schemas/dtos";
+import type { JsonRecord } from "@/features/schemas/api/schema-types";
 
 type Props = {
   schema: unknown;

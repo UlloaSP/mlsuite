@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Building2, Check, ChevronsUpDown } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { Link, useNavigate } from "react-router";
-import { useSelectOrganization, useWorkspaceContext } from "@/api/workspace/hooks";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import { useSelectOrganization } from "@/features/workspace/api/workspace.mutations";
 import { cx } from "./cx";
 import { FOCUS_RING } from "./focus-ring";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";

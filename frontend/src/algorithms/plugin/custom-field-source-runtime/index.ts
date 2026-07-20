@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { defineFieldKind, type DefinedFieldKind } from "mlform/kit";
 import type { FieldConfig } from "mlform/runtime";
 import * as zod from "zod";
-import { memoizePluginRuntime } from "@/api/plugins/runtime-cache";
+import { memoizePluginRuntime } from "@/capabilities/mlform/plugin-runtime-cache";
 
 type TypeScriptModule = typeof import("typescript");
 type ZodModule = typeof zod;

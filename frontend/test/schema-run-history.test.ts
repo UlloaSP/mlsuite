@@ -9,11 +9,11 @@ import {
   getModelInputBulkSchema,
   toSchemaRunSerializedValues,
 } from "@/algorithms/schema/bulk-upload";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
-  SchemaVersionDto,
-} from "@/api/schemas/dtos";
+} from "@/features/schemas/api/prediction-types";
 
 const version: SchemaVersionDto = {
   id: "version-1",

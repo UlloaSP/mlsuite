@@ -7,7 +7,7 @@ import { LoaderCircle, Square, Upload } from "lucide-react";
 import { useRef, type ChangeEvent } from "react";
 import { AppButton } from "@/app/components/AppButton";
 import { useSchemaRunBulkUpload } from "@/schemas/hooks/use-schema-run-bulk-upload";
-import type { SchemaVersionDto } from "@/api/schemas/dtos";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 type Props = {
   version: SchemaVersionDto;

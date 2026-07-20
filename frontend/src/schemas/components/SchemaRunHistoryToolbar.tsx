@@ -7,7 +7,11 @@ import { CalendarDays, Search, SlidersHorizontal } from "lucide-react";
 import { AppSelect } from "@/app/components/AppSelect";
 import { AppTextField } from "@/app/components/AppTextField";
 import { AppToolbar } from "@/app/components/AppToolbar";
-import type { PredictionRunStatus, PredictionRunDto, SchemaVersionDto } from "@/api/schemas/dtos";
+import type {
+  PredictionRunDto,
+  PredictionRunStatus,
+} from "@/features/schemas/api/prediction-types";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { SchemaRunExportButton } from "./SchemaRunExportButton";
 
 export type SchemaRunStatusFilter = "all" | PredictionRunStatus;

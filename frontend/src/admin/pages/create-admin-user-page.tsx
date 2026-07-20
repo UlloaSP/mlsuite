@@ -8,7 +8,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useCreateAdminUser } from "@/features/admin/api/admin-user.mutations";
-import { useUser } from "@/api/user/hooks";
+import { useUser } from "@/features/user/api/user-session";
 import { AppButton } from "@/app/components/AppButton";
 import { AppIconButton } from "@/app/components/AppIconButton";
 import { AppPage } from "@/app/components/AppPage";

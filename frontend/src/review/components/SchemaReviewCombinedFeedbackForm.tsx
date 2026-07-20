@@ -16,10 +16,13 @@ import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
-  SchemaVersionDto,
-} from "@/api/schemas/dtos";
+} from "@/features/schemas/api/prediction-types";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { REVIEW_STEP_CONTEXT_EVENT } from "@/review/components/ReviewStepContextPanel";
-import * as api from "@/api/review/services";
+import {
+  createSchemaReviewFeedback,
+  updateSchemaReviewFeedback,
+} from "@/features/reviews/api/review-api";
 
 type Props = {
   token: string;
@@ -85,12 +88,12 @@ export function SchemaReviewCombinedFeedbackForm({
           steps.map(async (step) => {
             const stepValues = valuesForCombinedStep(values, step);
             if (step.feedback) {
-              await api.updateSchemaReviewFeedback(token, {
+              await updateSchemaReviewFeedback(token, {
                 feedbackId: step.feedback.id,
                 value: stepValues,
               });
             } else {
-              await api.createSchemaReviewFeedback(token, {
+              await createSchemaReviewFeedback(token, {
                 resultId: step.resultId,
                 type: step.type,
                 order: step.order,

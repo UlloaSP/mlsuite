@@ -9,7 +9,8 @@ import { NotFoundError } from "@/app/pages/error-page";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
 import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
-import { useOrganizationAdminDashboardQuery, useWorkspaceContext } from "@/api/workspace/hooks";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 
 const tabs = [
   { label: "Overview", value: "overview" },

@@ -6,13 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { FileDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/app/components/AppButton";
-import { usePredictionRunsFeedback } from "@/api/schemas/hooks";
+import { usePredictionRunsFeedback } from "@/features/schemas/api/schema-queries";
 import { buildSchemaRunExport, downloadSchemaRunExport } from "@/algorithms/schema/export";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
-  SchemaVersionDto,
-} from "@/api/schemas/dtos";
+} from "@/features/schemas/api/prediction-types";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { SchemaRunExportReviewModal } from "./SchemaRunExportReviewModal";
 import {
   selectedSchemaRunExportData,

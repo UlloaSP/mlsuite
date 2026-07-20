@@ -704,6 +704,30 @@
 - Preserved endpoints, payloads, query keys, five-second polling, abort propagation, cache invalidation, event guards, and terminal lifecycle.
 - Extended the existing infrastructure test file with remote-interface coverage for all endpoints plus HTTP, network, and cancellation errors.
 - Passed focused architecture/infrastructure tests (19/19), TypeScript, full frontend tests (158/158), release build, old-path audit, source line limits, and diff whitespace check.
+- `graphify update .` completed: 10,945 nodes, 31,083 edges, 348 communities.
 - `src/api` fell from 323 to 290 files. Remaining: schemas 98, workspace 95, models 36, review 25, plugins 20, user 16.
 - `vp check` remains blocked by nine pre-existing formatting violations outside this slice.
 - React Doctor reports 66/100 with 90 existing findings (4 errors, 86 warnings); no visual check was run because it was not requested.
+
+# Frontend Legacy API Full Removal
+
+- [x] Capture clean baseline and inventory all remaining `src/api` modules/imports.
+- [x] Migrate user identity and workspace context/resources to `capabilities/workspace-context`, `features/user/api`, and `features/workspace/api`.
+- [x] Migrate schema and review remote interfaces to `features/schemas/api` and `features/reviews/api`.
+- [x] Migrate model and plugin remote interfaces to `features/models/api`, `features/plugins/api`, and the existing MLForm capability where runtime ownership requires it.
+- [x] Reconcile cross-domain imports through concrete feature/capability modules without barrels or forwarding files.
+- [x] Delete `src/api`, remove `api` from architecture legacy roots, and prove no old references/exceptions remain.
+- [x] Run focused tests, TypeScript, full tests, build/check, React Doctor, line/diff/staging audits, and `graphify update .`.
+- [x] Record final ownership map, verification, and exact blockers.
+
+## Review
+
+- Removed all 290 remaining files under `src/api`; the root itself and every `@/api/` import are gone.
+- Replaced DTO/endpoint/hook ceremony with 39 named feature remote-interface modules plus four capability modules for workspace context and MLForm runtime cache.
+- Preserved transport URLs/payloads, tenant-aware keys, `AbortSignal`, polling, mutation reconciliation, workspace cache isolation, and plugin runtime invalidation.
+- Removed `api` from architecture legacy roots and added a fitness assertion that rejects recreating even an empty `src/api` directory.
+- Passed architecture/contract tests (37/37), TypeScript, full frontend tests (158/158), release build, old-path/barrel/dependency/line-limit audits, and diff whitespace check.
+- `graphify update .` completed: 10,678 nodes, 30,092 edges, 396 communities.
+- `vp check` remains blocked by five pre-existing formatting violations outside this slice.
+- React Doctor improved from 66/100 and 90 findings to 68/100 and 86 findings (4 errors, 82 warnings); no visual check was run because it was not requested.
+- Separate audit found 19 pre-existing TSX files with multiple JSX-bearing declarations; this slice changed imports only and did not expand into unrelated UI splitting.

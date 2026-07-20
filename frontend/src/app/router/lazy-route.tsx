@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { createElement, type ComponentType, type ReactNode } from "react";
-import type { WorkspacePermissionKey } from "@/api/workspace/dtos";
+import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context.types";
 import { RequireTeamPermission } from "@/workspace/components/RequireTeamPermission";
 import {
   RequireSuperadmin,

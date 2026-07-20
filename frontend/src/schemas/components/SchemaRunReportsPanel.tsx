@@ -10,7 +10,8 @@ import { AppPanel } from "@/app/components/AppPanel";
 import { AppSectionTitle } from "@/app/components/AppSectionTitle";
 import { getSchemaResultReports } from "@/algorithms/schema/report-display";
 import { schemaRunDebug } from "@/algorithms/schema/run-debug";
-import type { PredictionResultDto, SchemaVersionDto } from "@/api/schemas/dtos";
+import type { PredictionResultDto } from "@/features/schemas/api/prediction-types";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { SchemaRunReportRenderer } from "./SchemaRunReportRenderer";
 
 type Props = {

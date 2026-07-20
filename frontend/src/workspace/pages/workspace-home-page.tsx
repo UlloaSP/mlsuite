@@ -7,8 +7,8 @@ import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSectionTitle } from "@/app/components/AppSectionTitle";
 import { AppSurface } from "@/app/components/AppSurface";
-import { useGetModels } from "@/api/models/hooks";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useGetModels } from "@/features/models/api/model.queries";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 
 export function WorkspaceHomePage() {
   const { data: context } = useWorkspaceContext();

@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { formatTimestamp } from "@/algorithms/models/utils";
 import { useReviewTrayLayout } from "@/review/hooks/useReviewTrayLayout";
 import { ReviewPredictionTrayGroup } from "@/review/components/ReviewPredictionTrayGroup";
-import type { SchemaReviewRunListItemDto } from "@/api/review/services";
+import type { SchemaReviewRunListItemDto } from "@/features/reviews/api/review-types";
 
 type Props = {
   items: SchemaReviewRunListItemDto[];

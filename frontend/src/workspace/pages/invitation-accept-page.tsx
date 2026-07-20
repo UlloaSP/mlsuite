@@ -4,7 +4,7 @@ import { AppPage } from "@/app/components/AppPage";
 import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSurface } from "@/app/components/AppSurface";
-import { acceptInvitation, declineInvitation } from "@/api/workspace/services";
+import { acceptInvitation, declineInvitation } from "@/features/workspace/api/invitations.api";
 
 export function InvitationAcceptPage() {
   const navigate = useNavigate();

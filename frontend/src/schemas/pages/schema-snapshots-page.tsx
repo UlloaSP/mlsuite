@@ -9,19 +9,21 @@ import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
-import type { SchemaVersionDto } from "@/api/schemas/dtos";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import {
   useCreateSchemaBookmarkMutation,
-  useCreateSchemaDraftMutation,
   useDuplicateSchemaMutation,
+} from "@/features/schemas/api/schema-mutations";
+import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
+import {
   useSchema,
   useSchemaBookmarks,
   useSchemaDrafts,
   useSchemaVersions,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
 import { countVisibleSchemaFields } from "@/algorithms/schema/one-hot-category";
 import { schemaVersionId, sortSchemaVersions } from "@/algorithms/schema/version-selection";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { SchemaBookmarkDialog } from "@/schemas/components/SchemaBookmarkDialog";
 import { SchemaChangeNameDialog } from "@/schemas/components/SchemaChangeNameDialog";
 import { SchemaRepoNav } from "@/schemas/components/SchemaRepoNav";

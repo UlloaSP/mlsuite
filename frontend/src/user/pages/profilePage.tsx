@@ -9,10 +9,10 @@ import { AppPage } from "@/app/components/AppPage";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { ProfileBody } from "@/user/components/ProfileBody";
 import { ProfileHeader } from "@/user/components/ProfileHeader";
-import { useUser } from "@/api/user/hooks"; // Adjust the import path as necessary
+import { useUser } from "@/features/user/api/user-session";
 
 export function ProfilePage() {
   const { data: user, isError } = useUser();

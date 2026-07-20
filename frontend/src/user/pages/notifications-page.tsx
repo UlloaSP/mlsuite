@@ -5,7 +5,7 @@ import { AppPage } from "@/app/components/AppPage";
 import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSurface } from "@/app/components/AppSurface";
-import { usePendingInvitations } from "@/api/workspace/hooks";
+import { usePendingInvitations } from "@/features/workspace/api/workspace.queries";
 import { NotificationInvitationItem } from "@/user/components/NotificationInvitationItem";
 
 export function NotificationsPage() {

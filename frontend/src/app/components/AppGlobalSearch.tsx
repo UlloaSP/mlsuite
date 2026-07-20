@@ -4,7 +4,7 @@ import { Dialog } from "radix-ui";
 import { useAtom } from "jotai";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
-import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { isGlobalSearchShortcut } from "@/algorithms/search/shortcut";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { SearchResultGroup } from "@/features/search/components/SearchResultGroup";

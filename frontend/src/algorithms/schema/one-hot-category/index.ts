@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { getString, isRecord } from "@/algorithms/mlform/shared";
-import type { JsonRecord } from "@/api/schemas/dtos";
+import type { JsonRecord } from "@/features/schemas/api/schema-types";
 
 type Candidate = {
   base: string;

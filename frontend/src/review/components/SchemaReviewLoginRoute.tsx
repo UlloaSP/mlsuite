@@ -1,6 +1,6 @@
 import { Navigate, useParams } from "react-router";
 import { AuthLandingPage } from "@/app/pages/AuthLandingPage";
-import { useLogin, useUser } from "@/api/user/hooks";
+import { useLogin, useUser } from "@/features/user/api/user-session";
 
 export function SchemaReviewLoginRoute() {
   const { token = "" } = useParams<{ token: string }>();

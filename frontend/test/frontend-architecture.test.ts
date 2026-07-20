@@ -11,7 +11,7 @@ const CONTRACT = join(ROOT, "ARCHITECTURE.md");
 const AGENTS = join(ROOT, "AGENTS.md");
 const TARGET_ROOTS = new Set(["app", "shared", "capabilities", "features"]);
 const LEGACY_ROOTS = new Set(
-  "admin algorithms api editor models plugin review schemas user workspace".split(" "),
+  "admin algorithms editor models plugin review schemas user workspace".split(" "),
 );
 const ALLOWED_ROOTS = new Set([...TARGET_ROOTS, ...LEGACY_ROOTS]);
 const ALLOWED_ROOT_FILES = new Set(["vite-env.d.ts"]);
@@ -242,12 +242,8 @@ describe("frontend architecture contract", () => {
     ).toBe(true);
   });
 
-  test("does not add inverted dependencies to the legacy API layer", () => {
-    const failures = ALL_IMPORTS.filter((edge) => edge.importer.startsWith("api/"))
-      .filter((edge) => !["api", "shared"].includes(edge.target.split("/")[0]))
-      .map((edge) => `${edge.importer} -> ${edge.target}`);
-
-    expect(failures).toEqual([]);
+  test("does not recreate the removed legacy API root", () => {
+    expect(existsSync(join(SRC, "api"))).toBe(false);
   });
 
   test("keeps legacy algorithms free of React source files", () => {

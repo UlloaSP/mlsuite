@@ -1,8 +1,11 @@
 import {
-  WORKSPACE_CONTEXT_QUERY_KEY,
   organizationAdminDashboardQueryKey,
   organizationTeamsQueryKey,
-} from "@/api/workspace/hooks/query-keys";
+} from "@/features/workspace/api/workspace.keys";
+import {
+  WORKSPACE_CONTEXT_QUERY_KEY,
+  useWorkspaceContext,
+} from "@/capabilities/workspace-context/workspace-context";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Box, MoreHorizontal, Plus, Users, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -15,7 +18,7 @@ import { AppPage } from "@/app/components/AppPage";
 import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
-import { createTeam } from "@/api/workspace/services";
+import { createTeam } from "@/features/workspace/api/teams.api";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
 import { QuotaBar } from "@/workspace/components/admin/QuotaBar";
@@ -23,8 +26,7 @@ import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
 import {
   useOrganizationMembersQuery,
   useOrganizationTeamsQuery,
-  useWorkspaceContext,
-} from "@/api/workspace/hooks";
+} from "@/features/workspace/api/workspace.queries";
 
 export function TeamsPage() {
   const { organizationId = "" } = useParams();

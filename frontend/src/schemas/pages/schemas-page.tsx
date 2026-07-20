@@ -7,17 +7,17 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { SCHEMA_CATALOG_PAGE_SIZE } from "@/features/schemas/api/schema-keys";
 import {
-  SCHEMA_CATALOG_PAGE_SIZE,
   useArchiveSchemaMutation,
   useDeleteSchemaMutation,
   useDuplicateSchemaMutation,
   useRenameSchemaMutation,
-  useSchemaCatalogPageQuery,
-} from "@/api/schemas/hooks";
-import type { SchemaCatalogItemDto } from "@/api/schemas/dtos";
-import { useUser } from "@/api/user/hooks";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+} from "@/features/schemas/api/schema-mutations";
+import { useSchemaCatalogPageQuery } from "@/features/schemas/api/schema-queries";
+import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
+import { useUser } from "@/features/user/api/user-session";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppButton } from "@/app/components/AppButton";
 import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";

@@ -9,7 +9,11 @@ import { AppButton } from "@/app/components/AppButton";
 import { AppPage } from "@/app/components/AppPage";
 import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppSurface } from "@/app/components/AppSurface";
-import { useSchema, useSchemaBookmark, useSchemaVersion } from "@/api/schemas/hooks";
+import {
+  useSchema,
+  useSchemaBookmark,
+  useSchemaVersion,
+} from "@/features/schemas/api/schema-queries";
 import { SchemaSnapshotPreviewPanel } from "@/schemas/components/SchemaSnapshotPreviewPanel";
 
 export function SchemaBookmarkDetailPage() {

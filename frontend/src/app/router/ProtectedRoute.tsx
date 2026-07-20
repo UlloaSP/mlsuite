@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Navigate, Outlet } from "react-router";
-import { useUser } from "@/api/user/hooks";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useUser } from "@/features/user/api/user-session";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
 
 export function ProtectedRoute() {

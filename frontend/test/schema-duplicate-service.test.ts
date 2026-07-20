@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { beforeEach, describe, expect, it, vi, type Mock } from "vite-plus/test";
-import { duplicateSchema } from "@/api/schemas/services/duplicate-schema";
+import { duplicateSchema } from "@/features/schemas/api/schema-api";
 
 const { appFetch } = vi.hoisted(() => ({ appFetch: vi.fn() }));
 

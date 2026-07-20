@@ -11,21 +11,22 @@ import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSurface } from "@/app/components/AppSurface";
 import { invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
-import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { isRecord } from "@/algorithms/mlform/shared";
 import { SchemaRunForm } from "@/schemas/components/SchemaRunForm";
 import { SchemaRunSaveModal } from "@/schemas/components/SchemaRunSaveModal";
-import { createPredictionResultFeedback } from "@/api/schemas/services";
+import { createPredictionResultFeedback } from "@/features/schemas/api/schema-prediction-api";
+import { useCreatePredictionRunForBookmarkMutation } from "@/features/schemas/api/schema-prediction-mutations";
 import {
-  useCreatePredictionRunForBookmarkMutation,
   usePredictionRun,
   useSchema,
   useSchemaBookmark,
   useSchemaVersion,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
 import { prepareSchemaVersionDtoForUse } from "@/algorithms/schema/binding-rebase";
 import type { PendingFeedback } from "@/algorithms/schema/pending-feedback";
-import type { CreatePredictionRunRequest, JsonRecord } from "@/api/schemas/dtos";
+import type { CreatePredictionRunRequest } from "@/features/schemas/api/prediction-types";
+import type { JsonRecord } from "@/features/schemas/api/schema-types";
 
 export function CreateSchemaRunPage() {
   const organizationId = useCurrentOrganizationId() ?? "none";

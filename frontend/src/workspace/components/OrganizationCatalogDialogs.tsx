@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Ellipsis, Pencil, Share2, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { OrganizationMembershipRowDto } from "@/api/workspace/dtos";
+import type { OrganizationMembershipRowDto } from "@/features/workspace/api/workspace.types";
 import { AppButton } from "@/app/components/AppButton";
 import { AppIconButton } from "@/app/components/AppIconButton";
 import { cx } from "@/app/components/cx";

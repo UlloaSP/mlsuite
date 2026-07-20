@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { SchemaVersionDto } from "@/api/schemas/dtos";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 /**
  * schemaVersionId: performs the exported transformation for this algorithm.

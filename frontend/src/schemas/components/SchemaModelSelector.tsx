@@ -10,7 +10,7 @@ import { AppPanel } from "@/app/components/AppPanel";
 import { AppSectionTitle } from "@/app/components/AppSectionTitle";
 import { cx } from "@/app/components/cx";
 import { isRecord } from "@/algorithms/mlform/shared";
-import type { ModelDto } from "@/api/models/services";
+import type { ModelDto } from "@/features/models/api/model.types";
 import { getModelAlgorithmLabel } from "@/algorithms/models/utils";
 
 type Selection = {

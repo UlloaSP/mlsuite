@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Blocks, BrainCircuit, CalendarDays, ClipboardList, GitBranch, Users } from "lucide-react";
 import { useState } from "react";
-import type { OrganizationCatalogItemDto } from "@/api/workspace/dtos";
-import { useOrganizationMembersQuery } from "@/api/workspace/hooks";
+import type { OrganizationCatalogItemDto } from "@/features/workspace/api/workspace.types";
+import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 import { modifierName } from "@/algorithms/catalog/relative-time";
 import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 import {

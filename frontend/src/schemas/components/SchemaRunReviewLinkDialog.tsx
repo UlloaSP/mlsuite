@@ -13,9 +13,10 @@ import { formatTimestamp } from "@/algorithms/models/utils";
 import {
   useCreateSchemaReviewLinkMutation,
   useRevokeSchemaReviewLinkMutation,
-  useSchemaReviewLinks,
-} from "@/api/review/hooks";
-import type { PredictionRunDto, SchemaVersionDto } from "@/api/schemas/dtos";
+} from "@/features/reviews/api/review-mutations";
+import { useSchemaReviewLinks } from "@/features/reviews/api/review-queries";
+import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 type Props = {
   runs: PredictionRunDto[];

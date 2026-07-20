@@ -2,7 +2,10 @@ import { FileDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/app/components/AppButton";
 import { AppIconButton } from "@/app/components/AppIconButton";
-import type { PredictionResultFeedbackDto, PredictionRunDto } from "@/api/schemas/dtos";
+import type {
+  PredictionResultFeedbackDto,
+  PredictionRunDto,
+} from "@/features/schemas/api/prediction-types";
 import { SchemaRunExportRunRow } from "./SchemaRunExportRunRow";
 import {
   buildSchemaRunExportSummaries,

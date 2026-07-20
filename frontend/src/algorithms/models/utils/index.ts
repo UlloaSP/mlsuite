@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { ModelDto } from "@/api/models/services";
+import type { ModelDto } from "@/features/models/api/model.types";
 
 type JsonRecord = Record<string, unknown>;
 

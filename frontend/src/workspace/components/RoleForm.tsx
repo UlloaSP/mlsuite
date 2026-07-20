@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { AppButton } from "@/app/components/AppButton";
 import { AppTextArea } from "@/app/components/AppTextArea";
 import { AppTextField } from "@/app/components/AppTextField";
-import type { PermissionKey, RoleDefinitionDto } from "@/api/workspace/dtos";
+import type { PermissionKey, RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
 
 type RolePermission = {
   key: PermissionKey;

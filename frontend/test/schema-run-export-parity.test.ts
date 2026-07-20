@@ -5,11 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test } from "vite-plus/test";
 import { buildSchemaRunExport } from "@/algorithms/schema/export";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
-  SchemaVersionDto,
-} from "@/api/schemas/dtos";
+} from "@/features/schemas/api/prediction-types";
 
 const version: SchemaVersionDto = {
   id: "version-1",

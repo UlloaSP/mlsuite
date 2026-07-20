@@ -1,9 +1,12 @@
 import {
   ORGANIZATIONS_QUERY_KEY,
-  WORKSPACE_CONTEXT_QUERY_KEY,
   organizationDetailsQueryKey,
   organizationMembersQueryKey,
-} from "@/api/workspace/hooks/query-keys";
+} from "@/features/workspace/api/workspace.keys";
+import {
+  WORKSPACE_CONTEXT_QUERY_KEY,
+  useWorkspaceContext,
+} from "@/capabilities/workspace-context/workspace-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
@@ -16,12 +19,14 @@ import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
-import { transferOrganizationOwnership, updateOrganization } from "@/api/workspace/services";
+import {
+  transferOrganizationOwnership,
+  updateOrganization,
+} from "@/features/workspace/api/organizations.api";
 import {
   useOrganizationDetailsQuery,
   useOrganizationMembersQuery,
-  useWorkspaceContext,
-} from "@/api/workspace/hooks";
+} from "@/features/workspace/api/workspace.queries";
 
 export function OrganizationSettingsPage() {
   const { organizationId = "" } = useParams();

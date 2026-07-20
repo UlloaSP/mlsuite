@@ -11,15 +11,16 @@ import {
   SCHEMA_DRAFT_QUERY_KEY,
   SCHEMA_QUERY_KEY,
   SCHEMA_VERSION_QUERY_KEY,
-} from "@/api/schemas/hooks/query-keys";
+} from "@/features/schemas/api/schema-keys";
 import { createAppQueryClient } from "@/app/providers/query-client";
 import { HttpError } from "@/shared/api/http";
+import { organizationMembersQueryKey } from "@/features/workspace/api/workspace.keys";
+import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
+import { removeOrganizationCache } from "@/features/workspace/api/organization-cache";
 import {
-  organizationMembersQueryKey,
-  organizationQueryKey,
-} from "@/api/workspace/hooks/query-keys";
-import { removeOrganizationCache } from "@/api/workspace/hooks/organization-cache";
-import { invalidatePluginRuntimeCache, memoizePluginRuntime } from "@/api/plugins/runtime-cache";
+  invalidatePluginRuntimeCache,
+  memoizePluginRuntime,
+} from "@/capabilities/mlform/plugin-runtime-cache";
 import { classifyRouteError } from "@/app/router/route-error";
 
 type TenantDetailKey = (organizationId: number, resourceId: string) => readonly unknown[];

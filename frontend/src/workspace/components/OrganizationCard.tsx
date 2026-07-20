@@ -4,7 +4,10 @@ import { AppCopy } from "@/app/components/AppCopy";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSectionTitle } from "@/app/components/AppSectionTitle";
 import { RoleBadge } from "./RoleBadge";
-import type { OrganizationDto, OrganizationMembershipDto } from "@/api/workspace/dtos";
+import type {
+  OrganizationDto,
+  OrganizationMembershipDto,
+} from "@/capabilities/workspace-context/workspace-context.types";
 
 export function OrganizationCard({
   organization,

@@ -8,13 +8,20 @@ import { AppPage } from "@/app/components/AppPage";
 import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
-import { removeTeamMember, updateTeam, updateTeamMemberRole } from "@/api/workspace/services";
+import {
+  removeTeamMember,
+  updateTeam,
+  updateTeamMemberRole,
+} from "@/features/workspace/api/teams.api";
 import { MemberTable } from "@/workspace/components/MemberTable";
 import {
   organizationTeamMembersQueryKey,
   organizationTeamQueryKey,
-} from "@/api/workspace/hooks/query-keys";
-import { useOrganizationTeamMembersQuery, useOrganizationTeamQuery } from "@/api/workspace/hooks";
+} from "@/features/workspace/api/workspace.keys";
+import {
+  useOrganizationTeamMembersQuery,
+  useOrganizationTeamQuery,
+} from "@/features/workspace/api/workspace.queries";
 
 export function TeamDetailPage() {
   const { organizationId = "", teamId = "" } = useParams();

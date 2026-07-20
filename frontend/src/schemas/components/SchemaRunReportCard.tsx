@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { AppCopy } from "@/app/components/AppCopy";
 import { AppPanel } from "@/app/components/AppPanel";
 import { formatDisplayValue } from "@/algorithms/schema/input-display";
-import type { JsonRecord } from "@/api/schemas/dtos";
+import type { JsonRecord } from "@/features/schemas/api/schema-types";
 
 type Props = {
   label: string;

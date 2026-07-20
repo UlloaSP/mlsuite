@@ -1,13 +1,13 @@
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { appFetch, HttpError } from "@/shared/api/http";
-import { schemaReviewLinksQueryOptions } from "@/api/review/review-queries";
+import { schemaReviewLinksQueryOptions } from "@/features/reviews/api/review-queries";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
-import { organizationTeamsQueryOptions } from "@/api/workspace/workspace-queries";
+import { organizationTeamsQueryOptions } from "@/features/workspace/api/workspace.queries";
 
 const { getTeams } = vi.hoisted(() => ({ getTeams: vi.fn() }));
 
-vi.mock("@/api/workspace/services", () => ({ getTeams }));
+vi.mock("@/features/workspace/api/teams.api", () => ({ getTeams }));
 
 const client = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 

@@ -3,7 +3,7 @@ import { Navigate, useSearchParams } from "react-router";
 import { AppEmptyState } from "@/app/components/AppEmptyState";
 import { AppPage } from "@/app/components/AppPage";
 import { AppSurface } from "@/app/components/AppSurface";
-import { useUser } from "@/api/user/hooks";
+import { useUser } from "@/features/user/api/user-session";
 import { AlertsView } from "@/admin/infrastructure/components/AlertsView";
 import { LogsView } from "@/admin/infrastructure/components/LogsView";
 import { OverviewView } from "@/admin/infrastructure/components/OverviewView";

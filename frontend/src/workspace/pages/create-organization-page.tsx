@@ -16,9 +16,9 @@ import { AppTextArea } from "@/app/components/AppTextArea";
 import { AppTextField } from "@/app/components/AppTextField";
 import { NotFoundError } from "@/app/pages/error-page";
 import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
-import { useUser } from "@/api/user/hooks";
-import { useInvalidateOrganizationQueries } from "@/api/workspace/hooks";
-import { createOrganization } from "@/api/workspace/services";
+import { useUser } from "@/features/user/api/user-session";
+import { useInvalidateOrganizationQueries } from "@/features/workspace/api/workspace.mutations";
+import { createOrganization } from "@/features/workspace/api/organizations.api";
 import type { AdminUser } from "@/features/admin/api/admin-user.types";
 
 export function CreateOrganizationPage() {

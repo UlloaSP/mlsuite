@@ -6,15 +6,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import type { OrganizationCatalogItemDto } from "@/api/workspace/dtos";
+import type { OrganizationCatalogItemDto } from "@/features/workspace/api/workspace.types";
 import {
-  ORGANIZATION_CATALOG_PAGE_SIZE,
   useDeleteOrganizationMutation,
-  useOrganizationCatalogPageQuery,
   useRenameOrganizationMutation,
   useTransferOrganizationOwnershipMutation,
-} from "@/api/workspace/hooks";
-import { useUser } from "@/api/user/hooks";
+} from "@/features/workspace/api/workspace.mutations";
+import { ORGANIZATION_CATALOG_PAGE_SIZE } from "@/features/workspace/api/workspace.keys";
+import { useOrganizationCatalogPageQuery } from "@/features/workspace/api/workspace.queries";
+import { useUser } from "@/features/user/api/user-session";
 import { AppButton } from "@/app/components/AppButton";
 import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";

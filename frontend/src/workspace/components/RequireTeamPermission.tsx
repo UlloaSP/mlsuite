@@ -2,8 +2,8 @@ import type { PropsWithChildren } from "react";
 import { useParams } from "react-router";
 import { NotFoundError } from "@/app/pages/error-page";
 import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
-import type { TeamPermissionsDto } from "@/api/workspace/dtos";
-import { useTeamPermissions } from "@/api/workspace/hooks";
+import type { TeamPermissionsDto } from "@/features/workspace/api/workspace.types";
+import { useTeamPermissions } from "@/features/workspace/api/workspace.queries";
 
 export function RequireTeamPermission({
   permission,

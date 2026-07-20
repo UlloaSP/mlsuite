@@ -17,16 +17,18 @@ import type {
   SchemaDraftBindingDto,
   SchemaDraftChangeDto,
   SchemaDraftMergeSide,
-  SchemaModelBindingDto,
-} from "@/api/schemas/dtos";
+} from "@/features/schemas/api/draft-types";
+import type { SchemaModelBindingDto } from "@/features/schemas/api/schema-types";
 import {
   useMergeSchemaDraftMutation,
   usePublishSchemaDraftMutation,
+} from "@/features/schemas/api/schema-draft-mutations";
+import {
   useSchema,
   useSchemaDraft,
   useSchemaDraftDiff,
   useSchemaVersion,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
 import { SchemaMergeDiffViewer } from "@/schemas/components/SchemaMergeDiffViewer";
 
 export function SchemaDraftConflictPage() {

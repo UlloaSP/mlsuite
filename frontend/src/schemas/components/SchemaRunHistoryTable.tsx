@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppBadge } from "@/app/components/AppBadge";
 import { formatTimestamp, getPredictionShortId } from "@/algorithms/models/utils";
-import type { PredictionRunDto } from "@/api/schemas/dtos";
+import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 
 type Props = {
   runs: PredictionRunDto[];

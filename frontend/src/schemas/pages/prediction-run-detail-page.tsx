@@ -16,7 +16,7 @@ import {
   usePredictionRunFeedback,
   useSchema,
   useSchemaVersion,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-queries";
 import { SchemaRunInputsPanel } from "@/schemas/components/SchemaRunInputsPanel";
 import { SchemaRunFeedbackQuestionnaire } from "@/schemas/components/SchemaRunFeedbackQuestionnaire";
 import { SchemaRunDetailMetrics } from "@/schemas/components/SchemaRunDetailMetrics";

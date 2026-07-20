@@ -21,7 +21,7 @@ import { ReportQuestionnaireMount } from "@/models/components/ReportQuestionnair
 import {
   useCreatePredictionResultFeedbackMutation,
   useUpdatePredictionResultFeedbackMutation,
-} from "@/api/schemas/hooks";
+} from "@/features/schemas/api/schema-prediction-mutations";
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
@@ -30,8 +30,8 @@ import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
-  SchemaVersionDto,
-} from "@/api/schemas/dtos";
+} from "@/features/schemas/api/prediction-types";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 type Props = {
   run: PredictionRunDto;

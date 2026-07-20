@@ -1,4 +1,5 @@
-import { organizationRolesQueryKey } from "@/api/workspace/hooks/query-keys";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import { organizationRolesQueryKey } from "@/features/workspace/api/workspace.keys";
 import { useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Lock, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -16,12 +17,16 @@ import {
   deleteRole,
   duplicateRole,
   updateRole,
-} from "@/api/workspace/services";
+} from "@/features/workspace/api/roles.api";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { RoleDrawer } from "@/workspace/components/RoleDrawer";
 import { RoleForm } from "@/workspace/components/RoleForm";
-import { useOrganizationRolesQuery, useWorkspaceContext } from "@/api/workspace/hooks";
-import type { PermissionKey, RoleDefinitionDto, RoleTemplateDto } from "@/api/workspace/dtos";
+import { useOrganizationRolesQuery } from "@/features/workspace/api/workspace.queries";
+import type {
+  PermissionKey,
+  RoleDefinitionDto,
+  RoleTemplateDto,
+} from "@/features/workspace/api/workspace.types";
 
 type Tab = "roles" | "templates" | "permissions";
 

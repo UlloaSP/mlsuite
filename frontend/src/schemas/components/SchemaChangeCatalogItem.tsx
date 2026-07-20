@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import type { SchemaDraftDto } from "@/api/schemas/dtos";
+import type { SchemaDraftDto } from "@/features/schemas/api/draft-types";
 import { AppIconButton } from "@/app/components/AppIconButton";
 import { cx } from "@/app/components/cx";
 import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";

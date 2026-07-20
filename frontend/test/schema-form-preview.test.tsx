@@ -16,7 +16,7 @@ vi.mock("../src/algorithms/models/prediction-catalog-definitions", () => ({
     throw new Error("catalog failed");
   }),
 }));
-vi.mock("../src/api/workspace/hooks/use-current-organization-id", () => ({
+vi.mock("../src/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 1,
 }));
 

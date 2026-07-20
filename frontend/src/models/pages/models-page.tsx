@@ -7,16 +7,16 @@ import { Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
-  MODEL_CATALOG_PAGE_SIZE,
   useArchiveModelMutation,
   useDeleteModelMutation,
   useDuplicateModelMutation,
-  useModelCatalogPageQuery,
   useRenameModelMutation,
-} from "@/api/models/hooks";
-import type { ModelDto } from "@/api/models/services";
-import { useUser } from "@/api/user/hooks";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+} from "@/features/models/api/model.mutations";
+import { MODEL_CATALOG_PAGE_SIZE } from "@/features/models/api/model.keys";
+import { useModelCatalogPageQuery } from "@/features/models/api/model.queries";
+import type { ModelDto } from "@/features/models/api/model.types";
+import { useUser } from "@/features/user/api/user-session";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppButton } from "@/app/components/AppButton";
 import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";

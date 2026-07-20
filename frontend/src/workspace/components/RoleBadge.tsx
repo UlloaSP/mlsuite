@@ -3,8 +3,8 @@ import type {
   InvitationStatus,
   MembershipStatus,
   OrganizationRole,
-  TeamRole,
-} from "@/api/workspace/dtos";
+} from "@/capabilities/workspace-context/workspace-context.types";
+import type { TeamRole } from "@/features/workspace/api/workspace.types";
 
 type RoleValue = OrganizationRole | TeamRole | MembershipStatus | InvitationStatus;
 

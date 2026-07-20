@@ -9,8 +9,8 @@ import { AppPage } from "@/app/components/AppPage";
 import { AppPageHeader } from "@/app/components/PageHeader";
 import { NotFoundError } from "@/app/pages/error-page";
 import { emitErrorFromUnknown } from "@/app/utils/error-sink";
-import { useUser } from "@/api/user/hooks";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useUser } from "@/features/user/api/user-session";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import {
   applyInspectedBundleFiles,
   type InspectedBundleFile,
@@ -32,7 +32,7 @@ import {
   useCreateModelMutation,
   useInspectArtifactMutation,
   useMatchArtifactsMutation,
-} from "@/api/models/hooks";
+} from "@/features/models/api/model.mutations";
 
 let _nextId = 1;
 

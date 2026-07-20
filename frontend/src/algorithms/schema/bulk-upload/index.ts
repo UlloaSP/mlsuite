@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { mappedTarget, targetKey } from "@/algorithms/mlform/mapped-to";
-import type { JsonRecord, SchemaVersionDto } from "@/api/schemas/dtos";
+import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 type FieldRecord = JsonRecord & {
   id?: string;

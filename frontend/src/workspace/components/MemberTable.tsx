@@ -4,10 +4,10 @@ import { AppPanel } from "@/app/components/AppPanel";
 import { AppSelect } from "@/app/components/AppSelect";
 import { RoleBadge } from "./RoleBadge";
 import type {
-  MembershipRowActionsDto,
   MembershipStatus,
   RoleSummaryDto,
-} from "@/api/workspace/dtos";
+} from "@/capabilities/workspace-context/workspace-context.types";
+import type { MembershipRowActionsDto } from "@/features/workspace/api/workspace.types";
 
 type MemberTableRow = {
   id: number;

@@ -5,13 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ReportConfig } from "mlform/runtime";
 import type { DefinedReportKind } from "mlform/kit";
-import type { PluginDto } from "@/api/plugins/services";
+import type { PluginDto } from "@/features/plugins/api/plugin.types";
 import { detectPluginType, loadPlugins } from "@/algorithms/plugin/catalog-loader";
 import {
   CUSTOM_REPORT_COMPONENT,
   resolveCustomReportDefinition,
 } from "@/algorithms/plugin/custom-report-source-runtime";
-import { memoizePluginRuntime } from "@/api/plugins/runtime-cache";
+import { memoizePluginRuntime } from "@/capabilities/mlform/plugin-runtime-cache";
 
 export { CUSTOM_REPORT_COMPONENT };
 

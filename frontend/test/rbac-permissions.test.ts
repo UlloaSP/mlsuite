@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { invitationRoleOptions } from "@/algorithms/workspace/invitation-role-options";
-import type { RoleDefinitionDto } from "@/api/workspace/dtos";
+import type { RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
 
 const role = (
   id: number,

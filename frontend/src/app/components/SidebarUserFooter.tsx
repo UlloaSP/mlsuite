@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Bell, ChevronsUpDown, LogOut, ShieldCheck, User2 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { Link } from "react-router";
-import { useLogout, useUser } from "@/api/user/hooks";
-import { usePendingInvitations } from "@/api/workspace/hooks";
+import { useLogout, useUser } from "@/features/user/api/user-session";
+import { usePendingInvitations } from "@/features/workspace/api/workspace.queries";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarMenu } from "./app-sidebar/SidebarMenu";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";

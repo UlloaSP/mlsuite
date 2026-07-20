@@ -9,7 +9,7 @@ import { schemaNeedsPluginCatalog } from "@/capabilities/mlform/schema-plugin-re
 import { loadPredictionCatalogDefinitions } from "@/algorithms/models/prediction-catalog-definitions";
 import type { PredictionCatalogDefinitions } from "@/algorithms/models/prediction-catalog-definitions";
 import { schemaRunDebug, schemaRunDebugError } from "@/algorithms/schema/run-debug";
-import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 
 const emptyCatalog: PredictionCatalogDefinitions = {
   fieldDefinitions: [],

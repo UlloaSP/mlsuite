@@ -14,7 +14,7 @@ import {
 } from "@/features/admin/api/admin-user.mutations";
 import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
 import type { AdminUser } from "@/features/admin/api/admin-user.types";
-import { useUser } from "@/api/user/hooks";
+import { useUser } from "@/features/user/api/user-session";
 import { AppButton } from "@/app/components/AppButton";
 import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";

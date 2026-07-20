@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { useUser } from "@/api/user/hooks";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useUser } from "@/features/user/api/user-session";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { isTypingTarget, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
 import { cx } from "./cx";
 import { Kbd } from "./Kbd";

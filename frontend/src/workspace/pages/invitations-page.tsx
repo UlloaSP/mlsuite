@@ -1,7 +1,7 @@
 import {
   organizationInvitationCandidatesQueryKey,
   organizationInvitationsQueryKey,
-} from "@/api/workspace/hooks/query-keys";
+} from "@/features/workspace/api/workspace.keys";
 import { useQueryClient } from "@tanstack/react-query";
 import { Mail, RotateCcw, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -19,7 +19,7 @@ import {
   createInvitation,
   resendInvitation,
   revokeInvitation,
-} from "@/api/workspace/services";
+} from "@/features/workspace/api/invitations.api";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";
 import { StatusBadge } from "@/workspace/components/admin/StatusBadge";
@@ -30,10 +30,10 @@ import {
   useOrganizationInvitationsQuery,
   useOrganizationRolesQuery,
   useOrganizationTeamsQuery,
-  useWorkspaceContext,
-} from "@/api/workspace/hooks";
+} from "@/features/workspace/api/workspace.queries";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { invitationRoleOptions } from "@/algorithms/workspace/invitation-role-options";
-import type { InvitationStatus } from "@/api/workspace/dtos";
+import type { InvitationStatus } from "@/capabilities/workspace-context/workspace-context.types";
 
 const statuses: Array<InvitationStatus | "ALL"> = [
   "ALL",

@@ -3,17 +3,20 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { createPredictionRunForBookmark, getLastPredictionRunId } from "@/api/schemas/services";
+import {
+  createPredictionRunForBookmark,
+  getLastPredictionRunId,
+} from "@/features/schemas/api/schema-prediction-api";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type {
-  SchemaVersionDto,
   PredictionRunDto,
   CreatePredictionRunRequest,
-} from "@/api/schemas/dtos";
-import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/api/schemas/hooks/query-keys";
+} from "@/features/schemas/api/prediction-types";
+import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/features/schemas/api/schema-keys";
 import { createSchemaRunRuntime } from "@/algorithms/schema/runtime-assembly";
 import { isRecord } from "@/algorithms/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "@/algorithms/models/prediction-catalog-definitions";

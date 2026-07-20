@@ -8,7 +8,7 @@ import { AppButton } from "@/app/components/AppButton";
 import { AppCopy } from "@/app/components/AppCopy";
 import { AppPanel } from "@/app/components/AppPanel";
 import { AppSectionTitle } from "@/app/components/AppSectionTitle";
-import type { ModelDto } from "@/api/models/services";
+import type { ModelDto } from "@/features/models/api/model.types";
 import { formatTimestamp, getModelAlgorithmLabel } from "@/algorithms/models/utils";
 
 type ModelSummaryTabProps = {

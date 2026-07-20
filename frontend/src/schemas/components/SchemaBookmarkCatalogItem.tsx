@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal, History, Play, Tag } from "lucide-react";
 import { Link } from "react-router";
-import type { SchemaBookmarkDto } from "@/api/schemas/dtos";
+import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import { AppButton } from "@/app/components/AppButton";
 import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 

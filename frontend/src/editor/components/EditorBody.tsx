@@ -17,7 +17,7 @@ import {
   type CatalogReportDefinition,
 } from "@/algorithms/plugin/custom-report-catalog";
 import { invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
-import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { pluginCatalogVersionAtom } from "@/plugin/mlform/plugin-catalog-state";
 import { schemaNeedsPluginCatalog } from "@/capabilities/mlform/schema-plugin-requirement";
 import { mlformJsonSchema, validateMlformSchema } from "@/algorithms/mlform/schema-validation";

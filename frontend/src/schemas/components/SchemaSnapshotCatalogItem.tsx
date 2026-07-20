@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Copy, GitCommitHorizontal, MoreHorizontal, PencilLine, Tag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import type { SchemaVersionDto } from "@/api/schemas/dtos";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { schemaVersionId } from "@/algorithms/schema/version-selection";
 import { AppIconButton } from "@/app/components/AppIconButton";
 import { cx } from "@/app/components/cx";

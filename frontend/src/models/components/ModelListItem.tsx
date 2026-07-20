@@ -7,7 +7,7 @@ import { CalendarDays, Database, Rows3, ScrollText, TrendingUp } from "lucide-re
 import type { ReactNode } from "react";
 import { getModelAlgorithmLabel } from "@/algorithms/models/utils";
 import { modifierName } from "@/algorithms/catalog/relative-time";
-import type { ModelDto } from "@/api/models/services";
+import type { ModelDto } from "@/features/models/api/model.types";
 import { cx } from "@/app/components/cx";
 import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";

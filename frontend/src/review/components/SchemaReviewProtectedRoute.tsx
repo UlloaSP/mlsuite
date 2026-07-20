@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useParams } from "react-router";
-import { useUser } from "@/api/user/hooks";
+import { useUser } from "@/features/user/api/user-session";
 import { ReviewShell } from "@/review/components/ReviewShell";
 
 export function SchemaReviewProtectedRoute() {

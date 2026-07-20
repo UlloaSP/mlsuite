@@ -11,10 +11,10 @@ import { AppPageHeader } from "@/app/components/PageHeader";
 import { AppSurface } from "@/app/components/AppSurface";
 import { AppButton } from "@/app/components/AppButton";
 import { NotFoundError } from "@/app/pages/error-page";
-import { useUser } from "@/api/user/hooks";
-import { useWorkspaceContext } from "@/api/workspace/hooks";
+import { useUser } from "@/features/user/api/user-session";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { ModelSummaryTab } from "@/models/components/ModelSummaryTab";
-import { useGetModels } from "@/api/models/hooks";
+import { useGetModels } from "@/features/models/api/model.queries";
 import { findModelById, formatTimestamp, getModelAlgorithmLabel } from "@/algorithms/models/utils";
 
 export function ModelDetailPage() {
