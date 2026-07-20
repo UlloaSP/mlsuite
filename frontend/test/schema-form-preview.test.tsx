@@ -7,11 +7,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { createRoot, type Root } from "react-dom/client";
-import { SchemaFormPreview } from "@/schemas/components/SchemaFormPreview";
+import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-vi.mock("../src/algorithms/models/prediction-catalog-definitions", () => ({
+vi.mock("@/capabilities/mlform/prediction-catalog-definitions", () => ({
   loadPredictionCatalogDefinitions: vi.fn(async () => {
     throw new Error("catalog failed");
   }),

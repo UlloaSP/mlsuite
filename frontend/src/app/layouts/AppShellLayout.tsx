@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import type { PropsWithChildren } from "react";
-import { sidebarCollapsedAtom } from "@/app/atoms";
+import { sidebarCollapsedAtom } from "@/shared/ui/ui-state";
 import { AppGlobalSearch } from "@/app/components/AppGlobalSearch";
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/Sidebar";

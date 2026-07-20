@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { appFetch, HttpError } from "@/shared/api/http";
-import { schemaReviewLinksQueryOptions } from "@/features/reviews/api/review-queries";
+import { schemaReviewLinksQueryOptions } from "@/features/schemas/api/review-links";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { organizationTeamsQueryOptions } from "@/features/workspace/api/workspace.queries";
 

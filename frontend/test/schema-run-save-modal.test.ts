@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { buildPendingSchemaRunFeedback } from "@/algorithms/schema/pending-feedback";
-import type { SchemaFeedbackStep } from "@/algorithms/schema/feedback-steps";
+import { buildPendingSchemaRunFeedback } from "@/features/schemas/lib/pending-feedback";
+import type { SchemaFeedbackStep } from "@/capabilities/mlform/feedback-steps";
 
 const feedbackStep = (
   id: string,

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ButtonHTMLAttributes } from "react";
-import { cx } from "@/app/components/cx";
+import { cx } from "@/shared/ui/cx";
 
 export function PaginationLink({
   className,

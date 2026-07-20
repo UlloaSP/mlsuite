@@ -23,17 +23,6 @@ export const getPluginPage = (
 export const getPluginStats = (signal?: AbortSignal): Promise<PluginStatsDto> =>
   appFetch<PluginStatsDto>("/api/plugins/stats", { signal });
 
-export const getAllPlugins = async (size = 100): Promise<PluginDto[]> => {
-  const items: PluginDto[] = [];
-  let page = 0;
-  while (true) {
-    const response = await getPluginPage({ page, size });
-    items.push(...response.items);
-    if (!response.hasNext) return items;
-    page += 1;
-  }
-};
-
 export const uploadPlugin = (file: File): Promise<PluginDto> => {
   const formData = new FormData();
   formData.append("file", file);

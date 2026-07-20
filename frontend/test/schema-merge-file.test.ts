@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import { buildSchemaMergeFile } from "@/schemas/utils/schema-merge-file";
+import { buildSchemaMergeFile } from "@/features/schemas/lib/schema-merge-file";
 
 type Change = Parameters<typeof buildSchemaMergeFile>[0]["changes"][number];
 

@@ -6,8 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { describe, expect, test } from "vite-plus/test";
-import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
-import { createSchemaRunRuntime } from "@/algorithms/schema/runtime-assembly";
+import type { CatalogReportDefinition } from "@/capabilities/mlform/custom-report-catalog";
+import { createSchemaRunRuntime } from "@/capabilities/mlform/runtime-assembly";
 
 const findReport = (reports: readonly unknown[], id: string) =>
   reports.find(

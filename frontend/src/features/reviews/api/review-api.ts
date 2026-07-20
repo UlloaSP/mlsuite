@@ -1,26 +1,11 @@
 import { appFetch, json } from "@/shared/api/http";
 import type {
   CreateReviewFeedbackRequest,
-  CreateSchemaReviewLinkRequest,
   ReviewPredictionResultFeedbackDto,
   SchemaReviewLinkContextDto,
-  SchemaReviewLinkCreateResponse,
-  SchemaReviewLinkSummaryDto,
   SchemaReviewRunDetailDto,
   UpdateReviewFeedbackRequest,
 } from "./review-types";
-
-export const createSchemaReviewLink = (request: CreateSchemaReviewLinkRequest) =>
-  appFetch<SchemaReviewLinkCreateResponse>("/api/schema-review-links", json("POST", request));
-
-export const listSchemaReviewLinks = (schemaId: string, versionId: string, signal?: AbortSignal) =>
-  appFetch<SchemaReviewLinkSummaryDto[]>(
-    `/api/schema-review-links?schemaId=${encodeURIComponent(schemaId)}&versionId=${encodeURIComponent(versionId)}`,
-    { signal },
-  );
-
-export const revokeSchemaReviewLink = (id: number) =>
-  appFetch<void>(`/api/schema-review-links/${id}/revoke`, json("POST"));
 
 export const getSchemaReviewContext = (token: string, signal?: AbortSignal) =>
   appFetch<SchemaReviewLinkContextDto>(

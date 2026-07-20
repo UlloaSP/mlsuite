@@ -11,7 +11,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/workspace-home-page"),
+        () => import("@/app/pages/workspace-home-page"),
         "WorkspaceHomePage",
         workspacePage("canViewWorkspace"),
       ),
@@ -20,7 +20,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace/organizations",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/organizations-page"),
+        () => import("@/features/workspace/pages/organizations-page"),
         "OrganizationsPage",
         superadmin,
       ),
@@ -29,7 +29,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace/organizations/create",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/create-organization-page"),
+        () => import("@/app/pages/create-organization-page"),
         "CreateOrganizationPage",
         superadmin,
       ),
@@ -38,7 +38,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace/organizations/:organizationId",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/organization-admin-page"),
+        () => import("@/features/workspace/pages/organization-admin-page"),
         "OrganizationAdminPage",
         workspacePage("canViewOrganization"),
       ),
@@ -47,7 +47,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace/organizations/:organizationId/teams",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/teams-page"),
+        () => import("@/features/workspace/pages/teams-page"),
         "TeamsPage",
         workspacePage("canViewTeams"),
       ),
@@ -55,13 +55,13 @@ export const protectedPages: RouteObject[] = [
   {
     path: "workspace/organizations/:organizationId/teams/:teamId",
     lazy: () =>
-      lazyPage(() => import("@/workspace/pages/team-detail-page"), "TeamDetailPage", team),
+      lazyPage(() => import("@/features/workspace/pages/team-detail-page"), "TeamDetailPage", team),
   },
   {
     path: "workspace/organizations/:organizationId/members",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/members-page"),
+        () => import("@/features/workspace/pages/members-page"),
         "MembersPage",
         workspacePage("canViewMembers"),
       ),
@@ -70,7 +70,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace/organizations/:organizationId/invitations",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/invitations-page"),
+        () => import("@/features/workspace/pages/invitations-page"),
         "InvitationsPage",
         workspacePage("canViewInvitations"),
       ),
@@ -79,7 +79,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace/organizations/:organizationId/roles",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/roles-page"),
+        () => import("@/features/workspace/pages/roles-page"),
         "RolesPage",
         workspacePage("canViewMembers"),
       ),
@@ -88,7 +88,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace/organizations/:organizationId/settings",
     lazy: () =>
       lazyPage(
-        () => import("@/workspace/pages/organization-settings-page"),
+        () => import("@/features/workspace/pages/organization-settings-page"),
         "OrganizationSettingsPage",
         workspacePage("canViewOrganization"),
       ),
@@ -96,26 +96,34 @@ export const protectedPages: RouteObject[] = [
   {
     path: "invite/:token",
     lazy: () =>
-      lazyPage(() => import("@/workspace/pages/invitation-accept-page"), "InvitationAcceptPage"),
+      lazyPage(
+        () => import("@/features/workspace/pages/invitation-accept-page"),
+        "InvitationAcceptPage",
+      ),
   },
   {
     path: "profile",
-    lazy: () => lazyPage(() => import("@/user/pages/profilePage"), "ProfilePage"),
+    lazy: () => lazyPage(() => import("@/features/user/pages/profilePage"), "ProfilePage"),
   },
   {
     path: "notifications",
-    lazy: () => lazyPage(() => import("@/user/pages/notifications-page"), "NotificationsPage"),
+    lazy: () =>
+      lazyPage(() => import("@/features/workspace/pages/notifications-page"), "NotificationsPage"),
   },
   {
     path: "admin/users",
     lazy: () =>
-      lazyPage(() => import("@/admin/pages/admin-users-page"), "AdminUsersPage", superadmin),
+      lazyPage(
+        () => import("@/features/admin/pages/admin-users-page"),
+        "AdminUsersPage",
+        superadmin,
+      ),
   },
   {
     path: "admin/users/create",
     lazy: () =>
       lazyPage(
-        () => import("@/admin/pages/create-admin-user-page"),
+        () => import("@/features/admin/pages/create-admin-user-page"),
         "CreateAdminUserPage",
         superadmin,
       ),
@@ -124,7 +132,7 @@ export const protectedPages: RouteObject[] = [
     path: "admin/infrastructure",
     lazy: () =>
       lazyPage(
-        () => import("@/admin/infrastructure/pages/admin-infrastructure-page"),
+        () => import("@/features/infrastructure/pages/admin-infrastructure-page"),
         "AdminInfrastructurePage",
         superadmin,
       ),
@@ -133,7 +141,7 @@ export const protectedPages: RouteObject[] = [
     path: "models",
     lazy: () =>
       lazyPage(
-        () => import("@/models/pages/models-page"),
+        () => import("@/features/models/pages/models-page"),
         "ModelsPage",
         workspacePage("canViewModels"),
       ),
@@ -142,7 +150,7 @@ export const protectedPages: RouteObject[] = [
     path: "models/create",
     lazy: () =>
       lazyPage(
-        () => import("@/models/pages/create-model-page"),
+        () => import("@/features/models/pages/create-model-page"),
         "CreateModelPage",
         workspacePage("canCreateModels"),
       ),
@@ -151,7 +159,7 @@ export const protectedPages: RouteObject[] = [
     path: "models/:modelId",
     lazy: () =>
       lazyPage(
-        () => import("@/models/pages/model-detail-page"),
+        () => import("@/features/models/pages/model-detail-page"),
         "ModelDetailPage",
         workspacePage("canViewModels"),
       ),
@@ -160,7 +168,7 @@ export const protectedPages: RouteObject[] = [
     path: "plugins",
     lazy: () =>
       lazyPage(
-        () => import("@/plugin/catalog/pages/PluginCatalogPage"),
+        () => import("@/features/plugins/pages/PluginCatalogPage"),
         "PluginCatalogPage",
         workspacePage("canViewPlugins"),
       ),
@@ -169,7 +177,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schemas-page"),
+        () => import("@/features/schemas/pages/schemas-page"),
         "SchemasPage",
         workspacePage("canViewModels"),
       ),
@@ -178,7 +186,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/create",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/create-schema-page"),
+        () => import("@/app/pages/create-schema-page"),
         "CreateSchemaPage",
         workspacePage("canEditModels"),
       ),
@@ -187,7 +195,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-detail-page"),
+        () => import("@/features/schemas/pages/schema-detail-page"),
         "SchemaDetailPage",
         workspacePage("canViewModels"),
       ),
@@ -196,7 +204,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/changes",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-changes-page"),
+        () => import("@/features/schemas/pages/schema-changes-page"),
         "SchemaChangesPage",
         workspacePage("canViewModels"),
       ),
@@ -205,7 +213,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/bookmarks",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-bookmarks-page"),
+        () => import("@/features/schemas/pages/schema-bookmarks-page"),
         "SchemaBookmarksPage",
         workspacePage("canViewModels"),
       ),
@@ -214,7 +222,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/snapshots",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-snapshots-page"),
+        () => import("@/features/schemas/pages/schema-snapshots-page"),
         "SchemaSnapshotsPage",
         workspacePage("canViewModels"),
       ),
@@ -223,7 +231,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/drafts/:draftId",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-draft-editor-page"),
+        () => import("@/features/schemas/pages/schema-draft-editor-page"),
         "SchemaDraftEditorPage",
         workspacePage("canEditModels"),
       ),
@@ -232,7 +240,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/drafts/:draftId/conflicts",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-draft-conflict-page"),
+        () => import("@/features/schemas/pages/schema-draft-conflict-page"),
         "SchemaDraftConflictPage",
         workspacePage("canEditModels"),
       ),
@@ -241,7 +249,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/versions/:versionId",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-snapshot-detail-page"),
+        () => import("@/features/schemas/pages/schema-snapshot-detail-page"),
         "SchemaSnapshotDetailPage",
         workspacePage("canViewModels"),
       ),
@@ -250,7 +258,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/bookmarks/:bookmarkId",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-bookmark-detail-page"),
+        () => import("@/features/schemas/pages/schema-bookmark-detail-page"),
         "SchemaBookmarkDetailPage",
         workspacePage("canViewModels"),
       ),
@@ -259,7 +267,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/create",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/create-schema-run-page"),
+        () => import("@/features/schemas/pages/create-schema-run-page"),
         "CreateSchemaRunPage",
         workspacePage("canRunPredictions"),
       ),
@@ -268,7 +276,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/bookmarks/:bookmarkId/runs",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/schema-run-history-page"),
+        () => import("@/features/schemas/pages/schema-run-history-page"),
         "SchemaRunHistoryPage",
         workspacePage("canViewModels"),
       ),
@@ -277,7 +285,7 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/:runId",
     lazy: () =>
       lazyPage(
-        () => import("@/schemas/pages/prediction-run-detail-page"),
+        () => import("@/features/schemas/pages/prediction-run-detail-page"),
         "PredictionRunDetailPage",
         workspacePage("canViewModels"),
       ),

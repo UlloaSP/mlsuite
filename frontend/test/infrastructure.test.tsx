@@ -4,18 +4,18 @@ import {
   countHealthyServices,
   countProblemServices,
   getOverviewTimestamp,
-} from "@/algorithms/admin/infrastructure/dashboard-summary";
+} from "@/features/infrastructure/lib/dashboard-summary";
 import {
   appendLogLine,
   applyInfrastructureEvent,
   resolveSelectedService,
-} from "@/algorithms/admin/infrastructure/state";
+} from "@/features/infrastructure/lib/infrastructure-state";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
-import { buildWebSocketUrl } from "@/admin/infrastructure/ws/infrastructureSocket";
+import { buildWebSocketUrl } from "@/features/infrastructure/lib/infrastructure-socket";
 import {
   filterAndSortServices,
   serviceStatusCounts,
-} from "@/admin/infrastructure/components/services-view-model";
+} from "@/features/infrastructure/components/services-view-model";
 import {
   closeTerminalSession,
   createTerminalSession,

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Navigate, Outlet } from "react-router";
-import { useUser } from "@/features/user/api/user-session";
+import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
 

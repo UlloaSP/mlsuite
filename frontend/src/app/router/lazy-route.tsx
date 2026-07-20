@@ -5,11 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { createElement, type ComponentType, type ReactNode } from "react";
 import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context.types";
-import { RequireTeamPermission } from "@/workspace/components/RequireTeamPermission";
-import {
-  RequireSuperadmin,
-  RequireWorkspacePermission,
-} from "@/workspace/components/RequireWorkspacePermission";
+import { RequireTeamPermission } from "@/features/workspace/components/RequireTeamPermission";
+import { RequireWorkspacePermission } from "@/features/workspace/components/RequireWorkspacePermission";
+import { RequireSuperadmin } from "@/features/workspace/components/RequireSuperadmin";
 
 type Wrap = (element: ReactNode) => ReactNode;
 

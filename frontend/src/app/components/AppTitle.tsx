@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { HTMLAttributes } from "react";
-import { cx } from "./cx";
+import { cx } from "@/shared/ui/cx";
 
 export function AppTitle({ children, className }: HTMLAttributes<HTMLHeadingElement>) {
   return (

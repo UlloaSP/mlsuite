@@ -5,14 +5,14 @@ import { useAtom } from "jotai";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { isGlobalSearchShortcut } from "@/algorithms/search/shortcut";
+import { isGlobalSearchShortcut } from "@/shared/lib/global-search-shortcut";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { SearchResultGroup } from "@/features/search/components/SearchResultGroup";
 import { useDebouncedValue } from "@/features/search/lib/use-debounced-value";
-import { globalSearchOpenAtom } from "@/app/atoms";
-import { AppCopy } from "./AppCopy";
-import { cx } from "./cx";
-import { FOCUS_RING } from "./focus-ring";
+import { globalSearchOpenAtom } from "@/shared/ui/ui-state";
+import { AppCopy } from "@/shared/ui/AppCopy";
+import { cx } from "@/shared/ui/cx";
+import { FOCUS_RING } from "@/shared/ui/focus-ring";
 
 const isTypingTarget = (target: EventTarget | null) =>
   target instanceof HTMLElement &&

@@ -7,8 +7,8 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   getModelInputBulkSchema,
   toSchemaRunSerializedValues,
-} from "@/algorithms/schema/bulk-upload";
-import { parseCsvPredictionFile } from "@/algorithms/models/parse-csv-prediction-file";
+} from "@/features/schemas/lib/bulk-upload";
+import { parseCsvPredictionFile } from "@/capabilities/mlform/parse-csv-prediction-file";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 const version: SchemaVersionDto = {

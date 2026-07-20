@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronRight } from "lucide-react";
 import type { ComponentPropsWithoutRef } from "react";
-import { cx } from "@/app/components/cx";
+import { cx } from "@/shared/ui/cx";
 import { PaginationLink } from "./PaginationLink";
 
 export function PaginationNext({

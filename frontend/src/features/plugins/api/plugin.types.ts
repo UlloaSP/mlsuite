@@ -3,17 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export interface PluginDto {
-  id: string;
-  fileName: string;
-  contentType: string;
-  sizeBytes: number;
-  createdAt: string;
-  updatedAt: string;
+import type { PluginRuntimeSource } from "@/shared/api/plugin-runtime";
+
+export interface PluginDto extends PluginRuntimeSource {
   updatedByName?: string | null;
   updatedByEmail?: string | null;
   updatedByAvatarUrl?: string | null;
-  source: string;
   pluginType: "field" | "report" | "invalid";
   kind: string | null;
 }

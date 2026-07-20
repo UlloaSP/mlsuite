@@ -10,10 +10,7 @@ const SRC = join(ROOT, "src");
 const CONTRACT = join(ROOT, "ARCHITECTURE.md");
 const AGENTS = join(ROOT, "AGENTS.md");
 const TARGET_ROOTS = new Set(["app", "shared", "capabilities", "features"]);
-const LEGACY_ROOTS = new Set(
-  "admin algorithms editor models plugin review schemas user workspace".split(" "),
-);
-const ALLOWED_ROOTS = new Set([...TARGET_ROOTS, ...LEGACY_ROOTS]);
+const ALLOWED_ROOTS = TARGET_ROOTS;
 const ALLOWED_ROOT_FILES = new Set(["vite-env.d.ts"]);
 const FEATURE_PARTS = new Set("api lib components pages routes.tsx index.ts".split(" "));
 const SHARED_PARTS = new Set("api config ui lib".split(" "));
@@ -242,16 +239,21 @@ describe("frontend architecture contract", () => {
     ).toBe(true);
   });
 
-  test("does not recreate the removed legacy API root", () => {
-    expect(existsSync(join(SRC, "api"))).toBe(false);
-  });
+  test("does not recreate removed legacy source roots", () => {
+    const removedRoots = [
+      "admin",
+      "algorithms",
+      "api",
+      "editor",
+      "models",
+      "plugin",
+      "review",
+      "schemas",
+      "user",
+      "workspace",
+    ];
 
-  test("keeps legacy algorithms free of React source files", () => {
-    const failures = walk(join(SRC, "algorithms"))
-      .filter((file) => extname(file) !== ".ts")
-      .map(rel);
-
-    expect(failures).toEqual([]);
+    expect(removedRoots.filter((root) => existsSync(join(SRC, root)))).toEqual([]);
   });
 
   test("keeps source modules within the line limit", () => {

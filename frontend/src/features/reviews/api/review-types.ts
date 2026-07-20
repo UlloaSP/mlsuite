@@ -80,13 +80,6 @@ export type UpdateReviewFeedbackRequest = {
   value: unknown;
 };
 
-export type CreateSchemaReviewLinkRequest = {
-  schemaId: string;
-  versionId: string;
-  runIds: string[];
-  expiresAt?: string;
-};
-
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
@@ -97,35 +90,6 @@ export type SchemaReviewLinkContextDto = {
   schema: ReviewSchemaDto;
   schemaVersion: ReviewSchemaVersionDto;
   runs: SchemaReviewRunListItemDto[];
-};
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaReviewLinkCreateResponse = {
-  id: number;
-  url: string;
-  expiresAt: string;
-  runCount: number;
-};
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaReviewLinkSummaryDto = {
-  id: number;
-  schemaId: string;
-  versionId: string;
-  createdByEmail: string;
-  expiresAt: string;
-  revokedAt?: string | null;
-  createdAt: string;
-  token?: string | null;
-  runCount: number;
 };
 
 /*

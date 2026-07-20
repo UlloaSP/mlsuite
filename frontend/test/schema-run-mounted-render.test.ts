@@ -8,8 +8,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { mountSchemaRunForm } from "@/app/utils/mlform/schema-run-mount";
-import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import { mountSchemaRunForm } from "@/capabilities/mlform/schema-run-mount";
+import type { CatalogReportDefinition } from "@/capabilities/mlform/custom-report-catalog";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 

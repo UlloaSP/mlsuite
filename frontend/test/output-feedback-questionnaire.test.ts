@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import { createOutputFeedbackQuestionnaire } from "@/algorithms/models/output-feedback-questionnaire";
+import { createOutputFeedbackQuestionnaire } from "@/capabilities/mlform/output-feedback-questionnaire";
 
 describe("output feedback questionnaire", () => {
   test("uses category assessment for classifier", () => {

@@ -4,11 +4,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { buildSchemaRunExport } from "@/algorithms/schema/export";
+import { buildSchemaRunExport } from "@/features/schemas/lib/export";
 import {
   getModelInputBulkSchema,
   toSchemaRunSerializedValues,
-} from "@/algorithms/schema/bulk-upload";
+} from "@/features/schemas/lib/bulk-upload";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type {
   PredictionResultFeedbackDto,

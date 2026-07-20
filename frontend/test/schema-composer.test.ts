@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
-import { composeSchemaVersion } from "@/algorithms/schema/merge";
-import { countVisibleSchemaFields } from "@/algorithms/schema/one-hot-category";
+import { composeSchemaVersion } from "@/features/schemas/lib/merge";
+import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
 import type { ModelDto } from "@/features/models/api/model.types";
 
 const withMappedTo = (items: unknown[]): unknown[] =>

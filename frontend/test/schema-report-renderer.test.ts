@@ -4,10 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { normalizeAnalyzerPredictionResult } from "@/algorithms/mlform/analyzer-result-normalization";
-import { describeSchemaCustomReport } from "@/algorithms/schema/report-descriptor";
-import { getSchemaResultReports } from "@/algorithms/schema/report-display";
-import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
+import { normalizeAnalyzerPredictionResult } from "@/capabilities/mlform/analyzer-result-normalization";
+import { describeSchemaCustomReport } from "@/features/schemas/lib/report-descriptor";
+import { getSchemaResultReports } from "@/capabilities/mlform/report-display";
+import type { CatalogReportDefinition } from "@/capabilities/mlform/custom-report-catalog";
 
 const catalogReport = (): CatalogReportDefinition =>
   ({

@@ -14,9 +14,10 @@ import {
 } from "lucide-react";
 import { useAtom } from "jotai";
 import { useEffect, useEffectEvent } from "react";
-import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "@/app/atoms";
+import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "@/shared/ui/ui-state";
 import { isModShortcut, isTypingTarget } from "@/app/utils/keyboard-shortcuts";
-import { Kbd, KbdGroup } from "./Kbd";
+import { Kbd } from "./Kbd";
+import { KbdGroup } from "./KbdGroup";
 import { SidebarGroup } from "./app-sidebar/SidebarGroup";
 import { SidebarGroupContent } from "./app-sidebar/SidebarGroupContent";
 import { SidebarGroupLabel } from "./app-sidebar/SidebarGroupLabel";

@@ -7,7 +7,7 @@ This document is the mandatory architecture contract for `frontend/`.
 - Read it before creating, moving, or substantially changing frontend code.
 - `AGENTS.md` contains operational rules. This document explains module ownership, dependency direction, and placement decisions.
 - When this document conflicts with `frontend/AGENTS.md`, `AGENTS.md` wins.
-- The target structure is normative. The legacy structure is a temporary migration state, not a template for new code.
+- The target structure is normative; removed legacy roots must not be recreated.
 - Architecture fitness tests in `test/frontend-architecture.test.ts` enforce the mechanically checkable subset.
 
 ## Goals
@@ -28,7 +28,7 @@ The design optimizes for:
 - predictable dependency direction;
 - route-level loading and bundle isolation;
 - one source of truth for server state;
-- incremental migration without a flag day.
+- mechanically enforced ownership boundaries.
 
 It does not optimize for:
 
@@ -190,7 +190,7 @@ Do not create a cross-feature barrel to bypass this rule.
 
 ### `app/`
 
-`app/` is the composition root. It may import features, capabilities, shared modules, and temporary legacy entry points.
+`app/` is the composition root. It may import features, capabilities, and shared modules.
 
 It owns:
 
@@ -446,36 +446,18 @@ MLForm is a capability, not application-global infrastructure and not the MLSuit
 - known top-level source roots;
 - target dependency direction;
 - feature isolation;
-- no target-to-legacy imports outside `app` migration composition;
+- absence of removed legacy source roots;
 - no internal barrel imports in target modules;
-- only `.ts` source files inside legacy `src/algorithms`;
-- source line limit, with exact non-growing legacy baselines only;
+- source line limit without grandfathered exceptions;
 - existence and `AGENTS.md` linkage of this contract.
 
-An exception is grandfathered migration debt, not permission. It must identify an exact existing path and ceiling, cannot grow, and may only be removed. New or substantially edited files cannot claim an exception. When a violation falls back inside the contract, the test must fail until its stale exception is deleted.
+Architecture exceptions are not allowed. A violation must be fixed at its owning boundary; the fitness test must never be weakened to admit it.
 
-## Transitional Legacy Structure
+## Removed Legacy Structure
 
-Current legacy roots include:
+The former top-level domain, `api`, and `algorithms` roots have been removed. Source code may exist only under `app`, `shared`, `capabilities`, or `features` (plus the root Vite declaration). The fitness test explicitly rejects recreation of any removed root.
 
-```text
-admin algorithms api editor layout models plugin review router schemas search user workspace
-```
-
-They exist because the repository previously mixed domain folders with horizontal `api/` and `algorithms/` trees.
-
-During migration:
-
-- do not model new features after the legacy tree;
-- do not create another top-level legacy root;
-- do not move code into global `api/` or `algorithms/` when a vertical feature can own it;
-- a small bug fix may remain in legacy location when moving the whole seam would inflate risk;
-- a substantial change should migrate one coherent vertical slice;
-- never leave forwarding files, compatibility barrels, dead imports, or duplicate implementations after a move;
-- update source and tests in the same slice;
-- preserve query keys and public contracts unless behavior intentionally changes.
-
-The application composition root may import legacy entry points while migration is incomplete. New `shared`, `capabilities`, and `features` modules must never import legacy roots.
+Never leave forwarding files, compatibility barrels, dead imports, or duplicate implementations after a move. Preserve query keys and public contracts unless behavior intentionally changes.
 
 ## Placement Decision Tree
 
@@ -533,20 +515,9 @@ import type { SchemaDto } from "./index";
 useQuery({ queryKey: ["organizationMembers", id], queryFn: () => getMembers(id) });
 ```
 
-## Refactor Sequence
+## Refactor Practice
 
-Use vertical, compiling slices:
-
-1. Establish this contract and fitness test.
-2. Create `shared/api`, `shared/config`, and initial `shared/ui` interfaces.
-3. Make `app` the real composition root; absorb router/layout assembly.
-4. Pilot one small feature such as admin users or plugins.
-5. Migrate workspace and fix tenant-scoped Query interfaces.
-6. Migrate models.
-7. Extract real MLForm, editor, and feedback capabilities.
-8. Migrate schemas last because it has the widest runtime surface.
-9. Move routes into lazy feature route modules.
-10. Delete global legacy roots when empty.
+Use vertical, compiling slices that keep behavior, ownership, tests, and imports coherent. When a workflow spans features, compose it in `app` or extract a genuine capability; never restore a horizontal domain root.
 
 Never perform a repository-wide path rewrite without a computed move map and full test run.
 

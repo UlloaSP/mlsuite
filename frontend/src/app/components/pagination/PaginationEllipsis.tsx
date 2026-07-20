@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { MoreHorizontal } from "lucide-react";
 import type { ComponentPropsWithoutRef } from "react";
-import { cx } from "@/app/components/cx";
+import { cx } from "@/shared/ui/cx";
 
 export function PaginationEllipsis({ className, ...props }: ComponentPropsWithoutRef<"span">) {
   return (

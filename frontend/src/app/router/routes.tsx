@@ -35,15 +35,12 @@ export const routes: RouteObject[] = [
       {
         path: "review/:token/login",
         lazy: () =>
-          lazyPage(
-            () => import("@/review/components/SchemaReviewLoginRoute"),
-            "SchemaReviewLoginRoute",
-          ),
+          lazyPage(() => import("@/app/pages/schema-review-login-route"), "SchemaReviewLoginRoute"),
       },
       {
         lazy: () =>
           lazyPage(
-            () => import("@/review/components/SchemaReviewProtectedRoute"),
+            () => import("@/features/reviews/components/SchemaReviewProtectedRoute"),
             "SchemaReviewProtectedRoute",
           ),
         children: [
@@ -51,7 +48,7 @@ export const routes: RouteObject[] = [
             path: "review/:token",
             lazy: () =>
               lazyPage(
-                () => import("@/review/pages/review-workspace-page"),
+                () => import("@/features/reviews/pages/review-workspace-page"),
                 "SchemaReviewWorkspacePage",
               ),
           },
@@ -59,7 +56,7 @@ export const routes: RouteObject[] = [
             path: "review/:token/runs/:runToken",
             lazy: () =>
               lazyPage(
-                () => import("@/review/pages/review-workspace-page"),
+                () => import("@/features/reviews/pages/review-workspace-page"),
                 "SchemaReviewWorkspacePage",
               ),
           },

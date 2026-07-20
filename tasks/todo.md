@@ -731,3 +731,27 @@
 - `vp check` remains blocked by five pre-existing formatting violations outside this slice.
 - React Doctor improved from 66/100 and 90 findings to 68/100 and 86 findings (4 errors, 82 warnings); no visual check was run because it was not requested.
 - Separate audit found 19 pre-existing TSX files with multiple JSX-bearing declarations; this slice changed imports only and did not expand into unrelated UI splitting.
+
+# Frontend Direct Feature Roots Removal
+
+- [x] Capture the dependency/verification baseline and compute the complete move map.
+- [x] Move admin UI to `features/admin`, infrastructure UI/domain logic to `features/infrastructure`, and editor code to `capabilities/editor`.
+- [x] Move model and plugin UI/domain logic to `features/models` and `features/plugins`.
+- [x] Move review and schema UI/domain logic to `features/reviews` and `features/schemas`.
+- [x] Move user and workspace UI/domain logic to `features/user` and `features/workspace`.
+- [x] Relocate remaining cross-cutting MLForm/editor/search/catalog mechanisms to their target capability/shared owners.
+- [x] Reconcile app, source, and test imports; delete all migrated direct roots without forwarding files.
+- [x] Remove architecture migration exceptions for eliminated roots and assert they cannot return.
+- [x] Run focused architecture tests, TypeScript, full tests, build/check, line/diff audits, React Doctor, and `graphify update .`.
+- [x] Record final ownership map, verification, and exact blockers.
+
+## Review
+
+- `src` now contains only `app`, `capabilities`, `features`, and `shared`; all former direct domain roots plus `api` and `algorithms` are absent, with zero legacy alias imports and no forwarding files/barrels.
+- Admin, infrastructure, models, plugins, reviews, schemas, user, and workspace now own vertical UI/API/lib modules. Monaco and MLForm mechanisms live in named capabilities; generic UI, session seams, HTTP/plugin transport, relative-time, and keyboard mechanisms live at their permitted lower layer.
+- Cross-feature workflows are composed in `app` or adapted through structural capability inputs. Review-link management moved to the schema boundary while the external review portal remains isolated.
+- Removed the architecture legacy-root allowlist and its algorithms exception. The fitness test now explicitly rejects recreating every removed root; `ARCHITECTURE.md` documents the completed target state and disallows exceptions.
+- Split migrated helper components so touched feature files honor one React component per file; all source modules remain below 300 non-comment lines.
+- Passed architecture tests (9/9), TypeScript, full frontend tests (157/157), and release build. Old-path, root, target-barrel, line-limit, staging, and whitespace audits pass.
+- `vp check` is blocked only by the pre-existing formatting issue in `frontend/AGENTS.md`; all refactor code passes formatting. React Doctor reports 67/100 with 85 existing findings (4 errors, 81 warnings).
+- No visual check was run because it was not requested.

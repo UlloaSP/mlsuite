@@ -19,10 +19,10 @@ import {
 } from "lucide-react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { useUser } from "@/features/user/api/user-session";
+import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { isTypingTarget, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
-import { cx } from "./cx";
+import { cx } from "@/shared/ui/cx";
 import { Kbd } from "./Kbd";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
 import { INFRA_CHILDREN, isChildActive, type NavigationItem } from "./sidebar-navigation-support";
