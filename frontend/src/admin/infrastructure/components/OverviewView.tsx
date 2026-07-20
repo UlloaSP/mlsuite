@@ -7,7 +7,7 @@ import {
   toneForMetric,
 } from "@/algorithms/admin/infrastructure/dashboard-summary";
 import { formatBytes, formatPercent } from "@/algorithms/admin/infrastructure/formatters";
-import type { InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
+import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 import { KpiCard, SegmentedControl } from "./OverviewViewSupport";
 import { OverviewChartPanel } from "./OverviewChartPanel";
 import { OverviewServicePanels, OverviewSignalsPanel } from "./OverviewSidePanels";

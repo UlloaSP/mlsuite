@@ -4,7 +4,7 @@ import { AppBadge } from "@/app/components/AppBadge";
 import { AppButton } from "@/app/components/AppButton";
 import { AppSelect } from "@/app/components/AppSelect";
 import { cx } from "@/app/components/cx";
-import type { ServiceStatusDto } from "@/api/infrastructure/dtos";
+import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
 
 type Props = {
   services: ServiceStatusDto[];

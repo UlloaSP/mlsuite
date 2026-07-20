@@ -1,4 +1,4 @@
-import type { ServiceStatusDto } from "@/api/infrastructure/dtos";
+import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
 
 export type SortKey = "name" | "status" | "uptime" | "cpuPercent" | "memoryBytes";
 export type SortDir = "asc" | "desc";

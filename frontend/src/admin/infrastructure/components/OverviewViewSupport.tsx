@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import { cx } from "@/app/components/cx";
 import { formatBytes } from "@/algorithms/admin/infrastructure/formatters";
-import type { InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
+import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 
 export function KpiCard({
   label,

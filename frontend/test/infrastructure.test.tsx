@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   buildDashboardAlerts,
   countHealthyServices,
@@ -10,12 +10,25 @@ import {
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/algorithms/admin/infrastructure/state";
-import type { InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
+import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 import { buildWebSocketUrl } from "@/admin/infrastructure/ws/infrastructureSocket";
 import {
   filterAndSortServices,
   serviceStatusCounts,
 } from "@/admin/infrastructure/components/services-view-model";
+import {
+  closeTerminalSession,
+  createTerminalSession,
+  getInfrastructureOverview,
+  getServiceLogsSnapshot,
+  runServiceAction,
+} from "@/features/infrastructure/api/infrastructure.api";
+import { infrastructureKeys } from "@/features/infrastructure/api/infrastructure.keys";
+import {
+  infrastructureOverviewQueryOptions,
+  serviceLogsQueryOptions,
+} from "@/features/infrastructure/api/infrastructure.queries";
+import { HttpError } from "@/shared/api/http";
 
 const overview: InfrastructureOverviewDto = {
   aggregate: {
@@ -71,6 +84,14 @@ const overview: InfrastructureOverviewDto = {
     ],
   },
 };
+
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("infra helpers", () => {
   it("filters, sorts, and counts service rows", () => {
@@ -214,5 +235,56 @@ describe("infra helpers", () => {
     expect(alerts.some((alert) => alert.id === "stream")).toBe(true);
     expect(alerts.some((alert) => alert.id === "frontend")).toBe(true);
     expect(alerts.some((alert) => alert.id === "shell")).toBe(true);
+  });
+
+  it("preserves infrastructure query and transport contracts", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(overview))
+      .mockResolvedValueOnce(jsonResponse({ serviceName: "spring-app", lines: ["ready"] }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(jsonResponse({ sessionId: "term-1", wsPath: "/terminal/term-1" }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getInfrastructureOverview();
+    await getServiceLogsSnapshot("spring-app", 50);
+    await runServiceAction("spring-app", "RESTART");
+    await createTerminalSession("spring-app", 120, 40);
+    await closeTerminalSession("term-1");
+
+    expect(infrastructureOverviewQueryOptions().queryKey).toEqual(infrastructureKeys.all);
+    expect(serviceLogsQueryOptions("spring-app").queryKey).toEqual(
+      infrastructureKeys.logs("spring-app"),
+    );
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "http://localhost/api/admin/infrastructure/overview",
+      "http://localhost/api/admin/infrastructure/services/spring-app/logs?tail=50",
+      "http://localhost/api/admin/infrastructure/services/spring-app/actions",
+      "http://localhost/api/admin/infrastructure/terminal/sessions",
+      "http://localhost/api/admin/infrastructure/terminal/sessions/term-1",
+    ]);
+    expect(fetchMock.mock.calls[2]?.[1]).toEqual(
+      expect.objectContaining({ method: "POST", body: JSON.stringify({ action: "RESTART" }) }),
+    );
+  });
+
+  it("preserves HTTP, network, and cancellation failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse({ message: "Denied", status: 403 }, 403)),
+    );
+    const httpFailure = getInfrastructureOverview();
+    await expect(httpFailure).rejects.toBeInstanceOf(HttpError);
+    await expect(httpFailure).rejects.toMatchObject({ status: 403 });
+
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+    await expect(getInfrastructureOverview()).rejects.toMatchObject({ status: 0 });
+
+    const cancellation = new DOMException("cancelled", "AbortError");
+    const controller = new AbortController();
+    controller.abort(cancellation);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(cancellation));
+    await expect(getInfrastructureOverview(controller.signal)).rejects.toBe(cancellation);
   });
 });

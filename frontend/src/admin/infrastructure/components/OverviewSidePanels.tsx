@@ -10,7 +10,7 @@ import {
   countHealthyServices,
 } from "@/algorithms/admin/infrastructure/dashboard-summary";
 import { formatBytes } from "@/algorithms/admin/infrastructure/formatters";
-import type { InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
+import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 import { CountCell, MemoryBar, ServiceHealthSegment } from "./OverviewViewSupport";
 import { alertTone } from "@/algorithms/admin/infrastructure/alert-tone";
 

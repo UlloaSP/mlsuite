@@ -11,16 +11,20 @@ import { ServicesView } from "@/admin/infrastructure/components/ServicesView";
 import { TerminalView } from "@/admin/infrastructure/components/TerminalView";
 import {
   useInfrastructureOverview,
-  useServiceAction,
   useServiceLogsSnapshot,
-} from "@/api/infrastructure/hooks";
+} from "@/features/infrastructure/api/infrastructure.queries";
+import { useServiceAction } from "@/features/infrastructure/api/infrastructure.mutations";
 import {
   appendLogLine,
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/algorithms/admin/infrastructure/state";
-import { isOverviewSnapshotEvent, isServiceLogEvent } from "@/api/infrastructure/dtos";
-import type { InfrastructureEvent, InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
+import {
+  isOverviewSnapshotEvent,
+  isServiceLogEvent,
+  type InfrastructureEvent,
+  type InfrastructureOverviewDto,
+} from "@/features/infrastructure/api/infrastructure.types";
 import {
   openInfrastructureSocket,
   subscribeToServiceLogs,

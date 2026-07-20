@@ -685,3 +685,25 @@
 - `graphify update .` completed: 10,979 nodes, 31,192 edges, 345 communities.
 - `vp check` now has 10 pre-existing formatting blockers; three touched legacy files were normalized while updating their imports.
 - React Doctor remains at 67/100 with 91 existing findings (4 errors, 87 warnings); no visual check was run because it was not requested.
+
+# Frontend Infrastructure Feature API Vertical Slice
+
+- [x] Establish architecture baseline and inventory all 323 remaining `src/api` files by owner.
+- [x] Consolidate infrastructure contracts and event guards under `features/infrastructure/api`.
+- [x] Consolidate infrastructure HTTP transport, query keys/options, hooks, mutations, and terminal lifecycle without internal barrels.
+- [x] Update all admin/algorithm/test consumers to concrete feature modules.
+- [x] Delete `src/api/infrastructure`; audit old paths and architecture exceptions.
+- [x] Strengthen the single infrastructure contract test for migrated success and error behavior.
+- [x] Run focused/full tests, TypeScript, build/check, React Doctor, line/diff audits, and `graphify update .`.
+- [x] Record final review, remaining `src/api` inventory, and exact blockers.
+
+## Review
+
+- Established infrastructure as its own feature under `features/infrastructure/api`; admin only gates and composes it.
+- Replaced 33 shallow legacy files with five named modules for types/guards, transport, keys, queries, and mutations. No barrels or forwarding files remain.
+- Preserved endpoints, payloads, query keys, five-second polling, abort propagation, cache invalidation, event guards, and terminal lifecycle.
+- Extended the existing infrastructure test file with remote-interface coverage for all endpoints plus HTTP, network, and cancellation errors.
+- Passed focused architecture/infrastructure tests (19/19), TypeScript, full frontend tests (158/158), release build, old-path audit, source line limits, and diff whitespace check.
+- `src/api` fell from 323 to 290 files. Remaining: schemas 98, workspace 95, models 36, review 25, plugins 20, user 16.
+- `vp check` remains blocked by nine pre-existing formatting violations outside this slice.
+- React Doctor reports 66/100 with 90 existing findings (4 errors, 86 warnings); no visual check was run because it was not requested.

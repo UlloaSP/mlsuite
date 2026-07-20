@@ -1,9 +1,12 @@
-import { isOverviewDeltaEvent, isOverviewSnapshotEvent } from "@/api/infrastructure/dtos";
+import {
+  isOverviewDeltaEvent,
+  isOverviewSnapshotEvent,
+} from "@/features/infrastructure/api/infrastructure.types";
 import type {
   InfrastructureEvent,
   InfrastructureOverviewDto,
   ServiceLogEvent,
-} from "@/api/infrastructure/dtos";
+} from "@/features/infrastructure/api/infrastructure.types";
 
 /**
  * applyInfrastructureEvent: applies a deterministic transformation to the supplied data

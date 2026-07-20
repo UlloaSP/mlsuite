@@ -1,5 +1,8 @@
 import { getBackendBaseUrl } from "@/shared/config/runtime";
-import type { InfrastructureEvent, TerminalFrame } from "@/api/infrastructure/dtos";
+import type {
+  InfrastructureEvent,
+  TerminalFrame,
+} from "@/features/infrastructure/api/infrastructure.types";
 
 type SocketCallbacks<TMessage> = {
   onMessage: (event: TMessage) => void;

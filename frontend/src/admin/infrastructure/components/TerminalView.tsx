@@ -7,13 +7,13 @@ import { useEffect, useRef, useState } from "react";
 import { AppBadge } from "@/app/components/AppBadge";
 import { AppButton } from "@/app/components/AppButton";
 import { AppSelect } from "@/app/components/AppSelect";
-import { closeTerminalSession } from "@/api/infrastructure/services";
-import { useTerminalSession } from "@/api/infrastructure/hooks";
+import { closeTerminalSession } from "@/features/infrastructure/api/infrastructure.api";
+import { useTerminalSession } from "@/features/infrastructure/api/infrastructure.mutations";
 import {
   openTerminalSocket,
   sendTerminalFrame,
 } from "@/admin/infrastructure/ws/infrastructureSocket";
-import type { ServiceStatusDto } from "@/api/infrastructure/dtos";
+import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
 
 type Props = {
   services: ServiceStatusDto[];

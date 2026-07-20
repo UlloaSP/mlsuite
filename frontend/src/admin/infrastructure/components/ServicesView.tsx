@@ -9,7 +9,7 @@ import {
   labelForServiceHealth,
   toneForServiceStatus,
 } from "@/algorithms/admin/infrastructure/status";
-import type { ServiceStatusDto } from "@/api/infrastructure/dtos";
+import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
 import { SegmentedControl } from "./ServicesSegmentedControl";
 import { SortTh } from "./ServicesSortTh";
 import { ActionBtn } from "./ServicesViewSupport";

@@ -678,3 +678,8 @@
 
 - Correction: frontend build used floating Vite+ versions, non-frozen Docker installs, preserved stale output, and suppressed the toolchain's preferred React transform.
 - Rule: pin build-tool versions across package metadata and containers, enforce the lockfile in Docker, accept clean output defaults, and never suppress migration guidance without a measured incompatibility.
+
+# Infrastructure Feature Ownership
+
+- Correction: frontend infrastructure remote state was grouped under admin because its routes require admin access, but authorization does not define domain ownership.
+- Rule: infrastructure owns its feature modules under `features/infrastructure`; admin may gate or compose them but must not absorb their transport, contracts, queries, or runtime lifecycle.
