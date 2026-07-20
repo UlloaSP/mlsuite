@@ -63,7 +63,15 @@ export function AppPageHeader({
           {actionNodes.length > 0 ? (
             <div className="grid shrink-0 grid-cols-2 gap-2">
               {actionNodes.map((actionNode, index) => (
-                <div key={index} className={ACTION_POSITIONS[index]}>
+                <div
+                  key={
+                    isValidElement(actionNode)
+                      ? (actionNode.key ??
+                        String((actionNode.props as { children?: ReactNode }).children))
+                      : String(actionNode)
+                  }
+                  className={ACTION_POSITIONS[index]}
+                >
                   {actionNode}
                 </div>
               ))}

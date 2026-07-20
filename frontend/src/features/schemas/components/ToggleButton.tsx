@@ -71,9 +71,9 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
             `}
         >
           <motion.div
+            layout="size"
             animate={{
               x: progressProps.x,
-              width: progressProps.width,
             }}
             transition={{
               duration: 1,
@@ -84,6 +84,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
             } shadow-[var(--shadow-card)]`}
             style={{
               top: 4,
+              width: progressProps.width,
             }}
           >
             <div className="flex h-full w-full items-center justify-center text-white">

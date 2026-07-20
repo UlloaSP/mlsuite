@@ -66,6 +66,8 @@ export function InvitationsPage() {
       ),
     [invitations, query, status],
   );
+  const selectedIds = useMemo(() => new Set(selected), [selected]);
+  const teamsById = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
   if (workspace && !workspace.permissions.canViewInvitations) return <NotFoundError />;
   const roleOptions = invitationRoleOptions(
     roles?.roles ?? [],
@@ -172,7 +174,7 @@ export function InvitationsPage() {
                       aria-label={`Select invitation ${invite.email}`}
                       className="mr-3"
                       type="checkbox"
-                      checked={selected.includes(invite.id)}
+                      checked={selectedIds.has(invite.id)}
                       onChange={(event) =>
                         setSelected((current) =>
                           event.target.checked
@@ -186,7 +188,11 @@ export function InvitationsPage() {
                   <td>
                     <RoleBadge value={invite.roleDefinition?.name ?? invite.role} />
                   </td>
-                  <td>{teams.find((team) => team.id === invite.teamId)?.name ?? "No team"}</td>
+                  <td>
+                    {invite.teamId === null || invite.teamId === undefined
+                      ? "No team"
+                      : (teamsById.get(invite.teamId) ?? "No team")}
+                  </td>
                   <td>
                     <StatusBadge value={invite.status} />
                   </td>

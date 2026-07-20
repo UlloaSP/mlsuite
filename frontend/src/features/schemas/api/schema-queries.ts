@@ -1,12 +1,6 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { keepPreviousData, queryOptions, useQueries, useQuery } from "@tanstack/react-query";
-import {
-  getSchema,
-  getSchemaPage,
-  getSchemas,
-  getSchemaVersion,
-  getSchemaVersions,
-} from "./schema-api";
+import { getSchema, getSchemaPage, getSchemaVersion, getSchemaVersions } from "./schema-api";
 import { getSchemaBookmark, getSchemaBookmarks } from "./schema-bookmark-api";
 import { getSchemaDraft, getSchemaDraftDiff, getSchemaDrafts } from "./schema-draft-api";
 import {
@@ -25,7 +19,6 @@ import {
   SCHEMA_DRAFTS_QUERY_KEY,
   SCHEMA_DRAFT_DIFF_QUERY_KEY,
   SCHEMA_DRAFT_QUERY_KEY,
-  SCHEMAS_QUERY_KEY,
   SCHEMA_QUERY_KEY,
   SCHEMA_VERSIONS_QUERY_KEY,
   SCHEMA_VERSION_QUERY_KEY,
@@ -33,12 +26,6 @@ import {
 } from "./schema-keys";
 
 type Scope = number | string;
-
-export const schemasQueryOptions = (organizationId: Scope) =>
-  queryOptions({
-    queryKey: SCHEMAS_QUERY_KEY(organizationId),
-    queryFn: ({ signal }) => getSchemas(signal),
-  });
 
 export const schemaCatalogPageQueryOptions = (
   organizationId: Scope | undefined,
@@ -132,11 +119,6 @@ export const predictionResultFeedbackQueryOptions = (organizationId: Scope, resu
     enabled: Boolean(resultId),
   });
 
-export const useSchemas = () => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(schemasQueryOptions(organizationId));
-};
-
 export const useSchema = (schemaId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery(schemaQueryOptions(organizationId, schemaId));
@@ -192,14 +174,6 @@ export const usePredictionRunsForBookmark = (bookmarkId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery({
     ...bookmarkPredictionRunsQueryOptions(organizationId, bookmarkId),
-    placeholderData: [],
-  });
-};
-
-export const usePredictionResultFeedback = (resultId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
-    ...predictionResultFeedbackQueryOptions(organizationId, resultId),
     placeholderData: [],
   });
 };

@@ -51,8 +51,11 @@ export function applyInspectedBundleFiles(
 ): ApplyResult {
   const next = previous.map((bundle) => ({ ...bundle }));
   let nextId = firstId;
-  const dataframes = inspected.filter((item) => item.kind === "dataframe").map((item) => item.file);
-  const models = inspected.filter((item) => item.kind === "model").map((item) => item.file);
+  const dataframes: File[] = [];
+  const models: File[] = [];
+  for (const item of inspected) {
+    (item.kind === "model" ? models : dataframes).push(item.file);
+  }
   const match = options.match;
   const matchModels = options.matchModels ?? models;
   const matchDataframes = options.matchDataframes ?? dataframes;

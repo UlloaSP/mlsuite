@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Hash } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -22,38 +22,44 @@ import { useInvalidateOrganizationQueries } from "@/features/workspace/api/works
 import { createOrganization } from "@/features/workspace/api/organizations.api";
 import type { AdminUser } from "@/features/admin/api/admin-user.types";
 
+const EMPTY_USERS: AdminUser[] = [];
+
 export function CreateOrganizationPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: usersPage } = useAdminUsers();
-  const users = usersPage?.items ?? [];
+  const users = usersPage?.items ?? EMPTY_USERS;
   const invalidateOrganizations = useInvalidateOrganizationQueries();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [owner, setOwner] = useState<AdminUser | null>(null);
-  const [ownerInitialized, setOwnerInitialized] = useState(false);
-  const [slugEdited, setSlugEdited] = useState(false);
+  const ownerInitializedRef = useRef(false);
+  const slugEditedRef = useRef(false);
   const [saving, setSaving] = useState(false);
   const ownerItems = useMemo(
     () =>
-      users
-        .filter((item) => item.enabled)
-        .map((item) => ({
-          id: item.id,
-          label: item.fullName,
-          description: item.email,
-          avatarUrl: item.avatarUrl,
-        })),
+      users.flatMap((item) =>
+        item.enabled
+          ? [
+              {
+                id: item.id,
+                label: item.fullName,
+                description: item.email,
+                avatarUrl: item.avatarUrl,
+              },
+            ]
+          : [],
+      ),
     [users],
   );
 
   useEffect(() => {
-    if (!ownerInitialized && user && users.length) {
+    if (!ownerInitializedRef.current && user && users.length) {
       setOwner(users.find((item) => item.id === Number(user.id)) ?? null);
-      setOwnerInitialized(true);
+      ownerInitializedRef.current = true;
     }
-  }, [ownerInitialized, user, users]);
+  }, [user, users]);
 
   if (!user || error) return <NotFoundError />;
   if (user.systemRole !== "SUPERADMIN") return <NotFoundError />;
@@ -81,11 +87,11 @@ export function CreateOrganizationPage() {
 
   const updateName = (value: string) => {
     setName(value);
-    if (!slugEdited) setSlug(slugify(value));
+    if (!slugEditedRef.current) setSlug(slugify(value));
   };
 
   const updateSlug = (value: string) => {
-    setSlugEdited(true);
+    slugEditedRef.current = true;
     setSlug(slugify(value));
   };
 

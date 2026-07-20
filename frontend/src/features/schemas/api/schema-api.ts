@@ -50,9 +50,6 @@ export const getSchemaPage = (
   return appFetch<SchemaPageDto>(`/api/schemas?${params.toString()}`, { signal });
 };
 
-export const getSchemas = (signal?: AbortSignal): Promise<SchemaDto[]> =>
-  appFetch<SchemaDto[]>("/api/schemas/all", { signal });
-
 export const getSchema = (schemaId: string, signal?: AbortSignal): Promise<SchemaDto> =>
   appFetch<SchemaDto>(`/api/schemas/${encodeURIComponent(schemaId)}`, { signal });
 

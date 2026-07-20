@@ -108,16 +108,3 @@ export const readFileText = (file: File): Promise<string> =>
     reader.onerror = () => reject(reader.error ?? new Error("Could not read selected file."));
     reader.readAsText(file);
   });
-
-/**
- * formatTimestamp: converts raw data into a stable human-readable string
- *
- * Purpose: models plugin catalog page filters, labels, display metadata, and file/timestamp helpers.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
-export const formatTimestamp = (value: string): string => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-};

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppPage } from "@/shared/ui/AppPage";
@@ -52,10 +52,7 @@ export function CreateSchemaRunPage() {
     reportsPending: boolean;
   } | null>(null);
   const [defaultName] = useState(`run-${new Date().toISOString()}`);
-  const initialInputsRef = useRef<JsonRecord | undefined>(undefined);
-  if (!initialInputsRef.current && sourceRun) {
-    initialInputsRef.current = sourceRun.inputData;
-  }
+  const initialInputs = sourceRun?.inputData;
 
   useEffect(() => {
     invalidatePluginCatalog(organizationId);
@@ -128,7 +125,7 @@ export function CreateSchemaRunPage() {
           <div className="min-h-0 flex-1 overflow-hidden">
             <SchemaRunForm
               version={executableVersion}
-              initialInputs={initialInputsRef.current}
+              initialInputs={initialInputs}
               onSubmit={handleSubmit}
               onResultUpdate={handleResultUpdate}
             />

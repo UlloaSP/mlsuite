@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -28,19 +28,13 @@ import { BundleCard } from "@/features/models/components/BundleCard";
 import { BundleDropZone } from "@/features/models/components/BundleDropZone";
 import { BundleEmptyState } from "@/features/models/components/BundleEmptyState";
 import { BundleSummaryPanel } from "@/features/models/components/BundleSummaryPanel";
-import {
-  useCreateModelMutation,
-  useInspectArtifactMutation,
-  useMatchArtifactsMutation,
-} from "@/features/models/api/model.mutations";
-
-let _nextId = 1;
+import { useCreateModelMutation } from "@/features/models/api/model.mutations";
+import { inspectArtifact, matchArtifacts } from "@/features/models/api/model.api";
 
 export function CreateModelPage() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
+  const nextIdRef = useRef(1);
   const mutation = useCreateModelMutation();
-  const { mutateAsync: inspectArtifact } = useInspectArtifactMutation();
-  const { mutateAsync: matchArtifacts } = useMatchArtifactsMutation();
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
@@ -67,18 +61,17 @@ export function CreateModelPage() {
       );
 
       const accepted = inspected.filter((item): item is InspectedBundleFile => item !== null);
-      const incomingModels = accepted
-        .filter((item) => item.kind === "model")
-        .map((item) => item.file);
-      const incomingDataframes = accepted
-        .filter((item) => item.kind === "dataframe")
-        .map((item) => item.file);
-      const existingModels = bundles
-        .map((bundle) => bundle.modelFile)
-        .filter((file): file is File => Boolean(file));
-      const existingDataframes = bundles
-        .map((bundle) => bundle.dfFile)
-        .filter((file): file is File => Boolean(file));
+      const incomingModels: File[] = [];
+      const incomingDataframes: File[] = [];
+      for (const item of accepted) {
+        (item.kind === "model" ? incomingModels : incomingDataframes).push(item.file);
+      }
+      const existingModels: File[] = [];
+      const existingDataframes: File[] = [];
+      for (const bundle of bundles) {
+        if (bundle.modelFile) existingModels.push(bundle.modelFile);
+        if (bundle.dfFile) existingDataframes.push(bundle.dfFile);
+      }
       const matchModels = [...existingModels, ...incomingModels];
       const matchDataframes = [...existingDataframes, ...incomingDataframes];
       const match =
@@ -91,17 +84,18 @@ export function CreateModelPage() {
             )
           : undefined;
 
-      setBundles((prev) => {
-        const result = applyInspectedBundleFiles(prev, accepted, _nextId, {
-          match,
-          matchModels,
-          matchDataframes,
-        });
-        _nextId = result.nextId;
-        return result.bundles;
-      });
+      const firstId = nextIdRef.current;
+      nextIdRef.current += accepted.length;
+      setBundles(
+        (prev) =>
+          applyInspectedBundleFiles(prev, accepted, firstId, {
+            match,
+            matchModels,
+            matchDataframes,
+          }).bundles,
+      );
     },
-    [bundles, inspectArtifact, matchArtifacts],
+    [bundles],
   );
 
   // ── Bundle actions ───────────────────────────────────────────────────────
@@ -192,9 +186,9 @@ export function CreateModelPage() {
 
   const saveAll = async () => {
     const unsaved = bundles.filter((b) => b.modelFile && b.name.trim() && !b.saved && !b.saving);
-    for (const bundle of unsaved) {
-      await saveBundle(bundle.id, { navigateWhenComplete: false });
-    }
+    await Promise.all(
+      unsaved.map((bundle) => saveBundle(bundle.id, { navigateWhenComplete: false })),
+    );
     navigate("/models");
   };
 

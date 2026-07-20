@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cx } from "@/shared/ui/cx";
 
 export type OrganizationPatch = {
@@ -30,6 +30,12 @@ export function EditableText({
   value: string;
 }) {
   const [draft, setDraft] = useState(value);
+  const label =
+    as === "description"
+      ? "Organization description"
+      : as === "title"
+        ? "Organization name"
+        : "Organization slug";
   const submit = async () => {
     const next = draft.trim();
     onCancel();
@@ -44,11 +50,10 @@ export function EditableText({
     }
   };
 
-  useEffect(() => setDraft(value), [value]);
-
   if (editing) {
     return as === "description" ? (
       <textarea
+        aria-label={label}
         value={draft}
         autoFocus
         onChange={(event) => setDraft(event.target.value)}
@@ -57,6 +62,7 @@ export function EditableText({
       />
     ) : (
       <input
+        aria-label={label}
         value={draft}
         autoFocus
         onChange={(event) => setDraft(event.target.value)}
@@ -80,7 +86,10 @@ export function EditableText({
     <button
       type="button"
       disabled={disabled}
-      onClick={onEdit}
+      onClick={() => {
+        setDraft(value);
+        onEdit();
+      }}
       className={cx(
         "block max-w-full truncate text-left hover:underline",
         as === "title"

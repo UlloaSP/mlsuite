@@ -50,6 +50,7 @@ export function ReviewPredictionTrayGroup({
         </span>
         <button
           type="button"
+          aria-label={`${open ? "Collapse" : "Expand"} ${title}`}
           onClick={onToggle}
           aria-expanded={open}
           className="flex size-8 items-center justify-center rounded-md bg-[var(--surface-muted)] text-[var(--text-primary)]"

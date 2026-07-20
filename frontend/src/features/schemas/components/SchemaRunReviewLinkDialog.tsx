@@ -32,6 +32,11 @@ const defaultExpiryDate = () => {
   return date.toISOString().slice(0, 10);
 };
 
+const copyReviewUrl = async (value: string) => {
+  await navigator.clipboard.writeText(value);
+  toast.success("Review link copied");
+};
+
 export function SchemaRunReviewLinkDialog({ runs, version, onClose }: Props) {
   const [expiresAt, setExpiresAt] = useState(defaultExpiryDate);
   const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(
@@ -74,11 +79,6 @@ export function SchemaRunReviewLinkDialog({ runs, version, onClose }: Props) {
         description: error instanceof Error ? error.message : String(error),
       });
     }
-  };
-
-  const copy = async (value: string) => {
-    await navigator.clipboard.writeText(value);
-    toast.success("Review link copied");
   };
 
   const toggleSelection = useCallback((runId: string) => {
@@ -191,7 +191,7 @@ export function SchemaRunReviewLinkDialog({ runs, version, onClose }: Props) {
                           type="button"
                           variant="secondary"
                           disabled={!url}
-                          onClick={() => void copy(url)}
+                          onClick={() => void copyReviewUrl(url)}
                           className="rounded-md px-3 py-2"
                         >
                           <Copy size={15} />

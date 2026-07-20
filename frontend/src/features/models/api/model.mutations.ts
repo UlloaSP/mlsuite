@@ -5,23 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import {
-  archiveModel,
-  createModel,
-  deleteModel,
-  duplicateModel,
-  inspectArtifact,
-  matchArtifacts,
-  renameModel,
-} from "./model.api";
+import { archiveModel, createModel, deleteModel, duplicateModel, renameModel } from "./model.api";
 import {
   CREATE_MODEL_QUERY_KEY,
   GET_MODELS_QUERY_KEY,
-  INSPECT_ARTIFACT_QUERY_KEY,
-  MATCH_ARTIFACTS_QUERY_KEY,
   MODEL_CATALOG_PAGE_QUERY_KEY,
 } from "./model.keys";
-import type { CreateModelRequest, MatchArtifactsRequest, ModelDto } from "./model.types";
+import type { CreateModelRequest, ModelDto } from "./model.types";
 
 export const useInvalidateModelQueries = () => {
   const queryClient = useQueryClient();
@@ -78,17 +68,3 @@ export const useCreateModelMutation = () => {
     },
   });
 };
-
-export const useInspectArtifactMutation = () =>
-  useMutation({
-    meta: { errorHandledLocally: true },
-    mutationKey: INSPECT_ARTIFACT_QUERY_KEY,
-    mutationFn: inspectArtifact,
-  });
-
-export const useMatchArtifactsMutation = () =>
-  useMutation({
-    meta: { errorHandledLocally: true },
-    mutationKey: MATCH_ARTIFACTS_QUERY_KEY,
-    mutationFn: (request: MatchArtifactsRequest) => matchArtifacts(request),
-  });

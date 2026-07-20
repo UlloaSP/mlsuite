@@ -22,12 +22,14 @@ type Props = {
   customReportDefinitions?: readonly CatalogReportDefinition[];
 };
 
+const EMPTY_CUSTOM_REPORT_DEFINITIONS: readonly CatalogReportDefinition[] = [];
+
 export function SchemaRunReportsPanel({
   version,
   results,
   open = true,
   onToggle,
-  customReportDefinitions = [],
+  customReportDefinitions = EMPTY_CUSTOM_REPORT_DEFINITIONS,
 }: Props) {
   const reports = results.flatMap((result) =>
     getSchemaResultReports(version, result).map((report) => ({ result, report })),
@@ -54,9 +56,9 @@ export function SchemaRunReportsPanel({
       {open ? (
         reports.length > 0 ? (
           <div className="grid gap-4 xl:grid-cols-2">
-            {reports.map(({ result, report }, index) => (
+            {reports.map(({ result, report }) => (
               <SchemaRunReportRenderer
-                key={`${report.id}-${index}`}
+                key={`${result.id}-${report.id}`}
                 version={version}
                 result={result}
                 report={report}

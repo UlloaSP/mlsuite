@@ -17,11 +17,12 @@ type Props = {
 
 const tone = (status: string) =>
   status === "SUCCESS" ? "success" : status === "PARTIAL_SUCCESS" ? "warning" : "danger";
+const EMPTY_FEEDBACK_STATUSES = new Map<string, "COMPLETED" | "PENDING">();
 
 export function SchemaRunHistoryTable({
   runs,
   onOpenRun,
-  feedbackStatusByRunId = new Map(),
+  feedbackStatusByRunId = EMPTY_FEEDBACK_STATUSES,
 }: Props) {
   return (
     <AppPanel className="overflow-hidden p-0">
@@ -41,8 +42,15 @@ export function SchemaRunHistoryTable({
             {runs.map((run) => (
               <tr
                 key={run.id}
+                tabIndex={0}
                 className="cursor-pointer border-t border-[var(--border-soft)] text-sm transition hover:bg-[var(--surface-muted)]"
                 onClick={() => onOpenRun(run.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpenRun(run.id);
+                  }
+                }}
               >
                 <td className="px-5 py-4">
                   <div className="space-y-1">

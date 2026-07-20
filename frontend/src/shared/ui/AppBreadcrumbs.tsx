@@ -50,8 +50,8 @@ export function AppBreadcrumbs({
           const item = segment.kind === "item" ? segment.item : undefined;
           const key =
             segment.kind === "item"
-              ? `${index}-${item?.to ?? "current"}-${String(item?.label)}`
-              : `${index}-ellipsis`;
+              ? `${item?.to ?? "current"}-${String(item?.label)}`
+              : `ellipsis-${segment.hiddenItems.map((hidden) => hidden.to ?? String(hidden.label)).join("|")}`;
 
           return (
             <Fragment key={key}>

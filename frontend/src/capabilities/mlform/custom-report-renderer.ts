@@ -106,7 +106,7 @@ export class PredictionCustomReportRendererElement
     if (normalized.html) {
       const html = document.createElement("div");
       html.className = "block html";
-      html.innerHTML = normalized.html;
+      appendSanitizedHtml(html, normalized.html);
       shell.append(html);
     }
 
@@ -141,3 +141,46 @@ const isRenderableResult = (value: unknown): boolean =>
   typeof value === "string" ||
   Array.isArray(value) ||
   (typeof value === "object" && value !== null);
+
+const BLOCKED_HTML_TAGS = new Set([
+  "BASE",
+  "EMBED",
+  "FORM",
+  "IFRAME",
+  "LINK",
+  "MATH",
+  "META",
+  "OBJECT",
+  "SCRIPT",
+  "STYLE",
+  "SVG",
+]);
+const URL_ATTRIBUTES = new Set(["action", "formaction", "href", "src", "xlink:href"]);
+
+function appendSanitizedHtml(container: HTMLElement, source: string): void {
+  const documentFragment = new DOMParser().parseFromString(source, "text/html");
+  for (const element of documentFragment.body.querySelectorAll("*")) {
+    if (BLOCKED_HTML_TAGS.has(element.tagName)) {
+      element.remove();
+      continue;
+    }
+    for (const attribute of Array.from(element.attributes)) {
+      const name = attribute.name.toLowerCase();
+      const compactValue = attribute.value.replace(/[\u0000-\u0020]/g, "").toLowerCase();
+      if (
+        name.startsWith("on") ||
+        name === "srcdoc" ||
+        name === "style" ||
+        (URL_ATTRIBUTES.has(name) && /^(?:data|javascript|vbscript):/.test(compactValue))
+      ) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+    if (element.getAttribute("target") === "_blank") {
+      element.setAttribute("rel", "noopener noreferrer");
+    }
+  }
+  container.append(
+    ...Array.from(documentFragment.body.childNodes, (node) => document.importNode(node, true)),
+  );
+}

@@ -87,10 +87,10 @@ export function BreadcrumbCollapsedMenu({ items }: { items: BreadcrumbCollapsedM
               style={{ left: menuPosition.left, top: menuPosition.top }}
               className="fixed z-[9999] min-w-[168px] rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.10)]"
             >
-              {items.map((item, index) =>
+              {items.map((item) =>
                 item.to ? (
                   <Link
-                    key={`${index}-${item.to}`}
+                    key={item.to}
                     to={item.to}
                     role="menuitem"
                     onClick={() => setOpen(false)}
@@ -100,7 +100,7 @@ export function BreadcrumbCollapsedMenu({ items }: { items: BreadcrumbCollapsedM
                   </Link>
                 ) : (
                   <span
-                    key={`${index}-${String(item.label)}`}
+                    key={String(item.label)}
                     role="menuitem"
                     className="block rounded-md px-2.5 py-1.5 text-[13px] font-medium leading-5 text-[var(--text-primary)]"
                   >

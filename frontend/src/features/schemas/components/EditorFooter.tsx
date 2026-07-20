@@ -20,10 +20,10 @@ export function EditorFooter() {
 
   return (
     <motion.div
+      layout="size"
       className="w-full shrink-0 z-30 flex flex-col"
       style={{ height: expanded ? openedH : closedH }}
-      animate={{ height: expanded ? openedH : closedH }}
-      transition={{ duration: 0.25 }}
+      transition={{ layout: { duration: 0.25 } }}
     >
       <EditorErrorBar expanded={expanded} setExpanded={setExpandedRequested} />
       {expanded && <EditorErrorPanel />}

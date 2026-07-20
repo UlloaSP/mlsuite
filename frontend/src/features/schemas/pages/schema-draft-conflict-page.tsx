@@ -77,9 +77,11 @@ export function SchemaDraftConflictPage() {
     if (!diff) return;
     setResolutions(
       Object.fromEntries(
-        diff.changes
-          .filter((change) => change.conflict)
-          .map((change) => [change.path, needsMerge ? undefined : defaultSide(change)]),
+        diff.changes.flatMap((change) =>
+          change.conflict
+            ? [[change.path, needsMerge ? undefined : defaultSide(change)] as const]
+            : [],
+        ),
       ),
     );
   }, [diff, needsMerge]);
@@ -116,12 +118,16 @@ export function SchemaDraftConflictPage() {
         expectedCurrentVersionId: diff.currentVersionId,
         expectedCurrentDocumentHash: diff.currentDocumentHash,
         expectedDraftRevision: draft.revision,
-        resolutions: diff.changes
-          .filter((change) => change.conflict)
-          .map((change) => ({
-            path: change.path,
-            side: resolutions[change.path] ?? defaultSide(change),
-          })),
+        resolutions: diff.changes.flatMap((change) =>
+          change.conflict
+            ? [
+                {
+                  path: change.path,
+                  side: resolutions[change.path] ?? defaultSide(change),
+                },
+              ]
+            : [],
+        ),
       });
       toast.success("Merge applied");
     } catch (error) {

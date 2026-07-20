@@ -121,36 +121,3 @@ export const getPredictionShortId = (id: unknown): string => {
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export const getPredictionExecutionTime = (value: unknown): number | null => {
-  const reports = getPredictionReports(value);
-  const executionTime = reports[0]?.execution_time;
-  return typeof executionTime === "number" ? executionTime : null;
-};
-
-/**
- * formatExecutionTime: converts raw data into a stable human-readable string
- *
- * Purpose: normalizes model and prediction metadata for display and lookup.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
-export const formatExecutionTime = (time: number | null): string => {
-  if (time === null) {
-    return "N/A";
-  }
-
-  if (time < 1000) {
-    return `${time.toFixed(2)} ms`;
-  }
-
-  if (time < 60000) {
-    return `${(time / 1000).toFixed(2)} s`;
-  }
-
-  if (time < 3600000) {
-    return `${(time / 60000).toFixed(2)} min`;
-  }
-
-  return `${(time / 3600000).toFixed(2)} h`;
-};

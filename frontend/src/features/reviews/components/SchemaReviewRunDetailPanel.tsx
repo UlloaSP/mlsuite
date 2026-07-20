@@ -63,15 +63,19 @@ export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewC
     () =>
       detail.data
         ? detail.data.run.results.flatMap((result) =>
-            getSchemaResultReports(version, result)
-              .filter((report) => isBuiltinReportKind(report.kind))
-              .map((report) => ({
-                id: `${result.id}-${report.id}`,
-                predictionId: result.runId,
-                order: report.order,
-                value: displayTargetValue(report.payload),
-                createdAt: result.createdAt,
-              })),
+            getSchemaResultReports(version, result).flatMap((report) =>
+              isBuiltinReportKind(report.kind)
+                ? [
+                    {
+                      id: `${result.id}-${report.id}`,
+                      predictionId: result.runId,
+                      order: report.order,
+                      value: displayTargetValue(report.payload),
+                      createdAt: result.createdAt,
+                    },
+                  ]
+                : [],
+            ),
           )
         : [],
     [detail.data, version],

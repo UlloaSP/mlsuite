@@ -25,10 +25,11 @@ type Props = {
   onChange: (value: Selection[]) => void;
 };
 
+const hasSchema = (model: SchemaSourceModel) =>
+  isRecord(model.inputSchema) && Array.isArray(model.inputSchema.fields);
+
 export function SchemaModelSelector({ models, value, onChange }: Props) {
   const selectedIds = new Set(value.map((item) => item.modelId));
-  const hasSchema = (model: SchemaSourceModel) =>
-    isRecord(model.inputSchema) && Array.isArray(model.inputSchema.fields);
   const toggle = (model: SchemaSourceModel) => {
     if (!hasSchema(model)) return;
     if (selectedIds.has(model.id)) {

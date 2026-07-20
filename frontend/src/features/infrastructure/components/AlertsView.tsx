@@ -13,18 +13,18 @@ type Props = {
 
 type AlertLevel = "all" | "danger" | "warning" | "info";
 
+const ALERT_LEVELS: Record<string, AlertLevel> = {
+  danger: "danger",
+  warning: "warning",
+  accent: "info",
+  success: "info",
+};
+
 export function AlertsView({ overview, streamConnected, selectedService }: Props) {
   const [filter, setFilter] = useState<AlertLevel>("all");
   const alerts = buildDashboardAlerts(overview, streamConnected, selectedService);
 
-  const levelMap: Record<string, AlertLevel> = {
-    danger: "danger",
-    warning: "warning",
-    accent: "info",
-    success: "info",
-  };
-
-  const filtered = alerts.filter((a) => filter === "all" || levelMap[a.tone] === filter);
+  const filtered = alerts.filter((a) => filter === "all" || ALERT_LEVELS[a.tone] === filter);
 
   const counts = {
     all: alerts.length,

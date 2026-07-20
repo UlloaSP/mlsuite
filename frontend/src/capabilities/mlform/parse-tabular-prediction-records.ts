@@ -198,6 +198,7 @@ export function parseTabularPredictionRecords(
   }
 
   const inputHeaders = hasNameHeader ? headers.slice(1) : headers;
+  const inputHeaderSet = new Set(inputHeaders);
   if (!hasNameHeader && autoNameBase === undefined) {
     return {
       records: [],
@@ -207,7 +208,7 @@ export function parseTabularPredictionRecords(
     };
   }
   const missing = fields.reduce<string[]>((items, field) => {
-    if (!inputHeaders.includes(field.name)) items.push(field.name);
+    if (!inputHeaderSet.has(field.name)) items.push(field.name);
     return items;
   }, []);
   const extra = inputHeaders.filter((header) => !fieldMap.has(header));

@@ -683,3 +683,8 @@
 
 - Correction: frontend infrastructure remote state was grouped under admin because its routes require admin access, but authorization does not define domain ownership.
 - Rule: infrastructure owns its feature modules under `features/infrastructure`; admin may gate or compose them but must not absorb their transport, contracts, queries, or runtime lifecycle.
+
+# Interactive Container Semantics
+
+- Correction: replacing a clickable drop-zone button with a passive `div` fixed nested controls but made most of the zone inert.
+- Rule: when a whole surface is one action, keep one native outer button and render button-like descendants as non-interactive visual elements; verify clicks from the surface, not only its action label.

@@ -155,11 +155,18 @@ export function ServicesView({
                 return (
                   <tr
                     key={s.name}
+                    tabIndex={0}
                     className={cx(
                       "cursor-pointer border-b border-[var(--border-soft)] transition",
                       active ? "bg-[var(--accent-quiet)]" : "hover:bg-[var(--surface-muted)]",
                     )}
                     onClick={() => onSelect(s.name)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onSelect(s.name);
+                      }
+                    }}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">

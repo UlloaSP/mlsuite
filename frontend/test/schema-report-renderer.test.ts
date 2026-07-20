@@ -3,11 +3,17 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+// @vitest-environment jsdom
+
 import { describe, expect, test } from "vite-plus/test";
 import { normalizeAnalyzerPredictionResult } from "@/capabilities/mlform/analyzer-result-normalization";
 import { describeSchemaCustomReport } from "@/features/schemas/lib/report-descriptor";
 import { getSchemaResultReports } from "@/capabilities/mlform/report-display";
 import type { CatalogReportDefinition } from "@/capabilities/mlform/custom-report-catalog";
+import {
+  CUSTOM_REPORT_RENDERER_TAG,
+  PredictionCustomReportRendererElement,
+} from "@/capabilities/mlform/custom-report-renderer";
 
 const catalogReport = (): CatalogReportDefinition =>
   ({
@@ -31,6 +37,29 @@ const catalogReport = (): CatalogReportDefinition =>
   }) as unknown as CatalogReportDefinition;
 
 describe("schema report renderer", () => {
+  test("sanitizes plugin HTML before mounting it", () => {
+    if (!customElements.get(CUSTOM_REPORT_RENDERER_TAG)) {
+      customElements.define(CUSTOM_REPORT_RENDERER_TAG, PredictionCustomReportRendererElement);
+    }
+    const element = document.createElement(
+      CUSTOM_REPORT_RENDERER_TAG,
+    ) as PredictionCustomReportRendererElement;
+    document.body.append(element);
+    element.descriptor = {
+      props: {
+        result: {
+          html: '<strong>Safe</strong><script>window.bad = true</script><img src="x" onerror="window.bad = true"><a href="javascript:alert(1)" target="_blank">Link</a>',
+        },
+      },
+    } as never;
+
+    expect(element.shadowRoot?.querySelector("strong")?.textContent).toBe("Safe");
+    expect(element.shadowRoot?.querySelector("script")).toBeNull();
+    expect(element.shadowRoot?.querySelector("img")?.hasAttribute("onerror")).toBe(false);
+    expect(element.shadowRoot?.querySelector("a")?.hasAttribute("href")).toBe(false);
+    expect(element.shadowRoot?.querySelector("a")?.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
   test("finds model reports when DTO model ids use different scalar types", () => {
     const reports = getSchemaResultReports(
       {

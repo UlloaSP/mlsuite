@@ -3,19 +3,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   archiveSchema,
   createSchema,
-  createSchemaVersion,
   deleteSchema,
   duplicateSchema,
   renameSchema,
 } from "./schema-api";
 import { createSchemaBookmark } from "./schema-bookmark-api";
-import type { CreateSchemaBookmarkRequest, CreateSchemaVersionRequest } from "./schema-types";
+import type { CreateSchemaBookmarkRequest } from "./schema-types";
 import {
   SCHEMA_BOOKMARKS_QUERY_KEY,
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_CATALOG_PAGE_QUERY_KEY,
   SCHEMAS_QUERY_KEY,
-  SCHEMA_VERSIONS_QUERY_KEY,
 } from "./schema-keys";
 
 export const useInvalidateSchemaQueries = () => {
@@ -62,17 +60,6 @@ export function useCreateSchemaMutation() {
     meta: { errorHandledLocally: true },
     mutationFn: createSchema,
     onSuccess: () => void invalidate(),
-  });
-}
-
-export function useCreateSchemaVersionMutation(schemaId: string) {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  const qc = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (req: CreateSchemaVersionRequest) => createSchemaVersion(schemaId, req),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: SCHEMA_VERSIONS_QUERY_KEY(organizationId, schemaId) }),
   });
 }
 

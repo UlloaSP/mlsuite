@@ -68,9 +68,6 @@ export const getOrganization = (
 ): Promise<OrganizationDto> =>
   appFetch<OrganizationDto>(`/api/organizations/${organizationId}`, { signal });
 
-export const getOrganizations = (): Promise<OrganizationDto[]> =>
-  appFetch<OrganizationDto[]>("/api/organizations");
-
 export const removeOrganizationMember = (
   organizationId: number,
   membershipId: number,

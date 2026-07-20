@@ -41,6 +41,7 @@ export function RoleForm({
   const [selected, setSelected] = useState<PermissionKey[]>(
     initial?.permissionKeys ?? roleDefinition?.permissions.map((p) => p.key) ?? [],
   );
+  const selectedSet = new Set(selected);
   const canSave = Boolean(name.trim() && selected.length > 0);
   const toggle = (permission: PermissionKey, checked: boolean) => {
     setSelected((current) =>
@@ -94,7 +95,7 @@ export function RoleForm({
                     </h3>
                     <span className="text-xs text-[var(--text-secondary)]">
                       {
-                        group.permissions.filter((permission) => selected.includes(permission.key))
+                        group.permissions.filter((permission) => selectedSet.has(permission.key))
                           .length
                       }
                       /{group.permissions.length}
@@ -109,7 +110,7 @@ export function RoleForm({
                         <input
                           type="checkbox"
                           aria-label={permission.label}
-                          checked={selected.includes(permission.key)}
+                          checked={selectedSet.has(permission.key)}
                           onChange={(e) => toggle(permission.key, e.target.checked)}
                           className="mt-1"
                         />

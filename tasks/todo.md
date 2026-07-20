@@ -755,3 +755,38 @@
 - Passed architecture tests (9/9), TypeScript, full frontend tests (157/157), and release build. Old-path, root, target-barrel, line-limit, staging, and whitespace audits pass.
 - `vp check` is blocked only by the pre-existing formatting issue in `frontend/AGENTS.md`; all refactor code passes formatting. React Doctor reports 67/100 with 85 existing findings (4 errors, 81 warnings).
 - No visual check was run because it was not requested.
+# Frontend React Doctor Cleanup
+
+- [x] Reproduce React Doctor baseline and capture every diagnostic by rule/file.
+- [x] Read frontend architecture contract; map findings to owning modules and rank root causes.
+- [x] Fix all error diagnostics with focused regression coverage where a real behavior seam exists.
+- [x] Fix all warning diagnostics using minimal native React/HTML patterns; split files before limits.
+- [x] Re-run React Doctor until no actionable diagnostics remain; inspect any tool false positives explicitly.
+- [x] Run focused tests, architecture tests, TypeScript, full tests, build/check, line/diff audits.
+- [x] Run `graphify update .` and record final score, counts, changes, and exact blockers here.
+
+## Review
+
+- React Doctor improved from 63/100 (4 errors, 81 warnings) to 100/100 with zero findings across 463 files.
+- Removed 15 dead frontend source files and obsolete exports; replaced impure render/state patterns, unstable keys, repeated scans, layout animations, and invalid interactive markup with native focused alternatives.
+- Hardened custom report HTML rendering with a DOM-based sanitizer and regression coverage for scripts, event handlers, unsafe URLs, and external-link isolation.
+- Focused verification: 7 files and 45 tests passed. Full verification: 39 files and 158 tests passed.
+- `vp exec tsc -b --pretty false`, `vp build`, frontend architecture checks, and `git diff --check` passed.
+- `vp check` reached repository formatting and stopped only on the pre-existing, out-of-scope `frontend/AGENTS.md` formatting issue.
+- Visual verification was intentionally skipped because the task did not request it and repository policy forbids unsolicited visual checks.
+- `graphify update .` completed: 10,472 nodes, 28,645 edges, and 451 communities. Tool-only warnings noted a stale installed skill, three zero-node JSON configuration files, and a missing optional SQL parser.
+
+# Bundle Drop Zone Click Regression
+
+- [x] Reproduce full-zone click regression with a component test.
+- [x] Restore one native interactive surface without nested controls.
+- [x] Run focused test, TypeScript, React Doctor, and Graphify update.
+
+## Review
+
+- Regression reproduced before the fix: clicking `.group` triggered zero file-input clicks.
+- The whole drop zone is again one native button; the nested action is a visual `span`, preserving full-surface mouse and keyboard activation without nested interactive controls.
+- Focused component test and TypeScript passed.
+- React Doctor reports no component diagnostic. Its current project result is 77/100 with only two unrelated pnpm-hardening warnings because `minimumReleaseAge` and `trustPolicy` are commented out in the working copy; those concurrent settings were preserved.
+- No visual check was run because it was not requested.
+- Final `graphify update .` completed: 10,470 nodes, 28,639 edges, and 450 communities.

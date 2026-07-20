@@ -18,12 +18,15 @@ export function SortTh({
 }) {
   const active = sort.key === sortKey;
   return (
-    <th
-      className="cursor-pointer select-none px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-      onClick={() => onSort(sortKey)}
-    >
-      {label}
-      {active && <span className="ml-1">{sort.dir === "asc" ? "↑" : "↓"}</span>}
+    <th className="px-4 py-2.5 text-left">
+      <button
+        type="button"
+        className="select-none text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        onClick={() => onSort(sortKey)}
+      >
+        {label}
+        {active && <span className="ml-1">{sort.dir === "asc" ? "↑" : "↓"}</span>}
+      </button>
     </th>
   );
 }

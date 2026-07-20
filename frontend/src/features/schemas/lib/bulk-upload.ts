@@ -121,11 +121,11 @@ export const toSchemaRunSerializedValues = (
           return true;
         }),
       );
-      field.options
-        .flatMap((option) => mappedTargets(option.mappedTo))
-        .forEach((target) => {
+      for (const option of field.options) {
+        for (const target of mappedTargets(option.mappedTo)) {
           if (target in inputs) consumedKeys.add(target);
-        });
+        }
+      }
       if (selected) payload[field.id] = selected.value ?? selected.label;
       return payload;
     }

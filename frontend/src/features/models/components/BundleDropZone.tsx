@@ -16,7 +16,7 @@ export function BundleDropZone({ onFiles }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handle = (list: FileList | null) => {
-    if (list) onFiles(Array.from(list));
+    if (list) void onFiles(Array.from(list));
   };
 
   const active = dragOver;
@@ -25,7 +25,7 @@ export function BundleDropZone({ onFiles }: Props) {
     <div className="flex-shrink-0 px-4 pt-4">
       <button
         type="button"
-        aria-label="Drop model and dataframe files here"
+        onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -36,7 +36,6 @@ export function BundleDropZone({ onFiles }: Props) {
           setDragOver(false);
           handle(e.dataTransfer.files);
         }}
-        onClick={() => inputRef.current?.click()}
         className={cx(
           "group flex w-full cursor-pointer select-none items-center gap-4 rounded-[10px] border-[1.5px] border-dashed px-4 py-[18px]",
           "bg-[var(--surface-secondary)]",
@@ -47,7 +46,7 @@ export function BundleDropZone({ onFiles }: Props) {
         )}
       >
         {/* Upload icon box */}
-        <div
+        <span
           className={cx(
             "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-[10px] border transition-all duration-150",
             active
@@ -69,32 +68,25 @@ export function BundleDropZone({ onFiles }: Props) {
             <line x1="12" y1="12" x2="12" y2="21" />
             <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
           </svg>
-        </div>
+        </span>
 
         {/* Labels */}
-        <div className="min-w-0 flex-1 text-left">
-          <p className="text-[13px] font-bold text-[var(--text-primary)]">
+        <span className="min-w-0 flex-1 text-left">
+          <span className="block text-[13px] font-bold text-[var(--text-primary)]">
             Drop files here or <span className="text-[var(--accent-primary)]">browse</span>
-          </p>
-          <p className="mt-0.5 truncate font-mono text-[11px] text-[var(--text-muted)]">
+          </span>
+          <span className="mt-0.5 block truncate font-mono text-[11px] text-[var(--text-muted)]">
             models: {MODEL_EXT_LABEL}
-          </p>
-          <p className="truncate font-mono text-[11px] text-[var(--text-muted)]">
+          </span>
+          <span className="block truncate font-mono text-[11px] text-[var(--text-muted)]">
             dataframes: {DF_EXT_LABEL}
-          </p>
-        </div>
+          </span>
+        </span>
 
-        {/* Browse button — stops propagation so it doesn't double-trigger */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            inputRef.current?.click();
-          }}
-          className="flex-shrink-0 cursor-pointer rounded-lg border border-[var(--border-strong)] bg-[var(--surface-primary)] px-3.5 py-2 text-[12px] font-bold text-[var(--text-secondary)] shadow-none transition-all duration-150 hover:-translate-y-px hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] hover:shadow-[var(--shadow-hover)]"
-        >
+        {/* Visual action; the whole drop zone is the interactive control. */}
+        <span className="flex-shrink-0 cursor-pointer rounded-lg border border-[var(--border-strong)] bg-[var(--surface-primary)] px-3.5 py-2 text-[12px] font-bold text-[var(--text-secondary)] shadow-none transition-all duration-150 hover:-translate-y-px hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] hover:shadow-[var(--shadow-hover)]">
           Add files
-        </button>
+        </span>
       </button>
 
       <input

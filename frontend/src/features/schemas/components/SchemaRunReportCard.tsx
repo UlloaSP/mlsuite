@@ -45,23 +45,17 @@ export function SchemaRunReportCard({ label, kind, payload, labels = [] }: Props
                 : formatDisplayValue(mainValue)}
             </p>
           ) : null}
-          {text.map((item, index) => (
-            <p key={index} className="text-sm leading-7 text-[var(--text-primary)]">
+          {text.map((item) => (
+            <p key={item} className="text-sm leading-7 text-[var(--text-primary)]">
               {item}
             </p>
           ))}
           {probs.length > 0 ? (
             <div className="space-y-2">
               {probs.map((probability, index) => (
-                <div key={index} className="space-y-1">
+                <div key={probabilityLabel(payload, labels, index)} className="space-y-1">
                   <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                    <span>
-                      {String(
-                        labels[index] ??
-                          (payload.labels as unknown[] | undefined)?.[index] ??
-                          `Class ${index + 1}`,
-                      )}
-                    </span>
+                    <span>{probabilityLabel(payload, labels, index)}</span>
                     <span>{(probability * 100).toFixed(1)}%</span>
                   </div>
                   <div className="h-2 rounded bg-[var(--surface-muted)]">
@@ -79,5 +73,11 @@ export function SchemaRunReportCard({ label, kind, payload, labels = [] }: Props
         <AppCopy>No report content returned.</AppCopy>
       )}
     </AppPanel>
+  );
+}
+
+function probabilityLabel(payload: JsonRecord, labels: string[], index: number): string {
+  return String(
+    labels[index] ?? (payload.labels as unknown[] | undefined)?.[index] ?? `Class ${index + 1}`,
   );
 }

@@ -9,14 +9,6 @@ export const ORGANIZATION_CATALOG_PAGE_SIZE = 24;
 export const ORGANIZATION_CATALOG_PAGE_QUERY_KEY = ["organizationCatalogPages"] as const;
 
 import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
-export const organizationResourceQueryKey = (
-  organizationId: number | string,
-  resource: string,
-  resourceId?: number | string,
-) =>
-  resourceId === undefined
-    ? ([...organizationQueryKey(organizationId), resource] as const)
-    : ([...organizationQueryKey(organizationId), resource, resourceId] as const);
 export const organizationMembersQueryKey = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "members"] as const;
 export const organizationDetailsQueryKey = (organizationId: number | string) =>

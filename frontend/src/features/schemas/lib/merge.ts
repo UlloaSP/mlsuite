@@ -60,7 +60,7 @@ const optionKey = (option: JsonRecord, fallback: string): string =>
 const cloneField = (item: JsonRecord): JsonRecord => {
   const field = { ...item };
   if (Array.isArray(item.options)) {
-    field.options = item.options.filter(isRecord).map((option) => ({ ...option }));
+    field.options = item.options.flatMap((option) => (isRecord(option) ? [{ ...option }] : []));
   }
   delete field.id;
   return field;
@@ -90,11 +90,12 @@ const mergeOneHotMappedTargets = (
 ) => {
   if (!Array.isArray(targetField.options) || !Array.isArray(sourceField.options)) return;
   const targetOptionsRaw = targetField.options;
-  const targetOptions = targetOptionsRaw.filter(isRecord);
-  const byKey = new Map(
-    targetOptions.map((option, index) => [optionKey(option, String(index)), option]),
-  );
-  sourceField.options.filter(isRecord).forEach((sourceOption, index) => {
+  const byKey = new Map<string, JsonRecord>();
+  targetOptionsRaw.forEach((option, index) => {
+    if (isRecord(option)) byKey.set(optionKey(option, String(index)), option);
+  });
+  sourceField.options.forEach((sourceOption, index) => {
+    if (!isRecord(sourceOption)) return;
     const target = targetValue(sourceOption, `option-${index + 1}`);
     const key = optionKey(sourceOption, String(index));
     let targetOption = byKey.get(key);
@@ -127,7 +128,8 @@ const createCanonical = (
   const canonical: JsonRecord[] = [];
   if (!Array.isArray(items)) return { canonical, byKey };
 
-  items.filter(isRecord).forEach((item, index) => {
+  items.forEach((item, index) => {
+    if (!isRecord(item)) return;
     const key = itemKey(item);
     if (byKey.has(key)) return;
     const label = getString(item.label) ?? getString(item.id) ?? `${prefix}-${index + 1}`;
@@ -152,7 +154,8 @@ const addMissingCanonical = (
 ) => {
   const usedIds = new Set(canonical.map((item) => getString(item.id) ?? ""));
   if (!Array.isArray(sourceItems)) return;
-  sourceItems.filter(isRecord).forEach((item, index) => {
+  sourceItems.forEach((item, index) => {
+    if (!isRecord(item)) return;
     const key = itemKey(item);
     if (byKey.has(key)) return;
     const label = getString(item.label) ?? getString(item.id) ?? `${prefix}-${index + 1}`;
@@ -176,7 +179,8 @@ const addInputMappedTargets = (
     const modelKeyName = modelName ?? modelId;
     const fields = isRecord(model.inputSchema) ? model.inputSchema.fields : [];
     if (!Array.isArray(fields)) return;
-    fields.filter(isRecord).forEach((field) => {
+    fields.forEach((field) => {
+      if (!isRecord(field)) return;
       const canonical = fieldsByKey.get(itemKey(field));
       if (canonical && isOneHotCategory(field)) {
         mergeOneHotMappedTargets(canonical.field, field, bindingKey(modelKeyName));
@@ -193,10 +197,16 @@ const addInputMappedTargets = (
 };
 
 /** kindsFrom: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const kindsFrom = (items: unknown): string[] =>
-  Array.isArray(items)
-    ? Array.from(new Set(items.filter(isRecord).flatMap((item) => getString(item.kind) ?? [])))
-    : [];
+const kindsFrom = (items: unknown): string[] => {
+  const kinds = new Set<string>();
+  if (!Array.isArray(items)) return [];
+  for (const item of items) {
+    if (!isRecord(item)) continue;
+    const kind = getString(item.kind);
+    if (kind) kinds.add(kind);
+  }
+  return Array.from(kinds);
+};
 
 /** buildPluginPolicy: internal transformation helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const buildPluginPolicy = (model: SchemaSourceModel): JsonRecord => {
@@ -214,7 +224,8 @@ const buildBindingReports = (selected: readonly SelectedSchemaModel[]): JsonReco
     const modelKeyName = modelName ?? modelId;
     const sourceReports = isRecord(model.inputSchema) ? model.inputSchema.reports : [];
     if (Array.isArray(sourceReports)) {
-      sourceReports.filter(isRecord).forEach((report, index) => {
+      sourceReports.forEach((report, index) => {
+        if (!isRecord(report)) return;
         const target = canonicalReportTarget(report, `report-${index + 1}`);
         const nextReport: JsonRecord = {
           ...report,
