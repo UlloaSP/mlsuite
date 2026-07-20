@@ -644,3 +644,24 @@
 - `graphify update .` completed: 11,004 nodes, 31,281 edges, 353 communities.
 - `vp check` remains blocked by the same 13 pre-existing formatting violations outside this slice.
 - React Doctor improved from 94 to 92 findings at 67/100 (4 errors, 88 warnings); no visual check was run because it was not requested.
+
+# Frontend Admin Users Remote Slice
+
+- [x] Read architecture contract, refreshed Graphify report, agent rules, and relevant lessons.
+- [x] Audit the isolated admin-users transport/query seam and its legacy consumers.
+- [x] Consolidate admin-user contracts and HTTP operations in `features/admin/api`.
+- [x] Consolidate tenant-independent keys, query options, and mutation cache ownership in named modules.
+- [x] Update legacy admin/workspace consumers and tests to concrete feature imports.
+- [x] Delete `src/api/admin-users` completely without barrels or forwarding files.
+- [x] Run focused architecture/admin tests, TypeScript, full tests/build/check, React Doctor, line/diff checks, and `graphify update .`.
+- [x] Record final review and exact blockers.
+
+## Review
+
+- Consolidated 20 horizontal admin-user files into five named modules under `features/admin/api`: types, transport, keys, queries, and mutations.
+- Preserved URLs, query parameters, query-key identity, `AbortSignal`, local error ownership, and prefix invalidation; legacy admin/workspace consumers now use concrete feature imports.
+- Deleted `src/api/admin-users` without barrels or forwarding files and added one contract test covering reads, writes, HTTP/network failures, and cancellation.
+- Passed focused architecture/admin tests (13/13), TypeScript, full frontend tests (156/156), release build, old-path audit, line limits, and diff whitespace check.
+- `graphify update .` completed: 10,984 nodes, 31,234 edges, 343 communities.
+- `vp check` remains blocked by the same 13 pre-existing formatting violations outside this slice.
+- React Doctor improved from 92 to 91 findings at 67/100 (4 errors, 87 warnings); no visual check was run because it was not requested.

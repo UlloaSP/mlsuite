@@ -7,7 +7,7 @@ import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { useCreateAdminUser } from "@/api/admin-users/hooks";
+import { useCreateAdminUser } from "@/features/admin/api/admin-user.mutations";
 import { useUser } from "@/api/user/hooks";
 import { AppButton } from "@/app/components/AppButton";
 import { AppIconButton } from "@/app/components/AppIconButton";

@@ -15,11 +15,11 @@ import { AppSurface } from "@/app/components/AppSurface";
 import { AppTextArea } from "@/app/components/AppTextArea";
 import { AppTextField } from "@/app/components/AppTextField";
 import { NotFoundError } from "@/app/pages/error-page";
-import { useAdminUsers } from "@/api/admin-users/hooks";
+import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
 import { useUser } from "@/api/user/hooks";
 import { useInvalidateOrganizationQueries } from "@/api/workspace/hooks";
 import { createOrganization } from "@/api/workspace/services";
-import type { AdminUserDto } from "@/api/admin-users/dtos";
+import type { AdminUser } from "@/features/admin/api/admin-user.types";
 
 export function CreateOrganizationPage() {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export function CreateOrganizationPage() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [owner, setOwner] = useState<AdminUserDto | null>(null);
+  const [owner, setOwner] = useState<AdminUser | null>(null);
   const [ownerInitialized, setOwnerInitialized] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
   const [saving, setSaving] = useState(false);

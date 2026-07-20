@@ -7,13 +7,13 @@ import { Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import type { AdminUserDto } from "@/api/admin-users/dtos";
 import {
-  useAdminUsers,
   useDeleteAdminUser,
   useResetAdminUserPassword,
   useUpdateAdminUser,
-} from "@/api/admin-users/hooks";
+} from "@/features/admin/api/admin-user.mutations";
+import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
+import type { AdminUser } from "@/features/admin/api/admin-user.types";
 import { useUser } from "@/api/user/hooks";
 import { AppButton } from "@/app/components/AppButton";
 import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
@@ -63,8 +63,8 @@ export function AdminUsersPage() {
     updateUser.isPending || resetPassword.isPending || deleteUser.isPending || pageQuery.isLoading;
 
   const update = async (
-    row: AdminUserDto,
-    payload: { enabled?: boolean; systemRole?: AdminUserDto["systemRole"] },
+    row: AdminUser,
+    payload: { enabled?: boolean; systemRole?: AdminUser["systemRole"] },
   ) => {
     try {
       await updateUser.mutateAsync({ id: row.id, payload });
@@ -74,7 +74,7 @@ export function AdminUsersPage() {
       throw actionError;
     }
   };
-  const remove = async (row: AdminUserDto) => {
+  const remove = async (row: AdminUser) => {
     try {
       await deleteUser.mutateAsync(row.id);
       if (pageItems.length === 1 && controls.page > 0) {

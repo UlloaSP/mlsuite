@@ -6,12 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { CalendarDays, Mail, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import type { AdminUserDto } from "@/api/admin-users/dtos";
+import type { AdminUser } from "@/features/admin/api/admin-user.types";
 import { AppBadge } from "@/app/components/AppBadge";
 import { UserActionsMenu } from "./UserActionsMenu";
 import { ChangeRoleDialog, DeleteUserDialog } from "./UserCatalogDialogs";
 
-type Role = AdminUserDto["systemRole"];
+type Role = AdminUser["systemRole"];
 
 export function UserCatalogTile({
   disabled,
@@ -21,7 +21,7 @@ export function UserCatalogTile({
   onUpdate,
 }: {
   disabled: boolean;
-  item: AdminUserDto;
+  item: AdminUser;
   onDelete: () => Promise<void>;
   onResetPassword: () => void;
   onUpdate: (payload: { enabled?: boolean; systemRole?: Role }) => Promise<void>;

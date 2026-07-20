@@ -4,11 +4,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useState } from "react";
-import type { AdminUserDto } from "@/api/admin-users/dtos";
+import type { AdminUser } from "@/features/admin/api/admin-user.types";
 import { AppButton } from "@/app/components/AppButton";
 import { AppSelect } from "@/app/components/AppSelect";
 
-type Role = AdminUserDto["systemRole"];
+type Role = AdminUser["systemRole"];
 
 const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
   { value: "USER", label: "User" },
@@ -22,7 +22,7 @@ export function DeleteUserDialog({
   onConfirm,
 }: {
   disabled: boolean;
-  user: AdminUserDto;
+  user: AdminUser;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
 }) {
@@ -58,7 +58,7 @@ export function ChangeRoleDialog({
   onConfirm,
 }: {
   disabled: boolean;
-  user: AdminUserDto;
+  user: AdminUser;
   onCancel: () => void;
   onConfirm: (role: Role) => Promise<void>;
 }) {
