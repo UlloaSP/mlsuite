@@ -10,7 +10,7 @@ import { AppCopy } from "@/app/components/AppCopy";
 import { AppPanel } from "@/app/components/AppPanel";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { createPredictionPrimitiveRegistry } from "@/app/utils/mlform/primitive-registry";
-import { isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
+import { isBuiltinReportKind } from "@/capabilities/mlform/builtin-registry";
 import { patchSchemaReportContext } from "@/algorithms/schema/report-plugin-context";
 import type { SchemaDisplayReport } from "@/algorithms/schema/report-display";
 import type { PredictionResultDto, SchemaVersionDto } from "@/api/schemas/dtos";

@@ -8,7 +8,7 @@ import {
   BUILTIN_FIELD_KINDS,
   BUILTIN_REPORT_DEFINITIONS,
   BUILTIN_REPORT_KINDS,
-} from "@/algorithms/mlform/builtin-registry";
+} from "@/capabilities/mlform/builtin-registry";
 
 type JsonSchema = Record<string, unknown>;
 

@@ -16,4 +16,3 @@ export const removeOrganizationCache = async (
   queryClient.removeQueries({ queryKey: scope });
   invalidatePluginRuntimeCache(organizationId);
 };
-

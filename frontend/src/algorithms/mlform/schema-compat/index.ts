@@ -1,7 +1,7 @@
 import type { FieldConfig, ReportConfig } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "@/algorithms/plugin/custom-field-catalog";
 import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
-import { getBuiltinRegistry } from "@/algorithms/mlform/builtin-registry";
+import { getBuiltinRegistry } from "@/capabilities/mlform/builtin-registry";
 import {
   getAllowedFieldKeys,
   getAllowedReportKeys,
@@ -14,17 +14,8 @@ import {
   validateFieldConfig,
   validateReportConfig,
 } from "@/algorithms/mlform/schema-definition-validation";
-import type {
-  CompatIssue,
-  CompatValidationResult,
-  JsonRecord,
-} from "@/algorithms/mlform/shared";
-import {
-  getString,
-  hasBlockingIssues,
-  isRecord,
-  toUniqueId,
-} from "@/algorithms/mlform/shared";
+import type { CompatIssue, CompatValidationResult, JsonRecord } from "@/algorithms/mlform/shared";
+import { getString, hasBlockingIssues, isRecord, toUniqueId } from "@/algorithms/mlform/shared";
 
 /**
  * ValidateMlformSchemaOptions: describes the public data contract consumed or returned by this algorithm.

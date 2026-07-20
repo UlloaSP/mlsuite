@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig } from "mlform/runtime";
-import { isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
+import { isBuiltinReportKind } from "@/capabilities/mlform/builtin-registry";
 import { isRecord, type JsonRecord } from "@/algorithms/mlform/shared";
 import { isSkippedSchemaReportPayload } from "@/algorithms/schema/report-plugin-context";
 import { reportTargetForBinding } from "@/algorithms/mlform/schema-run-report-mapping";

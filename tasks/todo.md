@@ -665,3 +665,23 @@
 - `graphify update .` completed: 10,984 nodes, 31,234 edges, 343 communities.
 - `vp check` remains blocked by the same 13 pre-existing formatting violations outside this slice.
 - React Doctor improved from 92 to 91 findings at 67/100 (4 errors, 87 warnings); no visual check was run because it was not requested.
+
+# Frontend MLForm Capability Foundation
+
+- [x] Read architecture contract, refreshed Graphify report, agent rules, and relevant lessons.
+- [x] Audit runtime cache, built-in registry, plugin-requirement detection, and all consumers.
+- [x] Prove the runtime cache cannot move alone while legacy plugin/workspace API modules own its invalidation; keep it legacy without an exception.
+- [x] Move MLForm built-in registry ownership and schema plugin-requirement detection into the same capability.
+- [x] Update source/tests to concrete capability imports and delete both migrated legacy modules without forwarding files.
+- [x] Run focused architecture/MLForm tests, TypeScript, full tests/build/check, React Doctor, line/diff checks, and `graphify update .`.
+- [x] Record final review and exact blockers.
+
+## Review
+
+- Established `capabilities/mlform` ownership for the MLForm built-in registry and schema plugin-requirement detection; deleted both legacy algorithm modules without forwarding files.
+- Updated all source/test consumers to concrete capability imports. Runtime behavior and public function names remain unchanged.
+- The attempted runtime-cache move exposed two forbidden `legacy api → capability` imports in the fitness test; the move was reverted and no exception was added. It must move with plugin/workspace invalidation ownership.
+- Passed focused architecture/MLForm tests (24/24), TypeScript, full frontend tests (156/156), release build, old-path audit, line limits, and diff whitespace check.
+- `graphify update .` completed: 10,979 nodes, 31,192 edges, 345 communities.
+- `vp check` now has 10 pre-existing formatting blockers; three touched legacy files were normalized while updating their imports.
+- React Doctor remains at 67/100 with 91 existing findings (4 errors, 87 warnings); no visual check was run because it was not requested.

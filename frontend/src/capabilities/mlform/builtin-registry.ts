@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { createMlRegistryPack } from "mlform/builtins";
 import type { FieldConfig, FieldDefinition, ReportConfig, ReportDefinition } from "mlform/runtime";
 
-/** builtinRegistry: internal helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
+/** Stable registry supplied by MLForm's built-in pack. */
 const builtinRegistry = createMlRegistryPack().registry;
 
 /**

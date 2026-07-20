@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { FormSchema } from "mlform/runtime";
 import type { CatalogFieldDefinition } from "@/algorithms/plugin/custom-field-catalog";
 import type { CatalogReportDefinition } from "@/algorithms/plugin/custom-report-catalog";
-import { isBuiltinFieldKind, isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
+import { isBuiltinFieldKind, isBuiltinReportKind } from "@/capabilities/mlform/builtin-registry";
 import {
   mlformJsonSchema,
   validateMlformSchema as validateBaseMlformSchema,

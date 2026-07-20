@@ -19,7 +19,7 @@ import {
 import { invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
 import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 import { pluginCatalogVersionAtom } from "@/plugin/mlform/plugin-catalog-state";
-import { schemaNeedsPluginCatalog } from "@/algorithms/plugin/schema-needs-plugin-catalog";
+import { schemaNeedsPluginCatalog } from "@/capabilities/mlform/schema-plugin-requirement";
 import { mlformJsonSchema, validateMlformSchema } from "@/algorithms/mlform/schema-validation";
 import {
   type EditorErrorCard,
