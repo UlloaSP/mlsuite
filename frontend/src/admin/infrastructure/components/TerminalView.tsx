@@ -4,10 +4,15 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { SquareTerminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AppBadge, AppButton, AppSelect } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppButton } from "@/app/components/AppButton";
+import { AppSelect } from "@/app/components/AppSelect";
 import { closeTerminalSession } from "@/api/infrastructure/services";
 import { useTerminalSession } from "@/api/infrastructure/hooks";
-import { openTerminalSocket, sendTerminalFrame } from "@/admin/infrastructure/ws/infrastructureSocket";
+import {
+  openTerminalSocket,
+  sendTerminalFrame,
+} from "@/admin/infrastructure/ws/infrastructureSocket";
 import type { ServiceStatusDto } from "@/api/infrastructure/dtos";
 
 type Props = {

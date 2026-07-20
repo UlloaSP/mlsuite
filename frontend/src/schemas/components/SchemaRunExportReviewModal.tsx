@@ -1,6 +1,7 @@
 import { FileDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AppButton, AppIconButton } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppIconButton } from "@/app/components/AppIconButton";
 import type { PredictionResultFeedbackDto, PredictionRunDto } from "@/api/schemas/dtos";
 import { SchemaRunExportRunRow } from "./SchemaRunExportRunRow";
 import {

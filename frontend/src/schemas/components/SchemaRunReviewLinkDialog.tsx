@@ -6,7 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Copy, Link2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AppButton, AppIconButton, AppTextField } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppIconButton } from "@/app/components/AppIconButton";
+import { AppTextField } from "@/app/components/AppTextField";
 import { formatTimestamp } from "@/algorithms/models/utils";
 import {
   useCreateSchemaReviewLinkMutation,

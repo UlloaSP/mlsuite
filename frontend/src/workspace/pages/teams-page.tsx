@@ -7,15 +7,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Box, MoreHorizontal, Plus, Users, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import {
-  AppButton,
-  AppSelect,
-  AppTextArea,
-  AppTextField,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppSelect } from "@/app/components/AppSelect";
+import { AppTextArea } from "@/app/components/AppTextArea";
+import { AppTextField } from "@/app/components/AppTextField";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
 import { createTeam } from "@/api/workspace/services";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";

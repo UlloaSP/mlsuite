@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { SortDir, SortKey } from "./ServicesView";
+import type { SortDir, SortKey } from "./services-view-model";
 
 export function SortTh({
   label,

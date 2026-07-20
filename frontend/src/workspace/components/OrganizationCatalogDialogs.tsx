@@ -6,7 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Ellipsis, Pencil, Share2, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { OrganizationMembershipRowDto } from "@/api/workspace/dtos";
-import { AppButton, AppIconButton, cx } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppIconButton } from "@/app/components/AppIconButton";
+import { cx } from "@/app/components/cx";
 
 export function OrganizationCardMenu({
   disabled,

@@ -1,6 +1,6 @@
 import { Building2, Boxes, BrainCircuit, FileJson2, PlayCircle, Users } from "lucide-react";
 import { Link } from "react-router";
-import { cx } from "@/app/components";
+import { cx } from "@/app/components/cx";
 import type { SearchResultDto, SearchResultType } from "@/api/search/dtos";
 
 const icons: Record<SearchResultType, typeof Building2> = {

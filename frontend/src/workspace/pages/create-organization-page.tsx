@@ -7,15 +7,13 @@ import { Hash } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import {
-  AppButton,
-  AppCombobox,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-  AppTextArea,
-  AppTextField,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppCombobox } from "@/app/components/AppCombobox";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSurface } from "@/app/components/AppSurface";
+import { AppTextArea } from "@/app/components/AppTextArea";
+import { AppTextField } from "@/app/components/AppTextField";
 import { NotFoundError } from "@/app/pages/error-page";
 import { useAdminUsers } from "@/api/admin-users/hooks";
 import { useUser } from "@/api/user/hooks";

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AppEmptyState } from "@/app/components";
+import { AppEmptyState } from "@/app/components/AppEmptyState";
 import { isBuiltinReportKind } from "@/algorithms/mlform/builtin-registry";
 import { ReviewAccordionSection } from "@/review/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "@/review/components/ReviewInputsSection";

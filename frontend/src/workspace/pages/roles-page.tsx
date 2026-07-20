@@ -3,7 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Lock, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { AppBadge, AppButton, AppPage, AppPageHeader, AppSurface, AppTabs } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppButton } from "@/app/components/AppButton";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSurface } from "@/app/components/AppSurface";
+import { AppTabs } from "@/app/components/AppTabs";
 import { NotFoundError } from "@/app/pages/error-page";
 import {
   createRole,

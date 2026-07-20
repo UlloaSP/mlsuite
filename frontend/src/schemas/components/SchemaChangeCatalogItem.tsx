@@ -13,7 +13,8 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import type { SchemaDraftDto } from "@/api/schemas/dtos";
-import { AppIconButton, cx } from "@/app/components";
+import { AppIconButton } from "@/app/components/AppIconButton";
+import { cx } from "@/app/components/cx";
 import { LiveRelativeTime } from "@/app/components/LiveRelativeTime";
 
 type Props = {

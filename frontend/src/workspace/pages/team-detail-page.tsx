@@ -1,14 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
-import {
-  AppButton,
-  AppTextArea,
-  AppTextField,
-  AppPage,
-  AppPageHeader,
-  AppSurface,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppTextArea } from "@/app/components/AppTextArea";
+import { AppTextField } from "@/app/components/AppTextField";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
 import { removeTeamMember, updateTeam, updateTeamMemberRole } from "@/api/workspace/services";
 import { MemberTable } from "@/workspace/components/MemberTable";

@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Filter, RefreshCw, Search } from "lucide-react";
-import { AppBadge, AppButton, AppSelect, cx } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppButton } from "@/app/components/AppButton";
+import { AppSelect } from "@/app/components/AppSelect";
+import { cx } from "@/app/components/cx";
 import { formatBytes, formatPercent } from "@/algorithms/admin/infrastructure/formatters";
 import {
   labelForServiceHealth,
@@ -10,6 +13,12 @@ import type { ServiceStatusDto } from "@/api/infrastructure/dtos";
 import { SegmentedControl } from "./ServicesSegmentedControl";
 import { SortTh } from "./ServicesSortTh";
 import { ActionBtn } from "./ServicesViewSupport";
+import {
+  filterAndSortServices,
+  serviceStatusCounts,
+  type ServiceSort,
+  type SortKey,
+} from "./services-view-model";
 type Props = {
   services: ServiceStatusDto[];
   selectedService: string | null;
@@ -17,8 +26,6 @@ type Props = {
   onSelect: (serviceName: string) => void;
   onAction: (serviceName: string, action: "START" | "STOP" | "RESTART") => void;
 };
-export type SortKey = "name" | "status" | "uptime" | "cpuPercent" | "memoryBytes";
-export type SortDir = "asc" | "desc";
 export function ServicesView({
   services,
   selectedService,
@@ -29,7 +36,7 @@ export function ServicesView({
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [healthFilter, setHealthFilter] = useState("all");
-  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({
+  const [sort, setSort] = useState<ServiceSort>({
     key: "name",
     dir: "asc",
   });
@@ -37,37 +44,13 @@ export function ServicesView({
     setSort((prev) =>
       prev.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" },
     );
-  const filtered = services
-    .filter((s) => {
-      if (statusFilter !== "all" && s.status !== statusFilter) return false;
-      if (healthFilter !== "all") {
-        if (healthFilter === "healthy" && s.health !== "healthy") return false;
-        if (healthFilter === "degraded" && s.health !== "degraded") return false;
-        if (healthFilter === "unknown" && s.health != null) return false;
-      }
-      if (query) {
-        const q = query.toLowerCase();
-        if (!s.name.toLowerCase().includes(q) && !(s.containerName ?? "").toLowerCase().includes(q))
-          return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      const dir = sort.dir === "asc" ? 1 : -1;
-      const va = a[sort.key];
-      const vb = b[sort.key];
-      if (va == null && vb == null) return 0;
-      if (va == null) return 1;
-      if (vb == null) return -1;
-      if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
-      return String(va).localeCompare(String(vb)) * dir;
-    });
-  const counts = {
-    all: services.length,
-    running: services.filter((s) => s.status === "running").length,
-    stopped: services.filter((s) => s.status === "exited" || s.status === "dead").length,
-    restarting: services.filter((s) => s.status === "restarting").length,
-  };
+  const filtered = filterAndSortServices(services, {
+    query,
+    status: statusFilter,
+    health: healthFilter,
+    sort,
+  });
+  const counts = serviceStatusCounts(services);
   const activeFilters =
     (query ? 1 : 0) + (statusFilter !== "all" ? 1 : 0) + (healthFilter !== "all" ? 1 : 0);
   const clearFilters = () => {

@@ -7,7 +7,9 @@ import { GitCompareArrows, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
+import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
 import type { SchemaDraftDto } from "@/api/schemas/dtos";
 import {
   useSchema,

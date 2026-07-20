@@ -29,4 +29,3 @@ export { usePredictionRunFeedback } from "./use-prediction-run-feedback";
 export { usePredictionRunsFeedback } from "./use-prediction-runs-feedback";
 export { useCreatePredictionResultFeedbackMutation } from "./use-create-prediction-result-feedback-mutation";
 export { useUpdatePredictionResultFeedbackMutation } from "./use-update-prediction-result-feedback-mutation";
-export { useSchemaRunBulkUpload } from "./use-schema-run-bulk-upload";

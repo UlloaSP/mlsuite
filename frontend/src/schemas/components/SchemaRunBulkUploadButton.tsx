@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { LoaderCircle, Square, Upload } from "lucide-react";
 import { useRef, type ChangeEvent } from "react";
-import { AppButton } from "@/app/components";
-import { useSchemaRunBulkUpload } from "@/api/schemas/hooks";
+import { AppButton } from "@/app/components/AppButton";
+import { useSchemaRunBulkUpload } from "@/schemas/hooks/use-schema-run-bulk-upload";
 import type { SchemaVersionDto } from "@/api/schemas/dtos";
 
 type Props = {

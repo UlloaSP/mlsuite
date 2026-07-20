@@ -9,13 +9,11 @@ import { Link, useNavigate } from "react-router";
 import { useSelectOrganization, useWorkspaceContext } from "@/api/workspace/hooks";
 import { cx } from "./cx";
 import { FOCUS_RING } from "./focus-ring";
-import {
-  SidebarLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "./app-sidebar";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
+import { SidebarMenu } from "./app-sidebar/SidebarMenu";
+import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
+import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
+import { useSidebar } from "./app-sidebar/SidebarContext";
 
 export function SidebarOrganizationHeader() {
   const navigate = useNavigate();

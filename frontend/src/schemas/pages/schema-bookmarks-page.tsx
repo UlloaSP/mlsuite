@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Tags } from "lucide-react";
 import { useMemo } from "react";
 import { useParams } from "react-router";
-import { CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
+import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
 import type { SchemaBookmarkDto } from "@/api/schemas/dtos";
 import {
   useSchema,

@@ -15,7 +15,9 @@ import {
   useTransferOrganizationOwnershipMutation,
 } from "@/api/workspace/hooks";
 import { useUser } from "@/api/user/hooks";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
+import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
 import { NotFoundError } from "@/app/pages/error-page";
 import type { OrganizationPatch } from "@/workspace/components/OrganizationCatalogEditable";
 import { OrganizationCatalogTile } from "@/workspace/components/OrganizationCatalogTile";

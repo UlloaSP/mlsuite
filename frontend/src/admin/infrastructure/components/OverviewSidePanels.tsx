@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
-import { cx } from "@/app/components";
+import { cx } from "@/app/components/cx";
 import {
   buildDashboardAlerts,
   countHealthyServices,

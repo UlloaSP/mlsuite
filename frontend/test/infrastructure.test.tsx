@@ -12,6 +12,10 @@ import {
 } from "@/algorithms/admin/infrastructure/state";
 import type { InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
 import { buildWebSocketUrl } from "@/admin/infrastructure/ws/infrastructureSocket";
+import {
+  filterAndSortServices,
+  serviceStatusCounts,
+} from "@/admin/infrastructure/components/services-view-model";
 
 const overview: InfrastructureOverviewDto = {
   aggregate: {
@@ -69,6 +73,41 @@ const overview: InfrastructureOverviewDto = {
 };
 
 describe("infra helpers", () => {
+  it("filters, sorts, and counts service rows", () => {
+    const stopped = {
+      ...overview.services[0],
+      name: "worker",
+      containerName: null,
+      status: "exited" as const,
+      health: null,
+      cpuPercent: null,
+    };
+    const services = [stopped, overview.services[0]];
+
+    expect(
+      filterAndSortServices(services, {
+        query: "spring",
+        status: "running",
+        health: "healthy",
+        sort: { key: "cpuPercent", dir: "desc" },
+      }),
+    ).toEqual([overview.services[0]]);
+    expect(
+      filterAndSortServices(services, {
+        query: "",
+        status: "all",
+        health: "all",
+        sort: { key: "cpuPercent", dir: "asc" },
+      }),
+    ).toEqual([overview.services[0], stopped]);
+    expect(serviceStatusCounts(services)).toEqual({
+      all: 2,
+      running: 1,
+      stopped: 1,
+      restarting: 0,
+    });
+  });
+
   it("applies overview delta without losing bounded history", () => {
     const next = applyInfrastructureEvent(overview, {
       type: "overview.delta",

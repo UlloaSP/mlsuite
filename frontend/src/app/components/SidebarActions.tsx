@@ -17,16 +17,14 @@ import { useEffect, useEffectEvent } from "react";
 import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "@/app/atoms";
 import { isModShortcut, isTypingTarget } from "@/app/utils/keyboard-shortcuts";
 import { Kbd, KbdGroup } from "./Kbd";
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "./app-sidebar";
+import { SidebarGroup } from "./app-sidebar/SidebarGroup";
+import { SidebarGroupContent } from "./app-sidebar/SidebarGroupContent";
+import { SidebarGroupLabel } from "./app-sidebar/SidebarGroupLabel";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
+import { SidebarMenu } from "./app-sidebar/SidebarMenu";
+import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
+import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
+import { useSidebar } from "./app-sidebar/SidebarContext";
 
 type ViewTransitionDocument = Document & {
   startViewTransition?: (callback: () => void) => { finished: Promise<void> };

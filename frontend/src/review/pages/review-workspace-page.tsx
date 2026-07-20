@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { HttpError } from "@/api/core/services";
-import { AppEmptyState } from "@/app/components";
+import { AppEmptyState } from "@/app/components/AppEmptyState";
 import { ReviewShell } from "@/review/components/ReviewShell";
 import { ReviewStepContextPanel } from "@/review/components/ReviewStepContextPanel";
 import { ReviewUnavailable } from "@/review/components/ReviewUnavailable";

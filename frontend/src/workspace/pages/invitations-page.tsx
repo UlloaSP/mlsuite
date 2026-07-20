@@ -6,15 +6,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Mail, RotateCcw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import {
-  AppButton,
-  AppSelect,
-  AppCopy,
-  AppPage,
-  AppPageHeader,
-  AppSectionTitle,
-  AppSurface,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppSelect } from "@/app/components/AppSelect";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSectionTitle } from "@/app/components/AppSectionTitle";
+import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
 import {
   bulkRevokeInvitations,

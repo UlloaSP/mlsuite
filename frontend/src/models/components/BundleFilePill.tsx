@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { cx } from "@/app/components";
+import { cx } from "@/app/components/cx";
 import { formatBytes } from "@/algorithms/models/bundle-utils";
 
 type Props = {

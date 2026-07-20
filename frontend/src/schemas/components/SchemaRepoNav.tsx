@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal, GitPullRequestArrow, Tags } from "lucide-react";
 import { Link } from "react-router";
-import { AppBadge, cx } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { cx } from "@/app/components/cx";
 
 type Props = {
   active: "overview" | "changes" | "bookmarks" | "snapshots";

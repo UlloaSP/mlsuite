@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { AppPanel, AppBadge } from "@/app/components";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppBadge } from "@/app/components/AppBadge";
 import { formatTimestamp } from "@/algorithms/models/utils";
 import type { PredictionRunDto } from "@/api/schemas/dtos";
 

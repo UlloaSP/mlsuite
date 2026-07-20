@@ -18,7 +18,9 @@ import {
 import type { SchemaCatalogItemDto } from "@/api/schemas/dtos";
 import { useUser } from "@/api/user/hooks";
 import { useWorkspaceContext } from "@/api/workspace/hooks";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
+import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
 import { NotFoundError } from "@/app/pages/error-page";
 import type { SchemaAction } from "@/schemas/components/SchemaActionsMenu";
 import { SchemaActionDialog } from "@/schemas/components/SchemaActionDialog";

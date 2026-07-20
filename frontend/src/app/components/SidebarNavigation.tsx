@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import {
-  AlertTriangle,
   Blocks,
   BrainCircuit,
   Building2,
@@ -12,12 +11,9 @@ import {
   ClipboardList,
   KeyRound,
   LayoutGrid,
-  List,
   Mail,
-  Server,
   ServerCog,
   ShieldCheck,
-  SquareTerminal,
   Settings,
   Users,
 } from "lucide-react";
@@ -29,28 +25,18 @@ import { isTypingTarget, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
 import { cx } from "./cx";
 import { Kbd } from "./Kbd";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
-import { isChildActive, type NavigationItem } from "./sidebar-navigation-support";
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  useSidebar,
-} from "./app-sidebar";
-
-const INFRA_CHILDREN: NavigationItem["children"] = [
-  { to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview", exact: true },
-  { to: "/admin/infrastructure?tab=services", icon: Server, label: "Services" },
-  { to: "/admin/infrastructure?tab=logs", icon: List, label: "Logs" },
-  { to: "/admin/infrastructure?tab=terminal", icon: SquareTerminal, label: "Terminal" },
-  { to: "/admin/infrastructure?tab=alerts", icon: AlertTriangle, label: "Alerts" },
-];
+import { INFRA_CHILDREN, isChildActive, type NavigationItem } from "./sidebar-navigation-support";
+import { SidebarGroup } from "./app-sidebar/SidebarGroup";
+import { SidebarGroupContent } from "./app-sidebar/SidebarGroupContent";
+import { SidebarGroupLabel } from "./app-sidebar/SidebarGroupLabel";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
+import { SidebarMenu } from "./app-sidebar/SidebarMenu";
+import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
+import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
+import { SidebarMenuSub } from "./app-sidebar/SidebarMenuSub";
+import { SidebarMenuSubButton } from "./app-sidebar/SidebarMenuSubButton";
+import { SidebarMenuSubItem } from "./app-sidebar/SidebarMenuSubItem";
+import { useSidebar } from "./app-sidebar/SidebarContext";
 
 export function SidebarNavigation() {
   const location = useLocation();

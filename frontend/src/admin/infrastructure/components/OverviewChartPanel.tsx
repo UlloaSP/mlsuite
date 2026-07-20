@@ -16,13 +16,11 @@ import {
   YAxis,
 } from "recharts";
 import { Download } from "lucide-react";
-import { AppBadge, AppSelect } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppSelect } from "@/app/components/AppSelect";
 import { formatTimestamp } from "@/algorithms/admin/infrastructure/formatters";
 import type { InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
-import type {
-  ChartLayer,
-  ChartValueKey,
-} from "@/algorithms/admin/infrastructure/overview-metrics";
+import type { ChartLayer, ChartValueKey } from "@/algorithms/admin/infrastructure/overview-metrics";
 import {
   LAYER_CONFIG,
   chartPointForService,

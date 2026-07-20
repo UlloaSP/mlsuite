@@ -4,7 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { AppCopy, AppPanel, AppSectionTitle } from "@/app/components";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSectionTitle } from "@/app/components/AppSectionTitle";
 import { formatDisplayValue, getVisibleSchemaInputs } from "@/algorithms/schema/input-display";
 import type { JsonRecord } from "@/api/schemas/dtos";
 

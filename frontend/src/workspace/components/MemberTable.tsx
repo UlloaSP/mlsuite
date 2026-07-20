@@ -1,4 +1,7 @@
-import { AppButton, AppCopy, AppPanel, AppSelect } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSelect } from "@/app/components/AppSelect";
 import { RoleBadge } from "./RoleBadge";
 import type {
   MembershipRowActionsDto,

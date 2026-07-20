@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getBackendBaseUrl } from "@/app/config/runtimeConfig";
+import { getBackendBaseUrl } from "@/shared/config/runtime";
 import type { ErrorDto } from "@/api/core/dtos";
 
 export class HttpError extends Error {

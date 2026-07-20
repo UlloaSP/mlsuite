@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { AppCombobox, AppButton, AppSelect } from "@/app/components";
+import { AppCombobox } from "@/app/components/AppCombobox";
+import { AppButton } from "@/app/components/AppButton";
+import { AppSelect } from "@/app/components/AppSelect";
 import type { InvitationCandidateDto } from "@/api/workspace/dtos";
 import type { RoleDefinitionDto, TeamDto } from "@/api/workspace/dtos";
 

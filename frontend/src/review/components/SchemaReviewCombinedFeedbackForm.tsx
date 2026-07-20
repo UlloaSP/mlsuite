@@ -3,7 +3,8 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { FieldConfig } from "mlform/runtime";
 import { themeWithHtmlAtom } from "@/app/atoms";
-import { AppCopy, AppButton } from "@/app/components";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppButton } from "@/app/components/AppButton";
 import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,

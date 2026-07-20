@@ -7,14 +7,12 @@ import { Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import {
-  AppButton,
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSurface,
-  AppTextField,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSurface } from "@/app/components/AppSurface";
+import { AppTextField } from "@/app/components/AppTextField";
 import { useGetModels } from "@/api/models/hooks";
 import { createSchemaVersion } from "@/api/schemas/services";
 import { SchemaModelSelector } from "@/schemas/components/SchemaModelSelector";

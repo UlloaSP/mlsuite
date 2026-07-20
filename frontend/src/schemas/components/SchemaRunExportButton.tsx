@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { FileDown } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AppButton } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
 import { usePredictionRunsFeedback } from "@/api/schemas/hooks";
 import { buildSchemaRunExport, downloadSchemaRunExport } from "@/algorithms/schema/export";
 import type {

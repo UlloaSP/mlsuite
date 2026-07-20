@@ -13,7 +13,7 @@ import type {
   PredictionRunDto,
   CreatePredictionRunRequest,
 } from "@/api/schemas/dtos";
-import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "./query-keys";
+import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/api/schemas/hooks/query-keys";
 import { createSchemaRunRuntime } from "@/algorithms/schema/runtime-assembly";
 import { isRecord } from "@/algorithms/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "@/algorithms/models/prediction-catalog-definitions";

@@ -580,3 +580,25 @@
 - Plugin mutations now invalidate both TanStack server-state queries and the organization-scoped derived runtime cache from one owner.
 - Passed focused contracts (25/25), full frontend tests (152/152), production build, architecture/line limits, changed-file formatting/type checks, diff whitespace checks, and `graphify update .`.
 - Full `vp check` remains blocked by 22 pre-existing formatting violations. React Doctor remains at 67/100 with 100 pre-existing findings (4 errors, 96 warnings); none targets the new Query contracts.
+
+# Frontend Architecture Exception Removal
+
+- [x] Read `frontend/ARCHITECTURE.md`, frontend/root agent rules, Graphify report, and relevant lessons.
+- [x] Run architecture-test baseline and inventory exact migration exceptions.
+- [x] Remove every `LEGACY_API_IMPORT_EXCEPTIONS` dependency inversion at its owning seam.
+- [x] Replace legacy `app` barrel imports with concrete module imports, then delete barrel files.
+- [x] Split the two source modules above 300 non-comment lines and remove `LEGACY_LINE_LIMITS`.
+- [x] Delete all three explicit exception collections from the architecture fitness test.
+- [x] Run focused architecture/tests, full frontend tests/build/check, React Doctor, line/diff checks, and `graphify update .`.
+- [x] Record final review, verification, and any exact external blocker.
+
+## Review
+
+- Removed all 18 explicit fitness-test exceptions: 10 inverted legacy API imports, 6 app barrels, and 2 line-limit ceilings.
+- Runtime config now lives in `shared/config`; plugin query types derive from their transport contract; redundant workspace Jotai synchronization was deleted; schema bulk-upload orchestration moved out of the horizontal API layer.
+- All app component consumers now import concrete modules. No replacement barrel or forwarding compatibility file remains.
+- Extracted the service list model and infrastructure navigation data; `ServicesView.tsx` is 285 physical lines and `SidebarNavigation.tsx` is 299.
+- Passed architecture/infrastructure focused tests (17/17), TypeScript, full frontend tests (153/153), production build, and diff whitespace check.
+- `graphify update .` completed: 11,044 nodes, 31,359 edges, 351 communities.
+- `vp check` remains blocked by 15 pre-existing formatting violations outside this change.
+- React Doctor completed at 67/100 with 94 existing findings (4 errors, 90 warnings); no visual check was run because it was not requested.

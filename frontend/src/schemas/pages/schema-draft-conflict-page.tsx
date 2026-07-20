@@ -7,7 +7,11 @@ import { CheckCircle2, GitMerge, PencilLine, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { AppButton, AppCopy, AppPage, AppPageHeader, AppSurface } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSurface } from "@/app/components/AppSurface";
 import { isHttpError } from "@/api/core/services/app-fetch";
 import type {
   SchemaDraftBindingDto,

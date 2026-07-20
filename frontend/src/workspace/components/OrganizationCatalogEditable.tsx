@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { OrganizationCatalogItemDto } from "@/api/workspace/dtos";
-import { cx } from "@/app/components";
+import { cx } from "@/app/components/cx";
 
 export type OrganizationPatch = {
   description?: string | null;

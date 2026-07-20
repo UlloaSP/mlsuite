@@ -24,7 +24,9 @@ import {
   readFileText,
 } from "@/algorithms/plugin/catalog-page-model";
 import { detectPluginType } from "@/algorithms/plugin/catalog-loader";
-import { AppButton, CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
+import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
 import { NotFoundError } from "@/app/pages/error-page";
 import { PluginCatalogListItem } from "@/plugin/catalog/components/PluginCatalogListItem";
 import { bumpPluginCatalogVersionAtom } from "@/plugin/mlform/plugin-catalog-state";

@@ -1,13 +1,11 @@
 import { Eye, EyeOff, KeyRound, X } from "lucide-react";
 import { useState } from "react";
-import {
-  AppButton,
-  AppIconButton,
-  AppTextField,
-  AppCopy,
-  AppPanel,
-  AppSectionTitle,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppIconButton } from "@/app/components/AppIconButton";
+import { AppTextField } from "@/app/components/AppTextField";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSectionTitle } from "@/app/components/AppSectionTitle";
 
 export function ResetPasswordDialog({
   fullName,

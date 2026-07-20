@@ -7,12 +7,10 @@ import { SidebarActions } from "./SidebarActions";
 import { SidebarNavigation } from "./SidebarNavigation";
 import { SidebarOrganizationHeader } from "./SidebarOrganizationHeader";
 import { SidebarUserFooter } from "./SidebarUserFooter";
-import {
-  Sidebar as SidebarRoot,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-} from "./app-sidebar";
+import { Sidebar as SidebarRoot } from "./app-sidebar/Sidebar";
+import { SidebarContent } from "./app-sidebar/SidebarContent";
+import { SidebarFooter } from "./app-sidebar/SidebarFooter";
+import { SidebarHeader } from "./app-sidebar/SidebarHeader";
 
 export function Sidebar() {
   return (

@@ -7,7 +7,10 @@ import { Copy, Tag } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { AppButton, AppPage, AppPageHeader, AppSurface } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSurface } from "@/app/components/AppSurface";
 import {
   useCreateSchemaBookmarkMutation,
   useDuplicateSchemaMutation,

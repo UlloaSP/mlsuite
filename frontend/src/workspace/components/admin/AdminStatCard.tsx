@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { AppPanel, cx } from "@/app/components";
+import { AppPanel } from "@/app/components/AppPanel";
+import { cx } from "@/app/components/cx";
 
 export function AdminStatCard({
   label,

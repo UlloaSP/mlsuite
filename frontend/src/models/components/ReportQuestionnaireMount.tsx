@@ -17,7 +17,7 @@ import {
   buildQuestionnaireFormSchema,
   buildQuestionnaireWizardLayout,
 } from "@/algorithms/models/questionnaire-schema";
-import { AppSectionTitle } from "@/app/components";
+import { AppSectionTitle } from "@/app/components/AppSectionTitle";
 import { createLocalQuestionnaireTransport } from "@/models/local-questionnaire-transport";
 import {
   getQuestionnaireValues,

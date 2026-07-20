@@ -8,13 +8,11 @@ import { DropdownMenu } from "radix-ui";
 import { Link } from "react-router";
 import { useLogout, useUser } from "@/api/user/hooks";
 import { usePendingInvitations } from "@/api/workspace/hooks";
-import {
-  SidebarLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "./app-sidebar";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
+import { SidebarMenu } from "./app-sidebar/SidebarMenu";
+import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
+import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
+import { useSidebar } from "./app-sidebar/SidebarContext";
 
 export function SidebarUserFooter() {
   const { state } = useSidebar();

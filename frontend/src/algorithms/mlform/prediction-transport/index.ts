@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { SubmitRequest, Transport } from "mlform/runtime";
-import { getBackendBaseUrl } from "@/app/config/runtimeConfig";
+import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { type PredictionPayloadField, isRecord } from "@/algorithms/mlform/shared";
 import { mappedTarget, targetKey } from "@/algorithms/mlform/mapped-to";
 import { normalizeAnalyzerPredictionResult } from "@/algorithms/mlform/analyzer-result-normalization";

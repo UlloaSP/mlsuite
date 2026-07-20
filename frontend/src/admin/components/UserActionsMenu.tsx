@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Ellipsis, KeyRound, ShieldCheck, Trash2, UserCheck, UserX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { AppIconButton, cx } from "@/app/components";
+import { AppIconButton } from "@/app/components/AppIconButton";
+import { cx } from "@/app/components/cx";
 
 export function UserActionsMenu({
   disabled,

@@ -1,14 +1,12 @@
 import { Building2, FolderKanban, Puzzle, Users } from "lucide-react";
 import { Link } from "react-router";
-import {
-  AppBadge,
-  AppCopy,
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSectionTitle,
-  AppSurface,
-} from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSectionTitle } from "@/app/components/AppSectionTitle";
+import { AppSurface } from "@/app/components/AppSurface";
 import { useGetModels } from "@/api/models/hooks";
 import { useWorkspaceContext } from "@/api/workspace/hooks";
 

@@ -9,7 +9,8 @@ import { sidebarCollapsedAtom } from "@/app/atoms";
 import { AppGlobalSearch } from "@/app/components/AppGlobalSearch";
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/Sidebar";
-import { SidebarInset, SidebarProvider } from "@/app/components/app-sidebar";
+import { SidebarInset } from "@/app/components/app-sidebar/SidebarInset";
+import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);

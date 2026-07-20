@@ -6,14 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Play } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import {
-  AppButton,
-  AppEmptyState,
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSurface,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppEmptyState } from "@/app/components/AppEmptyState";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSurface } from "@/app/components/AppSurface";
 import { SchemaRunHistoryTable } from "@/schemas/components/SchemaRunHistoryTable";
 import { SchemaRunShareButton } from "@/schemas/components/SchemaRunShareButton";
 import {

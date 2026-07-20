@@ -9,24 +9,18 @@ import { useAtom } from "jotai";
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { themeWithHtmlAtom } from "@/app/atoms";
-import {
-  AppCopy,
-  AppPanel,
-  AppSectionTitle,
-  AppButton,
-  AppIconButton,
-  AppTextField,
-} from "@/app/components";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSectionTitle } from "@/app/components/AppSectionTitle";
+import { AppButton } from "@/app/components/AppButton";
+import { AppIconButton } from "@/app/components/AppIconButton";
+import { AppTextField } from "@/app/components/AppTextField";
 import { buildCombinedFeedbackQuestionnaire } from "@/algorithms/models/combined-feedback-questionnaire";
 import {
   ReportQuestionnaireMount,
   type ReportQuestionnaireMountHandle,
 } from "@/models/components/ReportQuestionnaireMount";
-import type {
-  CreatePredictionRunRequest,
-  JsonRecord,
-  SchemaVersionDto,
-} from "@/api/schemas/dtos";
+import type { CreatePredictionRunRequest, JsonRecord, SchemaVersionDto } from "@/api/schemas/dtos";
 import { buildSchemaFeedbackSteps } from "@/algorithms/schema/feedback-steps";
 import {
   buildPendingSchemaRunFeedback,

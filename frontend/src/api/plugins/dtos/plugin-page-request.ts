@@ -10,3 +10,6 @@ export type PluginPageRequest = {
   search?: string;
   sort?: "updated" | "name";
 };
+
+export type PluginCatalogType = NonNullable<PluginPageRequest["type"]>;
+export type PluginCatalogSort = NonNullable<PluginPageRequest["sort"]>;

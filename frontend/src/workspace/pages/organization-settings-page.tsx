@@ -7,16 +7,14 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
-import {
-  AppButton,
-  AppSelect,
-  AppTextArea,
-  AppTextField,
-  AppPage,
-  AppPageHeader,
-  AppPanel,
-  AppSurface,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppSelect } from "@/app/components/AppSelect";
+import { AppTextArea } from "@/app/components/AppTextArea";
+import { AppTextField } from "@/app/components/AppTextField";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
 import { transferOrganizationOwnership, updateOrganization } from "@/api/workspace/services";
 import {

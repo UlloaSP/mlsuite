@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
-import { AppPage, AppPageHeader } from "@/app/components";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
 import { NotFoundError } from "@/app/pages/error-page";
 import { emitErrorFromUnknown } from "@/app/utils/error-sink";
 import { useUser } from "@/api/user/hooks";

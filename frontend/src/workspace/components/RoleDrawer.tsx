@@ -1,5 +1,5 @@
 import { Shield } from "lucide-react";
-import { AppButton } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
 import type { RoleDefinitionDto } from "@/api/workspace/dtos";
 
 export function RoleDrawer({

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig } from "mlform/runtime";
-import { getBackendBaseUrl } from "@/app/config/runtimeConfig";
+import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { toAnalyzerReportPayload } from "@/algorithms/mlform/report-normalization";
 import { isRecord, type JsonRecord } from "@/algorithms/mlform/shared";
 import { mappedTarget, targetKey } from "@/algorithms/mlform/mapped-to";

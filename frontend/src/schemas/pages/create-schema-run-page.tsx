@@ -6,7 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { AppPage, AppPageHeader, AppPanel, AppSurface } from "@/app/components";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSurface } from "@/app/components/AppSurface";
 import { invalidatePluginCatalog } from "@/algorithms/plugin/catalog-loader";
 import { useCurrentOrganizationId } from "@/api/workspace/hooks/use-current-organization-id";
 import { isRecord } from "@/algorithms/mlform/shared";

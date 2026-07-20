@@ -1,4 +1,4 @@
-import { AppEmptyState } from "@/app/components";
+import { AppEmptyState } from "@/app/components/AppEmptyState";
 import { ReviewShell } from "./ReviewShell";
 
 type ReviewUnavailableProps = {

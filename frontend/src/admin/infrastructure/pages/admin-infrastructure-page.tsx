@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
-import { AppEmptyState, AppPage, AppSurface } from "@/app/components";
+import { AppEmptyState } from "@/app/components/AppEmptyState";
+import { AppPage } from "@/app/components/AppPage";
+import { AppSurface } from "@/app/components/AppSurface";
 import { useUser } from "@/api/user/hooks";
 import { AlertsView } from "@/admin/infrastructure/components/AlertsView";
 import { LogsView } from "@/admin/infrastructure/components/LogsView";
@@ -18,11 +20,11 @@ import {
   resolveSelectedService,
 } from "@/algorithms/admin/infrastructure/state";
 import { isOverviewSnapshotEvent, isServiceLogEvent } from "@/api/infrastructure/dtos";
-import type {
-  InfrastructureEvent,
-  InfrastructureOverviewDto,
-} from "@/api/infrastructure/dtos";
-import { openInfrastructureSocket, subscribeToServiceLogs } from "@/admin/infrastructure/ws/infrastructureSocket";
+import type { InfrastructureEvent, InfrastructureOverviewDto } from "@/api/infrastructure/dtos";
+import {
+  openInfrastructureSocket,
+  subscribeToServiceLogs,
+} from "@/admin/infrastructure/ws/infrastructureSocket";
 
 type InfraTab = "overview" | "services" | "logs" | "terminal" | "alerts";
 

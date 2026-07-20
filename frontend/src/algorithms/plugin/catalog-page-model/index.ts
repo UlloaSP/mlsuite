@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { PluginDto } from "@/api/plugins/services";
+import type { PluginCatalogSort, PluginCatalogType } from "@/api/plugins/dtos";
 import type { DetectedPluginType } from "@/algorithms/plugin/catalog-loader";
 
 /**
@@ -14,7 +15,7 @@ import type { DetectedPluginType } from "@/algorithms/plugin/catalog-loader";
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export type SortMode = "updated" | "name";
+export type SortMode = PluginCatalogSort;
 /**
  * PluginViewType: describes the public data contract consumed or returned by this algorithm.
  *
@@ -32,7 +33,7 @@ export type PluginViewType = DetectedPluginType | "invalid";
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export type TypeFilter = "all" | DetectedPluginType;
+export type TypeFilter = PluginCatalogType;
 
 /**
  * PluginPageItem: describes the public data contract consumed or returned by this algorithm.

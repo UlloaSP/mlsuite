@@ -1,4 +1,4 @@
-import { AppBadge } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
 
 const tone = {
   ACTIVE: "success",

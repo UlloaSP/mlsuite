@@ -4,7 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { m as motion } from "motion/react";
-import { AppBadge, AppPage, AppPanel, AppSurface } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSurface } from "@/app/components/AppSurface";
 import { NotFoundError } from "@/app/pages/error-page";
 import { useWorkspaceContext } from "@/api/workspace/hooks";
 import { ProfileBody } from "@/user/components/ProfileBody";

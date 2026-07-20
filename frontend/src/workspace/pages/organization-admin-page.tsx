@@ -1,6 +1,10 @@
 import { ClipboardList, Mail, Plus, Settings, Shield, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
-import { AppButton, AppPage, AppPageHeader, AppSurface, AppTabs } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSurface } from "@/app/components/AppSurface";
+import { AppTabs } from "@/app/components/AppTabs";
 import { NotFoundError } from "@/app/pages/error-page";
 import { AdminDataPanel } from "@/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/workspace/components/admin/AdminStatCard";

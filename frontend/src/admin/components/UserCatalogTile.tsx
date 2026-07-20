@@ -7,7 +7,7 @@ import { CalendarDays, Mail, ShieldCheck, ToggleLeft, ToggleRight } from "lucide
 import type { ReactNode } from "react";
 import { useState } from "react";
 import type { AdminUserDto } from "@/api/admin-users/dtos";
-import { AppBadge } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
 import { UserActionsMenu } from "./UserActionsMenu";
 import { ChangeRoleDialog, DeleteUserDialog } from "./UserCatalogDialogs";
 

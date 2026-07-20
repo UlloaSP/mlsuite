@@ -1,4 +1,4 @@
-import { getBackendBaseUrl } from "@/app/config/runtimeConfig";
+import { getBackendBaseUrl } from "@/shared/config/runtime";
 import type { InfrastructureEvent, TerminalFrame } from "@/api/infrastructure/dtos";
 
 type SocketCallbacks<TMessage> = {

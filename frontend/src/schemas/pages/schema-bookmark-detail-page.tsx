@@ -5,7 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { History, Play } from "lucide-react";
 import { Link, useParams } from "react-router";
-import { AppButton, AppPage, AppPageHeader, AppSurface } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSurface } from "@/app/components/AppSurface";
 import { useSchema, useSchemaBookmark, useSchemaVersion } from "@/api/schemas/hooks";
 import { SchemaSnapshotPreviewPanel } from "@/schemas/components/SchemaSnapshotPreviewPanel";
 

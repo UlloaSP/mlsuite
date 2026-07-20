@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download, RefreshCw } from "lucide-react";
-import { AppButton } from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
 import {
   countHealthyServices,
   countProblemServices,

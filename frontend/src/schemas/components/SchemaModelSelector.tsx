@@ -4,7 +4,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Check, Database } from "lucide-react";
-import { AppBadge, AppCopy, AppPanel, AppSectionTitle, cx } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppPanel } from "@/app/components/AppPanel";
+import { AppSectionTitle } from "@/app/components/AppSectionTitle";
+import { cx } from "@/app/components/cx";
 import { isRecord } from "@/algorithms/mlform/shared";
 import type { ModelDto } from "@/api/models/services";
 import { getModelAlgorithmLabel } from "@/algorithms/models/utils";

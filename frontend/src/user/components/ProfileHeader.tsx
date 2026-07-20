@@ -4,7 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { m as motion } from "motion/react";
-import { AppBadge, AppCopy, AppEyebrow } from "@/app/components";
+import { AppBadge } from "@/app/components/AppBadge";
+import { AppCopy } from "@/app/components/AppCopy";
+import { AppEyebrow } from "@/app/components/AppEyebrow";
 
 export type ProfileHeaderProps = {
   imageUrl: string | null;

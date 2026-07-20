@@ -7,7 +7,8 @@ import { GitCommitHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { CatalogResourcePage, useCatalogControls } from "@/app/components";
+import { CatalogResourcePage } from "@/app/components/catalog/CatalogResourcePage";
+import { useCatalogControls } from "@/app/components/catalog/useCatalogControls";
 import type { SchemaVersionDto } from "@/api/schemas/dtos";
 import {
   useCreateSchemaBookmarkMutation,

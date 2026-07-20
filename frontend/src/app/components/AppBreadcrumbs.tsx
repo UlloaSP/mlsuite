@@ -4,15 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Fragment, type HTMLAttributes, type ReactNode } from "react";
-import {
-  Breadcrumb,
-  BreadcrumbCollapsedMenu,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "./breadcrumb";
+import { Breadcrumb } from "./breadcrumb/Breadcrumb";
+import { BreadcrumbCollapsedMenu } from "./breadcrumb/BreadcrumbCollapsedMenu";
+import { BreadcrumbItem } from "./breadcrumb/BreadcrumbItem";
+import { BreadcrumbLink } from "./breadcrumb/BreadcrumbLink";
+import { BreadcrumbList } from "./breadcrumb/BreadcrumbList";
+import { BreadcrumbPage } from "./breadcrumb/BreadcrumbPage";
+import { BreadcrumbSeparator } from "./breadcrumb/BreadcrumbSeparator";
 
 export type AppBreadcrumbItem = {
   label: ReactNode;

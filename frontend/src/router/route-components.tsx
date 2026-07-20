@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Navigate, Outlet } from "react-router";
 import { useUser } from "@/api/user/hooks";
-import { useWorkspaceContextSync } from "@/api/workspace/hooks";
+import { useWorkspaceContext } from "@/api/workspace/hooks";
 import { EditorAssemblyLoader } from "./EditorAssemblyLoader";
 
 export function EditorRouteFallback() {
@@ -14,7 +14,7 @@ export function EditorRouteFallback() {
 
 export function ProtectedRoute() {
   const { data: user, error, isLoading } = useUser();
-  const workspace = useWorkspaceContextSync(Boolean(user) && !error);
+  const workspace = useWorkspaceContext(Boolean(user) && !error);
 
   if (isLoading || workspace.isLoading) {
     return <EditorRouteFallback />;

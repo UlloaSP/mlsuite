@@ -1,7 +1,6 @@
 export * from "./query-keys";
 export { useWorkspaceContext } from "./use-workspace-context";
 export { useCurrentOrganizationId } from "./use-current-organization-id";
-export { useWorkspaceContextSync } from "./use-workspace-context-sync";
 export { usePendingInvitations } from "./use-pending-invitations";
 export { useAcceptInvitation } from "./use-accept-invitation";
 export { useDeclineInvitation } from "./use-decline-invitation";

@@ -19,20 +19,6 @@ const ALLOWED_ROOTS = new Set([...TARGET_ROOTS, ...LEGACY_ROOTS]);
 const ALLOWED_ROOT_FILES = new Set(["main.tsx", "vite-env.d.ts"]);
 const FEATURE_PARTS = new Set("api lib components pages routes.tsx index.ts".split(" "));
 const SHARED_PARTS = new Set("api config ui lib".split(" "));
-const LEGACY_API_IMPORT_EXCEPTIONS = new Set(
-  "api/core/services/app-fetch.ts -> app/config/runtimeConfig.ts|api/plugins/hooks/query-keys.ts -> algorithms/plugin/catalog-page-model/index.ts|api/plugins/hooks/use-plugin-catalog-page-query.ts -> algorithms/plugin/catalog-page-model/index.ts|api/schemas/hooks/use-schema-run-bulk-upload.ts -> algorithms/schema/runtime-assembly/index.ts|api/schemas/hooks/use-schema-run-bulk-upload.ts -> algorithms/mlform/shared/index.ts|api/schemas/hooks/use-schema-run-bulk-upload.ts -> algorithms/models/prediction-catalog-definitions/index.ts|api/schemas/hooks/use-schema-run-bulk-upload.ts -> algorithms/models/parse-spreadsheet-prediction-file/index.ts|api/schemas/hooks/use-schema-run-bulk-upload.ts -> algorithms/schema/run-cache/index.ts|api/schemas/hooks/use-schema-run-bulk-upload.ts -> algorithms/schema/bulk-upload/index.ts|api/workspace/hooks/use-workspace-context-sync.ts -> workspace/atoms.ts".split(
-    "|",
-  ),
-);
-const LEGACY_APP_BARRELS = new Set(
-  "app/components/index.ts app/components/app-sidebar/index.ts app/components/breadcrumb/index.ts app/components/catalog/index.ts app/components/pagination/index.ts app/components/select/index.ts".split(
-    " ",
-  ),
-);
-const LEGACY_LINE_LIMITS = new Map([
-  ["admin/infrastructure/components/ServicesView.tsx", 302],
-  ["app/components/SidebarNavigation.tsx", 306],
-]);
 
 type SourceImport = {
   importer: string;
@@ -130,7 +116,6 @@ function dependencyFailure(edge: SourceImport): string | null {
 }
 
 function isForbiddenTargetBarrel(edge: SourceImport): boolean {
-  if (LEGACY_APP_BARRELS.has(edge.target)) return false;
   const importer = edge.importer.split("/");
   const target = edge.target.split("/");
   const isIndex = target.at(-1) === "index.ts" || target.at(-1) === "index.tsx";
@@ -233,14 +218,12 @@ describe("frontend architecture contract", () => {
     expect(failures).toEqual([]);
   });
 
-  test("allows no new app barrels beyond the exact migration baseline", () => {
+  test("keeps app composition free of barrels", () => {
     const actual = sourceFiles()
       .map(rel)
       .filter((path) => path.startsWith("app/") && /\/index\.tsx?$/.test(path));
 
-    expect(actual.sort((a, b) => a.localeCompare(b))).toEqual(
-      [...LEGACY_APP_BARRELS].sort((a, b) => a.localeCompare(b)),
-    );
+    expect(actual).toEqual([]);
   });
 
   test("allows only external use of narrow target public barrels", () => {
@@ -264,8 +247,7 @@ describe("frontend architecture contract", () => {
   test("does not add inverted dependencies to the legacy API layer", () => {
     const failures = ALL_IMPORTS.filter((edge) => edge.importer.startsWith("api/"))
       .filter((edge) => !["api", "shared"].includes(edge.target.split("/")[0]))
-      .map((edge) => `${edge.importer} -> ${edge.target}`)
-      .filter((edge) => !LEGACY_API_IMPORT_EXCEPTIONS.has(edge));
+      .map((edge) => `${edge.importer} -> ${edge.target}`);
 
     expect(failures).toEqual([]);
   });
@@ -278,23 +260,12 @@ describe("frontend architecture contract", () => {
     expect(failures).toEqual([]);
   });
 
-  test("keeps source modules within the line limit without growing legacy debt", () => {
+  test("keeps source modules within the line limit", () => {
     const failures = sourceFiles()
       .map((file) => ({ file: rel(file), lines: codeLineCount(file) }))
-      .filter(({ file, lines }) => lines > (LEGACY_LINE_LIMITS.get(file) ?? 300))
+      .filter(({ lines }) => lines > 300)
       .map(({ file, lines }) => `${file}: ${lines}`);
-    const stale = [...LEGACY_LINE_LIMITS]
-      .filter(([file, ceiling]) => {
-        const absolute = join(SRC, file);
-        return (
-          !existsSync(absolute) ||
-          codeLineCount(absolute) <= 300 ||
-          codeLineCount(absolute) > ceiling
-        );
-      })
-      .map(([file]) => file);
 
     expect(failures).toEqual([]);
-    expect(stale).toEqual([]);
   });
 });

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { SortMode, TypeFilter } from "@/algorithms/plugin/catalog-page-model";
+import type { PluginCatalogSort, PluginCatalogType } from "@/api/plugins/dtos";
 import { organizationQueryKey } from "@/api/workspace/hooks/query-keys";
 
 export const PLUGIN_CATALOG_PAGE_SIZE = 24;
@@ -14,9 +14,9 @@ export const PLUGIN_CATALOG_STATS_QUERY_KEY = (organizationId: number | string) 
 export const pluginCatalogPageQueryKey = (
   organizationId: number | string | undefined,
   page: number,
-  type: TypeFilter,
+  type: PluginCatalogType,
   search: string,
-  sort: SortMode,
+  sort: PluginCatalogSort,
 ) => [
   ...PLUGIN_CATALOG_PAGE_QUERY_KEY(organizationId ?? "none"),
   page,

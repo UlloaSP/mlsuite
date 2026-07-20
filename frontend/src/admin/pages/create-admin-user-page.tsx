@@ -9,15 +9,13 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { useCreateAdminUser } from "@/api/admin-users/hooks";
 import { useUser } from "@/api/user/hooks";
-import {
-  AppButton,
-  AppIconButton,
-  AppPage,
-  AppPageHeader,
-  AppSelect,
-  AppSurface,
-  AppTextField,
-} from "@/app/components";
+import { AppButton } from "@/app/components/AppButton";
+import { AppIconButton } from "@/app/components/AppIconButton";
+import { AppPage } from "@/app/components/AppPage";
+import { AppPageHeader } from "@/app/components/PageHeader";
+import { AppSelect } from "@/app/components/AppSelect";
+import { AppSurface } from "@/app/components/AppSurface";
+import { AppTextField } from "@/app/components/AppTextField";
 import { NotFoundError } from "@/app/pages/error-page";
 
 type Role = "USER" | "SUPERADMIN";
