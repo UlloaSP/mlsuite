@@ -3,10 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only Monaco import is erased from runtime.
-import type * as Monaco from "monaco-editor";
+import type { EditorProps } from "@monaco-editor/react";
 
-export const editorOptions: Monaco.editor.IStandaloneEditorConstructionOptions = {
+export const editorOptions: NonNullable<EditorProps["options"]> = {
   minimap: { enabled: false },
   fontSize: 14,
   fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",

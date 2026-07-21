@@ -10,6 +10,13 @@ import org.springframework.data.jpa.repository.Query;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 
 public interface PredictionRunRepository extends JpaRepository<PredictionRun, Long> {
+
+    @Query("""
+            SELECT COUNT(r) FROM PredictionRun r
+            WHERE r.id IN :runIds
+            AND r.schemaVersion.schema.organization.id = :organizationId
+            """)
+    long countByIdsAndOrganizationId(List<Long> runIds, Long organizationId);
     @Query("SELECT r FROM PredictionRun r WHERE r.id = :id AND r.schemaVersion.schema.organization.id = :organizationId")
     Optional<PredictionRun> findByIdAndOrganizationId(Long id, Long organizationId);
 

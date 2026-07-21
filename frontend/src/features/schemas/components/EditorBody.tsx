@@ -14,9 +14,8 @@ import {
   getCustomReportDefinitions,
   type CatalogReportDefinition,
 } from "@/capabilities/mlform/custom-report-catalog";
-import { invalidatePluginCatalog } from "@/capabilities/mlform/plugin-catalog-loader";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { pluginCatalogVersionAtom } from "@/capabilities/mlform/plugin-catalog-state";
+import { usePluginRuntimeSourcesQuery } from "@/capabilities/mlform/plugin-runtime-sources";
 import { schemaNeedsPluginCatalog } from "@/capabilities/mlform/schema-plugin-requirement";
 import { mlformJsonSchema, validateMlformSchema } from "@/capabilities/mlform/schema-validation";
 import { buildCatalogWarning } from "@/features/schemas/lib/catalog-warning";
@@ -34,7 +33,7 @@ import { editorOptions } from "@/capabilities/editor/editor-options";
 import type {
   EditorBodyProps,
   MonacoEditorInstance,
-  MonacoLanguages,
+  MonacoJson,
   MonacoMarker,
   MonacoMarkerData,
   MonacoNamespace,
@@ -48,7 +47,7 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
   const [, setSchema] = useAtom(schemaAtom);
   const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
   const [theme] = useAtom(themeWithHtmlAtom);
-  const [pluginCatalogVersion] = useAtom(pluginCatalogVersionAtom);
+  const pluginSourcesQuery = usePluginRuntimeSourcesQuery(organizationId);
 
   const editorRef = useRef<MonacoEditorInstance | null>(null);
   const monacoRef = useRef<MonacoNamespace | null>(null);
@@ -58,6 +57,10 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
   const catalogFieldDefinitionsRef = useRef<readonly CatalogFieldDefinition[]>([]);
   const catalogReportDefinitionsRef = useRef<readonly CatalogReportDefinition[]>([]);
   const catalogWarningRef = useRef<EditorErrorCard | null>(null);
+  const schemaTextRef = useRef(schemaText);
+  useEffect(() => {
+    schemaTextRef.current = schemaText;
+  }, [schemaText]);
   const applyChangeDecorations = useCallback(
     (text: string) => {
       if (!editorRef.current) return;
@@ -161,7 +164,7 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
     defineEditorThemes(monacoNs);
     setEditorTheme(monacoNs, theme === "dark");
 
-    (monacoNs.languages as MonacoLanguages).json.jsonDefaults.setDiagnosticsOptions({
+    (monacoNs as MonacoNamespace & MonacoJson).json.jsonDefaults.setDiagnosticsOptions({
       validate: true,
       enableSchemaRequest: false,
       schemas: [
@@ -230,13 +233,16 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
   );
 
   useEffect(() => {
+    if (!pluginSourcesQuery.data && !pluginSourcesQuery.error) return;
     let cancelled = false;
 
     void (async () => {
       try {
+        if (pluginSourcesQuery.error) throw pluginSourcesQuery.error;
+        const sources = pluginSourcesQuery.data ?? [];
         const [customFieldDefinitions, customReportDefinitions] = await Promise.all([
-          getCustomFieldDefinitions(organizationId),
-          getCustomReportDefinitions(organizationId),
+          getCustomFieldDefinitions(organizationId, sources),
+          getCustomReportDefinitions(organizationId, sources),
         ]);
         if (cancelled) {
           return;
@@ -245,7 +251,7 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
         catalogFieldDefinitionsRef.current = customFieldDefinitions;
         catalogReportDefinitionsRef.current = customReportDefinitions;
         catalogWarningRef.current = null;
-        const nextText = editorRef.current?.getValue() ?? schemaText;
+        const nextText = editorRef.current?.getValue() ?? schemaTextRef.current;
         applyCompatValidation(nextText, customFieldDefinitions, customReportDefinitions);
       } catch (error: unknown) {
         if (cancelled) {
@@ -256,9 +262,9 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
         catalogReportDefinitionsRef.current = [];
         catalogWarningRef.current = buildCatalogWarning(
           error,
-          schemaNeedsPluginCatalog(editorRef.current?.getValue() ?? schemaText),
+          schemaNeedsPluginCatalog(editorRef.current?.getValue() ?? schemaTextRef.current),
         );
-        const nextText = editorRef.current?.getValue() ?? schemaText;
+        const nextText = editorRef.current?.getValue() ?? schemaTextRef.current;
         applyCompatValidation(nextText, [], []);
       }
     })();
@@ -266,11 +272,7 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
     return () => {
       cancelled = true;
     };
-  }, [applyCompatValidation, organizationId, pluginCatalogVersion, schemaText]);
-
-  useEffect(() => {
-    invalidatePluginCatalog(organizationId);
-  }, [organizationId, pluginCatalogVersion]);
+  }, [applyCompatValidation, organizationId, pluginSourcesQuery.data, pluginSourcesQuery.error]);
 
   useEffect(() => {
     if (monacoRef.current) {

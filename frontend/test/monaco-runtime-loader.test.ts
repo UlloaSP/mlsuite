@@ -3,8 +3,8 @@ import { afterEach, expect, test, vi } from "vite-plus/test";
 afterEach(() => {
   vi.doUnmock("monaco-editor");
   vi.doUnmock("@monaco-editor/react");
-  vi.doUnmock("monaco-editor/esm/vs/editor/editor.worker?worker");
-  vi.doUnmock("monaco-editor/esm/vs/language/json/json.worker?worker");
+  vi.doUnmock("monaco-editor/editor/editor.worker.js?worker");
+  vi.doUnmock("monaco-editor/language/json/json.worker.js?worker");
   vi.resetModules();
   Reflect.deleteProperty(globalThis, "MonacoEnvironment");
 });
@@ -20,10 +20,10 @@ test("configures the React wrapper with the local Monaco instance once", async (
   });
   vi.doMock("monaco-editor", () => ({ editor: { create: vi.fn() } }));
   vi.doMock("@monaco-editor/react", () => ({ Editor, loader: { config } }));
-  vi.doMock("monaco-editor/esm/vs/editor/editor.worker?worker", () => ({
+  vi.doMock("monaco-editor/editor/editor.worker.js?worker", () => ({
     default: EditorWorker,
   }));
-  vi.doMock("monaco-editor/esm/vs/language/json/json.worker?worker", () => ({
+  vi.doMock("monaco-editor/language/json/json.worker.js?worker", () => ({
     default: JsonWorker,
   }));
 
@@ -49,10 +49,10 @@ test("propagates local Monaco configuration failures", async () => {
   });
   vi.doMock("monaco-editor", () => ({ editor: { create: vi.fn() } }));
   vi.doMock("@monaco-editor/react", () => ({ Editor: vi.fn(), loader: { config } }));
-  vi.doMock("monaco-editor/esm/vs/editor/editor.worker?worker", () => ({
+  vi.doMock("monaco-editor/editor/editor.worker.js?worker", () => ({
     default: vi.fn(),
   }));
-  vi.doMock("monaco-editor/esm/vs/language/json/json.worker?worker", () => ({
+  vi.doMock("monaco-editor/language/json/json.worker.js?worker", () => ({
     default: vi.fn(),
   }));
 

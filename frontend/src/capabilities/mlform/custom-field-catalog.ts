@@ -5,13 +5,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { FieldConfig } from "mlform/runtime";
 import type { DefinedFieldKind } from "mlform/kit";
-import type { PluginRuntimeSource } from "@/shared/api/plugin-runtime";
-import { detectPluginType, loadPlugins } from "@/capabilities/mlform/plugin-catalog-loader";
+import type { PluginRuntimeSource } from "@/capabilities/mlform/plugin-runtime-sources";
+import { detectPluginType } from "@/capabilities/mlform/plugin-catalog-loader";
 import {
   CUSTOM_FIELD_COMPONENT,
   resolveCustomFieldDefinition,
 } from "@/capabilities/mlform/custom-field-source-runtime";
-import { memoizePluginRuntime } from "@/capabilities/mlform/plugin-runtime-cache";
 
 export { CUSTOM_FIELD_COMPONENT };
 
@@ -78,13 +77,12 @@ const toCatalogDefinition = async (
  */
 export const getCustomFieldDefinitions = (
   organizationId: number | string,
+  items: readonly PluginRuntimeSource[],
 ): Promise<readonly CatalogFieldDefinition[]> =>
-  memoizePluginRuntime(organizationId, "field-definitions", () =>
-    loadPlugins(organizationId).then(async (items) => {
-      const definitions = (
-        await Promise.all(items.map((item) => toCatalogDefinition(organizationId, item)))
-      ).filter((definition): definition is CatalogFieldDefinition => definition !== null);
-      assertUniqueKinds(definitions);
-      return definitions;
-    }),
-  );
+  Promise.all(items.map((item) => toCatalogDefinition(organizationId, item))).then((results) => {
+    const definitions = results.filter(
+      (definition): definition is CatalogFieldDefinition => definition !== null,
+    );
+    assertUniqueKinds(definitions);
+    return definitions;
+  });

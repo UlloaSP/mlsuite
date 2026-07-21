@@ -27,6 +27,11 @@ export type CreatePredictionRunRequest = {
     status: PredictionResultStatus;
     errorMessage?: string | null;
     errorJson?: JsonRecord | null;
+    feedback?: Array<{
+      type: PredictionResultFeedbackType;
+      order: number;
+      value: unknown;
+    }>;
   }>;
 };
 

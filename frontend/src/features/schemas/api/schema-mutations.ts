@@ -2,7 +2,7 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   archiveSchema,
-  createSchema,
+  createSchemaWithInitialVersion,
   deleteSchema,
   duplicateSchema,
   renameSchema,
@@ -54,11 +54,11 @@ export const useDuplicateSchemaMutation = () => {
   });
 };
 
-export function useCreateSchemaMutation() {
+export function useCreateSchemaWithInitialVersionMutation() {
   const invalidate = useInvalidateSchemaQueries();
   return useMutation({
     meta: { errorHandledLocally: true },
-    mutationFn: createSchema,
+    mutationFn: createSchemaWithInitialVersion,
     onSuccess: () => void invalidate(),
   });
 }

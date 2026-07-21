@@ -13,24 +13,29 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import { useGetModels } from "@/features/models/api/model.queries";
-import { createSchemaVersion } from "@/features/schemas/api/schema-api";
 import { SchemaModelSelector } from "@/features/schemas/components/SchemaModelSelector";
-import { useCreateSchemaMutation } from "@/features/schemas/api/schema-mutations";
+import { useCreateSchemaWithInitialVersionMutation } from "@/features/schemas/api/schema-mutations";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
 import { prepareSchemaVersionForSave } from "@/capabilities/mlform/binding-rebase";
-import { composeSchemaVersion, type SelectedSchemaModel } from "@/features/schemas/lib/merge";
+import {
+  composeSchemaVersion,
+  type SchemaSourceModel,
+  type SelectedSchemaModel,
+} from "@/features/schemas/lib/merge";
 
 type SelectedModel = SelectedSchemaModel;
 
-export function CreateSchemaPage() {
+type Props = {
+  isLoading: boolean;
+  models: SchemaSourceModel[];
+};
+
+export function CreateSchemaPage({ isLoading, models }: Props) {
   const navigate = useNavigate();
-  const { data: models = [], isLoading } = useGetModels();
-  const createSchema = useCreateSchemaMutation();
+  const createSchema = useCreateSchemaWithInitialVersionMutation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selected, setSelected] = useState<SelectedModel[]>([]);
-  const [saving, setSaving] = useState(false);
 
   const composedVersion = useMemo(
     () =>
@@ -41,7 +46,7 @@ export function CreateSchemaPage() {
     [selected],
   );
   const canSubmit = name.trim().length > 0 && selected.length > 0;
-  const busy = createSchema.isPending || saving;
+  const busy = createSchema.isPending;
   const fieldCount = countVisibleSchemaFields(composedVersion.formSchema);
   const reportCount = Array.isArray(composedVersion.formSchema.reports)
     ? composedVersion.formSchema.reports.length
@@ -51,7 +56,6 @@ export function CreateSchemaPage() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!canSubmit || busy) return;
-    setSaving(true);
     try {
       const preparedVersion = prepareSchemaVersionForSave(
         composedVersion,
@@ -59,21 +63,21 @@ export function CreateSchemaPage() {
       );
       const schemaId = (
         await createSchema.mutateAsync({
-          name,
-          description: description.trim() || undefined,
+          schema: {
+            name,
+            description: description.trim() || undefined,
+          },
+          initialVersion: {
+            ...preparedVersion,
+            name: "v1",
+          },
         })
       ).id;
-      await createSchemaVersion(schemaId, {
-        ...preparedVersion,
-        name: "v1",
-      });
       void navigate(`/schemas/${schemaId}`);
     } catch (error) {
       toast.error("Schema create failed", {
         description: error instanceof Error ? error.message : String(error),
       });
-    } finally {
-      setSaving(false);
     }
   };
 

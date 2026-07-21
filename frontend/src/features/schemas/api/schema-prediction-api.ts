@@ -50,3 +50,14 @@ export const getPredictionResultFeedback = (
     `/api/prediction-result-feedback?resultId=${encodeURIComponent(resultId)}`,
     { signal },
   );
+
+export const getPredictionRunsFeedback = (
+  runIds: readonly string[],
+  signal?: AbortSignal,
+): Promise<PredictionResultFeedbackDto[]> => {
+  const params = new URLSearchParams({ runIds: runIds.join(",") });
+  return appFetch<PredictionResultFeedbackDto[]>(
+    `/api/prediction-result-feedback/by-runs?${params.toString()}`,
+    { signal },
+  );
+};

@@ -44,8 +44,8 @@ export function SchemaRunFeedbackQuestionnaire({ run, version, feedback, onSaved
   const [theme] = useAtom(themeWithHtmlAtom);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
   const [savedValues, setSavedValues] = useState<Record<string, unknown> | null>(null);
-  const createFeedback = useCreatePredictionResultFeedbackMutation("");
-  const updateFeedback = useUpdatePredictionResultFeedbackMutation("");
+  const createFeedback = useCreatePredictionResultFeedbackMutation();
+  const updateFeedback = useUpdatePredictionResultFeedbackMutation();
   const steps = useMemo(
     () => buildSchemaFeedbackSteps(version, run.results, feedback),
     [feedback, run.results, version],

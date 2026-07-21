@@ -41,8 +41,10 @@ export function OrganizationsPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const controls = useCatalogControls<OrganizationFilterMode, OrganizationSortMode>({
+    filters: FILTERS.map(({ value }) => value),
     initialFilter: "all",
     initialSort: "updated",
+    sorts: SORT_OPTIONS.map(({ value }) => value),
   });
   const renameMutation = useRenameOrganizationMutation();
   const deleteMutation = useDeleteOrganizationMutation();

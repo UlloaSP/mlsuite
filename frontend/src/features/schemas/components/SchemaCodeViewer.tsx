@@ -4,16 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-// react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only Monaco import is erased from runtime.
-import type * as Monaco from "monaco-editor";
+import type { Monaco, OnMount } from "@monaco-editor/react";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { cx } from "@/shared/ui/cx";
 import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
 import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
 import { defineEditorThemes, setEditorTheme } from "@/capabilities/editor/configure-editor-theme";
 import { editorOptions } from "@/capabilities/editor/editor-options";
-
-type MonacoNamespace = typeof import("monaco-editor");
 
 type Props = {
   value: string;
@@ -24,9 +21,9 @@ const MonacoEditor = lazy(loadLocalMonacoEditor);
 
 export function SchemaCodeViewer({ value, className }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
-  const monacoRef = useRef<MonacoNamespace | null>(null);
+  const monacoRef = useRef<Monaco | null>(null);
 
-  const mount = (_editor: Monaco.editor.IStandaloneCodeEditor, monacoNs: MonacoNamespace) => {
+  const mount: OnMount = (_editor, monacoNs) => {
     monacoRef.current = monacoNs;
     defineEditorThemes(monacoNs);
     setEditorTheme(monacoNs, theme === "dark");

@@ -5,6 +5,7 @@ import { getSchemaBookmark, getSchemaBookmarks } from "./schema-bookmark-api";
 import { getSchemaDraft, getSchemaDraftDiff, getSchemaDrafts } from "./schema-draft-api";
 import {
   getPredictionResultFeedback,
+  getPredictionRunsFeedback,
   getPredictionRun,
   getPredictionRunsForBookmark,
 } from "./schema-prediction-api";
@@ -12,6 +13,7 @@ import type { PredictionRunDto } from "./prediction-types";
 import {
   BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
   PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
+  PREDICTION_RUNS_FEEDBACK_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
   SCHEMA_BOOKMARKS_QUERY_KEY,
   SCHEMA_BOOKMARK_QUERY_KEY,
@@ -119,6 +121,20 @@ export const predictionResultFeedbackQueryOptions = (organizationId: Scope, resu
     enabled: Boolean(resultId),
   });
 
+export const predictionRunsFeedbackQueryOptions = (
+  organizationId: Scope,
+  runIds: readonly (number | string)[],
+) => {
+  const normalizedRunIds = [...new Set(runIds.map(String))].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  return queryOptions({
+    queryKey: PREDICTION_RUNS_FEEDBACK_QUERY_KEY(organizationId, normalizedRunIds),
+    queryFn: ({ signal }) => getPredictionRunsFeedback(normalizedRunIds, signal),
+    enabled: normalizedRunIds.length > 0,
+  });
+};
+
 export const useSchema = (schemaId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery(schemaQueryOptions(organizationId, schemaId));
@@ -195,17 +211,14 @@ export const usePredictionRunFeedback = (run?: PredictionRunDto) => {
 
 export const usePredictionRunsFeedback = (runs: readonly PredictionRunDto[]) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
-  const resultIds = runs.flatMap((run) => run.results.map((result) => result.id));
-  const queries = useQueries({
-    queries: resultIds.map((resultId) => ({
-      ...predictionResultFeedbackQueryOptions(organizationId, resultId),
-      placeholderData: [],
-    })),
+  const query = useQuery({
+    ...predictionRunsFeedbackQueryOptions(
+      organizationId,
+      runs.map((run) => run.id),
+    ),
+    placeholderData: [],
   });
-  return {
-    data: queries.flatMap((query) => query.data ?? []),
-    isLoading: queries.some((query) => query.isLoading),
-  };
+  return { ...query, data: query.data ?? [] };
 };
 
 export const useSchemaCatalogPageQuery = (

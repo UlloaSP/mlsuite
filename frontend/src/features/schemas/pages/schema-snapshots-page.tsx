@@ -59,9 +59,11 @@ export function SchemaSnapshotsPage() {
   const [changeTarget, setChangeTarget] = useState<SchemaVersionDto | null>(null);
   const [cloneTarget, setCloneTarget] = useState<SchemaVersionDto | null>(null);
   const controls = useCatalogControls<SnapshotFilter, SnapshotSort>({
+    filters: FILTERS.map(({ value }) => value),
     initialFilter: "all",
     initialSort: "created",
     resetKey: schemaId,
+    sorts: SORTS.map(({ value }) => value),
   });
   const sortedVersions = useMemo(
     () => sortSchemaVersions(versionsQuery.data ?? []),

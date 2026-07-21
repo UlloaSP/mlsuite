@@ -90,10 +90,10 @@ class SchemaFlowServiceTest {
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, modelRepository, workspaceAccessService, authorizationService);
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, bindingRepository,
-                runRepository, resultRepository, modelRepository,
+                runRepository, resultRepository, feedbackRepository, modelRepository,
                 workspaceAccessService, authorizationService);
         feedbackService = new PredictionResultFeedbackService(userLookupService, workspaceAccessService,
-                authorizationService, resultRepository, feedbackRepository);
+                authorizationService, resultRepository, feedbackRepository, runRepository);
         when(userLookupService.requireById(7L)).thenReturn(user());
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization());
     }

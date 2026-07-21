@@ -12,7 +12,7 @@ import type {
 } from "./prediction-types";
 import {
   BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
-  PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
+  PREDICTION_FEEDBACK_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
 } from "./schema-keys";
 
@@ -32,26 +32,26 @@ export function useCreatePredictionRunForBookmarkMutation(bookmarkId: string) {
   });
 }
 
-export function useCreatePredictionResultFeedbackMutation(resultId: string) {
+export function useCreatePredictionResultFeedbackMutation() {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (req: CreatePredictionResultFeedbackRequest) => createPredictionResultFeedback(req),
     onSuccess: () =>
       qc.invalidateQueries({
-        queryKey: PREDICTION_RESULT_FEEDBACK_QUERY_KEY(organizationId, resultId),
+        queryKey: PREDICTION_FEEDBACK_QUERY_KEY(organizationId),
       }),
   });
 }
 
-export function useUpdatePredictionResultFeedbackMutation(resultId: string) {
+export function useUpdatePredictionResultFeedbackMutation() {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (req: UpdatePredictionResultFeedbackRequest) => updatePredictionResultFeedback(req),
     onSuccess: () =>
       qc.invalidateQueries({
-        queryKey: PREDICTION_RESULT_FEEDBACK_QUERY_KEY(organizationId, resultId),
+        queryKey: PREDICTION_FEEDBACK_QUERY_KEY(organizationId),
       }),
   });
 }

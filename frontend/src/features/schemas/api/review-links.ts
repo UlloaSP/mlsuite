@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
 import { appFetch, json } from "@/shared/api/http";
 
 type CreateSchemaReviewLinkRequest = {

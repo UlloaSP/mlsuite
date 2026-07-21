@@ -57,9 +57,11 @@ export function SchemaChangesPage() {
   const [renameTarget, setRenameTarget] = useState<SchemaDraftDto | null>(null);
   const renameMutation = useUpdateSchemaDraftMutation(renameTarget?.id ?? "");
   const controls = useCatalogControls<ChangeFilter, ChangeSort>({
+    filters: FILTERS.map(({ value }) => value),
     initialFilter: "open",
     initialSort: "updated",
     resetKey: schemaId,
+    sorts: SORTS.map(({ value }) => value),
   });
   const drafts = draftsQuery.data ?? EMPTY_DRAFTS;
   const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);

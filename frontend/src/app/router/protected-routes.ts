@@ -11,7 +11,7 @@ export const protectedPages: RouteObject[] = [
     path: "workspace",
     lazy: () =>
       lazyPage(
-        () => import("@/app/pages/workspace-home-page"),
+        () => import("@/features/workspace/pages/workspace-home-page"),
         "WorkspaceHomePage",
         workspacePage("canViewWorkspace"),
       ),
@@ -29,8 +29,8 @@ export const protectedPages: RouteObject[] = [
     path: "workspace/organizations/create",
     lazy: () =>
       lazyPage(
-        () => import("@/app/pages/create-organization-page"),
-        "CreateOrganizationPage",
+        () => import("@/app/router/create-organization-route"),
+        "CreateOrganizationRoute",
         superadmin,
       ),
   },
@@ -186,8 +186,8 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/create",
     lazy: () =>
       lazyPage(
-        () => import("@/app/pages/create-schema-page"),
-        "CreateSchemaPage",
+        () => import("@/app/router/create-schema-route"),
+        "CreateSchemaRoute",
         workspacePage("canEditModels"),
       ),
   },
@@ -231,8 +231,8 @@ export const protectedPages: RouteObject[] = [
     path: "schemas/:schemaId/drafts/:draftId",
     lazy: () =>
       lazyPage(
-        () => import("@/features/schemas/pages/schema-draft-editor-page"),
-        "SchemaDraftEditorPage",
+        () => import("@/features/schemas/pages/schema-draft-editor-route"),
+        "SchemaDraftEditorRoute",
         workspacePage("canEditModels"),
       ),
   },

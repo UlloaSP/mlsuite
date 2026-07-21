@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { QueryClient } from "@tanstack/react-query";
 import { invalidatePluginRuntimeCache } from "@/capabilities/mlform/plugin-runtime-cache";
-import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
 export const removeOrganizationCache = async (
   queryClient: QueryClient,

@@ -1,8 +1,8 @@
-import type * as Monaco from "monaco-editor";
+import type { OnMount } from "@monaco-editor/react";
 import { getLineChangeMarkers } from "@/capabilities/editor/line-change-markers";
 
 export function applyLineChangeDecorations(
-  editor: Monaco.editor.IStandaloneCodeEditor,
+  editor: Parameters<OnMount>[0],
   previousDecorationIds: string[],
   baseText: string,
   text: string,

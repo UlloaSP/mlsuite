@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search, Upload } from "lucide-react";
-import { useSetAtom } from "jotai";
 import { useRef, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import {
@@ -31,7 +30,6 @@ import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { PluginCatalogListItem } from "@/features/plugins/components/PluginCatalogListItem";
-import { bumpPluginCatalogVersionAtom } from "@/capabilities/mlform/plugin-catalog-state";
 
 const TYPE_FILTERS: Array<{ value: TypeFilter; label: string }> = [
   { value: "all", label: "All" },
@@ -49,11 +47,12 @@ export function PluginCatalogPage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const organizationId = workspace?.currentOrganization.id;
   const canManagePlugins = workspace?.permissions.canManagePlugins ?? false;
-  const bumpPluginCatalogVersion = useSetAtom(bumpPluginCatalogVersionAtom);
   const controls = useCatalogControls<TypeFilter, SortMode>({
+    filters: TYPE_FILTERS.map(({ value }) => value),
     initialFilter: "all",
     initialSort: "updated",
     resetKey: organizationId,
+    sorts: SORT_OPTIONS.map(({ value }) => value),
   });
   const uploadMutation = useUploadPluginMutation();
   const deleteMutation = useDeletePluginMutation();
@@ -67,9 +66,6 @@ export function PluginCatalogPage() {
   );
   const items = pageQuery.data?.items ?? [];
 
-  const refreshPluginRuntime = () => {
-    bumpPluginCatalogVersion();
-  };
   const handleFileSelection = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -78,7 +74,6 @@ export function PluginCatalogPage() {
       const detected = await detectPluginType(organizationId ?? "none", source);
       await uploadMutation.mutateAsync(file);
       controls.setPage(0);
-      refreshPluginRuntime();
       toast.success(
         `${file.name} uploaded as ${TYPE_META[detected.pluginType].shortLabel} "${detected.kind}".`,
       );
@@ -94,7 +89,6 @@ export function PluginCatalogPage() {
       if (items.length === 1 && controls.page > 0) {
         controls.setPage((current) => current - 1);
       }
-      refreshPluginRuntime();
       toast.success(
         `${item.fileName} (${TYPE_META[item.pluginType].shortLabel}) deleted from catalog.`,
       );

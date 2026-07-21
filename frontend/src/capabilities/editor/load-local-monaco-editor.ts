@@ -9,8 +9,8 @@ export function loadLocalMonacoEditor(): Promise<MonacoEditorModule> {
   editorModulePromise ??= Promise.all([
     import("monaco-editor"),
     import("@monaco-editor/react"),
-    import("monaco-editor/esm/vs/editor/editor.worker?worker"),
-    import("monaco-editor/esm/vs/language/json/json.worker?worker"),
+    import("monaco-editor/editor/editor.worker.js?worker"),
+    import("monaco-editor/language/json/json.worker.js?worker"),
   ]).then(([monaco, { Editor, loader }, { default: EditorWorker }, { default: JsonWorker }]) => {
     globalThis.MonacoEnvironment = {
       getWorker: (_moduleId, label) => (label === "json" ? new JsonWorker() : new EditorWorker()),

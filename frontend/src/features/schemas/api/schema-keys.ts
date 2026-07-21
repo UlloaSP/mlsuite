@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
 export const SCHEMAS_QUERY_KEY = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "schemas"] as const;
@@ -37,10 +37,16 @@ export const BOOKMARK_PREDICTION_RUNS_QUERY_KEY = (
     "bookmarkPredictionRuns",
     { bookmarkId: String(bookmarkId) },
   ] as const;
+export const PREDICTION_FEEDBACK_QUERY_KEY = (organizationId: number | string) =>
+  [...organizationQueryKey(organizationId), "predictionFeedback"] as const;
 export const PREDICTION_RESULT_FEEDBACK_QUERY_KEY = (
   organizationId: number | string,
   resultId: string,
-) => [...organizationQueryKey(organizationId), "predictionResultFeedback", { resultId }] as const;
+) => [...PREDICTION_FEEDBACK_QUERY_KEY(organizationId), "result", { resultId }] as const;
+export const PREDICTION_RUNS_FEEDBACK_QUERY_KEY = (
+  organizationId: number | string,
+  runIds: readonly string[],
+) => [...PREDICTION_FEEDBACK_QUERY_KEY(organizationId), "runs", { runIds }] as const;
 
 export const schemaCatalogPageQueryKey = (
   organizationId: number | string | undefined,

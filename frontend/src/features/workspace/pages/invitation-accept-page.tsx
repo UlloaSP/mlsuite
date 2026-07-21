@@ -4,11 +4,16 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import { acceptInvitation, declineInvitation } from "@/features/workspace/api/invitations.api";
+import {
+  useAcceptInvitation,
+  useDeclineInvitation,
+} from "@/features/workspace/api/workspace.mutations";
 
 export function InvitationAcceptPage() {
   const navigate = useNavigate();
   const { token = "" } = useParams();
+  const accept = useAcceptInvitation();
+  const decline = useDeclineInvitation();
 
   return (
     <AppPage>
@@ -23,7 +28,7 @@ export function InvitationAcceptPage() {
             <AppButton
               type="button"
               onClick={() => {
-                void acceptInvitation(token).then(() => navigate("/workspace"));
+                void accept.mutateAsync(token).then(() => navigate("/workspace"));
               }}
             >
               Accept Invite
@@ -32,7 +37,7 @@ export function InvitationAcceptPage() {
               type="button"
               variant="secondary"
               onClick={() => {
-                void declineInvitation(token).then(() => navigate("/workspace"));
+                void decline.mutateAsync(token).then(() => navigate("/workspace"));
               }}
             >
               Decline

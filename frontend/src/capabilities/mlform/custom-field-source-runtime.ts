@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { defineFieldKind, type DefinedFieldKind } from "mlform/kit";
 import type { FieldConfig } from "mlform/runtime";
 import * as zod from "zod";
-import { memoizePluginRuntime } from "@/capabilities/mlform/plugin-runtime-cache";
+import { memoizeCompiledPlugin } from "@/capabilities/mlform/plugin-runtime-cache";
 
 type TypeScriptModule = typeof import("typescript");
 type ZodModule = typeof zod;
@@ -51,7 +51,7 @@ const getZodGlobalKey = (source: string): string => `${zodGlobalPrefix}_${hashSt
 
 /** loadTypeScript: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const loadTypeScript = async (): Promise<TypeScriptModule> => {
-  return memoizePluginRuntime("shared", "typescript", () => import("typescript"));
+  return import("typescript");
 };
 
 /** formatDiagnostics: internal normalization helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
@@ -166,7 +166,7 @@ export const resolveCustomFieldDefinition = (
   source: string,
 ): Promise<CustomFieldKind> => {
   const cacheKey = hashString(source);
-  return memoizePluginRuntime(organizationId, `field-source:${cacheKey}`, () =>
+  return memoizeCompiledPlugin(organizationId, `field-source:${cacheKey}`, () =>
     importDefinitionFromSource(source),
   );
 };

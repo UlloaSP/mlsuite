@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 const scopes = new Map<string, Map<string, Promise<unknown>>>();
 
-export const memoizePluginRuntime = <T>(
+export const memoizeCompiledPlugin = <T>(
   organizationId: number | string,
   key: string,
   load: () => Promise<T>,
@@ -20,6 +20,7 @@ export const memoizePluginRuntime = <T>(
   if (!value) {
     value = load();
     cache.set(key, value);
+    void value.catch(() => cache?.delete(key));
   }
   return value;
 };

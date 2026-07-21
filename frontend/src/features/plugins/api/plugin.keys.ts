@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
 import type { PluginCatalogSort, PluginCatalogType } from "./plugin.types";
 
 export const PLUGIN_CATALOG_PAGE_SIZE = 24;

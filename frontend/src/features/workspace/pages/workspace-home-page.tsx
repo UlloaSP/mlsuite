@@ -7,12 +7,14 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import { useGetModels } from "@/features/models/api/model.queries";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
 
 export function WorkspaceHomePage() {
   const { data: context } = useWorkspaceContext();
-  const { data: models = [] } = useGetModels();
+  const { data: dashboard } = useOrganizationAdminDashboardQuery(
+    context?.currentOrganization.id ?? 0,
+  );
 
   if (!context) {
     return null;
@@ -34,7 +36,7 @@ export function WorkspaceHomePage() {
   const stats = [
     { label: "Members", value: context.memberships.length },
     { label: "Teams", value: context.teams.length },
-    { label: "Models", value: models.length },
+    { label: "Models", value: dashboard?.stats.totalModels ?? 0 },
     { label: "Invites", value: context.invitations.length },
   ];
 

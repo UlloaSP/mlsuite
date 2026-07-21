@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -9,15 +8,11 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import {
-  removeTeamMember,
-  updateTeam,
-  updateTeamMemberRole,
-} from "@/features/workspace/api/teams.api";
+  useRemoveTeamMemberMutation,
+  useUpdateTeamMemberRoleMutation,
+  useUpdateTeamMutation,
+} from "@/features/workspace/api/team.mutations";
 import { MemberTable } from "@/features/workspace/components/MemberTable";
-import {
-  organizationTeamMembersQueryKey,
-  organizationTeamQueryKey,
-} from "@/features/workspace/api/workspace.keys";
 import {
   useOrganizationTeamMembersQuery,
   useOrganizationTeamQuery,
@@ -25,22 +20,23 @@ import {
 
 export function TeamDetailPage() {
   const { organizationId = "", teamId = "" } = useParams();
-  const qc = useQueryClient();
   const id = Number(teamId);
   const { data: team } = useOrganizationTeamQuery(organizationId, id);
   const { data: members = [] } = useOrganizationTeamMembersQuery(organizationId, id);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const update = useUpdateTeamMutation(organizationId, id);
+  const updateMemberRole = useUpdateTeamMemberRoleMutation(organizationId, id);
+  const removeMember = useRemoveTeamMemberMutation(organizationId, id);
 
   async function saveTeam() {
     if (!team) {
       return;
     }
-    await updateTeam(id, {
+    await update.mutateAsync({
       name: name || team.name,
       description: description || team.description || "",
     });
-    await qc.invalidateQueries({ queryKey: organizationTeamQueryKey(organizationId, id) });
   }
 
   if (!team) {
@@ -88,18 +84,10 @@ export function TeamDetailPage() {
           <MemberTable
             rows={members}
             onRoleChange={(membershipId, roleDefinitionId) => {
-              void updateTeamMemberRole(id, membershipId, roleDefinitionId).then(() =>
-                qc.invalidateQueries({
-                  queryKey: organizationTeamMembersQueryKey(organizationId, id),
-                }),
-              );
+              updateMemberRole.mutate({ membershipId, roleDefinitionId });
             }}
             onRemove={(membershipId) => {
-              void removeTeamMember(id, membershipId).then(() =>
-                qc.invalidateQueries({
-                  queryKey: organizationTeamMembersQueryKey(organizationId, id),
-                }),
-              );
+              removeMember.mutate(membershipId);
             }}
           />
         </div>

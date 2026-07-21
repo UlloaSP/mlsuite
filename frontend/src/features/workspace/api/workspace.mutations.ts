@@ -8,6 +8,7 @@ import type { WorkspaceContextDto } from "@/capabilities/workspace-context/works
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 import { acceptInvitation, declineInvitation } from "./invitations.api";
 import {
+  createOrganization,
   deleteOrganization,
   transferOrganizationOwnership,
   updateOrganization,
@@ -17,6 +18,8 @@ import { removeOrganizationCache } from "./organization-cache";
 import {
   ORGANIZATIONS_QUERY_KEY,
   ORGANIZATION_CATALOG_PAGE_QUERY_KEY,
+  organizationDetailsQueryKey,
+  organizationMembersQueryKey,
   PENDING_INVITATIONS_QUERY_KEY,
 } from "./workspace.keys";
 
@@ -47,6 +50,31 @@ export const useDeleteOrganizationMutation = () => {
     meta: { errorHandledLocally: true },
     mutationFn: deleteOrganization,
     onSuccess: () => void invalidate(),
+  });
+};
+
+export const useCreateOrganizationMutation = () => {
+  const invalidate = useInvalidateOrganizationQueries();
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: createOrganization,
+    onSuccess: () => void invalidate(),
+  });
+};
+
+export const useUpdateOrganizationMutation = (organizationId: number) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: (request: Parameters<typeof updateOrganization>[1]) =>
+      updateOrganization(organizationId, request),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: organizationDetailsQueryKey(organizationId) }),
+        queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
+      ]);
+    },
   });
 };
 
@@ -99,11 +127,22 @@ type TransferOrganizationOwnershipRequest = {
 };
 
 export const useTransferOrganizationOwnershipMutation = () => {
-  const invalidate = useInvalidateOrganizationQueries();
+  const queryClient = useQueryClient();
   return useMutation({
     meta: { errorHandledLocally: true },
     mutationFn: ({ organizationId, nextOwnerMembershipId }: TransferOrganizationOwnershipRequest) =>
       transferOrganizationOwnership(organizationId, nextOwnerMembershipId),
-    onSuccess: () => void invalidate(),
+    onSuccess: async (_data, request) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
+        queryClient.invalidateQueries({
+          queryKey: organizationMembersQueryKey(request.organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: organizationDetailsQueryKey(request.organizationId),
+        }),
+        queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
+      ]);
+    },
   });
 };

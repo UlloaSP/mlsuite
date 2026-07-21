@@ -1,12 +1,4 @@
-import {
-  organizationAdminDashboardQueryKey,
-  organizationTeamsQueryKey,
-} from "@/features/workspace/api/workspace.keys";
-import {
-  WORKSPACE_CONTEXT_QUERY_KEY,
-  useWorkspaceContext,
-} from "@/capabilities/workspace-context/workspace-context";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { Box, MoreHorizontal, Plus, Users, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
@@ -16,7 +8,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
-import { createTeam } from "@/features/workspace/api/teams.api";
+import { useCreateTeamMutation } from "@/features/workspace/api/team.mutations";
 import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/features/workspace/components/admin/AdminStatCard";
 import { QuotaBar } from "@/features/workspace/components/admin/QuotaBar";
@@ -30,7 +22,6 @@ import {
 export function TeamsPage() {
   const { organizationId = "" } = useParams();
   const id = Number(organizationId);
-  const qc = useQueryClient();
   const { data: workspace } = useWorkspaceContext();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
@@ -40,17 +31,7 @@ export function TeamsPage() {
     id,
     Boolean(workspace?.permissions.canCreateTeams),
   );
-  const mutation = useMutation({
-    mutationFn: (payload: Parameters<typeof createTeam>[1]) => createTeam(id, payload),
-    onSuccess: async () => {
-      setOpen(false);
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: organizationTeamsQueryKey(id) }),
-        qc.invalidateQueries({ queryKey: organizationAdminDashboardQueryKey(id) }),
-        qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
-      ]);
-    },
-  });
+  const mutation = useCreateTeamMutation(id);
   const filtered = useMemo(
     () =>
       teams.filter((team) => {
@@ -169,7 +150,7 @@ export function TeamsPage() {
           <CreateTeamModal
             members={members}
             onClose={() => setOpen(false)}
-            onCreate={(payload) => mutation.mutate(payload)}
+            onCreate={(payload) => mutation.mutate(payload, { onSuccess: () => setOpen(false) })}
           />
         ) : null}
       </AppSurface>

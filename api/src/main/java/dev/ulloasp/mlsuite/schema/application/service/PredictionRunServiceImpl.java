@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -19,6 +20,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
@@ -26,6 +28,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
@@ -39,6 +42,7 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
     private final PredictionResultRepository resultRepository;
+    private final PredictionResultFeedbackRepository feedbackRepository;
     private final ModelRepository modelRepository;
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
@@ -46,13 +50,15 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     public PredictionRunServiceImpl(UserLookupService userLookupService, SchemaBookmarkRepository bookmarkRepository,
             SchemaModelBindingRepository bindingRepository,
             PredictionRunRepository runRepository, PredictionResultRepository resultRepository,
-            ModelRepository modelRepository, WorkspaceAccessService workspaceAccessService,
+            PredictionResultFeedbackRepository feedbackRepository, ModelRepository modelRepository,
+            WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService authorizationService) {
         this.userLookupService = userLookupService;
         this.bookmarkRepository = bookmarkRepository;
         this.bindingRepository = bindingRepository;
         this.runRepository = runRepository;
         this.resultRepository = resultRepository;
+        this.feedbackRepository = feedbackRepository;
         this.modelRepository = modelRepository;
         this.workspaceAccessService = workspaceAccessService;
         this.authorizationService = authorizationService;
@@ -60,9 +66,10 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
 
     @Override
     public PredictionRun createRunForBookmark(Long userId, Long schemaBookmarkId, CreatePredictionRunRequest request) {
+        User user = userLookupService.requireById(userId);
         Long organizationId = requireOperate(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
-        return createRun(organizationId, bookmark, bookmark.getVersion(), request);
+        return createRun(organizationId, user, bookmark, bookmark.getVersion(), request);
     }
 
     @Override
@@ -104,7 +111,7 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
     }
 
-    private PredictionRun createRun(Long organizationId, SchemaBookmark bookmark, SchemaVersion version,
+    private PredictionRun createRun(Long organizationId, User user, SchemaBookmark bookmark, SchemaVersion version,
             CreatePredictionRunRequest request) {
         if (runRepository.existsBySchemaVersionIdAndName(version.getId(), request.name())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Prediction run name already exists");
@@ -113,7 +120,11 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         validateResults(bindings, request.results());
         PredictionRun run = runRepository.save(new PredictionRun(bookmark, version, request.name(),
                 request.inputData(), aggregateStatus(request.results())));
-        request.results().forEach(result -> saveResult(organizationId, run, result));
+        request.results().forEach(item -> {
+            PredictionResult result = saveResult(organizationId, run, item);
+            item.feedback().forEach(feedback -> feedbackRepository.save(new PredictionResultFeedback(
+                    result, user, feedback.type(), feedback.order(), feedback.value())));
+        });
         return run;
     }
 
@@ -129,6 +140,12 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
             if (!submitted.add(key)) {
                 throw badRequest("Duplicate prediction result for model");
             }
+            Set<String> feedbackKeys = new HashSet<>();
+            result.feedback().forEach(feedback -> {
+                if (!feedbackKeys.add(feedback.type() + ":" + feedback.order())) {
+                    throw badRequest("Duplicate prediction feedback type and order");
+                }
+            });
         }
         if (!submitted.equals(bound)) {
             throw badRequest("Prediction run must include one result for every schema binding");

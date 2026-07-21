@@ -7,6 +7,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { createRoot, type Root } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -16,12 +17,19 @@ vi.mock("@/capabilities/mlform/prediction-catalog-definitions", () => ({
     throw new Error("catalog failed");
   }),
 }));
+vi.mock("@/capabilities/mlform/plugin-runtime-sources", () => ({
+  pluginRuntimeSourcesQueryOptions: () => ({
+    queryKey: ["plugin-runtime-sources"],
+    queryFn: async () => [],
+  }),
+}));
 vi.mock("../src/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 1,
 }));
 
 describe("schema form preview", () => {
   let root: Root | null = null;
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   afterEach(() => {
     root?.unmount();
@@ -34,12 +42,14 @@ describe("schema form preview", () => {
     document.body.append(container);
     root = createRoot(container);
     root.render(
-      <SchemaFormPreview
-        schema={{
-          fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
-          reports: [{ id: "prediction", kind: "classifier", mappedTo: "prediction" }],
-        }}
-      />,
+      <QueryClientProvider client={queryClient}>
+        <SchemaFormPreview
+          schema={{
+            fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+            reports: [{ id: "prediction", kind: "classifier", mappedTo: "prediction" }],
+          }}
+        />
+      </QueryClientProvider>,
     );
 
     await flush();
@@ -61,19 +71,21 @@ describe("schema form preview", () => {
     document.body.append(container);
     root = createRoot(container);
     root.render(
-      <SchemaFormPreview
-        schema={{
-          fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
-          reports: [
-            {
-              id: "prediction",
-              label: "Prediction",
-              kind: "classifier",
-              mappedTo: { "Model A": "prediction_a", "Model B": "prediction_b" },
-            },
-          ],
-        }}
-      />,
+      <QueryClientProvider client={queryClient}>
+        <SchemaFormPreview
+          schema={{
+            fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+            reports: [
+              {
+                id: "prediction",
+                label: "Prediction",
+                kind: "classifier",
+                mappedTo: { "Model A": "prediction_a", "Model B": "prediction_b" },
+              },
+            ],
+          }}
+        />
+      </QueryClientProvider>,
     );
 
     await flush();
@@ -93,12 +105,14 @@ describe("schema form preview", () => {
     document.body.append(container);
     root = createRoot(container);
     root.render(
-      <SchemaFormPreview
-        schema={{
-          fields: [{ id: "custom", label: "Custom", kind: "External Slider" }],
-          reports: [],
-        }}
-      />,
+      <QueryClientProvider client={queryClient}>
+        <SchemaFormPreview
+          schema={{
+            fields: [{ id: "custom", label: "Custom", kind: "External Slider" }],
+            reports: [],
+          }}
+        />
+      </QueryClientProvider>,
     );
 
     for (let attempt = 0; attempt < 5; attempt += 1) await flush();

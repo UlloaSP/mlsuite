@@ -15,11 +15,11 @@ import {
 import { createAppQueryClient } from "@/app/providers/query-client";
 import { HttpError } from "@/shared/api/http";
 import { organizationMembersQueryKey } from "@/features/workspace/api/workspace.keys";
-import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
 import { removeOrganizationCache } from "@/features/workspace/api/organization-cache";
 import {
   invalidatePluginRuntimeCache,
-  memoizePluginRuntime,
+  memoizeCompiledPlugin,
 } from "@/capabilities/mlform/plugin-runtime-cache";
 import { classifyRouteError } from "@/app/router/route-error";
 
@@ -79,11 +79,25 @@ describe("frontend critical reliability", () => {
     let loads = 0;
     const load = async () => ++loads;
 
-    expect(await memoizePluginRuntime(11, "catalog", load)).toBe(1);
-    expect(await memoizePluginRuntime(11, "catalog", load)).toBe(1);
-    expect(await memoizePluginRuntime(22, "catalog", load)).toBe(2);
+    expect(await memoizeCompiledPlugin(11, "source-hash", load)).toBe(1);
+    expect(await memoizeCompiledPlugin(11, "source-hash", load)).toBe(1);
+    expect(await memoizeCompiledPlugin(22, "source-hash", load)).toBe(2);
     invalidatePluginRuntimeCache(11);
-    expect(await memoizePluginRuntime(11, "catalog", load)).toBe(3);
+    expect(await memoizeCompiledPlugin(11, "source-hash", load)).toBe(3);
+  });
+
+  test("does not retain failed plugin compilations", async () => {
+    let loads = 0;
+    const load = async () => {
+      loads += 1;
+      if (loads === 1) throw new Error("invalid plugin");
+      return "compiled";
+    };
+
+    await expect(memoizeCompiledPlugin(11, "failed-source", load)).rejects.toThrow(
+      "invalid plugin",
+    );
+    await expect(memoizeCompiledPlugin(11, "failed-source", load)).resolves.toBe("compiled");
   });
 
   test("uses one canonical, tenant-scoped members key", () => {

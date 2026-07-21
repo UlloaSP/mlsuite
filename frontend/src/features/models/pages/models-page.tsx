@@ -45,8 +45,10 @@ export function ModelsPage() {
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
   const controls = useCatalogControls<ModelStatusFilter, ModelSortMode>({
+    filters: STATUS_FILTERS.map(({ value }) => value),
     initialFilter: "active",
     initialSort: "updated",
+    sorts: SORT_OPTIONS.map(({ value }) => value),
     resetKey: organizationId,
   });
   const renameMutation = useRenameModelMutation();

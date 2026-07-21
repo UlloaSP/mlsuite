@@ -47,9 +47,11 @@ export function SchemasPage() {
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
   const controls = useCatalogControls<SchemaStatusFilter, SchemaSortMode>({
+    filters: STATUS_FILTERS.map(({ value }) => value),
     initialFilter: "active",
     initialSort: "updated",
     resetKey: organizationId,
+    sorts: SORT_OPTIONS.map(({ value }) => value),
   });
   const renameMutation = useRenameSchemaMutation();
   const archiveMutation = useArchiveSchemaMutation();

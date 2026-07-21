@@ -11,6 +11,7 @@ import {
   getCustomReportDefinitions,
   type CatalogReportDefinition,
 } from "@/capabilities/mlform/custom-report-catalog";
+import type { PluginRuntimeSource } from "@/capabilities/mlform/plugin-runtime-sources";
 
 /**
  * PredictionCatalogDefinitions: describes the public data contract consumed or returned by this algorithm.
@@ -35,10 +36,11 @@ export type PredictionCatalogDefinitions = {
  */
 export const loadPredictionCatalogDefinitions = async (
   organizationId: number | string,
+  sources: readonly PluginRuntimeSource[],
 ): Promise<PredictionCatalogDefinitions> => {
   const [fieldDefinitions, reportDefinitions] = await Promise.all([
-    getCustomFieldDefinitions(organizationId),
-    getCustomReportDefinitions(organizationId),
+    getCustomFieldDefinitions(organizationId, sources),
+    getCustomReportDefinitions(organizationId, sources),
   ]);
   return {
     fieldDefinitions,

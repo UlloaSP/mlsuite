@@ -1,13 +1,4 @@
-import {
-  ORGANIZATIONS_QUERY_KEY,
-  organizationDetailsQueryKey,
-  organizationMembersQueryKey,
-} from "@/features/workspace/api/workspace.keys";
-import {
-  WORKSPACE_CONTEXT_QUERY_KEY,
-  useWorkspaceContext,
-} from "@/capabilities/workspace-context/workspace-context";
-import { useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useState } from "react";
 import { useParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -20,9 +11,9 @@ import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import {
-  transferOrganizationOwnership,
-  updateOrganization,
-} from "@/features/workspace/api/organizations.api";
+  useTransferOrganizationOwnershipMutation,
+  useUpdateOrganizationMutation,
+} from "@/features/workspace/api/workspace.mutations";
 import {
   useOrganizationDetailsQuery,
   useOrganizationMembersQuery,
@@ -30,7 +21,6 @@ import {
 
 export function OrganizationSettingsPage() {
   const { organizationId = "" } = useParams();
-  const qc = useQueryClient();
   const id = Number(organizationId);
   const { data: workspace } = useWorkspaceContext();
   const { data: organization } = useOrganizationDetailsQuery(id);
@@ -41,20 +31,17 @@ export function OrganizationSettingsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nextOwnerMembershipId, setNextOwnerMembershipId] = useState("");
+  const updateMutation = useUpdateOrganizationMutation(id);
+  const transferMutation = useTransferOrganizationOwnershipMutation();
 
   const effectiveName = name || organization?.name || "";
   const effectiveDescription = description || organization?.description || "";
 
   async function submit() {
-    await updateOrganization(id, {
+    await updateMutation.mutateAsync({
       name: effectiveName,
       description: effectiveDescription,
     });
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: organizationDetailsQueryKey(id) }),
-      qc.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
-      qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
-    ]);
   }
 
   async function transferOwnership() {
@@ -62,13 +49,8 @@ export function OrganizationSettingsPage() {
     if (!membershipId) {
       return;
     }
-    await transferOrganizationOwnership(id, membershipId);
+    await transferMutation.mutateAsync({ organizationId: id, nextOwnerMembershipId: membershipId });
     setNextOwnerMembershipId("");
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
-      qc.invalidateQueries({ queryKey: organizationMembersQueryKey(id) }),
-      qc.invalidateQueries({ queryKey: organizationDetailsQueryKey(id) }),
-    ]);
   }
 
   if (!organization) {

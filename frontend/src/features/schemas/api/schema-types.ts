@@ -18,6 +18,11 @@ export type CreateSchemaRequest = {
   description?: string;
 };
 
+export type CreateSchemaWithInitialVersionRequest = {
+  schema: CreateSchemaRequest;
+  initialVersion: CreateSchemaVersionRequest;
+};
+
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin

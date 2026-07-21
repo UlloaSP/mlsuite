@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
 export const GET_MODELS_QUERY_KEY = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "getModels"] as const;

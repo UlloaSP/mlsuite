@@ -28,13 +28,18 @@ import { BundleCard } from "@/features/models/components/BundleCard";
 import { BundleDropZone } from "@/features/models/components/BundleDropZone";
 import { BundleEmptyState } from "@/features/models/components/BundleEmptyState";
 import { BundleSummaryPanel } from "@/features/models/components/BundleSummaryPanel";
-import { useCreateModelMutation } from "@/features/models/api/model.mutations";
-import { inspectArtifact, matchArtifacts } from "@/features/models/api/model.api";
+import {
+  useCreateModelMutation,
+  useInspectArtifactMutation,
+  useMatchArtifactsMutation,
+} from "@/features/models/api/model.mutations";
 
 export function CreateModelPage() {
   const [bundles, setBundles] = useState<Bundle[]>([]);
   const nextIdRef = useRef(1);
   const mutation = useCreateModelMutation();
+  const inspectArtifact = useInspectArtifactMutation();
+  const matchArtifacts = useMatchArtifactsMutation();
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
@@ -47,7 +52,7 @@ export function CreateModelPage() {
         files.map(async (file) => {
           if (isJoblibFile(file.name)) {
             try {
-              const inspection = await inspectArtifact(file);
+              const inspection = await inspectArtifact.mutateAsync(file);
               return { file, kind: inspection.kind };
             } catch (error) {
               emitErrorFromUnknown(error);
@@ -76,12 +81,12 @@ export function CreateModelPage() {
       const matchDataframes = [...existingDataframes, ...incomingDataframes];
       const match =
         matchModels.length && matchDataframes.length
-          ? await matchArtifacts({ models: matchModels, dataframes: matchDataframes }).catch(
-              (error) => {
+          ? await matchArtifacts
+              .mutateAsync({ models: matchModels, dataframes: matchDataframes })
+              .catch((error) => {
                 emitErrorFromUnknown(error);
                 return undefined;
-              },
-            )
+              })
           : undefined;
 
       const firstId = nextIdRef.current;
@@ -95,7 +100,7 @@ export function CreateModelPage() {
           }).bundles,
       );
     },
-    [bundles],
+    [bundles, inspectArtifact.mutateAsync, matchArtifacts.mutateAsync],
   );
 
   // ── Bundle actions ───────────────────────────────────────────────────────
@@ -112,7 +117,7 @@ export function CreateModelPage() {
 
   const attachFileToBundle = async (bundleId: number, file: File, kind: "model" | "dataframe") => {
     try {
-      const inspection = await inspectArtifact(file);
+      const inspection = await inspectArtifact.mutateAsync(file);
       if (inspection.kind !== kind) return;
     } catch (error) {
       emitErrorFromUnknown(error);

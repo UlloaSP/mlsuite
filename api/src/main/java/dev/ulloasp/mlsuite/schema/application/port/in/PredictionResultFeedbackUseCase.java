@@ -12,4 +12,6 @@ public interface PredictionResultFeedbackUseCase {
     PredictionResultFeedback update(Long userId, UpdatePredictionResultFeedbackRequest request);
 
     List<PredictionResultFeedback> listByResult(Long userId, Long resultId);
+
+    List<PredictionResultFeedback> listByRuns(Long userId, List<Long> runIds);
 }

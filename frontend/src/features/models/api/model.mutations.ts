@@ -5,7 +5,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { archiveModel, createModel, deleteModel, duplicateModel, renameModel } from "./model.api";
+import {
+  archiveModel,
+  createModel,
+  deleteModel,
+  duplicateModel,
+  inspectArtifact,
+  matchArtifacts,
+  renameModel,
+} from "./model.api";
 import {
   CREATE_MODEL_QUERY_KEY,
   GET_MODELS_QUERY_KEY,
@@ -68,3 +76,11 @@ export const useCreateModelMutation = () => {
     },
   });
 };
+
+export const useInspectArtifactMutation = () =>
+  // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Inspection is a read-only command and changes no cached resource.
+  useMutation({ meta: { errorHandledLocally: true }, mutationFn: inspectArtifact });
+
+export const useMatchArtifactsMutation = () =>
+  // react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Matching is a read-only command and changes no cached resource.
+  useMutation({ meta: { errorHandledLocally: true }, mutationFn: matchArtifacts });

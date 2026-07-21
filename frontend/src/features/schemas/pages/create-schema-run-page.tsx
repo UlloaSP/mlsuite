@@ -3,19 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import { invalidatePluginCatalog } from "@/capabilities/mlform/plugin-catalog-loader";
-import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { isRecord } from "@/capabilities/mlform/shared";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
 import { SchemaRunSaveModal } from "@/features/schemas/components/SchemaRunSaveModal";
-import { createPredictionResultFeedback } from "@/features/schemas/api/schema-prediction-api";
 import { useCreatePredictionRunForBookmarkMutation } from "@/features/schemas/api/schema-prediction-mutations";
 import {
   usePredictionRun,
@@ -29,7 +26,6 @@ import type { CreatePredictionRunRequest } from "@/features/schemas/api/predicti
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 
 export function CreateSchemaRunPage() {
-  const organizationId = useCurrentOrganizationId() ?? "none";
   const [searchParams] = useSearchParams();
   const { schemaId, bookmarkId } = useParams<{
     schemaId: string;
@@ -54,10 +50,6 @@ export function CreateSchemaRunPage() {
   const [defaultName] = useState(`run-${new Date().toISOString()}`);
   const initialInputs = sourceRun?.inputData;
 
-  useEffect(() => {
-    invalidatePluginCatalog(organizationId);
-  }, [organizationId]);
-
   const handleSubmit = useCallback(
     (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => {
       setPendingRun({ inputData, raw, reportsPending });
@@ -75,19 +67,21 @@ export function CreateSchemaRunPage() {
   const handleSave = useCallback(
     async (request: CreatePredictionRunRequest, feedback: PendingFeedback[]) => {
       try {
-        const run = await createBookmarkRun.mutateAsync(request);
-        await Promise.all(
-          feedback.map((item) => {
-            const result = run.results.find((candidate) => candidate.modelId === item.modelId);
-            if (!result) return Promise.resolve();
-            return createPredictionResultFeedback({
-              resultId: result.id,
-              type: item.type,
-              order: item.order,
-              value: item.value,
-            });
-          }),
-        );
+        const feedbackByModel = feedback.reduce<Map<string, PendingFeedback[]>>((items, item) => {
+          items.set(item.modelId, [...(items.get(item.modelId) ?? []), item]);
+          return items;
+        }, new Map());
+        await createBookmarkRun.mutateAsync({
+          ...request,
+          results: request.results.map((result) => ({
+            ...result,
+            feedback: (feedbackByModel.get(result.modelId) ?? []).map(({ type, order, value }) => ({
+              type,
+              order,
+              value,
+            })),
+          })),
+        });
         setPendingRun(null);
         toast.success("Run saved");
       } catch (error) {

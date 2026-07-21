@@ -790,3 +790,67 @@
 - React Doctor reports no component diagnostic. Its current project result is 77/100 with only two unrelated pnpm-hardening warnings because `minimumReleaseAge` and `trustPolicy` are commented out in the working copy; those concurrent settings were preserved.
 - No visual check was run because it was not requested.
 - Final `graphify update .` completed: 10,470 nodes, 28,639 edges, and 450 communities.
+
+# TanStack Query And Ownership Cleanup
+
+- [x] Centralize page writes, cache updates, and invalidations in feature mutation modules.
+- [x] Replace prediction-feedback N+1 with one tenant-scoped batch query and backend contract.
+- [x] Make schema+initial-version and run+initial-feedback persistence transactional backend commands.
+- [x] Make Query own remote plugin sources; keep manual cache only for compiled source hashes; remove Jotai version state.
+- [x] Persist catalog search/filter/sort/page in URL without dependencies.
+- [x] Scope schema editor atoms per draft and move business pages from `app` to owning features.
+- [x] Add success/error contract coverage; run focused and broad API/frontend verification.
+- [x] Audit line limits, stale references, diff, then run `graphify update .`.
+
+## Review
+
+- Added atomic `POST /api/schemas/with-initial-version`; schema and v1 now share one transaction.
+- Initial result feedback now travels inside run creation and persists in the run transaction; duplicate type/order is rejected before persistence.
+- Added organization-scoped feedback batch endpoint/query. History now performs one HTTP request for normalized run ids instead of one per result.
+- Moved remote plugin source loading into tenant-scoped Query options with cancellation. Manual cache now contains compiled source hashes only, evicts rejected promises, and no Jotai version atom remains.
+- Catalog controls now use canonical URL params (`q`, `filter`, `sort`, `page`), validate values, preserve unrelated params, and reset page correctly.
+- Workspace/model page writes now call mutation modules. Schema editor uses a fresh Jotai store per `draftId`.
+- Moved schema creation, organization creation, and workspace home business UI into owning features; app retains cross-feature route composition. Review login behavior moved to reviews with app-only view composition.
+- Passed API focused tests (8/8), API compile, frontend TypeScript, architecture tests, full frontend tests (165/165), and production build. Full API suite ran 148 tests; only pre-existing `WebAdapterArchitectureTest` violations in model/review controllers failed.
+- `vp check` remains blocked only by pre-existing `frontend/AGENTS.md` formatting. React Doctor has no code findings; only two pre-existing pnpm-hardening warnings remain.
+- No visual check run: repository policy forbids it unless explicitly requested.
+- Final `graphify update .` completed: 10,572 nodes, 28,977 edges, 459 communities.
+
+# Monaco Worker Rolldown Build Fix
+
+- [x] Reproduce `vp run build` failure and inspect installed Monaco worker paths.
+- [x] Add focused regression coverage for worker module resolution.
+- [x] Apply smallest root-cause fix without externalizing Monaco.
+- [x] Run focused tests, TypeScript, full tests/check/build, and source audits.
+- [x] Run `graphify update .` and record exact verification below.
+
+## Review
+
+- Monaco 0.56 changed its package exports to map public subpaths into `esm/vs`; the old imports therefore resolved through a duplicated `esm/vs/esm/vs` path.
+- Replaced both worker imports with Monaco 0.56 public specifiers and updated the existing loader test mocks so invalid production imports can no longer be hidden.
+- Regression test failed before the source fix with the reported `ERR_MODULE_NOT_FOUND`, then passed 2/2 after it.
+- TypeScript, architecture/loader tests (11/11), full frontend tests (165/165), exact `vp run build`, line-limit audit, stale-import audit, and `git diff --check` passed.
+- `vp check` remains blocked only by existing formatting issues in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`.
+- React Doctor found no code issue; its two existing warnings are pnpm hardening settings in `frontend/pnpm-workspace.yaml`.
+- `graphify update .` completed: 10,570 nodes, 28,976 edges, 457 communities.
+
+# MLForm Language Registry Render Crash
+
+- [x] Reproduce both React Router render errors with one deterministic frontend check.
+- [x] Trace language registry creation and every affected consumer.
+- [x] Add regression coverage for missing JSON defaults and non-string sort values.
+- [x] Fix the shared normalization boundary with the smallest coherent change.
+- [x] Run focused tests, TypeScript, build/check, React Doctor, line/diff audits, and `graphify update .`.
+- [x] Record root cause, verification, and exact blockers below.
+
+## Review
+
+- Monaco 0.56 exposes JSON defaults at `monaco.json.jsonDefaults`; removed the false `languages.json` contract and configured the supported root export.
+- Normalized numeric backend run ids to strings before deduplication and sorting, eliminating the `localeCompare` crash and stabilizing query keys/transport.
+- Unified Monaco callback, marker, theme, editor, and option types on `@monaco-editor/react`; this removes the IDE-only `onMount`/`options` incompatibilities reported after the first fix.
+- Regression reproduced before the fix with the exact `localeCompare` TypeError and a clean TypeScript contract failure for `languages.json`.
+- Passed focused tests (11/11), forced TypeScript, full frontend tests with limited workers (166/166), production build, formatting for all touched files, line-limit audit, stale-type audit, and `git diff --check`.
+- Initial unconstrained full test run passed 149 assertions but timed out starting 6 workers; those files passed 17/17 alone and the complete limited-worker rerun passed 166/166.
+- `vp check` is blocked only by pre-existing formatting issues in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`.
+- React Doctor found no code issue; only two pre-existing pnpm-hardening warnings remain. No visual check ran because repository policy forbids unsolicited visual verification.
+- `graphify update .` completed: 10,567 nodes, 28,970 edges, and 460 communities; existing tool/version, optional SQL parser, and zero-node JSON warnings remain.

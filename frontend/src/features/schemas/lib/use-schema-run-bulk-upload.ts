@@ -20,6 +20,7 @@ import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/features/schemas/api/schem
 import { createSchemaRunRuntime } from "@/capabilities/mlform/runtime-assembly";
 import { isRecord } from "@/capabilities/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "@/capabilities/mlform/prediction-catalog-definitions";
+import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/mlform/plugin-runtime-sources";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/mlform/parse-spreadsheet-prediction-file";
 import { prependMissingPredictionRuns } from "@/features/schemas/lib/run-cache";
 import {
@@ -72,7 +73,10 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
 
       const controller = new AbortController();
       abortRef.current = controller;
-      const catalog = await loadPredictionCatalogDefinitions(organizationId);
+      const sources = await queryClient.fetchQuery(
+        pluginRuntimeSourcesQueryOptions(organizationId),
+      );
+      const catalog = await loadPredictionCatalogDefinitions(organizationId, sources);
       const runtime = createSchemaRunRuntime({
         schema: version.formSchema,
         bindings: version.bindings,

@@ -1,7 +1,6 @@
 import { appFetch, json } from "@/shared/api/http";
 import type {
-  CreateSchemaRequest,
-  CreateSchemaVersionRequest,
+  CreateSchemaWithInitialVersionRequest,
   DuplicateSchemaRequest,
   SchemaDto,
   SchemaNameRequest,
@@ -10,8 +9,10 @@ import type {
   SchemaVersionDto,
 } from "./schema-types";
 
-export const createSchema = (req: CreateSchemaRequest): Promise<SchemaDto> =>
-  appFetch<SchemaDto>("/api/schemas", json("POST", req));
+export const createSchemaWithInitialVersion = (
+  req: CreateSchemaWithInitialVersionRequest,
+): Promise<SchemaDto> =>
+  appFetch<SchemaDto>("/api/schemas/with-initial-version", json("POST", req));
 
 export const archiveSchema = (id: string): Promise<SchemaDto> => {
   return appFetch<SchemaDto>(`/api/schemas/${encodeURIComponent(id)}/archive`, {
@@ -59,15 +60,6 @@ export const renameSchema = ({ id, name }: SchemaNameRequest): Promise<SchemaDto
     method: "PATCH",
   });
 };
-
-export const createSchemaVersion = (
-  schemaId: string,
-  req: CreateSchemaVersionRequest,
-): Promise<SchemaVersionDto> =>
-  appFetch<SchemaVersionDto>(
-    `/api/schemas/${encodeURIComponent(schemaId)}/versions`,
-    json("POST", req),
-  );
 
 export const getSchemaVersions = (
   schemaId: string,

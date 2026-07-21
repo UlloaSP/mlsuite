@@ -688,3 +688,8 @@
 
 - Correction: replacing a clickable drop-zone button with a passive `div` fixed nested controls but made most of the zone inert.
 - Rule: when a whole surface is one action, keep one native outer button and render button-like descendants as non-interactive visual elements; verify clicks from the surface, not only its action label.
+
+# Monaco Wrapper Type Ownership
+
+- Correction: incremental TypeScript and build passed while the editor reported incompatible `onMount` and `options` types after Monaco 0.56, because app code typed wrapper props from a separate Monaco entry point.
+- Rule: type `@monaco-editor/react` callbacks and options from its exported types; use direct Monaco types only for runtime APIs absent from the wrapper contract, and force a clean TypeScript build after Monaco upgrades.

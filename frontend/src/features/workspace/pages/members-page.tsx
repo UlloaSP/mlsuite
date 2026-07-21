@@ -1,9 +1,4 @@
-import {
-  WORKSPACE_CONTEXT_QUERY_KEY,
-  useWorkspaceContext,
-} from "@/capabilities/workspace-context/workspace-context";
-import { organizationMembersQueryKey } from "@/features/workspace/api/workspace.keys";
-import { useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { Search, Shield, UserCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
@@ -13,9 +8,9 @@ import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import {
-  removeOrganizationMember,
-  updateOrganizationMemberRole,
-} from "@/features/workspace/api/organizations.api";
+  useRemoveOrganizationMemberMutation,
+  useUpdateOrganizationMemberRoleMutation,
+} from "@/features/workspace/api/member.mutations";
 import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/features/workspace/components/admin/AdminStatCard";
 import { MemberTable } from "@/features/workspace/components/MemberTable";
@@ -26,12 +21,13 @@ import {
 
 export function MembersPage() {
   const { organizationId = "" } = useParams();
-  const qc = useQueryClient();
   const id = Number(organizationId);
   const { data: workspace } = useWorkspaceContext();
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("ALL");
   const { data: members = [] } = useOrganizationMembersQuery(id);
+  const removeMember = useRemoveOrganizationMemberMutation(id);
+  const updateMemberRole = useUpdateOrganizationMemberRoleMutation(id);
   useOrganizationTeamsQuery(id);
   const filtered = useMemo(
     () =>
@@ -106,17 +102,10 @@ export function MembersPage() {
             <MemberTable
               rows={filtered}
               onRoleChange={(membershipId, roleDefinitionId) => {
-                void updateOrganizationMemberRole(id, membershipId, roleDefinitionId).then(() =>
-                  Promise.all([
-                    qc.invalidateQueries({ queryKey: organizationMembersQueryKey(id) }),
-                    qc.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
-                  ]),
-                );
+                updateMemberRole.mutate({ membershipId, roleDefinitionId });
               }}
               onRemove={(membershipId) => {
-                void removeOrganizationMember(id, membershipId).then(() =>
-                  qc.invalidateQueries({ queryKey: organizationMembersQueryKey(id) }),
-                );
+                removeMember.mutate(membershipId);
               }}
             />
           </div>

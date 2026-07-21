@@ -44,9 +44,11 @@ export function SchemaBookmarksPage() {
   const bookmarksQuery = useSchemaBookmarks(schemaId);
   const { data: versions = EMPTY_VERSIONS } = useSchemaVersions(schemaId);
   const controls = useCatalogControls<BookmarkFilter, BookmarkSort>({
+    filters: FILTERS.map(({ value }) => value),
     initialFilter: "all",
     initialSort: "updated",
     resetKey: schemaId,
+    sorts: SORTS.map(({ value }) => value),
   });
   const bookmarks = bookmarksQuery.data ?? EMPTY_BOOKMARKS;
   const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);

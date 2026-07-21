@@ -1,8 +1,3 @@
-import {
-  organizationInvitationCandidatesQueryKey,
-  organizationInvitationsQueryKey,
-} from "@/features/workspace/api/workspace.keys";
-import { useQueryClient } from "@tanstack/react-query";
 import { Mail, RotateCcw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
@@ -15,11 +10,11 @@ import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import {
-  bulkRevokeInvitations,
-  createInvitation,
-  resendInvitation,
-  revokeInvitation,
-} from "@/features/workspace/api/invitations.api";
+  useBulkRevokeInvitationsMutation,
+  useCreateInvitationMutation,
+  useResendInvitationMutation,
+  useRevokeInvitationMutation,
+} from "@/features/workspace/api/invitation.mutations";
 import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/features/workspace/components/admin/AdminStatCard";
 import { StatusBadge } from "@/features/workspace/components/admin/StatusBadge";
@@ -46,13 +41,16 @@ const invitationDateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 
 
 export function InvitationsPage() {
   const { organizationId = "" } = useParams();
-  const qc = useQueryClient();
   const id = Number(organizationId);
   const { data: workspace } = useWorkspaceContext();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<InvitationStatus | "ALL">("PENDING");
   const [selected, setSelected] = useState<number[]>([]);
   const { data: invitations = [] } = useOrganizationInvitationsQuery(id);
+  const bulkRevoke = useBulkRevokeInvitationsMutation(id);
+  const create = useCreateInvitationMutation(id);
+  const resend = useResendInvitationMutation(id);
+  const revoke = useRevokeInvitationMutation(id);
   const { data: teams = [] } = useOrganizationTeamsQuery(id);
   const canManage = Boolean(workspace?.permissions.canManageInvitations);
   const { data: roles } = useOrganizationRolesQuery(id, canManage);
@@ -99,15 +97,7 @@ export function InvitationsPage() {
                 candidates={candidates}
                 roleOptions={roleOptions}
                 onSubmit={async (payload) => {
-                  await createInvitation(id, payload);
-                  await Promise.all([
-                    qc.invalidateQueries({
-                      queryKey: organizationInvitationsQueryKey(id),
-                    }),
-                    qc.invalidateQueries({
-                      queryKey: organizationInvitationCandidatesQueryKey(id),
-                    }),
-                  ]);
+                  await create.mutateAsync(payload);
                 }}
               />
             ) : (
@@ -141,11 +131,8 @@ export function InvitationsPage() {
                 <AppButton
                   variant="danger"
                   onClick={() =>
-                    void bulkRevokeInvitations(id, selected).then(() => {
+                    void bulkRevoke.mutateAsync(selected).then(() => {
                       setSelected([]);
-                      return qc.invalidateQueries({
-                        queryKey: organizationInvitationsQueryKey(id),
-                      });
                     })
                   }
                 >
@@ -198,16 +185,7 @@ export function InvitationsPage() {
                   </td>
                   <td>{invitationDateFormatter.format(Date.parse(invite.expiresAt))}</td>
                   <td className="flex gap-2 py-3">
-                    <AppButton
-                      variant="secondary"
-                      onClick={() =>
-                        void resendInvitation(id, invite.id).then(() =>
-                          qc.invalidateQueries({
-                            queryKey: organizationInvitationsQueryKey(id),
-                          }),
-                        )
-                      }
-                    >
+                    <AppButton variant="secondary" onClick={() => resend.mutate(invite.id)}>
                       <RotateCcw size={14} />
                       Resend
                     </AppButton>
@@ -222,16 +200,7 @@ export function InvitationsPage() {
                       Copy
                     </AppButton>
                     {workspace?.permissions.canManageInvitations ? (
-                      <AppButton
-                        variant="danger"
-                        onClick={() =>
-                          void revokeInvitation(id, invite.id).then(() =>
-                            qc.invalidateQueries({
-                              queryKey: organizationInvitationsQueryKey(id),
-                            }),
-                          )
-                        }
-                      >
+                      <AppButton variant="danger" onClick={() => revoke.mutate(invite.id)}>
                         <X size={14} />
                         Revoke
                       </AppButton>

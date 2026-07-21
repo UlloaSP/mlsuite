@@ -19,6 +19,16 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
             """)
     List<PredictionResultFeedback> findByResultIdAndOrganizationId(Long resultId, Long organizationId);
 
+    @Query("""
+            SELECT f FROM PredictionResultFeedback f
+            JOIN FETCH f.result r
+            JOIN FETCH f.user
+            WHERE r.run.id IN :runIds
+            AND r.run.schemaVersion.schema.organization.id = :organizationId
+            ORDER BY r.run.id ASC, r.id ASC, f.type ASC, f.order ASC
+            """)
+    List<PredictionResultFeedback> findByRunIdsAndOrganizationId(List<Long> runIds, Long organizationId);
+
     Optional<PredictionResultFeedback> findByResultIdAndUserIdAndTypeAndOrder(
             Long resultId, Long userId, PredictionResultFeedbackType type, int order);
 

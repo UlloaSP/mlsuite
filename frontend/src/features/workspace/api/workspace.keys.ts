@@ -8,7 +8,7 @@ export const ORGANIZATIONS_QUERY_KEY = ["organizations"] as const;
 export const ORGANIZATION_CATALOG_PAGE_SIZE = 24;
 export const ORGANIZATION_CATALOG_PAGE_QUERY_KEY = ["organizationCatalogPages"] as const;
 
-import { organizationQueryKey } from "@/capabilities/workspace-context/organization-query-key";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
 export const organizationMembersQueryKey = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "members"] as const;
 export const organizationDetailsQueryKey = (organizationId: number | string) =>

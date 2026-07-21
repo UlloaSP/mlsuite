@@ -4,12 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { schemaNeedsPluginCatalog } from "@/capabilities/mlform/schema-plugin-requirement";
 import { loadPredictionCatalogDefinitions } from "@/capabilities/mlform/prediction-catalog-definitions";
 import type { PredictionCatalogDefinitions } from "@/capabilities/mlform/prediction-catalog-definitions";
 import { schemaRunDebug, schemaRunDebugError } from "@/capabilities/mlform/run-debug";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/mlform/plugin-runtime-sources";
 
 const emptyCatalog: PredictionCatalogDefinitions = {
   fieldDefinitions: [],
@@ -23,6 +25,7 @@ type CatalogState =
 
 export const useSchemaPluginCatalog = (schema: unknown) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
+  const queryClient = useQueryClient();
   const needsPlugins = useMemo(() => schemaNeedsPluginCatalog(schema), [schema]);
   const [state, setState] = useState<CatalogState>({
     status: needsPlugins ? "loading" : "ready",
@@ -39,7 +42,10 @@ export const useSchemaPluginCatalog = (schema: unknown) => {
     schemaRunDebug("catalog.load.start");
     setState({ status: "loading", data: emptyCatalog, error: null });
     try {
-      const definitions = await loadPredictionCatalogDefinitions(organizationId);
+      const sources = await queryClient.fetchQuery(
+        pluginRuntimeSourcesQueryOptions(organizationId),
+      );
+      const definitions = await loadPredictionCatalogDefinitions(organizationId, sources);
       schemaRunDebug("catalog.load.ready", {
         fields: definitions.fieldDefinitions.map((definition) => definition.kind),
         reports: definitions.reportDefinitions.map((definition) => definition.kind),
@@ -51,7 +57,7 @@ export const useSchemaPluginCatalog = (schema: unknown) => {
       toast.error("Plugin catalog unavailable", { description: message });
       setState({ status: "error", data: emptyCatalog, error: message });
     }
-  }, [needsPlugins, organizationId]);
+  }, [needsPlugins, organizationId, queryClient]);
 
   useEffect(() => {
     void retry();

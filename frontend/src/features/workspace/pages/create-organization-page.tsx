@@ -14,29 +14,31 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
-import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
-import { useUser } from "@/capabilities/workspace-context/session";
-import { useInvalidateOrganizationQueries } from "@/features/workspace/api/workspace.mutations";
-import { createOrganization } from "@/features/workspace/api/organizations.api";
-import type { AdminUser } from "@/features/admin/api/admin-user.types";
+import { useCreateOrganizationMutation } from "@/features/workspace/api/workspace.mutations";
 
-const EMPTY_USERS: AdminUser[] = [];
+type OrganizationOwnerCandidate = {
+  avatarUrl?: string | null;
+  email: string;
+  enabled: boolean;
+  fullName: string;
+  id: number;
+};
 
-export function CreateOrganizationPage() {
+type Props = {
+  currentUserId?: number;
+  users: OrganizationOwnerCandidate[];
+};
+
+export function CreateOrganizationPage({ currentUserId, users }: Props) {
   const navigate = useNavigate();
-  const { data: user, error } = useUser();
-  const { data: usersPage } = useAdminUsers();
-  const users = usersPage?.items ?? EMPTY_USERS;
-  const invalidateOrganizations = useInvalidateOrganizationQueries();
+  const createOrganization = useCreateOrganizationMutation();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [owner, setOwner] = useState<AdminUser | null>(null);
+  const [owner, setOwner] = useState<OrganizationOwnerCandidate | null>(null);
   const ownerInitializedRef = useRef(false);
   const slugEditedRef = useRef(false);
-  const [saving, setSaving] = useState(false);
   const ownerItems = useMemo(
     () =>
       users.flatMap((item) =>
@@ -55,33 +57,26 @@ export function CreateOrganizationPage() {
   );
 
   useEffect(() => {
-    if (!ownerInitializedRef.current && user && users.length) {
-      setOwner(users.find((item) => item.id === Number(user.id)) ?? null);
+    if (!ownerInitializedRef.current && currentUserId && users.length) {
+      setOwner(users.find((item) => item.id === currentUserId) ?? null);
       ownerInitializedRef.current = true;
     }
-  }, [user, users]);
-
-  if (!user || error) return <NotFoundError />;
-  if (user.systemRole !== "SUPERADMIN") return <NotFoundError />;
+  }, [currentUserId, users]);
 
   async function submit() {
     const trimmedName = name.trim();
-    if (!trimmedName || !owner || saving) return;
-    setSaving(true);
+    if (!trimmedName || !owner || createOrganization.isPending) return;
     try {
-      await createOrganization({
+      await createOrganization.mutateAsync({
         name: trimmedName,
         slug: slug.trim() || undefined,
         description: description.trim() || undefined,
         ownerUserId: owner.id,
       });
-      await invalidateOrganizations();
       toast.success("Organization created.");
       void navigate("/workspace/organizations");
     } catch (submitError: unknown) {
       toast.error(submitError instanceof Error ? submitError.message : String(submitError));
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -154,9 +149,9 @@ export function CreateOrganizationPage() {
             <AppButton
               type="button"
               onClick={() => void submit()}
-              disabled={!name.trim() || !owner || saving}
+              disabled={!name.trim() || !owner || createOrganization.isPending}
             >
-              {saving ? "Creating..." : "Create Organization"}
+              {createOrganization.isPending ? "Creating..." : "Create Organization"}
             </AppButton>
           </div>
         </section>

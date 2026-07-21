@@ -44,8 +44,10 @@ export function AdminUsersPage() {
   const navigate = useNavigate();
   const { data: user, error } = useUser();
   const controls = useCatalogControls<UserRoleFilter, UserSortMode>({
+    filters: FILTERS.map(({ value }) => value),
     initialFilter: "all",
     initialSort: "current",
+    sorts: SORT_OPTIONS.map(({ value }) => value),
   });
   const pageQuery = useAdminUsers({
     page: controls.page,

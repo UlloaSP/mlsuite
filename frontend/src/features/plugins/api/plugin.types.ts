@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PluginRuntimeSource } from "@/shared/api/plugin-runtime";
+import type { PluginRuntimeSource } from "@/capabilities/mlform/plugin-runtime-sources";
 
 export interface PluginDto extends PluginRuntimeSource {
   updatedByName?: string | null;

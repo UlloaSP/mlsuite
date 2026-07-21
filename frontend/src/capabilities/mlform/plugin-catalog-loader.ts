@@ -3,13 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getAllPluginRuntimeSources, type PluginRuntimeSource } from "@/shared/api/plugin-runtime";
 import { validateCustomFieldSource } from "@/capabilities/mlform/custom-field-source-runtime";
 import { validateCustomReportSource } from "@/capabilities/mlform/custom-report-source-runtime";
-import {
-  invalidatePluginRuntimeCache,
-  memoizePluginRuntime,
-} from "@/capabilities/mlform/plugin-runtime-cache";
 
 /**
  * DetectedPluginType: describes the public data contract consumed or returned by this algorithm.
@@ -59,29 +54,6 @@ const validateByType = async (
 };
 
 /**
- * invalidatePluginCatalog: clears cached state so next read reloads source data
- *
- * Purpose: loads plugin catalog rows and detects field/report plugin source type.
- * @returns void after cache invalidation.
- * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
- * @remarks Side cases/effects: Mutates in-memory cache only; next read recomputes from source data.
- */
-export const invalidatePluginCatalog = invalidatePluginRuntimeCache;
-
-/**
- * loadPlugins: loads and caches async catalog data
- *
- * Purpose: loads plugin catalog rows and detects field/report plugin source type.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Propagates browser/API/runtime failures from the called platform APIs.
- * @remarks Side cases/effects: Performs async catalog/report work and preserves existing cache semantics for repeat calls.
- */
-export const loadPlugins = (
-  organizationId: number | string,
-): Promise<readonly PluginRuntimeSource[]> =>
-  memoizePluginRuntime(organizationId, "catalog", getAllPluginRuntimeSources);
-
-/**
  * detectPluginType: performs the exported transformation for this algorithm.
  *
  * Purpose: loads plugin catalog rows and detects field/report plugin source type.
@@ -90,39 +62,38 @@ export const loadPlugins = (
  * @throws Propagates browser/API/runtime failures from the called platform APIs.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export const detectPluginType = (
+export const detectPluginType = async (
   organizationId: number | string,
   source: string,
-): Promise<DetectionResult> =>
-  memoizePluginRuntime(organizationId, `detection:${source}`, async () => {
-    const declaredType = detectDeclaredPluginType(source);
-    if (declaredType) {
-      try {
-        return await validateByType(organizationId, source, declaredType);
-      } catch (error: unknown) {
-        throw new Error(`Plugin validation failed for ${declaredType}: ${getErrorMessage(error)}`);
-      }
+): Promise<DetectionResult> => {
+  const declaredType = detectDeclaredPluginType(source);
+  if (declaredType) {
+    try {
+      return await validateByType(organizationId, source, declaredType);
+    } catch (error: unknown) {
+      throw new Error(`Plugin validation failed for ${declaredType}: ${getErrorMessage(error)}`);
     }
+  }
 
-    const attempts = await Promise.allSettled([
-      validateCustomFieldSource(organizationId, source),
-      validateCustomReportSource(organizationId, source),
-    ]);
-    if (attempts[0].status === "fulfilled") {
-      return { pluginType: "field", kind: attempts[0].value.kind };
+  const attempts = await Promise.allSettled([
+    validateCustomFieldSource(organizationId, source),
+    validateCustomReportSource(organizationId, source),
+  ]);
+  if (attempts[0].status === "fulfilled") {
+    return { pluginType: "field", kind: attempts[0].value.kind };
+  }
+  if (attempts[1].status === "fulfilled") {
+    return { pluginType: "report", kind: attempts[1].value.kind };
+  }
+  const reasons = attempts.reduce<string[]>((messages, attempt) => {
+    if (attempt.status === "rejected") {
+      messages.push(getErrorMessage(attempt.reason));
     }
-    if (attempts[1].status === "fulfilled") {
-      return { pluginType: "report", kind: attempts[1].value.kind };
-    }
-    const reasons = attempts.reduce<string[]>((messages, attempt) => {
-      if (attempt.status === "rejected") {
-        messages.push(getErrorMessage(attempt.reason));
-      }
-      return messages;
-    }, []);
-    throw new Error(
-      reasons.length > 0
-        ? `Plugin validation failed for field/report: ${reasons.join(" | ")}`
-        : "Plugin validation failed. The file is not a valid field or report plugin.",
-    );
-  });
+    return messages;
+  }, []);
+  throw new Error(
+    reasons.length > 0
+      ? `Plugin validation failed for field/report: ${reasons.join(" | ")}`
+      : "Plugin validation failed. The file is not a valid field or report plugin.",
+  );
+};

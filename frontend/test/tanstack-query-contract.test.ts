@@ -4,15 +4,22 @@ import { appFetch, HttpError } from "@/shared/api/http";
 import { schemaReviewLinksQueryOptions } from "@/features/schemas/api/review-links";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { organizationTeamsQueryOptions } from "@/features/workspace/api/workspace.queries";
+import { predictionRunsFeedbackQueryOptions } from "@/features/schemas/api/schema-queries";
+import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/mlform/plugin-runtime-sources";
 
-const { getTeams } = vi.hoisted(() => ({ getTeams: vi.fn() }));
+const { getPredictionRunsFeedback, getTeams } = vi.hoisted(() => ({
+  getPredictionRunsFeedback: vi.fn(),
+  getTeams: vi.fn(),
+}));
 
 vi.mock("@/features/workspace/api/teams.api", () => ({ getTeams }));
+vi.mock("@/features/schemas/api/schema-prediction-api", () => ({ getPredictionRunsFeedback }));
 
 const client = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 afterEach(() => {
   getTeams.mockReset();
+  getPredictionRunsFeedback.mockReset();
   vi.unstubAllGlobals();
 });
 
@@ -39,6 +46,60 @@ describe("TanStack Query resource contracts", () => {
     ]);
 
     expect(getTeams).toHaveBeenCalledWith(7, expect.any(AbortSignal));
+  });
+
+  test("batches run feedback with one normalized tenant query", async () => {
+    getPredictionRunsFeedback.mockResolvedValue([{ id: "feedback-1" }]);
+    const options = predictionRunsFeedbackQueryOptions(7, ["run-2", "run-1", "run-2"]);
+
+    await expect(client().fetchQuery(options)).resolves.toEqual([{ id: "feedback-1" }]);
+
+    expect(options.queryKey).toEqual([
+      "org",
+      7,
+      "predictionFeedback",
+      "runs",
+      { runIds: ["run-1", "run-2"] },
+    ]);
+    expect(getPredictionRunsFeedback).toHaveBeenCalledOnce();
+    expect(getPredictionRunsFeedback).toHaveBeenCalledWith(
+      ["run-1", "run-2"],
+      expect.any(AbortSignal),
+    );
+  });
+
+  test("normalizes numeric run ids before batching feedback", async () => {
+    getPredictionRunsFeedback.mockResolvedValue([]);
+    const options = predictionRunsFeedbackQueryOptions(7, [2, 1, 2]);
+
+    await client().fetchQuery(options);
+
+    expect(options.queryKey).toEqual([
+      "org",
+      7,
+      "predictionFeedback",
+      "runs",
+      { runIds: ["1", "2"] },
+    ]);
+    expect(getPredictionRunsFeedback).toHaveBeenCalledWith(["1", "2"], expect.any(AbortSignal));
+  });
+
+  test("lets Query own tenant plugin sources and forwards cancellation", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ items: [{ id: "plugin-1" }], hasNext: false }), {
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const options = pluginRuntimeSourcesQueryOptions(7);
+
+    await expect(client().fetchQuery(options)).resolves.toEqual([{ id: "plugin-1" }]);
+
+    expect(options.queryKey).toEqual(["org", 7, "pluginRuntimeSources"]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/plugins?"),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   test("preserves query failures", async () => {

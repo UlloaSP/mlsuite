@@ -1,6 +1,4 @@
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { organizationRolesQueryKey } from "@/features/workspace/api/workspace.keys";
-import { useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
@@ -11,13 +9,7 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabs } from "@/shared/ui/AppTabs";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
-import {
-  createRole,
-  createRoleFromTemplate,
-  deleteRole,
-  duplicateRole,
-  updateRole,
-} from "@/features/workspace/api/roles.api";
+import { useRoleMutations } from "@/features/workspace/api/role.mutations";
 import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
 import { RoleDrawer } from "@/features/workspace/components/RoleDrawer";
 import { RoleForm } from "@/features/workspace/components/RoleForm";
@@ -35,7 +27,6 @@ type Tab = "roles" | "templates" | "permissions";
 export function RolesPage() {
   const { organizationId = "" } = useParams();
   const id = Number(organizationId);
-  const qc = useQueryClient();
   const { data: workspace } = useWorkspaceContext();
   const { data } = useOrganizationRolesQuery(id);
   const [tab, setTab] = useState<Tab>("roles");
@@ -43,7 +34,7 @@ export function RolesPage() {
   const [selected, setSelected] = useState<RoleDefinitionDto | null>(null);
   const [editing, setEditing] = useState<RoleDefinitionDto | null>(null);
   const [template, setTemplate] = useState<RoleTemplateDto | null>(null);
-  const invalidate = () => qc.invalidateQueries({ queryKey: organizationRolesQueryKey(id) });
+  const roleMutations = useRoleMutations(id);
   const roles = useMemo(
     () =>
       (data?.roles ?? []).filter((role) =>
@@ -167,13 +158,13 @@ export function RolesPage() {
             onClose={() => setSelected(null)}
             onEdit={() => setEditing(selected)}
             onDuplicate={() =>
-              void duplicateRole(id, selected.id, `${selected.name} Copy`).then(invalidate)
+              roleMutations.duplicate.mutate({
+                roleId: selected.id,
+                name: `${selected.name} Copy`,
+              })
             }
             onDelete={() =>
-              void deleteRole(id, selected.id).then(() => {
-                setSelected(null);
-                void invalidate();
-              })
+              roleMutations.delete.mutate(selected.id, { onSuccess: () => setSelected(null) })
             }
           />
         ) : null}
@@ -183,11 +174,14 @@ export function RolesPage() {
             permissionGroups={data?.permissionCatalog ?? []}
             onClose={() => setEditing(null)}
             onSave={(payload) => {
-              const op = editing.id ? updateRole(id, editing.id, payload) : createRole(id, payload);
-              void op.then(() => {
-                setEditing(null);
-                void invalidate();
-              });
+              if (editing.id) {
+                roleMutations.update.mutate(
+                  { roleId: editing.id, payload },
+                  { onSuccess: () => setEditing(null) },
+                );
+              } else {
+                roleMutations.create.mutate(payload, { onSuccess: () => setEditing(null) });
+              }
             }}
           />
         ) : null}
@@ -202,14 +196,14 @@ export function RolesPage() {
             permissionGroups={data?.permissionCatalog ?? []}
             onClose={() => setTemplate(null)}
             onSave={(payload) => {
-              void createRoleFromTemplate(id, {
-                templateId: template.id,
-                name: payload.name,
-                permissionKeys: payload.permissionKeys,
-              }).then(() => {
-                setTemplate(null);
-                void invalidate();
-              });
+              roleMutations.createFromTemplate.mutate(
+                {
+                  templateId: template.id,
+                  name: payload.name,
+                  permissionKeys: payload.permissionKeys,
+                },
+                { onSuccess: () => setTemplate(null) },
+              );
             }}
           />
         ) : null}
