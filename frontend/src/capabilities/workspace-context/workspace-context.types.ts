@@ -106,7 +106,8 @@ export type WorkspacePermissionKey =
   | "canDeleteModels"
   | "canRunPredictions"
   | "canExportPredictions"
-  | "canManageReviewLinks"
+  | "canReview"
+  | "canManageReviews"
   | "canViewPlugins"
   | "canManagePlugins";
 
@@ -132,7 +133,8 @@ export interface WorkspacePermissionsDto {
   canDeleteModels: boolean;
   canRunPredictions: boolean;
   canExportPredictions: boolean;
-  canManageReviewLinks: boolean;
+  canReview: boolean;
+  canManageReviews: boolean;
   canViewPlugins: boolean;
   canManagePlugins: boolean;
 }

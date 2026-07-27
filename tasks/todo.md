@@ -854,3 +854,338 @@
 - `vp check` is blocked only by pre-existing formatting issues in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`.
 - React Doctor found no code issue; only two pre-existing pnpm-hardening warnings remain. No visual check ran because repository policy forbids unsolicited visual verification.
 - `graphify update .` completed: 10,567 nodes, 28,970 edges, and 460 communities; existing tool/version, optional SQL parser, and zero-node JSON warnings remain.
+
+# Internal Review Pool And Unified Authentication
+
+- [x] Capture the current review/auth/permission contract and a clean verification baseline.
+- [x] Replace review-link/token persistence with organization-owned reviews, review runs, and per-user submissions; no compatibility or migration layer.
+- [x] Replace external-review permissions and role seeding with `REVIEW`, `MANAGE_REVIEWS`, and one `Reviewer` organization role.
+- [x] Expose authenticated manager and reviewer APIs for creating, listing, opening, submitting, closing, and revoking reviews.
+- [x] Consolidate login/register into the normal auth page with a validated local `returnTo` destination.
+- [x] Move Review into the standard application shell/sidebar and remove the token portal, separate shell, and special login route.
+- [x] Adapt review creation and workspace UI to the organization review pool without generated or copied links.
+- [x] Replace legacy tests with one focused backend review contract suite and focused frontend auth/review behavior coverage.
+- [x] Remove every stale token, external-reviewer, link, assignment, and legacy route reference; audit source line limits.
+- [x] Run narrow then broad API/frontend verification, React Doctor, diff checks, and `graphify update .` without visual inspection.
+- [x] Record implementation results and exact blockers in the Review section below.
+
+## Review
+
+- Replaced the encrypted review-link model with `SchemaReview`, public review/run UUIDs, organization ownership, derived lifecycle state, and per-user submissions. No Review token or compatibility path remains.
+- Added `REVIEW` and `MANAGE_REVIEWS`; seeded one editable `Reviewer` organization role with only `REVIEW`. Generic organization invitation tokens remain intentionally separate.
+- Added authenticated `/api/schema-reviews` manager/reviewer operations through an application port. Reviewers see every open review in their active organization and keep independent feedback/completion state.
+- Moved Review to `/review` inside `AppShell`, added permission-aware sidebar/route guards, removed `ReviewShell` and the special Review login, and reused the normal login/register page with validated local `returnTo` plus permission-aware post-login landing.
+- Replaced link creation/copy UI with organization review creation, close, and revoke controls. No visual check was run because repository policy forbids it unless requested.
+- Passed focused API tests (29/29), all functional API tests (149/149), API package, TypeScript, focused frontend tests (16/16), full frontend tests with limited workers (171/171), production build, stale-contract audit, source line limits, and `git diff --check`.
+- Full API run is blocked only by the pre-existing three `ModelControllerImpl` violations in `WebAdapterArchitectureTest`; the new Review controller adds zero violations after introducing `SchemaReviewUseCase`.
+- `vp check` is blocked only by the two pre-existing formatting issues in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`.
+- React Doctor reports 79/100 with 21 pre-existing findings, none in files changed by this feature. Initial parallel run timed out; the isolated rerun completed successfully.
+- `graphify update .` completed: 10,556 nodes, 28,924 edges, and 468 communities; existing skill-version, optional SQL parser, and zero-node JSON warnings remain.
+
+# Assigned Organization Reviews
+
+- [x] Persist explicit reviewer assignments and validate selected users are active organization members with `REVIEW` permission.
+- [x] Restrict reviewer visibility and access to assigned reviews while managers retain the full organization catalog.
+- [x] Expose eligible reviewers and assignment metadata through the review API.
+- [x] Rework the create-review modal around inference and reviewer selection, with a centered bounded layout.
+- [x] Make `/review` the direct all-review catalog and keep lifecycle management there.
+- [x] Update focused success/error coverage and remove stale open-pool copy and behavior.
+- [x] Run narrow and broad API/frontend verification, audits, and `graphify update .` without visual inspection.
+- [x] Record final implementation results and exact blockers below.
+
+## Review
+
+- Reviews now persist explicit assignees. Creation accepts only unique, enabled, active organization members whose effective role contains `REVIEW`; invalid selections roll back the transaction.
+- Reviewers can list and open only assigned reviews. Managers see the full organization catalog across schemas and lifecycle states, with close/revoke controls on `/review`.
+- The creation dialog selects inferences and reviewers in one centered native modal; review history and lifecycle actions no longer live inside that dialog.
+- Focused backend review coverage passes 7/7. All 152 non-architecture API tests pass; the architecture test remains blocked only by the three pre-existing `ModelControllerImpl` service dependencies.
+- No visual check was run because repository policy forbids it unless explicitly requested.
+- Final `graphify update .` completed with 10,597 nodes, 29,054 edges, and 457 communities.
+
+# Review Feedback Persistence Regression
+
+- [x] Reproduce the empty saved-answer payload at the shared MLForm transport seam.
+- [x] Fix the shared questionnaire transport so history and assigned-review pages persist field answers.
+- [x] Ensure both surfaces refresh into a completed summary instead of remounting an empty questionnaire.
+- [x] Run focused regression tests, broad API/frontend verification, audits, and `graphify update .`.
+- [x] Record the root cause and final verification below.
+
+## Review
+
+- Reproduced the regression with MLForm model serialization empty and serialized field answers populated: the old transport submitted `{}`.
+- The shared questionnaire transport now persists `serializedFieldValues`, so both inference history and assigned-review pages save the actual field-keyed answers.
+- Both surfaces now share completion logic; assigned reviews require all questionnaire fields and no longer treat an empty feedback record as complete.
+- Questionnaire state is reset by inference identity, preventing saved answers from leaking when navigating between review runs.
+- The focused regression failed before the fix and passes after it. Full frontend verification passes 43 files/172 tests, TypeScript, production build, formatting of touched files, line limits, stale-reference audit, and `git diff --check`.
+- `vp check` remains blocked only by the existing formatting issues in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`. React Doctor reports 21 pre-existing findings and none in changed files.
+- The final graph refresh completed successfully; existing skill-version, optional SQL parser, and zero-node JSON warnings remain.
+
+# Reviewer Inbox And Organization Inferences
+
+- [x] Reproduce and remove the intermediate Review catalog/schema-selection behavior.
+- [x] Add one reviewer-scoped Review inbox API returning all assigned open review groups and runs.
+- [x] Make `/review` and its deep links render one direct rail/detail workspace across assigned reviews.
+- [x] Remove global manager review visibility from reviewer work surfaces.
+- [x] Add an organization-scoped inference catalog API with schema, snapshot, bookmark, and status metadata.
+- [x] Add first-level `/inferences` route/sidebar page with URL-backed search, schema, bookmark, and status filters.
+- [x] Add focused success/error/isolation coverage in the existing review and prediction feature test files.
+- [x] Run focused and broad API/frontend verification, source audits, and `graphify update .` without visual inspection.
+- [x] Record final results and exact blockers below.
+
+## Review
+
+- `/review` is now the current user's direct inbox: it opens the first pending assigned inference and keeps all assigned open review runs in one schema-labelled rail. The catalog/card step and separate workspace page were removed.
+- Review work is assignment-scoped for every user, including review managers; manager permission no longer exposes an organization-global work pool. Feedback and completion remain independent per reviewer.
+- Added `/inferences` as a first-level organization page. Its compact catalog includes schema/snapshot/bookmark metadata and URL-backed text, schema, bookmark, and status filters.
+- Added an organization-scoped prediction-run catalog endpoint and focused isolation/filter/route coverage. No migration or compatibility layer was added.
+- Passed focused tests (10 frontend, 10 backend), all 155 functional API tests, all 177 frontend tests, TypeScript, production build, formatting of touched files, line limits, stale-reference and diff audits.
+- The API architecture test remains blocked only by the three pre-existing `ModelControllerImpl` service dependencies. `vp check` remains blocked only by pre-existing formatting in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`.
+- React Doctor reports 21 pre-existing findings and none in changed code. No visual check ran because repository policy forbids it unless explicitly requested.
+- `graphify update .` completed with 10,632 nodes, 29,151 edges, and 461 communities; existing skill-version, optional SQL parser, and zero-node JSON warnings remain.
+
+# Auth And Review Legacy Cleanup
+
+- [x] Add a failing contract check for the orphaned configurable auth surface and duplicate selector.
+- [x] Make the public auth route open Login directly and switch to Register in the same fixed form.
+- [x] Delete auth props and components that only supported the removed external-review login.
+- [x] Remove unused global review catalog/context/lifecycle API and its DTO/entity state.
+- [x] Preserve and verify secure `returnTo`, assigned inbox, review creation, feedback, and submission.
+- [x] Run focused and broad frontend/API verification, source audits, and `graphify update .`.
+- [x] Record final result and exact pre-existing blockers below.
+
+## Review
+
+- Auth now opens the Login form directly and switches to Register inside the same fixed form. Removed eight orphaned injection/config props plus `AuthOptions`, `AuthButton`, and `BackButton`.
+- Preserved validated `returnTo`; it remains required by `ProtectedRoute` for authenticated deep links and rejects external or backslash destinations.
+- Review API now exposes only consumed operations: create, eligible reviewers, assigned inbox, run detail, feedback, and submit. Removed unused global list/context/close/revoke operations, summary/organization DTOs, reviewer-list query, creator/update/lifecycle entity fields, and matching frontend contracts.
+- Broader legacy scan found active role, draft, and storage compatibility code with real consumers; left it untouched because it is unrelated and not orphaned.
+- Regression failed before cleanup and passes after it. Focused verification passes 16 frontend assertions and 8 Review API tests; broad verification passes all 155 functional API tests and 178 frontend tests, TypeScript, production build, touched-file formatting, line limits, stale-reference audit, and `git diff --check`.
+- `vp check` remains blocked only by pre-existing formatting in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`. API architecture remains blocked only by the three pre-existing `ModelControllerImpl` service dependencies documented earlier.
+- React Doctor reports 21 pre-existing findings, none in changed files. No visual check ran because repository policy forbids it unless explicitly requested.
+- `graphify update .` completed with 10,597 nodes, 29,034 edges, and 461 communities; existing skill-version, optional SQL parser, and zero-node JSON warnings remain.
+
+# Inference Catalog Actions
+
+- [x] Extract review creation into one reusable capability and expose it from Inferences.
+- [x] Reuse the full schema-run export flow for the currently filtered inference snapshot.
+- [x] Make each inference row the detail target and replace the View action with a three-dot Delete menu.
+- [x] Add organization-scoped inference deletion, rejecting runs already attached to a review.
+- [x] Cover export reuse, review action, navigation, deletion success, and deletion error paths.
+- [x] Run focused and broad verification, audits, and `graphify update .` without visual inspection.
+
+## Review
+
+- Inferences now exposes Create review and the existing full Export to CSV workflow. Export loads full runs and snapshot data, then reuses the same inference/reviewer selection modal and schema-derived CSV builder as bookmark history; no compact catalog CSV remains.
+- When filtered results span snapshots, Export first lists those snapshots because the established CSV contract is snapshot/schema-specific. Only currently filtered inference ids are passed into the selected export.
+- Entire inference rows open detail. The former View action is gone; authorized users get a far-right three-dot menu with Delete.
+- `DELETE /api/prediction-runs/{id}` is organization-scoped, requires `canRunPredictions`, deletes result feedback/results transactionally, and returns conflict when the inference belongs to a review.
+- Focused frontend checks pass 20/20 and API deletion checks 4/4. Full frontend passes 44 files/180 tests, TypeScript, architecture fitness, and production build. Full functional API passes 157/157.
+- Full API remains blocked only by the three pre-existing `ModelControllerImpl` architecture violations. `vp check` remains blocked only by pre-existing formatting in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`.
+- React Doctor reports the same 21 pre-existing findings and none in changed files. Source limits, stale-reference audit, and `git diff --check` pass. No visual check ran because it was not requested.
+- `graphify update .` completed with 10,622 nodes, 29,075 edges, and 466 communities; existing skill-version, optional SQL parser, and zero-node JSON warnings remain.
+
+# Reviewer Submission Reopening
+
+- [x] Expose manager-scoped reviewer status for each organization inference.
+- [x] Reopen one completed review run for one assigned reviewer while retaining feedback.
+- [x] Add Review status and Reopen to the inference overflow workflow.
+- [x] Cover success, authorization/scope, invalid state, and visible frontend contracts.
+- [x] Run focused and broad verification, audits, and `graphify update .` without visual inspection.
+
+## Review
+
+- Inferences now exposes Review status in each authorized overflow menu. Managers see every real review assignment for that inference, including reviewer, pending/in-progress/completed state, submission time, and expiry.
+- Reopen targets one review run and one assigned reviewer. It requires `MANAGE_REVIEWS`, current-organization ownership, a live review, and an existing completed submission; only the submission marker is deleted, so saved feedback remains available for correction and resubmission.
+- Added a tenant-scoped Query contract and organization-wide invalidation after reopening, keeping both the manager surface and reviewer inbox consistent without a second client state store.
+- Focused checks pass: 6/6 backend management tests and 7/7 inference frontend tests. Broad checks pass: 163/163 functional API tests, 181/181 frontend tests, TypeScript, frontend architecture, and production build.
+- API architecture remains blocked only by the same three pre-existing `ModelControllerImpl` service dependencies. `vp check` remains blocked only by pre-existing formatting in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`.
+- React Doctor reports the same 21 pre-existing findings and none in changed files. Touched source limits and `git diff --check` pass. No visual check ran because it was not requested.
+- Final `graphify update .` completed with 10,679 nodes, 29,281 edges, and 473 communities; existing skill-version, optional SQL parser, and zero-node JSON warnings remain.
+
+# Inference Review Detail Navigation
+
+- [x] Add canonical `/inferences/:inferenceId` detail route with one inline Reviews section.
+- [x] Move reviewer status and reopening from the modal into that section.
+- [x] Make inference rows open canonical detail and `Review status` open `?section=reviews`.
+- [x] Delete modal state/component and stale contract assertions.
+- [x] Cover route, navigation, permissions, loading/error/empty, and reopen behavior.
+- [x] Run focused and broad verification, audits, and `graphify update .` without visual inspection.
+
+## Review
+
+- Inference rows now open `/inferences/:inferenceId`; the overflow `Review status` action opens `/inferences/:inferenceId?section=reviews`.
+- The detail page has no tabs. It renders inference metadata followed by one inline Reviews section; the query parameter only scrolls directly to that section.
+- Review status, empty/loading/error states, reviewer completion metadata, and the existing reopen workflow moved into a reusable section. The former modal component and table modal state were removed.
+- Focused checks pass 8/8, and broad frontend verification passes 44 files/182 tests, TypeScript, architecture fitness, and production build.
+- Touched-file formatting, source limits, stale implementation-reference checks, and `git diff --check` pass. `vp check` remains blocked only by pre-existing formatting in `frontend/AGENTS.md` and `frontend/pnpm-workspace.yaml`.
+- React Doctor reports the same 21 pre-existing findings and none in changed files. No visual check ran because it was not requested.
+- `graphify update .` completed with 10,682 nodes, 29,283 edges, and 469 communities; existing skill-version, optional SQL parser, and zero-node JSON warnings remain.
+# Impeccable Product Context Init
+
+- [x] Load Impeccable init workflow, repository graph, existing docs, routes, and current task lessons.
+- [x] Confirm primary user/job, product distinction, and durable constraints with product owner.
+- [x] Create root `PRODUCT.md` using Impeccable product schema without changing `DESIGN.md`.
+- [x] Configure live mode if useful and safe; otherwise record why skipped.
+- [x] Verify product record, update graph, and document result below.
+
+## Review
+
+- Captured MLSuite as a schema-first, self-hostable web platform for ML engineers, data scientists, domain reviewers, and organization administrators.
+- Recorded versioned model/schema contracts, generated forms, traceable inference, assigned review, feedback, RBAC, evidence boundaries, and durable product principles.
+- Left existing `DESIGN.md` untouched. Added minimal live-mode config for `frontend/index.html`; CSP detection found no policy requiring a source patch.
+- Verified Impeccable schema/path discovery, live boot, JSON config, injection target, and whitespace checks. No visual check ran because it was not requested.
+- `graphify update .` completed with 10,691 nodes, 29,292 edges, and 469 communities; existing skill-version, optional SQL parser, visualization-size, and zero-node JSON warnings remain.
+
+# Inference Catalog Refresh After Creation
+
+- [x] Reproduce missing catalog invalidation for manual inference creation.
+- [x] Centralize prediction-run catalog cache identity without cross-feature imports.
+- [x] Refresh bookmark history and organization Inferences after manual and bulk creation.
+- [x] Add regression coverage for cache invalidation and both creation paths.
+- [x] Run focused and broad frontend verification, audits, and `graphify update .` without visual inspection.
+
+## Review
+
+- Root cause: manual and bulk creation refreshed bookmark history only, leaving the organization inference catalog cache valid with stale data.
+- Added one prediction-run catalog key capability consumed by both Inferences and Schemas. Both creation paths now invalidate bookmark history and organization Inferences without broad organization refetching or cross-feature imports.
+- Regression failed before the fix and passes after it. Focused inference checks pass 9/9; broad frontend passes 44 files/183 tests, TypeScript, architecture fitness, and production build.
+- Touched-file formatting, source limits, and `git diff --check` pass. `vp check` remains blocked by pre-existing formatting in `frontend/AGENTS.md`, `frontend/index.html`, and `frontend/pnpm-workspace.yaml`.
+- React Doctor reports 10 existing findings and none in current refresh files. No visual check ran because this was a cache-only fix and none was requested.
+- `graphify update .` completed with 10,682 nodes, 29,283 edges, and 472 communities; existing skill-version, visualization-size, optional SQL parser, and zero-node JSON warnings remain.
+
+# Review Catalogs And Assignment Repair
+
+- [x] Reproduce and fix PostgreSQL review creation failure at its persisted source.
+- [x] Replace create-review lists with two searchable, independently paginated selection catalogs.
+- [x] Preserve selection across pages and both Inferences/bookmark-history entry points.
+- [x] Replace inference review status rows with paginated reviewer-specific tiles.
+- [x] Add safe Reopen and Delete response actions with tenant and permission enforcement.
+- [x] Reconcile review/inference caches after create, reopen, and delete.
+- [x] Cover creation, pagination, permissions, state transitions, errors, and empty states.
+- [x] Run focused and broad API/frontend verification, audits, and `graphify update .` without visual inspection.
+
+## Review
+
+- Root cause of Assign failure was PostgreSQL rejecting inserts because active `SchemaReview` no longer mapped the
+  required `updated_at` and `created_by_user_id` columns. Both fields are active again; creator metadata now reaches
+  inference review tiles.
+- Shared Create review dialog now provides separate searchable, six-item paginated Inferences and Reviewers
+  catalogs. Selection survives page/search changes, IDs are validated and sent as numbers, and the same capability
+  serves organization Inferences and bookmark history.
+- Inference detail now ends with a searchable/status-filtered, paginated tile catalog: one tile per reviewer
+  assignment. Reopen removes only completion and keeps answers; Delete response removes that reviewer's submission
+  plus feedback while retaining the assignment as Pending.
+- Management operations require `MANAGE_REVIEWS`, current-organization ownership, matching review run, and an
+  assigned reviewer. Create/reopen/delete invalidate reviewer inbox and the exact inference assignment cache.
+- Passed focused API tests 19/19, focused frontend/architecture tests 20/20, all functional API tests, all frontend
+  tests 185/185, TypeScript, frontend architecture 9/9, and production build.
+- Full API remains blocked only by the three pre-existing `ModelControllerImpl` architecture violations. `vp check`
+  remains blocked only by existing formatting in `frontend/AGENTS.md`, `frontend/index.html`, and
+  `frontend/pnpm-workspace.yaml`. React Doctor improved to 80/100 with nine unrelated existing warnings.
+- Source limits and diff whitespace pass. No visual check ran because repository policy forbids it unless requested.
+
+# Global Search And Plugin Report Persistence Repair
+
+- [x] Reproduce separate Snapshot/Bookmark search gaps and define their independent result contracts.
+- [x] Reproduce `Duplicate report payload for mappedTo "classifier9"` at the MLForm result boundary.
+- [x] Reproduce CrystalTree divergence between mounted form, result modal, and saved prediction payload.
+- [x] Add organization-scoped Snapshot and Bookmark groups to global search with canonical navigation.
+- [x] Fix report payload identity/expansion at the shared MLForm transport boundary.
+- [x] Preserve CrystalTree results through modal rendering and prediction persistence.
+- [x] Cover grouped search, duplicate targets, per-model payloads, and fetched plugin-result persistence.
+- [x] Run focused and broad API/frontend verification, audits, and `graphify update .` without visual inspection.
+
+## Review
+
+- Global search now returns separate organization-scoped `Snapshots` and `Bookmarks` groups. Each result uses its
+  canonical snapshot/bookmark detail route; frontend result types, icons, and search prompt match the API contract.
+- Root cause of `Duplicate report payload`: analyzer targets such as `classifier9` were also used as MLForm's
+  cross-model payload identity. Labels were irrelevant. Runtime report keys are now unique while per-model output and
+  persistence retain the original analyzer target.
+- Root cause of missing CrystalTree output: `mlf-submit-success` exposed fetched plugin payloads in
+  `pipelineResult.reportFetchResults`, but the mount adapter only consumed `submitResult.raw`. Fetched results now
+  become ready report states and are copied into the owning result before the modal/save callback.
+- Regression tests failed before the fixes and now pass. Focused API search tests pass; all frontend tests pass
+  187/187, frontend architecture passes 9/9, TypeScript and production build pass.
+- Full API executed 170 tests and is blocked only by the three pre-existing `ModelControllerImpl` architecture
+  violations. React Doctor remains 80/100 with nine unrelated existing warnings. No visual check ran because it was
+  not requested.
+- `graphify update .` completed with 10,730 nodes, 29,407 edges, and 473 communities; existing skill-version,
+  visualization-size, optional SQL parser, and zero-node JSON warnings remain.
+
+# Inference Creation Theme And Summary Layout
+
+- [x] Reproduce report loss when switching light/dark mode after a schema run.
+- [x] Reproduce CrystalTree light-only rendering in the inference creation summary.
+- [x] Preserve mounted MLForm report state across theme updates without rerunning models.
+- [x] Make custom report rendering consume the active app theme.
+- [x] Recompose inference creation summary as one column: name, feedback, collapsible outputs, collapsible inputs.
+- [x] Reuse inference-detail output/input organization where its contract matches.
+- [x] Add regression coverage for theme updates, dark CrystalTree, section order, and collapse behavior.
+- [x] Run focused/full frontend verification, audits, source limits, and `graphify update .`.
+
+## Review
+
+- Root cause: `SchemaRunForm`, `SchemaFormPreview`, and `ReportQuestionnaireMount` included `theme` in
+  their mount-effect dependencies, so every theme switch destroyed MLForm state. They now update the mounted design
+  system in place, preserving resolved reports and questionnaire values.
+- Read-only custom/plugin reports now receive MLForm's active design-system tokens. CrystalTree therefore follows
+  light/dark mode in the creation summary without recreating its report frame or payload.
+- The creation modal is a centered single-column summary ordered Name, Feedback questionnaire, Outputs, and Inputs.
+  Outputs and Inputs reuse the same independently collapsible panels as inference detail; save actions remain in a
+  stable footer.
+- New regression coverage failed before the fix and now passes. Focused tests pass 23/23; the full frontend suite
+  passes 190/190; TypeScript, focused lint, architecture tests, and the production build pass.
+- React Doctor improved from 77/100 with three errors introduced by the first implementation to 80/100 with only
+  nine unrelated existing warnings. Full `vp check` remains blocked by existing formatting drift in `AGENTS.md`,
+  `index.html`, `pnpm-workspace.yaml`, and an unrelated prior test; all files changed for this task are formatted.
+- No source exceeds 300 non-comment lines. No visual check ran because it was not requested. `graphify update .`
+  completed with 10,733 nodes, 29,409 edges, and 491 communities.
+
+# Schema Preview Identity, Logical Feedback, And Bulk Save
+
+- [x] Reproduce same-key multi-model failure through schema preview and lock it with a regression.
+- [x] Reuse one runtime report identity preparation path in inference and preview.
+- [x] Keep MLForm preview mount failures inside the preview instead of the route boundary.
+- [x] Build one logical feedback assessment per source report and fan its answer out to every mapped result.
+- [x] Preserve separate assessments for separate source reports, including equal analyzer keys.
+- [x] Serialize model/dataframe bundle saves and retain failed bundles for retry.
+- [x] Cover success, partial/divergent feedback, preview failure, bulk partial failure, and retry.
+- [x] Run focused and broad verification, source audits, and `graphify update .`.
+
+## Review
+
+- Schema draft/version preview now uses the same runtime report preparation as real inference. Multi-model reports
+  sharing `classifier9` receive unique MLForm identities, while analyzer targets remain unchanged. Synchronous mount
+  failures render inside the preview instead of reaching the route boundary.
+- Feedback steps now follow source reports. One report mapped to several successful models renders one assessment;
+  separate reports remain separate even when their analyzer keys match. Internal feedback, reviewer feedback, and
+  pending inference feedback fan one answer out to every mapped result.
+- Existing identical target feedback pre-fills and completes the shared assessment. Missing or divergent target
+  feedback remains incomplete until one save converges every target.
+- Model/dataframe Save all now runs one analyzer upload at a time, attempts later bundles after a failure, retains
+  failed bundles, and navigates only after every selected bundle succeeds.
+- Regression tests failed before the fixes and pass after them. Focused checks pass 36/36; full frontend passes
+  201/201, architecture 9/9, TypeScript has zero errors, production build passes, and touched files remain below 300
+  non-comment lines.
+- Full `vp check` is blocked only by pre-existing formatting in `AGENTS.md`, `index.html`,
+  `pnpm-workspace.yaml`, and `test/schema-run-report-regressions.test.ts`. React Doctor reports nine existing
+  findings and none in this change. No visual check ran because it was not requested.
+- `graphify update .` completed with 10,739 nodes, 29,412 edges, and 480 communities; existing skill-version,
+  visualization-size, optional SQL parser, and zero-node JSON warnings remain.
+
+# Preview Transport Alias Deduplication
+
+- [x] Reproduce screenshot error with a runtime target exposed through model and `default` aliases.
+- [x] Deduplicate preview payloads by resolved runtime target.
+- [x] Assert transport payload cardinality instead of only mounted frame count.
+- [x] Run focused/full frontend tests, typecheck, build, and `graphify update .`.
+
+## Review
+
+- Root cause: runtime schema adaptation correctly added `default` as an alias, but preview transport treated both
+  alias entries as independent reports and returned the same `mappedTo` payload twice.
+- Preview transport now emits one payload per unique runtime target. Analyzer keys and report identities remain
+  unchanged.
+- Exact regression failed with two identical payloads before the fix and passes with one after it. Full frontend
+  passes 202/202; TypeScript has zero errors and production build passes.

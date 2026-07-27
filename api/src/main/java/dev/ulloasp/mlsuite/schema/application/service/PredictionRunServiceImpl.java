@@ -67,7 +67,7 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     @Override
     public PredictionRun createRunForBookmark(Long userId, Long schemaBookmarkId, CreatePredictionRunRequest request) {
         User user = userLookupService.requireById(userId);
-        Long organizationId = requireOperate(userId);
+        Long organizationId = requireRunPredictions(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
         return createRun(organizationId, user, bookmark, bookmark.getVersion(), request);
     }
@@ -80,6 +80,11 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     }
 
     @Override
+    public List<PredictionRun> listOrganizationRuns(Long userId) {
+        return runRepository.findByOrganizationIdOrderByCreatedAtDesc(requireRead(userId));
+    }
+
+    @Override
     public PredictionRun getRun(Long userId, Long runId) {
         Long organizationId = requireRead(userId);
         return runRepository.findByIdAndOrganizationId(runId, organizationId)
@@ -87,8 +92,22 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     }
 
     @Override
+    public void deleteRun(Long userId, Long runId) {
+        Long organizationId = requireRunPredictions(userId);
+        PredictionRun run = runRepository.findByIdAndOrganizationId(runId, organizationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Prediction run not found"));
+        if (runRepository.isIncludedInReview(runId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Inference cannot be deleted while it belongs to a review");
+        }
+        feedbackRepository.deleteByResult_Run_Id(runId);
+        resultRepository.deleteByRun_Id(runId);
+        runRepository.delete(run);
+    }
+
+    @Override
     public Long getLastPredictionRunId(Long userId) {
-        requireOperate(userId);
+        requireRunPredictions(userId);
         return runRepository.findLastPredictionRunId();
     }
 
@@ -99,10 +118,10 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         return organizationId;
     }
 
-    private Long requireOperate(Long userId) {
+    private Long requireRunPredictions(Long userId) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationOperate(userId, organizationId);
+        authorizationService.requireRunPredictions(userId, organizationId);
         return organizationId;
     }
 

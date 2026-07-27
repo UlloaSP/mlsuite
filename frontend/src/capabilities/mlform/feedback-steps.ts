@@ -5,7 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { CombinedFeedbackStep } from "@/capabilities/mlform/combined-feedback-questionnaire";
 import { createOutputFeedbackQuestionnaire } from "@/capabilities/mlform/output-feedback-questionnaire";
-import { getEffectiveFeedbackValues } from "@/capabilities/mlform/questionnaire-feedback";
+import {
+  getEffectiveFeedbackValues,
+  getQuestionnaireFieldIds,
+} from "@/capabilities/mlform/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/mlform/questionnaire-schema";
 import { isBuiltinReportKind } from "@/capabilities/mlform/builtin-registry";
 import { getFormattedReportContent } from "@/capabilities/mlform/report-feedback-utils";
@@ -52,9 +55,15 @@ type FeedbackKind = "OUTPUT" | "EXPLANATION";
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export type SchemaFeedbackStep = CombinedFeedbackStep<FeedbackKind, PredictionResultFeedback> & {
-  resultId: string;
+export type SchemaFeedbackStep = CombinedFeedbackStep<FeedbackKind, never> & {
   type: PredictionResultFeedbackType;
+  targets: SchemaFeedbackTarget[];
+};
+
+export type SchemaFeedbackTarget = {
+  resultId: string;
+  modelId: string;
+  feedback?: PredictionResultFeedback;
 };
 
 /** isRecord: internal predicate for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
@@ -64,10 +73,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 /** reportsOf: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportsOf = (schema: unknown): Record<string, unknown>[] =>
   isRecord(schema) && Array.isArray(schema.reports) ? schema.reports.filter(isRecord) : [];
-
-/** reportId: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const reportId = (report: Record<string, unknown>): string | undefined =>
-  typeof report.id === "string" ? report.id : undefined;
 
 /** feedbackQuestionnaire: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const feedbackQuestionnaire = (report: Record<string, unknown>): QuestionnaireSchema | undefined =>
@@ -110,9 +115,49 @@ const reportDescription = (payload: unknown): string => {
   return content ? `Prediction report:\n${content}` : "Prediction report";
 };
 
-/** feedbackKey: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const feedbackKey = (resultId: string, type: PredictionResultFeedbackType, order: number): string =>
   `${resultId}:${type}:${order}`;
+
+type DisplayTarget = {
+  result: PredictionResult;
+  display: ReturnType<typeof getSchemaResultReports>[number];
+};
+
+const commonFeedbackValues = (
+  targets: readonly SchemaFeedbackTarget[],
+  schema: QuestionnaireSchema,
+): Record<string, unknown> => {
+  if (targets.length === 0 || targets.some((target) => !target.feedback)) return {};
+  const values = targets.map((target) => getEffectiveFeedbackValues(target.feedback, schema));
+  const fieldIds = getQuestionnaireFieldIds(schema);
+  const first = values[0] ?? {};
+  const equal = values.every((value) =>
+    fieldIds.every((fieldId) => JSON.stringify(value[fieldId]) === JSON.stringify(first[fieldId])),
+  );
+  return equal ? first : {};
+};
+
+const stepTargets = (
+  members: readonly DisplayTarget[],
+  type: PredictionResultFeedbackType,
+  order: number,
+  feedbackByKey: ReadonlyMap<string, PredictionResultFeedback>,
+): SchemaFeedbackTarget[] =>
+  members.map(({ result }) => ({
+    resultId: result.id,
+    modelId: result.modelId,
+    feedback: feedbackByKey.get(feedbackKey(result.id, type, order)),
+  }));
+
+const combinedDescription = (
+  members: readonly DisplayTarget[],
+  describe: (payload: unknown) => string,
+): string =>
+  members.length === 1
+    ? describe(members[0]?.display.payload)
+    : members
+        .map(({ result, display }) => `${result.modelId}: ${describe(display.payload)}`)
+        .join("\n");
 
 /**
  * buildSchemaFeedbackSteps: constructs a new derived object from source data
@@ -132,50 +177,51 @@ export const buildSchemaFeedbackSteps = (
   );
   const sourceReports = reportsOf(version.formSchema);
 
-  return results.flatMap((result) => {
-    if (result.status !== "SUCCESS") return [];
-    const displayReports = getSchemaResultReports(version, result);
-    return displayReports.flatMap((display, index): SchemaFeedbackStep[] => {
-      const order = display.order ?? index;
-      const config =
-        sourceReports.find((report) => reportId(report) === display.id) ?? display.config;
-      const outputFeedback = feedbackByKey.get(feedbackKey(result.id, "OUTPUT", order));
-      const reportFeedback = feedbackByKey.get(feedbackKey(result.id, "EXPLANATION", order));
-      const questionnaire = config ? feedbackQuestionnaire(config) : undefined;
-      const isBuiltin = isBuiltinReportKind(display.kind);
-      const explanationStep: SchemaFeedbackStep | null = questionnaire
-        ? {
-            id: `result-${result.id}-report-${order}`,
-            kind: "EXPLANATION",
-            type: "EXPLANATION",
-            resultId: result.id,
-            order,
-            title: `${display.label} review`,
-            description: reportDescription(display.payload),
-            schema: questionnaire,
-            initialValues: getEffectiveFeedbackValues(reportFeedback, questionnaire),
-            feedback: reportFeedback,
-          }
-        : null;
-      if (!isBuiltin) return explanationStep ? [explanationStep] : [];
-      const outputSchema = createOutputFeedbackQuestionnaire(
-        config,
-        fakeTarget(order, display.payload),
-        result.output,
+  return sourceReports.flatMap((config, order): SchemaFeedbackStep[] => {
+    const members = results.flatMap((result): DisplayTarget[] => {
+      if (result.status !== "SUCCESS") return [];
+      const display = getSchemaResultReports(version, result).find(
+        (candidate) => candidate.order === order,
       );
-      const outputStep: SchemaFeedbackStep = {
-        id: `result-${result.id}-output-${order}`,
-        kind: "OUTPUT",
-        type: "OUTPUT",
-        resultId: result.id,
-        order,
-        title: display.label,
-        description: outputDescription(display.payload),
-        schema: outputSchema,
-        initialValues: getEffectiveFeedbackValues(outputFeedback, outputSchema),
-        feedback: outputFeedback,
-      };
-      return explanationStep ? [outputStep, explanationStep] : [outputStep];
+      return display ? [{ result, display }] : [];
     });
+    const first = members[0];
+    if (!first) return [];
+    const questionnaire = feedbackQuestionnaire(config);
+    const explanationTargets = stepTargets(members, "EXPLANATION", order, feedbackByKey);
+    const explanationStep: SchemaFeedbackStep | null = questionnaire
+      ? {
+          id: `report-${order}-explanation`,
+          kind: "EXPLANATION",
+          type: "EXPLANATION",
+          targets: explanationTargets,
+          order,
+          title: `${first.display.label} review`,
+          description: combinedDescription(members, reportDescription),
+          schema: questionnaire,
+          initialValues: commonFeedbackValues(explanationTargets, questionnaire),
+        }
+      : null;
+    if (!isBuiltinReportKind(first.display.kind)) {
+      return explanationStep ? [explanationStep] : [];
+    }
+    const outputSchema = createOutputFeedbackQuestionnaire(
+      config,
+      fakeTarget(order, first.display.payload),
+      first.result.output,
+    );
+    const outputTargets = stepTargets(members, "OUTPUT", order, feedbackByKey);
+    const outputStep: SchemaFeedbackStep = {
+      id: `report-${order}-output`,
+      kind: "OUTPUT",
+      type: "OUTPUT",
+      targets: outputTargets,
+      order,
+      title: first.display.label,
+      description: combinedDescription(members, outputDescription),
+      schema: outputSchema,
+      initialValues: commonFeedbackValues(outputTargets, outputSchema),
+    };
+    return explanationStep ? [outputStep, explanationStep] : [outputStep];
   });
 };

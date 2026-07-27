@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { RefreshCcw } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createMlRegistryPack } from "mlform/builtins";
 import { mountForm, registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { MountedForm } from "mlform/kit";
@@ -18,7 +18,7 @@ import { toMlformRuntimeSchema } from "@/capabilities/mlform/schema-runtime-adap
 import { wrapSchemaReportDefinitions } from "@/capabilities/mlform/report-plugin-context";
 import {
   createSchemaPreviewTransport,
-  expandSchemaPreviewReports,
+  prepareSchemaPreviewReports,
 } from "@/features/schemas/lib/preview-transport";
 import { createPredictionPrimitiveRegistry } from "@/capabilities/mlform/primitive-registry";
 import { getPredictionDesignSystem } from "@/capabilities/mlform/headless-prediction";
@@ -41,6 +41,8 @@ export function SchemaFormPreview({ schema }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedForm | null>(null);
   const [theme] = useAtom(themeWithHtmlAtom);
+  const [initialTheme] = useState(theme);
+  const [mountError, setMountError] = useState<string | null>(null);
   const catalog = useSchemaPluginCatalog(schema);
 
   const resolvedSchema = useMemo<ResolvedSchema>(() => {
@@ -49,7 +51,7 @@ export function SchemaFormPreview({ schema }: Props) {
       const reportDefinitions = wrapSchemaReportDefinitions(catalog.data.reportDefinitions);
       return {
         status: "ready",
-        schema: toMlformSchema(toMlformRuntimeSchema(expandSchemaPreviewReports(schema)), {
+        schema: toMlformSchema(toMlformRuntimeSchema(prepareSchemaPreviewReports(schema)), {
           customFieldDefinitions: catalog.data.fieldDefinitions,
           customReportDefinitions: reportDefinitions,
         }),
@@ -76,29 +78,36 @@ export function SchemaFormPreview({ schema }: Props) {
       registerDefinedReportKind(pack.registry, pack.descriptorRegistry, definition.definition);
     });
     mountedRef.current?.unmount();
-    mountedRef.current = mountForm(containerRef.current, {
-      schema: resolvedSchema.schema,
-      registry: pack.registry,
-      descriptorRegistry: pack.descriptorRegistry,
-      primitiveRegistry: createPredictionPrimitiveRegistry(),
-      transport: createSchemaPreviewTransport(),
-      layout: { kind: "split" },
-      reportPane: "always",
-      reportFetchMode: "none",
-      labels: {
-        form: "Schema Inputs",
-        reports: "Preview Results",
-        submit: "Run Preview",
-        validating: "Checking schema...",
-        submitting: "Rendering preview...",
-      },
-      designSystem: getPredictionDesignSystem(theme),
-    });
-    return () => {
-      mountedRef.current?.unmount();
+    setMountError(null);
+    try {
+      mountedRef.current = mountForm(containerRef.current, {
+        schema: resolvedSchema.schema,
+        registry: pack.registry,
+        descriptorRegistry: pack.descriptorRegistry,
+        primitiveRegistry: createPredictionPrimitiveRegistry(),
+        transport: createSchemaPreviewTransport(),
+        layout: { kind: "split" },
+        reportPane: "always",
+        reportFetchMode: "none",
+        labels: {
+          form: "Schema Inputs",
+          reports: "Preview Results",
+          submit: "Run Preview",
+          validating: "Checking schema...",
+          submitting: "Rendering preview...",
+        },
+        designSystem: getPredictionDesignSystem(initialTheme),
+      });
+    } catch (error) {
       mountedRef.current = null;
+      setMountError(error instanceof Error ? error.message : String(error));
+    }
+    const mounted = mountedRef.current;
+    return () => {
+      mounted?.unmount();
+      if (mountedRef.current === mounted) mountedRef.current = null;
     };
-  }, [catalog.data.fieldDefinitions, resolvedSchema, theme]);
+  }, [catalog.data.fieldDefinitions, initialTheme, resolvedSchema]);
 
   useEffect(() => {
     mountedRef.current?.replaceDesignSystem(getPredictionDesignSystem(theme));
@@ -122,11 +131,17 @@ export function SchemaFormPreview({ schema }: Props) {
 
   return (
     <div className="size-full min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]">
-      {resolvedSchema.status === "error" ? (
-        <AppPanel className="m-4">{resolvedSchema.message}</AppPanel>
-      ) : (
-        <div className="size-full min-h-0 overflow-auto" ref={containerRef} />
-      )}
+      {resolvedSchema.status === "error" || mountError ? (
+        <AppPanel className="m-4">
+          {resolvedSchema.status === "error" ? resolvedSchema.message : mountError}
+        </AppPanel>
+      ) : null}
+      {resolvedSchema.status === "ready" ? (
+        <div
+          className={`size-full min-h-0 overflow-auto ${mountError ? "hidden" : ""}`}
+          ref={containerRef}
+        />
+      ) : null}
     </div>
   );
 }

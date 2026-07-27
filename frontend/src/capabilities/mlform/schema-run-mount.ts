@@ -19,6 +19,7 @@ import type { CatalogReportDefinition } from "@/capabilities/mlform/custom-repor
 import { schemaRunDebug, schemaRunDebugError } from "@/capabilities/mlform/run-debug";
 import {
   buildSchemaRunRawFromSubmitResult,
+  mergeReportFetchResults,
   reportStatesFromSnapshot,
 } from "@/capabilities/mlform/schema-run-result-state";
 
@@ -40,6 +41,7 @@ type SubmitSuccessDetail = {
   result?: { raw?: unknown };
   pipelineResult?: {
     submitResult?: { raw?: unknown };
+    reportFetchResults?: unknown;
   };
 };
 
@@ -97,16 +99,21 @@ export const mountSchemaRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   const handleSubmitSuccess = (event: Event) => {
-    const raw = rawFromSubmitSuccess((event as CustomEvent<SubmitSuccessDetail>).detail);
+    const detail = (event as CustomEvent<SubmitSuccessDetail>).detail;
+    const raw = rawFromSubmitSuccess(detail);
+    const reportStates = mergeReportFetchResults(
+      reportStatesFromSnapshot(mounted.form.state.reportStates),
+      detail?.pipelineResult?.reportFetchResults,
+    );
     schemaRunDebug("mount.after-submit.before-normalize", {
       raw,
       reports: mounted.form.reports,
-      reportStates: mounted.form.state.reportStates,
+      reportStates,
     });
     const next = buildSchemaRunRawFromSubmitResult(
       raw,
       mounted.form.reports,
-      reportStatesFromSnapshot(mounted.form.state.reportStates),
+      reportStates,
       bindings,
     );
     schemaRunDebug("mount.after-submit", {

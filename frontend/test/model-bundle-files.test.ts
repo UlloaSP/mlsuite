@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, it } from "vite-plus/test";
 import { applyInspectedBundleFiles } from "@/features/models/lib/bundle-planner";
+import { saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
 import { ALL_EXTS, DF_EXTS, isJoblibFile } from "@/features/models/lib/bundle-utils";
 
 const file = (name: string) => new File(["x"], name);
@@ -97,5 +98,36 @@ describe("model bundle file handling", () => {
       "shared.joblib",
       "shared.joblib",
     ]);
+  });
+
+  it("saves bundles sequentially", async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const saved: number[] = [];
+
+    const complete = await saveModelBundlesSequentially([1, 2, 3], async (id) => {
+      inFlight += 1;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await Promise.resolve();
+      saved.push(id);
+      inFlight -= 1;
+      return true;
+    });
+
+    expect(complete).toBe(true);
+    expect(saved).toEqual([1, 2, 3]);
+    expect(maxInFlight).toBe(1);
+  });
+
+  it("continues after one bundle fails and reports partial failure", async () => {
+    const attempted: number[] = [];
+
+    const complete = await saveModelBundlesSequentially([1, 2, 3], async (id) => {
+      attempted.push(id);
+      return id !== 2;
+    });
+
+    expect(complete).toBe(false);
+    expect(attempted).toEqual([1, 2, 3]);
   });
 });

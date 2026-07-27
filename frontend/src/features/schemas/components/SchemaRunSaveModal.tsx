@@ -63,6 +63,8 @@ export function SchemaRunSaveModal({
 }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [name, setName] = useState(defaultName);
+  const [outputsOpen, setOutputsOpen] = useState(true);
+  const [inputsOpen, setInputsOpen] = useState(true);
   const results = useMemo(() => (pendingRun ? toResults(pendingRun.raw) : []), [pendingRun]);
   const displayInputData = useMemo(
     () => (pendingRun ? mergeSchemaRunInputs(pendingRun.inputData, results) : {}),
@@ -101,7 +103,7 @@ export function SchemaRunSaveModal({
   const handleSave = async () => {
     if (!pendingRun) return;
     const values = feedbackSteps.length > 0 ? (questionnaireRef.current?.getValues() ?? {}) : {};
-    const feedback = buildPendingSchemaRunFeedback(feedbackSteps, values, displayResults);
+    const feedback = buildPendingSchemaRunFeedback(feedbackSteps, values);
     const request = {
       name: name.trim(),
       inputData: displayInputData,
@@ -135,69 +137,82 @@ export function SchemaRunSaveModal({
           >
             <div className="flex items-center justify-between border-b border-[var(--border-soft)] p-8">
               <div className="space-y-2">
-                <AppCopy className="text-xs uppercase tracking-[0.22em]">Prediction Review</AppCopy>
-                <AppSectionTitle className="text-4xl">Save Schema Run</AppSectionTitle>
+                <AppCopy className="text-xs uppercase tracking-[0.22em]">Inference</AppCopy>
+                <AppSectionTitle className="text-4xl">Create inference</AppSectionTitle>
               </div>
               <AppIconButton type="button" aria-label="Close modal" onClick={onCancel}>
                 <X size={24} />
               </AppIconButton>
             </div>
 
-            <div className="grid flex-1 gap-8 overflow-auto p-8 xl:grid-cols-[minmax(20rem,0.8fr)_minmax(28rem,1.2fr)]">
-              <div className="space-y-6">
-                <AppPanel className="space-y-4 p-6">
-                  <AppSectionTitle>Prediction Name</AppSectionTitle>
-                  <AppTextField
-                    id="schema-run-name"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    className="w-full"
-                  />
-                  <div className="flex gap-4 pt-2">
-                    <AppButton onClick={onCancel} variant="secondary" className="flex-1">
-                      Cancel
-                    </AppButton>
-                    <AppButton
-                      onClick={() => void handleSave()}
-                      disabled={!name.trim() || isSaving || pendingRun.reportsPending}
-                      className="flex-1"
-                    >
-                      <Save size={18} />
-                      <span>
-                        {pendingRun.reportsPending ? "Waiting reports" : "Save Prediction"}
-                      </span>
-                    </AppButton>
-                  </div>
-                  {pendingRun.reportsPending ? (
-                    <AppCopy>
-                      Plugin reports still running. Save unlocks when reports finish.
-                    </AppCopy>
-                  ) : null}
-                </AppPanel>
-
-                <SchemaRunInputsPanel schema={version.formSchema} inputData={displayInputData} />
-              </div>
-
-              <div className="space-y-6">
-                {feedbackSteps.length > 0 ? (
-                  <AppPanel className="space-y-4">
-                    <AppSectionTitle>Plugin feedback</AppSectionTitle>
-                    <ReportQuestionnaireMount
-                      ref={questionnaireRef}
-                      title="Feedback"
-                      schema={feedbackQuestionnaire.schema}
-                      initialValues={feedbackQuestionnaire.initialValues}
-                      editable
-                      theme={theme}
-                      mode="navigation"
+            <div className="flex-1 overflow-auto p-8">
+              <div className="mx-auto w-full max-w-5xl space-y-6">
+                <section data-inference-create-section="name">
+                  <AppPanel className="space-y-4 p-6">
+                    <AppSectionTitle>Name</AppSectionTitle>
+                    <AppTextField
+                      id="schema-run-name"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      className="w-full"
                     />
                   </AppPanel>
+                </section>
+
+                {feedbackSteps.length > 0 ? (
+                  <section data-inference-create-section="feedback">
+                    <AppPanel>
+                      <ReportQuestionnaireMount
+                        ref={questionnaireRef}
+                        title="Feedback questionnaire"
+                        schema={feedbackQuestionnaire.schema}
+                        initialValues={feedbackQuestionnaire.initialValues}
+                        editable
+                        theme={theme}
+                        mode="navigation"
+                      />
+                    </AppPanel>
+                  </section>
                 ) : null}
-                <SchemaRunReportsPanel
-                  version={version}
-                  results={displayResults}
-                  customReportDefinitions={catalog.data.reportDefinitions}
-                />
+
+                <section data-inference-create-section="outputs">
+                  <SchemaRunReportsPanel
+                    version={version}
+                    results={displayResults}
+                    open={outputsOpen}
+                    onToggle={() => setOutputsOpen((current) => !current)}
+                    customReportDefinitions={catalog.data.reportDefinitions}
+                  />
+                </section>
+
+                <section data-inference-create-section="inputs">
+                  <SchemaRunInputsPanel
+                    schema={version.formSchema}
+                    inputData={displayInputData}
+                    open={inputsOpen}
+                    onToggle={() => setInputsOpen((current) => !current)}
+                  />
+                </section>
+              </div>
+            </div>
+
+            <div className="border-t border-[var(--border-soft)] p-6">
+              <div className="mx-auto flex w-full max-w-5xl items-center justify-end gap-4">
+                {pendingRun.reportsPending ? (
+                  <AppCopy className="mr-auto">
+                    Plugin reports still running. Save unlocks when reports finish.
+                  </AppCopy>
+                ) : null}
+                <AppButton onClick={onCancel} variant="secondary">
+                  Cancel
+                </AppButton>
+                <AppButton
+                  onClick={() => void handleSave()}
+                  disabled={!name.trim() || isSaving || pendingRun.reportsPending}
+                >
+                  <Save size={18} />
+                  <span>{pendingRun.reportsPending ? "Waiting reports" : "Save inference"}</span>
+                </AppButton>
               </div>
             </div>
           </motion.div>

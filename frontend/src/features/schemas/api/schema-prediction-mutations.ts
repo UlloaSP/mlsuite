@@ -1,5 +1,6 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
+import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import {
   createPredictionResultFeedback,
   createPredictionRunForBookmark,
@@ -16,6 +17,20 @@ import {
   PREDICTION_RUN_QUERY_KEY,
 } from "./schema-keys";
 
+export const invalidatePredictionRunCollections = (
+  queryClient: QueryClient,
+  organizationId: number | string,
+  bookmarkId: string | number,
+) =>
+  Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: BOOKMARK_PREDICTION_RUNS_QUERY_KEY(organizationId, bookmarkId),
+    }),
+    queryClient.invalidateQueries({
+      queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(organizationId),
+    }),
+  ]);
+
 export function useCreatePredictionRunForBookmarkMutation(bookmarkId: string) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
@@ -25,9 +40,7 @@ export function useCreatePredictionRunForBookmarkMutation(bookmarkId: string) {
       createPredictionRunForBookmark(bookmarkId, req),
     onSuccess: (run) => {
       qc.setQueryData(PREDICTION_RUN_QUERY_KEY(organizationId, run.id), run);
-      void qc.invalidateQueries({
-        queryKey: BOOKMARK_PREDICTION_RUNS_QUERY_KEY(organizationId, bookmarkId),
-      });
+      void invalidatePredictionRunCollections(qc, organizationId, bookmarkId);
     },
   });
 }

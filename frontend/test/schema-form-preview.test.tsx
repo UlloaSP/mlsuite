@@ -9,9 +9,21 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
+import { createSchemaPreviewTransport } from "@/features/schemas/lib/preview-transport";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+const kitState = vi.hoisted(() => ({ mountError: null as Error | null }));
 
+vi.mock("mlform/kit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("mlform/kit")>();
+  return {
+    ...actual,
+    mountForm: (...args: Parameters<typeof actual.mountForm>) => {
+      if (kitState.mountError) throw kitState.mountError;
+      return actual.mountForm(...args);
+    },
+  };
+});
 vi.mock("@/capabilities/mlform/prediction-catalog-definitions", () => ({
   loadPredictionCatalogDefinitions: vi.fn(async () => {
     throw new Error("catalog failed");
@@ -34,6 +46,7 @@ describe("schema form preview", () => {
   afterEach(() => {
     root?.unmount();
     root = null;
+    kitState.mountError = null;
     document.body.innerHTML = "";
   });
 
@@ -64,6 +77,25 @@ describe("schema form preview", () => {
     await flush();
 
     expect(formRoot?.querySelectorAll("mlf-report-frame")).toHaveLength(1);
+  });
+
+  test("returns one preview payload when runtime and default aliases share a target", async () => {
+    const response = await createSchemaPreviewTransport().submit({
+      reports: [
+        {
+          id: "predicted-class-decisiontree-best-model",
+          kind: "classifier",
+          mappedTo: {
+            "DecisionTree Best Model": "report:predicted-class-decisiontree-best-model",
+            default: "report:predicted-class-decisiontree-best-model",
+          },
+        },
+      ],
+    } as never);
+
+    expect(response.reports.map((report: { mappedTo?: unknown }) => report.mappedTo)).toEqual([
+      "report:predicted-class-decisiontree-best-model",
+    ]);
   });
 
   test("renders one local report preview per mappedTo entry", async () => {
@@ -98,6 +130,65 @@ describe("schema form preview", () => {
     await flush();
 
     expect(formRoot?.querySelectorAll("mlf-report-frame")).toHaveLength(2);
+  });
+
+  test("renders multi-model reports when mappedTo entries share the same analyzer key", async () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    root.render(
+      <QueryClientProvider client={queryClient}>
+        <SchemaFormPreview
+          schema={{
+            fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+            reports: [
+              {
+                id: "prediction",
+                label: "Prediction",
+                kind: "classifier",
+                mappedTo: { "Model A": "classifier9", "Model B": "classifier9" },
+              },
+            ],
+          }}
+        />
+      </QueryClientProvider>,
+    );
+
+    await flush();
+    await flush();
+    const formRoot = container.querySelector("mlf-form")?.shadowRoot;
+    formRoot
+      ?.querySelector("mlf-submit-button")
+      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    await flush();
+    await flush();
+
+    const reportFrames = [...(formRoot?.querySelectorAll("mlf-report-frame") ?? [])];
+    expect(reportFrames).toHaveLength(2);
+    expect(reportFrames.map((frame) => frame.shadowRoot?.textContent).join("\n")).not.toContain(
+      "Duplicate report payload",
+    );
+  });
+
+  test("keeps invalid preview schemas inside the preview error panel", async () => {
+    kitState.mountError = new Error("Preview mount failed");
+    const container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    root.render(
+      <QueryClientProvider client={queryClient}>
+        <SchemaFormPreview
+          schema={{
+            fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+            reports: [],
+          }}
+        />
+      </QueryClientProvider>,
+    );
+
+    for (let attempt = 0; attempt < 5; attempt += 1) await flush();
+
+    expect(container.textContent).toContain("Preview mount failed");
   });
 
   test("shows an error when required plugin definitions are unavailable", async () => {

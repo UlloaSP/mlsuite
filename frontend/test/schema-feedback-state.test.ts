@@ -7,9 +7,24 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
-} from "@/features/schemas/lib/feedback-state";
-import { buildCombinedFeedbackQuestionnaire } from "@/capabilities/mlform/combined-feedback-questionnaire";
+} from "@/capabilities/mlform/feedback-completion";
+import {
+  buildCombinedFeedbackQuestionnaire,
+  createCombinedQuestionnaireTransport,
+} from "@/capabilities/mlform/combined-feedback-questionnaire";
 import type { SchemaFeedbackStep } from "@/capabilities/mlform/feedback-steps";
+import { saveSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-save";
+
+const feedback = (resultId: string, value: Record<string, unknown>, id = "feedback-1") => ({
+  id,
+  resultId,
+  userId: "user-1",
+  userEmail: "reviewer@example.com",
+  type: "OUTPUT" as const,
+  order: 0,
+  value,
+  createdAt: "2026-06-04T00:00:00Z",
+});
 
 const step = (
   value?: Record<string, unknown>,
@@ -18,7 +33,13 @@ const step = (
   id: "result-1-output-0",
   kind: "OUTPUT",
   type: "OUTPUT",
-  resultId: "result-1",
+  targets: [
+    {
+      resultId: "result-1",
+      modelId: "model-1",
+      feedback: value ? feedback("result-1", value) : undefined,
+    },
+  ],
   order: 0,
   title: "Result",
   description: "Prediction result",
@@ -32,18 +53,6 @@ const step = (
     ],
   },
   initialValues: value ?? {},
-  feedback: value
-    ? {
-        id: "feedback-1",
-        resultId: "result-1",
-        userId: "user-1",
-        userEmail: "reviewer@example.com",
-        type: "OUTPUT",
-        order: 0,
-        value,
-        createdAt: "2026-06-04T00:00:00Z",
-      }
-    : undefined,
 });
 
 describe("schema feedback state", () => {
@@ -70,6 +79,24 @@ describe("schema feedback state", () => {
     expect(isSchemaFeedbackComplete([step({ assessment: 4 })])).toBe(true);
   });
 
+  test("does not complete when one mapped result lacks feedback", () => {
+    const shared = step({ assessment: 4 });
+    shared.targets.push({ resultId: "result-2", modelId: "model-2" });
+
+    expect(isSchemaFeedbackComplete([shared])).toBe(false);
+  });
+
+  test("does not complete when mapped results have divergent feedback", () => {
+    const shared = step({ assessment: 4 });
+    shared.targets.push({
+      resultId: "result-2",
+      modelId: "model-2",
+      feedback: feedback("result-2", { assessment: 2 }, "feedback-2"),
+    });
+
+    expect(isSchemaFeedbackComplete([shared])).toBe(false);
+  });
+
   test("does not complete local saved values when combined questionnaire is partial", () => {
     const steps = [
       step(undefined, [
@@ -90,5 +117,59 @@ describe("schema feedback state", () => {
     const combined = buildCombinedFeedbackQuestionnaire([step()], { required: true });
 
     expect(combined.schema.steps[0]?.fields[0]?.required).toBe(true);
+  });
+
+  test("persists field answers when model serialization is empty", async () => {
+    let submitted: Record<string, unknown> | undefined;
+    const transport = createCombinedQuestionnaireTransport(async (values) => {
+      submitted = values;
+    });
+
+    await transport.submit({
+      values: { "result-1-output-0-assessment": 4 },
+      fieldValues: { "result-1-output-0-assessment": 4 },
+      serializedValues: {},
+      serializedFieldValues: { "result-1-output-0-assessment": 4 },
+      fields: [],
+      reports: [],
+    });
+
+    expect(submitted).toEqual({ "result-1-output-0-assessment": 4 });
+  });
+
+  test("fans saved values out through create and update targets", async () => {
+    const shared = step({ assessment: 2 });
+    shared.targets.push({ resultId: "result-2", modelId: "model-2" });
+    const writes: string[] = [];
+
+    await saveSchemaFeedbackSteps(
+      [shared],
+      { "result-1-output-0-assessment": 5 },
+      {
+        create: async (_step, target, value) => {
+          writes.push(`create:${target.resultId}:${String(value.assessment)}`);
+        },
+        update: async (_step, target, _feedback, value) => {
+          writes.push(`update:${target.resultId}:${String(value.assessment)}`);
+        },
+      },
+    );
+
+    expect(writes.sort()).toEqual(["create:result-2:5", "update:result-1:5"]);
+  });
+
+  test("propagates a target persistence failure", async () => {
+    await expect(
+      saveSchemaFeedbackSteps(
+        [step()],
+        { "result-1-output-0-assessment": 5 },
+        {
+          create: async () => {
+            throw new Error("save failed");
+          },
+          update: async () => undefined,
+        },
+      ),
+    ).rejects.toThrow("save failed");
   });
 });

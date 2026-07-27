@@ -10,9 +10,14 @@ import {
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
 } from "@/capabilities/mlform/combined-feedback-questionnaire";
+import { saveSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-save";
 import { ReportQuestionnaireMount } from "@/capabilities/mlform/ReportQuestionnaireMount";
 import { buildQuestionnaireFormSchema } from "@/capabilities/mlform/questionnaire-schema";
 import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
+import {
+  isCombinedSchemaFeedbackComplete,
+  isSchemaFeedbackComplete,
+} from "@/capabilities/mlform/feedback-completion";
 import type {
   ReviewPredictionResultFeedbackDto,
   ReviewPredictionRunDto,
@@ -25,7 +30,8 @@ import {
 } from "@/features/reviews/api/review-api";
 
 type Props = {
-  token: string;
+  reviewId: string;
+  reviewRunId: string;
   run: ReviewPredictionRunDto;
   version: ReviewSchemaVersionDto;
   feedback: ReviewPredictionResultFeedbackDto[];
@@ -53,7 +59,8 @@ const displayValue = (value: unknown, field?: FieldConfig): string => {
 };
 
 export function SchemaReviewCombinedFeedbackForm({
-  token,
+  reviewId,
+  reviewRunId,
   run,
   version,
   feedback,
@@ -66,52 +73,54 @@ export function SchemaReviewCombinedFeedbackForm({
     () => buildSchemaFeedbackSteps(version, run.results, feedback),
     [feedback, run.results, version],
   );
-  const combined = useMemo(() => buildCombinedFeedbackQuestionnaire(steps), [steps]);
-  const complete = steps.length > 0 && steps.every((step) => step.feedback);
+  const combined = useMemo(
+    () => buildCombinedFeedbackQuestionnaire(steps, { required: true }),
+    [steps],
+  );
+  const complete = isSchemaFeedbackComplete(steps);
+  const savedValuesComplete =
+    savedValues !== null && isCombinedSchemaFeedbackComplete(steps, savedValues);
+  const displayComplete = complete || savedValuesComplete;
   const activeStepIdRef = useRef<string | undefined>(undefined);
   const labels = useMemo(() => ({ submit: "Save review", submitting: "Saving review..." }), []);
 
   useEffect(() => {
-    const firstStep = complete && !editing ? undefined : steps[0];
+    const firstStep = displayComplete && !editing ? undefined : steps[0];
     activeStepIdRef.current = firstStep?.id;
     window.dispatchEvent(new CustomEvent(REVIEW_STEP_CONTEXT_EVENT, { detail: firstStep }));
     return () => {
       activeStepIdRef.current = undefined;
       window.dispatchEvent(new CustomEvent(REVIEW_STEP_CONTEXT_EVENT, { detail: undefined }));
     };
-  }, [complete, editing, steps]);
+  }, [displayComplete, editing, steps]);
 
   const transport = useMemo(
     () =>
       createCombinedQuestionnaireTransport(async (values) => {
-        await Promise.all(
-          steps.map(async (step) => {
-            const stepValues = valuesForCombinedStep(values, step);
-            if (step.feedback) {
-              await updateSchemaReviewFeedback(token, {
-                feedbackId: step.feedback.id,
-                value: stepValues,
-              });
-            } else {
-              await createSchemaReviewFeedback(token, {
-                resultId: step.resultId,
-                type: step.type,
-                order: step.order,
-                value: stepValues,
-              });
-            }
-          }),
-        );
+        await saveSchemaFeedbackSteps(steps, values, {
+          create: (step, target, value) =>
+            createSchemaReviewFeedback(reviewId, reviewRunId, {
+              resultId: target.resultId,
+              type: step.type,
+              order: step.order,
+              value,
+            }),
+          update: (_step, _target, feedback, value) =>
+            updateSchemaReviewFeedback(reviewId, reviewRunId, {
+              feedbackId: feedback.id,
+              value,
+            }),
+        });
         setSavedValues(values);
         await onSaved();
         setEditing(false);
         toast.success("Review feedback saved");
       }),
-    [onSaved, steps, token],
+    [onSaved, reviewId, reviewRunId, steps],
   );
 
   if (steps.length === 0) return <AppCopy>No feedback questionnaire configured.</AppCopy>;
-  if ((complete || savedValues) && !editing) {
+  if (displayComplete && !editing) {
     return (
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">

@@ -2,37 +2,46 @@ import { appFetch, json } from "@/shared/api/http";
 import type {
   CreateReviewFeedbackRequest,
   ReviewPredictionResultFeedbackDto,
-  SchemaReviewLinkContextDto,
+  SchemaReviewContextDto,
   SchemaReviewRunDetailDto,
   UpdateReviewFeedbackRequest,
 } from "./review-types";
 
-export const getSchemaReviewContext = (token: string, signal?: AbortSignal) =>
-  appFetch<SchemaReviewLinkContextDto>(
-    `/api/schema-review-links/token/${encodeURIComponent(token)}/context`,
-    { signal },
-  );
+export const getSchemaReviewInbox = (signal?: AbortSignal) =>
+  appFetch<SchemaReviewContextDto[]>("/api/schema-reviews/inbox", { signal });
 
-export const getSchemaReviewRunDetail = (token: string, runToken: string, signal?: AbortSignal) =>
+export const getSchemaReviewRunDetail = (
+  reviewId: string,
+  reviewRunId: string,
+  signal?: AbortSignal,
+) =>
   appFetch<SchemaReviewRunDetailDto>(
-    `/api/schema-review-links/token/${encodeURIComponent(token)}/runs/${encodeURIComponent(runToken)}`,
+    `/api/schema-reviews/${encodeURIComponent(reviewId)}/runs/${encodeURIComponent(reviewRunId)}`,
     { signal },
   );
 
-export const createSchemaReviewFeedback = (token: string, request: CreateReviewFeedbackRequest) =>
+export const createSchemaReviewFeedback = (
+  reviewId: string,
+  reviewRunId: string,
+  request: CreateReviewFeedbackRequest,
+) =>
   appFetch<ReviewPredictionResultFeedbackDto>(
-    `/api/schema-review-links/token/${encodeURIComponent(token)}/feedback`,
+    `/api/schema-reviews/${encodeURIComponent(reviewId)}/runs/${encodeURIComponent(reviewRunId)}/feedback`,
     json("POST", request),
   );
 
-export const updateSchemaReviewFeedback = (token: string, request: UpdateReviewFeedbackRequest) =>
+export const updateSchemaReviewFeedback = (
+  reviewId: string,
+  reviewRunId: string,
+  request: UpdateReviewFeedbackRequest,
+) =>
   appFetch<ReviewPredictionResultFeedbackDto>(
-    `/api/schema-review-links/token/${encodeURIComponent(token)}/feedback`,
+    `/api/schema-reviews/${encodeURIComponent(reviewId)}/runs/${encodeURIComponent(reviewRunId)}/feedback`,
     json("PATCH", request),
   );
 
-export const submitSchemaReviewRuns = (token: string, runTokens: string[]) =>
+export const submitSchemaReviewRuns = (reviewId: string, reviewRunIds: string[]) =>
   appFetch<void>(
-    `/api/schema-review-links/token/${encodeURIComponent(token)}/submit`,
-    json("POST", { runTokens }),
+    `/api/schema-reviews/${encodeURIComponent(reviewId)}/submit`,
+    json("POST", { reviewRunIds }),
   );

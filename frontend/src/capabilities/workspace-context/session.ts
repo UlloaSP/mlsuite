@@ -30,7 +30,10 @@ export const useUser = () =>
 
 export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "SUPERADMIN";
 
-export const useLogin = (destination = "/workspace") => {
+export const safeReturnTo = (value: string | null | undefined, fallback = "/home") =>
+  value?.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : fallback;
+
+export const useLogin = (destination = "/home") => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
@@ -44,7 +47,7 @@ export const useLogin = (destination = "/workspace") => {
   });
 };
 
-export const useRegister = () => {
+export const useRegister = (destination = "/home") => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
@@ -53,7 +56,7 @@ export const useRegister = () => {
     onSuccess: (user) => {
       queryClient.setQueryData(USER_QUERY_KEY, user);
       void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      void navigate("/workspace", { replace: true });
+      void navigate(destination, { replace: true });
     },
   });
 };

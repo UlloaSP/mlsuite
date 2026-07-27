@@ -20,6 +20,9 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
     @Query("SELECT r FROM PredictionRun r WHERE r.id = :id AND r.schemaVersion.schema.organization.id = :organizationId")
     Optional<PredictionRun> findByIdAndOrganizationId(Long id, Long organizationId);
 
+    @Query("SELECT COUNT(rr) > 0 FROM SchemaReviewRun rr WHERE rr.run.id = :runId")
+    boolean isIncludedInReview(Long runId);
+
     @Query("""
             SELECT r FROM PredictionRun r
             WHERE r.schemaBookmark.id = :schemaBookmarkId
@@ -27,6 +30,13 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
             ORDER BY r.createdAt DESC
             """)
     List<PredictionRun> findBySchemaBookmarkIdAndOrganizationId(Long schemaBookmarkId, Long organizationId);
+
+    @Query("""
+            SELECT r FROM PredictionRun r
+            WHERE r.schemaVersion.schema.organization.id = :organizationId
+            ORDER BY r.createdAt DESC
+            """)
+    List<PredictionRun> findByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
 
     @Query("SELECT COALESCE(MAX(r.id), 0) FROM PredictionRun r")
     Long findLastPredictionRunId();

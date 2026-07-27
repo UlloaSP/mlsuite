@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
@@ -31,9 +31,11 @@ type Props = {
 
 export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mountedRef = useRef<ReturnType<typeof mountSchemaRunForm> | null>(null);
   const onSubmitRef = useRef(onSubmit);
   const onResultUpdateRef = useRef(onResultUpdate);
   const [theme] = useAtom(themeWithHtmlAtom);
+  const [initialTheme] = useState(theme);
   const formSchema = useMemo(
     () =>
       initialInputs && Object.keys(initialInputs).length > 0
@@ -77,7 +79,7 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
         container: containerRef.current,
         schema: formSchema,
         bindings: version.bindings,
-        theme,
+        theme: initialTheme,
         customFieldDefinitions: data.fieldDefinitions,
         customReportDefinitions: data.reportDefinitions,
         onSubmit(inputData, raw, reportsPending) {
@@ -97,6 +99,7 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
           });
         },
       });
+      mountedRef.current = mounted;
       const unsubscribe = mounted.form.subscribe((state) => {
         if (!state.lastResult || !onResultUpdateRef.current) return;
         schemaRunDebug("form.subscribe.state", {
@@ -129,6 +132,7 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
         schemaRunDebug("form.mount.cleanup", { versionId: version.id });
         unsubscribe();
         mounted.unmount();
+        if (mountedRef.current === mounted) mountedRef.current = null;
       };
     } catch (error) {
       schemaRunDebugError("form.mount.error", error);
@@ -140,12 +144,16 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
     data.fieldDefinitions,
     data.reportDefinitions,
     formSchema,
+    initialTheme,
     needsPlugins,
     status,
-    theme,
     version.bindings,
     version.id,
   ]);
+
+  useEffect(() => {
+    mountedRef.current?.updateTheme(theme);
+  }, [theme]);
 
   return version.bindings.length === 0 ? (
     <AppPanel>

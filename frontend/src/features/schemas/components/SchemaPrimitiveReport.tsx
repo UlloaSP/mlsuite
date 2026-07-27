@@ -3,7 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useAtom } from "jotai";
 import { useEffect, useMemo, useRef } from "react";
+import { attachDesignSystem } from "mlform/design";
 import {
   primitiveStaticText,
   primitiveTagNames,
@@ -13,6 +15,8 @@ import {
   type ReportDescriptor,
 } from "mlform/primitives";
 import type { ReportConfig } from "mlform/runtime";
+import { getPredictionDesignSystem } from "@/capabilities/mlform/headless-prediction";
+import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
 
 type Props = {
   descriptor: ReportDescriptor;
@@ -36,6 +40,7 @@ export function SchemaPrimitiveReport({
   config,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const [theme] = useAtom(themeWithHtmlAtom);
   const controller = useMemo<PrimitiveReportController>(
     () => ({
       id: reportId,
@@ -47,6 +52,15 @@ export function SchemaPrimitiveReport({
     }),
     [config, kind, label, payload, reportId],
   );
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const designSystem = attachDesignSystem(host, {
+      config: getPredictionDesignSystem(theme),
+    });
+    return () => designSystem.disconnect();
+  }, [theme]);
 
   useEffect(() => {
     const host = hostRef.current;

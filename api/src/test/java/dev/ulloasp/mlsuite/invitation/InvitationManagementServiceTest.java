@@ -98,11 +98,11 @@ class InvitationManagementServiceTest {
     }
 
     @Test
-    void createInvitation_AllowsExternalReviewerAsLegacyViewer() {
+    void createInvitation_AllowsReviewerAsLegacyViewer() {
         Organization org = organization();
         User actor = user(7L);
         OrganizationMembership actorMembership = membership(org, actor, OrganizationRole.ADMIN);
-        RoleDefinition reviewerRole = externalReviewerRole(org);
+        RoleDefinition reviewerRole = reviewerRole(org);
         when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
         when(workspaceAccessService.requireMembership(7L, 41L)).thenReturn(actorMembership);
         when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
@@ -130,7 +130,7 @@ class InvitationManagementServiceTest {
         actor.setSystemRole(SystemRole.SUPERADMIN);
         User invitee = user(8L);
         invitee.setEmail("target@example.com");
-        RoleDefinition role = externalReviewerRole(org);
+        RoleDefinition role = reviewerRole(org);
         when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
         when(workspaceAccessService.requireMembership(7L, 41L))
                 .thenReturn(membership(org, actor, OrganizationRole.ADMIN));
@@ -161,7 +161,7 @@ class InvitationManagementServiceTest {
     void createInvitation_StaysPendingWhenInviterIsNotSuperadmin() {
         Organization org = organization();
         User actor = user(7L);
-        RoleDefinition role = externalReviewerRole(org);
+        RoleDefinition role = reviewerRole(org);
         when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
         when(workspaceAccessService.requireMembership(7L, 41L))
                 .thenReturn(membership(org, actor, OrganizationRole.ADMIN));
@@ -224,8 +224,8 @@ class InvitationManagementServiceTest {
         return organization;
     }
 
-    private RoleDefinition externalReviewerRole(Organization org) {
-        OrganizationSystemRole systemRole = OrganizationSystemRole.EXTERNAL_REVIEWER;
+    private RoleDefinition reviewerRole(Organization org) {
+        OrganizationSystemRole systemRole = OrganizationSystemRole.REVIEWER;
         RoleDefinition role = new RoleDefinition(
                 org,
                 null,
@@ -248,6 +248,6 @@ class InvitationManagementServiceTest {
     private WorkspacePermissionsDto permissions() {
         return new WorkspacePermissionsDto(
                 true, true, true, false, false, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true, true);
+                true, true, true, true, true, true, true, true, true, true, true, true, true, true);
     }
 }

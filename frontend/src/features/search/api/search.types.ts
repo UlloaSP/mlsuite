@@ -3,6 +3,8 @@ export type SearchResultType =
   | "team"
   | "model"
   | "schema"
+  | "snapshot"
+  | "bookmark"
   | "predictionRun"
   | "plugin";
 

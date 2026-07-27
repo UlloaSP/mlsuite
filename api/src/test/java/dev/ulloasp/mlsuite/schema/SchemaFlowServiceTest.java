@@ -33,7 +33,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModel
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
+import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
@@ -72,7 +72,7 @@ class SchemaFlowServiceTest {
     @Mock private PredictionRunRepository runRepository;
     @Mock private PredictionResultRepository resultRepository;
     @Mock private PredictionResultFeedbackRepository feedbackRepository;
-    @Mock private SchemaReviewLinkRepository reviewLinkRepository;
+    @Mock private SchemaReviewRepository reviewRepository;
     @Mock private ModelRepository modelRepository;
     @Mock private WorkspaceAccessService workspaceAccessService;
     @Mock private WorkspaceAuthorizationService authorizationService;
@@ -85,7 +85,7 @@ class SchemaFlowServiceTest {
     @BeforeEach
     void setUp() {
         schemaService = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, runRepository, reviewLinkRepository,
+                bindingRepository, runRepository, reviewRepository,
                 workspaceAccessService, authorizationService);
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, modelRepository, workspaceAccessService, authorizationService);
@@ -250,7 +250,7 @@ class SchemaFlowServiceTest {
         when(runRepository.findLastPredictionRunId()).thenReturn(41L);
 
         assertEquals(41L, runService.getLastPredictionRunId(7L));
-        verify(authorizationService).requireOrganizationOperate(7L, 41L);
+        verify(authorizationService).requireRunPredictions(7L, 41L);
     }
 
     @Test
@@ -337,6 +337,6 @@ class SchemaFlowServiceTest {
 
     private WorkspacePermissionsDto permissions() {
         return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true);
+                true, true, true, true, true, true, true, true, true, true, true, true, true);
     }
 }

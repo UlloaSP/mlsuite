@@ -32,36 +32,6 @@ export const routes: RouteObject[] = [
         element: <ProtectedRoute />,
         children: [{ element: app(<Outlet />), children: protectedPages }],
       },
-      {
-        path: "review/:token/login",
-        lazy: () =>
-          lazyPage(() => import("@/app/pages/schema-review-login-route"), "SchemaReviewLoginRoute"),
-      },
-      {
-        lazy: () =>
-          lazyPage(
-            () => import("@/features/reviews/components/SchemaReviewProtectedRoute"),
-            "SchemaReviewProtectedRoute",
-          ),
-        children: [
-          {
-            path: "review/:token",
-            lazy: () =>
-              lazyPage(
-                () => import("@/features/reviews/pages/review-workspace-page"),
-                "SchemaReviewWorkspacePage",
-              ),
-          },
-          {
-            path: "review/:token/runs/:runToken",
-            lazy: () =>
-              lazyPage(
-                () => import("@/features/reviews/pages/review-workspace-page"),
-                "SchemaReviewWorkspacePage",
-              ),
-          },
-        ],
-      },
     ],
   },
 ];

@@ -11,6 +11,7 @@ import {
   createPredictionRunForBookmark,
   getLastPredictionRunId,
 } from "@/features/schemas/api/schema-prediction-api";
+import { invalidatePredictionRunCollections } from "@/features/schemas/api/schema-prediction-mutations";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type {
   PredictionRunDto,
@@ -129,8 +130,8 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
         queryClient.setQueryData<PredictionRunDto[]>(runsQueryKey, (current) =>
           prependMissingPredictionRuns(current, savedRuns),
         );
+        void invalidatePredictionRunCollections(queryClient, organizationId, bookmarkId);
       }
-      void queryClient.invalidateQueries({ queryKey: runsQueryKey });
     } catch (error) {
       setState(INITIAL);
       toast.error("Bulk upload could not start", {

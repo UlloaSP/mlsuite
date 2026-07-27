@@ -10,6 +10,10 @@ import { isRecord, type JsonRecord } from "@/capabilities/mlform/shared";
 import { mappedTarget, targetKey } from "@/capabilities/mlform/mapped-to";
 import { reportTargetForBinding } from "@/capabilities/mlform/schema-run-report-mapping";
 import { schemaRunDebug } from "@/capabilities/mlform/run-debug";
+import {
+  sourceReportTarget,
+  type RuntimeReportTargets,
+} from "@/capabilities/mlform/runtime-report-targets";
 
 type Options = {
   parsed: unknown;
@@ -17,6 +21,7 @@ type Options = {
   modelName?: string;
   modelInput: Record<string, unknown>;
   reports: readonly ReportConfig[];
+  sourceTargets?: RuntimeReportTargets;
 };
 
 type NormalizedAnalyzerResult = {
@@ -39,6 +44,7 @@ export const normalizeAnalyzerPredictionResult = ({
   modelName,
   modelInput,
   reports,
+  sourceTargets = {},
 }: Options): NormalizedAnalyzerResult => {
   const normalizedReports =
     isRecord(parsed) && Array.isArray(parsed.reports) ? parsed.reports.filter(isRecord) : [];
@@ -60,6 +66,7 @@ export const normalizeAnalyzerPredictionResult = ({
   reports.forEach((report) => {
     const kind = typeof report.kind === "string" ? report.kind : "";
     const target =
+      sourceReportTarget(report, { modelId, modelName }, sourceTargets) ??
       reportTargetForBinding(report, { modelId, modelName }) ??
       targetKey(mappedTarget(report.mappedTo, { modelId, modelName }));
     schemaRunDebug("normalize-analyzer.report-target", { report, kind, target });

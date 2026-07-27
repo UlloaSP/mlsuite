@@ -36,7 +36,7 @@ const copy = {
   delete: {
     title: "Delete schema?",
     submit: "Delete",
-    description: "Delete only works when no prediction runs or review links reference this schema.",
+    description: "Delete only works when no prediction runs or reviews reference this schema.",
   },
 } satisfies Record<SchemaAction, { title: string; submit: string; description: string }>;
 

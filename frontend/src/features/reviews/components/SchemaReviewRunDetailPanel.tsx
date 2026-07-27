@@ -15,8 +15,8 @@ import type { ReviewSchemaVersionDto } from "@/features/reviews/api/review-types
 import { SchemaReviewCombinedFeedbackForm } from "./SchemaReviewCombinedFeedbackForm";
 
 type Props = {
-  token: string;
-  runToken: string;
+  reviewId: string;
+  reviewRunId: string;
   version: ReviewSchemaVersionDto;
   onReviewChanged: () => unknown;
 };
@@ -35,8 +35,13 @@ const displayTargetValue = (payload: unknown): unknown => {
   return typeof probability === "number" ? { value: prediction, probability } : prediction;
 };
 
-export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewChanged }: Props) {
-  const detail = useSchemaReviewRun(token, runToken);
+export function SchemaReviewRunDetailPanel({
+  reviewId,
+  reviewRunId,
+  version,
+  onReviewChanged,
+}: Props) {
+  const detail = useSchemaReviewRun(reviewId, reviewRunId);
   const [outputsOpen, setOutputsOpen] = useState(false);
   const [inputsOpen, setInputsOpen] = useState(false);
   const visibleInputs = useMemo(
@@ -94,7 +99,7 @@ export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewC
     return (
       <AppEmptyState
         title="Inference unavailable"
-        description="This run cannot be opened from this review link."
+        description="This inference cannot be opened from this review."
       />
     );
   }
@@ -109,7 +114,9 @@ export function SchemaReviewRunDetailPanel({ token, runToken, version, onReviewC
         </h2>
       </div>
       <SchemaReviewCombinedFeedbackForm
-        token={token}
+        key={reviewRunId}
+        reviewId={reviewId}
+        reviewRunId={reviewRunId}
         run={detail.data.run}
         version={version}
         feedback={detail.data.feedback}

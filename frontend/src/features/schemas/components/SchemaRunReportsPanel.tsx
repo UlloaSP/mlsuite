@@ -48,8 +48,8 @@ export function SchemaRunReportsPanel({
         className="flex w-full items-center justify-between text-left"
       >
         <div>
-          <AppSectionTitle>Reports</AppSectionTitle>
-          <AppCopy>Predicted outputs and generated reports returned by selected models.</AppCopy>
+          <AppSectionTitle>Outputs</AppSectionTitle>
+          <AppCopy>Model predictions and plugin reports.</AppCopy>
         </div>
         {onToggle ? open ? <ChevronUp size={18} /> : <ChevronDown size={18} /> : null}
       </button>
@@ -67,7 +67,7 @@ export function SchemaRunReportsPanel({
             ))}
           </div>
         ) : (
-          <AppCopy>No reports returned.</AppCopy>
+          <AppCopy>No outputs returned.</AppCopy>
         )
       ) : null}
     </AppPanel>

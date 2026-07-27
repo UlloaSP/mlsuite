@@ -27,7 +27,7 @@ export function SchemaRunInputsPanel({ schema, inputData, open = true, onToggle 
         className="flex w-full items-center justify-between text-left"
       >
         <div>
-          <AppSectionTitle>Input Features</AppSectionTitle>
+          <AppSectionTitle>Inputs</AppSectionTitle>
           <AppCopy>Visible values provided by user.</AppCopy>
         </div>
         {onToggle ? open ? <ChevronUp size={18} /> : <ChevronDown size={18} /> : null}

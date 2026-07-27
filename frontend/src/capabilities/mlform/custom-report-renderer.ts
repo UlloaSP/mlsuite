@@ -70,17 +70,17 @@ export class PredictionCustomReportRendererElement
     style.textContent = `
 			:host { display: block; }
 			.shell { display: grid; gap: 0.85rem; }
-			.title { margin: 0; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mlf-color-text, #0f172a); }
+			.title { margin: 0; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mlf-color-text, var(--text-primary, #0f172a)); }
 			.block, .empty, .error {
 				margin: 0;
 				padding: 0.9rem 1rem;
 				border-radius: 16px;
-				border: 1px solid var(--mlf-color-border, #e2e8f0);
-				background: var(--mlf-color-surface, #fff);
+				border: 1px solid var(--mlf-color-border, var(--border-soft, #e2e8f0));
+				background: var(--mlf-color-surface, var(--surface-primary, #fff));
 			}
 			.block { white-space: pre-wrap; word-break: break-word; font: 500 0.82rem/1.55 var(--mlf-font-family-mono, monospace); }
 			.html { font: inherit; white-space: normal; overflow-x: auto; }
-			.empty { color: var(--mlf-color-text-muted, #475569); font-size: 0.84rem; }
+			.empty { color: var(--mlf-color-text-muted, var(--text-secondary, #475569)); font-size: 0.84rem; }
 			.error { color: var(--mlf-color-danger, #dc2626); border-color: color-mix(in srgb, var(--mlf-color-danger, #dc2626) 28%, transparent); background: color-mix(in srgb, var(--mlf-color-danger, #dc2626) 8%, transparent); }
 		`;
 

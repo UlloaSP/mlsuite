@@ -85,8 +85,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export type SchemaReviewLinkContextDto = {
-  organization: { id: number; name: string };
+export type SchemaReviewContextDto = {
+  publicId: string;
   schema: ReviewSchemaDto;
   schemaVersion: ReviewSchemaVersionDto;
   runs: SchemaReviewRunListItemDto[];
@@ -108,9 +108,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 export type SchemaReviewRunListItemDto = {
-  selectionToken: string;
+  publicId: string;
   run: ReviewPredictionRunDto;
-  reviewState: "PENDING" | "REVISION" | "SUBMITTED";
+  reviewState: "PENDING" | "IN_PROGRESS" | "COMPLETED";
   stateEnteredAt?: string | null;
   submittedAt?: string | null;
 };

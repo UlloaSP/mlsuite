@@ -4,47 +4,21 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { FileDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
-import { usePredictionRunsFeedback } from "@/features/schemas/api/schema-queries";
-import { buildSchemaRunExport, downloadSchemaRunExport } from "@/features/schemas/lib/export";
-import type {
-  PredictionResultFeedbackDto,
-  PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
+import { buildSchemaRunExport } from "@/features/schemas/lib/export";
+import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import { SchemaRunExportReviewModal } from "./SchemaRunExportReviewModal";
-import {
-  selectedSchemaRunExportData,
-  type SchemaRunExportSelection,
-} from "./schema-run-export-selection";
+import { SchemaRunExportDialog } from "./SchemaRunExportDialog";
 
 type Props = {
   runs: PredictionRunDto[];
   version: SchemaVersionDto;
 };
 
-const feedbackForRun = (
-  run: PredictionRunDto,
-  feedback: readonly PredictionResultFeedbackDto[],
-): PredictionResultFeedbackDto[] =>
-  feedback.filter((item) => run.results.some((result) => result.id === item.resultId));
-
 export function SchemaRunExportButton({ runs, version }: Props) {
   const [open, setOpen] = useState(false);
-  const feedback = usePredictionRunsFeedback(runs);
-  const feedbackByRun = useMemo(
-    () => runs.map((run) => feedbackForRun(run, feedback.data)),
-    [feedback.data, runs],
-  );
-
-  const exportSelection = (selection: SchemaRunExportSelection) => {
-    const selected = selectedSchemaRunExportData(selection, runs, feedbackByRun);
-    downloadSchemaRunExport(selected.runs, version, selected.feedback);
-    setOpen(false);
-  };
-
-  const hasData = buildSchemaRunExport(runs, version, feedback.data).content.length > 0;
+  const hasData = buildSchemaRunExport(runs, version).content.length > 0;
   return (
     <>
       <AppButton
@@ -56,12 +30,11 @@ export function SchemaRunExportButton({ runs, version }: Props) {
         <FileDown size={16} />
         Export to CSV
       </AppButton>
-      <SchemaRunExportReviewModal
+      <SchemaRunExportDialog
         open={open}
         runs={runs}
-        feedbackByRun={feedbackByRun}
+        version={version}
         onClose={() => setOpen(false)}
-        onExport={exportSelection}
       />
     </>
   );

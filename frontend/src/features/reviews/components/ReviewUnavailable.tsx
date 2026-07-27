@@ -1,5 +1,6 @@
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
-import { ReviewShell } from "./ReviewShell";
+import { AppPage } from "@/shared/ui/AppPage";
+import { AppSurface } from "@/shared/ui/AppSurface";
 
 type ReviewUnavailableProps = {
   title?: string;
@@ -7,12 +8,14 @@ type ReviewUnavailableProps = {
 };
 
 export function ReviewUnavailable({
-  title = "Review link unavailable",
-  description = "This link may have expired or been revoked.",
+  title = "Review unavailable",
+  description = "This review may have expired, closed, or been revoked.",
 }: ReviewUnavailableProps) {
   return (
-    <ReviewShell>
-      <AppEmptyState title={title} description={description} />
-    </ReviewShell>
+    <AppPage>
+      <AppSurface className="flex flex-1 items-center justify-center overflow-auto">
+        <AppEmptyState title={title} description={description} />
+      </AppSurface>
+    </AppPage>
   );
 }

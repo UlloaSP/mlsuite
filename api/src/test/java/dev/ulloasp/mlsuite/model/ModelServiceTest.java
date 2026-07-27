@@ -248,7 +248,7 @@ class ModelServiceTest {
 
     private WorkspacePermissionsDto allPermissions() {
         return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true);
+                true, true, true, true, true, true, true, true, true, true, true, true, true);
     }
 }
 

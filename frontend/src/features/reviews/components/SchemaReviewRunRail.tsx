@@ -5,12 +5,17 @@ import { useReviewTrayLayout } from "@/features/reviews/lib/use-review-tray-layo
 import { ReviewPredictionTrayGroup } from "@/features/reviews/components/ReviewPredictionTrayGroup";
 import type { SchemaReviewRunListItemDto } from "@/features/reviews/api/review-types";
 
+export type ReviewRailItem = SchemaReviewRunListItemDto & {
+  reviewId: string;
+  schemaName: string;
+};
+
 type Props = {
-  items: SchemaReviewRunListItemDto[];
-  selectedRunToken?: string;
+  items: ReviewRailItem[];
+  selectedReviewRunId?: string;
   submitting?: boolean;
-  onSelect: (runToken: string) => void;
-  onSubmitRevision: (runTokens: string[]) => void;
+  onSelect: (item: ReviewRailItem) => void;
+  onSubmitRevision: (items: ReviewRailItem[]) => void;
 };
 
 const rowClass = (active: boolean, tone: "revision" | "pending") =>
@@ -27,7 +32,7 @@ const statusDot = (tone: "revision" | "pending") =>
 
 export function SchemaReviewRunRail({
   items,
-  selectedRunToken,
+  selectedReviewRunId,
   submitting = false,
   onSelect,
   onSubmitRevision,
@@ -41,9 +46,8 @@ export function SchemaReviewRunRail({
   const pendingSectionRef = useRef<HTMLElement>(null);
   const pendingHeaderRef = useRef<HTMLDivElement>(null);
   const pendingListRef = useRef<HTMLDivElement>(null);
-  const revision = items.filter((item) => item.reviewState === "REVISION");
+  const revision = items.filter((item) => item.reviewState === "IN_PROGRESS");
   const pending = items.filter((item) => item.reviewState === "PENDING");
-  const revisionTokens = revision.map((item) => item.selectionToken);
   const listHeights = useReviewTrayLayout({
     bodyRef,
     revision: {
@@ -78,12 +82,12 @@ export function SchemaReviewRunRail({
         </div>
         <button
           type="button"
-          disabled={revisionTokens.length === 0 || submitting}
-          onClick={() => onSubmitRevision(revisionTokens)}
+          disabled={revision.length === 0 || submitting}
+          onClick={() => onSubmitRevision(revision)}
           className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-primary-strong)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Send size={15} />
-          Send revision ({revisionTokens.length})
+          Complete review ({revision.length})
         </button>
       </div>
       <div ref={bodyRef} className="mt-5 flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
@@ -100,20 +104,20 @@ export function SchemaReviewRunRail({
           onToggle={() => setRevisionOpen((value) => !value)}
         >
           {revision.map((item) => {
-            const active = item.selectionToken === selectedRunToken;
+            const active = item.publicId === selectedReviewRunId;
             const enteredAt = item.stateEnteredAt ?? item.run.createdAt;
             return (
               <button
-                key={item.selectionToken}
+                key={item.publicId}
                 type="button"
-                onClick={() => onSelect(item.selectionToken)}
+                onClick={() => onSelect(item)}
                 className={rowClass(active, "revision")}
               >
                 <span className="block truncate pr-5 text-sm font-semibold text-[var(--text-primary)]">
-                  {item.run.name}
+                  {item.schemaName} · {item.run.name}
                 </span>
                 <span className="mt-1.5 block text-xs text-[var(--text-secondary)]">
-                  Entered revision · {formatTimestamp(enteredAt)}
+                  Feedback saved · {formatTimestamp(enteredAt)}
                 </span>
                 <span
                   className={`absolute right-3 top-1/2 size-2.5 -translate-y-1/2 rounded-full ${statusDot("revision")}`}
@@ -135,17 +139,17 @@ export function SchemaReviewRunRail({
           onToggle={() => setPendingOpen((value) => !value)}
         >
           {pending.map((item) => {
-            const active = item.selectionToken === selectedRunToken;
+            const active = item.publicId === selectedReviewRunId;
             const enteredAt = item.stateEnteredAt ?? item.run.createdAt;
             return (
               <button
-                key={item.selectionToken}
+                key={item.publicId}
                 type="button"
-                onClick={() => onSelect(item.selectionToken)}
+                onClick={() => onSelect(item)}
                 className={rowClass(active, "pending")}
               >
                 <span className="block truncate pr-5 text-sm font-semibold text-[var(--text-primary)]">
-                  {item.run.name}
+                  {item.schemaName} · {item.run.name}
                 </span>
                 <span className="mt-1.5 block text-xs text-[var(--text-secondary)]">
                   Entered pending · {formatTimestamp(enteredAt)}

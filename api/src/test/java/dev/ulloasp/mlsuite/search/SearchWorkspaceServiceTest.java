@@ -28,6 +28,8 @@ import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetad
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
@@ -43,22 +45,16 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 @ExtendWith(MockitoExtension.class)
 class SearchWorkspaceServiceTest {
 
-    @Mock
-    private WorkspaceAccessService workspaceAccessService;
-    @Mock
-    private WorkspaceAuthorizationService workspaceAuthorizationService;
-    @Mock
-    private OrganizationMembershipRepository membershipRepository;
-    @Mock
-    private TeamRepository teamRepository;
-    @Mock
-    private ModelRepository modelRepository;
-    @Mock
-    private SchemaRepository schemaRepository;
-    @Mock
-    private PredictionRunRepository predictionRunRepository;
-    @Mock
-    private PluginMetadataRepository pluginMetadataRepository;
+    @Mock private WorkspaceAccessService workspaceAccessService;
+    @Mock private WorkspaceAuthorizationService workspaceAuthorizationService;
+    @Mock private OrganizationMembershipRepository membershipRepository;
+    @Mock private TeamRepository teamRepository;
+    @Mock private ModelRepository modelRepository;
+    @Mock private SchemaRepository schemaRepository;
+    @Mock private SchemaVersionRepository schemaVersionRepository;
+    @Mock private SchemaBookmarkRepository schemaBookmarkRepository;
+    @Mock private PredictionRunRepository predictionRunRepository;
+    @Mock private PluginMetadataRepository pluginMetadataRepository;
 
     private SearchWorkspaceService service;
 
@@ -71,6 +67,8 @@ class SearchWorkspaceServiceTest {
                 teamRepository,
                 modelRepository,
                 schemaRepository,
+                schemaVersionRepository,
+                schemaBookmarkRepository,
                 predictionRunRepository,
                 pluginMetadataRepository);
     }

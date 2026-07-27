@@ -5,8 +5,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { RouteObject } from "react-router";
 import { lazyPage, superadmin, team, workspacePage } from "./lazy-route";
+import { inferenceRoutes } from "./inference-routes";
+import { reviewRoutes } from "./review-routes";
 
 export const protectedPages: RouteObject[] = [
+  {
+    path: "home",
+    lazy: () =>
+      lazyPage(() => import("@/app/pages/authenticated-home-page"), "AuthenticatedHomePage"),
+  },
+  ...reviewRoutes,
   {
     path: "workspace",
     lazy: () =>
@@ -164,6 +172,7 @@ export const protectedPages: RouteObject[] = [
         workspacePage("canViewModels"),
       ),
   },
+  ...inferenceRoutes,
   {
     path: "plugins",
     lazy: () =>

@@ -18,6 +18,10 @@ import {
   reportTargetForBinding,
   reportContextKey,
 } from "@/capabilities/mlform/schema-run-report-mapping";
+import {
+  sourceReportTarget,
+  type RuntimeReportTargets,
+} from "@/capabilities/mlform/runtime-report-targets";
 
 type SchemaRunBinding = {
   modelId: string;
@@ -55,6 +59,7 @@ const runBinding = async (
   fieldValues: JsonRecord,
   fields: readonly PredictionPayloadField[],
   reports: readonly ReportConfig[],
+  sourceTargets: RuntimeReportTargets,
 ) => {
   const modelInput = applySchemaRunInputMapping(fieldValues, fields, binding);
   schemaRunDebug("transport.model.start", {
@@ -90,6 +95,7 @@ const runBinding = async (
         modelName: binding.modelName,
         modelInput,
         reports,
+        sourceTargets,
       });
       schemaRunDebug("transport.model.success", {
         modelId: binding.modelId,
@@ -152,6 +158,7 @@ const buildReports = (
   results: readonly Awaited<ReturnType<typeof runBinding>>[],
   bindings: readonly SchemaRunBinding[],
   reports: readonly ReportConfig[],
+  sourceTargets: RuntimeReportTargets,
 ): { reports: JsonRecord[]; reportContextById: JsonRecord; skippedReportIds: string[] } => {
   return results.reduce<{
     reports: JsonRecord[];
@@ -171,7 +178,8 @@ const buildReports = (
         const canonicalId = reportKey(report);
         if (!canonicalId) return;
         const kind = typeof report.kind === "string" ? report.kind : "";
-        const target = reportTargetForBinding(report, binding);
+        const runtimeTarget = reportTargetForBinding(report, binding);
+        const target = sourceReportTarget(report, binding, sourceTargets);
         schemaRunDebug("transport.reports.resolve", {
           result,
           binding,
@@ -179,8 +187,9 @@ const buildReports = (
           canonicalId,
           kind,
           target,
+          runtimeTarget,
         });
-        if (!target) {
+        if (!target || !runtimeTarget) {
           schemaRunDebug("transport.reports.no-target", {
             modelId: result.modelId,
             reportId: canonicalId,
@@ -196,7 +205,9 @@ const buildReports = (
           meta,
           raw: result.output,
         };
-        if (reportPayload !== undefined) payload.reports.push(reportPayload);
+        if (reportPayload !== undefined) {
+          payload.reports.push({ ...reportPayload, mappedTo: runtimeTarget });
+        }
         schemaRunDebug("transport.reports.mapped", {
           modelId: result.modelId,
           reportId: canonicalId,
@@ -224,6 +235,7 @@ const buildReports = (
 export const createSchemaRunTransport = (
   bindings: readonly SchemaRunBinding[],
   fields: readonly PredictionPayloadField[],
+  sourceTargets: RuntimeReportTargets = {},
 ): Transport => ({
   async submit(request: SubmitRequest) {
     const reports = request.reports.map((report: ReportConfig, index: number) => {
@@ -249,9 +261,9 @@ export const createSchemaRunTransport = (
       reports: reports.map((report: ReportConfig) => ({ id: report.id, kind: report.kind })),
     });
     const initialResults = await Promise.all(
-      bindings.map((binding) => runBinding(binding, fieldValues, fields, reports)),
+      bindings.map((binding) => runBinding(binding, fieldValues, fields, reports, sourceTargets)),
     );
-    const built = buildReports(initialResults, bindings, reports);
+    const built = buildReports(initialResults, bindings, reports, sourceTargets);
     schemaRunDebug("transport.submit.after-models", {
       results: initialResults,
       built,

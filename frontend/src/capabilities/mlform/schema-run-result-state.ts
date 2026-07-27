@@ -66,9 +66,23 @@ const targetForReport = (
   bindings: readonly Binding[],
   context: JsonRecord,
 ): string | undefined => {
+  const contextTarget = contextId(context.target);
+  if (contextTarget) return contextTarget;
   const modelId = contextId(context.modelId);
   const binding = bindings.find((item) => contextId(item.modelId) === modelId);
   return reportTargetForBinding(report, binding);
+};
+
+export const mergeReportFetchResults = (
+  reportStates: Record<string, ReportState>,
+  reportFetchResults: unknown,
+): Record<string, ReportState> => {
+  if (!isRecord(reportFetchResults)) return reportStates;
+  const next = { ...reportStates };
+  Object.entries(reportFetchResults).forEach(([id, payload]) => {
+    next[id] = { ...next[id], status: "ready", payload };
+  });
+  return next;
 };
 
 /** patchResultOutput: internal transformation helper for MLForm compatibility and runtime adaptation. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */

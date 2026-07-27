@@ -116,7 +116,7 @@ export function AppGlobalSearch() {
                     }
                   }
                 }}
-                placeholder="Search models, teams, plugins, schemas"
+                placeholder="Search snapshots, bookmarks, models, schemas"
                 className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
               />
               <kbd className="hidden rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] px-2 py-1 text-[0.68rem] font-medium lowercase text-[var(--text-muted)] md:block">

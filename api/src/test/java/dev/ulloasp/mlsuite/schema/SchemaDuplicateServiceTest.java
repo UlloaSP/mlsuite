@@ -32,7 +32,7 @@ import dev.ulloasp.mlsuite.schema.application.service.SchemaServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
+import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
@@ -47,7 +47,7 @@ class SchemaDuplicateServiceTest {
     @Mock private SchemaVersionRepository versionRepository;
     @Mock private SchemaModelBindingRepository bindingRepository;
     @Mock private PredictionRunRepository runRepository;
-    @Mock private SchemaReviewLinkRepository reviewLinkRepository;
+    @Mock private SchemaReviewRepository reviewRepository;
     @Mock private WorkspaceAccessService workspaceAccessService;
     @Mock private WorkspaceAuthorizationService authorizationService;
 
@@ -56,7 +56,7 @@ class SchemaDuplicateServiceTest {
     @BeforeEach
     void setUp() {
         service = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, runRepository, reviewLinkRepository,
+                bindingRepository, runRepository, reviewRepository,
                 workspaceAccessService, authorizationService);
         when(userLookupService.requireById(7L)).thenReturn(user());
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization());
@@ -98,7 +98,7 @@ class SchemaDuplicateServiceTest {
         assertSame(model, bindingCaptor.getValue().getModel());
         assertEquals(policy, bindingCaptor.getValue().getPluginPolicy());
         verify(versionRepository, never()).findTopBySchemaIdOrderByVersionDesc(5L);
-        verifyNoInteractions(runRepository, reviewLinkRepository);
+        verifyNoInteractions(runRepository, reviewRepository);
     }
 
     @Test
@@ -192,6 +192,6 @@ class SchemaDuplicateServiceTest {
 
     private WorkspacePermissionsDto permissions() {
         return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true);
+                true, true, true, true, true, true, true, true, true, true, true, true, true);
     }
 }

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { type Ref, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { createMlRegistryPack } from "mlform/builtins";
 import {
   mountForm,
@@ -24,6 +24,7 @@ import {
   submitQuestionnaire,
   toQuestionnaireSchema,
 } from "@/capabilities/mlform/questionnaire-feedback";
+import { getPredictionDesignSystem } from "@/capabilities/mlform/headless-prediction";
 
 export type ReportQuestionnaireMountHandle = {
   submit(): Promise<Record<string, unknown>>;
@@ -114,11 +115,7 @@ const mountQuestionnaireHost = ({
       registry: createMlRegistryPack().registry,
       transport: transport ?? createLocalQuestionnaireTransport(),
       initialValues,
-      designSystem: {
-        mode: theme,
-        theme: "airbnb",
-        recipe: "default",
-      },
+      designSystem: getPredictionDesignSystem(theme),
       labels: {
         submit: labels?.submit ?? (editable ? "Check answers" : "Reviewed"),
         submitting: labels?.submitting ?? "Checking answers...",
@@ -191,6 +188,7 @@ export function ReportQuestionnaireMount({
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedForm | null>(null);
   const initialValuesRef = useRef(initialValues);
+  const [initialTheme] = useState(theme);
   const onValuesChangeRef = useRef(onValuesChange);
   const onStepChangeRef = useRef(onStepChange);
   const currentStepIdRef = useRef<string | null>(null);
@@ -238,10 +236,14 @@ export function ReportQuestionnaireMount({
       },
       onValuesChange: (values) => onValuesChangeRef.current?.(values),
       square,
-      theme,
+      theme: initialTheme,
       transport,
     });
-  }, [effectiveSchema, editable, labels, mode, serializedSchema, square, theme, transport]);
+  }, [effectiveSchema, editable, initialTheme, labels, mode, serializedSchema, square, transport]);
+
+  useEffect(() => {
+    mountedRef.current?.replaceDesignSystem(getPredictionDesignSystem(theme));
+  }, [theme]);
 
   return (
     <div className="space-y-3">

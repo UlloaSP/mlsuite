@@ -62,7 +62,7 @@ public class WorkspaceBootstrapService {
                 user.getAvatarUrl(),
                 user));
         roleSeedService.ensureOrganizationRoles(organization);
-        roleSeedService.externalReviewerRole(organization);
+        roleSeedService.reviewerRole(organization);
         membershipRepository.save(new OrganizationMembership(
                 organization,
                 user,

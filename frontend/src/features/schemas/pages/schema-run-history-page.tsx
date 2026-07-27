@@ -13,7 +13,7 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { SchemaRunHistoryTable } from "@/features/schemas/components/SchemaRunHistoryTable";
-import { SchemaRunShareButton } from "@/features/schemas/components/SchemaRunShareButton";
+import { SchemaRunReviewButton } from "@/features/schemas/components/SchemaRunReviewButton";
 import {
   SchemaRunHistoryToolbar,
   type SchemaRunDateRangeFilter,
@@ -28,7 +28,7 @@ import {
   useSchemaBookmark,
   useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
-import { isSchemaFeedbackComplete } from "@/features/schemas/lib/feedback-state";
+import { isSchemaFeedbackComplete } from "@/capabilities/mlform/feedback-completion";
 import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
 import { prepareSchemaVersionDtoForUse } from "@/capabilities/mlform/binding-rebase";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
@@ -119,7 +119,7 @@ export function SchemaRunHistoryPage() {
           actions={
             executableVersion ? (
               <>
-                <SchemaRunShareButton runs={runs} version={executableVersion} />
+                <SchemaRunReviewButton runs={runs} version={executableVersion} />
                 <SchemaRunBulkUploadButton
                   version={executableVersion}
                   bookmarkId={bookmarkId ?? ""}

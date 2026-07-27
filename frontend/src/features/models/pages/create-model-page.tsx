@@ -16,6 +16,7 @@ import {
   type InspectedBundleFile,
 } from "@/features/models/lib/bundle-planner";
 import type { Bundle } from "@/features/models/lib/bundle-types";
+import { saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
 import {
   DF_EXTS,
   getStem,
@@ -165,7 +166,7 @@ export function CreateModelPage() {
 
   const saveBundle = async (id: number, options: { navigateWhenComplete?: boolean } = {}) => {
     const bundle = bundles.find((b) => b.id === id);
-    if (!bundle?.modelFile || !bundle.name.trim() || bundle.saved || bundle.saving) return;
+    if (!bundle?.modelFile || !bundle.name.trim() || bundle.saved || bundle.saving) return false;
     const hasOtherUnsaved = bundles.some(
       (b) => b.id !== id && b.modelFile && b.name.trim() && !b.saved && !b.saving,
     );
@@ -182,19 +183,22 @@ export function CreateModelPage() {
         prev.map((b) => (b.id === id ? { ...b, saved: true, saving: false } : b)),
       );
       if (options.navigateWhenComplete !== false && !hasOtherUnsaved) {
-        navigate("/models");
+        void navigate("/models");
       }
+      return true;
     } catch {
       setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, saving: false } : b)));
+      return false;
     }
   };
 
   const saveAll = async () => {
     const unsaved = bundles.filter((b) => b.modelFile && b.name.trim() && !b.saved && !b.saving);
-    await Promise.all(
-      unsaved.map((bundle) => saveBundle(bundle.id, { navigateWhenComplete: false })),
+    const complete = await saveModelBundlesSequentially(
+      unsaved.map((bundle) => bundle.id),
+      (id) => saveBundle(id, { navigateWhenComplete: false }),
     );
-    navigate("/models");
+    if (complete) void navigate("/models");
   };
 
   // ── Derived stats ────────────────────────────────────────────────────────

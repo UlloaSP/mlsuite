@@ -16,6 +16,7 @@ import {
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
 } from "@/capabilities/mlform/combined-feedback-questionnaire";
+import { saveSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-save";
 import { ReportFeedbackSummary } from "@/capabilities/mlform/ReportFeedbackSummary";
 import { ReportQuestionnaireMount } from "@/capabilities/mlform/ReportQuestionnaireMount";
 import {
@@ -25,7 +26,7 @@ import {
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
-} from "@/features/schemas/lib/feedback-state";
+} from "@/capabilities/mlform/feedback-completion";
 import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
 import type {
   PredictionResultFeedbackDto,
@@ -62,24 +63,20 @@ export function SchemaRunFeedbackQuestionnaire({ run, version, feedback, onSaved
   const transport = useMemo(
     () =>
       createCombinedQuestionnaireTransport(async (values) => {
-        await Promise.all(
-          steps.map(async (step) => {
-            const stepValues = valuesForCombinedStep(values, step);
-            if (step.feedback) {
-              await updateFeedback.mutateAsync({
-                feedbackId: step.feedback.id,
-                value: stepValues,
-              });
-            } else {
-              await createFeedback.mutateAsync({
-                resultId: step.resultId,
-                type: step.type,
-                order: step.order,
-                value: stepValues,
-              });
-            }
-          }),
-        );
+        await saveSchemaFeedbackSteps(steps, values, {
+          create: (step, target, value) =>
+            createFeedback.mutateAsync({
+              resultId: target.resultId,
+              type: step.type,
+              order: step.order,
+              value,
+            }),
+          update: (_step, _target, feedback, value) =>
+            updateFeedback.mutateAsync({
+              feedbackId: feedback.id,
+              value,
+            }),
+        });
         setSavedValues(values);
         await onSaved();
         setEditing(false);

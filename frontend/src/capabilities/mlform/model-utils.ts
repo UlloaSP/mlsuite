@@ -5,6 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 type JsonRecord = Record<string, unknown>;
 
+export { formatTimestamp } from "@/shared/lib/date-time";
+
 type ModelLabelSource = {
   type: string;
   specificType: string;
@@ -16,38 +18,6 @@ const isRecord = (value: unknown): value is JsonRecord =>
 
 /** toIdString: internal normalization helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const toIdString = (value: unknown): string => String(value ?? "");
-/** dateTimeFormatter: internal helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "short",
-  timeStyle: "short",
-});
-
-/**
- * toTimestampMillis: converts data into another contract shape
- *
- * Purpose: normalizes model and prediction metadata for display and lookup.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
-export const toTimestampMillis = (value: string): number => {
-  const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp) ? timestamp : 0;
-};
-
-/**
- * formatTimestamp: converts raw data into a stable human-readable string
- *
- * Purpose: normalizes model and prediction metadata for display and lookup.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
-export const formatTimestamp = (value: string): string => {
-  const timestamp = toTimestampMillis(value);
-  return timestamp === 0 ? value : dateTimeFormatter.format(timestamp);
-};
-
 /**
  * findModelById: performs the exported transformation for this algorithm.
  *

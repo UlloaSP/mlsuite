@@ -22,11 +22,6 @@ export type PendingFeedback = {
   value: Record<string, unknown>;
 };
 
-type PendingFeedbackResult = {
-  id: string;
-  modelId: string;
-};
-
 /**
  * buildPendingSchemaRunFeedback: constructs a new derived object from source data
  *
@@ -38,18 +33,14 @@ type PendingFeedbackResult = {
 export const buildPendingSchemaRunFeedback = (
   feedbackSteps: readonly SchemaFeedbackStep[],
   values: Record<string, unknown>,
-  results: readonly PendingFeedbackResult[],
 ): PendingFeedback[] =>
   feedbackSteps.flatMap((step): PendingFeedback[] => {
     const value = valuesForCombinedStep(values, step);
     if (!hasFeedbackValues(value)) return [];
-    const result = results.find((item) => item.id === step.resultId);
-    return [
-      {
-        modelId: result?.modelId ?? "",
-        type: step.type,
-        order: step.order,
-        value,
-      },
-    ];
+    return step.targets.map((target) => ({
+      modelId: target.modelId,
+      type: step.type,
+      order: step.order,
+      value,
+    }));
   });

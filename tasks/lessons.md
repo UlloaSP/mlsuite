@@ -1,5 +1,26 @@
 # Lessons
 
+## 2026-07-23 - Review status placement correction
+
+- Correction: reviewer status and reopening were implemented in a modal, but this management workflow needs a durable, linkable inference context.
+- Rule: multi-row resource management belongs on a canonical detail route with URL-owned sections; overflow actions navigate there instead of mounting a second transient workspace.
+- Correction: inference detail was split into tabs even though Reviews is one additive section, not an alternate workspace.
+- Rule: when detail content forms one readable flow, render inline sections; deep links may scroll to a section without introducing tabs or display modes.
+
+## 2026-07-23 - Review correction workflow
+
+- Correction: completed reviewer submissions had no manager recovery path, even though persisted feedback already supported correction after removing the submission marker.
+- Rule: terminal workflow states need an explicit authorized recovery action; reopen the exact actor-scoped submission while retaining work, instead of deleting the parent review or creating duplicate work.
+
+## 2026-07-23 - Inference catalog action correction
+
+- Correction: organization Inferences shipped data and filters but omitted the existing review-creation and export workflows.
+- Rule: aggregate catalogs must preserve applicable primary actions from scoped catalogs; acceptance review compares actions and permissions, not only data and filters.
+- Correction: detail navigation was isolated in a View link while the catalog item still exposed an Actions column.
+- Rule: catalog items use their full primary surface for navigation; reserve the far-right action affordance for an overflow menu and destructive commands.
+- Correction: Inferences received a new compact CSV instead of the established schema-run export with reviewer/feedback selection and schema-derived columns.
+- Rule: when a user asks to expose an existing action on another surface, reuse its complete behavior and contract; do not substitute a simpler action with the same label.
+
 ## 2026-07-07 - Schema change base selection correction
 
 - Correction: schema change creation made the important base-version choice feel secondary, while editable metadata got equal weight.
@@ -693,3 +714,62 @@
 
 - Correction: incremental TypeScript and build passed while the editor reported incompatible `onMount` and `options` types after Monaco 0.56, because app code typed wrapper props from a separate Monaco entry point.
 - Rule: type `@monaco-editor/react` callbacks and options from its exported types; use direct Monaco types only for runtime APIs absent from the wrapper contract, and force a clean TypeScript build after Monaco upgrades.
+
+# Review Assignment Ownership
+
+- Correction: an organization-wide open review pool did not let the creator choose the intended reviewers.
+- Rule: review assignments must be persisted and enforced by the backend; creation may select only active organization members with `REVIEW`, and the Review page should open directly as the user's review catalog without a schema-selection gate.
+
+# MLForm Feedback Submission Contract
+
+- Correction: review questionnaires read `serializedValues`, which contains model-mapped values and can be empty for unmapped questionnaire fields.
+- Rule: questionnaire persistence must consume MLForm's field-keyed submission values and have a regression test where model serialization is empty but serialized field answers are populated.
+
+# Reviewer Inbox Entry Point
+
+- Correction: replacing schema selection with a review-card catalog still left an unnecessary selection step before the actual rail workspace.
+- Rule: `/review` is the current reviewer's inbox: load all assigned review runs directly into one rail/detail workspace; management authority must not turn reviewer work into a global organization pool.
+
+# Breaking Flow Cleanup
+
+- Correction: deleting the external-review route left configurable auth modes/callbacks and unused global review lifecycle endpoints behind.
+- Rule: after a breaking flow replacement, trace every former injection point and endpoint consumer; delete orphaned configurability, DTOs, components, and states in the same change while preserving only independently used behavior.
+
+# Prediction Run Cache Fan-out
+
+- Correction: creating an inference refreshed its bookmark history but left the organization Inferences catalog stale.
+- Rule: every prediction-run creation path must invalidate all visible collection projections of that resource; centralize shared cache identity instead of importing one feature's internals from another.
+
+# Breaking Entity Cleanup Against Live DDL
+
+- Correction: removing active entity fields while relying on Hibernate `ddl-auto=update` left a live `NOT NULL` column that broke every review insert with a fallback 500.
+- Rule: before deleting persisted fields, inspect live DDL behavior; fields required by the current product should remain mapped, while genuinely removed columns need an explicit schema reset/change instead of assuming `update` will drop them.
+
+# Runtime Report Identity
+
+- Correction: multi-model report payloads reused the analyzer's persisted `mappedTo` as MLForm's global result key, so equal targets collided regardless of report labels.
+- Rule: keep runtime report identity unique per report controller while preserving the analyzer target in model output, report context, modal data, and persistence.
+
+# MLForm Pipeline Result Ownership
+
+- Correction: the mounted submit adapter consumed only `submitResult.raw`, discarding custom report payloads returned separately in `pipelineResult.reportFetchResults`.
+- Rule: merge fetched report results into ready report state before deriving modal/save data, then attach each payload to the result identified by its report context.
+
+# Theme Changes Must Preserve Runtime State
+
+- Correction: MLForm mounts treated the active theme as construction data, so toggling light/dark destroyed completed reports and questionnaire state.
+- Rule: mount stateful third-party runtimes once for structural inputs and update their design system in place; readonly report hosts must receive the same theme tokens without recreating payload-bearing DOM.
+
+# Preview And Feedback Identity
+
+- Correction: inference runtime used unique report identities, but schema draft/version preview retained a second expansion path that still collided when several models shared one analyzer key.
+- Rule: preview and execution must reuse one report preparation contract; analyzer target, logical source-report identity, and runtime payload identity are separate values.
+- Correction: unique preview report frames still failed because runtime adaptation added a `default` alias pointing to the same target, and the local transport emitted one payload per alias.
+- Rule: report transport responses must deduplicate by resolved runtime target, not by mapping-entry key; preview tests must assert returned payload cardinality and frame content, not only frame count.
+- Correction: feedback cardinality followed prediction results, so one source report mapped to several models rendered several assessments.
+- Rule: build assessments by source-report position/identity, then persist one logical answer to every successful mapped result; equal analyzer keys must never merge separate source reports.
+
+# Bulk Analyzer Backpressure
+
+- Correction: saving model/dataframe bundles concurrently overloaded blocking analyzer work, while swallowed per-item failures still caused success navigation.
+- Rule: serialize artifact creation unless analyzer concurrency is proven safe; batch completion must come from explicit per-item outcomes and failed items must remain retryable.

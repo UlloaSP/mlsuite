@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { appFetch, HttpError } from "@/shared/api/http";
-import { schemaReviewLinksQueryOptions } from "@/features/schemas/api/review-links";
+import { eligibleReviewersQueryOptions } from "@/capabilities/review-creation/review-creation-api";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { organizationTeamsQueryOptions } from "@/features/workspace/api/workspace.queries";
 import { predictionRunsFeedbackQueryOptions } from "@/features/schemas/api/schema-queries";
@@ -30,11 +30,11 @@ describe("TanStack Query resource contracts", () => {
       organizationTeamsQueryOptions(7).queryKey,
     );
     expect(searchQueryOptions(7, "risk").queryKey).toEqual(["org", 7, "search", "risk"]);
-    expect(schemaReviewLinksQueryOptions(7, "schema-1", "version-2").queryKey).toEqual([
+    expect(eligibleReviewersQueryOptions(7).queryKey).toEqual([
       "org",
       7,
-      "schemaReviewLinks",
-      { schemaId: "schema-1", versionId: "version-2" },
+      "schemaReviews",
+      "eligibleReviewers",
     ]);
   });
 

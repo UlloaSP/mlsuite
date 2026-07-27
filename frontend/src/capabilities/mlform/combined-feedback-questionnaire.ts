@@ -106,8 +106,8 @@ export const createCombinedQuestionnaireTransport = (
 ): Transport => ({
   async submit(request: SubmitRequest) {
     const values =
-      typeof request.serializedValues === "object" && request.serializedValues !== null
-        ? (request.serializedValues as Record<string, unknown>)
+      typeof request.serializedFieldValues === "object" && request.serializedFieldValues !== null
+        ? (request.serializedFieldValues as Record<string, unknown>)
         : {};
     await onSubmit(values);
     return { raw: values, meta: {}, reports: [] };

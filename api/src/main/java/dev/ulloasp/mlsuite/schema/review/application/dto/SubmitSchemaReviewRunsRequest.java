@@ -4,5 +4,5 @@ import java.util.List;
 
 import jakarta.validation.constraints.NotEmpty;
 
-public record SubmitSchemaReviewRunsRequest(@NotEmpty List<String> runTokens) {
+public record SubmitSchemaReviewRunsRequest(@NotEmpty List<String> reviewRunIds) {
 }
