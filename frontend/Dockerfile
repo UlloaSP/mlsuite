@@ -2,11 +2,11 @@
 
 FROM node:25-alpine3.21 AS build
 WORKDIR /app
-RUN npm install -g vite-plus@latest
+RUN npm install -g vite-plus@0.2.5
 ARG VITE_BACKEND_URL
 ENV VITE_BACKEND_URL=${VITE_BACKEND_URL}
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN vp install --ignore-scripts --no-frozen-lockfile
+RUN vp install --ignore-scripts --frozen-lockfile
 COPY . .
 RUN vp run build
 

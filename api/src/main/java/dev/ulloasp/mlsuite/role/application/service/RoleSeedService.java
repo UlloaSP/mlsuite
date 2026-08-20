@@ -99,10 +99,10 @@ public class RoleSeedService implements ApplicationRunner {
         return role;
     }
 
-    public RoleDefinition externalReviewerRole(Organization org) {
-        OrganizationSystemRole role = OrganizationSystemRole.EXTERNAL_REVIEWER;
+    public RoleDefinition reviewerRole(Organization org) {
+        OrganizationSystemRole role = OrganizationSystemRole.REVIEWER;
         return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.systemKey())
-                .map(this::ensureExternalReviewPermission)
+                .map(this::ensureReviewPermission)
                 .orElseGet(() -> {
                     RoleDefinition definition = new RoleDefinition(
                         org,
@@ -112,14 +112,14 @@ public class RoleSeedService implements ApplicationRunner {
                         role.slug(),
                         role.systemKey());
                     definition.setLocked(false);
-                    return saveRole(definition, Set.of(PermissionKey.EXTERNAL_REVIEW));
+                    return saveRole(definition, Set.of(PermissionKey.REVIEW));
                 });
     }
 
-    private RoleDefinition ensureExternalReviewPermission(RoleDefinition role) {
+    private RoleDefinition ensureReviewPermission(RoleDefinition role) {
         role.setLocked(false);
-        if (!role.getPermissions().contains(PermissionKey.EXTERNAL_REVIEW)) {
-            role.getPermissions().add(PermissionKey.EXTERNAL_REVIEW);
+        if (!role.getPermissions().contains(PermissionKey.REVIEW)) {
+            role.getPermissions().add(PermissionKey.REVIEW);
             return roleDefinitionRepository.save(role);
         }
         return role;
@@ -140,7 +140,7 @@ public class RoleSeedService implements ApplicationRunner {
         template("full-engineer", "Full Access Engineer", "Engineering", mapper.organization(OrganizationRole.MEMBER));
         template("read-only", "Read-Only Analyst", "Analytics", mapper.organization(OrganizationRole.VIEWER));
         template("inference", "Inference Operator", "Operations", Set.of(PermissionKey.VIEW_MODELS, PermissionKey.RUN_PREDICTIONS));
-        template("external-reviewer", "External Reviewer", "Review", Set.of(PermissionKey.EXTERNAL_REVIEW));
+        template("reviewer", "Reviewer", "Review", Set.of(PermissionKey.REVIEW));
         template("team-manager", "Team Manager", "Management", mapper.organization(OrganizationRole.ADMIN));
         template("data-scientist", "Data Scientist", "ML", mapper.organization(OrganizationRole.MEMBER));
     }

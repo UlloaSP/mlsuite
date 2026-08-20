@@ -203,9 +203,9 @@ class OrganizationManagementServiceTest {
     }
 
     @Test
-    void updateMemberRole_AllowsExternalReviewerAsLegacyViewer() {
+    void updateMemberRole_AllowsReviewerAsLegacyViewer() {
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
-        RoleDefinition reviewerRole = externalReviewerRole();
+        RoleDefinition reviewerRole = reviewerRole();
         when(membershipRepository.findById(2L)).thenReturn(Optional.of(target));
         when(workspaceAuthorizationService.organizationMemberActions(7L, 41L, target))
                 .thenReturn(new MembershipActionsDto(
@@ -241,8 +241,8 @@ class OrganizationManagementServiceTest {
         return organization;
     }
 
-    private RoleDefinition externalReviewerRole() {
-        OrganizationSystemRole systemRole = OrganizationSystemRole.EXTERNAL_REVIEWER;
+    private RoleDefinition reviewerRole() {
+        OrganizationSystemRole systemRole = OrganizationSystemRole.REVIEWER;
         RoleDefinition role = new RoleDefinition(
                 organization(),
                 null,

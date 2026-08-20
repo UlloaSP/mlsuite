@@ -55,7 +55,7 @@ public class WorkspaceAuthorizationService {
 
     public WorkspacePermissionsDto workspacePermissions(Long userId, Long organizationId) {
         if (workspaceAccessService.isSuperadmin(userId)) {
-            return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
+            return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
         }
         Set<PermissionKey> permissions = effectiveOrganizationPermissions(userId, organizationId);
         return new WorkspacePermissionsDto(
@@ -80,7 +80,8 @@ public class WorkspaceAuthorizationService {
                 has(permissions, PermissionKey.DELETE_MODELS),
                 has(permissions, PermissionKey.RUN_PREDICTIONS),
                 has(permissions, PermissionKey.EXPORT_PREDICTIONS),
-                has(permissions, PermissionKey.MANAGE_REVIEW_LINKS),
+                has(permissions, PermissionKey.REVIEW),
+                has(permissions, PermissionKey.MANAGE_REVIEWS),
                 has(permissions, PermissionKey.VIEW_PLUGINS),
                 has(permissions, PermissionKey.MANAGE_PLUGINS));
     }
@@ -151,6 +152,12 @@ public class WorkspaceAuthorizationService {
         }
     }
 
+    public void requireRunPredictions(Long userId, Long organizationId) {
+        if (!workspacePermissions(userId, organizationId).canRunPredictions()) {
+            throw new OrganizationAccessDeniedException(organizationId);
+        }
+    }
+
     public void requireOrganizationEdit(Long userId, Long organizationId) {
         if (!workspacePermissions(userId, organizationId).canEditOrganization()) {
             throw new OrganizationAccessDeniedException(organizationId);
@@ -205,25 +212,24 @@ public class WorkspaceAuthorizationService {
         }
     }
 
-    public void requireReviewLinkManagement(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canManageReviewLinks()) {
+    public void requireReviewManagement(Long userId, Long organizationId) {
+        if (!workspacePermissions(userId, organizationId).canManageReviews()) {
             throw new OrganizationAccessDeniedException(organizationId);
         }
     }
 
-    public boolean canPreviewReviewLink(Long userId, Long organizationId) {
+    public boolean canManageReviews(Long userId, Long organizationId) {
         try {
-            return workspacePermissions(userId, organizationId).canManageReviewLinks();
+            return workspacePermissions(userId, organizationId).canManageReviews();
         } catch (OrganizationAccessDeniedException ex) {
             return false;
         }
     }
 
-    public boolean isExternalReviewer(Long userId, Long organizationId) {
-        try {
-            return has(effectiveOrganizationPermissions(userId, organizationId), PermissionKey.EXTERNAL_REVIEW);
-        } catch (OrganizationAccessDeniedException ex) {
-            return false;
+    public void requireReviewAccess(Long userId, Long organizationId) {
+        WorkspacePermissionsDto permissions = workspacePermissions(userId, organizationId);
+        if (!permissions.canReview() && !permissions.canManageReviews()) {
+            throw new OrganizationAccessDeniedException(organizationId);
         }
     }
 

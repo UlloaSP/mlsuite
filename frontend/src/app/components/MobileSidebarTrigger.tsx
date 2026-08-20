@@ -1,4 +1,4 @@
-import { SidebarTrigger } from "./app-sidebar";
+import { SidebarTrigger } from "./app-sidebar/SidebarTrigger";
 
 export function MobileSidebarTrigger() {
   return (

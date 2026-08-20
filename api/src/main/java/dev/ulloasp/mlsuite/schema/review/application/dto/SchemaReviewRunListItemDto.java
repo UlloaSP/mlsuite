@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
 
 public record SchemaReviewRunListItemDto(
-        String selectionToken,
+        String publicId,
         PredictionRunDto run,
         String reviewState,
         OffsetDateTime stateEnteredAt,

@@ -6,7 +6,7 @@ import java.util.Optional;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 
 public enum OrganizationSystemRole {
-    EXTERNAL_REVIEWER("External Reviewer", "external-reviewer", OrganizationRole.VIEWER);
+    REVIEWER("Reviewer", "reviewer", OrganizationRole.VIEWER);
 
     private final String label;
     private final String slug;

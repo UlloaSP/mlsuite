@@ -10,8 +10,18 @@ import org.springframework.data.jpa.repository.Query;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 
 public interface PredictionRunRepository extends JpaRepository<PredictionRun, Long> {
+
+    @Query("""
+            SELECT COUNT(r) FROM PredictionRun r
+            WHERE r.id IN :runIds
+            AND r.schemaVersion.schema.organization.id = :organizationId
+            """)
+    long countByIdsAndOrganizationId(List<Long> runIds, Long organizationId);
     @Query("SELECT r FROM PredictionRun r WHERE r.id = :id AND r.schemaVersion.schema.organization.id = :organizationId")
     Optional<PredictionRun> findByIdAndOrganizationId(Long id, Long organizationId);
+
+    @Query("SELECT COUNT(rr) > 0 FROM SchemaReviewRun rr WHERE rr.run.id = :runId")
+    boolean isIncludedInReview(Long runId);
 
     @Query("""
             SELECT r FROM PredictionRun r
@@ -20,6 +30,13 @@ public interface PredictionRunRepository extends JpaRepository<PredictionRun, Lo
             ORDER BY r.createdAt DESC
             """)
     List<PredictionRun> findBySchemaBookmarkIdAndOrganizationId(Long schemaBookmarkId, Long organizationId);
+
+    @Query("""
+            SELECT r FROM PredictionRun r
+            WHERE r.schemaVersion.schema.organization.id = :organizationId
+            ORDER BY r.createdAt DESC
+            """)
+    List<PredictionRun> findByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
 
     @Query("SELECT COALESCE(MAX(r.id), 0) FROM PredictionRun r")
     Long findLastPredictionRunId();

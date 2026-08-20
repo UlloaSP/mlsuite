@@ -108,7 +108,7 @@ class WorkspaceAuthorizationServiceTest {
         assertTrue(permissions.canDeleteOrganization());
         assertTrue(permissions.canTransferOwnership());
         assertTrue(permissions.canExportPredictions());
-        assertTrue(permissions.canManageReviewLinks());
+        assertTrue(permissions.canManageReviews());
         assertTrue(permissions.canManagePlugins());
     }
 
@@ -123,7 +123,7 @@ class WorkspaceAuthorizationServiceTest {
 
         assertTrue(permissions.canManageMemberRoles());
         assertTrue(permissions.canExportPredictions());
-        assertTrue(permissions.canManageReviewLinks());
+        assertTrue(permissions.canManageReviews());
         assertTrue(permissions.canManagePlugins());
         assertFalse(permissions.canDeleteOrganization());
         assertFalse(permissions.canTransferOwnership());
@@ -142,25 +142,24 @@ class WorkspaceAuthorizationServiceTest {
         assertTrue(permissions.canViewPlugins());
         assertFalse(permissions.canCreateModels());
         assertFalse(permissions.canExportPredictions());
-        assertFalse(permissions.canManageReviewLinks());
+        assertFalse(permissions.canManageReviews());
         assertFalse(permissions.canManagePlugins());
     }
 
     @Test
-    void reviewLinkChecks_ReturnFalseForUsersOutsideOrganization() {
+    void reviewManagementCheck_ReturnsFalseForUsersOutsideOrganization() {
         when(workspaceAccessService.requireUser(17L)).thenReturn(user(17L));
         when(workspaceAccessService.isSuperadmin(17L)).thenReturn(false);
         when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 17L))
                 .thenReturn(Optional.empty());
 
-        assertFalse(service.canPreviewReviewLink(17L, 41L));
-        assertFalse(service.isExternalReviewer(17L, 41L));
+        assertFalse(service.canManageReviews(17L, 41L));
     }
 
     @Test
-    void externalReviewCheck_UsesRolePermissionsNotSystemRole() {
+    void reviewAccess_UsesRolePermissionsNotSystemRole() {
         RoleDefinition role = roleDefinition(21L, "Custom Reviewer", null);
-        role.setPermissions(Set.of(PermissionKey.EXTERNAL_REVIEW));
+        role.setPermissions(Set.of(PermissionKey.REVIEW));
         OrganizationMembership membership = organizationMembership(OrganizationRole.VIEWER, 18L);
         membership.setRoleDefinition(role);
         when(workspaceAccessService.requireUser(18L)).thenReturn(user(18L));
@@ -168,7 +167,7 @@ class WorkspaceAuthorizationServiceTest {
         when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 18L))
                 .thenReturn(Optional.of(membership));
 
-        assertTrue(service.isExternalReviewer(18L, 41L));
+        service.requireReviewAccess(18L, 41L);
     }
 
     @Test

@@ -34,7 +34,7 @@ import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetad
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
+import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -53,7 +53,7 @@ class OrganizationCatalogServiceTest {
     @Mock private PredictionRunRepository predictionRunRepository;
     @Mock private InvitationRepository invitationRepository;
     @Mock private RoleDefinitionRepository roleRepository;
-    @Mock private SchemaReviewLinkRepository reviewLinkRepository;
+    @Mock private SchemaReviewRepository reviewRepository;
     @Mock private AuditEventRepository auditRepository;
     @Mock private UserRepository userRepository;
 
@@ -72,7 +72,7 @@ class OrganizationCatalogServiceTest {
                 predictionRunRepository,
                 invitationRepository,
                 roleRepository,
-                reviewLinkRepository,
+                reviewRepository,
                 auditRepository,
                 userRepository);
     }

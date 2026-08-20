@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ComponentProps } from "react";
-import { cx } from "./cx";
+import { cx } from "@/shared/ui/cx";
 
 export function Kbd({ className, ...props }: ComponentProps<"kbd">) {
   return (
@@ -16,8 +16,4 @@ export function Kbd({ className, ...props }: ComponentProps<"kbd">) {
       )}
     />
   );
-}
-
-export function KbdGroup({ className, ...props }: ComponentProps<"span">) {
-  return <span {...props} className={cx("inline-flex items-center gap-1", className)} />;
 }

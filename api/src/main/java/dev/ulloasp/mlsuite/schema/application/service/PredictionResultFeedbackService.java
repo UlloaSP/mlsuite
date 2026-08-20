@@ -8,6 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.UpdatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUseCase;
@@ -28,15 +29,18 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
     private final WorkspaceAuthorizationService authorizationService;
     private final PredictionResultRepository resultRepository;
     private final PredictionResultFeedbackRepository feedbackRepository;
+    private final PredictionRunRepository runRepository;
 
     public PredictionResultFeedbackService(UserLookupService userLookupService,
             WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService,
-            PredictionResultRepository resultRepository, PredictionResultFeedbackRepository feedbackRepository) {
+            PredictionResultRepository resultRepository, PredictionResultFeedbackRepository feedbackRepository,
+            PredictionRunRepository runRepository) {
         this.userLookupService = userLookupService;
         this.workspaceAccessService = workspaceAccessService;
         this.authorizationService = authorizationService;
         this.resultRepository = resultRepository;
         this.feedbackRepository = feedbackRepository;
+        this.runRepository = runRepository;
     }
 
     @Override
@@ -70,6 +74,20 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
             throw notFound("Prediction result not found");
         }
         return feedbackRepository.findByResultIdAndOrganizationId(resultId, orgId);
+    }
+
+    @Override
+    public List<PredictionResultFeedback> listByRuns(Long userId, List<Long> runIds) {
+        userLookupService.requireById(userId);
+        Long orgId = requireOrg(userId);
+        if (runIds == null || runIds.isEmpty() || runIds.size() > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "runIds must contain 1 to 100 ids");
+        }
+        List<Long> uniqueRunIds = runIds.stream().distinct().toList();
+        if (runRepository.countByIdsAndOrganizationId(uniqueRunIds, orgId) != uniqueRunIds.size()) {
+            throw notFound("Prediction run not found");
+        }
+        return feedbackRepository.findByRunIdsAndOrganizationId(uniqueRunIds, orgId);
     }
 
     private Long requireOrg(Long userId) {

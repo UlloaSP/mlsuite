@@ -11,6 +11,10 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
 
 public interface PredictionResultFeedbackRepository extends JpaRepository<PredictionResultFeedback, Long> {
 
+    void deleteByResult_Run_Id(Long runId);
+
+    void deleteByResultRunIdAndUserId(Long runId, Long userId);
+
     @Query("""
             SELECT f FROM PredictionResultFeedback f
             WHERE f.result.id = :resultId
@@ -18,6 +22,16 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
             ORDER BY f.type ASC, f.order ASC
             """)
     List<PredictionResultFeedback> findByResultIdAndOrganizationId(Long resultId, Long organizationId);
+
+    @Query("""
+            SELECT f FROM PredictionResultFeedback f
+            JOIN FETCH f.result r
+            JOIN FETCH f.user
+            WHERE r.run.id IN :runIds
+            AND r.run.schemaVersion.schema.organization.id = :organizationId
+            ORDER BY r.run.id ASC, r.id ASC, f.type ASC, f.order ASC
+            """)
+    List<PredictionResultFeedback> findByRunIdsAndOrganizationId(List<Long> runIds, Long organizationId);
 
     Optional<PredictionResultFeedback> findByResultIdAndUserIdAndTypeAndOrder(
             Long resultId, Long userId, PredictionResultFeedbackType type, int order);
@@ -28,6 +42,8 @@ public interface PredictionResultFeedbackRepository extends JpaRepository<Predic
             ORDER BY f.type ASC, f.order ASC
             """)
     List<PredictionResultFeedback> findByResultIdAndUserId(Long resultId, Long userId);
+
+    boolean existsByResultRunIdAndUserId(Long runId, Long userId);
 
     @Query("""
             SELECT f FROM PredictionResultFeedback f

@@ -23,7 +23,7 @@ class DomainExceptionHandlerTest {
     @Test
     void handleResponseStatus_PreservesStatusAndReason() {
         DomainExceptionHandler handler = new DomainExceptionHandler();
-        when(request.getRequestURI()).thenReturn("/api/review-links/token/bad/context");
+        when(request.getRequestURI()).thenReturn("/api/schema-reviews/missing");
 
         ResponseEntity<ErrorDto> response = handler.handleResponseStatus(
                 new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied"),
@@ -33,6 +33,6 @@ class DomainExceptionHandlerTest {
         assertNotNull(response.getBody());
         assertEquals(403, response.getBody().status());
         assertEquals("Access denied", response.getBody().message());
-        assertEquals("/api/review-links/token/bad/context", response.getBody().path());
+        assertEquals("/api/schema-reviews/missing", response.getBody().path());
     }
 }

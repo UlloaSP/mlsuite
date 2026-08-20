@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
 import { type ComponentProps } from "react";
-import { cx } from "../cx";
-import { FOCUS_RING } from "../focus-ring";
+import { cx } from "@/shared/ui/cx";
+import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { useSidebar } from "./SidebarContext";
 
 export function SidebarTrigger({ className, ...props }: ComponentProps<"button">) {

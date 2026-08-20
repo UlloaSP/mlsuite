@@ -7,9 +7,9 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   getModelInputBulkSchema,
   toSchemaRunSerializedValues,
-} from "../src/algorithms/schema/bulk-upload";
-import { parseCsvPredictionFile } from "../src/algorithms/models/parse-csv-prediction-file";
-import type { SchemaVersionDto } from "../src/api/schemas/dtos";
+} from "@/features/schemas/lib/bulk-upload";
+import { parseCsvPredictionFile } from "@/capabilities/mlform/parse-csv-prediction-file";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 const version: SchemaVersionDto = {
   id: "version-1",
@@ -17,6 +17,7 @@ const version: SchemaVersionDto = {
   version: 1,
   name: "Risk schema",
   createdAt: "2026-06-02T00:00:00Z",
+  bindings: [],
   formSchema: {
     fields: [{ id: "age-ui", label: "Patient age", kind: "number", mappedTo: "age" }],
     reports: [],

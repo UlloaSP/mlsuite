@@ -23,7 +23,7 @@ import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetad
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
+import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -42,7 +42,7 @@ public class OrganizationCatalogService {
     private final PredictionRunRepository predictionRunRepository;
     private final InvitationRepository invitationRepository;
     private final RoleDefinitionRepository roleRepository;
-    private final SchemaReviewLinkRepository reviewLinkRepository;
+    private final SchemaReviewRepository reviewRepository;
     private final AuditEventRepository auditRepository;
     private final UserRepository userRepository;
 
@@ -57,7 +57,7 @@ public class OrganizationCatalogService {
             PredictionRunRepository predictionRunRepository,
             InvitationRepository invitationRepository,
             RoleDefinitionRepository roleRepository,
-            SchemaReviewLinkRepository reviewLinkRepository,
+            SchemaReviewRepository reviewRepository,
             AuditEventRepository auditRepository,
             UserRepository userRepository) {
         this.workspaceAccessService = workspaceAccessService;
@@ -70,7 +70,7 @@ public class OrganizationCatalogService {
         this.predictionRunRepository = predictionRunRepository;
         this.invitationRepository = invitationRepository;
         this.roleRepository = roleRepository;
-        this.reviewLinkRepository = reviewLinkRepository;
+        this.reviewRepository = reviewRepository;
         this.auditRepository = auditRepository;
         this.userRepository = userRepository;
     }
@@ -129,7 +129,7 @@ public class OrganizationCatalogService {
                 || pluginRepository.countByOrganizationId(organizationId) > 0
                 || teamRepository.countByOrganizationId(organizationId) > 0
                 || invitationRepository.countByOrganizationId(organizationId) > 0
-                || reviewLinkRepository.countByOrganizationId(organizationId) > 0
+                || reviewRepository.countByOrganizationId(organizationId) > 0
                 || auditRepository.countByOrganizationId(organizationId) > 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only empty organizations can be deleted.");
         }

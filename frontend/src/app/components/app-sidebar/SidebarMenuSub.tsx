@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { type ComponentProps } from "react";
-import { cx } from "../cx";
+import { cx } from "@/shared/ui/cx";
 import { useSidebar } from "./SidebarContext";
 
 export function SidebarMenuSub({ children, className, ...props }: ComponentProps<"ul">) {

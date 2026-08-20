@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { buildPendingSchemaRunFeedback } from "../src/algorithms/schema/pending-feedback";
-import type { SchemaFeedbackStep } from "../src/algorithms/schema/feedback-steps";
+import { buildPendingSchemaRunFeedback } from "@/features/schemas/lib/pending-feedback";
+import type { SchemaFeedbackStep } from "@/capabilities/mlform/feedback-steps";
 
 const feedbackStep = (
   id: string,
@@ -17,26 +17,27 @@ const feedbackStep = (
   id,
   kind: type,
   type,
-  resultId,
+  targets: [{ resultId, modelId: resultId.replace("result", "model") }],
   order,
   title: id,
   description: id,
   schema: {
-    steps: [{ id: `${id}-step`, fields: [{ id: fieldId, kind: "text", label: fieldId }] }],
+    steps: [
+      {
+        id: `${id}-step`,
+        title: id,
+        fields: [{ id: fieldId, kind: "text", label: fieldId }],
+      },
+    ],
   },
   initialValues: {},
 });
-
-const results = [
-  { id: "result-1", modelId: "model-1" },
-  { id: "result-2", modelId: "model-2" },
-];
 
 describe("schema run save modal feedback", () => {
   test("skips feedback when questionnaire is empty", () => {
     const steps = [feedbackStep("result-1-output-0", "result-1", "OUTPUT", 0, "assessment")];
 
-    expect(buildPendingSchemaRunFeedback(steps, {}, results)).toEqual([]);
+    expect(buildPendingSchemaRunFeedback(steps, {})).toEqual([]);
   });
 
   test("saves a partially completed feedback step", () => {
@@ -45,9 +46,7 @@ describe("schema run save modal feedback", () => {
       feedbackStep("result-1-report-0", "result-1", "EXPLANATION", 0, "note"),
     ];
 
-    expect(
-      buildPendingSchemaRunFeedback(steps, { "result-1-output-0-assessment": 4 }, results),
-    ).toEqual([
+    expect(buildPendingSchemaRunFeedback(steps, { "result-1-output-0-assessment": 4 })).toEqual([
       {
         modelId: "model-1",
         type: "OUTPUT",
@@ -64,14 +63,10 @@ describe("schema run save modal feedback", () => {
     ];
 
     expect(
-      buildPendingSchemaRunFeedback(
-        steps,
-        {
-          "result-1-output-0-assessment": 5,
-          "result-2-report-1-note": "good",
-        },
-        results,
-      ),
+      buildPendingSchemaRunFeedback(steps, {
+        "result-1-output-0-assessment": 5,
+        "result-2-report-1-note": "good",
+      }),
     ).toEqual([
       {
         modelId: "model-1",
@@ -84,6 +79,28 @@ describe("schema run save modal feedback", () => {
         type: "EXPLANATION",
         order: 1,
         value: { note: "good" },
+      },
+    ]);
+  });
+
+  test("fans one logical assessment out to every mapped model", () => {
+    const step = feedbackStep("report-0-output", "result-1", "OUTPUT", 0, "assessment");
+    step.targets.push({ resultId: "result-2", modelId: "model-2" });
+
+    expect(
+      buildPendingSchemaRunFeedback([step], { "report-0-output-assessment": "approved" }),
+    ).toEqual([
+      {
+        modelId: "model-1",
+        type: "OUTPUT",
+        order: 0,
+        value: { assessment: "approved" },
+      },
+      {
+        modelId: "model-2",
+        type: "OUTPUT",
+        order: 0,
+        value: { assessment: "approved" },
       },
     ]);
   });

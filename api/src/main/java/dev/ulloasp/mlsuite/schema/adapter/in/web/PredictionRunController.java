@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunSequenceDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
@@ -57,9 +59,22 @@ public class PredictionRunController {
                 predictionRunUseCase.getLastPredictionRunId(userId(authentication))));
     }
 
+    @GetMapping("/prediction-runs")
+    public ResponseEntity<List<PredictionRunCatalogItemDto>> listOrganizationRuns(Authentication authentication) {
+        return ResponseEntity.ok(predictionRunUseCase.listOrganizationRuns(userId(authentication)).stream()
+                .map(PredictionRunCatalogItemDto::from)
+                .toList());
+    }
+
     @GetMapping("/prediction-runs/{runId}")
     public ResponseEntity<PredictionRunDto> get(Authentication authentication, @PathVariable Long runId) {
         return ResponseEntity.ok(toDto(predictionRunUseCase.getRun(userId(authentication), runId)));
+    }
+
+    @DeleteMapping("/prediction-runs/{runId}")
+    public ResponseEntity<Void> delete(Authentication authentication, @PathVariable Long runId) {
+        predictionRunUseCase.deleteRun(userId(authentication), runId);
+        return ResponseEntity.noContent().build();
     }
 
     private PredictionRunDto toDto(PredictionRun run) {

@@ -26,7 +26,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
+import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -42,20 +42,20 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     private final SchemaVersionRepository versionRepository;
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
-    private final SchemaReviewLinkRepository reviewLinkRepository;
+    private final SchemaReviewRepository reviewRepository;
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
 
     public SchemaServiceImpl(UserLookupService userLookupService, SchemaRepository schemaRepository,
             SchemaVersionRepository versionRepository, SchemaModelBindingRepository bindingRepository,
-            PredictionRunRepository runRepository, SchemaReviewLinkRepository reviewLinkRepository,
+            PredictionRunRepository runRepository, SchemaReviewRepository reviewRepository,
             WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService) {
         this.userLookupService = userLookupService;
         this.schemaRepository = schemaRepository;
         this.versionRepository = versionRepository;
         this.bindingRepository = bindingRepository;
         this.runRepository = runRepository;
-        this.reviewLinkRepository = reviewLinkRepository;
+        this.reviewRepository = reviewRepository;
         this.workspaceAccessService = workspaceAccessService;
         this.authorizationService = authorizationService;
     }
@@ -163,9 +163,9 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireDelete(userId, organization.getId());
         Schema schema = requireSchema(schemaId, organization.getId());
-        if (runRepository.existsBySchemaId(schemaId) || reviewLinkRepository.existsBySchemaId(schemaId)) {
+        if (runRepository.existsBySchemaId(schemaId) || reviewRepository.existsBySchemaId(schemaId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Schema is used by prediction runs or review links. Archive it instead.");
+                    "Schema is used by prediction runs or reviews. Archive it instead.");
         }
         versionRepository.findBySchemaIdOrderByVersionDesc(schemaId).forEach(version -> {
             bindingRepository.findBySchemaVersionId(version.getId()).forEach(bindingRepository::delete);

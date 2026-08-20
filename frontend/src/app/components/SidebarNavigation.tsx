@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import {
-  AlertTriangle,
   Blocks,
   BrainCircuit,
   Building2,
@@ -12,45 +11,33 @@ import {
   ClipboardList,
   KeyRound,
   LayoutGrid,
-  List,
   Mail,
-  Server,
+  MessageSquareText,
   ServerCog,
   ShieldCheck,
-  SquareTerminal,
   Settings,
   Users,
 } from "lucide-react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { useUser } from "../../api/user/hooks";
-import { useWorkspaceContext } from "../../api/workspace/hooks";
-import { isTypingTarget, shortcutDigit } from "../utils/keyboard-shortcuts";
-import { cx } from "./cx";
+import { useUser } from "@/capabilities/workspace-context/session";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import { isTypingTarget, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
+import { cx } from "@/shared/ui/cx";
 import { Kbd } from "./Kbd";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
-import { isChildActive, type NavigationItem } from "./sidebar-navigation-support";
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  useSidebar,
-} from "./app-sidebar";
-
-const INFRA_CHILDREN: NavigationItem["children"] = [
-  { to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview", exact: true },
-  { to: "/admin/infrastructure?tab=services", icon: Server, label: "Services" },
-  { to: "/admin/infrastructure?tab=logs", icon: List, label: "Logs" },
-  { to: "/admin/infrastructure?tab=terminal", icon: SquareTerminal, label: "Terminal" },
-  { to: "/admin/infrastructure?tab=alerts", icon: AlertTriangle, label: "Alerts" },
-];
+import { INFRA_CHILDREN, isChildActive, type NavigationItem } from "./sidebar-navigation-support";
+import { SidebarGroup } from "./app-sidebar/SidebarGroup";
+import { SidebarGroupContent } from "./app-sidebar/SidebarGroupContent";
+import { SidebarGroupLabel } from "./app-sidebar/SidebarGroupLabel";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
+import { SidebarMenu } from "./app-sidebar/SidebarMenu";
+import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
+import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
+import { SidebarMenuSub } from "./app-sidebar/SidebarMenuSub";
+import { SidebarMenuSubButton } from "./app-sidebar/SidebarMenuSubButton";
+import { SidebarMenuSubItem } from "./app-sidebar/SidebarMenuSubItem";
+import { useSidebar } from "./app-sidebar/SidebarContext";
 
 export function SidebarNavigation() {
   const location = useLocation();
@@ -63,8 +50,6 @@ export function SidebarNavigation() {
   const permissions = workspace?.permissions;
   const currentPath = `${location.pathname}${location.search}`;
   const activeSchemaPath = getActiveSchemaPath(location.pathname);
-  const collapsed = state === "collapsed";
-  const showExpandedShortcutHints = showShortcutHints && !collapsed;
   const currentOrganizationPath = workspace
     ? `/workspace/organizations/${workspace.currentOrganization.id}`
     : undefined;
@@ -86,7 +71,6 @@ export function SidebarNavigation() {
       ? [{ to: `${currentOrganizationPath}/settings`, icon: Settings, label: "Settings" }]
       : []),
   ];
-  const schemaChildren = getSchemaNavigationChildren(activeSchemaPath);
   const navigation: NavigationItem[] = [
     ...(user?.systemRole === "SUPERADMIN"
       ? [
@@ -127,11 +111,17 @@ export function SidebarNavigation() {
             to: activeSchemaPath ?? "/schemas",
             icon: ClipboardList,
             label: "Schemas",
-            children: schemaChildren,
+            children: getSchemaNavigationChildren(activeSchemaPath),
           },
         ]
       : []),
+    ...(permissions?.canViewModels
+      ? [{ to: "/inferences", icon: BrainCircuit, label: "Inferences" }]
+      : []),
     ...(permissions?.canViewPlugins ? [{ to: "/plugins", icon: Blocks, label: "Plugins" }] : []),
+    ...(permissions?.canReview || permissions?.canManageReviews
+      ? [{ to: "/review", icon: MessageSquareText, label: "Review" }]
+      : []),
     ...(user?.systemRole === "SUPERADMIN"
       ? [
           { to: "/admin/users", icon: ShieldCheck, label: "Users" },
@@ -155,7 +145,7 @@ export function SidebarNavigation() {
     return parent?.children ?? [];
   };
   const handleWindowKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    if (event.key === "Alt" && !collapsed && !isTypingTarget(event.target)) {
+    if (event.key === "Alt" && state !== "collapsed" && !isTypingTarget(event.target)) {
       setShowShortcutHints(true);
     }
 
@@ -199,17 +189,16 @@ export function SidebarNavigation() {
             const hasChildren = Boolean(item.children?.length);
             const open = openItem === undefined ? active : openItem === item.to;
             const Icon = item.icon;
-            const shortcut = String(index + 1);
 
             return (
               <SidebarMenuItem key={item.to}>
                 {hasChildren ? (
                   <SidebarMenuButton
                     aria-expanded={open}
-                    aria-keyshortcuts={`Alt+${shortcut}`}
+                    aria-keyshortcuts={`Alt+${String(index + 1)}`}
                     isActive={active}
                     onClick={() => {
-                      if (collapsed) {
+                      if (state === "collapsed") {
                         void navigate(item.children?.[0]?.to ?? item.to, { viewTransition: true });
                         return;
                       }
@@ -220,23 +209,20 @@ export function SidebarNavigation() {
                   >
                     <Icon size={18} className="shrink-0" />
                     <SidebarLabel className="truncate">{item.label}</SidebarLabel>
-                    {!collapsed ? (
+                    {state !== "collapsed" ? (
                       <Kbd
-                        aria-hidden={!showExpandedShortcutHints}
-                        className={cx(
-                          "ml-auto shrink-0",
-                          !showExpandedShortcutHints && "invisible",
-                        )}
+                        aria-hidden={!showShortcutHints}
+                        className={cx("ml-auto shrink-0", !showShortcutHints && "invisible")}
                       >
-                        {shortcut}
+                        {String(index + 1)}
                       </Kbd>
                     ) : null}
-                    {!collapsed ? (
+                    {state !== "collapsed" ? (
                       <ChevronRight
                         size={15}
                         className={cx(
                           "shrink-0 transition-transform duration-200",
-                          !showExpandedShortcutHints && "ml-auto",
+                          !showShortcutHints && "ml-auto",
                           open && "rotate-90",
                         )}
                       />
@@ -244,24 +230,25 @@ export function SidebarNavigation() {
                   </SidebarMenuButton>
                 ) : (
                   <SidebarMenuButton asChild isActive={active} title={item.label}>
-                    <Link aria-keyshortcuts={`Alt+${shortcut}`} to={item.to} viewTransition>
+                    <Link
+                      aria-keyshortcuts={`Alt+${String(index + 1)}`}
+                      to={item.to}
+                      viewTransition
+                    >
                       <Icon size={18} className="shrink-0" />
                       <SidebarLabel className="truncate">{item.label}</SidebarLabel>
-                      {!collapsed ? (
+                      {state !== "collapsed" ? (
                         <Kbd
-                          aria-hidden={!showExpandedShortcutHints}
-                          className={cx(
-                            "ml-auto shrink-0",
-                            !showExpandedShortcutHints && "invisible",
-                          )}
+                          aria-hidden={!showShortcutHints}
+                          className={cx("ml-auto shrink-0", !showShortcutHints && "invisible")}
                         >
-                          {shortcut}
+                          {String(index + 1)}
                         </Kbd>
                       ) : null}
                     </Link>
                   </SidebarMenuButton>
                 )}
-                {item.children && !collapsed ? (
+                {item.children && state !== "collapsed" ? (
                   <div
                     className={cx(
                       "grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
@@ -286,10 +273,10 @@ export function SidebarNavigation() {
                                   <ChildIcon size={14} className="shrink-0" />
                                   <span className="truncate">{child.label}</span>
                                   <Kbd
-                                    aria-hidden={!showExpandedShortcutHints}
+                                    aria-hidden={!showShortcutHints}
                                     className={cx(
                                       "ml-auto h-4 min-w-4 shrink-0 text-[0.62rem]",
-                                      !showExpandedShortcutHints && "invisible",
+                                      !showShortcutHints && "invisible",
                                     )}
                                   >
                                     {childShortcut}

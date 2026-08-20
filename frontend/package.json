@@ -4,48 +4,48 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vp dev",
     "build": "tsc -b && vp build"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@pierre/diffs": "^1.2.12",
-    "@tanstack/react-query": "^5.100.10",
+    "@tanstack/react-query": "^5.101.3",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "gsap": "^3.15.0",
-    "jotai": "^2.20.0",
+    "jotai": "^2.20.2",
     "json-source-map": "^0.6.1",
     "jsonc-parser": "^3.3.1",
-    "lucide-react": "^1.16.0",
+    "lucide-react": "^1.25.0",
     "mlform": "0.1.19",
-    "monaco-editor": "^0.55.1",
-    "motion": "^12.38.0",
-    "radix-ui": "^1.5.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "react-is": "^19.2.6",
-    "react-router": "^7.15.1",
-    "read-excel-file": "^9.0.9",
-    "recharts": "^3.8.1",
+    "monaco-editor": "^0.56.0",
+    "motion": "^12.42.2",
+    "radix-ui": "^1.6.4",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-is": "^19.2.7",
+    "react-router": "^8.2.0",
+    "read-excel-file": "^9.3.3",
+    "recharts": "^3.10.0",
     "sonner": "^2.0.7",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.0",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/json-source-map": "^0.6.0",
-    "@types/react": "^19.2.14",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react-swc": "^4.3.1",
+    "@vitejs/plugin-react": "6.0.3",
     "jsdom": "^29.1.1",
-    "tailwindcss": "^4.3.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vite-plus": "latest"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.5",
+    "vite-plus": "0.2.5"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.5",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@0.1.24"
   },
-  "packageManager": "pnpm@11.8.0"
+  "packageManager": "pnpm@11.15.1"
 }
