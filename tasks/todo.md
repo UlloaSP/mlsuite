@@ -1263,3 +1263,25 @@
 - Independent review found no code defect. Because schema migration was intentionally omitted, an existing development
   database must be reset before startup; Hibernate `ddl-auto=update` neither drops Team schema nor cleans persisted
   Team permission enum values.
+
+# Legacy role migration
+
+- [x] Map every legacy role read/write path after Team removal and define the safe phase boundary.
+- [x] Backfill missing organization membership and invitation role definitions for every status.
+- [x] Make bootstrap writes assign the owner role definition immediately.
+- [x] Add focused regression coverage for mappings, custom-role preservation, idempotency, and bootstrap.
+- [x] Run focused/full API verification, source-limit audit, independent review, and `graphify update .`.
+
+## Review
+
+- `RoleSeedService` now seeds system definitions once per organization and backfills null role definitions on all
+  organization memberships and invitations, independent of lifecycle status. Existing custom assignments remain intact,
+  changed rows are saved explicitly, and repeated runs perform no writes.
+- Personal workspace bootstrap now persists its OWNER membership with the matching role definition from the start.
+- The focused migration/invitation/organization/authorization suite passes: 27 tests, 0 failures. The full API suite ran
+  173 tests; its only failure is the pre-existing `WebAdapterArchitectureTest` dependency from `ModelControllerImpl` to
+  `ModelCreationService`, unrelated to this change.
+- All touched Java files remain below 300 non-comment lines. Legacy enums, nullable columns, DTO fallbacks, and frontend
+  contracts intentionally remain for a later Phase B after the backfill has been deployed and validated.
+- Independent review found no high-severity defect. Its persistence-test concern was resolved by asserting explicit
+  repository writes; the startup runner intentionally keeps one transaction because this development dataset is small.

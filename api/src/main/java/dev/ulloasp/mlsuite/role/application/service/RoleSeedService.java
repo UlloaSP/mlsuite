@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.role.application.service;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.boot.ApplicationArguments;
@@ -8,9 +10,10 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
+import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
@@ -27,6 +30,7 @@ public class RoleSeedService implements ApplicationRunner {
 
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository orgMembershipRepository;
+    private final InvitationRepository invitationRepository;
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final RoleTemplateRepository roleTemplateRepository;
     private final LegacyRolePermissionMapper mapper;
@@ -34,11 +38,13 @@ public class RoleSeedService implements ApplicationRunner {
     public RoleSeedService(
             OrganizationRepository organizationRepository,
             OrganizationMembershipRepository orgMembershipRepository,
+            InvitationRepository invitationRepository,
             RoleDefinitionRepository roleDefinitionRepository,
             RoleTemplateRepository roleTemplateRepository,
             LegacyRolePermissionMapper mapper) {
         this.organizationRepository = organizationRepository;
         this.orgMembershipRepository = orgMembershipRepository;
+        this.invitationRepository = invitationRepository;
         this.roleDefinitionRepository = roleDefinitionRepository;
         this.roleTemplateRepository = roleTemplateRepository;
         this.mapper = mapper;
@@ -48,17 +54,42 @@ public class RoleSeedService implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         seedTemplates();
-        organizationRepository.findAll().forEach(this::ensureOrganizationRoles);
+        organizationRepository.findAll().forEach(organization -> {
+            Map<OrganizationRole, RoleDefinition> systemRoles = organizationRoles(organization);
+            migrateLegacyAssignments(organization, systemRoles);
+        });
     }
 
     @Transactional
     public void ensureOrganizationRoles(Organization organization) {
+        organizationRoles(organization);
+    }
+
+    private Map<OrganizationRole, RoleDefinition> organizationRoles(Organization organization) {
+        Map<OrganizationRole, RoleDefinition> roles = new EnumMap<>(OrganizationRole.class);
         for (OrganizationRole role : OrganizationRole.values()) {
-            RoleDefinition def = orgRole(organization, role);
-            orgMembershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(organization.getId(), MembershipStatus.ACTIVE)
-                    .stream()
-                    .filter(membership -> membership.getRoleDefinition() == null && membership.getRole() == role)
-                    .forEach(membership -> membership.setRoleDefinition(def));
+            roles.put(role, orgRole(organization, role));
+        }
+        return roles;
+    }
+
+    private void migrateLegacyAssignments(
+            Organization organization,
+            Map<OrganizationRole, RoleDefinition> systemRoles) {
+        List<OrganizationMembership> memberships = orgMembershipRepository.findByOrganizationId(organization.getId()).stream()
+                .filter(membership -> membership.getRoleDefinition() == null)
+                .toList();
+        memberships.forEach(membership -> membership.setRoleDefinition(systemRoles.get(membership.getRole())));
+        if (!memberships.isEmpty()) {
+            orgMembershipRepository.saveAll(memberships);
+        }
+
+        List<Invitation> invitations = invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organization.getId()).stream()
+                .filter(invitation -> invitation.getRoleDefinition() == null)
+                .toList();
+        invitations.forEach(invitation -> invitation.setRoleDefinition(systemRoles.get(invitation.getRole())));
+        if (!invitations.isEmpty()) {
+            invitationRepository.saveAll(invitations);
         }
     }
 

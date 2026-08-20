@@ -63,11 +63,13 @@ public class WorkspaceBootstrapService {
                 user));
         roleSeedService.ensureOrganizationRoles(organization);
         roleSeedService.reviewerRole(organization);
-        membershipRepository.save(new OrganizationMembership(
+        OrganizationMembership membership = new OrganizationMembership(
                 organization,
                 user,
                 OrganizationRole.OWNER,
-                MembershipStatus.ACTIVE));
+                MembershipStatus.ACTIVE);
+        membership.setRoleDefinition(roleSeedService.orgRole(organization, OrganizationRole.OWNER));
+        membershipRepository.save(membership);
         user.setCurrentOrganization(organization);
         userRepository.save(user);
         backfillModels(user, organization);
