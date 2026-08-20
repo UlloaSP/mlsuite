@@ -76,7 +76,7 @@ export function SidebarOrganizationHeader() {
                   )}
                   onSelect={() => {
                     void selectOrganization.mutateAsync(organization.id).then(() => {
-                      void navigate("/workspace");
+                      void navigate("/home");
                     });
                   }}
                 >

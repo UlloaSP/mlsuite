@@ -43,6 +43,25 @@ describe("integrated review authentication and routes", () => {
     ]);
   });
 
+  test("recomputes the authorized landing page after switching organizations", () => {
+    const organizationHeader = readFileSync(
+      new URL("../src/app/components/SidebarOrganizationHeader.tsx", import.meta.url),
+      "utf8",
+    );
+    const authenticatedHome = readFileSync(
+      new URL("../src/app/pages/authenticated-home-page.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(organizationHeader).toMatch(
+      /mutateAsync\(organization\.id\)\.then\(\(\) => \{\s+void navigate\("\/home"\);/,
+    );
+    expect(organizationHeader).not.toContain('navigate("/workspace")');
+    expect(authenticatedHome).toContain("permissions?.canViewWorkspace");
+    expect(authenticatedHome).toContain("permissions?.canReview || permissions?.canManageReviews");
+    expect(authenticatedHome).toContain('<Navigate to="/review" replace />');
+  });
+
   test.each(["https://evil.example/review", "//evil.example/review", "/\\evil", null])(
     "rejects unsafe return destination %s",
     (destination) => {

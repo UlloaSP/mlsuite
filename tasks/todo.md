@@ -1326,3 +1326,20 @@
   React Doctor remains 80/100 with nine unrelated existing findings.
 - Touched TS/TSX files pass formatting and stay below 300 non-comment lines. `index.html` retains its known existing
   formatting drift; only the obsolete decoration rules were removed. No visual check ran because it was not requested.
+
+# Reviewer organization switch redirect
+
+- [x] Reproduce Reviewer returning to an organization and landing on inaccessible workspace.
+- [x] Route organization changes through the same first-authorized destination used at login.
+- [x] Cover Reviewer and normal workspace access in one regression file.
+- [x] Run focused/full frontend verification, source limits, and `graphify update .`.
+
+## Review
+
+- Root cause was the organization selector hardcoding `/workspace` after a successful context mutation. It now routes
+  through `/home`, where the updated permission set chooses `/workspace`, `/review`, or `/profile` exactly as login does.
+- Regression failed before the fix and passes after it. Mutation rejection still cannot navigate because routing remains
+  inside the fulfilled promise handler.
+- Focused review routing passes 8/8; full frontend passes 207/207; architecture passes 9/9; TypeScript and production
+  build pass. React Doctor reports 89/100 with two unrelated existing findings.
+- Touched files pass formatting, diff checks, and the 300-line limit. No visual check ran because it was not requested.
