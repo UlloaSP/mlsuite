@@ -43,11 +43,10 @@ export type OrganizationPageRequest = {
   search?: string;
   size: number;
   sort?: string;
-  filter?: string;
 };
 
 export const getOrganizationPage = (
-  { page, search = "", size, sort = "updated", filter = "all" }: OrganizationPageRequest,
+  { page, search = "", size, sort = "updated" }: OrganizationPageRequest,
   signal?: AbortSignal,
 ): Promise<OrganizationPageDto> => {
   const params = new URLSearchParams({
@@ -55,7 +54,6 @@ export const getOrganizationPage = (
     search,
     size: String(size),
     sort,
-    filter,
   });
   return appFetch<OrganizationPageDto>(`/api/organizations/catalog?${params.toString()}`, {
     signal,

@@ -32,16 +32,10 @@ export const organizationInvitationCandidatesQueryKey = (organizationId: number 
 export const organizationRolesQueryKey = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "roles"] as const;
 
-export const organizationCatalogPageQueryKey = (
-  page: number,
-  search: string,
-  sort: string,
-  filter: string,
-) => [
+export const organizationCatalogPageQueryKey = (page: number, search: string, sort: string) => [
   ...ORGANIZATION_CATALOG_PAGE_QUERY_KEY,
   page,
   ORGANIZATION_CATALOG_PAGE_SIZE,
   search,
   sort,
-  filter,
 ];

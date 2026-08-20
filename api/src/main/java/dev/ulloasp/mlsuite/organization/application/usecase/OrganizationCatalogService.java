@@ -76,11 +76,10 @@ public class OrganizationCatalogService {
     }
 
     @Transactional(readOnly = true)
-    public OrganizationPageDto getPage(Long userId, int page, int size, String search, String filter, String sort) {
+    public OrganizationPageDto getPage(Long userId, int page, int size, String search, String sort) {
         requireSuperadmin(userId);
         var organizations = organizationRepository.findCatalogPage(
                 normalizeSearch(search),
-                normalizeFilter(filter),
                 PageRequest.of(Math.max(page, 0), normalizePageSize(size), sort(sort)));
         return new OrganizationPageDto(
                 organizations.getContent().stream().map(this::catalogItem).toList(),
@@ -119,7 +118,6 @@ public class OrganizationCatalogService {
                 schemaRepository.countByOrganizationId(id),
                 pluginRepository.countByOrganizationId(id),
                 predictionRunRepository.countByOrganizationId(id),
-                true,
                 membershipRepository.countByOrganizationIdAndStatus(id, MembershipStatus.ACTIVE));
     }
 
@@ -150,10 +148,6 @@ public class OrganizationCatalogService {
 
     private String normalizeSearch(String search) {
         return search == null ? "" : search.strip();
-    }
-
-    private String normalizeFilter(String filter) {
-        return "public".equals(filter) || "private".equals(filter) ? filter : "all";
     }
 
     private int normalizePageSize(int size) {

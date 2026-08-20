@@ -58,6 +58,19 @@ export function useCatalogControls<TFilter extends string, TSort extends string>
     );
   }, [resetChanged, resetKey, setParams]);
 
+  useEffect(() => {
+    if (!filterParam || filters.includes(filterParam as TFilter)) return;
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("filter");
+        next.delete("page");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [filterParam, filters, setParams]);
+
   const update = (values: Record<string, string | null>, replace = false) => {
     setParams(
       (current) => {

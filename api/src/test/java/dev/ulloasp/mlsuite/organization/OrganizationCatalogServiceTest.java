@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.organization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -82,7 +84,7 @@ class OrganizationCatalogServiceTest {
         Organization organization = organization();
         OrganizationMembership owner = membership(organization, user(2L, "Owner"));
         when(workspaceAccessService.isSuperadmin(1L)).thenReturn(true);
-        when(organizationRepository.findCatalogPage(eq("north"), eq("all"), any(Pageable.class)))
+        when(organizationRepository.findCatalogPage(eq("north"), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(organization)));
         when(membershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE))
                 .thenReturn(List.of(owner));
@@ -93,7 +95,7 @@ class OrganizationCatalogServiceTest {
         when(predictionRunRepository.countByOrganizationId(41L)).thenReturn(7L);
         when(membershipRepository.countByOrganizationIdAndStatus(41L, MembershipStatus.ACTIVE)).thenReturn(6L);
 
-        var page = service.getPage(1L, 0, 24, " north ", "all", "updated");
+        var page = service.getPage(1L, 0, 24, " north ", "updated");
 
         assertEquals(1, page.items().size());
         var item = page.items().get(0);
@@ -106,6 +108,8 @@ class OrganizationCatalogServiceTest {
         assertEquals(7L, item.inferenceCount());
         assertEquals(2L, item.teamCount());
         assertEquals(6L, item.memberCount());
+        assertFalse(Arrays.stream(item.getClass().getRecordComponents())
+                .anyMatch(component -> component.getName().equals("publicAccess")));
     }
 
     @Test
@@ -139,7 +143,7 @@ class OrganizationCatalogServiceTest {
         when(workspaceAccessService.isSuperadmin(9L)).thenReturn(false);
 
         assertThrows(ResponseStatusException.class,
-                () -> service.getPage(9L, 0, 24, "", "all", "updated"));
+                () -> service.getPage(9L, 0, 24, "", "updated"));
     }
 
     private Organization organization() {

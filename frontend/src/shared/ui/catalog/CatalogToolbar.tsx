@@ -69,26 +69,28 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
       </div>
       {children}
       <div className="flex flex-wrap items-center gap-3">
-        <fieldset
-          aria-label={filterLabel}
-          className={cx(
-            segmented
-              ? "inline-flex w-fit rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-1"
-              : "flex w-fit gap-1",
-          )}
-        >
-          {filters.map((option) => (
-            <button
-              key={option.value}
-              className={getFilterClassName(segmented, filter === option.value)}
-              disabled={option.disabled}
-              type="button"
-              onClick={() => onFilterChange(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </fieldset>
+        {filters.length > 1 ? (
+          <fieldset
+            aria-label={filterLabel}
+            className={cx(
+              segmented
+                ? "inline-flex w-fit rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-1"
+                : "flex w-fit gap-1",
+            )}
+          >
+            {filters.map((option) => (
+              <button
+                key={option.value}
+                className={getFilterClassName(segmented, filter === option.value)}
+                disabled={option.disabled}
+                type="button"
+                onClick={() => onFilterChange(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </fieldset>
+        ) : null}
         <AppSelect
           aria-label={sortLabel}
           className="min-w-44"

@@ -76,8 +76,6 @@ export interface OrganizationAdminStatsDto {
   totalMembers: number;
   totalModels: number;
   pendingInvitations: number;
-  quotaUsed: number;
-  quotaLimit: number;
 }
 
 export interface OrganizationCatalogItemDto {
@@ -99,7 +97,6 @@ export interface OrganizationCatalogItemDto {
   schemaCount: number;
   pluginCount: number;
   inferenceCount: number;
-  publicAccess: boolean;
   memberCount: number;
 }
 

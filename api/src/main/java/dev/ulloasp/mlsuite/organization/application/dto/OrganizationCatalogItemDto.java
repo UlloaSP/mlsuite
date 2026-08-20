@@ -24,7 +24,6 @@ public record OrganizationCatalogItemDto(
         long schemaCount,
         long pluginCount,
         long inferenceCount,
-        boolean publicAccess,
         long memberCount) {
 
     public static OrganizationCatalogItemDto from(
@@ -37,7 +36,6 @@ public record OrganizationCatalogItemDto(
             long schemaCount,
             long pluginCount,
             long inferenceCount,
-            boolean publicAccess,
             long memberCount) {
         User modifier = organization.getUpdatedBy() == null ? organization.getCreatedBy() : organization.getUpdatedBy();
         return new OrganizationCatalogItemDto(
@@ -59,7 +57,6 @@ public record OrganizationCatalogItemDto(
                 schemaCount,
                 pluginCount,
                 inferenceCount,
-                publicAccess,
                 memberCount);
     }
 }

@@ -23,12 +23,10 @@ import type { OrganizationPatch } from "@/features/workspace/components/Organiza
 import { OrganizationCatalogTile } from "@/features/workspace/components/OrganizationCatalogTile";
 
 type OrganizationSortMode = "updated" | "created" | "name";
-type OrganizationFilterMode = "all" | "public" | "private";
+type OrganizationFilterMode = "all";
 
 const FILTERS: Array<{ value: OrganizationFilterMode; label: string }> = [
   { value: "all", label: "All" },
-  { value: "public", label: "Public" },
-  { value: "private", label: "Private" },
 ];
 
 const SORT_OPTIONS: Array<{ value: OrganizationSortMode; label: string }> = [
@@ -54,7 +52,6 @@ export function OrganizationsPage() {
     controls.page,
     controls.search,
     controls.sort,
-    controls.filter,
     canView,
   );
   const deleteOrganization = async (organization: OrganizationCatalogItemDto) => {
@@ -129,7 +126,7 @@ export function OrganizationsPage() {
       emptyTitle="No organizations yet"
       filteredEmptyTitle="No matching organizations"
       emptyDescription="Create the first organization for models, schemas, plugins, and members."
-      filteredEmptyDescription="Try another search term or filter."
+      filteredEmptyDescription="Try another search term."
       emptyAction={
         <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
           + New Organization

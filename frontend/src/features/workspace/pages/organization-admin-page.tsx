@@ -1,4 +1,4 @@
-import { ClipboardList, Mail, Shield, Users } from "lucide-react";
+import { Mail, Shield, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -58,7 +58,7 @@ export function OrganizationAdminPage() {
             )
           }
         />
-        <div className="grid gap-4 md:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-4">
           <AdminStatCard
             label="Total Teams"
             value={data?.stats.totalTeams ?? 0}
@@ -82,15 +82,6 @@ export function OrganizationAdminPage() {
             value={data?.stats.pendingInvitations ?? 0}
             detail="Pending"
             icon={<Mail size={18} />}
-          />
-          <AdminStatCard
-            label="Quota"
-            value={
-              data?.stats.quotaLimit
-                ? `${data.stats.quotaUsed}/${data.stats.quotaLimit}`
-                : "No quota"
-            }
-            icon={<ClipboardList size={18} />}
           />
         </div>
         <div className="grid gap-4 xl:grid-cols-2">

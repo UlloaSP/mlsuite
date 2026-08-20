@@ -35,19 +35,11 @@ export const pendingInvitationsQueryOptions = () =>
     staleTime: 30_000,
   });
 
-export const organizationCatalogPageQueryOptions = (
-  page: number,
-  search: string,
-  sort: string,
-  filter: string,
-) =>
+export const organizationCatalogPageQueryOptions = (page: number, search: string, sort: string) =>
   queryOptions({
-    queryKey: organizationCatalogPageQueryKey(page, search, sort, filter),
+    queryKey: organizationCatalogPageQueryKey(page, search, sort),
     queryFn: ({ signal }) =>
-      getOrganizationPage(
-        { page, search, size: ORGANIZATION_CATALOG_PAGE_SIZE, sort, filter },
-        signal,
-      ),
+      getOrganizationPage({ page, search, size: ORGANIZATION_CATALOG_PAGE_SIZE, sort }, signal),
     placeholderData: (previous) => previous,
   });
 
@@ -124,11 +116,10 @@ export const useOrganizationCatalogPageQuery = (
   page: number,
   search: string,
   sort: string,
-  filter: string,
   enabled = true,
 ) =>
   useQuery({
-    ...organizationCatalogPageQueryOptions(page, search, sort, filter),
+    ...organizationCatalogPageQueryOptions(page, search, sort),
     enabled,
   });
 

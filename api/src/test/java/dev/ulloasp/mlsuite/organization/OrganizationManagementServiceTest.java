@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.organization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
@@ -142,6 +145,9 @@ class OrganizationManagementServiceTest {
         assertEquals(0, result.stats().pendingInvitations());
         assertEquals(List.of(), result.recentMembers());
         assertEquals(List.of(), result.recentInvitations());
+        var statsJson = new ObjectMapper().valueToTree(result.stats());
+        assertFalse(statsJson.has("quotaUsed"));
+        assertFalse(statsJson.has("quotaLimit"));
         verify(membershipRepository, never())
                 .findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE);
         verify(invitationRepository, never()).findByOrganizationIdOrderByCreatedAtDesc(41L);

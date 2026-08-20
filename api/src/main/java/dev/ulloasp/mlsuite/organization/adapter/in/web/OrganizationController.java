@@ -36,7 +36,6 @@ public interface OrganizationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "24") int size,
             @RequestParam(defaultValue = "") String search,
-            @RequestParam(defaultValue = "all") String filter,
             @RequestParam(defaultValue = "updated") String sort);
 
     @PostMapping

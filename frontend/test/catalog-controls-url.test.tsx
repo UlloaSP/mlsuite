@@ -83,5 +83,6 @@ describe("catalog URL controls", () => {
     const probe = await render("/catalog?filter=unknown&sort=bad&page=-4");
 
     expect(probe.dataset).toMatchObject({ filter: "active", page: "0", sort: "updated" });
+    expect(probe.dataset.url).not.toContain("filter=");
   });
 });

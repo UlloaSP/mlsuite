@@ -1214,3 +1214,29 @@
 - All touched source files remain below 300 non-comment lines. No visual check ran because it was not requested.
   Final independent review found no critical or important issues. `graphify update .` completed with 10,749 nodes,
   29,438 edges, and 489 communities.
+
+# Organization Fake Metrics And Visibility Removal
+
+- [x] Lock the real organization catalog/dashboard contract with focused regressions.
+- [x] Remove organization quota fields and their non-functional dashboard card.
+- [x] Remove fake Public/Private catalog data, filtering, query parameters, cache dimensions, and UI copy.
+- [x] Confirm Members uses the permission-shaped `totalMembers` source and retain its regression coverage.
+- [x] Run focused and broad API/frontend verification, source-limit audit, review, and `graphify update .`.
+
+## Review
+
+- Organization dashboards no longer expose the always-zero quota fields or render a quota card. Real team, member,
+  model, and invitation counts remain permission-shaped.
+- Organization catalog items no longer claim every organization is public. The fake visibility filter was removed from
+  the controller, service, repository query, frontend request, cache key, DTO, and UI; stale visibility URL filters are
+  normalized away.
+- Workspace Members continues to use `dashboard.stats.totalMembers`, with regression coverage for the real value,
+  fallback, and denied permissions. Persisted Team quota remains intentionally untouched.
+- Focused backend tests pass 15/15; full frontend passes 207/207; focused frontend passes 7/7; TypeScript, production
+  build, touched-file formatting, source limits, and diff checks pass.
+- Full API executes 173 tests and remains blocked only by the three pre-existing `ModelControllerImpl` architecture
+  violations. Full `vp check` remains blocked by repository-wide formatting drift (469 files); touched files pass.
+  React Doctor remains 80/100 with nine unrelated existing findings. No visual check ran because it was not requested.
+- Independent review found no critical or important issues.
+- `graphify update .` completed with 10,749 nodes, 29,433 edges, and 505 communities; existing skill-version,
+  visualization-size, optional SQL parser, and zero-node JSON warnings remain.

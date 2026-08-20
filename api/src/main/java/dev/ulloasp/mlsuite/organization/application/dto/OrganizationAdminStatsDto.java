@@ -5,7 +5,5 @@ public record OrganizationAdminStatsDto(
         long activeTeams,
         long totalMembers,
         long totalModels,
-        long pendingInvitations,
-        long quotaUsed,
-        long quotaLimit) {
+        long pendingInvitations) {
 }

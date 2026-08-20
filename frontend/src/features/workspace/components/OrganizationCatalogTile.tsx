@@ -108,12 +108,6 @@ export function OrganizationCatalogTile({
             </div>
           );
         })}
-        <div className="rounded bg-[var(--surface-secondary)] px-3 py-2">
-          <div className="text-xs font-semibold text-[var(--text-secondary)]">Visibility</div>
-          <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
-            {item.publicAccess ? "Public" : "Private"}
-          </p>
-        </div>
       </div>
 
       <div className="justify-self-end self-start">

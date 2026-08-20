@@ -130,9 +130,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 permissions.canViewTeams() ? teamRepository.countByOrganizationIdAndStatus(organizationId, TeamStatus.ACTIVE) : 0,
                 permissions.canViewMembers() ? membershipRepository.countByOrganizationIdAndStatus(organizationId, MembershipStatus.ACTIVE) : 0,
                 permissions.canViewModels() ? modelRepository.countByOrganizationId(organizationId) : 0,
-                permissions.canManageInvitations() ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING) : 0,
-                0,
-                0);
+                permissions.canManageInvitations() ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING) : 0);
         var teams = permissions.canViewTeams() ? teamRepository.findByOrganizationIdOrderByNameAsc(organizationId).stream()
                 .limit(5)
                 .map(team -> TeamDto.from(
