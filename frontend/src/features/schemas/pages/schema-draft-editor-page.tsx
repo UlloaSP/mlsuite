@@ -13,7 +13,6 @@ import {
   useSchema,
   useSchemaDraft,
   useSchemaDraftDiff,
-  useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
 import { useUpdateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -36,7 +35,6 @@ export function SchemaDraftEditorPage() {
   const { data: schemaDto } = useSchema(schemaId);
   const { data: draft } = useSchemaDraft(draftId);
   const { data: diff } = useSchemaDraftDiff(draftId);
-  const { data: baseVersion } = useSchemaVersion(draft?.baseVersionId);
   const updateMutation = useUpdateSchemaDraftMutation(draftId ?? "");
   const [schema, setSchema] = useAtom(schemaAtom);
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
@@ -49,7 +47,6 @@ export function SchemaDraftEditorPage() {
   const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;
   const conflictCount = diff?.changes.filter((change) => change.conflict).length ?? 0;
   const previewSchema = useMemo(() => schema ?? draft?.formSchema, [draft?.formSchema, schema]);
-  const baseText = baseVersion ? JSON.stringify(baseVersion.formSchema, null, 2) : undefined;
 
   useEffect(() => {
     if (!draft) return;
@@ -191,7 +188,7 @@ export function SchemaDraftEditorPage() {
               />
             </div>
             {editorView === "code" ? (
-              <EditorWrapper diffBaseText={baseText} />
+              <EditorWrapper />
             ) : editorHasErrors ? (
               <AppPanel className="m-4">Fix schema errors to preview the form.</AppPanel>
             ) : (

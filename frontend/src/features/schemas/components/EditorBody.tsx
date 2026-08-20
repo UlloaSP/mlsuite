@@ -27,11 +27,9 @@ import {
 } from "@/features/schemas/lib/schema-diagnostics";
 import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/features/schemas/lib/editor-atoms";
-import { applyLineChangeDecorations as updateLineChangeDecorations } from "@/capabilities/editor/apply-line-change-decorations";
 import { defineEditorThemes, setEditorTheme } from "@/capabilities/editor/configure-editor-theme";
 import { editorOptions } from "@/capabilities/editor/editor-options";
 import type {
-  EditorBodyProps,
   MonacoEditorInstance,
   MonacoJson,
   MonacoMarker,
@@ -41,7 +39,7 @@ import type {
 
 const MonacoEditor = lazy(loadLocalMonacoEditor);
 
-export function EditorBody({ diffBaseText }: EditorBodyProps) {
+export function EditorBody() {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [, setSchema] = useAtom(schemaAtom);
@@ -52,7 +50,6 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
   const editorRef = useRef<MonacoEditorInstance | null>(null);
   const monacoRef = useRef<MonacoNamespace | null>(null);
   const compatCardsRef = useRef<EditorErrorCard[]>([]);
-  const changeDecorationIdsRef = useRef<string[]>([]);
   const validationSequenceRef = useRef(0);
   const catalogFieldDefinitionsRef = useRef<readonly CatalogFieldDefinition[]>([]);
   const catalogReportDefinitionsRef = useRef<readonly CatalogReportDefinition[]>([]);
@@ -61,18 +58,6 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
   useEffect(() => {
     schemaTextRef.current = schemaText;
   }, [schemaText]);
-  const applyChangeDecorations = useCallback(
-    (text: string) => {
-      if (!editorRef.current) return;
-      changeDecorationIdsRef.current = updateLineChangeDecorations(
-        editorRef.current,
-        changeDecorationIdsRef.current,
-        diffBaseText ?? "",
-        text,
-      );
-    },
-    [diffBaseText],
-  );
   const applyCompatValidation = useCallback(
     (
       text: string,
@@ -181,13 +166,11 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
       catalogFieldDefinitionsRef.current,
       catalogReportDefinitionsRef.current,
     );
-    applyChangeDecorations(editor.getValue());
   };
 
   const handleOnChange = (value?: string) => {
     const text = value ?? "";
     setSchemaText(text);
-    applyChangeDecorations(text);
     applyCompatValidation(
       text,
       catalogFieldDefinitionsRef.current,
@@ -280,10 +263,6 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
     }
   }, [theme]);
 
-  useEffect(() => {
-    applyChangeDecorations(editorRef.current?.getValue() ?? schemaText);
-  }, [applyChangeDecorations, schemaText]);
-
   return (
     <Suspense fallback={<div className="h-full w-full bg-[var(--surface-primary)]" />}>
       <MonacoEditor
@@ -293,7 +272,7 @@ export function EditorBody({ diffBaseText }: EditorBodyProps) {
         onChange={handleOnChange}
         onMount={handleOnMount}
         onValidate={handleOnValidate}
-        options={{ ...editorOptions, glyphMargin: Boolean(diffBaseText) }}
+        options={editorOptions}
       />
     </Suspense>
   );

@@ -1310,3 +1310,19 @@
 - All touched Java files remain below 300 non-comment lines and `git diff --check` is clean apart from line-ending
   notices. A JPA-backed query regression could not run because this environment has no Docker for the repository's
   Testcontainers setup; domain/service regressions cover ACTIVE access plus PENDING/REMOVED denial and reactivation.
+
+# Schema editor change decoration cleanup
+
+- [x] Reproduce the red/green changed-line backgrounds and gutter bars from the shared Monaco decoration path.
+- [x] Remove those visual decorations without changing schema editing or change detection.
+- [x] Run focused frontend tests, typecheck, source-limit checks, and `graphify update .`.
+- [x] Record verification and result below.
+
+## Review
+
+- Removed the custom Monaco changed-line backgrounds, glyph/gutter bars, marker calculation, and unused base-version
+  query. Schema validation, editing, preview, and saving remain unchanged.
+- Frontend architecture passes 9/9, full frontend tests pass 206/206, clean TypeScript build and production build pass.
+  React Doctor remains 80/100 with nine unrelated existing findings.
+- Touched TS/TSX files pass formatting and stay below 300 non-comment lines. `index.html` retains its known existing
+  formatting drift; only the obsolete decoration rules were removed. No visual check ran because it was not requested.
