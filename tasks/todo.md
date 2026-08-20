@@ -1189,3 +1189,28 @@
   unchanged.
 - Exact regression failed with two identical payloads before the fix and passes with one after it. Full frontend
   passes 202/202; TypeScript has zero errors and production build passes.
+
+# Workspace Context Invitation Removal
+
+- [x] Confirm every consumer of `WorkspaceContextDto.invitations` and the dedicated invitation query contracts.
+- [x] Add regression coverage proving workspace bootstrap omits organization invitations.
+- [x] Remove invitations and their repository dependency from the backend workspace context.
+- [x] Remove the frontend workspace-context field and use authorized dashboard metrics on the workspace home.
+- [x] Run focused backend/frontend tests, broad relevant checks, source-limit audit, and `graphify update .`.
+
+## Review
+
+- Workspace bootstrap no longer injects or queries `InvitationRepository`; its public JSON omits `invitations` in
+  both GET and organization-selection responses. Dedicated incoming and organization invitation APIs remain intact.
+- Workspace home now reads member, model, and pending-invitation counts from the organization dashboard instead of
+  treating the current user's organization memberships as members or loading invitation records into session context.
+- Dashboard counts and recent collections are permission-shaped: invitation summaries require invitation management,
+  member summaries require member visibility, and the home omits metric cards the current role cannot view.
+- The backend contract regression failed before the fix and passes after it. Focused API tests pass 12/12; focused
+  frontend passes 3/3; full frontend passes 205/205; TypeScript and production build pass.
+- Full API ran 173 tests and remains blocked only by the three pre-existing `ModelControllerImpl` architecture
+  violations. Full `vp check` remains blocked by existing repository-wide formatting drift; all touched frontend
+  files pass formatting. React Doctor remains 80/100 with nine unrelated existing findings.
+- All touched source files remain below 300 non-comment lines. No visual check ran because it was not requested.
+  Final independent review found no critical or important issues. `graphify update .` completed with 10,749 nodes,
+  29,438 edges, and 489 communities.

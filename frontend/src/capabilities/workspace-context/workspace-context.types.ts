@@ -80,7 +80,6 @@ export interface WorkspaceContextDto {
   currentOrganization: OrganizationDto;
   currentMembership: OrganizationMembershipDto;
   teams: TeamDto[];
-  invitations: InvitationDto[];
   permissions: WorkspacePermissionsDto;
 }
 

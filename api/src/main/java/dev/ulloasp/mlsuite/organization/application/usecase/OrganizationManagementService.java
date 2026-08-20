@@ -124,32 +124,33 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
         var org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
+        var permissions = workspaceAuthorizationService.workspacePermissions(userId, organizationId);
         var stats = new OrganizationAdminStatsDto(
-                teamRepository.countByOrganizationId(organizationId),
-                teamRepository.countByOrganizationIdAndStatus(organizationId, TeamStatus.ACTIVE),
-                membershipRepository.countByOrganizationIdAndStatus(organizationId, MembershipStatus.ACTIVE),
-                modelRepository.countByOrganizationId(organizationId),
-                invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING),
+                permissions.canViewTeams() ? teamRepository.countByOrganizationId(organizationId) : 0,
+                permissions.canViewTeams() ? teamRepository.countByOrganizationIdAndStatus(organizationId, TeamStatus.ACTIVE) : 0,
+                permissions.canViewMembers() ? membershipRepository.countByOrganizationIdAndStatus(organizationId, MembershipStatus.ACTIVE) : 0,
+                permissions.canViewModels() ? modelRepository.countByOrganizationId(organizationId) : 0,
+                permissions.canManageInvitations() ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING) : 0,
                 0,
                 0);
-        var teams = teamRepository.findByOrganizationIdOrderByNameAsc(organizationId).stream()
+        var teams = permissions.canViewTeams() ? teamRepository.findByOrganizationIdOrderByNameAsc(organizationId).stream()
                 .limit(5)
                 .map(team -> TeamDto.from(
                         team,
                         teamMembershipRepository.countByTeamIdAndStatus(team.getId(), MembershipStatus.ACTIVE),
                         modelRepository.countByTeamId(team.getId()),
                         0))
-                .toList();
+                .toList() : List.<TeamDto>of();
         return new OrganizationAdminDashboardDto(
                 OrganizationDto.from(org),
-                workspaceAuthorizationService.workspacePermissions(userId, organizationId),
+                permissions,
                 stats,
                 teams,
-                listMembers(userId, organizationId).stream().limit(5).toList(),
-                invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
+                permissions.canViewMembers() ? listMembers(userId, organizationId).stream().limit(5).toList() : List.of(),
+                permissions.canManageInvitations() ? invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
                         .limit(5)
                         .map(dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto::from)
-                        .toList());
+                        .toList() : List.of());
     }
 
     @Override

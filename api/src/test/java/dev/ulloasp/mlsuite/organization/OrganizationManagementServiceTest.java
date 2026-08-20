@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +42,7 @@ import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
+import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -76,6 +78,9 @@ class OrganizationManagementServiceTest {
 
     @Mock
     private RoleDefinitionRepository roleDefinitionRepository;
+
+    @Mock
+    private WorkspacePermissionsDto workspacePermissions;
 
     private OrganizationManagementService service;
 
@@ -124,6 +129,36 @@ class OrganizationManagementServiceTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.createOrganization(7L, new CreateOrganizationRequest("Acme", "acme", null, 8L)));
+    }
+
+    @Test
+    void getAdminDashboard_OmitsCollectionsWithoutTheirPermissions() {
+        when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization()));
+        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(workspacePermissions);
+
+        var result = service.getAdminDashboard(7L, 41L);
+
+        assertEquals(0, result.stats().totalMembers());
+        assertEquals(0, result.stats().pendingInvitations());
+        assertEquals(List.of(), result.recentMembers());
+        assertEquals(List.of(), result.recentInvitations());
+        verify(membershipRepository, never())
+                .findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE);
+        verify(invitationRepository, never()).findByOrganizationIdOrderByCreatedAtDesc(41L);
+    }
+
+    @Test
+    void getAdminDashboard_LoadsAuthorizedMemberAndInvitationSummaries() {
+        when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization()));
+        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(workspacePermissions);
+        when(workspacePermissions.canViewMembers()).thenReturn(true);
+        when(workspacePermissions.canManageInvitations()).thenReturn(true);
+
+        service.getAdminDashboard(7L, 41L);
+
+        verify(membershipRepository)
+                .findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE);
+        verify(invitationRepository).findByOrganizationIdOrderByCreatedAtDesc(41L);
     }
 
     @Test

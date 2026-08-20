@@ -34,10 +34,16 @@ export function WorkspaceHomePage() {
       : []),
   ] as const;
   const stats = [
-    { label: "Members", value: context.memberships.length },
-    { label: "Teams", value: context.teams.length },
-    { label: "Models", value: dashboard?.stats.totalModels ?? 0 },
-    { label: "Invites", value: context.invitations.length },
+    ...(context.permissions.canViewMembers
+      ? [{ label: "Members", value: dashboard?.stats.totalMembers ?? 0 }]
+      : []),
+    ...(context.permissions.canViewTeams ? [{ label: "Teams", value: context.teams.length }] : []),
+    ...(context.permissions.canViewModels
+      ? [{ label: "Models", value: dashboard?.stats.totalModels ?? 0 }]
+      : []),
+    ...(context.permissions.canManageInvitations
+      ? [{ label: "Invites", value: dashboard?.stats.pendingInvitations ?? 0 }]
+      : []),
   ];
 
   return (
