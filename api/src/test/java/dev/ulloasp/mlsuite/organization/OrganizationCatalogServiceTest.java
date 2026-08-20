@@ -83,13 +83,13 @@ class OrganizationCatalogServiceTest {
         when(workspaceAccessService.isSuperadmin(1L)).thenReturn(true);
         when(organizationRepository.findCatalogPage(eq("north"), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(organization)));
-        when(membershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE))
+        when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(owner));
         when(modelRepository.countByOrganizationId(41L)).thenReturn(3L);
         when(schemaRepository.countByOrganizationId(41L)).thenReturn(4L);
         when(pluginRepository.countByOrganizationId(41L)).thenReturn(5L);
         when(predictionRunRepository.countByOrganizationId(41L)).thenReturn(7L);
-        when(membershipRepository.countByOrganizationIdAndStatus(41L, MembershipStatus.ACTIVE)).thenReturn(6L);
+        when(membershipRepository.countActiveByOrganizationId(41L)).thenReturn(6L);
 
         var page = service.getPage(1L, 0, 24, " north ", "updated");
 

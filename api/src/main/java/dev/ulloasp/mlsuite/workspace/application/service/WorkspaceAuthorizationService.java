@@ -6,7 +6,6 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
@@ -17,7 +16,6 @@ import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
-import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 
@@ -26,19 +24,16 @@ import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 public class WorkspaceAuthorizationService {
 
     private final WorkspaceAccessService workspaceAccessService;
-    private final OrganizationMembershipRepository organizationMembershipRepository;
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final RoleSeedService roleSeedService;
     private final LegacyRolePermissionMapper legacyRolePermissionMapper;
 
     public WorkspaceAuthorizationService(
             WorkspaceAccessService workspaceAccessService,
-            OrganizationMembershipRepository organizationMembershipRepository,
             RoleDefinitionRepository roleDefinitionRepository,
             RoleSeedService roleSeedService,
             LegacyRolePermissionMapper legacyRolePermissionMapper) {
         this.workspaceAccessService = workspaceAccessService;
-        this.organizationMembershipRepository = organizationMembershipRepository;
         this.roleDefinitionRepository = roleDefinitionRepository;
         this.roleSeedService = roleSeedService;
         this.legacyRolePermissionMapper = legacyRolePermissionMapper;
@@ -77,8 +72,7 @@ public class WorkspaceAuthorizationService {
         if (workspaceAccessService.isSuperadmin(userId)) {
             return legacyRolePermissionMapper.all();
         }
-        User user = workspaceAccessService.requireUser(userId);
-        OrganizationMembership membership = requireOrganizationMembership(user, organizationId);
+        OrganizationMembership membership = workspaceAccessService.requireMembership(userId, organizationId);
         roleSeedService.ensureOrganizationRoles(membership.getOrganization());
         if (membership.getRoleDefinition() != null) {
             return membership.getRoleDefinition().getPermissions();
@@ -181,12 +175,6 @@ public class WorkspaceAuthorizationService {
         if (!workspacePermissions(userId, organizationId).canTransferOwnership()) {
             throw new OrganizationAccessDeniedException(organizationId);
         }
-    }
-
-    private OrganizationMembership requireOrganizationMembership(User user, Long organizationId) {
-        return organizationMembershipRepository.findByOrganizationIdAndUserId(organizationId, user.getId())
-                .filter(membership -> membership.getStatus() == dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE)
-                .orElseThrow(() -> new OrganizationAccessDeniedException(organizationId));
     }
 
     private boolean has(Set<PermissionKey> permissions, PermissionKey key) {

@@ -79,7 +79,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     @Override
     public List<InvitationCandidateDto> listInvitationCandidates(Long userId, Long organizationId) {
         workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
-        return userRepository.findEnabledUsersOutsideOrganization(organizationId, MembershipStatus.ACTIVE)
+        return userRepository.findEnabledUsersOutsideActiveOrganization(organizationId)
                 .stream()
                 .map(InvitationCandidateDto::from)
                 .toList();
@@ -198,14 +198,19 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     private void acceptPendingInvitation(Invitation invitation, User user) {
         roleSeedService.ensureOrganizationRoles(invitation.getOrganization());
-        organizationMembershipRepository.findByOrganizationIdAndUserId(invitation.getOrganization().getId(), user.getId())
-                .orElseGet(() -> {
-                    OrganizationMembership membership = new OrganizationMembership(invitation.getOrganization(), user, invitation.getRole(), MembershipStatus.ACTIVE);
-                    membership.setRoleDefinition(invitation.getRoleDefinition() != null
-                            ? invitation.getRoleDefinition()
-                            : roleSeedService.orgRole(invitation.getOrganization(), invitation.getRole()));
-                    return organizationMembershipRepository.save(membership);
-                });
+        RoleDefinition roleDefinition = invitation.getRoleDefinition() != null
+                ? invitation.getRoleDefinition()
+                : roleSeedService.orgRole(invitation.getOrganization(), invitation.getRole());
+        var existingMembership = organizationMembershipRepository
+                .findByOrganizationIdAndUserId(invitation.getOrganization().getId(), user.getId());
+        OrganizationMembership membership = existingMembership.orElseGet(() -> new OrganizationMembership(
+                invitation.getOrganization(), user, invitation.getRole(), MembershipStatus.ACTIVE));
+        if (existingMembership.isEmpty() || membership.getStatus() != MembershipStatus.ACTIVE) {
+            membership.setStatus(MembershipStatus.ACTIVE);
+            membership.setRole(invitation.getRole());
+            membership.setRoleDefinition(roleDefinition);
+            organizationMembershipRepository.save(membership);
+        }
         user.setCurrentOrganization(invitation.getOrganization());
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepository.save(invitation);

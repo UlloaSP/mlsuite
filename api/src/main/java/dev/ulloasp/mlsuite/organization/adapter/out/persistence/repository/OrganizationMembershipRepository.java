@@ -8,21 +8,21 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 
 @Repository
 public interface OrganizationMembershipRepository extends JpaRepository<OrganizationMembership, Long> {
 
-    List<OrganizationMembership> findByOrganizationIdAndStatusOrderByCreatedAtAsc(Long organizationId, MembershipStatus status);
+    @Query("SELECT m FROM OrganizationMembership m WHERE m.organization.id = :organizationId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE ORDER BY m.createdAt ASC")
+    List<OrganizationMembership> findActiveByOrganizationIdOrderByCreatedAtAsc(Long organizationId);
 
-    @Query("SELECT m FROM OrganizationMembership m WHERE m.user.id = :userId AND m.status = 'ACTIVE' ORDER BY m.organization.name ASC")
+    @Query("SELECT m FROM OrganizationMembership m WHERE m.user.id = :userId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE ORDER BY m.organization.name ASC")
     List<OrganizationMembership> findActiveByUserId(Long userId);
 
     @Query("""
             SELECT m FROM OrganizationMembership m
             WHERE m.user.id = :userId
-            AND m.status = 'ACTIVE'
+            AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
             AND (
                 lower(m.organization.name) LIKE lower(concat('%', :search, '%'))
                 OR lower(m.organization.slug) LIKE lower(concat('%', :search, '%'))
@@ -31,15 +31,24 @@ public interface OrganizationMembershipRepository extends JpaRepository<Organiza
             """)
     List<OrganizationMembership> searchActiveByUserId(Long userId, String search, Pageable pageable);
 
+    @Query("SELECT m FROM OrganizationMembership m WHERE m.organization.id = :organizationId AND m.user.id = :userId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
+    Optional<OrganizationMembership> findActiveByOrganizationIdAndUserId(Long organizationId, Long userId);
+
     Optional<OrganizationMembership> findByOrganizationIdAndUserId(Long organizationId, Long userId);
 
-    long countByOrganizationIdAndRoleAndStatus(Long organizationId, dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole role, MembershipStatus status);
+    @Query("SELECT m FROM OrganizationMembership m WHERE m.id = :membershipId AND m.organization.id = :organizationId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
+    Optional<OrganizationMembership> findActiveByIdAndOrganizationId(Long membershipId, Long organizationId);
 
-    long countByOrganizationIdAndStatus(Long organizationId, MembershipStatus status);
+    @Query("SELECT COUNT(m) FROM OrganizationMembership m WHERE m.organization.id = :organizationId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
+    long countActiveByOrganizationId(Long organizationId);
 
-    long countByRoleDefinitionIdAndStatus(Long roleDefinitionId, MembershipStatus status);
+    @Query("SELECT COUNT(m) FROM OrganizationMembership m WHERE m.roleDefinition.id = :roleDefinitionId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
+    long countActiveByRoleDefinitionId(Long roleDefinitionId);
 
-    List<OrganizationMembership> findByRoleDefinitionIdAndStatus(Long roleDefinitionId, MembershipStatus status);
+    @Query("SELECT m FROM OrganizationMembership m WHERE m.roleDefinition.id = :roleDefinitionId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
+    List<OrganizationMembership> findActiveByRoleDefinitionId(Long roleDefinitionId);
+
+    List<OrganizationMembership> findByRoleDefinitionId(Long roleDefinitionId);
 
     List<OrganizationMembership> findByOrganizationId(Long organizationId);
 }

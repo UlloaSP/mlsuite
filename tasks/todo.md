@@ -1285,3 +1285,28 @@
   contracts intentionally remain for a later Phase B after the backfill has been deployed and validated.
 - Independent review found no high-severity defect. Its persistence-test concern was resolved by asserting explicit
   repository writes; the startup runner intentionally keeps one transaction because this development dataset is small.
+
+# Active membership rule
+
+- [x] Inventory every active-membership predicate and repository query.
+- [x] Define one canonical active-membership rule and record the domain term.
+- [x] Route access, context, catalog, and review consumers through that rule.
+- [x] Add one focused regression file covering active, pending, and removed memberships.
+- [x] Run focused/full API verification, source-limit audit, independent review, and `graphify update .`.
+
+## Review
+
+- Active membership is now a repository-level semantic contract: only `ACTIVE` grants organization access or appears
+  in context, catalog counts, search, review assignment, role counts, and member mutations. Raw all-status queries remain
+  only for migration, explicit invitation reactivation, organization cleanup, and role-deletion integrity.
+- `WorkspaceAccessService` is the single active-membership gate used by authorization and organization selection.
+  Bootstrap repairs a stale current-organization pointer by selecting another active membership or creating a personal
+  organization when none exists.
+- Accepting an invitation explicitly reactivates a `PENDING` or `REMOVED` membership and applies the invited role;
+  an already-active membership is left unchanged. Deleting a role reassigns inactive memberships and invitations too,
+  preventing historical foreign keys from blocking deletion.
+- The focused compile and seven-suite verification pass. The full API run executes 177 tests; its sole failure remains
+  the pre-existing `WebAdapterArchitectureTest` dependency from `ModelControllerImpl` to `ModelCreationService`.
+- All touched Java files remain below 300 non-comment lines and `git diff --check` is clean apart from line-ending
+  notices. A JPA-backed query regression could not run because this environment has no Docker for the repository's
+  Testcontainers setup; domain/service regressions cover ACTIVE access plus PENDING/REMOVED denial and reactivation.

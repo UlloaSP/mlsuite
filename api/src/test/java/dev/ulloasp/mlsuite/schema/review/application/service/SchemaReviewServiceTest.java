@@ -156,7 +156,7 @@ class SchemaReviewServiceTest {
         User reviewer = reviewer(12L, "Reviewer");
         OrganizationMembership membership = new OrganizationMembership(
                 organization(), reviewer, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
-        when(memberships.findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE))
+        when(memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(membership));
         when(authorization.effectiveOrganizationPermissions(12L, 41L)).thenReturn(Set.of(PermissionKey.REVIEW));
 
@@ -172,7 +172,7 @@ class SchemaReviewServiceTest {
         Organization organization = organization();
         OrganizationMembership membership = new OrganizationMembership(
                 organization, reviewer, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
-        when(memberships.findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE))
+        when(memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(membership));
         when(authorization.effectiveOrganizationPermissions(12L, 41L)).thenReturn(Set.of(PermissionKey.VIEW_WORKSPACE));
         Schema schema = new Schema(organization, "Risk", null);

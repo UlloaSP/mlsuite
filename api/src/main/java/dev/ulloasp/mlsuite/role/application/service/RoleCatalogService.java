@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
 import dev.ulloasp.mlsuite.role.application.dto.PermissionDto;
@@ -83,7 +82,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
 
     public RoleDefinitionDto toDto(Long userId, Long orgId, RoleDefinition role) {
         boolean canManage = authorizationService.workspacePermissions(userId, orgId).canManageMemberRoles();
-        long users = membershipRepository.countByRoleDefinitionIdAndStatus(role.getId(), MembershipStatus.ACTIVE);
+        long users = membershipRepository.countActiveByRoleDefinitionId(role.getId());
         return new RoleDefinitionDto(
                 role.getId(),
                 role.getName(),

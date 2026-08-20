@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewAssigneeRepository;
@@ -56,7 +55,7 @@ public class SchemaReviewAssignmentService {
     }
 
     private List<OrganizationMembership> eligibleMembers(Long organizationId) {
-        return memberships.findByOrganizationIdAndStatusOrderByCreatedAtAsc(organizationId, MembershipStatus.ACTIVE)
+        return memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId)
                 .stream()
                 .filter(membership -> membership.getUser().isEnabled())
                 .filter(membership -> authorization

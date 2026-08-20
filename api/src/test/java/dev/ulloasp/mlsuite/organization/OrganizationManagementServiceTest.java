@@ -139,7 +139,7 @@ class OrganizationManagementServiceTest {
         assertFalse(statsJson.has("quotaUsed"));
         assertFalse(statsJson.has("quotaLimit"));
         verify(membershipRepository, never())
-                .findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE);
+                .findActiveByOrganizationIdOrderByCreatedAtAsc(41L);
         verify(invitationRepository, never()).findByOrganizationIdOrderByCreatedAtDesc(41L);
     }
 
@@ -153,7 +153,7 @@ class OrganizationManagementServiceTest {
         service.getAdminDashboard(7L, 41L);
 
         verify(membershipRepository)
-                .findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE);
+                .findActiveByOrganizationIdOrderByCreatedAtAsc(41L);
         verify(invitationRepository).findByOrganizationIdOrderByCreatedAtDesc(41L);
     }
 
@@ -161,8 +161,8 @@ class OrganizationManagementServiceTest {
     void transferOwnership_MovesOwnerToTargetActiveMember() {
         OrganizationMembership owner = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
-        when(membershipRepository.findById(2L)).thenReturn(Optional.of(target));
-        when(membershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE))
+        when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.of(target));
+        when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(owner, target));
         when(membershipRepository.save(owner)).thenReturn(owner);
         when(membershipRepository.save(target)).thenReturn(target);
@@ -186,8 +186,7 @@ class OrganizationManagementServiceTest {
 
     @Test
     void transferOwnership_RejectsInactiveTarget() {
-        when(membershipRepository.findById(2L))
-                .thenReturn(Optional.of(membership(2L, OrganizationRole.MEMBER, MembershipStatus.REMOVED)));
+        when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.transferOwnership(7L, 41L, new TransferOrganizationOwnershipRequest(2L)));
@@ -196,8 +195,8 @@ class OrganizationManagementServiceTest {
     @Test
     void transferOwnership_RejectsOrganizationWithoutOwner() {
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
-        when(membershipRepository.findById(2L)).thenReturn(Optional.of(target));
-        when(membershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE))
+        when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.of(target));
+        when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(target));
 
         assertThrows(IllegalArgumentException.class,
@@ -237,7 +236,7 @@ class OrganizationManagementServiceTest {
     void updateMemberRole_AllowsReviewerAsLegacyViewer() {
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
         RoleDefinition reviewerRole = reviewerRole();
-        when(membershipRepository.findById(2L)).thenReturn(Optional.of(target));
+        when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.of(target));
         when(workspaceAuthorizationService.organizationMemberActions(7L, 41L, target))
                 .thenReturn(new MembershipActionsDto(
                         true,

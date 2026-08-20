@@ -23,4 +23,6 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     long countByOrganizationIdAndStatus(Long organizationId, InvitationStatus status);
 
     long countByOrganizationId(Long organizationId);
+
+    List<Invitation> findByRoleDefinitionId(Long roleDefinitionId);
 }

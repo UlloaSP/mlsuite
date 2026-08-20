@@ -177,7 +177,7 @@ class InvitationManagementServiceTest {
         User candidate = user(8L);
         candidate.setEmail("user@example.com");
         candidate.setFullName("User Example");
-        when(userRepository.findEnabledUsersOutsideOrganization(41L, MembershipStatus.ACTIVE))
+        when(userRepository.findEnabledUsersOutsideActiveOrganization(41L))
                 .thenReturn(List.of(candidate));
 
         var result = service.listInvitationCandidates(7L, 41L);

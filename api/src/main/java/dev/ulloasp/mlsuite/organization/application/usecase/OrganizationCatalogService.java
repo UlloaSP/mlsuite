@@ -15,7 +15,6 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationCatalogItemDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationPageDto;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
@@ -99,7 +98,7 @@ public class OrganizationCatalogService {
     private OrganizationCatalogItemDto catalogItem(Organization organization) {
         Long id = organization.getId();
         OrganizationMembership owner = membershipRepository
-                .findByOrganizationIdAndStatusOrderByCreatedAtAsc(id, MembershipStatus.ACTIVE)
+                .findActiveByOrganizationIdOrderByCreatedAtAsc(id)
                 .stream()
                 .filter(this::isOwner)
                 .findFirst()
@@ -113,7 +112,7 @@ public class OrganizationCatalogService {
                 schemaRepository.countByOrganizationId(id),
                 pluginRepository.countByOrganizationId(id),
                 predictionRunRepository.countByOrganizationId(id),
-                membershipRepository.countByOrganizationIdAndStatus(id, MembershipStatus.ACTIVE));
+                membershipRepository.countActiveByOrganizationId(id));
     }
 
     private void assertDeletable(Long organizationId) {

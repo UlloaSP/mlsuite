@@ -41,7 +41,7 @@ public class WorkspaceAccessService {
     }
 
     public Organization requireCurrentOrganization(Long userId) {
-        return workspaceBootstrapService.ensureCurrentOrganization(requireUser(userId));
+        return requireUser(userId).getCurrentOrganization();
     }
 
     public OrganizationMembership requireMembership(Long userId, Long organizationId) {
@@ -51,34 +51,8 @@ public class WorkspaceAccessService {
         if (isSuperadmin(user)) {
             return new OrganizationMembership(organization, user, OrganizationRole.OWNER, dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE);
         }
-        return membershipRepository.findByOrganizationIdAndUserId(organizationId, userId)
+        return membershipRepository.findActiveByOrganizationIdAndUserId(organizationId, userId)
                 .orElseThrow(() -> new OrganizationAccessDeniedException(organizationId));
-    }
-
-    public Organization requireAdminOrganization(Long userId, Long organizationId) {
-        User user = requireUser(userId);
-        if (isSuperadmin(user)) {
-            return organizationRepository.findById(organizationId)
-                    .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        }
-        OrganizationMembership membership = requireMembership(userId, organizationId);
-        if (membership.getRole() != OrganizationRole.OWNER && membership.getRole() != OrganizationRole.ADMIN) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-        return membership.getOrganization();
-    }
-
-    public Organization requireOwnerOrganization(Long userId, Long organizationId) {
-        User user = requireUser(userId);
-        if (isSuperadmin(user)) {
-            return organizationRepository.findById(organizationId)
-                    .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        }
-        OrganizationMembership membership = requireMembership(userId, organizationId);
-        if (membership.getRole() != OrganizationRole.OWNER) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-        return membership.getOrganization();
     }
 
     public boolean isSuperadmin(Long userId) {

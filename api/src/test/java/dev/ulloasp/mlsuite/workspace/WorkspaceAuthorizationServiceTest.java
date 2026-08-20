@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -39,9 +37,6 @@ class WorkspaceAuthorizationServiceTest {
     private WorkspaceAccessService workspaceAccessService;
 
     @Mock
-    private OrganizationMembershipRepository organizationMembershipRepository;
-
-    @Mock
     private RoleDefinitionRepository roleDefinitionRepository;
 
     @Mock
@@ -53,7 +48,6 @@ class WorkspaceAuthorizationServiceTest {
     void setUp() {
         service = new WorkspaceAuthorizationService(
                 workspaceAccessService,
-                organizationMembershipRepository,
                 roleDefinitionRepository,
                 roleSeedService,
                 new LegacyRolePermissionMapper());
@@ -73,10 +67,9 @@ class WorkspaceAuthorizationServiceTest {
 
     @Test
     void workspacePermissions_DenyMemberAdministrativeActions() {
-        when(workspaceAccessService.requireUser(3L)).thenReturn(user(3L));
         when(workspaceAccessService.isSuperadmin(3L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 3L))
-                .thenReturn(Optional.of(organizationMembership(OrganizationRole.MEMBER, 3L)));
+        when(workspaceAccessService.requireMembership(3L, 41L))
+                .thenReturn(organizationMembership(OrganizationRole.MEMBER, 3L));
 
         var permissions = service.workspacePermissions(3L, 41L);
 
@@ -90,10 +83,9 @@ class WorkspaceAuthorizationServiceTest {
 
     @Test
     void workspacePermissions_GiveOwnerFullOrganizationAccess() {
-        when(workspaceAccessService.requireUser(2L)).thenReturn(user(2L));
         when(workspaceAccessService.isSuperadmin(2L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 2L))
-                .thenReturn(Optional.of(organizationMembership(OrganizationRole.OWNER, 2L)));
+        when(workspaceAccessService.requireMembership(2L, 41L))
+                .thenReturn(organizationMembership(OrganizationRole.OWNER, 2L));
 
         var permissions = service.workspacePermissions(2L, 41L);
 
@@ -106,10 +98,9 @@ class WorkspaceAuthorizationServiceTest {
 
     @Test
     void workspacePermissions_LimitAdminOwnerOnlyActions() {
-        when(workspaceAccessService.requireUser(4L)).thenReturn(user(4L));
         when(workspaceAccessService.isSuperadmin(4L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 4L))
-                .thenReturn(Optional.of(organizationMembership(OrganizationRole.ADMIN, 4L)));
+        when(workspaceAccessService.requireMembership(4L, 41L))
+                .thenReturn(organizationMembership(OrganizationRole.ADMIN, 4L));
 
         var permissions = service.workspacePermissions(4L, 41L);
 
@@ -123,10 +114,9 @@ class WorkspaceAuthorizationServiceTest {
 
     @Test
     void workspacePermissions_KeepViewerReadOnly() {
-        when(workspaceAccessService.requireUser(6L)).thenReturn(user(6L));
         when(workspaceAccessService.isSuperadmin(6L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 6L))
-                .thenReturn(Optional.of(organizationMembership(OrganizationRole.VIEWER, 6L)));
+        when(workspaceAccessService.requireMembership(6L, 41L))
+                .thenReturn(organizationMembership(OrganizationRole.VIEWER, 6L));
 
         var permissions = service.workspacePermissions(6L, 41L);
 
@@ -140,10 +130,9 @@ class WorkspaceAuthorizationServiceTest {
 
     @Test
     void reviewManagementCheck_ReturnsFalseForUsersOutsideOrganization() {
-        when(workspaceAccessService.requireUser(17L)).thenReturn(user(17L));
         when(workspaceAccessService.isSuperadmin(17L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 17L))
-                .thenReturn(Optional.empty());
+        when(workspaceAccessService.requireMembership(17L, 41L))
+                .thenThrow(new OrganizationAccessDeniedException(41L));
 
         assertFalse(service.canManageReviews(17L, 41L));
     }
@@ -154,30 +143,26 @@ class WorkspaceAuthorizationServiceTest {
         role.setPermissions(Set.of(PermissionKey.REVIEW));
         OrganizationMembership membership = organizationMembership(OrganizationRole.VIEWER, 18L);
         membership.setRoleDefinition(role);
-        when(workspaceAccessService.requireUser(18L)).thenReturn(user(18L));
         when(workspaceAccessService.isSuperadmin(18L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 18L))
-                .thenReturn(Optional.of(membership));
+        when(workspaceAccessService.requireMembership(18L, 41L)).thenReturn(membership);
 
         service.requireReviewAccess(18L, 41L);
     }
 
     @Test
     void requireInvitationManagement_ThrowsForViewer() {
-        when(workspaceAccessService.requireUser(5L)).thenReturn(user(5L));
         when(workspaceAccessService.isSuperadmin(5L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 5L))
-                .thenReturn(Optional.of(organizationMembership(OrganizationRole.VIEWER, 5L)));
+        when(workspaceAccessService.requireMembership(5L, 41L))
+                .thenReturn(organizationMembership(OrganizationRole.VIEWER, 5L));
 
         assertThrows(OrganizationAccessDeniedException.class, () -> service.requireInvitationManagement(5L, 41L));
     }
 
     @Test
     void organizationMemberActions_LimitAdminAgainstOwner() {
-        when(workspaceAccessService.requireUser(9L)).thenReturn(user(9L));
         when(workspaceAccessService.isSuperadmin(9L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 9L))
-                .thenReturn(Optional.of(organizationMembership(OrganizationRole.ADMIN, 9L)));
+        when(workspaceAccessService.requireMembership(9L, 41L))
+                .thenReturn(organizationMembership(OrganizationRole.ADMIN, 9L));
         when(roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(41L, RoleScope.ORGANIZATION))
                 .thenReturn(java.util.List.of(
                         roleDefinition(1L, "Admin", "ADMIN"),

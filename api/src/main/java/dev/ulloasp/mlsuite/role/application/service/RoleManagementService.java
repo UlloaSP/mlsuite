@@ -8,10 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
+import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
+import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
 import dev.ulloasp.mlsuite.role.application.dto.CreateRoleFromTemplateRequest;
@@ -20,6 +21,7 @@ import dev.ulloasp.mlsuite.role.application.dto.DuplicateRoleRequest;
 import dev.ulloasp.mlsuite.role.application.dto.RoleDefinitionDto;
 import dev.ulloasp.mlsuite.role.application.dto.UpdateRoleRequest;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleManagementUseCase;
+import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
@@ -36,6 +38,7 @@ public class RoleManagementService implements RoleManagementUseCase {
     private final RoleTemplateRepository templateRepository;
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
+    private final InvitationRepository invitationRepository;
     private final UserLookupService userLookupService;
     private final AuditLogService auditLogService;
 
@@ -46,6 +49,7 @@ public class RoleManagementService implements RoleManagementUseCase {
             RoleTemplateRepository templateRepository,
             OrganizationRepository organizationRepository,
             OrganizationMembershipRepository membershipRepository,
+            InvitationRepository invitationRepository,
             UserLookupService userLookupService,
             AuditLogService auditLogService) {
         this.authorizationService = authorizationService;
@@ -54,6 +58,7 @@ public class RoleManagementService implements RoleManagementUseCase {
         this.templateRepository = templateRepository;
         this.organizationRepository = organizationRepository;
         this.membershipRepository = membershipRepository;
+        this.invitationRepository = invitationRepository;
         this.userLookupService = userLookupService;
         this.auditLogService = auditLogService;
     }
@@ -123,11 +128,20 @@ public class RoleManagementService implements RoleManagementUseCase {
         requireManage(userId, organizationId);
         RoleDefinition role = requireRole(organizationId, roleId);
         if (role.isLocked()) throw new IllegalArgumentException("Locked role cannot be deleted.");
-        var assigned = membershipRepository.findByRoleDefinitionIdAndStatus(roleId, MembershipStatus.ACTIVE);
-        if (!assigned.isEmpty()) {
+        var assignedMemberships = membershipRepository.findByRoleDefinitionId(roleId);
+        var assignedInvitations = invitationRepository.findByRoleDefinitionId(roleId);
+        if (!assignedMemberships.isEmpty() || !assignedInvitations.isEmpty()) {
             if (replacementRoleId == null || replacementRoleId.equals(roleId)) throw new IllegalArgumentException("Replacement role is required.");
             RoleDefinition replacement = requireRole(organizationId, replacementRoleId);
-            assigned.forEach(membership -> membership.setRoleDefinition(replacement));
+            var legacyRole = OrganizationSystemRole.legacyRole(replacement, OrganizationRole.MEMBER);
+            assignedMemberships.forEach(membership -> {
+                membership.setRoleDefinition(replacement);
+                membership.setRole(legacyRole);
+            });
+            assignedInvitations.forEach(invitation -> {
+                invitation.setRoleDefinition(replacement);
+                invitation.setRole(legacyRole);
+            });
         }
         roleRepository.delete(role);
         auditLogService.record(role.getOrganization(), userLookupService.requireById(userId), "ROLE_DELETE", "ROLE", roleId.toString(), role.getName());

@@ -116,7 +116,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         var permissions = workspaceAuthorizationService.workspacePermissions(userId, organizationId);
         var stats = new OrganizationAdminStatsDto(
-                permissions.canViewMembers() ? membershipRepository.countByOrganizationIdAndStatus(organizationId, MembershipStatus.ACTIVE) : 0,
+                permissions.canViewMembers() ? membershipRepository.countActiveByOrganizationId(organizationId) : 0,
                 permissions.canViewModels() ? modelRepository.countByOrganizationId(organizationId) : 0,
                 permissions.canManageInvitations() ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING) : 0);
         return new OrganizationAdminDashboardDto(
@@ -159,7 +159,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         workspaceAuthorizationService.requireOrganizationMemberView(userId, organizationId);
         roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException(organizationId)));
-        return membershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(organizationId, MembershipStatus.ACTIVE)
+        return membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId)
                 .stream()
                 .map(membership -> OrganizationMembershipRowDto.from(
                         membership,
@@ -174,11 +174,8 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             Long membershipId,
             UpdateOrganizationMembershipRoleRequest request) {
         workspaceAuthorizationService.requireOrganizationMemberView(userId, organizationId);
-        OrganizationMembership membership = membershipRepository.findById(membershipId)
+        OrganizationMembership membership = membershipRepository.findActiveByIdAndOrganizationId(membershipId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
-        if (!membership.getOrganization().getId().equals(organizationId)) {
-            throw new IllegalArgumentException("Membership does not belong to organization.");
-        }
         var actions = workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership);
         Long nextRoleId = request.roleDefinitionId();
         boolean assignable = actions.assignableRoles().stream().anyMatch(role -> role.id().equals(nextRoleId));
@@ -195,11 +192,8 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     @Override
     public void removeMember(Long userId, Long organizationId, Long membershipId) {
         workspaceAuthorizationService.requireOrganizationMemberView(userId, organizationId);
-        OrganizationMembership membership = membershipRepository.findById(membershipId)
+        OrganizationMembership membership = membershipRepository.findActiveByIdAndOrganizationId(membershipId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
-        if (!membership.getOrganization().getId().equals(organizationId)) {
-            throw new IllegalArgumentException("Membership does not belong to organization.");
-        }
         if (!workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership).canRemove()
                 || membership.getRole() == OrganizationRole.OWNER) {
             throw new IllegalArgumentException("Cannot remove organization owner.");
@@ -214,13 +208,11 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             Long organizationId,
             TransferOrganizationOwnershipRequest request) {
         workspaceAuthorizationService.requireOwnershipTransfer(userId, organizationId);
-        OrganizationMembership nextOwner = membershipRepository.findById(request.nextOwnerMembershipId())
+        OrganizationMembership nextOwner = membershipRepository.findActiveByIdAndOrganizationId(
+                request.nextOwnerMembershipId(), organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
-        if (!nextOwner.getOrganization().getId().equals(organizationId) || nextOwner.getStatus() != MembershipStatus.ACTIVE) {
-            throw new IllegalArgumentException("Target membership is invalid.");
-        }
         OrganizationMembership currentOwner = membershipRepository
-                .findByOrganizationIdAndStatusOrderByCreatedAtAsc(organizationId, MembershipStatus.ACTIVE)
+                .findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId)
                 .stream()
                 .filter(membership -> membership.getRole() == OrganizationRole.OWNER)
                 .findFirst()
