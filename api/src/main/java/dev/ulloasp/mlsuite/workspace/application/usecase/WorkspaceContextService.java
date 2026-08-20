@@ -10,8 +10,6 @@ import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipDto;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
-import dev.ulloasp.mlsuite.team.application.dto.TeamDto;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.workspace.application.dto.SelectOrganizationRequest;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspaceContextDto;
@@ -28,7 +26,6 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
-    private final TeamRepository teamRepository;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
 
     public WorkspaceContextService(
@@ -36,13 +33,11 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
             UserRepository userRepository,
             OrganizationRepository organizationRepository,
             OrganizationMembershipRepository membershipRepository,
-            TeamRepository teamRepository,
             WorkspaceAuthorizationService workspaceAuthorizationService) {
         this.workspaceAccessService = workspaceAccessService;
         this.userRepository = userRepository;
         this.organizationRepository = organizationRepository;
         this.membershipRepository = membershipRepository;
-        this.teamRepository = teamRepository;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
     }
 
@@ -62,7 +57,6 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
                     organizationRepository.findAll().stream().map(OrganizationDto::from).toList(),
                     OrganizationDto.from(currentOrganization),
                     OrganizationMembershipDto.from(currentMembership),
-                    teamRepository.findByOrganizationIdOrderByNameAsc(currentOrganization.getId()).stream().map(TeamDto::from).toList(),
                     workspaceAuthorizationService.workspacePermissions(userId, currentOrganization.getId()));
         }
         List<OrganizationMembership> memberships = membershipRepository.findActiveByUserId(userId);
@@ -76,7 +70,6 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
                 memberships.stream().map(OrganizationMembership::getOrganization).map(OrganizationDto::from).toList(),
                 OrganizationDto.from(currentOrganization),
                 OrganizationMembershipDto.from(currentMembership),
-                teamRepository.findByOrganizationIdOrderByNameAsc(currentOrganization.getId()).stream().map(TeamDto::from).toList(),
                 workspaceAuthorizationService.workspacePermissions(userId, currentOrganization.getId()));
     }
 

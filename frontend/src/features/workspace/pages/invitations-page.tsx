@@ -24,7 +24,6 @@ import {
   useOrganizationInvitationCandidatesQuery,
   useOrganizationInvitationsQuery,
   useOrganizationRolesQuery,
-  useOrganizationTeamsQuery,
 } from "@/features/workspace/api/workspace.queries";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { invitationRoleOptions } from "@/features/workspace/lib/invitation-role-options";
@@ -51,7 +50,6 @@ export function InvitationsPage() {
   const create = useCreateInvitationMutation(id);
   const resend = useResendInvitationMutation(id);
   const revoke = useRevokeInvitationMutation(id);
-  const { data: teams = [] } = useOrganizationTeamsQuery(id);
   const canManage = Boolean(workspace?.permissions.canManageInvitations);
   const { data: roles } = useOrganizationRolesQuery(id, canManage);
   const { data: candidates = [] } = useOrganizationInvitationCandidatesQuery(id, canManage);
@@ -65,7 +63,6 @@ export function InvitationsPage() {
     [invitations, query, status],
   );
   const selectedIds = useMemo(() => new Set(selected), [selected]);
-  const teamsById = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams]);
   if (workspace && !workspace.permissions.canViewInvitations) return <NotFoundError />;
   const roleOptions = invitationRoleOptions(
     roles?.roles ?? [],
@@ -93,7 +90,6 @@ export function InvitationsPage() {
             </div>
             {roleOptions.length > 0 ? (
               <InviteForm
-                teams={teams}
                 candidates={candidates}
                 roleOptions={roleOptions}
                 onSubmit={async (payload) => {
@@ -142,12 +138,11 @@ export function InvitationsPage() {
             </>
           }
         >
-          <table className="w-full min-w-[820px] text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead className="border-b border-[var(--border-soft)] text-left">
               <tr>
                 <th className="p-4">Email</th>
                 <th>Role</th>
-                <th>Team</th>
                 <th>Status</th>
                 <th>Expires</th>
                 <th>Actions</th>
@@ -174,11 +169,6 @@ export function InvitationsPage() {
                   </td>
                   <td>
                     <RoleBadge value={invite.roleDefinition?.name ?? invite.role} />
-                  </td>
-                  <td>
-                    {invite.teamId === null || invite.teamId === undefined
-                      ? "No team"
-                      : (teamsById.get(invite.teamId) ?? "No team")}
                   </td>
                   <td>
                     <StatusBadge value={invite.status} />

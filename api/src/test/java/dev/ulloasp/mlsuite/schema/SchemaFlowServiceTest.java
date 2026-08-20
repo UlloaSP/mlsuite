@@ -336,7 +336,7 @@ class SchemaFlowServiceTest {
     }
 
     private WorkspacePermissionsDto permissions() {
-        return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true, true);
+        return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true,
+                true, true, true, true, true, true, true, true, true, true);
     }
 }

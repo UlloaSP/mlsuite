@@ -16,8 +16,8 @@ export function DeleteOrganizationDialog({
       <div className="w-full max-w-sm rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-hover)]">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Delete organization?</h2>
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
-          {name} will be deleted only if it has no models, schemas, plugins, teams, invitations, or
-          audit events.
+          {name} will be deleted only if it has no models, schemas, plugins, invitations, or audit
+          events.
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <AppButton type="button" variant="secondary" onClick={onCancel} disabled={disabled}>

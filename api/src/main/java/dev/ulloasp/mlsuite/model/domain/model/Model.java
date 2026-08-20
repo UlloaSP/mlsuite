@@ -14,7 +14,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,10 +64,6 @@ public class Model {
     @ManyToOne
     @JoinColumn(name = "organization_id", foreignKey = @ForeignKey(name = "fk_model_organization"))
     private Organization organization;
-
-    @ManyToOne
-    @JoinColumn(name = "team_id", foreignKey = @ForeignKey(name = "fk_model_team"))
-    private Team team;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;

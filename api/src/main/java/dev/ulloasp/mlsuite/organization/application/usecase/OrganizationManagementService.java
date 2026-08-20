@@ -31,10 +31,6 @@ import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
-import dev.ulloasp.mlsuite.team.application.dto.TeamDto;
-import dev.ulloasp.mlsuite.team.domain.model.TeamStatus;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -46,8 +42,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
-    private final TeamRepository teamRepository;
-    private final TeamMembershipRepository teamMembershipRepository;
     private final ModelRepository modelRepository;
     private final InvitationRepository invitationRepository;
     private final RoleSeedService roleSeedService;
@@ -58,8 +52,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             WorkspaceAuthorizationService workspaceAuthorizationService,
             OrganizationRepository organizationRepository,
             OrganizationMembershipRepository membershipRepository,
-            TeamRepository teamRepository,
-            TeamMembershipRepository teamMembershipRepository,
             ModelRepository modelRepository,
             InvitationRepository invitationRepository,
             RoleSeedService roleSeedService,
@@ -68,8 +60,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.organizationRepository = organizationRepository;
         this.membershipRepository = membershipRepository;
-        this.teamRepository = teamRepository;
-        this.teamMembershipRepository = teamMembershipRepository;
         this.modelRepository = modelRepository;
         this.invitationRepository = invitationRepository;
         this.roleSeedService = roleSeedService;
@@ -126,24 +116,13 @@ public class OrganizationManagementService implements OrganizationManagementUseC
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         var permissions = workspaceAuthorizationService.workspacePermissions(userId, organizationId);
         var stats = new OrganizationAdminStatsDto(
-                permissions.canViewTeams() ? teamRepository.countByOrganizationId(organizationId) : 0,
-                permissions.canViewTeams() ? teamRepository.countByOrganizationIdAndStatus(organizationId, TeamStatus.ACTIVE) : 0,
                 permissions.canViewMembers() ? membershipRepository.countByOrganizationIdAndStatus(organizationId, MembershipStatus.ACTIVE) : 0,
                 permissions.canViewModels() ? modelRepository.countByOrganizationId(organizationId) : 0,
                 permissions.canManageInvitations() ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING) : 0);
-        var teams = permissions.canViewTeams() ? teamRepository.findByOrganizationIdOrderByNameAsc(organizationId).stream()
-                .limit(5)
-                .map(team -> TeamDto.from(
-                        team,
-                        teamMembershipRepository.countByTeamIdAndStatus(team.getId(), MembershipStatus.ACTIVE),
-                        modelRepository.countByTeamId(team.getId()),
-                        0))
-                .toList() : List.<TeamDto>of();
         return new OrganizationAdminDashboardDto(
                 OrganizationDto.from(org),
                 permissions,
                 stats,
-                teams,
                 permissions.canViewMembers() ? listMembers(userId, organizationId).stream().limit(5).toList() : List.of(),
                 permissions.canManageInvitations() ? invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
                         .limit(5)

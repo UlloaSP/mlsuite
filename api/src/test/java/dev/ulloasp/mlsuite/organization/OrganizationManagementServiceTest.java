@@ -24,8 +24,6 @@ import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.Invitat
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
@@ -65,12 +63,6 @@ class OrganizationManagementServiceTest {
     private OrganizationMembershipRepository membershipRepository;
 
     @Mock
-    private TeamRepository teamRepository;
-
-    @Mock
-    private TeamMembershipRepository teamMembershipRepository;
-
-    @Mock
     private ModelRepository modelRepository;
 
     @Mock
@@ -94,8 +86,6 @@ class OrganizationManagementServiceTest {
                 workspaceAuthorizationService,
                 organizationRepository,
                 membershipRepository,
-                teamRepository,
-                teamMembershipRepository,
                 modelRepository,
                 invitationRepository,
                 roleSeedService,
@@ -286,7 +276,6 @@ class OrganizationManagementServiceTest {
         OrganizationSystemRole systemRole = OrganizationSystemRole.REVIEWER;
         RoleDefinition role = new RoleDefinition(
                 organization(),
-                null,
                 RoleScope.ORGANIZATION,
                 systemRole.label(),
                 systemRole.slug(),
@@ -296,7 +285,7 @@ class OrganizationManagementServiceTest {
     }
 
     private RoleDefinition orgRole(OrganizationRole role) {
-        return new RoleDefinition(organization(), null, RoleScope.ORGANIZATION, role.name(), role.name(), role.name());
+        return new RoleDefinition(organization(), RoleScope.ORGANIZATION, role.name(), role.name(), role.name());
     }
 
     private User user(Long id) {

@@ -36,8 +36,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
 import dev.ulloasp.mlsuite.search.application.usecase.SearchWorkspaceService;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -48,7 +46,6 @@ class SearchWorkspaceServiceTest {
     @Mock private WorkspaceAccessService workspaceAccessService;
     @Mock private WorkspaceAuthorizationService workspaceAuthorizationService;
     @Mock private OrganizationMembershipRepository membershipRepository;
-    @Mock private TeamRepository teamRepository;
     @Mock private ModelRepository modelRepository;
     @Mock private SchemaRepository schemaRepository;
     @Mock private SchemaVersionRepository schemaVersionRepository;
@@ -64,7 +61,6 @@ class SearchWorkspaceServiceTest {
                 workspaceAccessService,
                 workspaceAuthorizationService,
                 membershipRepository,
-                teamRepository,
                 modelRepository,
                 schemaRepository,
                 schemaVersionRepository,
@@ -82,14 +78,12 @@ class SearchWorkspaceServiceTest {
     @Test
     void search_ReturnsScopedGroupedResults() {
         Organization organization = organization();
-        Team team = team(organization);
-        Model model = model(organization, team);
+        Model model = model(organization);
         Schema schema = schema(organization);
         PredictionRun run = run(schema);
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
         when(membershipRepository.searchActiveByUserId(eq(7L), eq("ac"), any(Pageable.class)))
                 .thenReturn(List.of(membership(organization)));
-        when(teamRepository.searchByOrganizationId(eq(41L), eq("ac"), any(Pageable.class))).thenReturn(List.of(team));
         when(modelRepository.searchByOrganizationId(eq(41L), eq("ac"), any(Pageable.class))).thenReturn(List.of(model));
         when(schemaRepository.searchByOrganizationId(eq(41L), eq("ac"), any(Pageable.class))).thenReturn(List.of(schema));
         when(predictionRunRepository.searchByOrganizationId(eq(41L), eq("ac"), any(Pageable.class))).thenReturn(List.of(run));
@@ -108,7 +102,7 @@ class SearchWorkspaceServiceTest {
 
         SearchResponseDto response = service.search(7L, "ac");
 
-        assertEquals(6, response.groups().size());
+        assertEquals(5, response.groups().size());
         assertEquals("Organizations", response.groups().getFirst().label());
         assertTrue(response.groups().stream()
                 .flatMap(group -> group.results().stream())
@@ -124,12 +118,11 @@ class SearchWorkspaceServiceTest {
     @Test
     void search_MatchesTokensSeparatedByCamelCase() {
         Organization organization = organization();
-        Model model = model(organization, team(organization));
+        Model model = model(organization);
         model.setName("RandomForestClassifier");
         stubSearches(
                 "random",
                 organization,
-                List.of(),
                 List.of(),
                 List.of(model),
                 List.of(),
@@ -154,7 +147,6 @@ class SearchWorkspaceServiceTest {
                 organization,
                 List.of(),
                 List.of(),
-                List.of(),
                 List.of(schema),
                 List.of(),
                 List.of());
@@ -175,7 +167,6 @@ class SearchWorkspaceServiceTest {
                 List.of(),
                 List.of(),
                 List.of(),
-                List.of(),
                 List.of(plugin));
 
         SearchResponseDto response = service.search(7L, "schema audit");
@@ -189,7 +180,6 @@ class SearchWorkspaceServiceTest {
             String prefilter,
             Organization organization,
             List<OrganizationMembership> memberships,
-            List<Team> teams,
             List<Model> models,
             List<Schema> schemas,
             List<PredictionRun> runs,
@@ -197,7 +187,6 @@ class SearchWorkspaceServiceTest {
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
         when(membershipRepository.searchActiveByUserId(eq(7L), eq(prefilter), any(Pageable.class)))
                 .thenReturn(memberships);
-        when(teamRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(teams);
         when(modelRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(models);
         when(schemaRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(schemas);
         when(predictionRunRepository.searchByOrganizationId(eq(41L), eq(prefilter), any(Pageable.class))).thenReturn(runs);
@@ -234,21 +223,10 @@ class SearchWorkspaceServiceTest {
         return membership;
     }
 
-    private Team team(Organization organization) {
-        Team team = new Team();
-        team.setId(21L);
-        team.setOrganization(organization);
-        team.setSlug("acme-data");
-        team.setName("Acme Data");
-        team.setUpdatedAt(now());
-        return team;
-    }
-
-    private Model model(Organization organization, Team team) {
+    private Model model(Organization organization) {
         Model model = new Model();
         model.setId(11L);
         model.setOrganization(organization);
-        model.setTeam(team);
         model.setName("Acme Model");
         model.setType("clf");
         model.setSpecificType("rf");

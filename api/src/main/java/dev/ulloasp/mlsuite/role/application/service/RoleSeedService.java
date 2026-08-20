@@ -21,35 +21,24 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.role.domain.model.RoleTemplate;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
-import dev.ulloasp.mlsuite.team.domain.model.TeamMembership;
-import dev.ulloasp.mlsuite.team.domain.model.TeamRole;
 
 @Service
 public class RoleSeedService implements ApplicationRunner {
 
     private final OrganizationRepository organizationRepository;
-    private final TeamRepository teamRepository;
     private final OrganizationMembershipRepository orgMembershipRepository;
-    private final TeamMembershipRepository teamMembershipRepository;
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final RoleTemplateRepository roleTemplateRepository;
     private final LegacyRolePermissionMapper mapper;
 
     public RoleSeedService(
             OrganizationRepository organizationRepository,
-            TeamRepository teamRepository,
             OrganizationMembershipRepository orgMembershipRepository,
-            TeamMembershipRepository teamMembershipRepository,
             RoleDefinitionRepository roleDefinitionRepository,
             RoleTemplateRepository roleTemplateRepository,
             LegacyRolePermissionMapper mapper) {
         this.organizationRepository = organizationRepository;
-        this.teamRepository = teamRepository;
         this.orgMembershipRepository = orgMembershipRepository;
-        this.teamMembershipRepository = teamMembershipRepository;
         this.roleDefinitionRepository = roleDefinitionRepository;
         this.roleTemplateRepository = roleTemplateRepository;
         this.mapper = mapper;
@@ -60,7 +49,6 @@ public class RoleSeedService implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         seedTemplates();
         organizationRepository.findAll().forEach(this::ensureOrganizationRoles);
-        teamRepository.findAll().forEach(this::ensureTeamRoles);
     }
 
     @Transactional
@@ -74,21 +62,10 @@ public class RoleSeedService implements ApplicationRunner {
         }
     }
 
-    @Transactional
-    public void ensureTeamRoles(Team team) {
-        for (TeamRole role : TeamRole.values()) {
-            RoleDefinition def = teamRole(team, role);
-            teamMembershipRepository.findByTeamIdAndStatusOrderByCreatedAtAsc(team.getId(), MembershipStatus.ACTIVE)
-                    .stream()
-                    .filter(membership -> membership.getRoleDefinition() == null && membership.getRole() == role)
-                    .forEach(membership -> membership.setRoleDefinition(def));
-        }
-    }
-
     public RoleDefinition orgRole(Organization org, OrganizationRole role) {
         return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.name())
                 .map(definition -> ensureSystemRolePermissions(definition, mapper.organization(role)))
-                .orElseGet(() -> saveRole(new RoleDefinition(org, null, RoleScope.ORGANIZATION, label(role.name()), role.name().toLowerCase(), role.name()), mapper.organization(role)));
+                .orElseGet(() -> saveRole(new RoleDefinition(org, RoleScope.ORGANIZATION, label(role.name()), role.name().toLowerCase(), role.name()), mapper.organization(role)));
     }
 
     private RoleDefinition ensureSystemRolePermissions(RoleDefinition role, Set<PermissionKey> permissions) {
@@ -106,7 +83,6 @@ public class RoleSeedService implements ApplicationRunner {
                 .orElseGet(() -> {
                     RoleDefinition definition = new RoleDefinition(
                         org,
-                        null,
                         RoleScope.ORGANIZATION,
                         role.label(),
                         role.slug(),
@@ -125,11 +101,6 @@ public class RoleSeedService implements ApplicationRunner {
         return role;
     }
 
-    public RoleDefinition teamRole(Team team, TeamRole role) {
-        return roleDefinitionRepository.findByTeamIdAndSystemKey(team.getId(), role.name())
-                .orElseGet(() -> saveRole(new RoleDefinition(null, team, RoleScope.TEAM, label(role.name()), role.name().toLowerCase(), role.name()), mapper.team(role)));
-    }
-
     private RoleDefinition saveRole(RoleDefinition role, Set<PermissionKey> permissions) {
         role.setDescription(role.getName());
         role.setPermissions(permissions);
@@ -141,7 +112,6 @@ public class RoleSeedService implements ApplicationRunner {
         template("read-only", "Read-Only Analyst", "Analytics", mapper.organization(OrganizationRole.VIEWER));
         template("inference", "Inference Operator", "Operations", Set.of(PermissionKey.VIEW_MODELS, PermissionKey.RUN_PREDICTIONS));
         template("reviewer", "Reviewer", "Review", Set.of(PermissionKey.REVIEW));
-        template("team-manager", "Team Manager", "Management", mapper.organization(OrganizationRole.ADMIN));
         template("data-scientist", "Data Scientist", "ML", mapper.organization(OrganizationRole.MEMBER));
     }
 

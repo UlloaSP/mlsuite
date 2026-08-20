@@ -24,7 +24,6 @@ import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitio
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 
@@ -38,7 +37,6 @@ public class OrganizationCatalogService {
     private final ModelRepository modelRepository;
     private final SchemaRepository schemaRepository;
     private final PluginMetadataRepository pluginRepository;
-    private final TeamRepository teamRepository;
     private final PredictionRunRepository predictionRunRepository;
     private final InvitationRepository invitationRepository;
     private final RoleDefinitionRepository roleRepository;
@@ -53,7 +51,6 @@ public class OrganizationCatalogService {
             ModelRepository modelRepository,
             SchemaRepository schemaRepository,
             PluginMetadataRepository pluginRepository,
-            TeamRepository teamRepository,
             PredictionRunRepository predictionRunRepository,
             InvitationRepository invitationRepository,
             RoleDefinitionRepository roleRepository,
@@ -66,7 +63,6 @@ public class OrganizationCatalogService {
         this.modelRepository = modelRepository;
         this.schemaRepository = schemaRepository;
         this.pluginRepository = pluginRepository;
-        this.teamRepository = teamRepository;
         this.predictionRunRepository = predictionRunRepository;
         this.invitationRepository = invitationRepository;
         this.roleRepository = roleRepository;
@@ -113,7 +109,6 @@ public class OrganizationCatalogService {
                 owner != null ? owner.getUser().getFullName() : null,
                 owner != null ? owner.getUser().getEmail() : null,
                 owner != null ? owner.getUser().getAvatarUrl() : null,
-                teamRepository.countByOrganizationId(id),
                 modelRepository.countByOrganizationId(id),
                 schemaRepository.countByOrganizationId(id),
                 pluginRepository.countByOrganizationId(id),
@@ -125,7 +120,6 @@ public class OrganizationCatalogService {
         if (modelRepository.countByOrganizationId(organizationId) > 0
                 || schemaRepository.countByOrganizationId(organizationId) > 0
                 || pluginRepository.countByOrganizationId(organizationId) > 0
-                || teamRepository.countByOrganizationId(organizationId) > 0
                 || invitationRepository.countByOrganizationId(organizationId) > 0
                 || reviewRepository.countByOrganizationId(organizationId) > 0
                 || auditRepository.countByOrganizationId(organizationId) > 0) {

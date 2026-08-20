@@ -29,7 +29,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExis
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
-import dev.ulloasp.mlsuite.team.domain.exception.TeamNotFoundException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,7 +44,6 @@ public class DomainExceptionHandler {
             PluginNotFoundException.class,
             UserDoesNotExistException.class,
             OrganizationNotFoundException.class,
-            TeamNotFoundException.class,
             InvitationNotFoundException.class
     })
     public ResponseEntity<ErrorDto> handleNotFound(RuntimeException ex, HttpServletRequest req) {

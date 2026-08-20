@@ -1,4 +1,4 @@
-import { Building2, FolderKanban, Puzzle, Users } from "lucide-react";
+import { Building2, FolderKanban, Puzzle } from "lucide-react";
 import { Link } from "react-router";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppCopy } from "@/shared/ui/AppCopy";
@@ -22,7 +22,6 @@ export function WorkspaceHomePage() {
 
   const basePath = `/workspace/organizations/${context.currentOrganization.id}`;
   const cards = [
-    ...(context.permissions.canViewTeams ? [{ title: "Teams", icon: Users, href: "teams" }] : []),
     ...(context.permissions.canViewMembers
       ? [{ title: "Members", icon: Building2, href: "members" }]
       : []),
@@ -37,7 +36,6 @@ export function WorkspaceHomePage() {
     ...(context.permissions.canViewMembers
       ? [{ label: "Members", value: dashboard?.stats.totalMembers ?? 0 }]
       : []),
-    ...(context.permissions.canViewTeams ? [{ label: "Teams", value: context.teams.length }] : []),
     ...(context.permissions.canViewModels
       ? [{ label: "Models", value: dashboard?.stats.totalModels ?? 0 }]
       : []),
@@ -52,10 +50,10 @@ export function WorkspaceHomePage() {
         <AppPageHeader
           eyebrow="Workspace"
           title={context.currentOrganization.name}
-          description="Organization command deck for teams, permissions, plugins, and model operations."
+          description="Organization command deck for members, permissions, plugins, and model operations."
           actions={<AppBadge tone="accent">{context.currentMembership.role}</AppBadge>}
         />
-        <section className="grid gap-4 md:grid-cols-4">
+        <section className="grid gap-4 md:grid-cols-3">
           {stats.map((stat) => (
             <AppPanel key={stat.label}>
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
@@ -67,7 +65,7 @@ export function WorkspaceHomePage() {
             </AppPanel>
           ))}
         </section>
-        <section className="grid gap-4 xl:grid-cols-4">
+        <section className="grid gap-4 xl:grid-cols-3">
           {cards.map((card) => {
             const href = card.href.startsWith("/") ? card.href : `${basePath}/${card.href}`;
             return (

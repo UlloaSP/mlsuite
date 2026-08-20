@@ -27,7 +27,6 @@ import dev.ulloasp.mlsuite.search.application.port.in.SearchWorkspaceUseCase;
 import dev.ulloasp.mlsuite.search.application.service.SearchTextMatcher;
 import dev.ulloasp.mlsuite.search.application.service.SearchTextMatcher.SearchTextQuery;
 import dev.ulloasp.mlsuite.search.application.usecase.SearchWorkspaceCandidateFactory.SearchCandidate;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -39,7 +38,6 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final OrganizationMembershipRepository membershipRepository;
-    private final TeamRepository teamRepository;
     private final ModelRepository modelRepository;
     private final SchemaRepository schemaRepository;
     private final SchemaVersionRepository schemaVersionRepository;
@@ -50,7 +48,6 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
             WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
             OrganizationMembershipRepository membershipRepository,
-            TeamRepository teamRepository,
             ModelRepository modelRepository,
             SchemaRepository schemaRepository,
             SchemaVersionRepository schemaVersionRepository,
@@ -60,7 +57,6 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
         this.workspaceAccessService = workspaceAccessService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.membershipRepository = membershipRepository;
-        this.teamRepository = teamRepository;
         this.modelRepository = modelRepository;
         this.schemaRepository = schemaRepository;
         this.schemaVersionRepository = schemaVersionRepository;
@@ -86,10 +82,6 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                         .toList(),
                 searchQuery,
                 SearchWorkspaceCandidateFactory::fromOrganization));
-        addGroup(groups, "Teams", rank(
-                teamRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
-                searchQuery,
-                SearchWorkspaceCandidateFactory::fromTeam));
         addGroup(groups, "Models", rank(
                 modelRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
                 searchQuery,

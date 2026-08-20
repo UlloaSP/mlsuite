@@ -2,7 +2,6 @@ import { useState } from "react";
 import { AppCombobox } from "@/shared/ui/AppCombobox";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
-import type { TeamDto } from "@/capabilities/workspace-context/workspace-context.types";
 import type {
   InvitationCandidateDto,
   RoleDefinitionDto,
@@ -12,23 +11,16 @@ const defaultRoleId = (roles: RoleDefinitionDto[]) =>
   roles.find((role) => role.systemKey === "MEMBER")?.id ?? roles[0]?.id ?? null;
 
 export function InviteForm({
-  teams,
   candidates,
   onSubmit,
   roleOptions,
 }: {
-  teams: TeamDto[];
   candidates: InvitationCandidateDto[];
-  onSubmit: (payload: {
-    email: string;
-    roleDefinitionId: number;
-    teamId?: number;
-  }) => Promise<void>;
+  onSubmit: (payload: { email: string; roleDefinitionId: number }) => Promise<void>;
   roleOptions: RoleDefinitionDto[];
 }) {
   const [candidate, setCandidate] = useState<InvitationCandidateDto | null>(null);
   const [roleDefinitionId, setRoleDefinitionId] = useState<string>("");
-  const [teamId, setTeamId] = useState<string>("");
   const selectedRoleId = roleDefinitionId ? Number(roleDefinitionId) : defaultRoleId(roleOptions);
   const canSubmit = Boolean(candidate && selectedRoleId);
   const candidateItems = candidates.map((item) => ({
@@ -42,16 +34,14 @@ export function InviteForm({
     void onSubmit({
       email: candidate.email,
       roleDefinitionId: selectedRoleId,
-      teamId: teamId ? Number(teamId) : undefined,
     }).then(() => {
       setCandidate(null);
       setRoleDefinitionId("");
-      setTeamId("");
     });
   };
 
   return (
-    <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.4fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto] lg:items-start">
+    <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.4fr)_minmax(180px,0.7fr)_auto] lg:items-start">
       <AppCombobox
         value={candidate?.id ?? null}
         items={candidateItems}
@@ -70,18 +60,6 @@ export function InviteForm({
           value: String(option.id),
           label: option.name,
         }))}
-      />
-      <AppSelect
-        className="rounded shadow-none"
-        value={teamId}
-        onValueChange={setTeamId}
-        options={[
-          { value: "", label: "No team" },
-          ...teams.map((team) => ({
-            value: String(team.id),
-            label: team.name,
-          })),
-        ]}
       />
       <AppButton
         type="button"

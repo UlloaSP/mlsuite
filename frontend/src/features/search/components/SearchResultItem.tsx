@@ -6,14 +6,12 @@ import {
   FileJson2,
   History,
   PlayCircle,
-  Users,
 } from "lucide-react";
 import { Link } from "react-router";
 import type { SearchResult, SearchResultType } from "@/features/search/api/search.types";
 
 const icons: Record<SearchResultType, typeof Building2> = {
   organization: Building2,
-  team: Users,
   model: BrainCircuit,
   schema: FileJson2,
   snapshot: History,

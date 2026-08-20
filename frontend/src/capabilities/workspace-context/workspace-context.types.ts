@@ -7,7 +7,6 @@ export interface InvitationDto {
   id: number;
   organizationId: number;
   organizationName: string;
-  teamId?: number | null;
   email: string;
   role: OrganizationRole;
   roleDefinition?: RoleSummaryDto | null;
@@ -45,7 +44,7 @@ export interface OrganizationMembershipDto {
 
 export type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
 
-export type RoleScope = "SYSTEM" | "ORGANIZATION" | "TEAM";
+export type RoleScope = "SYSTEM" | "ORGANIZATION";
 
 export interface RoleSummaryDto {
   id: number | null;
@@ -56,30 +55,12 @@ export interface RoleSummaryDto {
   systemKey?: string | null;
 }
 
-export interface TeamDto {
-  id: number;
-  organizationId: number;
-  slug: string;
-  name: string;
-  description?: string | null;
-  leadName?: string | null;
-  leadEmail?: string | null;
-  memberCount?: number;
-  modelCount?: number;
-  quotaUsed?: number;
-  quotaLimit?: number | null;
-  status?: "ACTIVE" | "INACTIVE" | "ARCHIVED";
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface WorkspaceContextDto {
   user: WorkspaceUserDto;
   memberships: OrganizationMembershipDto[];
   organizations: OrganizationDto[];
   currentOrganization: OrganizationDto;
   currentMembership: OrganizationMembershipDto;
-  teams: TeamDto[];
   permissions: WorkspacePermissionsDto;
 }
 
@@ -95,10 +76,6 @@ export type WorkspacePermissionKey =
   | "canRemoveMembers"
   | "canViewInvitations"
   | "canManageInvitations"
-  | "canViewTeams"
-  | "canCreateTeams"
-  | "canEditTeams"
-  | "canDeleteTeams"
   | "canViewModels"
   | "canCreateModels"
   | "canEditModels"
@@ -122,10 +99,6 @@ export interface WorkspacePermissionsDto {
   canRemoveMembers: boolean;
   canViewInvitations: boolean;
   canManageInvitations: boolean;
-  canViewTeams: boolean;
-  canCreateTeams: boolean;
-  canEditTeams: boolean;
-  canDeleteTeams: boolean;
   canViewModels: boolean;
   canCreateModels: boolean;
   canEditModels: boolean;

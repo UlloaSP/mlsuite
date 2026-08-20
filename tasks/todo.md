@@ -1240,3 +1240,26 @@
 - Independent review found no critical or important issues.
 - `graphify update .` completed with 10,749 nodes, 29,433 edges, and 505 communities; existing skill-version,
   visualization-size, optional SQL parser, and zero-node JSON warnings remain.
+
+# Complete Team Removal
+
+- [x] Map every Team dependency and lock organization-only replacement contracts.
+- [x] Remove Team backend entities, persistence, services, endpoints, DTOs, role scope, permissions, and references.
+- [x] Remove Team frontend routes, navigation, pages, API/cache/types, permission gates, and copy.
+- [x] Remove obsolete tests and add focused regressions for surviving organization flows.
+- [x] Run focused/full API and frontend verification, source-limit audit, independent review, and `graphify update .`.
+
+## Review
+
+- Removed the complete Team backend package and every cross-domain association from invitations, models, roles,
+  authorization, workspace context, organization reporting, and search. The surviving contract is organization-only.
+- Removed Team routes, navigation, pages, mutations, queries, cache keys, types, permission gates, metrics, selectors,
+  and copy from the frontend. Legacy Team URLs now resolve through the normal not-found path.
+- Focused verification passes 65 API tests and 11 frontend tests. Full frontend passes 206/206, lint and production
+  build pass, touched formatting and source limits pass, and global source/test search finds no Team references.
+- Full API runs 171 tests; its only failure is the pre-existing three-violation `ModelControllerImpl` architecture rule.
+  Full `vp check` remains blocked by pre-existing repository-wide formatting drift in 461 files. React Doctor remains
+  80/100 with nine unrelated findings. No visual check ran because it was not requested.
+- Independent review found no code defect. Because schema migration was intentionally omitted, an existing development
+  database must be reset before startup; Hibernate `ddl-auto=update` neither drops Team schema nor cleans persisted
+  Team permission enum values.

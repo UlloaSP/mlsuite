@@ -3,32 +3,24 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { appFetch, HttpError } from "@/shared/api/http";
 import { eligibleReviewersQueryOptions } from "@/capabilities/review-creation/review-creation-api";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
-import { organizationTeamsQueryOptions } from "@/features/workspace/api/workspace.queries";
 import { predictionRunsFeedbackQueryOptions } from "@/features/schemas/api/schema-queries";
 import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/mlform/plugin-runtime-sources";
 
-const { getPredictionRunsFeedback, getTeams } = vi.hoisted(() => ({
+const { getPredictionRunsFeedback } = vi.hoisted(() => ({
   getPredictionRunsFeedback: vi.fn(),
-  getTeams: vi.fn(),
 }));
 
-vi.mock("@/features/workspace/api/teams.api", () => ({ getTeams }));
 vi.mock("@/features/schemas/api/schema-prediction-api", () => ({ getPredictionRunsFeedback }));
 
 const client = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 afterEach(() => {
-  getTeams.mockReset();
   getPredictionRunsFeedback.mockReset();
   vi.unstubAllGlobals();
 });
 
 describe("TanStack Query resource contracts", () => {
   test("scopes tenant resources and every query variable", () => {
-    expect(organizationTeamsQueryOptions(7).queryKey).toEqual(["org", 7, "teams"]);
-    expect(organizationTeamsQueryOptions(8).queryKey).not.toEqual(
-      organizationTeamsQueryOptions(7).queryKey,
-    );
     expect(searchQueryOptions(7, "risk").queryKey).toEqual(["org", 7, "search", "risk"]);
     expect(eligibleReviewersQueryOptions(7).queryKey).toEqual([
       "org",
@@ -36,16 +28,6 @@ describe("TanStack Query resource contracts", () => {
       "schemaReviews",
       "eligibleReviewers",
     ]);
-  });
-
-  test("fetches through reusable options and propagates Query cancellation signal", async () => {
-    getTeams.mockResolvedValue([{ id: 3, name: "Risk" }]);
-
-    await expect(client().fetchQuery(organizationTeamsQueryOptions(7))).resolves.toEqual([
-      { id: 3, name: "Risk" },
-    ]);
-
-    expect(getTeams).toHaveBeenCalledWith(7, expect.any(AbortSignal));
   });
 
   test("batches run feedback with one normalized tenant query", async () => {
@@ -103,10 +85,12 @@ describe("TanStack Query resource contracts", () => {
   });
 
   test("preserves query failures", async () => {
-    const failure = new Error("teams unavailable");
-    getTeams.mockRejectedValue(failure);
+    const failure = new Error("feedback unavailable");
+    getPredictionRunsFeedback.mockRejectedValue(failure);
 
-    await expect(client().fetchQuery(organizationTeamsQueryOptions(7))).rejects.toBe(failure);
+    await expect(client().fetchQuery(predictionRunsFeedbackQueryOptions(7, [1]))).rejects.toBe(
+      failure,
+    );
   });
 
   test("keeps typed HTTP failures", async () => {

@@ -1,5 +1,6 @@
-import { Mail, Shield, Users } from "lucide-react";
+import { Mail, Settings, Shield, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
+import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -10,11 +11,9 @@ import { AdminStatCard } from "@/features/workspace/components/admin/AdminStatCa
 import { StatusBadge } from "@/features/workspace/components/admin/StatusBadge";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
-import { OrganizationHeaderActions } from "@/features/workspace/components/OrganizationHeaderActions";
 
 const tabs = [
   { label: "Overview", value: "overview" },
-  { label: "Teams", value: "teams" },
   { label: "Members", value: "members" },
   { label: "Roles & Templates", value: "roles" },
   { label: "Invitations", value: "invitations" },
@@ -35,16 +34,18 @@ export function OrganizationAdminPage() {
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
           title={data?.organization.name ?? "Organization Admin"}
-          description="Manage teams, roles, invitations, and access control."
+          description="Manage members, roles, invitations, and access control."
           breadcrumbs={[
             { label: "Organizations", to: "/workspace/organizations" },
             { label: data?.organization.name ?? "Organization" },
           ]}
           actions={
-            <OrganizationHeaderActions
-              id={id}
-              canCreate={Boolean(data?.permissions.canCreateTeams)}
-            />
+            <Link to={`/workspace/organizations/${id}/settings`}>
+              <AppButton variant="secondary">
+                <Settings size={16} />
+                Settings
+              </AppButton>
+            </Link>
           }
         />
         <AppTabs
@@ -58,13 +59,7 @@ export function OrganizationAdminPage() {
             )
           }
         />
-        <div className="grid gap-4 md:grid-cols-4">
-          <AdminStatCard
-            label="Total Teams"
-            value={data?.stats.totalTeams ?? 0}
-            detail={`${data?.stats.activeTeams ?? 0} active`}
-            icon={<Users size={18} />}
-          />
+        <div className="grid gap-4 md:grid-cols-3">
           <AdminStatCard
             label="Members"
             value={data?.stats.totalMembers ?? 0}
@@ -84,26 +79,7 @@ export function OrganizationAdminPage() {
             icon={<Mail size={18} />}
           />
         </div>
-        <div className="grid gap-4 xl:grid-cols-2">
-          <AdminDataPanel title="Recent Teams" description="Latest team overview">
-            <div className="divide-y divide-[var(--border-soft)]">
-              {data?.recentTeams.map((team) => (
-                <Link
-                  key={team.id}
-                  to={`/workspace/organizations/${id}/teams/${team.id}`}
-                  className="flex items-center justify-between p-4 hover:bg-[var(--surface-tertiary)]"
-                >
-                  <div>
-                    <p className="font-semibold">{team.name}</p>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      {team.memberCount ?? 0} members · {team.modelCount ?? 0} models
-                    </p>
-                  </div>
-                  <StatusBadge value={team.status ?? "ACTIVE"} />
-                </Link>
-              ))}
-            </div>
-          </AdminDataPanel>
+        <div>
           <AdminDataPanel title="Recent Invitations" description="Pending and latest invites">
             <div className="divide-y divide-[var(--border-soft)]">
               {data?.recentInvitations.map((invite) => (

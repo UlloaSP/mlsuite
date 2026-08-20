@@ -53,7 +53,6 @@ class SearchControllerTest {
                         "acme",
                         "/workspace/organizations/41",
                         41L,
-                        null,
                         null)))));
         when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
         when(searchWorkspaceUseCase.search(7L, "ac")).thenReturn(response);

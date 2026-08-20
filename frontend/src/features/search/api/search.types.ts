@@ -1,6 +1,5 @@
 export type SearchResultType =
   | "organization"
-  | "team"
   | "model"
   | "schema"
   | "snapshot"
@@ -15,7 +14,6 @@ export interface SearchResult {
   subtitle: string;
   href: string;
   organizationId?: number | null;
-  teamId?: number | null;
   modelId?: number | null;
 }
 

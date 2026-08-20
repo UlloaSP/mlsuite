@@ -23,8 +23,6 @@ public class SearchIndexInitializer implements ApplicationRunner {
             "CREATE EXTENSION IF NOT EXISTS pg_trgm",
             "CREATE INDEX IF NOT EXISTS idx_search_org_name_trgm ON organization USING GIN (lower(name) gin_trgm_ops)",
             "CREATE INDEX IF NOT EXISTS idx_search_org_slug_trgm ON organization USING GIN (lower(slug) gin_trgm_ops)",
-            "CREATE INDEX IF NOT EXISTS idx_search_team_name_trgm ON team USING GIN (lower(name) gin_trgm_ops)",
-            "CREATE INDEX IF NOT EXISTS idx_search_team_slug_trgm ON team USING GIN (lower(slug) gin_trgm_ops)",
             "CREATE INDEX IF NOT EXISTS idx_search_model_name_trgm ON model USING GIN (lower(name) gin_trgm_ops)",
             "CREATE INDEX IF NOT EXISTS idx_search_model_file_trgm ON model USING GIN (lower(file_name) gin_trgm_ops)",
             "CREATE INDEX IF NOT EXISTS idx_search_schema_name_trgm ON schema_artifact USING GIN (lower(name) gin_trgm_ops)",

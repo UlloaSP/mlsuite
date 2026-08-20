@@ -33,8 +33,6 @@ import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -53,13 +51,7 @@ class InvitationManagementServiceTest {
     private InvitationRepository invitationRepository;
 
     @Mock
-    private TeamRepository teamRepository;
-
-    @Mock
     private OrganizationMembershipRepository organizationMembershipRepository;
-
-    @Mock
-    private TeamMembershipRepository teamMembershipRepository;
 
     @Mock
     private UserLookupService userLookupService;
@@ -86,9 +78,7 @@ class InvitationManagementServiceTest {
         service = new InvitationManagementService(
                 workspaceAccessService,
                 invitationRepository,
-                teamRepository,
                 organizationMembershipRepository,
-                teamMembershipRepository,
                 userLookupService,
                 workspaceAuthorizationService,
                 auditLogService,
@@ -117,7 +107,7 @@ class InvitationManagementServiceTest {
         var result = service.createInvitation(
                 7L,
                 41L,
-                new CreateInvitationRequest("reviewer@example.com", null, 5L, null));
+                new CreateInvitationRequest("reviewer@example.com", null, 5L));
 
         assertEquals(OrganizationRole.VIEWER.name(), result.role());
         assertEquals(5L, result.roleDefinition().id());
@@ -147,7 +137,7 @@ class InvitationManagementServiceTest {
         var result = service.createInvitation(
                 7L,
                 41L,
-                new CreateInvitationRequest("target@example.com", null, 5L, null));
+                new CreateInvitationRequest("target@example.com", null, 5L));
 
         assertEquals("ACCEPTED", result.status());
         assertEquals(org, invitee.getCurrentOrganization());
@@ -176,7 +166,7 @@ class InvitationManagementServiceTest {
         var result = service.createInvitation(
                 7L,
                 41L,
-                new CreateInvitationRequest("target@example.com", null, 5L, null));
+                new CreateInvitationRequest("target@example.com", null, 5L));
 
         assertEquals("PENDING", result.status());
         verifyNoInteractions(organizationMembershipRepository);
@@ -228,7 +218,6 @@ class InvitationManagementServiceTest {
         OrganizationSystemRole systemRole = OrganizationSystemRole.REVIEWER;
         RoleDefinition role = new RoleDefinition(
                 org,
-                null,
                 RoleScope.ORGANIZATION,
                 systemRole.label(),
                 systemRole.slug(),
@@ -248,6 +237,6 @@ class InvitationManagementServiceTest {
     private WorkspacePermissionsDto permissions() {
         return new WorkspacePermissionsDto(
                 true, true, true, false, false, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true, true, true);
+                true, true, true, true, true, true, true, true, true, true);
     }
 }

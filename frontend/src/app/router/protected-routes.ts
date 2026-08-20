@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { RouteObject } from "react-router";
-import { lazyPage, superadmin, team, workspacePage } from "./lazy-route";
+import { lazyPage, superadmin, workspacePage } from "./lazy-route";
 import { inferenceRoutes } from "./inference-routes";
 import { reviewRoutes } from "./review-routes";
 
@@ -50,20 +50,6 @@ export const protectedPages: RouteObject[] = [
         "OrganizationAdminPage",
         workspacePage("canViewOrganization"),
       ),
-  },
-  {
-    path: "workspace/organizations/:organizationId/teams",
-    lazy: () =>
-      lazyPage(
-        () => import("@/features/workspace/pages/teams-page"),
-        "TeamsPage",
-        workspacePage("canViewTeams"),
-      ),
-  },
-  {
-    path: "workspace/organizations/:organizationId/teams/:teamId",
-    lazy: () =>
-      lazyPage(() => import("@/features/workspace/pages/team-detail-page"), "TeamDetailPage", team),
   },
   {
     path: "workspace/organizations/:organizationId/members",

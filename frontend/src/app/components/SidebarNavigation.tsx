@@ -55,9 +55,6 @@ export function SidebarNavigation() {
     : undefined;
   const workspaceChildren: NavigationItem["children"] = [
     { to: "/workspace", icon: LayoutGrid, label: "Overview", exact: true },
-    ...(permissions?.canViewTeams && currentOrganizationPath
-      ? [{ to: `${currentOrganizationPath}/teams`, icon: Users, label: "Teams" }]
-      : []),
     ...(permissions?.canViewMembers && currentOrganizationPath
       ? [{ to: `${currentOrganizationPath}/members`, icon: Users, label: "Members" }]
       : []),

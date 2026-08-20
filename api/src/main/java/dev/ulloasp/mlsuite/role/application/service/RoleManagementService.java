@@ -62,7 +62,7 @@ public class RoleManagementService implements RoleManagementUseCase {
     public RoleDefinitionDto create(Long userId, Long organizationId, CreateRoleRequest request) {
         requireManage(userId, organizationId);
         var org = organizationRepository.findById(organizationId).orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        RoleDefinition role = new RoleDefinition(org, null, RoleScope.ORGANIZATION, request.name().strip(), uniqueSlug(organizationId, request.name()), null);
+        RoleDefinition role = new RoleDefinition(org, RoleScope.ORGANIZATION, request.name().strip(), uniqueSlug(organizationId, request.name()), null);
         role.setDescription(request.description());
         role.setCreatedBy(userLookupService.requireById(userId));
         role.setPermissions(parsePermissions(userId, organizationId, request.permissionKeys()));
@@ -109,7 +109,7 @@ public class RoleManagementService implements RoleManagementUseCase {
     public RoleDefinitionDto duplicate(Long userId, Long organizationId, Long roleId, DuplicateRoleRequest request) {
         requireManage(userId, organizationId);
         RoleDefinition source = requireRole(organizationId, roleId);
-        RoleDefinition copy = new RoleDefinition(source.getOrganization(), null, RoleScope.ORGANIZATION, request.name().strip(), uniqueSlug(organizationId, request.name()), null);
+        RoleDefinition copy = new RoleDefinition(source.getOrganization(), RoleScope.ORGANIZATION, request.name().strip(), uniqueSlug(organizationId, request.name()), null);
         copy.setDescription(source.getDescription());
         copy.setCreatedBy(userLookupService.requireById(userId));
         copy.setPermissions(new LinkedHashSet<>(source.getPermissions()));

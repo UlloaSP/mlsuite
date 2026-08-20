@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { createElement, type ComponentType, type ReactNode } from "react";
 import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context.types";
-import { RequireTeamPermission } from "@/features/workspace/components/RequireTeamPermission";
 import { RequireWorkspacePermission } from "@/features/workspace/components/RequireWorkspacePermission";
 import { RequireSuperadmin } from "@/features/workspace/components/RequireSuperadmin";
 import { RequireReviewAccess } from "@/features/reviews/components/RequireReviewAccess";
@@ -19,9 +18,6 @@ export const lazyPage = async (load: () => Promise<unknown>, name: string, wrap?
 };
 
 export const superadmin: Wrap = (element) => <RequireSuperadmin>{element}</RequireSuperadmin>;
-export const team: Wrap = (element) => (
-  <RequireTeamPermission permission="canViewTeam">{element}</RequireTeamPermission>
-);
 export const reviewAccess: Wrap = (element) => <RequireReviewAccess>{element}</RequireReviewAccess>;
 export const workspacePage =
   (permission: WorkspacePermissionKey): Wrap =>

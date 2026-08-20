@@ -27,10 +27,6 @@ import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
-import dev.ulloasp.mlsuite.team.domain.model.TeamMembership;
-import dev.ulloasp.mlsuite.team.domain.model.TeamRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -46,9 +42,6 @@ class WorkspaceAuthorizationServiceTest {
     private OrganizationMembershipRepository organizationMembershipRepository;
 
     @Mock
-    private TeamMembershipRepository teamMembershipRepository;
-
-    @Mock
     private RoleDefinitionRepository roleDefinitionRepository;
 
     @Mock
@@ -61,7 +54,6 @@ class WorkspaceAuthorizationServiceTest {
         service = new WorkspaceAuthorizationService(
                 workspaceAccessService,
                 organizationMembershipRepository,
-                teamMembershipRepository,
                 roleDefinitionRepository,
                 roleSeedService,
                 new LegacyRolePermissionMapper());
@@ -202,40 +194,6 @@ class WorkspaceAuthorizationServiceTest {
         assertEquals(3, memberActions.assignableRoles().size());
     }
 
-    @Test
-    void teamPermissions_AllowTeamAdminOnlyInsideTeam() {
-        Team team = team(77L);
-        when(workspaceAccessService.requireUser(12L)).thenReturn(user(12L));
-        when(workspaceAccessService.isSuperadmin(12L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 12L))
-                .thenReturn(Optional.of(organizationMembership(OrganizationRole.VIEWER, 12L)));
-        when(teamMembershipRepository.findByTeamIdAndUserId(77L, 12L))
-                .thenReturn(Optional.of(teamMembership(team, TeamRole.TEAM_ADMIN, 12L)));
-
-        var permissions = service.teamPermissions(12L, team);
-
-        assertTrue(permissions.canViewTeam());
-        assertTrue(permissions.canEditTeam());
-        assertFalse(permissions.canDeleteTeam());
-        assertTrue(permissions.canManageTeamMemberRoles());
-    }
-
-    @Test
-    void teamMemberActions_DenyTeamMemberRoleManagement() {
-        Team team = team(77L);
-        when(workspaceAccessService.requireUser(13L)).thenReturn(user(13L));
-        when(workspaceAccessService.isSuperadmin(13L)).thenReturn(false);
-        when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 13L))
-                .thenReturn(Optional.of(organizationMembership(OrganizationRole.MEMBER, 13L)));
-        when(teamMembershipRepository.findByTeamIdAndUserId(77L, 13L))
-                .thenReturn(Optional.of(teamMembership(team, TeamRole.TEAM_MEMBER, 13L)));
-
-        MembershipActionsDto actions = service.teamMemberActions(13L, team, teamMembership(team, TeamRole.TEAM_VIEWER, 14L));
-
-        assertFalse(actions.canChangeRole());
-        assertFalse(actions.canRemove());
-    }
-
     private User user(Long id) {
         User user = new User();
         user.setId(id);
@@ -251,15 +209,6 @@ class WorkspaceAuthorizationServiceTest {
         return organization;
     }
 
-    private Team team(Long id) {
-        Team team = new Team();
-        team.setId(id);
-        team.setName("Team");
-        team.setSlug("team");
-        team.setOrganization(organization());
-        return team;
-    }
-
     private OrganizationMembership organizationMembership(OrganizationRole role, Long userId) {
         OrganizationMembership membership = new OrganizationMembership();
         membership.setOrganization(organization());
@@ -269,17 +218,8 @@ class WorkspaceAuthorizationServiceTest {
         return membership;
     }
 
-    private TeamMembership teamMembership(Team team, TeamRole role, Long userId) {
-        TeamMembership membership = new TeamMembership();
-        membership.setTeam(team);
-        membership.setUser(user(userId));
-        membership.setRole(role);
-        membership.setStatus(MembershipStatus.ACTIVE);
-        return membership;
-    }
-
     private RoleDefinition roleDefinition(Long id, String name, String systemKey) {
-        RoleDefinition role = new RoleDefinition(organization(), null, RoleScope.ORGANIZATION, name, name.toLowerCase(), systemKey);
+        RoleDefinition role = new RoleDefinition(organization(), RoleScope.ORGANIZATION, name, name.toLowerCase(), systemKey);
         role.setId(id);
         return role;
     }

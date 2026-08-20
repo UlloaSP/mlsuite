@@ -28,7 +28,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
 import dev.ulloasp.mlsuite.search.application.usecase.SearchWorkspaceService;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -38,7 +37,6 @@ class SearchWorkspaceSchemaArtifactsTest {
     @Mock private WorkspaceAccessService access;
     @Mock private WorkspaceAuthorizationService authorization;
     @Mock private OrganizationMembershipRepository memberships;
-    @Mock private TeamRepository teams;
     @Mock private ModelRepository models;
     @Mock private SchemaRepository schemas;
     @Mock private SchemaVersionRepository versions;
@@ -54,7 +52,6 @@ class SearchWorkspaceSchemaArtifactsTest {
                 access,
                 authorization,
                 memberships,
-                teams,
                 models,
                 schemas,
                 versions,

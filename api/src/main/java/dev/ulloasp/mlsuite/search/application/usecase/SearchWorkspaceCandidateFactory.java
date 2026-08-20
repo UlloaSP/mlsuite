@@ -10,7 +10,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResultDto;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
 
 final class SearchWorkspaceCandidateFactory {
 
@@ -20,15 +19,8 @@ final class SearchWorkspaceCandidateFactory {
     static SearchCandidate fromOrganization(Organization organization) {
         return candidate(
                 "organization", organization.getId(), organization.getName(), organization.getSlug(),
-                "/workspace/organizations/" + organization.getId(), organization.getId(), null, null,
+                "/workspace/organizations/" + organization.getId(), organization.getId(), null,
                 organization.getUpdatedAt(), organization.getName(), organization.getSlug());
-    }
-
-    static SearchCandidate fromTeam(Team team) {
-        return candidate(
-                "team", team.getId(), team.getName(), team.getSlug(), "/workspace/teams/" + team.getId(),
-                team.getOrganization().getId(), team.getId(), null, team.getUpdatedAt(),
-                team.getName(), team.getSlug(), team.getDescription());
     }
 
     static SearchCandidate fromModel(Model model) {
@@ -36,14 +28,14 @@ final class SearchWorkspaceCandidateFactory {
                 "model", model.getId(), model.getName(), model.getType() + " / " + model.getSpecificType(),
                 "/models/" + model.getId(),
                 model.getOrganization() == null ? null : model.getOrganization().getId(),
-                model.getTeam() == null ? null : model.getTeam().getId(), model.getId(), model.getUpdatedAt(),
+                model.getId(), model.getUpdatedAt(),
                 model.getName(), model.getType(), model.getSpecificType(), model.getFileName());
     }
 
     static SearchCandidate fromSchema(Schema schema) {
         return candidate(
                 "schema", schema.getId(), schema.getName(), schema.getDescription(), "/schemas/" + schema.getId(),
-                schema.getOrganization().getId(), null, null, schema.getUpdatedAt(),
+                schema.getOrganization().getId(), null, schema.getUpdatedAt(),
                 schema.getName(), schema.getDescription());
     }
 
@@ -55,7 +47,7 @@ final class SearchWorkspaceCandidateFactory {
         return candidate(
                 "snapshot", version.getId(), title, schema.getName() + " / v" + version.getVersion(),
                 "/schemas/" + schema.getId() + "/versions/" + version.getId(),
-                schema.getOrganization().getId(), null, null, version.getCreatedAt(),
+                schema.getOrganization().getId(), null, version.getCreatedAt(),
                 title, schema.getName(), "v" + version.getVersion(), String.valueOf(version.getVersion()));
     }
 
@@ -68,7 +60,7 @@ final class SearchWorkspaceCandidateFactory {
         return candidate(
                 "bookmark", bookmark.getId(), bookmark.getName(), subtitle,
                 "/schemas/" + schema.getId() + "/bookmarks/" + bookmark.getId(),
-                schema.getOrganization().getId(), null, null, bookmark.getUpdatedAt(),
+                schema.getOrganization().getId(), null, bookmark.getUpdatedAt(),
                 bookmark.getName(), schema.getName(), versionName, "v" + version.getVersion());
     }
 
@@ -78,7 +70,7 @@ final class SearchWorkspaceCandidateFactory {
                 "predictionRun", run.getId(), run.getName(), schema.getName() + " / " + run.getStatus(),
                 "/schemas/" + schema.getId() + "/versions/" + run.getSchemaVersion().getId()
                         + "/runs/" + run.getId(),
-                schema.getOrganization().getId(), null, null, run.getUpdatedAt(), run.getName(), schema.getName());
+                schema.getOrganization().getId(), null, run.getUpdatedAt(), run.getName(), schema.getName());
     }
 
     static SearchCandidate fromPlugin(PluginMetadata plugin) {
@@ -86,7 +78,7 @@ final class SearchWorkspaceCandidateFactory {
                 new SearchResultDto(
                         "plugin", plugin.getId(), plugin.getFileName(),
                         plugin.getKind() == null ? "Plugin" : plugin.getKind(), "/plugins",
-                        plugin.getOrganization().getId(), null, null),
+                        plugin.getOrganization().getId(), null),
                 plugin.getUpdatedAt(), plugin.getFileName(), plugin.getPluginType(), plugin.getKind());
     }
 
@@ -97,13 +89,11 @@ final class SearchWorkspaceCandidateFactory {
             String subtitle,
             String href,
             Long organizationId,
-            Long teamId,
             Long modelId,
             OffsetDateTime updatedAt,
             String... terms) {
         return new SearchCandidate(
-                new SearchResultDto(type, String.valueOf(id), title, subtitle, href,
-                        organizationId, teamId, modelId),
+                new SearchResultDto(type, String.valueOf(id), title, subtitle, href, organizationId, modelId),
                 updatedAt,
                 terms);
     }

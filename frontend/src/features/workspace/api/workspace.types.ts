@@ -10,7 +10,6 @@ import type {
   OrganizationRole,
   RoleScope,
   RoleSummaryDto,
-  TeamDto,
   WorkspacePermissionsDto,
 } from "@/capabilities/workspace-context/workspace-context.types";
 
@@ -18,7 +17,6 @@ export interface CreateInvitationRequest {
   email: string;
   role?: OrganizationRole;
   roleDefinitionId?: number;
-  teamId?: number;
 }
 
 export interface CreateOrganizationRequest {
@@ -40,14 +38,6 @@ export interface CreateRoleRequest {
   permissionKeys: PermissionKey[];
 }
 
-export interface CreateTeamRequest {
-  name: string;
-  slug?: string;
-  description?: string;
-  leadMembershipId?: number;
-  monthlyInferenceQuota?: number;
-}
-
 export interface InvitationCandidateDto {
   id: number;
   fullName: string;
@@ -65,14 +55,11 @@ export interface OrganizationAdminDashboardDto {
   organization: OrganizationDto;
   permissions: WorkspacePermissionsDto;
   stats: OrganizationAdminStatsDto;
-  recentTeams: TeamDto[];
   recentMembers: OrganizationMembershipRowDto[];
   recentInvitations: InvitationDto[];
 }
 
 export interface OrganizationAdminStatsDto {
-  totalTeams: number;
-  activeTeams: number;
   totalMembers: number;
   totalModels: number;
   pendingInvitations: number;
@@ -92,7 +79,6 @@ export interface OrganizationCatalogItemDto {
   updatedByName?: string | null;
   updatedByEmail?: string | null;
   updatedByAvatarUrl?: string | null;
-  teamCount: number;
   modelCount: number;
   schemaCount: number;
   pluginCount: number;
@@ -146,10 +132,6 @@ export type PermissionKey =
   | "REMOVE_MEMBERS"
   | "VIEW_INVITATIONS"
   | "MANAGE_INVITATIONS"
-  | "VIEW_TEAMS"
-  | "CREATE_TEAMS"
-  | "EDIT_TEAMS"
-  | "DELETE_TEAMS"
   | "VIEW_MODELS"
   | "CREATE_MODELS"
   | "EDIT_MODELS"
@@ -201,36 +183,6 @@ export interface RolesResponseDto {
   };
 }
 
-export interface TeamDetailDto extends TeamDto {
-  currentUserRole?: TeamRole | null;
-  permissions: TeamPermissionsDto;
-}
-
-export interface TeamMembershipRowDto {
-  id: number;
-  teamId: number;
-  userId: number;
-  fullName: string;
-  email: string;
-  avatarUrl?: string | null;
-  role: RoleSummaryDto;
-  legacyRole?: TeamRole | null;
-  status: MembershipStatus;
-  createdAt: string;
-  actions: MembershipRowActionsDto;
-}
-
-export interface TeamPermissionsDto {
-  canViewTeam: boolean;
-  canEditTeam: boolean;
-  canDeleteTeam: boolean;
-  canViewTeamMembers: boolean;
-  canManageTeamMemberRoles: boolean;
-  canRemoveTeamMembers: boolean;
-}
-
-export type TeamRole = "TEAM_ADMIN" | "TEAM_MEMBER" | "TEAM_VIEWER";
-
 export interface UpdateOrganizationRequest {
   name: string;
   slug?: string;
@@ -238,11 +190,3 @@ export interface UpdateOrganizationRequest {
 }
 
 export interface UpdateRoleRequest extends CreateRoleRequest {}
-
-export interface UpdateTeamRequest {
-  name?: string;
-  description?: string;
-  leadMembershipId?: number;
-  monthlyInferenceQuota?: number;
-  status?: "ACTIVE" | "INACTIVE" | "ARCHIVED";
-}

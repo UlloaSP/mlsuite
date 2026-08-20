@@ -15,16 +15,6 @@ export const organizationDetailsQueryKey = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "organization"] as const;
 export const organizationAdminDashboardQueryKey = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "admin-dashboard"] as const;
-export const organizationTeamsQueryKey = (organizationId: number | string) =>
-  [...organizationQueryKey(organizationId), "teams"] as const;
-export const organizationTeamQueryKey = (
-  organizationId: number | string,
-  teamId: number | string,
-) => [...organizationQueryKey(organizationId), "team", teamId] as const;
-export const organizationTeamMembersQueryKey = (
-  organizationId: number | string,
-  teamId: number | string,
-) => [...organizationQueryKey(organizationId), "team-members", teamId] as const;
 export const organizationInvitationsQueryKey = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "invitations"] as const;
 export const organizationInvitationCandidatesQueryKey = (organizationId: number | string) =>

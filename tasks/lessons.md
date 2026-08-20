@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-08-20 - Development-only entity removal
+
+- Correction: a planned entity cleanup assumed production migration constraints, but this repository is still in development and the user explicitly allowed destructive schema changes.
+- Rule: when the user declares development-only data disposable, remove the entity and schema contract directly; do not add phased migration machinery or compatibility code.
+
 ## 2026-07-23 - Review status placement correction
 
 - Correction: reviewer status and reopening were implemented in a modal, but this management workflow needs a durable, linkable inference context.

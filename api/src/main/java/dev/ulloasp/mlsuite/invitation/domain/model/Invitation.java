@@ -8,7 +8,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,7 +36,6 @@ public class Invitation {
 
     public Invitation(
             Organization organization,
-            Team team,
             String email,
             OrganizationRole role,
             RoleDefinition roleDefinition,
@@ -45,7 +43,6 @@ public class Invitation {
             User invitedBy,
             OffsetDateTime expiresAt) {
         this.organization = organization;
-        this.team = team;
         this.email = email;
         this.role = role;
         this.roleDefinition = roleDefinition;
@@ -62,10 +59,6 @@ public class Invitation {
     @ManyToOne(optional = false)
     @JoinColumn(name = "organization_id", nullable = false, foreignKey = @ForeignKey(name = "fk_invitation_org"))
     private Organization organization;
-
-    @ManyToOne
-    @JoinColumn(name = "team_id", foreignKey = @ForeignKey(name = "fk_invitation_team"))
-    private Team team;
 
     @Column(name = "email", nullable = false, length = 200)
     private String email;

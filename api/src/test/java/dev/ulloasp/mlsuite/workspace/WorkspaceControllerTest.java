@@ -51,7 +51,6 @@ class WorkspaceControllerTest {
                 List.of(),
                 null,
                 null,
-                List.of(),
                 null);
         when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", SystemRole.USER));
         when(workspaceContextUseCase.getContext(7L)).thenReturn(context);

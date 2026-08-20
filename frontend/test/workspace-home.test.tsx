@@ -28,9 +28,7 @@ const context = {
   currentOrganization: { id: 7, name: "Acme", slug: "acme" },
   currentMembership: { role: "MEMBER" },
   memberships: Array.from({ length: 99 }, (_, id) => ({ id })),
-  teams: [{ id: 1 }, { id: 2 }],
   permissions: {
-    canViewTeams: true,
     canViewMembers: true,
     canViewModels: true,
     canManageInvitations: true,
@@ -105,7 +103,6 @@ describe("workspace home", () => {
       data: {
         ...context,
         permissions: {
-          canViewTeams: false,
           canViewMembers: false,
           canViewModels: false,
           canManageInvitations: false,
@@ -126,7 +123,6 @@ describe("workspace home", () => {
     const container = await renderHome();
 
     expect(statValue(container, "Members")).toBeUndefined();
-    expect(statValue(container, "Teams")).toBeUndefined();
     expect(statValue(container, "Models")).toBeUndefined();
     expect(statValue(container, "Invites")).toBeUndefined();
   });

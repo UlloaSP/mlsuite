@@ -14,10 +14,7 @@ import {
 import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/features/workspace/components/admin/AdminStatCard";
 import { MemberTable } from "@/features/workspace/components/MemberTable";
-import {
-  useOrganizationMembersQuery,
-  useOrganizationTeamsQuery,
-} from "@/features/workspace/api/workspace.queries";
+import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 
 export function MembersPage() {
   const { organizationId = "" } = useParams();
@@ -28,7 +25,6 @@ export function MembersPage() {
   const { data: members = [] } = useOrganizationMembersQuery(id);
   const removeMember = useRemoveOrganizationMemberMutation(id);
   const updateMemberRole = useUpdateOrganizationMemberRoleMutation(id);
-  useOrganizationTeamsQuery(id);
   const filtered = useMemo(
     () =>
       members.filter((member) => {

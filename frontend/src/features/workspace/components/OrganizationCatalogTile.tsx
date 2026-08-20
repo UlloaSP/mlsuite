@@ -24,7 +24,6 @@ type OrganizationCatalogTileProps = {
 };
 
 const dashboardItems = [
-  { key: "teamCount", label: "Teams", icon: Users },
   { key: "modelCount", label: "Models", icon: BrainCircuit },
   { key: "schemaCount", label: "Schemas", icon: ClipboardList },
   { key: "pluginCount", label: "Plugins", icon: Blocks },
