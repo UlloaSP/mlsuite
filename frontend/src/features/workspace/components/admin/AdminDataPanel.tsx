@@ -12,6 +12,7 @@ export function AdminDataPanel({
   actions,
   children,
   className,
+  flat = false,
 }: {
   title: string;
   description?: string;
@@ -20,9 +21,10 @@ export function AdminDataPanel({
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
+  flat?: boolean;
 }) {
   return (
-    <AppPanel className={cx("rounded-[16px] p-0", className)}>
+    <AppPanel variant={flat ? "flat" : "panel"} className={cx("p-0", className)}>
       <div className="flex flex-wrap items-start justify-between gap-4 p-6">
         <div>
           <AppSectionTitle>{title}</AppSectionTitle>

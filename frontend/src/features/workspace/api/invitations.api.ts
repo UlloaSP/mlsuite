@@ -5,7 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { appFetch, json } from "@/shared/api/http";
 import type { InvitationDto } from "@/capabilities/workspace-context/workspace-context.types";
-import type { CreateInvitationRequest, InvitationCandidateDto } from "./workspace.types";
+import type {
+  CreateInvitationRequest,
+  InvitationCandidateDto,
+  OrganizationInvitationDto,
+} from "./workspace.types";
 
 export const acceptInvitation = (token: string): Promise<InvitationDto> =>
   appFetch<InvitationDto>(`/api/invitations/${encodeURIComponent(token)}/accept`, {
@@ -44,8 +48,10 @@ export const getInvitationCandidates = (
 export const getInvitations = (
   organizationId: number,
   signal?: AbortSignal,
-): Promise<InvitationDto[]> =>
-  appFetch<InvitationDto[]>(`/api/organizations/${organizationId}/invitations`, { signal });
+): Promise<OrganizationInvitationDto[]> =>
+  appFetch<OrganizationInvitationDto[]>(`/api/organizations/${organizationId}/invitations`, {
+    signal,
+  });
 
 export const getPendingInvitations = (signal?: AbortSignal): Promise<InvitationDto[]> =>
   appFetch<InvitationDto[]>("/api/invitations/pending", { signal });

@@ -19,6 +19,7 @@ import {
   ORGANIZATIONS_QUERY_KEY,
   ORGANIZATION_CATALOG_PAGE_QUERY_KEY,
   organizationDetailsQueryKey,
+  organizationAdminDashboardQueryKey,
   organizationMembersQueryKey,
   PENDING_INVITATIONS_QUERY_KEY,
 } from "./workspace.keys";
@@ -45,11 +46,15 @@ export const useDeclineInvitation = () => {
 };
 
 export const useDeleteOrganizationMutation = () => {
+  const queryClient = useQueryClient();
   const invalidate = useInvalidateOrganizationQueries();
   return useMutation({
     meta: { errorHandledLocally: true },
     mutationFn: deleteOrganization,
-    onSuccess: () => void invalidate(),
+    onSuccess: async (_data, organizationId) => {
+      await removeOrganizationCache(queryClient, organizationId);
+      await invalidate();
+    },
   });
 };
 
@@ -71,6 +76,9 @@ export const useUpdateOrganizationMutation = (organizationId: number) => {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: organizationDetailsQueryKey(organizationId) }),
+        queryClient.invalidateQueries({
+          queryKey: organizationAdminDashboardQueryKey(organizationId),
+        }),
         queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
       ]);
@@ -140,6 +148,9 @@ export const useTransferOrganizationOwnershipMutation = () => {
         }),
         queryClient.invalidateQueries({
           queryKey: organizationDetailsQueryKey(request.organizationId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: organizationAdminDashboardQueryKey(request.organizationId),
         }),
         queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
       ]);

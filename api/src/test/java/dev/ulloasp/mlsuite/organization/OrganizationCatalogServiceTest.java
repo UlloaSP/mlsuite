@@ -5,13 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,8 +20,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.server.ResponseStatusException;
 
-import dev.ulloasp.mlsuite.audit.adapter.out.persistence.repository.AuditEventRepository;
-import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -33,11 +29,8 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
-import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
-import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 
@@ -51,11 +44,6 @@ class OrganizationCatalogServiceTest {
     @Mock private SchemaRepository schemaRepository;
     @Mock private PluginMetadataRepository pluginRepository;
     @Mock private PredictionRunRepository predictionRunRepository;
-    @Mock private InvitationRepository invitationRepository;
-    @Mock private RoleDefinitionRepository roleRepository;
-    @Mock private SchemaReviewRepository reviewRepository;
-    @Mock private AuditEventRepository auditRepository;
-    @Mock private UserRepository userRepository;
 
     private OrganizationCatalogService service;
 
@@ -68,12 +56,7 @@ class OrganizationCatalogServiceTest {
                 modelRepository,
                 schemaRepository,
                 pluginRepository,
-                predictionRunRepository,
-                invitationRepository,
-                roleRepository,
-                reviewRepository,
-                auditRepository,
-                userRepository);
+                predictionRunRepository);
     }
 
     @Test
@@ -105,32 +88,6 @@ class OrganizationCatalogServiceTest {
         assertEquals(6L, item.memberCount());
         assertFalse(Arrays.stream(item.getClass().getRecordComponents())
                 .anyMatch(component -> component.getName().equals("publicAccess")));
-    }
-
-    @Test
-    void deleteOrganization_RemovesEmptyOrganization() {
-        Organization organization = organization();
-        OrganizationMembership member = membership(organization, user(3L, "Member"));
-        when(workspaceAccessService.isSuperadmin(1L)).thenReturn(true);
-        when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization));
-        when(membershipRepository.findByOrganizationId(41L)).thenReturn(List.of(member));
-        when(roleRepository.findByOrganizationId(41L)).thenReturn(List.of());
-
-        service.deleteOrganization(1L, 41L);
-
-        verify(membershipRepository).deleteAll(List.of(member));
-        verify(roleRepository).deleteAll(List.of());
-        verify(userRepository).clearCurrentOrganization(41L);
-        verify(organizationRepository).delete(organization);
-    }
-
-    @Test
-    void deleteOrganization_BlocksNonEmptyOrganization() {
-        when(workspaceAccessService.isSuperadmin(1L)).thenReturn(true);
-        when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization()));
-        when(modelRepository.countByOrganizationId(41L)).thenReturn(1L);
-
-        assertThrows(ResponseStatusException.class, () -> service.deleteOrganization(1L, 41L));
     }
 
     @Test

@@ -56,8 +56,12 @@ export interface OrganizationAdminDashboardDto {
   permissions: WorkspacePermissionsDto;
   stats: OrganizationAdminStatsDto;
   recentMembers: OrganizationMembershipRowDto[];
-  recentInvitations: InvitationDto[];
+  recentInvitations: OrganizationInvitationDto[];
 }
+
+export type OrganizationInvitationDto = Omit<InvitationDto, "token"> & {
+  token?: string | null;
+};
 
 export interface OrganizationAdminStatsDto {
   totalMembers: number;

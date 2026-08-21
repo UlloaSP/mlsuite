@@ -19,7 +19,7 @@ export function AppTabs<TValue extends string>({
   return (
     <div
       className={cx(
-        "inline-flex flex-wrap items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-1 shadow-[var(--shadow-card)]",
+        "flex w-full flex-wrap items-center gap-6 border-b border-[var(--border-soft)]",
         className,
       )}
       role="tablist"
@@ -35,10 +35,10 @@ export function AppTabs<TValue extends string>({
             aria-selected={active}
             onClick={() => onChange(item.value)}
             className={cx(
-              "cursor-pointer rounded-full px-4 py-2.5 text-sm font-medium transition",
+              "cursor-pointer border-b-2 px-1 py-3 text-sm font-semibold transition-colors",
               active
-                ? "bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-[var(--shadow-card)]"
-                : "text-[var(--text-secondary)] hover:bg-[var(--surface-primary)] hover:text-[var(--text-primary)]",
+                ? "border-[var(--accent-primary)] text-[var(--text-primary)]"
+                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
             )}
           >
             {item.label}

@@ -122,6 +122,29 @@ public class WorkspaceAuthorizationService {
         }
     }
 
+    public void requireInvitationCreate(Long userId, Long organizationId) {
+        if (!workspacePermissions(userId, organizationId).canInviteMembers()) {
+            throw new OrganizationAccessDeniedException(organizationId);
+        }
+    }
+
+    public WorkspacePermissionsDto requireInvitationView(Long userId, Long organizationId) {
+        WorkspacePermissionsDto permissions = workspacePermissions(userId, organizationId);
+        if (!permissions.canViewInvitations()) {
+            throw new OrganizationAccessDeniedException(organizationId);
+        }
+        return permissions;
+    }
+
+    public void requireOrganizationRoleView(Long userId, Long organizationId) {
+        WorkspacePermissionsDto permissions = workspacePermissions(userId, organizationId);
+        if (!permissions.canViewMembers()
+                && !permissions.canInviteMembers()
+                && !permissions.canManageMemberRoles()) {
+            throw new OrganizationAccessDeniedException(organizationId);
+        }
+    }
+
     public void requirePluginView(Long userId, Long organizationId) {
         if (!workspacePermissions(userId, organizationId).canViewPlugins()) {
             throw new OrganizationAccessDeniedException(organizationId);

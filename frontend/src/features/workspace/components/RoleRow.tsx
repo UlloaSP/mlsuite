@@ -7,10 +7,10 @@ export function RoleRow({ role, onOpen }: { role: RoleDefinitionDto; onOpen: () 
     <button
       type="button"
       onClick={onOpen}
-      className="w-full rounded-[16px] border border-[var(--border-soft)] p-4 text-left hover:bg-[var(--surface-tertiary)]"
+      className="w-full rounded-lg border border-[var(--border-soft)] p-4 text-left transition-colors hover:border-[var(--text-secondary)]"
     >
       <div className="flex items-start gap-4">
-        <div className="rounded-[12px] bg-[var(--surface-tertiary)] p-3">
+        <div className="rounded-lg border border-[var(--border-soft)] p-3">
           <Lock size={20} />
         </div>
         <div className="min-w-0 flex-1">

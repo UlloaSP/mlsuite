@@ -778,3 +778,14 @@
 
 - Correction: saving model/dataframe bundles concurrently overloaded blocking analyzer work, while swallowed per-item failures still caused success navigation.
 - Rule: serialize artifact creation unless analyzer concurrency is proven safe; batch completion must come from explicit per-item outcomes and failed items must remain retryable.
+
+# Organization settings navigation
+
+- Correction: organization settings duplicated sidebar navigation with a second tab bar and kept extra title margins.
+- Correction: removing header spacing globally also removed the intended separation around the settings content.
+- Rule: when a persistent sidebar owns navigation, do not add page-level tabs. Keep the standard page header as its own full-width block, and apply centering/margins only to the settings block beneath it.
+
+# Organization roles presentation
+
+- Correction: Roles & Templates needs its internal tabs, but not pill styling, gray panel fills, or a drawer that competes with the persistent sidebar.
+- Rule: keep tabs when they switch local content; render them as a flat tab rail. Use centered dialogs for role details and editing, and keep catalog surfaces white/transparent.

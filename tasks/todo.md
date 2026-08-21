@@ -1343,3 +1343,29 @@
 - Focused review routing passes 8/8; full frontend passes 207/207; architecture passes 9/9; TypeScript and production
   build pass. React Doctor reports 89/100 with two unrelated existing findings.
 - Touched files pass formatting, diff checks, and the 300-line limit. No visual check ran because it was not requested.
+
+# Owner organization settings parity
+
+- [x] Lock owner/superadmin organization edit and safe-delete contracts with focused backend regressions.
+- [x] Unify organization update/delete authorization so owner permissions are real and superadmins do not need membership.
+- [x] Keep sidebar as the sole organization navigation and use target-organization permissions in each page.
+- [x] Rebuild settings with a standard full-width header and a centered flat settings block below it.
+- [x] Gate member, role, and invitation actions by their exact permissions.
+- [x] Restyle Roles & Templates as a flat catalog with underline tabs and native modal dialogs.
+- [x] Cover settings, invitation, role, permission, error, and destructive-action behavior in one frontend test file.
+- [x] Run focused and broad API/frontend verification, React Doctor, source-limit audit, independent review, and `graphify update .`.
+
+## Review
+
+- Organization Settings now edits name, slug, and nullable description; transfers ownership; and safely deletes empty
+  organizations. The page uses the normal full-width header as one block and centers only the settings content below.
+- The sidebar remains the only organization-level navigation. Target-organization permissions drive every route and
+  action, including independent view/invite/manage gates. Invitation tokens are redacted from read-only responses.
+- Roles & Templates keeps its meaningful local tabs as a flat underline rail, removes gray panel fills, and replaces
+  the sidebar-overlapping drawer with native, keyboard-operable detail and edit dialogs.
+- Focused API regressions pass 32/32. Full frontend passes 214/214, focused frontend/architecture passes 16/16,
+  TypeScript, lint, and production build pass. React Doctor's remaining findings are unrelated existing debt.
+- Full API runs 185 tests; its sole failure is the pre-existing `WebAdapterArchitectureTest` violation in
+  `ModelControllerImpl`/`ModelCreationService`. Full `vp check` remains blocked by 436 pre-existing formatting issues.
+- All changed sources remain at or below 300 non-comment lines. Independent review found no remaining task-scoped
+  Critical or Important findings. No visual browser check ran because it was not requested.

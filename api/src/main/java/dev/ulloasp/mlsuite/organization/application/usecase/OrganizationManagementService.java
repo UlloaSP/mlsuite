@@ -46,6 +46,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     private final InvitationRepository invitationRepository;
     private final RoleSeedService roleSeedService;
     private final RoleDefinitionRepository roleDefinitionRepository;
+    private final OrganizationDeletionService organizationDeletionService;
 
     public OrganizationManagementService(
             WorkspaceAccessService workspaceAccessService,
@@ -55,7 +56,8 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             ModelRepository modelRepository,
             InvitationRepository invitationRepository,
             RoleSeedService roleSeedService,
-            RoleDefinitionRepository roleDefinitionRepository) {
+            RoleDefinitionRepository roleDefinitionRepository,
+            OrganizationDeletionService organizationDeletionService) {
         this.workspaceAccessService = workspaceAccessService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.organizationRepository = organizationRepository;
@@ -64,6 +66,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         this.invitationRepository = invitationRepository;
         this.roleSeedService = roleSeedService;
         this.roleDefinitionRepository = roleDefinitionRepository;
+        this.organizationDeletionService = organizationDeletionService;
     }
 
     @Override
@@ -111,29 +114,30 @@ public class OrganizationManagementService implements OrganizationManagementUseC
 
     @Override
     public OrganizationAdminDashboardDto getAdminDashboard(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
+        var permissions = workspaceAuthorizationService.workspacePermissions(userId, organizationId);
         var org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        var permissions = workspaceAuthorizationService.workspacePermissions(userId, organizationId);
         var stats = new OrganizationAdminStatsDto(
                 permissions.canViewMembers() ? membershipRepository.countActiveByOrganizationId(organizationId) : 0,
                 permissions.canViewModels() ? modelRepository.countByOrganizationId(organizationId) : 0,
-                permissions.canManageInvitations() ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING) : 0);
+                permissions.canViewInvitations() ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING) : 0);
         return new OrganizationAdminDashboardDto(
                 OrganizationDto.from(org),
                 permissions,
                 stats,
                 permissions.canViewMembers() ? listMembers(userId, organizationId).stream().limit(5).toList() : List.of(),
-                permissions.canManageInvitations() ? invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
+                permissions.canViewInvitations() ? invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
                         .limit(5)
-                        .map(dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto::from)
+                        .map(invitation -> dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto.from(
+                                invitation, permissions.canManageInvitations()))
                         .toList() : List.of());
     }
 
     @Override
     public OrganizationDto updateOrganization(Long userId, Long organizationId, UpdateOrganizationRequest request) {
         workspaceAuthorizationService.requireOrganizationEdit(userId, organizationId);
-        Organization organization = workspaceAccessService.requireMembership(userId, organizationId).getOrganization();
+        Organization organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         String slug = request.slug() == null || request.slug().isBlank()
                 ? organization.getSlug()
                 : normalizeSlug(request.slug(), request.name());
@@ -150,8 +154,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     @Override
     public void deleteOrganization(Long userId, Long organizationId) {
         workspaceAuthorizationService.requireOrganizationDelete(userId, organizationId);
-        Organization organization = workspaceAccessService.requireMembership(userId, organizationId).getOrganization();
-        organizationRepository.delete(organization);
+        organizationDeletionService.delete(organizationId);
     }
 
     @Override

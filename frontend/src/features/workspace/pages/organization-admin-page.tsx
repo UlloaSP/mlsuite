@@ -1,33 +1,23 @@
-import { Mail, Settings, Shield, Users } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router";
-import { AppButton } from "@/shared/ui/AppButton";
+import { Mail, Shield, Users } from "lucide-react";
+import { useParams } from "react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import { AppTabs } from "@/shared/ui/AppTabs";
-import { NotFoundError } from "@/shared/ui/RouteStatusPage";
+import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/features/workspace/components/admin/AdminStatCard";
 import { StatusBadge } from "@/features/workspace/components/admin/StatusBadge";
-import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
-
-const tabs = [
-  { label: "Overview", value: "overview" },
-  { label: "Members", value: "members" },
-  { label: "Roles & Templates", value: "roles" },
-  { label: "Invitations", value: "invitations" },
-  { label: "Settings", value: "settings" },
-] as const;
+import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
 export function OrganizationAdminPage() {
   const { organizationId = "" } = useParams();
   const id = Number(organizationId);
-  const navigate = useNavigate();
-  const { data: workspace } = useWorkspaceContext();
-  const { data } = useOrganizationAdminDashboardQuery(id);
+  const { data, error, isError } = useOrganizationAdminDashboardQuery(id);
 
-  if (workspace && !workspace.permissions.canViewOrganization) return <NotFoundError />;
+  if (!Number.isFinite(id)) return <RouteStatusPage status={404} />;
+  if (isError) return <RouteStatusPage status={organizationRouteErrorStatus(error)} />;
+  if (data && !data.permissions.canViewOrganization) return <RouteStatusPage status={403} />;
 
   return (
     <AppPage>
@@ -36,28 +26,9 @@ export function OrganizationAdminPage() {
           title={data?.organization.name ?? "Organization Admin"}
           description="Manage members, roles, invitations, and access control."
           breadcrumbs={[
-            { label: "Organizations", to: "/workspace/organizations" },
+            { label: "Workspace", to: "/workspace" },
             { label: data?.organization.name ?? "Organization" },
           ]}
-          actions={
-            <Link to={`/workspace/organizations/${id}/settings`}>
-              <AppButton variant="secondary">
-                <Settings size={16} />
-                Settings
-              </AppButton>
-            </Link>
-          }
-        />
-        <AppTabs
-          items={tabs as unknown as Array<{ label: string; value: string }>}
-          value="overview"
-          onChange={(value) =>
-            void navigate(
-              value === "overview"
-                ? `/workspace/organizations/${id}`
-                : `/workspace/organizations/${id}/${value}`,
-            )
-          }
         />
         <div className="grid gap-4 md:grid-cols-3">
           <AdminStatCard

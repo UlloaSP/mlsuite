@@ -18,6 +18,10 @@ public record InvitationDto(
         OffsetDateTime createdAt) {
 
     public static InvitationDto from(Invitation invitation) {
+        return from(invitation, true);
+    }
+
+    public static InvitationDto from(Invitation invitation, boolean includeToken) {
         return new InvitationDto(
                 invitation.getId(),
                 invitation.getOrganization().getId(),
@@ -26,7 +30,7 @@ public record InvitationDto(
                 invitation.getRole().name(),
                 invitation.getRoleDefinition() != null ? RoleSummaryDto.from(invitation.getRoleDefinition()) : null,
                 invitation.getStatus().name(),
-                invitation.getToken(),
+                includeToken ? invitation.getToken() : null,
                 invitation.getExpiresAt(),
                 invitation.getCreatedAt());
     }

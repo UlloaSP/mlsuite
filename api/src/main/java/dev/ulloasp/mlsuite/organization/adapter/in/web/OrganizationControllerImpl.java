@@ -87,7 +87,7 @@ public class OrganizationControllerImpl implements OrganizationController {
 
     @Override
     public ResponseEntity<Void> deleteOrganization(Authentication authentication, Long organizationId) {
-        organizationCatalogService.deleteOrganization(currentUserResolver.resolve(authentication).userId(), organizationId);
+        organizationManagementUseCase.deleteOrganization(currentUserResolver.resolve(authentication).userId(), organizationId);
         return ResponseEntity.noContent().build();
     }
 

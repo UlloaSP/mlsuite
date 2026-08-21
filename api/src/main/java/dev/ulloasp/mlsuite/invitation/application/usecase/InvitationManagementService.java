@@ -22,6 +22,8 @@ import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
+import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
@@ -40,6 +42,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     private final WorkspaceAccessService workspaceAccessService;
     private final InvitationRepository invitationRepository;
     private final OrganizationMembershipRepository organizationMembershipRepository;
+    private final OrganizationRepository organizationRepository;
     private final UserLookupService userLookupService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final AuditLogService auditLogService;
@@ -51,6 +54,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
             WorkspaceAccessService workspaceAccessService,
             InvitationRepository invitationRepository,
             OrganizationMembershipRepository organizationMembershipRepository,
+            OrganizationRepository organizationRepository,
             UserLookupService userLookupService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
             AuditLogService auditLogService,
@@ -60,6 +64,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
         this.workspaceAccessService = workspaceAccessService;
         this.invitationRepository = invitationRepository;
         this.organizationMembershipRepository = organizationMembershipRepository;
+        this.organizationRepository = organizationRepository;
         this.userLookupService = userLookupService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.auditLogService = auditLogService;
@@ -70,15 +75,15 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     @Override
     public List<InvitationDto> listInvitations(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
+        var permissions = workspaceAuthorizationService.requireInvitationView(userId, organizationId);
         return invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
-                .map(InvitationDto::from)
+                .map(invitation -> InvitationDto.from(invitation, permissions.canManageInvitations()))
                 .toList();
     }
 
     @Override
     public List<InvitationCandidateDto> listInvitationCandidates(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
+        workspaceAuthorizationService.requireInvitationCreate(userId, organizationId);
         return userRepository.findEnabledUsersOutsideActiveOrganization(organizationId)
                 .stream()
                 .map(InvitationCandidateDto::from)
@@ -88,8 +93,9 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     @Override
     public InvitationDto createInvitation(Long userId, Long organizationId, CreateInvitationRequest request) {
         User user = workspaceAccessService.requireUser(userId);
-        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
-        var organization = workspaceAccessService.requireMembership(userId, organizationId).getOrganization();
+        workspaceAuthorizationService.requireInvitationCreate(userId, organizationId);
+        var organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         roleSeedService.ensureOrganizationRoles(organization);
         RoleDefinition roleDefinition = resolveRoleDefinition(organization, request);
         OrganizationRole legacyRole = legacyRole(roleDefinition);

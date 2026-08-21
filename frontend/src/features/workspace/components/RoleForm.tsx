@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppTextArea } from "@/shared/ui/AppTextArea";
@@ -34,6 +34,7 @@ export function RoleForm({
     permissionKeys: PermissionKey[];
   }) => void;
 }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState(initial?.name ?? roleDefinition?.name ?? "");
   const [description, setDescription] = useState(
     initial?.description ?? roleDefinition?.description ?? "",
@@ -49,12 +50,30 @@ export function RoleForm({
     );
   };
 
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    return () => {
+      if (dialog.open && typeof dialog.close === "function") dialog.close();
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
-      <div className="flex h-[min(86vh,760px)] w-full max-w-[840px] flex-col overflow-hidden rounded-xl bg-[var(--surface-primary)] shadow-[var(--shadow-card)]">
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="role-form-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      className="m-auto h-[min(86vh,760px)] w-[calc(100%-2rem)] max-w-[840px] overflow-hidden rounded-xl border-0 bg-[var(--surface-primary)] p-0 text-[var(--text-primary)] shadow-[var(--shadow-card)] backdrop:bg-black/35"
+    >
+      <div className="flex h-full flex-col">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-soft)] px-6 py-5">
           <div>
-            <h2 className="text-xl font-semibold">
+            <h2 id="role-form-title" className="text-xl font-semibold">
               {roleDefinition ? "Edit Role" : "Create New Role"}
             </h2>
             <p className="text-sm text-[var(--text-secondary)]">
@@ -73,6 +92,7 @@ export function RoleForm({
         <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 px-6 py-5">
           <div className="grid gap-3 md:grid-cols-[minmax(220px,0.8fr)_minmax(280px,1.2fr)]">
             <AppTextField
+              autoFocus
               className="rounded-xl shadow-none"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -144,6 +164,6 @@ export function RoleForm({
           </AppButton>
         </footer>
       </div>
-    </div>
+    </dialog>
   );
 }

@@ -53,7 +53,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
 
     @Override
     public RolesResponseDto list(Long userId, Long organizationId) {
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireOrganizationRoleView(userId, organizationId);
         roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId)));
         var roles = roleRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)

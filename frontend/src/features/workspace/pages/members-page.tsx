@@ -1,4 +1,3 @@
-import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { Search, Shield, UserCheck, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useParams } from "react-router";
@@ -6,7 +5,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import { NotFoundError } from "@/shared/ui/RouteStatusPage";
+import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 import {
   useRemoveOrganizationMemberMutation,
   useUpdateOrganizationMemberRoleMutation,
@@ -14,15 +13,22 @@ import {
 import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
 import { AdminStatCard } from "@/features/workspace/components/admin/AdminStatCard";
 import { MemberTable } from "@/features/workspace/components/MemberTable";
-import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
+import {
+  useOrganizationAdminDashboardQuery,
+  useOrganizationMembersQuery,
+} from "@/features/workspace/api/workspace.queries";
+import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
 export function MembersPage() {
   const { organizationId = "" } = useParams();
   const id = Number(organizationId);
-  const { data: workspace } = useWorkspaceContext();
+  const dashboard = useOrganizationAdminDashboardQuery(id);
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("ALL");
-  const { data: members = [] } = useOrganizationMembersQuery(id);
+  const { data: members = [] } = useOrganizationMembersQuery(
+    id,
+    Boolean(dashboard.data?.permissions.canViewMembers),
+  );
   const removeMember = useRemoveOrganizationMemberMutation(id);
   const updateMemberRole = useUpdateOrganizationMemberRoleMutation(id);
   const filtered = useMemo(
@@ -36,7 +42,11 @@ export function MembersPage() {
     [members, query, role],
   );
 
-  if (workspace && !workspace.permissions.canViewMembers) return <NotFoundError />;
+  if (!Number.isFinite(id)) return <RouteStatusPage status={404} />;
+  if (dashboard.isError)
+    return <RouteStatusPage status={organizationRouteErrorStatus(dashboard.error)} />;
+  if (dashboard.data && !dashboard.data.permissions.canViewMembers)
+    return <RouteStatusPage status={403} />;
 
   return (
     <AppPage>

@@ -48,35 +48,20 @@ export const protectedPages: RouteObject[] = [
       lazyPage(
         () => import("@/features/workspace/pages/organization-admin-page"),
         "OrganizationAdminPage",
-        workspacePage("canViewOrganization"),
       ),
   },
   {
     path: "workspace/organizations/:organizationId/members",
-    lazy: () =>
-      lazyPage(
-        () => import("@/features/workspace/pages/members-page"),
-        "MembersPage",
-        workspacePage("canViewMembers"),
-      ),
+    lazy: () => lazyPage(() => import("@/features/workspace/pages/members-page"), "MembersPage"),
   },
   {
     path: "workspace/organizations/:organizationId/invitations",
     lazy: () =>
-      lazyPage(
-        () => import("@/features/workspace/pages/invitations-page"),
-        "InvitationsPage",
-        workspacePage("canViewInvitations"),
-      ),
+      lazyPage(() => import("@/features/workspace/pages/invitations-page"), "InvitationsPage"),
   },
   {
     path: "workspace/organizations/:organizationId/roles",
-    lazy: () =>
-      lazyPage(
-        () => import("@/features/workspace/pages/roles-page"),
-        "RolesPage",
-        workspacePage("canViewMembers"),
-      ),
+    lazy: () => lazyPage(() => import("@/features/workspace/pages/roles-page"), "RolesPage"),
   },
   {
     path: "workspace/organizations/:organizationId/settings",
@@ -84,7 +69,6 @@ export const protectedPages: RouteObject[] = [
       lazyPage(
         () => import("@/features/workspace/pages/organization-settings-page"),
         "OrganizationSettingsPage",
-        workspacePage("canViewOrganization"),
       ),
   },
   {

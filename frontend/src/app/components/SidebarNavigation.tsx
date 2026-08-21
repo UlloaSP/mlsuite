@@ -58,10 +58,14 @@ export function SidebarNavigation() {
     ...(permissions?.canViewMembers && currentOrganizationPath
       ? [{ to: `${currentOrganizationPath}/members`, icon: Users, label: "Members" }]
       : []),
-    ...(permissions?.canViewInvitations && currentOrganizationPath
+    ...((permissions?.canViewInvitations || permissions?.canInviteMembers) &&
+    currentOrganizationPath
       ? [{ to: `${currentOrganizationPath}/invitations`, icon: Mail, label: "Invitations" }]
       : []),
-    ...(permissions?.canViewMembers && currentOrganizationPath
+    ...((permissions?.canViewMembers ||
+      permissions?.canInviteMembers ||
+      permissions?.canManageMemberRoles) &&
+    currentOrganizationPath
       ? [{ to: `${currentOrganizationPath}/roles`, icon: KeyRound, label: "Roles & Templates" }]
       : []),
     ...(permissions?.canViewOrganization && currentOrganizationPath

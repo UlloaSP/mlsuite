@@ -60,11 +60,11 @@ export const organizationMembersQueryOptions = (organizationId: number, enabled 
     enabled: Boolean(organizationId) && enabled,
   });
 
-export const organizationInvitationsQueryOptions = (organizationId: number) =>
+export const organizationInvitationsQueryOptions = (organizationId: number, enabled = true) =>
   queryOptions({
     queryKey: organizationInvitationsQueryKey(organizationId),
     queryFn: ({ signal }) => getInvitations(organizationId, signal),
-    enabled: Boolean(organizationId),
+    enabled: Boolean(organizationId) && enabled,
   });
 
 export const organizationRolesQueryOptions = (organizationId: number, enabled = true) =>
@@ -110,8 +110,8 @@ export const useOrganizationAdminDashboardQuery = (organizationId: number) =>
 export const useOrganizationMembersQuery = (organizationId: number, enabled = true) =>
   useQuery(organizationMembersQueryOptions(organizationId, enabled));
 
-export const useOrganizationInvitationsQuery = (organizationId: number) =>
-  useQuery(organizationInvitationsQueryOptions(organizationId));
+export const useOrganizationInvitationsQuery = (organizationId: number, enabled = true) =>
+  useQuery(organizationInvitationsQueryOptions(organizationId, enabled));
 
 export const useOrganizationRolesQuery = (organizationId: number, enabled = true) =>
   useQuery(organizationRolesQueryOptions(organizationId, enabled));
