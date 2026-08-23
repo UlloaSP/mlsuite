@@ -12,6 +12,28 @@ import type {
   JsonRecord,
   PredictionPayloadField,
 } from "@/capabilities/prediction-runtime/mlform/shared";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+
+/**
+ * Reads a literal model key or MLForm's nested representation of that key.
+ * @param modelValues Serialized MLForm model values.
+ * @param target Exact model feature name.
+ * @returns One-item tuple when present; empty tuple when absent.
+ * @throws Never.
+ * @remarks Literal keys win when both representations exist.
+ */
+const readModelValue = (modelValues: JsonRecord, target: string): [] | [unknown] => {
+  if (Object.hasOwn(modelValues, target)) return [modelValues[target]];
+  let value: unknown = modelValues;
+  for (const segment of target
+    .split(".")
+    .map((item) => item.trim())
+    .filter(Boolean)) {
+    if (!isRecord(value) || !Object.hasOwn(value, segment)) return [];
+    value = value[segment];
+  }
+  return [value];
+};
 
 /**
  * applySchemaRunInputMapping: applies a deterministic transformation to the supplied data
@@ -33,11 +55,15 @@ export const applySchemaRunInputMapping = (
         const optionRecord = option as JsonRecord;
         const target = targetKey(mappedTarget(optionRecord.mappedTo, binding));
         if (!target) return;
-        if (target in modelValues) payload[target] = modelValues[target];
+        const value = readModelValue(modelValues, target);
+        if (value.length > 0) payload[target] = value[0];
       });
       return payload;
     }
     const target = targetKey(mappedTarget(field.mappedTo, binding));
-    if (target && target in modelValues) payload[target] = modelValues[target];
+    if (target) {
+      const value = readModelValue(modelValues, target);
+      if (value.length > 0) payload[target] = value[0];
+    }
     return payload;
   }, {});

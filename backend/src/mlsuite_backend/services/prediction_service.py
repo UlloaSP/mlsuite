@@ -10,7 +10,7 @@ from ..utils.errors import internal_runtime_error
 async def predict(model_upload: UploadFile, data: str) -> dict[str, object]:
     runtime = await load_runtime_model_from_upload(model_upload)
     record = parse_record_json(data, "Invalid JSON")
-    frame = build_prediction_dataframe(runtime.model, record)
+    frame = build_prediction_dataframe(runtime.feature_metadata(), record)
 
     if runtime.kind != "classifier" and runtime.kind != "regressor":
         raise internal_runtime_error(f"Unsupported model kind: {runtime.kind}")

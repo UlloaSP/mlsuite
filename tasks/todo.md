@@ -1441,3 +1441,47 @@ Breaking migration: no compatibility path for pre-0.1.20 report envelopes.
   `ModelControllerImpl`/`ModelCreationService`. Full `vp check` remains blocked by 436 pre-existing formatting issues.
 - All changed sources remain at or below 300 non-comment lines. Independent review found no remaining task-scoped
   Critical or Important findings. No visual browser check ran because it was not requested.
+
+# Unresolved `$defs/__schema0` on schema change
+
+- [x] Build a deterministic reproduction from the schema-change editor validation path.
+- [x] Trace schema generation, normalization, Monaco model updates, and error rendering end to end.
+- [x] Test ranked causes against current code, dependency versions, tests, and relevant git history.
+- [x] Document root cause, trigger conditions, impact, and the smallest correct repair boundary.
+
+## Review
+
+- `mlform@0.1.22` converts every registered Zod field definition independently, then nests those complete JSON Schema
+  documents under a new root `oneOf`. Recursive field conditions produce local `$defs.__schema0`, while their
+  `#/$defs/__schema0` references still target document root. Generated root has no `$defs`: all 72 refs are unresolved.
+- Monaco correctly resolves local JSON Pointers from `internal://root.schema.json`, emits first resolution warning at
+  root line 1 column 1, and skips semantic JSON Schema validation. MLSuite counts that warning as an error and blocks
+  Preview/Review. Runtime Zod validation remains separate, which is why current focused tests pass.
+- Regression reached MLSuite in `03a83198`, which upgraded MLForm 0.1.19 to 0.1.22 and replaced the prior manual editor
+  schema with dynamic `toSchemaJsonSchema`. Monaco 0.56 predates this change and is not the cause.
+- Correct repair boundary is MLForm's `toSchemaJsonSchema`: export one combined Zod schema, or safely hoist/rebase every
+  nested definition and reference with collision-free names. Filtering the marker in MLSuite would hide an invalid
+  generated schema and leave custom definitions exposed to the same defect.
+- Deterministic inspection found 72/72 unresolved refs. A single combined Zod export produced 39/39 resolvable refs.
+  Existing `builtin-registry.test.ts` passes 5/5 and demonstrates the missing resolver-level regression coverage.
+
+# Literal dotted model feature mapping
+
+- [x] Add one frontend regression covering dotted one-hot targets in prediction and explanation payloads.
+- [x] Resolve MLForm path values while preserving literal model feature names.
+- [x] Reject incomplete prediction records in the Python runtime and cover success/error cases.
+- [x] Run focused and broad verification, source-limit audit, review, and `graphify update .`.
+
+## Review
+
+- MLForm path-shaped values are flattened back to exact model feature names; existing literal keys remain authoritative.
+- Prediction and explanation now share strict feature validation. Named models validate exact columns; positional models
+  validate feature count while retaining incoming column order.
+- Regression coverage failed before the fix and now passes for dotted one-hot prediction/explanation bodies, literal
+  precedence, named missing features, positional count mismatch, and complete predictions.
+- Full frontend passes 50 files and 214 tests; production build and touched-file checks pass. Full Python runtime passes
+  40 tests; compileall passes. React Doctor remains 81/100 with eight unrelated existing warnings.
+- Repository-wide `vp check` remains blocked by 353 pre-existing formatting issues. `ruff` is unavailable in the Python
+  environment; no dependency was added solely for linting. All touched files remain below 300 non-comment lines.
+- Independent review found no remaining Critical, Important, or Minor issues. No visual check ran because no UI changed
+  and none was requested. `graphify update .` completed with 10,315 nodes, 28,245 edges, and 467 communities.
