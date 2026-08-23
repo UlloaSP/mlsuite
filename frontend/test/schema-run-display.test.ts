@@ -11,6 +11,8 @@ import {
   mergeSchemaRunInputs,
 } from "@/capabilities/prediction-runtime/data/input-display";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
+import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
+import { validateMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 
 const schema = {
   fields: [
@@ -59,6 +61,34 @@ describe("schema run display", () => {
     expect(
       mergeSchemaRunInputs({ bloodGroup: "A" }, [{ modelInput: { blood_group__B: 1 } }]),
     ).toEqual({ bloodGroup: "A", blood_group__B: 1 });
+  });
+
+  test("restores display keys for generated schemas before validation and prefill", () => {
+    const generatedSchema = {
+      fields: [{ kind: "number", id: "age", label: "Age", mappedTo: "age" }],
+    };
+    const validation = validateMlformSchema(generatedSchema);
+    const prefill = getSchemaRunPrefillInputs(generatedSchema, { age: 42 });
+
+    expect(validation.success).toBe(true);
+    expect(validation.success && validation.data.fields[0]?.displayKey).toBe("Age");
+    expect(prefill).toEqual({ Age: 42 });
+    expect(applyPredictionInputsToSchema(generatedSchema, prefill)).toMatchObject({
+      fields: [{ defaultValue: 42 }],
+    });
+  });
+
+  test("falls back to id and skips fields without a usable display key", () => {
+    const generatedSchema = {
+      fields: [
+        { kind: "number", id: "score", mappedTo: "score" },
+        { kind: "number", mappedTo: "ignored" },
+      ],
+    };
+
+    expect(getSchemaRunPrefillInputs(generatedSchema, { score: 7, ignored: 9 })).toEqual({
+      score: 7,
+    });
   });
 
   test("reads normal and plugin report payload aliases", () => {

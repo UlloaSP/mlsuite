@@ -1,3 +1,19 @@
+# Restore schema display-key prefill
+
+- [x] Reproduce validation and prefill failure for generated fields without `displayKey`.
+- [x] Add one vertical regression covering `label` and `id` fallbacks.
+- [x] Restore one shared `displayKey = label || id` runtime adapter.
+- [x] Run focused and broad frontend verification plus source-limit checks.
+- [x] Update graphify and record exact results.
+
+## Review
+
+- Runtime normalization now resolves each absent `displayKey` as `label || id` without mutating persisted schemas.
+- Validation, visible input reconstruction, and run prefill share the same resolver; explicit `displayKey` remains authoritative.
+- The regression failed 2/6 before the fix and passes 6/6 after it. Related tests pass 17/17; the full frontend suite passes 49 files and 212 tests.
+- Targeted `vp check`, TypeScript, production build, diff whitespace, and changed-file line limits pass. No visual check ran because it was not requested.
+- `graphify update .` completed with 10,340 nodes and 28,318 edges.
+
 # Generic report plugin classification fix
 
 - [x] Reproduce backend and frontend misclassification for `defineReportKind<Config, Payload>({...})`.

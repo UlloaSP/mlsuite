@@ -8,6 +8,7 @@ import {
   isRecord,
   type JsonRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
+import { resolveDisplayKey } from "@/capabilities/prediction-runtime/mlform/display-key";
 import { mappedTargets } from "@/capabilities/prediction-runtime/mlform/mapped-to";
 
 type DisplayInput = { key: string; label: string; value: unknown };
@@ -15,15 +16,13 @@ type DisplayInput = { key: string; label: string; value: unknown };
 const fieldsOf = (schema: unknown): JsonRecord[] =>
   isRecord(schema) && Array.isArray(schema.fields) ? schema.fields.filter(isRecord) : [];
 
-const displayKeyOf = (field: JsonRecord): string | undefined => getString(field.displayKey);
-
 const hasDisplayValue = (value: unknown): boolean =>
   value !== null && value !== undefined && !(typeof value === "string" && value.trim() === "");
 
 const activeOneHot = (value: unknown): boolean => value === true || value === 1 || value === "1";
 
 const fieldValue = (field: JsonRecord, inputData: JsonRecord): unknown => {
-  for (const key of [displayKeyOf(field), ...mappedTargets(field.mappedTo)]) {
+  for (const key of [resolveDisplayKey(field), ...mappedTargets(field.mappedTo)]) {
     if (key && key in inputData && hasDisplayValue(inputData[key])) return inputData[key];
   }
   if (field.kind !== "onehot-category" || !Array.isArray(field.options)) return undefined;
@@ -39,7 +38,7 @@ const fieldValue = (field: JsonRecord, inputData: JsonRecord): unknown => {
 export const getVisibleSchemaInputs = (schema: unknown, inputData: JsonRecord): DisplayInput[] =>
   fieldsOf(schema).reduce<DisplayInput[]>((items, field) => {
     if (field.hidden === true) return items;
-    const key = displayKeyOf(field);
+    const key = resolveDisplayKey(field);
     const value = fieldValue(field, inputData);
     if (!key || !hasDisplayValue(value)) return items;
     items.push({ key, label: getString(field.label) ?? key, value });
@@ -50,7 +49,7 @@ export const getSchemaRunPrefillInputs = (schema: unknown, inputData: JsonRecord
   Object.fromEntries(
     fieldsOf(schema)
       .map((field) => {
-        const key = displayKeyOf(field);
+        const key = resolveDisplayKey(field);
         const value = fieldValue(field, inputData);
         return key && hasDisplayValue(value) ? [key, value] : undefined;
       })

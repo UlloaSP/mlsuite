@@ -18,6 +18,7 @@ import type {
   CompatValidationResult,
 } from "@/capabilities/prediction-runtime/mlform/shared";
 import { hasBlockingIssues, isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
 
 export type ValidateMlformSchemaOptions = {
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
@@ -43,13 +44,6 @@ const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
   if (Array.isArray(schema.fields)) {
     schema.fields.forEach((field, index) => {
       if (!isRecord(field)) return;
-      if (typeof field.displayKey !== "string" || field.displayKey.trim().length === 0) {
-        issues.push({
-          path: ["fields", index, "displayKey"],
-          message: `Schema field ${index + 1} is missing displayKey`,
-          severity: "error",
-        });
-      }
       if (field.kind === "onehot-category" && Array.isArray(field.options)) {
         field.options.forEach((option, optionIndex) => {
           if (isRecord(option) && option.mappedTo === undefined) {
@@ -104,9 +98,10 @@ export const validateMlformSchema = (
   schema: unknown,
   options: ValidateMlformSchemaOptions = {},
 ): CompatValidationResult => {
-  const result = validateSchema(schema, createValidationRegistry(options));
-  const issues = result.issues.map((issue) => toCompatIssue(issue, schema));
-  appendProductIssues(schema, issues);
+  const runtimeSchema = withResolvedDisplayKeys(schema);
+  const result = validateSchema(runtimeSchema, createValidationRegistry(options));
+  const issues = result.issues.map((issue) => toCompatIssue(issue, runtimeSchema));
+  appendProductIssues(runtimeSchema, issues);
 
   return result.success && !hasBlockingIssues(issues)
     ? { success: true, data: result.data, issues }

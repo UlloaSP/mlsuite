@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-08-23 - Derived display-key ownership
+
+- Correction: the initial diagnosis assigned `displayKey` generation to MLSchema, but the clarified contract keeps it optional in persisted schemas and derives it at the MLForm runtime boundary.
+- Rule: distinguish persisted producer data from runtime-normalized data before assigning ownership; optional derived identifiers belong at the consumer boundary and every prefill reader must reuse that resolution.
+
 ## 2026-08-23 - Alpha contract migration
 
 - Correction: the first report-contract plan preserved pre-0.1.20 envelopes although the user explicitly treats both releases as alpha.
