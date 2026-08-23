@@ -55,7 +55,7 @@ public class PluginServiceImpl implements
             "defineField(?:Kind|Definition)\\s*\\([^)]*kind\\s*:\\s*['\"]([^'\"]+)['\"]",
             Pattern.DOTALL);
     private static final Pattern REPORT_KIND = Pattern.compile(
-            "defineReport(?:Kind|Definition)\\s*\\([^)]*kind\\s*:\\s*['\"]([^'\"]+)['\"]",
+            "defineReport(?:Kind|Definition)\\s*(?:<[^>]+>\\s*)?\\([^)]*kind\\s*:\\s*['\"]([^'\"]+)['\"]",
             Pattern.DOTALL);
 
     private final ObjectStorageService objectStorageService;

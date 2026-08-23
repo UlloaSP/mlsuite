@@ -26,7 +26,7 @@ const detectDeclaredPluginType = (source: string): DetectedPluginType | null => 
   if (source.includes("defineFieldKind(")) {
     return "field";
   }
-  if (source.includes("defineReportKind(")) {
+  if (/defineReportKind\s*(?:<[^>]+>\s*)?\(/.test(source)) {
     return "report";
   }
   return null;

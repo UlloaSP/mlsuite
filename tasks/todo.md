@@ -1,3 +1,18 @@
+# Generic report plugin classification fix
+
+- [x] Reproduce backend and frontend misclassification for `defineReportKind<Config, Payload>({...})`.
+- [x] Accept TypeScript generic arguments in both lightweight declaration detectors.
+- [x] Run focused backend/frontend tests plus diff and line-limit checks.
+- [x] Update graphify and record exact verification results.
+
+## Review
+
+- Backend and frontend declaration detectors now accept generic type arguments before the report factory call.
+- Backend regression failed 3/3 before the fix and passed 3/3 after it. Frontend regression failed 2/3 before the fix and passed 3/3 after it.
+- Full frontend suite passed: 49 files, 210 tests. Targeted `vp check` passed with no formatting, lint, or type errors.
+- Full backend suite ran 185 tests: 184 passed; unrelated existing `WebAdapterArchitectureTest` failure remains in `ModelControllerImpl` because it depends directly on `ModelCreationService`.
+- React Doctor scored 81/100 with eight unrelated existing findings. Diff whitespace and changed-file line limits passed.
+
 # Strict MLForm consumer migration
 
 Breaking migration: no compatibility path for pre-stable schemas, payload aliases, report contexts, or renderers.
