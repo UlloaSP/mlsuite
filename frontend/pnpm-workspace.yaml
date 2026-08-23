@@ -1,6 +1,6 @@
 #minimumReleaseAge: 100080
 minimumReleaseAgeExclude:
-  - mlform@0.1.22
+  - mlform@0.1.23
   - "@tanstack/query-core@5.101.3"
   - "@tanstack/react-query@5.101.3"
   - monaco-editor@0.56.0
