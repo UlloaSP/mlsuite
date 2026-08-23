@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type { CatalogReportDefinition } from "@/capabilities/mlform/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
-import { getSchemaResultReports } from "@/capabilities/mlform/report-display";
-import { schemaRunDebug } from "@/capabilities/mlform/run-debug";
+import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
+import { schemaRunDebug } from "@/capabilities/prediction-runtime/mlform/run-debug";
 import type { PredictionResultDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { SchemaRunReportRenderer } from "./SchemaRunReportRenderer";

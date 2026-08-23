@@ -1,3 +1,44 @@
+# Strict MLForm consumer migration
+
+Breaking migration: no compatibility path for pre-stable schemas, payload aliases, report contexts, or renderers.
+
+- [x] Require explicit `displayKey`; remove label/id schema repair and prefill fallbacks.
+- [x] Consume canonical MLForm submission/report fields and official mapped-target helpers everywhere.
+- [x] Remove obsolete custom primitive renderers after proving defined plugin descriptors replace them.
+- [x] Replace the broad MLForm bucket with one prediction runtime capability split into MLForm, plugin, data, and feedback modules.
+- [x] Keep coordinated local MLForm source links until `0.1.21` is published; refresh lockfiles.
+- [x] Update tests, task memory, architecture checks, full tests/build/checks, React Doctor, and graphify.
+
+## Review
+
+- Removed all submission aliases, schema repair, custom renderer components, and duplicated mapped-target traversal.
+- `capabilities/mlform` no longer owns product data, feedback, import/export, or plugin hosting; the prediction runtime is one architecture-safe deep capability.
+- TypeScript, 48 files/207 tests, architecture tests, and production build pass. React Doctor reports only existing repository warnings after task-scoped findings were fixed.
+- Registry publication is intentionally not performed by this source change; consumers use the coordinated local `0.1.21` source until release.
+
+# MLForm report contract migration
+
+Breaking migration: no compatibility path for pre-0.1.20 report envelopes.
+
+- [x] Consume backend-scoped MLForm report envelopes and official per-report context.
+- [x] Remove `sourceTargets` and artificial `report:<id>` mappings.
+- [x] Remove `reportContextById`, report request/context patching, and skipped payload sentinel.
+- [x] Replace handwritten Zod diagnostics/JSON Schema conversion with MLForm registry tooling.
+- [x] Replace local mappedTo resolution and Promise fanout with MLForm public APIs.
+- [x] Preserve analyzer, binding, persistence, feedback, and plugin-hosting behavior.
+- [x] Link local MLForm 0.1.20 for coordinated verification, then run focused/full frontend checks.
+- [x] Update graphify and record exact results.
+
+## Review
+
+- MLSuite now emits strict MLForm 0.1.20 report envelopes and embeds model/backend context per result.
+- Deleted the report-context wrapper module, artificial report targets, skipped sentinel, and request/presenter patching.
+- Analyzer-ready results and client-fetched pending results remain distinct during persistence reconstruction.
+- Full frontend tests pass: 49 files/213 tests. TypeScript and production build pass; all changed source files pass `vp check`.
+- Deleted the handwritten builtin JSON Schema and schema-definition validators; Monaco now regenerates its schema from the active builtin plus tenant plugin registry.
+- Full repository `vp check` remains blocked by 399 pre-existing formatting issues. React Doctor remains 80/100 with nine unrelated existing findings.
+- `graphify update .` rebuilt the graph with 10,478 nodes and 28,679 edges.
+
 # Frontend Reproducible Vite+ Build
 
 - [x] Replace SWC React plugin with Oxc-compatible React plugin and remove obsolete suppression.

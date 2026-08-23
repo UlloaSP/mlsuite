@@ -15,10 +15,10 @@ import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
-} from "@/capabilities/mlform/combined-feedback-questionnaire";
-import { saveSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-save";
-import { ReportFeedbackSummary } from "@/capabilities/mlform/ReportFeedbackSummary";
-import { ReportQuestionnaireMount } from "@/capabilities/mlform/ReportQuestionnaireMount";
+} from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
+import { saveSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-save";
+import { ReportFeedbackSummary } from "@/capabilities/prediction-runtime/feedback/ReportFeedbackSummary";
+import { ReportQuestionnaireMount } from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
 import {
   useCreatePredictionResultFeedbackMutation,
   useUpdatePredictionResultFeedbackMutation,
@@ -26,8 +26,8 @@ import {
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
-} from "@/capabilities/mlform/feedback-completion";
-import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
+} from "@/capabilities/prediction-runtime/feedback/feedback-completion";
+import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,

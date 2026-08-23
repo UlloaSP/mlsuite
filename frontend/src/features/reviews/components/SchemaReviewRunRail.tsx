@@ -1,6 +1,6 @@
 import { Send } from "lucide-react";
 import { useRef, useState } from "react";
-import { formatTimestamp } from "@/capabilities/mlform/model-utils";
+import { formatTimestamp } from "@/capabilities/prediction-runtime/data/model-utils";
 import { useReviewTrayLayout } from "@/features/reviews/lib/use-review-tray-layout";
 import { ReviewPredictionTrayGroup } from "@/features/reviews/components/ReviewPredictionTrayGroup";
 import type { SchemaReviewRunListItemDto } from "@/features/reviews/api/review-types";

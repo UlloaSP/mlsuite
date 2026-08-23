@@ -3,9 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { valuesForCombinedStep } from "@/capabilities/mlform/combined-feedback-questionnaire";
-import { hasFeedbackValues } from "@/capabilities/mlform/questionnaire-feedback";
-import type { SchemaFeedbackStep } from "@/capabilities/mlform/feedback-steps";
+import { valuesForCombinedStep } from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
+import { hasFeedbackValues } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
+import type { SchemaFeedbackStep } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 
 /**
  * PendingFeedback: describes the public data contract consumed or returned by this algorithm.

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppBadge } from "@/shared/ui/AppBadge";
-import { formatTimestamp } from "@/capabilities/mlform/model-utils";
+import { formatTimestamp } from "@/capabilities/prediction-runtime/data/model-utils";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 
 type Props = {

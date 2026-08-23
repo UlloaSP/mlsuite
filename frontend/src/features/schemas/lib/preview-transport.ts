@@ -4,30 +4,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ReportConfig, SubmitRequest, Transport } from "mlform/runtime";
+import type { ReportResult } from "mlform/schema";
 import { normalizeSchemaId } from "mlform/schema";
-import { prepareRuntimeReports } from "@/capabilities/mlform/runtime-report-targets";
-import { isRecord, type JsonRecord } from "@/capabilities/mlform/shared";
-
-type PreviewTarget = {
-  key: string;
-  target: string;
-};
-
-const text = (value: unknown): string | undefined =>
-  typeof value === "string" || typeof value === "number" ? String(value) : undefined;
-
-const mappedTargets = (mappedTo: unknown): PreviewTarget[] => {
-  const direct = text(mappedTo);
-  if (direct) return [{ key: "default", target: direct }];
-  if (!isRecord(mappedTo)) return [];
-  const targets = Object.entries(mappedTo)
-    .map(([key, value]) => {
-      const target = text(value);
-      return target ? { key, target } : null;
-    })
-    .filter((item: PreviewTarget | null): item is PreviewTarget => Boolean(item));
-  return [...new Map(targets.map((item) => [item.target, item])).values()];
-};
+import { mappedRoutes } from "@/capabilities/prediction-runtime/mlform/mapped-to";
+import { prepareRuntimeReports } from "@/capabilities/prediction-runtime/mlform/runtime-report-targets";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 
 /**
  * prepareSchemaPreviewReports: prepares preview reports with runtime-safe identities.
@@ -50,27 +31,36 @@ export const prepareSchemaPreviewReports = (schema: unknown): unknown => {
     modelId: `preview-${index + 1}-${normalizeSchemaId(key)}`,
     modelName: key,
   }));
-  return prepareRuntimeReports(schema, bindings).schema;
+  return prepareRuntimeReports(schema, bindings);
 };
 
-const fakeReport = (report: ReportConfig, mappedTo: string): JsonRecord | null => {
-  const base = { id: report.id, kind: report.kind, mappedTo };
+const fakeReport = (
+  report: ReportConfig,
+  backend: string,
+  mappedTo: string,
+): ReportResult | null => {
   if (report.kind === "classifier") {
     return {
-      ...base,
-      prediction: "preview",
-      labels: ["preview", "alternative"],
-      probabilities: [0.72, 0.28],
+      backend,
+      mappedTo,
+      status: "ready",
+      payload: {
+        prediction: "preview",
+        labels: ["preview", "alternative"],
+        probabilities: [0.72, 0.28],
+      },
     };
   }
-  if (report.kind === "regressor") return { ...base, value: 42, values: [42] };
+  if (report.kind === "regressor") {
+    return { backend, mappedTo, status: "ready", payload: { value: 42, values: [42] } };
+  }
   return null;
 };
 
-const fakeReports = (report: ReportConfig): JsonRecord[] =>
-  mappedTargets(report.mappedTo)
-    .map(({ target }) => fakeReport(report, target))
-    .filter((item: JsonRecord | null): item is JsonRecord => Boolean(item));
+const fakeReports = (report: ReportConfig): ReportResult[] =>
+  mappedRoutes(report.mappedTo)
+    .map(({ backend, mappedTo }) => fakeReport(report, backend, String(mappedTo)))
+    .filter((item: ReportResult | null): item is ReportResult => Boolean(item));
 
 /**
  * createSchemaPreviewTransport: creates a local MLForm transport for editor previews.

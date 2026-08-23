@@ -24,12 +24,12 @@ vi.mock("mlform/kit", async (importOriginal) => {
     },
   };
 });
-vi.mock("@/capabilities/mlform/prediction-catalog-definitions", () => ({
+vi.mock("@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions", () => ({
   loadPredictionCatalogDefinitions: vi.fn(async () => {
     throw new Error("catalog failed");
   }),
 }));
-vi.mock("@/capabilities/mlform/plugin-runtime-sources", () => ({
+vi.mock("@/capabilities/prediction-runtime/plugins/plugin-runtime-sources", () => ({
   pluginRuntimeSourcesQueryOptions: () => ({
     queryKey: ["plugin-runtime-sources"],
     queryFn: async () => [],
@@ -58,7 +58,9 @@ describe("schema form preview", () => {
       <QueryClientProvider client={queryClient}>
         <SchemaFormPreview
           schema={{
-            fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+            fields: [
+              { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
+            ],
             reports: [{ id: "prediction", kind: "classifier", mappedTo: "prediction" }],
           }}
         />
@@ -79,22 +81,23 @@ describe("schema form preview", () => {
     expect(formRoot?.querySelectorAll("mlf-report-frame")).toHaveLength(1);
   });
 
-  test("returns one preview payload when runtime and default aliases share a target", async () => {
+  test("preserves backend routes when mapped targets share a value", async () => {
     const response = await createSchemaPreviewTransport().submit({
       reports: [
         {
           id: "predicted-class-decisiontree-best-model",
           kind: "classifier",
           mappedTo: {
-            "DecisionTree Best Model": "report:predicted-class-decisiontree-best-model",
-            default: "report:predicted-class-decisiontree-best-model",
+            "DecisionTree Best Model": "prediction",
+            default: "prediction",
           },
         },
       ],
     } as never);
 
-    expect(response.reports.map((report: { mappedTo?: unknown }) => report.mappedTo)).toEqual([
-      "report:predicted-class-decisiontree-best-model",
+    expect(response.reports).toMatchObject([
+      { backend: "DecisionTree Best Model", mappedTo: "prediction", status: "ready" },
+      { backend: "default", mappedTo: "prediction", status: "ready" },
     ]);
   });
 
@@ -106,7 +109,9 @@ describe("schema form preview", () => {
       <QueryClientProvider client={queryClient}>
         <SchemaFormPreview
           schema={{
-            fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+            fields: [
+              { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
+            ],
             reports: [
               {
                 id: "prediction",
@@ -140,7 +145,9 @@ describe("schema form preview", () => {
       <QueryClientProvider client={queryClient}>
         <SchemaFormPreview
           schema={{
-            fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+            fields: [
+              { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
+            ],
             reports: [
               {
                 id: "prediction",
@@ -179,7 +186,9 @@ describe("schema form preview", () => {
       <QueryClientProvider client={queryClient}>
         <SchemaFormPreview
           schema={{
-            fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+            fields: [
+              { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
+            ],
             reports: [],
           }}
         />
@@ -199,7 +208,9 @@ describe("schema form preview", () => {
       <QueryClientProvider client={queryClient}>
         <SchemaFormPreview
           schema={{
-            fields: [{ id: "custom", label: "Custom", kind: "External Slider" }],
+            fields: [
+              { id: "custom", label: "Custom", kind: "External Slider", displayKey: "custom" },
+            ],
             reports: [],
           }}
         />

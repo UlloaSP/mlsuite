@@ -39,8 +39,8 @@ importers:
         specifier: ^1.25.0
         version: 1.25.0(react@19.2.7)
       mlform:
-        specifier: 0.1.19
-        version: 0.1.19
+        specifier: 0.1.22
+        version: 0.1.22
       monaco-editor:
         specifier: ^0.56.0
         version: 0.56.0
@@ -2164,8 +2164,8 @@ packages:
   micromark-util-types@2.0.2:
     resolution: {integrity: sha512-Yw0ECSpJoViF1qTU4DC6NwtC4aWGt1EkzaQB8KPPyCRR8z9TWeV0HbEFGTO+ZY1wB22zmxnJqhPyTpOVCpeHTA==}
 
-  mlform@0.1.19:
-    resolution: {integrity: sha512-S5kcrLpU7FJ0MJ/wQRSVB0iytHdB47pHCutDl5FkqUuhE9B0PZUS/CWG1yDXjwNnJebyzfE2OznBXjZsScx8DQ==}
+  mlform@0.1.22:
+    resolution: {integrity: sha512-Vu+dGcc3vkRl8l/L8JG0Kv462Z7cJZzR+V7oasiJ2rzK/HPOGl/nGj9zTuj7oUAKlKqEDPRCIO475fKD7On9IA==}
     engines: {node: '>=24.9.0'}
 
   monaco-editor@0.56.0:
@@ -4431,7 +4431,7 @@ snapshots:
 
   micromark-util-types@2.0.2: {}
 
-  mlform@0.1.19:
+  mlform@0.1.22:
     dependencies:
       lit: 3.3.3
       zod: 4.4.3

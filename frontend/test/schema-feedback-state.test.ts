@@ -7,13 +7,13 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
-} from "@/capabilities/mlform/feedback-completion";
+} from "@/capabilities/prediction-runtime/feedback/feedback-completion";
 import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
-} from "@/capabilities/mlform/combined-feedback-questionnaire";
-import type { SchemaFeedbackStep } from "@/capabilities/mlform/feedback-steps";
-import { saveSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-save";
+} from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
+import type { SchemaFeedbackStep } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
+import { saveSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-save";
 
 const feedback = (resultId: string, value: Record<string, unknown>, id = "feedback-1") => ({
   id,
@@ -126,10 +126,19 @@ describe("schema feedback state", () => {
     });
 
     await transport.submit({
-      values: { "result-1-output-0-assessment": 4 },
-      fieldValues: { "result-1-output-0-assessment": 4 },
-      serializedValues: {},
-      serializedFieldValues: { "result-1-output-0-assessment": 4 },
+      inputs: [
+        {
+          fieldId: "result-1-output-0-assessment",
+          label: "Assessment",
+          value: 4,
+          serializedValue: 4,
+          modelValues: {},
+          visible: true,
+          disabled: false,
+        },
+      ],
+      displayValues: {},
+      modelValues: {},
       fields: [],
       reports: [],
     });

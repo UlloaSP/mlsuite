@@ -28,9 +28,9 @@ import {
   useSchemaBookmark,
   useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
-import { isSchemaFeedbackComplete } from "@/capabilities/mlform/feedback-completion";
-import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/mlform/binding-rebase";
+import { isSchemaFeedbackComplete } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
+import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
+import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 
 const EMPTY_RUNS: PredictionRunDto[] = [];

@@ -9,7 +9,7 @@ import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import type { ModelDto } from "@/features/models/api/model.types";
-import { formatTimestamp, getModelAlgorithmLabel } from "@/capabilities/mlform/model-utils";
+import { formatTimestamp, getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
 
 type ModelSummaryTabProps = {
   model: ModelDto;

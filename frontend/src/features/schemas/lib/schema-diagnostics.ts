@@ -7,7 +7,7 @@ import { parse as parseWithSourceMap } from "json-source-map";
 import { getLocation } from "jsonc-parser";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Type-only Monaco import is erased from runtime.
 import type * as Monaco from "monaco-editor";
-import { builtinFieldKindsDisplay } from "@/capabilities/mlform/builtin-registry";
+import { builtinFieldKindsDisplay } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 
 /**
  * EditorErrorCard: describes the public data contract consumed or returned by this algorithm.

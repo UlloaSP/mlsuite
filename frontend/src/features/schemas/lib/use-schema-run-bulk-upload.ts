@@ -18,16 +18,13 @@ import type {
   CreatePredictionRunRequest,
 } from "@/features/schemas/api/prediction-types";
 import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/features/schemas/api/schema-keys";
-import { createSchemaRunRuntime } from "@/capabilities/mlform/runtime-assembly";
-import { isRecord } from "@/capabilities/mlform/shared";
-import { loadPredictionCatalogDefinitions } from "@/capabilities/mlform/prediction-catalog-definitions";
-import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/mlform/plugin-runtime-sources";
-import { parseSpreadsheetPredictionFile } from "@/capabilities/mlform/parse-spreadsheet-prediction-file";
+import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { loadPredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions";
+import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
+import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
 import { prependMissingPredictionRuns } from "@/features/schemas/lib/run-cache";
-import {
-  getModelInputBulkSchema,
-  toSchemaRunSerializedValues,
-} from "@/features/schemas/lib/bulk-upload";
+import { getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
 
 type Status = "idle" | "parsing" | "processing" | "done";
@@ -103,7 +100,9 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
         try {
           // react-doctor-disable-next-line react-doctor/async-await-in-loop -- Bulk upload is intentionally sequential for progress, cancellation, and backend load control.
           const result = await runtime.transport.submit({
-            serializedValues: toSchemaRunSerializedValues(version, record.inputs),
+            inputs: [],
+            displayValues: record.inputs,
+            modelValues: record.inputs,
             reports: runtime.formSchema.reports,
           } as unknown as SubmitRequest);
           const raw = isRecord(result) && isRecord(result.raw) ? result.raw : {};

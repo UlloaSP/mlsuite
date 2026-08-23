@@ -6,12 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { schemaNeedsPluginCatalog } from "@/capabilities/mlform/schema-plugin-requirement";
-import { loadPredictionCatalogDefinitions } from "@/capabilities/mlform/prediction-catalog-definitions";
-import type { PredictionCatalogDefinitions } from "@/capabilities/mlform/prediction-catalog-definitions";
-import { schemaRunDebug, schemaRunDebugError } from "@/capabilities/mlform/run-debug";
+import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
+import { loadPredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions";
+import type { PredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions";
+import { schemaRunDebug, schemaRunDebugError } from "@/capabilities/prediction-runtime/mlform/run-debug";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/mlform/plugin-runtime-sources";
+import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
 
 const emptyCatalog: PredictionCatalogDefinitions = {
   fieldDefinitions: [],

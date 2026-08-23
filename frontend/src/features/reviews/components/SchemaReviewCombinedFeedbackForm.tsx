@@ -9,15 +9,15 @@ import {
   buildCombinedFeedbackQuestionnaire,
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
-} from "@/capabilities/mlform/combined-feedback-questionnaire";
-import { saveSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-save";
-import { ReportQuestionnaireMount } from "@/capabilities/mlform/ReportQuestionnaireMount";
-import { buildQuestionnaireFormSchema } from "@/capabilities/mlform/questionnaire-schema";
-import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
+} from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
+import { saveSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-save";
+import { ReportQuestionnaireMount } from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
+import { buildQuestionnaireFormSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
+import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
-} from "@/capabilities/mlform/feedback-completion";
+} from "@/capabilities/prediction-runtime/feedback/feedback-completion";
 import type {
   ReviewPredictionResultFeedbackDto,
   ReviewPredictionRunDto,

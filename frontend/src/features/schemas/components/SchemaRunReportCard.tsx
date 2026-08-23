@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
-import { formatDisplayValue } from "@/capabilities/mlform/input-display";
+import { formatDisplayValue } from "@/capabilities/prediction-runtime/data/input-display";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 
 type Props = {

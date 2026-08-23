@@ -1,10 +1,10 @@
-import type { PredictionReportDescriptor } from "@/capabilities/mlform/questionnaire-feedback";
+import type { PredictionReportDescriptor } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import {
   formatProbability,
   getSchemaAwareTargetValue,
   getTargetLabel,
   getTargetProbability,
-} from "@/capabilities/mlform/target-utils";
+} from "@/capabilities/prediction-runtime/mlform/target-utils";
 
 type ReviewOutputsSectionProps = {
   targets: TargetDto[];

@@ -9,15 +9,18 @@ import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
 import {
   getCustomFieldDefinitions,
   type CatalogFieldDefinition,
-} from "@/capabilities/mlform/custom-field-catalog";
+} from "@/capabilities/prediction-runtime/plugins/custom-field-catalog";
 import {
   getCustomReportDefinitions,
   type CatalogReportDefinition,
-} from "@/capabilities/mlform/custom-report-catalog";
+} from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { usePluginRuntimeSourcesQuery } from "@/capabilities/mlform/plugin-runtime-sources";
-import { schemaNeedsPluginCatalog } from "@/capabilities/mlform/schema-plugin-requirement";
-import { mlformJsonSchema, validateMlformSchema } from "@/capabilities/mlform/schema-validation";
+import { usePluginRuntimeSourcesQuery } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
+import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
+import {
+  createMlformJsonSchema,
+  validateMlformSchema,
+} from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import { buildCatalogWarning } from "@/features/schemas/lib/catalog-warning";
 import {
   type EditorErrorCard,
@@ -31,7 +34,6 @@ import { defineEditorThemes, setEditorTheme } from "@/capabilities/editor/config
 import { editorOptions } from "@/capabilities/editor/editor-options";
 import type {
   MonacoEditorInstance,
-  MonacoJson,
   MonacoMarker,
   MonacoMarkerData,
   MonacoNamespace,
@@ -55,6 +57,10 @@ export function EditorBody() {
   const catalogReportDefinitionsRef = useRef<readonly CatalogReportDefinition[]>([]);
   const catalogWarningRef = useRef<EditorErrorCard | null>(null);
   const schemaTextRef = useRef(schemaText);
+  const jsonSchemaCatalogRef = useRef<{
+    fields: readonly CatalogFieldDefinition[];
+    reports: readonly CatalogReportDefinition[];
+  } | null>(null);
   useEffect(() => {
     schemaTextRef.current = schemaText;
   }, [schemaText]);
@@ -75,6 +81,30 @@ export function EditorBody() {
       }
 
       const runId = ++validationSequenceRef.current;
+      const currentJsonSchemaCatalog = jsonSchemaCatalogRef.current;
+      if (
+        currentJsonSchemaCatalog?.fields !== customFieldDefinitions ||
+        currentJsonSchemaCatalog.reports !== customReportDefinitions
+      ) {
+        monacoNs.json.jsonDefaults.setDiagnosticsOptions({
+          validate: true,
+          enableSchemaRequest: false,
+          schemas: [
+            {
+              uri: "internal://root.schema.json",
+              fileMatch: ["*"],
+              schema: createMlformJsonSchema({
+                customFieldDefinitions,
+                customReportDefinitions,
+              }),
+            },
+          ],
+        });
+        jsonSchemaCatalogRef.current = {
+          fields: customFieldDefinitions,
+          reports: customReportDefinitions,
+        };
+      }
       const compatMarkers: MonacoMarkerData[] = [];
       const compatCards: EditorErrorCard[] = [];
       try {
@@ -148,18 +178,6 @@ export function EditorBody() {
 
     defineEditorThemes(monacoNs);
     setEditorTheme(monacoNs, theme === "dark");
-
-    (monacoNs as MonacoNamespace & MonacoJson).json.jsonDefaults.setDiagnosticsOptions({
-      validate: true,
-      enableSchemaRequest: false,
-      schemas: [
-        {
-          uri: "internal://root.schema.json",
-          fileMatch: ["*"],
-          schema: mlformJsonSchema,
-        },
-      ],
-    });
 
     applyCompatValidation(
       editor.getValue(),

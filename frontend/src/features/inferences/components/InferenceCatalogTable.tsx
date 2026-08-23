@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { formatTimestamp, getPredictionShortId } from "@/capabilities/mlform/model-utils";
+import { formatTimestamp, getPredictionShortId } from "@/capabilities/prediction-runtime/data/model-utils";
 import type { InferenceCatalogItemDto } from "@/features/inferences/api/inference-api";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppPanel } from "@/shared/ui/AppPanel";

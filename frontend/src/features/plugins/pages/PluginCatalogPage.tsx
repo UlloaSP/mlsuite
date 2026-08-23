@@ -24,7 +24,7 @@ import {
   type TypeFilter,
   readFileText,
 } from "@/features/plugins/lib/catalog-page-model";
-import { detectPluginType } from "@/capabilities/mlform/plugin-catalog-loader";
+import { detectPluginType } from "@/capabilities/prediction-runtime/plugins/plugin-catalog-loader";
 import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";

@@ -16,7 +16,7 @@ import { AppTextField } from "@/shared/ui/AppTextField";
 import { SchemaModelSelector } from "@/features/schemas/components/SchemaModelSelector";
 import { useCreateSchemaWithInitialVersionMutation } from "@/features/schemas/api/schema-mutations";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
-import { prepareSchemaVersionForSave } from "@/capabilities/mlform/binding-rebase";
+import { prepareSchemaVersionForSave } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
 import {
   composeSchemaVersion,
   type SchemaSourceModel,

@@ -7,20 +7,11 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "@/capabilities/mlform/runtime-assembly";
-import type { CatalogReportDefinition } from "@/capabilities/mlform/custom-report-catalog";
+import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 
 const stringMeta = (value: unknown): string =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";
-
-const findReport = (reports: readonly unknown[], id: string) =>
-  reports.find(
-    (report): report is { id?: string; payload?: unknown } =>
-      typeof report === "object" &&
-      report !== null &&
-      "id" in report &&
-      (report as { id?: unknown }).id === id,
-  );
 
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",
@@ -40,13 +31,14 @@ const crystal = (): CatalogReportDefinition => ({
       kind: z.literal("Crystal Tree"),
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
-    resolve: ({ report, result }) => findReport(result.reports, report.id)?.payload,
     fetch: ({ config }: { config: { endpoint: string } }) => ({
-      submit: async (request: { meta?: Record<string, unknown> }) => {
-        const modelId = stringMeta(request.meta?.modelId);
+      submit: async (request: {
+        reportContext?: { modelValues?: Record<string, unknown>; meta: Record<string, unknown> };
+      }) => {
+        const modelId = stringMeta(request.reportContext?.meta.modelId);
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, {
           method: "POST",
-          body: JSON.stringify({ instance: request.meta?.backendFieldValues }),
+          body: JSON.stringify({ instance: request.reportContext?.modelValues }),
         });
         return response.json();
       },

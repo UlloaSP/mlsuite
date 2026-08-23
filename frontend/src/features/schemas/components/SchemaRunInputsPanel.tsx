@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
-import { formatDisplayValue, getVisibleSchemaInputs } from "@/capabilities/mlform/input-display";
+import { formatDisplayValue, getVisibleSchemaInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 
 type Props = {

@@ -8,7 +8,7 @@ import type {
   PluginCatalogType,
   PluginDto,
 } from "@/features/plugins/api/plugin.types";
-import type { DetectedPluginType } from "@/capabilities/mlform/plugin-catalog-loader";
+import type { DetectedPluginType } from "@/capabilities/prediction-runtime/plugins/plugin-catalog-loader";
 
 /**
  * SortMode: describes the public data contract consumed or returned by this algorithm.

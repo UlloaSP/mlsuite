@@ -20,7 +20,7 @@ import { removeOrganizationCache } from "@/features/workspace/api/organization-c
 import {
   invalidatePluginRuntimeCache,
   memoizeCompiledPlugin,
-} from "@/capabilities/mlform/plugin-runtime-cache";
+} from "@/capabilities/prediction-runtime/plugins/plugin-runtime-cache";
 import { classifyRouteError } from "@/app/router/route-error";
 
 type TenantDetailKey = (organizationId: number, resourceId: string) => readonly unknown[];

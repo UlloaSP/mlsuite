@@ -3,12 +3,13 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { mappedTarget, targetKey } from "@/capabilities/mlform/mapped-to";
+import { mappedTargets } from "@/capabilities/prediction-runtime/mlform/mapped-to";
 import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 type FieldRecord = JsonRecord & {
   id?: string;
   label?: string;
+  displayKey?: string;
   kind?: string;
   hidden?: boolean;
   includeInSubmission?: boolean;
@@ -30,27 +31,11 @@ const getFields = (schema: unknown): FieldRecord[] => {
   return fields;
 };
 
-/** inputKeysFor: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const inputKeysFor = (field: FieldRecord): string[] =>
-  Array.from(
-    new Set(
-      [field.id].filter((key): key is string => typeof key === "string" && key.trim().length > 0),
-    ),
-  );
-
 /** displayKeysFor: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const displayKeysFor = (field: FieldRecord): string[] =>
-  typeof field.label === "string" && field.label.trim().length > 0 ? [field.label] : [];
-
-/** mappedTargets: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const mappedTargets = (mappedTo: unknown): string[] => {
-  const direct = targetKey(mappedTarget(mappedTo));
-  if (direct) return [direct];
-  if (!isRecord(mappedTo)) return [];
-  return Object.values(mappedTo).flatMap((value) =>
-    typeof value === "string" || typeof value === "number" ? [String(value)] : [],
-  );
-};
+  typeof field.displayKey === "string" && field.displayKey.trim().length > 0
+    ? [field.displayKey]
+    : [];
 
 /** modelInputFields: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
@@ -59,13 +44,13 @@ const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
     if (field.kind === "onehot-category" && Array.isArray(field.options)) {
       field.options.forEach((option) => {
         mappedTargets(option.mappedTo).forEach((key) => {
-          byKey.set(key, { kind: "number", id: key, label: key });
+          byKey.set(key, { kind: "number", id: key, label: key, displayKey: key });
         });
       });
       return;
     }
     mappedTargets(field.mappedTo).forEach((key) => {
-      byKey.set(key, { ...field, id: key, label: key, hidden: false });
+      byKey.set(key, { ...field, id: key, label: key, displayKey: key, hidden: false });
     });
   });
   return [...byKey.values()];
@@ -95,54 +80,39 @@ export const getModelInputBulkSchema = (version: SchemaVersionDto): unknown => {
 };
 
 /**
- * toSchemaRunSerializedValues: converts data into another contract shape
+ * toSchemaRunFieldValues: converts model-facing data into form field values.
  *
  * Purpose: builds schema-run bulk upload schema and serialized values from model-facing rows.
  * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
  * @throws Error when required schema/plugin/model mapping data is missing, malformed, or unsupported.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export const toSchemaRunSerializedValues = (
+export const toSchemaRunFieldValues = (
   version: SchemaVersionDto,
   inputs: JsonRecord,
 ): Record<string, unknown> => {
   const fields = getFields(version.formSchema);
-  const schemaKeys = new Set(
-    fields.flatMap((field) => [...inputKeysFor(field), ...displayKeysFor(field)]),
-  );
-  const consumedKeys = new Set<string>();
   const values = fields.reduce<Record<string, unknown>>((payload, field) => {
     if (!field.id) return payload;
     if (field.kind === "onehot-category" && Array.isArray(field.options)) {
       const selected = field.options.find((option) =>
         mappedTargets(option.mappedTo).some((target) => {
           if (inputs[target] !== 1) return false;
-          consumedKeys.add(target);
           return true;
         }),
       );
-      for (const option of field.options) {
-        for (const target of mappedTargets(option.mappedTo)) {
-          if (target in inputs) consumedKeys.add(target);
-        }
-      }
       if (selected) payload[field.id] = selected.value ?? selected.label;
       return payload;
     }
     const modelKey = mappedTargets(field.mappedTo).find((target) => target in inputs);
     if (modelKey) {
-      consumedKeys.add(modelKey);
       payload[field.id] = inputs[modelKey];
       return payload;
     }
-    const key = inputKeysFor(field).find((candidate) => candidate in inputs);
+    const key = displayKeysFor(field).find((candidate) => candidate in inputs);
     if (key) payload[field.id] = inputs[key];
     return payload;
   }, {});
-
-  Object.entries(inputs).forEach(([key, value]) => {
-    if (!schemaKeys.has(key) && !consumedKeys.has(key) && !(key in values)) values[key] = value;
-  });
 
   return values;
 };

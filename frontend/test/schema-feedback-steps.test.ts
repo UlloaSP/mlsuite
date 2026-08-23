@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
-import { skippedSchemaReportPayload } from "@/capabilities/mlform/report-plugin-context";
-import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
-import { getSchemaResultReports } from "@/capabilities/mlform/report-display";
+import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
+import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 
@@ -217,11 +216,7 @@ describe("schema feedback steps", () => {
           ...run.results[0]!,
           id: "result-2",
           modelId: "model-2",
-          output: {
-            reports: [
-              { id: "tree_2", mappedTo: "crystal-tree", payload: skippedSchemaReportPayload },
-            ],
-          },
+          output: { reports: [] },
         },
       ],
     };

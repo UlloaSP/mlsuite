@@ -9,8 +9,8 @@ import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { cx } from "@/shared/ui/cx";
-import { isRecord } from "@/capabilities/mlform/shared";
-import { getModelAlgorithmLabel } from "@/capabilities/mlform/model-utils";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
 import type { SchemaSourceModel } from "@/features/schemas/lib/merge";
 
 type Selection = {

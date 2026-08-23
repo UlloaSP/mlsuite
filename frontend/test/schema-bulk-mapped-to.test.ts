@@ -6,9 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { describe, expect, test } from "vite-plus/test";
 import {
   getModelInputBulkSchema,
-  toSchemaRunSerializedValues,
+  toSchemaRunFieldValues,
 } from "@/features/schemas/lib/bulk-upload";
-import { parseCsvPredictionFile } from "@/capabilities/mlform/parse-csv-prediction-file";
+import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 const version: SchemaVersionDto = {
@@ -32,9 +32,9 @@ describe("schema bulk mappedTo", () => {
     expect(bulkSchema.fields.map((field) => field.label)).toEqual(["age"]);
     expect(parsed.skipped).toEqual([]);
     expect(parsed.records[0]?.inputs).toEqual({ age: 52 });
-    expect(toSchemaRunSerializedValues(version, parsed.records[0]?.inputs ?? {})).toEqual({
+    expect(toSchemaRunFieldValues(version, parsed.records[0]?.inputs ?? {})).toEqual({
       "age-ui": 52,
     });
-    expect(toSchemaRunSerializedValues(version, { "Patient age": 52 })).toEqual({});
+    expect(toSchemaRunFieldValues(version, { "Patient age": 52 })).toEqual({});
   });
 });

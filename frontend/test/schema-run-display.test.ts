@@ -9,8 +9,8 @@ import {
   getVisibleSchemaInputRecord,
   getVisibleSchemaInputs,
   mergeSchemaRunInputs,
-} from "@/capabilities/mlform/input-display";
-import { getSchemaResultReports } from "@/capabilities/mlform/report-display";
+} from "@/capabilities/prediction-runtime/data/input-display";
+import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 
 const schema = {
   fields: [

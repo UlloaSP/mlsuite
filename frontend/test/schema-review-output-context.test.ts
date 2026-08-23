@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
-import { getVisibleSchemaInputRecord } from "@/capabilities/mlform/input-display";
+import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
+import { getVisibleSchemaInputRecord } from "@/capabilities/prediction-runtime/data/input-display";
 
 describe("schema review output context", () => {
   test("describes classifier feedback with prediction and probability", () => {

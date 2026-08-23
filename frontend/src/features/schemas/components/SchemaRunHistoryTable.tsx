@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ArrowRight } from "lucide-react";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppBadge } from "@/shared/ui/AppBadge";
-import { formatTimestamp, getPredictionShortId } from "@/capabilities/mlform/model-utils";
+import { formatTimestamp, getPredictionShortId } from "@/capabilities/prediction-runtime/data/model-utils";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 
 type Props = {

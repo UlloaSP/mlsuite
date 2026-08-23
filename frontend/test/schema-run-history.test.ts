@@ -7,7 +7,7 @@ import { describe, expect, test } from "vite-plus/test";
 import { buildSchemaRunExport } from "@/features/schemas/lib/export";
 import {
   getModelInputBulkSchema,
-  toSchemaRunSerializedValues,
+  toSchemaRunFieldValues,
 } from "@/features/schemas/lib/bulk-upload";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type {
@@ -82,7 +82,7 @@ describe("schema run history helpers", () => {
 
   test("serializes technical one-hot bulk input to visible field id", () => {
     expect(
-      toSchemaRunSerializedValues(version, { blood_group__A: 0, blood_group__B: 1, age: 52 }),
+      toSchemaRunFieldValues(version, { blood_group__A: 0, blood_group__B: 1, age: 52 }),
     ).toEqual({ "blood-group": "B", age: 52 });
   });
 

@@ -7,23 +7,14 @@ import { describe, expect, test, vi, afterEach } from "vite-plus/test";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { createSchemaRunRuntime } from "@/capabilities/mlform/runtime-assembly";
+import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
-} from "@/capabilities/mlform/schema-run-result-state";
-import type { CatalogReportDefinition } from "@/capabilities/mlform/custom-report-catalog";
+} from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 
 const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
-
-const findReport = (reports: readonly unknown[], id: string) =>
-  reports.find(
-    (report): report is { id?: string; payload?: unknown } =>
-      typeof report === "object" &&
-      report !== null &&
-      "id" in report &&
-      (report as { id?: unknown }).id === id,
-  );
 
 const crystal = (): CatalogReportDefinition => ({
   id: "crystal",
@@ -44,13 +35,14 @@ const crystal = (): CatalogReportDefinition => ({
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
     payloadSchema: z.object({ explanation: z.string() }),
-    resolve: ({ report, result }) => findReport(result.reports, report.id)?.payload,
     fetch: ({ config }: { config: { endpoint: string } }) => ({
-      submit: async (request: { meta?: Record<string, unknown> }) => {
-        const modelId = stringMeta(request.meta?.modelId);
+      submit: async (request: {
+        reportContext?: { modelValues?: Record<string, unknown>; meta: Record<string, unknown> };
+      }) => {
+        const modelId = stringMeta(request.reportContext?.meta.modelId);
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, {
           method: "POST",
-          body: JSON.stringify({ instance: request.meta?.backendFieldValues }),
+          body: JSON.stringify({ instance: request.reportContext?.modelValues }),
         });
         if (!response.ok) throw new Error(await response.text());
         return response.json();
@@ -122,6 +114,7 @@ describe("schema plugin real mlform lifecycle", () => {
       form.reports,
       reportStatesFromSnapshot(form.state.reportStates),
       [{ modelId: "model-1" }, { modelId: "model-2" }, { modelId: "model-3" }],
+      result.submitResult.reportContexts,
     );
     expect(
       (built.raw.results as Array<{ output: { reports: unknown[] } }>).map(
@@ -228,6 +221,7 @@ describe("schema plugin real mlform lifecycle", () => {
       form.reports,
       reportStatesFromSnapshot(form.state.reportStates),
       [{ modelId: "model-1" }, { modelId: "model-2" }],
+      result.submitResult.reportContexts,
     );
     expect(built.reportsPending).toBe(false);
   });

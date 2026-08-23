@@ -10,7 +10,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import { isRecord } from "@/capabilities/mlform/shared";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
 import { SchemaRunSaveModal } from "@/features/schemas/components/SchemaRunSaveModal";
 import { useCreatePredictionRunForBookmarkMutation } from "@/features/schemas/api/schema-prediction-mutations";
@@ -20,7 +20,7 @@ import {
   useSchemaBookmark,
   useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/mlform/binding-rebase";
+import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
 import type { PendingFeedback } from "@/features/schemas/lib/pending-feedback";
 import type { CreatePredictionRunRequest } from "@/features/schemas/api/prediction-types";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";

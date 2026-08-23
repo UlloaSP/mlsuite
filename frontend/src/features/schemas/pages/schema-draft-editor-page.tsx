@@ -8,7 +8,7 @@ import { AlertTriangle, GitCompareArrows, MoreHorizontal, PencilLine, Save } fro
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { isRecord } from "@/capabilities/mlform/shared";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import {
   useSchema,
   useSchemaDraft,

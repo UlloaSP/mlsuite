@@ -10,16 +10,19 @@ import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppButton } from "@/shared/ui/AppButton";
-import { applyPredictionInputsToSchema } from "@/capabilities/mlform/schema-compat";
-import { mountSchemaRunForm } from "@/capabilities/mlform/schema-run-mount";
+import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
+import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
-} from "@/capabilities/mlform/schema-run-result-state";
-import { isRecord } from "@/capabilities/mlform/shared";
-import { schemaRunDebug, schemaRunDebugError } from "@/capabilities/mlform/run-debug";
+} from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import {
+  schemaRunDebug,
+  schemaRunDebugError,
+} from "@/capabilities/prediction-runtime/mlform/run-debug";
 import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import { getSchemaRunPrefillInputs } from "@/capabilities/mlform/input-display";
+import { getSchemaRunPrefillInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
 
 type Props = {
@@ -115,6 +118,7 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
           mounted.form.reports,
           reportStatesFromSnapshot(state.reportStates),
           version.bindings,
+          state.lastResult.reportContexts,
         );
         schemaRunDebug("form.result-update", {
           inputData: isRecord(next.raw.inputData) ? next.raw.inputData : {},

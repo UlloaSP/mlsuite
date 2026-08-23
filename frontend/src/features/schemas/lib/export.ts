@@ -3,17 +3,17 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { isBuiltinReportKind } from "@/capabilities/mlform/builtin-registry";
-import { csvEscape, toCell } from "@/capabilities/mlform/export-csv";
-import { getOutputFeedbackFieldIds } from "@/capabilities/mlform/output-feedback-questionnaire";
-import { getQuestionnaireFieldIds } from "@/capabilities/mlform/questionnaire-feedback";
-import type { QuestionnaireSchema } from "@/capabilities/mlform/questionnaire-schema";
-import { getFormattedReportContent } from "@/capabilities/mlform/report-feedback-utils";
-import { formatTimestamp } from "@/capabilities/mlform/model-utils";
+import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
+import { csvEscape, toCell } from "@/capabilities/prediction-runtime/data/export-csv";
+import { getOutputFeedbackFieldIds } from "@/capabilities/prediction-runtime/feedback/output-feedback-questionnaire";
+import { getQuestionnaireFieldIds } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
+import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
+import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
+import { formatTimestamp } from "@/capabilities/prediction-runtime/data/model-utils";
 import {
   getSchemaResultReports,
   type SchemaDisplayReport,
-} from "@/capabilities/mlform/report-display";
+} from "@/capabilities/prediction-runtime/data/report-display";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,

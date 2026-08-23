@@ -9,19 +9,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createMlRegistryPack } from "mlform/builtins";
 import { mountForm, registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { MountedForm } from "mlform/kit";
+import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
-import { toMlformSchema } from "@/capabilities/mlform/schema-validation";
-import { toMlformRuntimeSchema } from "@/capabilities/mlform/schema-runtime-adapter";
-import { wrapSchemaReportDefinitions } from "@/capabilities/mlform/report-plugin-context";
+import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 import {
   createSchemaPreviewTransport,
   prepareSchemaPreviewReports,
 } from "@/features/schemas/lib/preview-transport";
-import { createPredictionPrimitiveRegistry } from "@/capabilities/mlform/primitive-registry";
-import { getPredictionDesignSystem } from "@/capabilities/mlform/headless-prediction";
+import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
 import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
 
 type Props = {
@@ -33,7 +32,7 @@ type ResolvedSchema =
   | {
       status: "ready";
       schema: ReturnType<typeof toMlformSchema>;
-      reportDefinitions: ReturnType<typeof wrapSchemaReportDefinitions>;
+      reportDefinitions: readonly CatalogReportDefinition[];
     }
   | { status: "error"; message: string };
 
@@ -48,10 +47,10 @@ export function SchemaFormPreview({ schema }: Props) {
   const resolvedSchema = useMemo<ResolvedSchema>(() => {
     if (catalog.needsPlugins && catalog.status !== "ready") return { status: "pending" };
     try {
-      const reportDefinitions = wrapSchemaReportDefinitions(catalog.data.reportDefinitions);
+      const reportDefinitions = catalog.data.reportDefinitions;
       return {
         status: "ready",
-        schema: toMlformSchema(toMlformRuntimeSchema(prepareSchemaPreviewReports(schema)), {
+        schema: toMlformSchema(prepareSchemaPreviewReports(schema), {
           customFieldDefinitions: catalog.data.fieldDefinitions,
           customReportDefinitions: reportDefinitions,
         }),
@@ -84,7 +83,7 @@ export function SchemaFormPreview({ schema }: Props) {
         schema: resolvedSchema.schema,
         registry: pack.registry,
         descriptorRegistry: pack.descriptorRegistry,
-        primitiveRegistry: createPredictionPrimitiveRegistry(),
+        primitiveRegistry: createBuiltinPrimitiveRegistry(),
         transport: createSchemaPreviewTransport(),
         layout: { kind: "split" },
         reportPane: "always",

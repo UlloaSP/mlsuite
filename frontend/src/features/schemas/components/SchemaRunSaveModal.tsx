@@ -15,20 +15,20 @@ import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppIconButton } from "@/shared/ui/AppIconButton";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import { buildCombinedFeedbackQuestionnaire } from "@/capabilities/mlform/combined-feedback-questionnaire";
+import { buildCombinedFeedbackQuestionnaire } from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
 import {
   ReportQuestionnaireMount,
   type ReportQuestionnaireMountHandle,
-} from "@/capabilities/mlform/ReportQuestionnaireMount";
+} from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
 import type { CreatePredictionRunRequest } from "@/features/schemas/api/prediction-types";
 import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
+import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import {
   buildPendingSchemaRunFeedback,
   type PendingFeedback,
 } from "@/features/schemas/lib/pending-feedback";
-import { mergeSchemaRunInputs } from "@/capabilities/mlform/input-display";
-import { schemaRunDebug } from "@/capabilities/mlform/run-debug";
+import { mergeSchemaRunInputs } from "@/capabilities/prediction-runtime/data/input-display";
+import { schemaRunDebug } from "@/capabilities/prediction-runtime/mlform/run-debug";
 import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
 import { SchemaRunInputsPanel } from "./SchemaRunInputsPanel";
 import { SchemaRunReportsPanel } from "./SchemaRunReportsPanel";

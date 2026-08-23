@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { CalendarDays, Database, Rows3, ScrollText, TrendingUp } from "lucide-react";
-import { getModelAlgorithmLabel } from "@/capabilities/mlform/model-utils";
+import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
 import { modifierName } from "@/shared/lib/relative-time";
 import type { ModelDto } from "@/features/models/api/model.types";
 import { cx } from "@/shared/ui/cx";

@@ -19,7 +19,7 @@ import {
   findModelById,
   formatTimestamp,
   getModelAlgorithmLabel,
-} from "@/capabilities/mlform/model-utils";
+} from "@/capabilities/prediction-runtime/data/model-utils";
 
 export function ModelDetailPage() {
   const navigate = useNavigate();

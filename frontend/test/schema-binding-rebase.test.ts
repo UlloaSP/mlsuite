@@ -7,7 +7,7 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   prepareSchemaVersionDtoForUse,
   prepareSchemaVersionForSave,
-} from "@/capabilities/mlform/binding-rebase";
+} from "@/capabilities/prediction-runtime/mlform/binding-rebase";
 import type { CreateSchemaVersionRequest } from "@/features/schemas/api/schema-types";
 
 const baseRequest = (): CreateSchemaVersionRequest => ({

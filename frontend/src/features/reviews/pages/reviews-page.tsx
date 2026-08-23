@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/mlform/binding-rebase";
+import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
 import { useSubmitSchemaReviewInboxMutation } from "@/features/reviews/api/review-mutations";
 import { useSchemaReviewInbox } from "@/features/reviews/api/review-queries";
 import type { SchemaReviewContextDto } from "@/features/reviews/api/review-types";

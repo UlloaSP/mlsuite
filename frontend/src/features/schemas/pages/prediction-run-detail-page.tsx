@@ -21,10 +21,10 @@ import { SchemaRunInputsPanel } from "@/features/schemas/components/SchemaRunInp
 import { SchemaRunFeedbackQuestionnaire } from "@/features/schemas/components/SchemaRunFeedbackQuestionnaire";
 import { SchemaRunDetailMetrics } from "@/features/schemas/components/SchemaRunDetailMetrics";
 import { SchemaRunReportsPanel } from "@/features/schemas/components/SchemaRunReportsPanel";
-import { isSchemaFeedbackComplete } from "@/capabilities/mlform/feedback-completion";
-import { buildSchemaFeedbackSteps } from "@/capabilities/mlform/feedback-steps";
+import { isSchemaFeedbackComplete } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
+import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/mlform/binding-rebase";
+import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
 
 export function PredictionRunDetailPage() {
   const { schemaId, runId, bookmarkId } = useParams<{

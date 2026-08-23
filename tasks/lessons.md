@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-08-23 - Alpha contract migration
+
+- Correction: the first report-contract plan preserved pre-0.1.20 envelopes although the user explicitly treats both releases as alpha.
+- Rule: ask whether alpha compatibility matters before designing adapters; when breaking change is allowed, define one contract and migrate every producer directly.
+
 ## 2026-08-20 - Development-only entity removal
 
 - Correction: a planned entity cleanup assumed production migration constraints, but this repository is still in development and the user explicitly allowed destructive schema changes.
@@ -773,6 +778,11 @@
 - Rule: report transport responses must deduplicate by resolved runtime target, not by mapping-entry key; preview tests must assert returned payload cardinality and frame content, not only frame count.
 - Correction: feedback cardinality followed prediction results, so one source report mapped to several models rendered several assessments.
 - Rule: build assessments by source-report position/identity, then persist one logical answer to every successful mapped result; equal analyzer keys must never merge separate source reports.
+
+# Alpha contract cleanup
+
+- Correction: core report migration passed tests while schema repair fallbacks, local package links, duplicated mapped-target logic, and old plugin renderers remained.
+- Rule: when compatibility is explicitly forbidden, audit every consumer and example after core changes; delete all fallback paths before calling migration complete.
 
 # Bulk Analyzer Backpressure
 

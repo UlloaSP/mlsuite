@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { formatTimestamp } from "@/capabilities/mlform/model-utils";
+import { formatTimestamp } from "@/capabilities/prediction-runtime/data/model-utils";
 import {
   isSchemaRunReviewSelected,
   schemaRunReviewerKey,

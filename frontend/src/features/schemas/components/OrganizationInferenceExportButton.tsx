@@ -3,7 +3,7 @@ import { FileDown } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/mlform/binding-rebase";
+import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { predictionRunQueryOptions, useSchemaVersion } from "@/features/schemas/api/schema-queries";
 import { AppButton } from "@/shared/ui/AppButton";

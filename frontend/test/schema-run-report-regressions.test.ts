@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { resolveMappedReportPayload } from "mlform/schema";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { createSchemaRunRuntime } from "@/capabilities/mlform/runtime-assembly";
+import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import {
   buildSchemaRunRawFromSubmitResult,
   mergeReportFetchResults,
-} from "@/capabilities/mlform/schema-run-result-state";
+} from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 
 describe("schema run report regressions", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -29,7 +29,7 @@ describe("schema run report regressions", () => {
     );
     const runtime = createSchemaRunRuntime({
       schema: {
-        fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "classifier-a",
@@ -57,22 +57,24 @@ describe("schema run report regressions", () => {
     const result = await executeFormPipeline({ form });
 
     expect(result.submitResult.reports).toHaveLength(2);
-    const payloads = result.submitResult.reports as Array<{ mappedTo?: unknown }>;
-    expect(payloads.map((report) => report.mappedTo)).toEqual([
-      "report:classifier-a",
-      "report:classifier-b",
+    const payloads = result.submitResult.reports as Array<{
+      backend?: unknown;
+      mappedTo?: unknown;
+    }>;
+    expect(payloads.map(({ backend, mappedTo }) => [backend, mappedTo])).toEqual([
+      ["model-1", "classifier9"],
+      ["model-2", "classifier9"],
     ]);
     const reportConfigs = runtime.formSchema.reports as Array<
       Parameters<typeof resolveMappedReportPayload>[0]
     >;
     expect(
-      reportConfigs.map((report) =>
-        resolveMappedReportPayload(report, result.submitResult),
-      ),
+      reportConfigs.map((report) => resolveMappedReportPayload(report, result.submitResult)),
     ).toEqual([{ prediction: "model-1" }, { prediction: "model-2" }]);
     expect(
-      (result.submitResult.raw as { results: Array<{ output: { reports: unknown[] } }> }).results
-        .map((item) => item.output.reports),
+      (
+        result.submitResult.raw as { results: Array<{ output: { reports: unknown[] } }> }
+      ).results.map((item) => item.output.reports),
     ).toEqual([
       [{ mappedTo: "classifier9", prediction: "model-1" }],
       [{ mappedTo: "classifier9", prediction: "model-2" }],
@@ -83,9 +85,6 @@ describe("schema run report regressions", () => {
     const raw = {
       reports: [],
       results: [{ modelId: "model-1", output: { reports: [] } }],
-      reportContextById: {
-        crystal: { modelId: "model-1", target: "crystal-tree" },
-      },
     };
     const reports = [
       {
@@ -101,6 +100,19 @@ describe("schema run report regressions", () => {
       reports,
       states,
       [{ modelId: "model-1" }],
+      {
+        crystal: {
+          reportId: "crystal",
+          kind: "CrystalTree",
+          target: "crystal-tree",
+          backend: "model-1",
+          displayValues: {},
+          modelValues: {},
+          reports: [],
+          meta: { modelId: "model-1" },
+          raw: {},
+        },
+      },
     );
 
     expect(built.raw.results).toEqual([

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { getString, isRecord, toUniqueId } from "@/capabilities/mlform/shared";
+import { getString, isRecord, toUniqueId } from "@/capabilities/prediction-runtime/mlform/shared";
 import { applyOneHotCategories } from "@/features/schemas/lib/one-hot-category";
 import type { CreateSchemaVersionRequest, JsonRecord } from "@/features/schemas/api/schema-types";
 

@@ -1,15 +1,15 @@
 import { useMemo, useState } from "react";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
-import { isBuiltinReportKind } from "@/capabilities/mlform/builtin-registry";
+import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { ReviewAccordionSection } from "@/features/reviews/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "@/features/reviews/components/ReviewInputsSection";
 import {
   ReviewOutputsSection,
   type TargetDto,
 } from "@/features/reviews/components/ReviewOutputsSection";
-import { getFormattedReportContent } from "@/capabilities/mlform/report-feedback-utils";
-import { getVisibleSchemaInputRecord } from "@/capabilities/mlform/input-display";
-import { getSchemaResultReports } from "@/capabilities/mlform/report-display";
+import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
+import { getVisibleSchemaInputRecord } from "@/capabilities/prediction-runtime/data/input-display";
+import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { useSchemaReviewRun } from "@/features/reviews/api/review-queries";
 import type { ReviewSchemaVersionDto } from "@/features/reviews/api/review-types";
 import { SchemaReviewCombinedFeedbackForm } from "./SchemaReviewCombinedFeedbackForm";

@@ -4,7 +4,7 @@ import { appFetch, HttpError } from "@/shared/api/http";
 import { eligibleReviewersQueryOptions } from "@/capabilities/review-creation/review-creation-api";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { predictionRunsFeedbackQueryOptions } from "@/features/schemas/api/schema-queries";
-import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/mlform/plugin-runtime-sources";
+import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
 
 const { getPredictionRunsFeedback } = vi.hoisted(() => ({
   getPredictionRunsFeedback: vi.fn(),
