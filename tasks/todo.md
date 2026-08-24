@@ -1510,3 +1510,23 @@ Breaking migration: no compatibility path for pre-0.1.20 report envelopes.
   300 non-comment lines. Independent review found no remaining Critical, Important, or Minor issues.
 - No visual check ran because repository policy forbids it unless explicitly requested.
 - `graphify update .` completed with 10,312 nodes, 28,239 edges, and 475 communities.
+
+# Inference history action grid
+
+- [x] Add an opt-in 2x2 header action grid with four equal slots.
+- [x] Apply top-right red, top-left white, bottom-right white, bottom-left red ordering.
+- [x] Use the grid on inference history without changing other page headers.
+- [x] Add focused UI coverage and run frontend verification.
+- [x] Run source-limit audit, design detector, React Doctor, review, and `graphify update .`.
+
+## Review
+
+- Inference history opts into a responsive 2x2 action grid. Every occupied slot is 48px high and both columns share
+  the same width; other page headers retain their existing layout.
+- Slot order is top-right, top-left, bottom-right, bottom-left. Tones are primary, secondary, secondary, primary.
+- Focused layout and architecture coverage passes 14 tests. Full frontend passes 50 files and 213 tests; production
+  build and touched-file checks pass.
+- React Doctor remains 80/100 with nine unrelated existing warnings. The layout detector reports no findings.
+- Repository-wide `vp check` remains blocked by 345 pre-existing formatting issues. All touched files remain below
+  300 non-comment lines. No visual check ran because repository policy forbids it unless explicitly requested.
+- `graphify update .` completed with 10,315 nodes, 28,238 edges, and 490 communities.

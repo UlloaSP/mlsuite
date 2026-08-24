@@ -19,7 +19,7 @@ export function SchemaRunReviewButton({ runs, version }: Props) {
   return (
     <ReviewCreationButton
       organizationId={organizationId}
-      variant="secondary"
+      variant="primary"
       candidates={runs.map((run) => ({
         runId: run.id,
         name: run.name,

@@ -116,6 +116,7 @@ export function SchemaRunHistoryPage() {
               ? `${bookmark?.name ?? executableVersion.name} · v${executableVersion.version}`
               : undefined
           }
+          actionLayout="checkerboard"
           actions={
             executableVersion ? (
               <>
@@ -125,7 +126,7 @@ export function SchemaRunHistoryPage() {
                   bookmarkId={bookmarkId ?? ""}
                 />
                 <Link to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}>
-                  <AppButton>
+                  <AppButton variant="secondary">
                     <Play size={16} />
                     Run
                   </AppButton>
