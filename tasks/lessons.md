@@ -804,3 +804,7 @@
 
 - Correction: Roles & Templates needs its internal tabs, but not pill styling, gray panel fills, or a drawer that competes with the persistent sidebar.
 - Rule: keep tabs when they switch local content; render them as a flat tab rail. Use centered dialogs for role details and editing, and keep catalog surfaces white/transparent.
+## 2026-08-24 - Inference loading starts after validation
+
+- Correction: treating the submit-button event as inference start shows a false running state while MLForm is still validating invalid inputs.
+- Rule: derive cross-component loading from the operation boundary (`beforeSubmit`/transport start), not from the user's click or a pre-validation UI event.

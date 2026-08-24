@@ -30,13 +30,21 @@ type Props = {
   initialInputs?: JsonRecord;
   onSubmit: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
   onResultUpdate?: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
+  onRunningChange?: (running: boolean) => void;
 };
 
-export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate }: Props) {
+export function SchemaRunForm({
+  version,
+  initialInputs,
+  onSubmit,
+  onResultUpdate,
+  onRunningChange,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<ReturnType<typeof mountSchemaRunForm> | null>(null);
   const onSubmitRef = useRef(onSubmit);
   const onResultUpdateRef = useRef(onResultUpdate);
+  const onRunningChangeRef = useRef(onRunningChange);
   const [theme] = useAtom(themeWithHtmlAtom);
   const [initialTheme] = useState(theme);
   const formSchema = useMemo(
@@ -61,7 +69,8 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
   useEffect(() => {
     onSubmitRef.current = onSubmit;
     onResultUpdateRef.current = onResultUpdate;
-  }, [onResultUpdate, onSubmit]);
+    onRunningChangeRef.current = onRunningChange;
+  }, [onResultUpdate, onRunningChange, onSubmit]);
 
   useEffect(() => {
     if (!containerRef.current || (needsPlugins && status !== "ready")) {
@@ -100,6 +109,9 @@ export function SchemaRunForm({ version, initialInputs, onSubmit, onResultUpdate
           toast.error("Schema run failed", {
             description: error instanceof Error ? error.message : String(error),
           });
+        },
+        onRunningChange(running) {
+          onRunningChangeRef.current?.(running);
         },
       });
       mountedRef.current = mounted;

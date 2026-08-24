@@ -40,6 +40,7 @@ type Options = {
   customReportDefinitions?: readonly CatalogReportDefinition[];
   onSubmit?: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
   onSubmitError?: (error: unknown) => void;
+  onRunningChange?: (running: boolean) => void;
 };
 
 const rawFromSubmitSuccess = (detail: PrimitiveSubmitSuccessDetail | undefined): JsonRecord => {
@@ -59,6 +60,7 @@ export const mountSchemaRunForm = ({
   customReportDefinitions = [],
   onSubmit,
   onSubmitError,
+  onRunningChange,
 }: Options): MountedPredictionForm => {
   schemaRunDebug("mount.start", {
     bindings: bindings.length,
@@ -78,8 +80,12 @@ export const mountSchemaRunForm = ({
     primitiveRegistry: createBuiltinPrimitiveRegistry(),
     transport: runtime.transport,
     hooks: {
+      beforeSubmit() {
+        onRunningChange?.(true);
+      },
       onSubmitError({ error }: SubmitErrorContext) {
         schemaRunDebugError("mount.submit-error", error);
+        onRunningChange?.(false);
         onSubmitError?.(error);
       },
     },
@@ -95,6 +101,7 @@ export const mountSchemaRunForm = ({
     },
     designSystem: getPredictionDesignSystem(theme),
   });
+  const handleSubmitAbort = () => onRunningChange?.(false);
   const handleSubmitSuccess = (event: Event) => {
     const detail = (event as CustomEvent<PrimitiveSubmitSuccessDetail>).detail;
     const submitResult = detail?.pipelineResult?.submitResult ?? detail?.result;
@@ -120,12 +127,14 @@ export const mountSchemaRunForm = ({
       reportCount: Array.isArray(next.raw.reports) ? next.raw.reports.length : 0,
       reportsPending: next.reportsPending,
     });
+    onRunningChange?.(false);
     onSubmit?.(
       isRecord(next.raw.inputData) ? next.raw.inputData : {},
       next.raw,
       next.reportsPending,
     );
   };
+  mounted.host.addEventListener("mlf-submit-abort", handleSubmitAbort);
   mounted.host.addEventListener("mlf-submit-success", handleSubmitSuccess);
   return {
     form: mounted.form,
@@ -135,6 +144,7 @@ export const mountSchemaRunForm = ({
     },
     unmount() {
       schemaRunDebug("mount.unmount");
+      mounted.host.removeEventListener("mlf-submit-abort", handleSubmitAbort);
       mounted.host.removeEventListener("mlf-submit-success", handleSubmitSuccess);
       mounted.unmount();
     },

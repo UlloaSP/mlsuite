@@ -1485,3 +1485,28 @@ Breaking migration: no compatibility path for pre-0.1.20 report envelopes.
   environment; no dependency was added solely for linting. All touched files remain below 300 non-comment lines.
 - Independent review found no remaining Critical, Important, or Minor issues. No visual check ran because no UI changed
   and none was requested. `graphify update .` completed with 10,315 nodes, 28,245 edges, and 467 communities.
+
+# Inline schema inference save flow
+
+- [x] Replace create-inference modal with editable run name and one save action in page header.
+- [x] Reset generated run name and saved state whenever a new prediction starts.
+- [x] Synchronize save availability and copy with running, report-loading, ready, saving, and saved states.
+- [x] Persist inference without creation-time feedback; keep feedback in existing inference detail workflow.
+- [x] Remove obsolete modal, pending-feedback bridge, and duplicated-summary tests.
+- [x] Cover success and error states in one focused frontend test file.
+- [x] Run focused and broad frontend verification, source-limit audit, review, and `graphify update .`.
+
+## Review
+
+- Inference creation now has one form: the editable generated name and state-aware save action live in the header;
+  creation-time feedback and the duplicated review modal were removed.
+- Loading begins only after MLForm validation succeeds. Invalid submissions remain idle, reports must finish before
+  saving, and saved results cannot be saved twice.
+- A synchronous save latch and run-generation guard prevent duplicate requests and prevent an older save from
+  overwriting a newer inference state.
+- Focused coverage passes 4 tests; the full frontend passes 49 files and 212 tests. Production build and touched-file
+  checks pass. React Doctor is 80/100 with nine unrelated pre-existing warnings.
+- Repository-wide `vp check` remains blocked by 348 pre-existing formatting issues. All touched files remain below
+  300 non-comment lines. Independent review found no remaining Critical, Important, or Minor issues.
+- No visual check ran because repository policy forbids it unless explicitly requested.
+- `graphify update .` completed with 10,312 nodes, 28,239 edges, and 475 communities.
