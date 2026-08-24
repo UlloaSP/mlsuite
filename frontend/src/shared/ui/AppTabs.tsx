@@ -12,7 +12,7 @@ export function AppTabs<TValue extends string>({
   onChange,
   className,
 }: Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
-  items: Array<{ label: ReactNode; value: TValue }>;
+  items: Array<{ label: ReactNode; value: TValue; count?: ReactNode }>;
   value: TValue;
   onChange: (value: TValue) => void;
 }) {
@@ -41,7 +41,21 @@ export function AppTabs<TValue extends string>({
                 : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
             )}
           >
-            {item.label}
+            <span className="flex items-center gap-2">
+              {item.label}
+              {item.count !== undefined ? (
+                <span
+                  className={cx(
+                    "min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-medium",
+                    active
+                      ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
+                      : "bg-[var(--surface-muted)] text-[var(--text-secondary)]",
+                  )}
+                >
+                  {item.count}
+                </span>
+              ) : null}
+            </span>
           </button>
         );
       })}

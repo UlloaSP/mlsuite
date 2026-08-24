@@ -28,6 +28,9 @@ const hasCompleteSavedSchemaFeedback = (step: SchemaFeedbackStep): boolean => {
   );
 };
 
+export const countCompletedSchemaFeedbackSteps = (steps: readonly SchemaFeedbackStep[]): number =>
+  steps.filter(hasCompleteSavedSchemaFeedback).length;
+
 export const isSchemaFeedbackComplete = (steps: readonly SchemaFeedbackStep[]): boolean =>
   steps.length > 0 && steps.every(hasCompleteSavedSchemaFeedback);
 

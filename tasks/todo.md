@@ -1530,3 +1530,80 @@ Breaking migration: no compatibility path for pre-0.1.20 report envelopes.
 - Repository-wide `vp check` remains blocked by 345 pre-existing formatting issues. All touched files remain below
   300 non-comment lines. No visual check ran because repository policy forbids it unless explicitly requested.
 - `graphify update .` completed with 10,315 nodes, 28,238 edges, and 490 communities.
+# Distilled inference detail
+
+- [x] Remove the Overview tab and its duplicated prediction summary.
+- [x] Replace overview metrics with one compact metadata row: date, status, feedback, bookmark, models.
+- [x] Add Inputs, Outputs, and Feedback tabs with Inputs selected by default.
+- [x] Add real-data search to Inputs and Outputs, including no-match states.
+- [x] Add one focused UI test covering metadata, tabs, searches, and empty matches.
+- [x] Run frontend checks, tests, build, design audit, React Doctor, review, and `graphify update .`.
+
+## Review
+
+- Removed the Overview tab and its duplicated summary. Date, run status, feedback state, source bookmark,
+  and model count now stay visible in one compact row above the three task tabs.
+- Inputs search matches key, label, or displayed value. Outputs search matches report label, kind, model,
+  or payload. Both expose explicit no-match states.
+- Focused UI and architecture coverage passes 10/10 tests. Full frontend suite passes 51 files and 214
+  tests; production build, touched-file `vp check`, diff whitespace, layout detector, and source limits pass.
+- React Doctor scored 80/100 with nine unrelated existing findings. Repository-wide `vp check` remains
+  blocked by formatting debt in 341 pre-existing files. No visual check ran because it was not requested.
+- `graphify update .` completed with 10,321 nodes, 28,242 edges, and 480 communities.
+# Prediction detail tab counts
+
+- [x] Let shared tabs render an optional compact count.
+- [x] Derive Inputs and Outputs counts from their existing display functions.
+- [x] Show Feedback as completed steps over total steps.
+- [x] Update focused UI coverage and run frontend verification.
+- [x] Update lessons and graphify.
+
+## Review
+
+- Shared tabs now accept an optional compact count without changing existing consumers.
+- Prediction detail shows visible Inputs, rendered Outputs, and completed/total Feedback steps from the
+  same derivation functions used by each section.
+- Focused coverage passed 12/12 tests; the full frontend suite passed 51 files and 214 tests. Production
+  build and touched-file checks passed.
+- React Doctor remained at 80/100 with nine unrelated existing findings. Repository-wide `vp check`
+  remains blocked by formatting debt in 341 pre-existing files. No visual check ran because it was not
+  requested.
+- `graphify update .` completed with 10,320 nodes, 28,243 edges, and 483 communities.
+# Outputs search model-name fix
+
+- [x] Reproduce failed output filtering by bound model name with multiple model results.
+- [x] Include real binding identity in the Outputs search corpus.
+- [x] Run focused and full frontend verification.
+- [x] Update lessons and graphify.
+
+## Review
+
+- Reproduced with two outputs: searching `Risk Forest` returned the no-match state because the filter only
+  indexed the internal `modelId`.
+- Outputs now resolve each result's real schema binding and index `modelName` alongside label, kind, id,
+  and payload. Positive regression proves one matching output remains while the other disappears.
+- Focused coverage passed 10/10 tests. Full frontend suite passed 51 files and 214 tests; production build,
+  touched-file checks, diff whitespace, and source limits passed.
+- React Doctor remained at 80/100 with nine unrelated existing findings. Repository-wide `vp check`
+  remains blocked by formatting debt in 341 pre-existing files. No visual check ran because it was not
+  requested.
+- `graphify update .` completed with 10,319 nodes, 28,239 edges, and 473 communities.
+# Remove Outputs search
+
+- [x] Delete Outputs search UI, state, and filtering logic.
+- [x] Keep every rendered output visible and preserve the Outputs count.
+- [x] Update focused coverage and run full frontend verification.
+- [x] Update lessons and graphify.
+
+## Review
+
+- Removed the Outputs search field, query state, filter corpus, and no-match branch. The panel always
+  renders every real output or its existing empty state.
+- Regression coverage asserts the search control is absent while both model outputs remain visible and
+  the Outputs tab count stays correct.
+- Focused coverage passed 10/10 tests. Full frontend suite passed 51 files and 214 tests; production build,
+  touched-file checks, diff whitespace, and source limits passed.
+- React Doctor remained at 80/100 with nine unrelated existing findings. Repository-wide `vp check`
+  remains blocked by formatting debt in 341 pre-existing files. No visual check ran because it was not
+  requested.
+- `graphify update .` completed with 10,319 nodes, 28,236 edges, and 481 communities.

@@ -808,3 +808,17 @@
 
 - Correction: treating the submit-button event as inference start shows a false running state while MLForm is still validating invalid inputs.
 - Rule: derive cross-component loading from the operation boundary (`beforeSubmit`/transport start), not from the user's click or a pre-validation UI event.
+# Prediction detail tab cardinality
+
+- Correction: the inference detail tabs were added without the item counts shown in the agreed design.
+- Rule: when replacing an existing navigation summary with task tabs, preserve useful cardinality in each tab and derive it from the same data used by its panel.
+
+# Output search corpus
+
+- Correction: Outputs search was shipped with a negative empty-state assertion but no positive multi-result filtering case.
+- Rule: search tests must prove one real result remains and another disappears; include every identity users see or use, especially human model names instead of only internal ids.
+
+# Search must earn its place
+
+- Correction: repeated corpus fixes did not make Outputs search useful in the real report surface.
+- Rule: remove a secondary search control when its searchable representation cannot reliably match rendered plugin content; keep search only where displayed data and filter data share one source of truth.
