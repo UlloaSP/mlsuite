@@ -822,3 +822,18 @@
 
 - Correction: repeated corpus fixes did not make Outputs search useful in the real report surface.
 - Rule: remove a secondary search control when its searchable representation cannot reliably match rendered plugin content; keep search only where displayed data and filter data share one source of truth.
+
+# Personal settings completeness
+
+- Correction: initial personal Settings shipped theme presets as one global choice and omitted custom themes, typography, and keybindings.
+- Rule: when a settings reference shows a configurable subsystem, implement its real persisted behavior and every active consumer; a gallery preview or read-only list does not count as a setting.
+
+# Personal settings interaction fidelity
+
+- Correction: typography options collapsed to the same unavailable-font fallback, theme cards exposed an unwanted Apply both control, and opening the theme editor forced Light through its initial preview.
+- Rule: test the visible result of settings, not only storage; theme hit targets must match the agreed interaction exactly, and previews must start only after user edits.
+
+# Theme cycle and guide granularity
+
+- Correction: the global theme shortcut remained a binary Light/Dark toggle, theme cards kept obsolete vertical space, and the sidebar guide explained navigation as one block.
+- Rule: global scheme toggles must cycle every exposed mode; remove layout constraints when their content disappears; product tours must target and explain each visible actionable element individually.

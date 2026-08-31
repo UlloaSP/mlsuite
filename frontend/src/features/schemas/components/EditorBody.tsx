@@ -3,9 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
+import { typographyAtom } from "@/shared/ui/typography-state";
 import {
   getCustomFieldDefinitions,
   type CatalogFieldDefinition,
@@ -31,7 +32,7 @@ import {
 import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/features/schemas/lib/editor-atoms";
 import { defineEditorThemes, setEditorTheme } from "@/capabilities/editor/configure-editor-theme";
-import { editorOptions } from "@/capabilities/editor/editor-options";
+import { editorOptionsFor } from "@/capabilities/editor/editor-options";
 import type {
   MonacoEditorInstance,
   MonacoMarker,
@@ -47,6 +48,7 @@ export function EditorBody() {
   const [, setSchema] = useAtom(schemaAtom);
   const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
   const [theme] = useAtom(themeWithHtmlAtom);
+  const typography = useAtomValue(typographyAtom);
   const pluginSourcesQuery = usePluginRuntimeSourcesQuery(organizationId);
 
   const editorRef = useRef<MonacoEditorInstance | null>(null);
@@ -290,7 +292,7 @@ export function EditorBody() {
         onChange={handleOnChange}
         onMount={handleOnMount}
         onValidate={handleOnValidate}
-        options={editorOptions}
+        options={editorOptionsFor(typography)}
       />
     </Suspense>
   );

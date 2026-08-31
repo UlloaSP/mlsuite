@@ -10,7 +10,7 @@ import { createMlRegistryPack } from "mlform/builtins";
 import { mountForm, registerDefinedFieldKind, registerDefinedReportKind } from "mlform/kit";
 import type { MountedForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";

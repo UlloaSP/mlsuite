@@ -14,6 +14,9 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useAtomValue } from "jotai";
+import { isTypingTarget } from "@/app/utils/keyboard-shortcuts";
+import { matchesShortcut, shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
 
 type SidebarContextValue = {
   state: "expanded" | "collapsed";
@@ -39,6 +42,7 @@ export function SidebarProvider({
 }>) {
   const [openMobile, setOpenMobile] = useState(false);
   const [isMobile, setIsMobile] = useState(isMobileViewport);
+  const bindings = useAtomValue(shortcutBindingsAtom);
   const toggleFromShortcut = useEffectEvent(() => {
     if (isMobileViewport()) {
       setOpenMobile((value) => !value);
@@ -56,14 +60,14 @@ export function SidebarProvider({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "b") {
+      if (!isTypingTarget(event.target) && matchesShortcut(event, bindings["toggle-sidebar"])) {
         event.preventDefault();
         toggleFromShortcut();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [bindings]);
 
   const value = useMemo<SidebarContextValue>(
     () => ({

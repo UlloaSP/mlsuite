@@ -3,14 +3,19 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom } from "jotai";
-import type { Monaco, OnMount } from "@monaco-editor/react";
+import { useAtom, useAtomValue } from "jotai";
+import type { OnMount } from "@monaco-editor/react";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { cx } from "@/shared/ui/cx";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
+import { typographyAtom } from "@/shared/ui/typography-state";
 import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
-import { defineEditorThemes, setEditorTheme } from "@/capabilities/editor/configure-editor-theme";
-import { editorOptions } from "@/capabilities/editor/editor-options";
+import {
+  defineEditorThemes,
+  setEditorTheme,
+  type MonacoNamespace,
+} from "@/capabilities/editor/configure-editor-theme";
+import { editorOptionsFor } from "@/capabilities/editor/editor-options";
 
 type Props = {
   value: string;
@@ -21,7 +26,8 @@ const MonacoEditor = lazy(loadLocalMonacoEditor);
 
 export function SchemaCodeViewer({ value, className }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
-  const monacoRef = useRef<Monaco | null>(null);
+  const typography = useAtomValue(typographyAtom);
+  const monacoRef = useRef<MonacoNamespace | null>(null);
 
   const mount: OnMount = (_editor, monacoNs) => {
     monacoRef.current = monacoNs;
@@ -49,7 +55,7 @@ export function SchemaCodeViewer({ value, className }: Props) {
           value={value}
           onMount={mount}
           options={{
-            ...editorOptions,
+            ...editorOptionsFor(typography),
             domReadOnly: true,
             readOnly: true,
             renderValidationDecorations: "off",

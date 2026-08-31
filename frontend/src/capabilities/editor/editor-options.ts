@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { EditorProps } from "@monaco-editor/react";
+import { MONOSPACE_STACKS, type TypographyPreferences } from "@/shared/ui/typography-state";
 
 export const editorOptions: NonNullable<EditorProps["options"]> = {
   minimap: { enabled: false },
@@ -22,6 +23,15 @@ export const editorOptions: NonNullable<EditorProps["options"]> = {
   cursorBlinking: "smooth",
   renderLineHighlight: "gutter",
 };
+
+export const editorOptionsFor = (
+  typography: TypographyPreferences,
+): NonNullable<EditorProps["options"]> => ({
+  ...editorOptions,
+  fontFamily: MONOSPACE_STACKS[typography.monospaceFont],
+  fontSize: typography.monospaceSize,
+  wordWrap: typography.wordWrap ? "on" : "off",
+});
 
 export const editorLightTheme = {
   base: "vs",

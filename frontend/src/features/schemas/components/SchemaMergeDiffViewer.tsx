@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { MultiFileDiff, UnresolvedFile, type FileContents } from "@pierre/diffs/react";
 import { useAtomValue } from "jotai";
 import { useMemo } from "react";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { cx } from "@/shared/ui/cx";
 import type {
   SchemaDraftChangeDto,

@@ -1,11 +1,10 @@
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog } from "radix-ui";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { isGlobalSearchShortcut } from "@/shared/lib/global-search-shortcut";
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { SearchResultGroup } from "@/features/search/components/SearchResultGroup";
 import { useDebouncedValue } from "@/features/search/lib/use-debounced-value";
@@ -13,6 +12,7 @@ import { globalSearchOpenAtom } from "@/shared/ui/ui-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
+import { matchesShortcut, shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
 
 const isTypingTarget = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
@@ -37,6 +37,7 @@ export function AppGlobalSearch() {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useAtom(globalSearchOpenAtom);
+  const bindings = useAtomValue(shortcutBindingsAtom);
   const [{ query, activeIndex }, dispatch] = useReducer(searchReducer, {
     query: "",
     activeIndex: 0,
@@ -52,14 +53,14 @@ export function AppGlobalSearch() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isGlobalSearchShortcut(event) && !isTypingTarget(event.target)) {
+      if (matchesShortcut(event, bindings["global-search"]) && !isTypingTarget(event.target)) {
         event.preventDefault();
         setOpen(true);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setOpen]);
+  }, [bindings, setOpen]);
 
   useEffect(() => {
     if (open) {

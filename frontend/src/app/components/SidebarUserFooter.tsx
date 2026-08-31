@@ -35,6 +35,7 @@ export function SidebarUserFooter() {
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <SidebarMenuButton
+              data-user-guide-item="user-menu"
               className={collapsed ? "mx-auto size-9 min-h-9 rounded-full p-0" : "min-h-13 rounded"}
               title={displayName}
             >

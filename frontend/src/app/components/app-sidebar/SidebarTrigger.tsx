@@ -3,15 +3,27 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { type ComponentProps } from "react";
+import type { SidebarPosition } from "@/shared/ui/sidebar-position";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { useSidebar } from "./SidebarContext";
 
-export function SidebarTrigger({ className, ...props }: ComponentProps<"button">) {
+type SidebarTriggerProps = ComponentProps<"button"> & {
+  side?: SidebarPosition;
+};
+
+export function SidebarTrigger({ className, side = "right", ...props }: SidebarTriggerProps) {
   const { state, toggleSidebar } = useSidebar();
-  const Icon = state === "collapsed" ? PanelRightOpen : PanelRightClose;
+  const Icon =
+    side === "left"
+      ? state === "collapsed"
+        ? PanelLeftOpen
+        : PanelLeftClose
+      : state === "collapsed"
+        ? PanelRightOpen
+        : PanelRightClose;
   const label = state === "collapsed" ? "Expand" : "Collapse";
 
   return (

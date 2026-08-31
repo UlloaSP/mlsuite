@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { ComponentProps } from "react";
-import { cx } from "@/shared/ui/cx";
+import { cx } from "./cx";
 
-export function Kbd({ className, ...props }: ComponentProps<"kbd">) {
+export function AppKbd({ className, ...props }: ComponentProps<"kbd">) {
   return (
     <kbd
       {...props}

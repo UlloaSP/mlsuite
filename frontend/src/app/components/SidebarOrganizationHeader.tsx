@@ -34,6 +34,7 @@ export function SidebarOrganizationHeader() {
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <SidebarMenuButton
+              data-user-guide-item="workspace-switcher"
               className={cx(
                 "rounded-xl text-[var(--text-primary)]",
                 collapsed ? "mx-auto size-9 min-h-9 p-0" : "min-h-13 px-2.5 py-2",

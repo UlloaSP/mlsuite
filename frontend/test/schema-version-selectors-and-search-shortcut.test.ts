@@ -5,7 +5,7 @@ import {
   sortSchemaVersions,
 } from "@/features/schemas/lib/version-selection";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import { isGlobalSearchShortcut } from "@/shared/lib/global-search-shortcut";
+import { DEFAULT_SHORTCUTS, matchesShortcut } from "@/shared/ui/shortcut-state";
 
 const version = (id: string | number, versionNumber: number): SchemaVersionDto =>
   ({
@@ -40,9 +40,10 @@ describe("schema version selectors and global search shortcut", () => {
   });
 
   it("uses Ctrl/Cmd+K for global search and leaves slash alone", () => {
-    expect(isGlobalSearchShortcut({ key: "k", ctrlKey: true })).toBe(true);
-    expect(isGlobalSearchShortcut({ key: "K", metaKey: true })).toBe(true);
-    expect(isGlobalSearchShortcut({ key: "/", shiftKey: true })).toBe(false);
-    expect(isGlobalSearchShortcut({ key: "k" })).toBe(false);
+    const binding = DEFAULT_SHORTCUTS["global-search"];
+    expect(matchesShortcut({ key: "k", ctrlKey: true }, binding)).toBe(true);
+    expect(matchesShortcut({ key: "K", metaKey: true }, binding)).toBe(true);
+    expect(matchesShortcut({ key: "/", shiftKey: true }, binding)).toBe(false);
+    expect(matchesShortcut({ key: "k" }, binding)).toBe(false);
   });
 });

@@ -2,7 +2,7 @@ import { useAtom } from "jotai";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { FieldConfig } from "mlform/runtime";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppButton } from "@/shared/ui/AppButton";
 import {

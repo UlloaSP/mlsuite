@@ -41,9 +41,3 @@ export const shortcutDigit = (event: ShortcutEvent) => {
   }
   return SHIFT_DIGITS[event.key] ?? null;
 };
-
-export const isModShortcut = (event: ShortcutEvent, key: string, shiftKey = false) =>
-  event.key.toLowerCase() === key.toLowerCase() &&
-  (event.ctrlKey || event.metaKey) &&
-  !event.altKey &&
-  (event.shiftKey === true) === shiftKey;

@@ -7,7 +7,7 @@ import type { FormEvent } from "react";
 import { useAtom } from "jotai";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import type { LoginPayload, RegisterPayload } from "@/capabilities/workspace-context/session-api";
 import { safeReturnTo, useLogin, useRegister } from "@/capabilities/workspace-context/session";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";

@@ -6,7 +6,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { Calendar, Fullscreen, Languages, Mail, MapPin, Plane, SunMoon, User } from "lucide-react";
 import { m as motion } from "motion/react";
-import { fullscreenAtom, themeAtom } from "@/shared/ui/ui-state";
+import { themeAtom } from "@/shared/ui/appearance-state";
+import { fullscreenAtom } from "@/shared/ui/ui-state";
 import type { UserDTO } from "@/capabilities/workspace-context/session-api";
 import { InfoCard } from "./InfoCard";
 

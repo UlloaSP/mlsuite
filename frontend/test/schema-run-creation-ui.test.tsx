@@ -10,7 +10,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
 import { CreateSchemaRunPage } from "@/features/schemas/pages/create-schema-run-page";
 import { getSchemaRunSaveAction } from "@/features/schemas/lib/schema-run-save-action";

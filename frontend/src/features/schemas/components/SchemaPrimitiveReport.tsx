@@ -16,7 +16,7 @@ import {
 } from "mlform/primitives";
 import type { ReportConfig } from "mlform/runtime";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 
 type Props = {
   descriptor: ReportDescriptor;

@@ -2,11 +2,13 @@ import "@xterm/xterm/css/xterm.css";
 
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
+import { useAtomValue } from "jotai";
 import { SquareTerminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
+import { MONOSPACE_STACKS, typographyAtom } from "@/shared/ui/typography-state";
 import { closeTerminalSession } from "@/features/infrastructure/api/infrastructure.api";
 import { useTerminalSession } from "@/features/infrastructure/api/infrastructure.mutations";
 import {
@@ -34,6 +36,7 @@ export function TerminalView({
   const socketRef = useRef<WebSocket | null>(null);
   const sessionRef = useRef<string | null>(null);
   const { mutateAsync: createTerminalSession, isPending } = useTerminalSession();
+  const typography = useAtomValue(typographyAtom);
   const [status, setStatus] = useState("idle");
   // react-doctor-disable-next-line react-doctor/rerender-state-only-in-handlers -- Requested service gates terminal session lifecycle and effect resubscription.
   const [requestedService, setRequestedService] = useState<string | null>(null);
@@ -48,7 +51,7 @@ export function TerminalView({
         foreground: "#e8e4e6",
         cursor: "#6366f1",
       },
-      fontFamily: "'IBM Plex Mono', 'DM Mono', ui-monospace, monospace",
+      fontFamily: MONOSPACE_STACKS["dm-mono"],
       fontSize: 13,
     });
     const fitAddon = new FitAddon();
@@ -76,6 +79,14 @@ export function TerminalView({
       fitAddonRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+    terminal.options.fontFamily = MONOSPACE_STACKS[typography.monospaceFont];
+    terminal.options.fontSize = typography.monospaceSize;
+    fitAddonRef.current?.fit();
+  }, [typography.monospaceFont, typography.monospaceSize]);
 
   // react-doctor-disable-next-line react-doctor/no-cascading-set-state, react-doctor/no-adjust-state-on-prop-change, react-doctor/exhaustive-deps -- Terminal session effect coordinates selected service, xterm status, socket setup, and cleanup.
   useEffect(() => {

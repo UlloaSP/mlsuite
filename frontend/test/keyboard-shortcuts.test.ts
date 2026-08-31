@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vite-plus/test";
-import { isModShortcut, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
+import { shortcutDigit } from "@/app/utils/keyboard-shortcuts";
+import {
+  bindingFromKeyboardEvent,
+  DEFAULT_SHORTCUTS,
+  isShortcutBindings,
+  matchesShortcut,
+} from "@/shared/ui/shortcut-state";
 
 describe("keyboard shortcut helpers", () => {
   it("reads Alt navigation digits from 1 through 9", () => {
@@ -15,13 +21,37 @@ describe("keyboard shortcut helpers", () => {
     expect(shortcutDigit({ key: "a", altKey: true })).toBeNull();
   });
 
-  it("matches Ctrl/Cmd shortcuts without Alt and with the requested Shift state", () => {
-    expect(isModShortcut({ key: "l", ctrlKey: true, shiftKey: true }, "l", true)).toBe(true);
-    expect(isModShortcut({ key: "F", metaKey: true, shiftKey: true }, "f", true)).toBe(true);
-    expect(isModShortcut({ key: "b", ctrlKey: true }, "b")).toBe(true);
+  it("matches, records, and rejects conflicting editable shortcuts", () => {
+    expect(matchesShortcut({ key: "K", ctrlKey: true }, DEFAULT_SHORTCUTS["global-search"])).toBe(
+      true,
+    );
+    expect(matchesShortcut({ key: "k", altKey: true }, DEFAULT_SHORTCUTS["global-search"])).toBe(
+      false,
+    );
+    expect(bindingFromKeyboardEvent({ key: "g", ctrlKey: true } as KeyboardEvent)).toEqual({
+      key: "g",
+      mod: true,
+      alt: false,
+      shift: false,
+    });
+    expect(bindingFromKeyboardEvent({ key: "g" } as KeyboardEvent)).toBeNull();
     expect(
-      isModShortcut({ key: "l", ctrlKey: true, altKey: true, shiftKey: true }, "l", true),
+      isShortcutBindings({
+        ...DEFAULT_SHORTCUTS,
+        "toggle-theme": DEFAULT_SHORTCUTS["global-search"],
+      }),
     ).toBe(false);
-    expect(isModShortcut({ key: "l", ctrlKey: true }, "l", true)).toBe(false);
+    expect(
+      isShortcutBindings({
+        ...DEFAULT_SHORTCUTS,
+        "toggle-sidebar": { key: "1", mod: false, alt: true, shift: false },
+      }),
+    ).toBe(false);
+    expect(
+      isShortcutBindings({
+        ...DEFAULT_SHORTCUTS,
+        "toggle-sidebar": { key: "l", mod: true, alt: false, shift: false },
+      }),
+    ).toBe(false);
   });
 });

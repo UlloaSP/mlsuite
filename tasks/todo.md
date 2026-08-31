@@ -1607,3 +1607,102 @@ Breaking migration: no compatibility path for pre-0.1.20 report envelopes.
   remains blocked by formatting debt in 341 pre-existing files. No visual check ran because it was not
   requested.
 - `graphify update .` completed with 10,319 nodes, 28,236 edges, and 481 communities.
+# Personal settings, themes, sidebar placement, and user guide
+
+- [x] Define one persisted preference contract for color scheme, six built-in themes, contrast, and sidebar side.
+- [x] Apply preferences before React mounts and keep system color-scheme changes live.
+- [x] Add a global Settings route and Tooling entries without conflating organization settings.
+- [x] Build accessible Appearance and Layout controls using existing design-system primitives.
+- [x] Add a permission-safe Driver.js user guide with stable shell targets.
+- [x] Cover success, invalid storage, migration, missing tour targets, and responsive sidebar behavior.
+- [x] Run focused tests, architecture checks, `vp check`, full tests, build, React Doctor, and graphify update.
+
+## Review
+
+- Tooling now exposes a lazy-loaded Driver.js guide and personal Settings. The guide tolerates missing
+  permission-gated targets, restores sidebar state and focus, and does not navigate away from the current page.
+- Settings persists System/Light/Dark, MLSuite/Airbnb/Grove/Ocean/Ember/Iris, contrast 100-125%, and left/right
+  sidebar placement. Boot-time validation and legacy theme migration prevent an incorrect first paint.
+- Theme and contrast tokens also feed embedded MLForm runtimes, so active prediction forms update without remounting.
+- Focused integration coverage passed 32/32 tests; the final full frontend suite passed 54 files and 225 tests.
+  TypeScript, production build, touched-file zero-warning `vp check`, diff whitespace, and source limits passed.
+- React Doctor scored 80/100; its nine findings are unrelated pre-existing debt. Repository-wide `vp check` remains
+  blocked by formatting debt in 331 pre-existing files. Independent review found no remaining blockers.
+- No visual check ran because repository policy forbids it unless explicitly requested.
+- `graphify update .` completed with 10,374 nodes, 28,295 edges, and 490 communities.
+
+# Complete personal appearance and keybindings
+
+- [x] Split appearance state before extending it; keep every source file below 300 lines.
+- [x] Let built-in and custom themes apply as a full pair or to Light/Dark independently.
+- [x] Add a validated local custom-theme editor with live semantic-token application.
+- [x] Add persisted interface and monospace typography controls with a representative preview.
+- [x] Centralize editable global shortcuts and add a conflict-aware Keybindings settings panel.
+- [x] Add Settings section navigation and preserve the existing Layout preferences.
+- [x] Cover migration, invalid data, theme-mode assignment, custom themes, typography, and shortcut conflicts.
+- [x] Run targeted checks, full tests/build, React Doctor, design detector, review, and graphify update.
+
+## Review
+
+- Settings now assigns every built-in or custom theme as a complete Light/Dark pair or per mode. The
+  custom editor rejects malformed and low-contrast palettes before persistence.
+- Typography controls apply interface and monospace families/sizes to the shell, Monaco, terminal, and
+  embedded MLForm. Word wrap is persisted. Keybindings are editable, conflict-aware, and reject browser
+  or sidebar-reserved combinations.
+- Settings sections use URL state plus keyboard-accessible tab semantics. Existing Layout preferences remain.
+- Focused coverage passed 12/12 tests; the full frontend suite passed 55 files and 228 tests. TypeScript,
+  production build, touched-file zero-warning `vp check`, diff whitespace, and source limits passed.
+- React Doctor remained at 80/100 with nine unrelated pre-existing findings. The design detector returned
+  no issues. No visual check ran because repository policy forbids it unless explicitly requested.
+- Final independent review found no remaining Critical or Important findings.
+- Final `graphify update .` completed with 10,450 nodes, 28,393 edges, and 506 communities.
+
+# Fix typography and theme interactions
+
+- [x] Reproduce typography fallback, theme hit-target, and create-dialog mode regressions.
+- [x] Use distinct available interface fonts and apply their stacks immediately.
+- [x] Make Light/Dark circles switch scheme; make the remaining card area apply both variants.
+- [x] Remove Apply both UI and card-level selected styling.
+- [x] Keep Create theme from changing scheme until creation.
+- [x] Run focused/full verification, React Doctor, design detector, review, and graphify update.
+
+## Review
+
+- Root cause: proprietary/unavailable interface fonts converged on Segoe UI; theme circles only assigned
+  palettes; the custom-theme preview effect applied its initial Light draft as soon as the dialog opened.
+- Interface choices now use Manrope, IBM Plex Sans, Source Sans 3, or system UI, with distinct local
+  fallbacks and boot-time plus live CSS-variable application.
+- Light/Dark circles assign that variant and switch color scheme. Clicking the card background assigns
+  both variants without a button or card-selected state. Create theme never changes active appearance.
+- Focused regression coverage passed 9/9 tests. Full frontend suite passed 55 files and 228 tests;
+  architecture coverage passed 9/9. Production build, touched-file checks, TypeScript, diff whitespace,
+  design detector, and source limits passed.
+- React Doctor returned to 80/100 with only nine unrelated pre-existing findings. No visual check ran
+  because repository policy forbids it unless explicitly requested.
+- Independent review found no Critical or Important findings. Final `graphify update .` completed with
+  10,450 nodes, 28,388 edges, and 505 communities.
+
+# Complete theme cycle and sidebar guide
+
+- [x] Make the configured theme shortcut cycle System, Light, and Dark.
+- [x] Reduce theme-card height while preserving separate Light/Dark hit targets.
+- [x] Explain every visible sidebar destination and action in Driver.js.
+- [x] Preserve permission filtering, sidebar restoration, and focus restoration.
+- [x] Add regressions and run focused/full frontend verification.
+- [x] Run React Doctor, design detector, source-limit checks, and graphify update.
+
+## Review
+
+- Ctrl/Cmd+Shift+L and the matching sidebar action now cycle System, Light, Dark, then System;
+  integrated coverage verifies each persisted transition.
+- Theme cards no longer keep the obsolete `min-h-44`, while their Light/Dark circles and full-card
+  assignment behavior remain unchanged.
+- Driver.js now explains the workspace switcher, every permitted top-level destination, visible active
+  submenu entries, every Tooling action, and the account menu individually. Closed submenu entries are
+  `aria-hidden` and `inert`, so the tour skips them safely.
+- Focused coverage passed 14/14 tests. The full frontend suite passed 55 files and 230 tests. TypeScript,
+  production build, touched-file checks, diff whitespace, design detector, and source limits passed.
+- React Doctor remained at 80/100 with nine unrelated pre-existing findings. No visual check ran because
+  repository policy forbids it unless explicitly requested. Independent review found no Critical or
+  Important findings.
+- Final `graphify update .` completed with 10,448 nodes, 28,377 edges, and 520 communities.

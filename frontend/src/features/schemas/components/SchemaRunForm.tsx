@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { themeWithHtmlAtom } from "@/shared/ui/ui-state";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppButton } from "@/shared/ui/AppButton";

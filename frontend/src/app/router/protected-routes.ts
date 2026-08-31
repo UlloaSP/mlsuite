@@ -84,6 +84,10 @@ export const protectedPages: RouteObject[] = [
     lazy: () => lazyPage(() => import("@/features/user/pages/profilePage"), "ProfilePage"),
   },
   {
+    path: "settings",
+    lazy: () => lazyPage(() => import("@/features/user/pages/SettingsPage"), "SettingsPage"),
+  },
+  {
     path: "notifications",
     lazy: () =>
       lazyPage(() => import("@/features/workspace/pages/notifications-page"), "NotificationsPage"),

@@ -24,7 +24,7 @@ import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { isTypingTarget, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
 import { cx } from "@/shared/ui/cx";
-import { Kbd } from "./Kbd";
+import { AppKbd } from "@/shared/ui/AppKbd";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
 import { INFRA_CHILDREN, isChildActive, type NavigationItem } from "./sidebar-navigation-support";
 import { SidebarGroup } from "./app-sidebar/SidebarGroup";
@@ -195,6 +195,7 @@ export function SidebarNavigation() {
               <SidebarMenuItem key={item.to}>
                 {hasChildren ? (
                   <SidebarMenuButton
+                    data-user-guide-item={`nav:${item.label}`}
                     aria-expanded={open}
                     aria-keyshortcuts={`Alt+${String(index + 1)}`}
                     isActive={active}
@@ -211,12 +212,12 @@ export function SidebarNavigation() {
                     <Icon size={18} className="shrink-0" />
                     <SidebarLabel className="truncate">{item.label}</SidebarLabel>
                     {state !== "collapsed" ? (
-                      <Kbd
+                      <AppKbd
                         aria-hidden={!showShortcutHints}
                         className={cx("ml-auto shrink-0", !showShortcutHints && "invisible")}
                       >
                         {String(index + 1)}
-                      </Kbd>
+                      </AppKbd>
                     ) : null}
                     {state !== "collapsed" ? (
                       <ChevronRight
@@ -232,6 +233,7 @@ export function SidebarNavigation() {
                 ) : (
                   <SidebarMenuButton asChild isActive={active} title={item.label}>
                     <Link
+                      data-user-guide-item={`nav:${item.label}`}
                       aria-keyshortcuts={`Alt+${String(index + 1)}`}
                       to={item.to}
                       viewTransition
@@ -239,18 +241,20 @@ export function SidebarNavigation() {
                       <Icon size={18} className="shrink-0" />
                       <SidebarLabel className="truncate">{item.label}</SidebarLabel>
                       {state !== "collapsed" ? (
-                        <Kbd
+                        <AppKbd
                           aria-hidden={!showShortcutHints}
                           className={cx("ml-auto shrink-0", !showShortcutHints && "invisible")}
                         >
                           {String(index + 1)}
-                        </Kbd>
+                        </AppKbd>
                       ) : null}
                     </Link>
                   </SidebarMenuButton>
                 )}
                 {item.children && state !== "collapsed" ? (
                   <div
+                    aria-hidden={!open}
+                    inert={!open}
                     className={cx(
                       "grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
                       open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
@@ -267,13 +271,14 @@ export function SidebarNavigation() {
                             <SidebarMenuSubItem key={child.to}>
                               <SidebarMenuSubButton asChild isActive={childActive}>
                                 <Link
+                                  data-user-guide-item={`subnav:${child.label}`}
                                   aria-keyshortcuts={`Alt+Shift+${childShortcut}`}
                                   to={child.to}
                                   viewTransition
                                 >
                                   <ChildIcon size={14} className="shrink-0" />
                                   <span className="truncate">{child.label}</span>
-                                  <Kbd
+                                  <AppKbd
                                     aria-hidden={!showShortcutHints}
                                     className={cx(
                                       "ml-auto h-4 min-w-4 shrink-0 text-[0.62rem]",
@@ -281,7 +286,7 @@ export function SidebarNavigation() {
                                     )}
                                   >
                                     {childShortcut}
-                                  </Kbd>
+                                  </AppKbd>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
