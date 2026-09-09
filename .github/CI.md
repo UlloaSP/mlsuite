@@ -30,9 +30,9 @@ Full frontend formatting/lint is not yet a required check: the initial
 in a separate change before adding the gate. This workflow does not suppress its
 failures or claim that the repository passes full lint.
 
-## Main protection
+## Develop and main protection
 
-Require a PR, `CI required` from GitHub Actions, an up-to-date branch, resolved
+Both branches require a PR, `CI required` from GitHub Actions, an up-to-date branch, resolved
 review conversations, and no force-pushes or branch deletion. Apply protection
 to administrators too. The sole current maintainer can merge their own PR after
 checks pass: no independent approval is required until another reviewer exists.
