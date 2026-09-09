@@ -18,7 +18,7 @@ import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelPageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
-import dev.ulloasp.mlsuite.model.application.service.ModelCreationService;
+import dev.ulloasp.mlsuite.model.application.port.in.ModelCreationUseCase;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
@@ -29,15 +29,15 @@ public class ModelControllerImpl implements ModelController {
 
     private final CurrentUserResolver currentUserResolver;
     private final ModelCatalogUseCase modelCatalogUseCase;
-    private final ModelCreationService modelCreationService;
+    private final ModelCreationUseCase modelCreationUseCase;
 
     public ModelControllerImpl(
             CurrentUserResolver currentUserResolver,
             ModelCatalogUseCase modelCatalogUseCase,
-            ModelCreationService modelCreationService) {
+            ModelCreationUseCase modelCreationUseCase) {
         this.currentUserResolver = currentUserResolver;
         this.modelCatalogUseCase = modelCatalogUseCase;
-        this.modelCreationService = modelCreationService;
+        this.modelCreationUseCase = modelCreationUseCase;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class ModelControllerImpl implements ModelController {
             @RequestParam(defaultValue = "__") String oneHotSeparator) {
         CurrentUser currentUser = currentUserResolver.resolve(authentication);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(modelCreationService.create(
+                .body(modelCreationUseCase.create(
                         currentUser.userId(),
                         name,
                         modelFile,
