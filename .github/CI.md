@@ -12,6 +12,12 @@ Java test reports are retained for seven days; frontend results appear in logs.
 
 ## Checks
 
+Branch flow is feature branch -> PR to develop -> PR from develop to main.
+Fetch/pull the relevant branches before branching or integrating changes. Feature
+PRs must not target main; CI rejects main PRs unless their source is this
+repository's develop branch. Integrate and validate in develop before opening
+the promotion PR. Opening a PR does not authorize its automatic merge.
+
 - Frontend: locked install, all tests, TypeScript and production build.
   Tests disable Node 25's native Web Storage so jsdom supplies browser storage.
 - API: Maven verify, including architecture tests and packaging.
