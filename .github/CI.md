@@ -13,6 +13,7 @@ Java test reports are retained for seven days; frontend results appear in logs.
 ## Checks
 
 - Frontend: locked install, all tests, TypeScript and production build.
+  Tests disable Node 25's native Web Storage so jsdom supplies browser storage.
 - API: Maven verify, including architecture tests and packaging.
 - Backend/ops-agent: locked dependency validation and all pytest tests.
 - Configuration: no tracked private `.env` files, both Compose definitions

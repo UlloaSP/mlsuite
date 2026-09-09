@@ -36,6 +36,9 @@ jobs:
           run-install: false
       - run: vp install --frozen-lockfile
       - run: vp test --run
+        env:
+          # Let jsdom supply browser storage instead of Node 25's incomplete global.
+          NODE_OPTIONS: --no-webstorage
       - run: vp run build
 
   api:
