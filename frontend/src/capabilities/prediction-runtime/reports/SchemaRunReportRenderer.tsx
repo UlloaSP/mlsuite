@@ -13,16 +13,19 @@ import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
 import type { SchemaDisplayReport } from "@/capabilities/prediction-runtime/data/report-display";
-import type { PredictionResultDto } from "@/features/schemas/api/prediction-types";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+type PredictionResultDto = {
+  modelId: string;
+  modelInput: Record<string, unknown>;
+  output: Record<string, unknown>;
+};
+
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { describeSchemaCustomReport } from "@/features/schemas/lib/report-descriptor";
+import { describeSchemaCustomReport } from "@/capabilities/prediction-runtime/reports/report-descriptor";
 import { SchemaPrimitiveReport } from "./SchemaPrimitiveReport";
 import { SchemaRunReportCard } from "./SchemaRunReportCard";
 import { schemaRunDebug } from "@/capabilities/prediction-runtime/mlform/run-debug";
 
 type Props = {
-  version: SchemaVersionDto;
   result: PredictionResultDto;
   report: SchemaDisplayReport;
   customReportDefinitions?: readonly CatalogReportDefinition[];

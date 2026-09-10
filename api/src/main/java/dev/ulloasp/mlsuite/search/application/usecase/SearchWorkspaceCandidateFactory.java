@@ -68,8 +68,7 @@ final class SearchWorkspaceCandidateFactory {
         Schema schema = run.getSchemaVersion().getSchema();
         return candidate(
                 "predictionRun", run.getId(), run.getName(), schema.getName() + " / " + run.getStatus(),
-                "/schemas/" + schema.getId() + "/versions/" + run.getSchemaVersion().getId()
-                        + "/runs/" + run.getId(),
+                "/inferences/" + run.getId(),
                 schema.getOrganization().getId(), null, run.getUpdatedAt(), run.getName(), schema.getName());
     }
 

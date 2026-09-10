@@ -8,6 +8,7 @@ __pycache__
 .pytest_cache
 .env
 .env.local
+.env.*
 .DS_Store
 *.log
 node_modules

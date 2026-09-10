@@ -1,5 +1,6 @@
+import { useReviewRunSelection } from "./useReviewRunSelection";
 import { ClipboardPlus, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { formatTimestamp } from "@/shared/lib/date-time";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -8,7 +9,6 @@ import { AppIconButton } from "@/shared/ui/AppIconButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import {
-  groupReviewCandidates,
   type ReviewCandidate,
   useCreateReviewMutation,
   useEligibleReviewers,
@@ -29,13 +29,19 @@ const defaultExpiryDate = () => {
 
 export function ReviewCreationDialog({ candidates, organizationId, onClose }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const groups = useMemo(() => groupReviewCandidates(candidates), [candidates]);
-  const [groupKey, setGroupKey] = useState(groups[0]?.key ?? "");
-  const group = groups.find((item) => item.key === groupKey) ?? groups[0];
+  const {
+    groups,
+    group,
+    bookmark,
+    bookmarkOptions,
+    runCandidates,
+    selectedRunIds,
+    setSelectedRunIds,
+    selectGroup,
+    selectBookmark,
+  } = useReviewRunSelection(candidates);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const [expiresAt, setExpiresAt] = useState(defaultExpiryDate);
-  const [selectedRunIds, setSelectedRunIds] = useState<Set<string>>(
-    () => new Set(group?.candidates.map((item) => item.runId)),
-  );
   const [selectedReviewerIds, setSelectedReviewerIds] = useState<Set<number>>(new Set());
   const reviewers = useEligibleReviewers(organizationId);
   const createReview = useCreateReviewMutation(organizationId);
@@ -43,15 +49,10 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
+    setPortalContainer(dialog);
     dialog.showModal();
     return () => dialog.close();
   }, []);
-
-  const selectGroup = (key: string) => {
-    const next = groups.find((item) => item.key === key);
-    setGroupKey(key);
-    setSelectedRunIds(new Set(next?.candidates.map((item) => item.runId)));
-  };
 
   const create = async () => {
     if (!group || !selectedRunIds.size || !selectedReviewerIds.size) {
@@ -82,9 +83,12 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
     }
   };
 
-  const toggleRun = useCallback((runId: string) => {
-    setSelectedRunIds((current) => toggleSetValue(current, runId));
-  }, []);
+  const toggleRun = useCallback(
+    (runId: string) => {
+      setSelectedRunIds((current) => toggleSetValue(current, runId));
+    },
+    [setSelectedRunIds],
+  );
   const toggleReviewer = useCallback((reviewerId: number) => {
     setSelectedReviewerIds((current) => toggleSetValue(current, reviewerId));
   }, []);
@@ -111,32 +115,46 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
           </AppIconButton>
         </header>
 
-        {groups.length > 1 ? (
-          <div className="border-b border-[var(--border-soft)] px-6 py-4">
+        {groups.length > 1 || bookmarkOptions.length > 0 ? (
+          <div className="grid gap-4 border-b border-[var(--border-soft)] px-6 py-4 sm:grid-cols-2">
             <AppFieldLabel label="Schema snapshot">
               <AppSelect
                 aria-label="Schema snapshot"
+                portalContainer={portalContainer}
                 value={group?.key}
                 onValueChange={selectGroup}
-                className="min-w-64"
+                className="w-full min-w-0"
                 options={groups.map((item) => ({ value: item.key, label: item.label }))}
               />
             </AppFieldLabel>
+            {bookmarkOptions.length > 0 ? (
+              <AppFieldLabel label="Bookmark">
+                <AppSelect
+                  aria-label="Bookmark"
+                  portalContainer={portalContainer}
+                  value={bookmark}
+                  onValueChange={selectBookmark}
+                  className="w-full min-w-0"
+                  options={[{ value: "all", label: "All bookmarks" }, ...bookmarkOptions]}
+                />
+              </AppFieldLabel>
+            ) : null}
           </div>
         ) : null}
 
         <div className="grid min-h-0 flex-1 divide-y divide-[var(--border-soft)] overflow-auto lg:grid-cols-2 lg:divide-x lg:divide-y-0">
           <ReviewSelectionCatalog
-            key={`inferences:${group?.key ?? "none"}`}
+            key={`inferences:${group?.key ?? "none"}:${bookmark}`}
             title="Inferences"
             emptyDescription="No inferences are available for this schema snapshot."
-            items={(group?.candidates ?? []).map((candidate) => ({
+            items={runCandidates.map((candidate) => ({
               id: candidate.runId,
               title: candidate.name,
               detail: formatTimestamp(candidate.createdAt),
             }))}
             selectedIds={selectedRunIds}
             onClear={() => setSelectedRunIds(new Set())}
+            onSelectAll={(ids) => setSelectedRunIds((current) => new Set([...current, ...ids]))}
             onToggle={toggleRun}
           />
           <ReviewSelectionCatalog
@@ -151,6 +169,9 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
             }))}
             selectedIds={selectedReviewerIds}
             onClear={() => setSelectedReviewerIds(new Set())}
+            onSelectAll={(ids) =>
+              setSelectedReviewerIds((current) => new Set([...current, ...ids]))
+            }
             onRetry={() => void reviewers.refetch()}
             onToggle={toggleReviewer}
           />

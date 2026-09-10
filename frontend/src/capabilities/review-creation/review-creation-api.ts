@@ -9,6 +9,8 @@ export type ReviewCandidate = {
   schemaId: string;
   versionId: string;
   groupLabel: string;
+  bookmarkId?: string | null;
+  bookmarkName?: string | null;
 };
 
 export type ReviewCandidateGroup = {

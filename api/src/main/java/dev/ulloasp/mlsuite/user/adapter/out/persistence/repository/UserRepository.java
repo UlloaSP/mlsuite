@@ -40,7 +40,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
             """)
     List<User> findEnabledUsersOutsideActiveOrganization(@Param("organizationId") Long organizationId);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE User u SET u.currentOrganization = null WHERE u.currentOrganization.id = :organizationId")
     void clearCurrentOrganization(@Param("organizationId") Long organizationId);
 }

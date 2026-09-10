@@ -61,7 +61,7 @@ export function CatalogListPanel({
 
   return (
     <>
-      <section className="min-h-0 flex-1 basis-0 overflow-y-auto py-4">
+      <section className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4">
         <div className={bodyClassName}>
           {!hasItems && isLoading ? (
             <AppPanel className="text-sm text-[var(--text-secondary)]">{loadingLabel}</AppPanel>

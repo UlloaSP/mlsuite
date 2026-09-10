@@ -37,8 +37,8 @@ export function SettingsTypographySection() {
         Tune interface and code text without changing content density rules.
       </p>
 
-      <div className="mt-7 grid gap-8">
-        <div>
+      <div className="mt-7 grid min-w-0 grid-cols-1 gap-8">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h3 className="text-base font-semibold text-[var(--text-primary)]">Interface font</h3>
@@ -69,7 +69,7 @@ export function SettingsTypographySection() {
           </div>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h3 className="text-base font-semibold text-[var(--text-primary)]">Monospace font</h3>

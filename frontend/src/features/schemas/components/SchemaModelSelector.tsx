@@ -9,7 +9,7 @@ import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { cx } from "@/shared/ui/cx";
-import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { hasModelSchema } from "@/features/schemas/lib/schema-model-selection";
 import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
 import type { SchemaSourceModel } from "@/features/schemas/lib/merge";
 
@@ -25,13 +25,10 @@ type Props = {
   onChange: (value: Selection[]) => void;
 };
 
-const hasSchema = (model: SchemaSourceModel) =>
-  isRecord(model.inputSchema) && Array.isArray(model.inputSchema.fields);
-
 export function SchemaModelSelector({ models, value, onChange }: Props) {
   const selectedIds = new Set(value.map((item) => item.modelId));
   const toggle = (model: SchemaSourceModel) => {
-    if (!hasSchema(model)) return;
+    if (!hasModelSchema(model)) return;
     if (selectedIds.has(model.id)) {
       onChange(value.filter((item) => item.modelId !== model.id));
       return;
@@ -51,7 +48,7 @@ export function SchemaModelSelector({ models, value, onChange }: Props) {
       <div className="min-h-0 flex-1 overflow-auto pr-1">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {models.map((model) => {
-            const available = hasSchema(model);
+            const available = hasModelSchema(model);
             const selected = selectedIds.has(model.id);
             return (
               <div

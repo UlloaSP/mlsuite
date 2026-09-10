@@ -17,6 +17,8 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
@@ -43,13 +45,16 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
     private final SchemaReviewRepository reviewRepository;
+    private final SchemaDraftRepository draftRepository;
+    private final SchemaBookmarkRepository bookmarkRepository;
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
 
     public SchemaServiceImpl(UserLookupService userLookupService, SchemaRepository schemaRepository,
             SchemaVersionRepository versionRepository, SchemaModelBindingRepository bindingRepository,
             PredictionRunRepository runRepository, SchemaReviewRepository reviewRepository,
-            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService) {
+            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService,
+            SchemaDraftRepository draftRepository, SchemaBookmarkRepository bookmarkRepository) {
         this.userLookupService = userLookupService;
         this.schemaRepository = schemaRepository;
         this.versionRepository = versionRepository;
@@ -58,6 +63,8 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         this.reviewRepository = reviewRepository;
         this.workspaceAccessService = workspaceAccessService;
         this.authorizationService = authorizationService;
+        this.draftRepository = draftRepository;
+        this.bookmarkRepository = bookmarkRepository;
     }
 
     @Override
@@ -79,7 +86,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     public List<Schema> listSchemas(Long userId) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireModelView(userId, organizationId);
         return schemaRepository.findByOrganizationIdAndArchivedAtIsNullOrderByCreatedAtDesc(organizationId);
     }
 
@@ -87,7 +94,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     public SchemaPageDto getSchemaPage(Long userId, int page, int size, String search, String sort, String status) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireModelView(userId, organizationId);
         Page<Schema> schemas = schemaRepository.findCatalogPage(
                 organizationId,
                 normalizeSearch(search),
@@ -106,7 +113,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     public Schema getSchema(Long userId, Long schemaId) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireModelView(userId, organizationId);
         return requireSchema(schemaId, organizationId);
     }
 
@@ -167,6 +174,8 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Schema is used by prediction runs or reviews. Archive it instead.");
         }
+        draftRepository.deleteBySchemaId(schemaId);
+        bookmarkRepository.deleteBySchemaId(schemaId);
         versionRepository.findBySchemaIdOrderByVersionDesc(schemaId).forEach(version -> {
             bindingRepository.findBySchemaVersionId(version.getId()).forEach(bindingRepository::delete);
             versionRepository.delete(version);

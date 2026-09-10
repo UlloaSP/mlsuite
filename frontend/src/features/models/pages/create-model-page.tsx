@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
@@ -62,6 +63,7 @@ export function CreateModelPage() {
           }
           if (isDfFile(file.name)) return { file, kind: "dataframe" as const };
           if (isModelFile(file.name)) return { file, kind: "model" as const };
+          toast.error(`Unsupported file: ${file.name}. Choose a .joblib model or dataframe.`);
           return null;
         }),
       );
@@ -167,9 +169,7 @@ export function CreateModelPage() {
   const saveBundle = async (id: number, options: { navigateWhenComplete?: boolean } = {}) => {
     const bundle = bundles.find((b) => b.id === id);
     if (!bundle?.modelFile || !bundle.name.trim() || bundle.saved || bundle.saving) return false;
-    const hasOtherUnsaved = bundles.some(
-      (b) => b.id !== id && b.modelFile && b.name.trim() && !b.saved && !b.saving,
-    );
+    const hasOtherUnsaved = bundles.some((b) => b.id !== id && !b.saved);
 
     setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, saving: true } : b)));
     try {
@@ -193,7 +193,7 @@ export function CreateModelPage() {
   };
 
   const saveAll = async () => {
-    const unsaved = bundles.filter((b) => b.modelFile && b.name.trim() && !b.saved && !b.saving);
+    const unsaved = bundles.filter((b) => !b.saved);
     const complete = await saveModelBundlesSequentially(
       unsaved.map((bundle) => bundle.id),
       (id) => saveBundle(id, { navigateWhenComplete: false }),
@@ -216,7 +216,7 @@ export function CreateModelPage() {
 
   return (
     <AppPage>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-8 py-7">
+      <div className="app-scroll flex min-h-0 flex-1 flex-col overflow-auto px-4 py-7 sm:px-8 lg:overflow-hidden">
         <AppPageHeader
           breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create Model" }]}
           eyebrow="Model Studio"
@@ -225,11 +225,11 @@ export function CreateModelPage() {
         />
 
         {/* ── Two-column layout ────────────────────────────────────── */}
-        <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
+        <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row lg:overflow-hidden">
           {/* Left: drop zone + bundle list */}
           <section
             aria-label="Model bundles"
-            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)]"
+            className="flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)] lg:flex-1"
           >
             <BundleDropZone onFiles={handleFiles} />
 

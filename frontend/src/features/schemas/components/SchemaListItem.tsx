@@ -90,6 +90,7 @@ export function SchemaListItem({
       </button>
       <div className="justify-self-end self-start">
         <SchemaActionsMenu
+          archived={Boolean(item.archivedAt)}
           canDelete={canDelete}
           canEdit={canEdit}
           onAction={onAction}

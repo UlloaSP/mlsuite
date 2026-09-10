@@ -16,6 +16,7 @@ import {
 import { useServiceAction } from "@/features/infrastructure/api/infrastructure.mutations";
 import {
   appendLogLine,
+  confirmServiceAction,
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
@@ -132,11 +133,14 @@ export function AdminInfrastructurePage() {
                 <ServicesView
                   services={currentOverview.services}
                   selectedService={selectedService}
-                  busyService={action.variables?.serviceName ?? null}
+                  busyService={action.isPending ? (action.variables?.serviceName ?? null) : null}
                   onSelect={(name) => {
                     handleSelectService(name);
                   }}
-                  onAction={(name, a) => action.mutate({ serviceName: name, action: a })}
+                  onAction={(name, a) => {
+                    if (confirmServiceAction(name, a))
+                      action.mutate({ serviceName: name, action: a });
+                  }}
                 />
               )}
               {activeTab === "logs" && (

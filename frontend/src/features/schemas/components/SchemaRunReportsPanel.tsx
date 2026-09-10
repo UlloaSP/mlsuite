@@ -6,13 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useMemo } from "react";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 import { AppCopy } from "@/shared/ui/AppCopy";
-import { AppPanel } from "@/shared/ui/AppPanel";
-import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { schemaRunDebug } from "@/capabilities/prediction-runtime/mlform/run-debug";
 import type { PredictionResultDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import { SchemaRunReportRenderer } from "./SchemaRunReportRenderer";
+import { SchemaRunReportRenderer } from "@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer";
 
 type Props = {
   version: SchemaVersionDto;
@@ -42,17 +40,12 @@ export function SchemaRunReportsPanel({
   });
 
   return (
-    <AppPanel className="space-y-4">
-      <div>
-        <AppSectionTitle>Outputs</AppSectionTitle>
-        <AppCopy>Model predictions and plugin reports.</AppCopy>
-      </div>
+    <div>
       {reports.length > 0 ? (
         <div className="grid gap-4 xl:grid-cols-2">
           {reports.map(({ result, report }) => (
             <SchemaRunReportRenderer
               key={`${result.id}-${report.id}`}
-              version={version}
               result={result}
               report={report}
               customReportDefinitions={customReportDefinitions}
@@ -62,6 +55,6 @@ export function SchemaRunReportsPanel({
       ) : (
         <AppCopy>No outputs returned.</AppCopy>
       )}
-    </AppPanel>
+    </div>
   );
 }

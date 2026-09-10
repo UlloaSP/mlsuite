@@ -58,6 +58,7 @@ export function CreateSchemaRunPage() {
     reportsPending: boolean;
   } | null>(null);
   const [name, setName] = useState(createRunName);
+  const nameEditedRef = useRef(false);
   const [phase, setPhase] = useState<SchemaRunCreationPhase>("idle");
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
@@ -82,7 +83,7 @@ export function CreateSchemaRunPage() {
   const handleRunningChange = useCallback((running: boolean) => {
     if (running) {
       runGenerationRef.current += 1;
-      setName(createRunName());
+      if (!nameEditedRef.current) setName(createRunName());
       setPendingRun(null);
       setPhase("running");
       return;
@@ -145,7 +146,10 @@ export function CreateSchemaRunPage() {
                   size={Math.max(name.length, 1)}
                   spellCheck={false}
                   value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(event) => {
+                    nameEditedRef.current = true;
+                    setName(event.target.value);
+                  }}
                   className="min-w-0 max-w-full bg-transparent font-inherit text-inherit outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] disabled:cursor-default"
                 />
                 <PencilLine

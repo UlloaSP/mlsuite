@@ -24,7 +24,8 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
   const [chartRange, setChartRange] = useState("60m");
   const aggregate = overview.aggregate;
   const points = overview.history.points;
-  const running = countHealthyServices(overview.services);
+  const healthy = countHealthyServices(overview.services);
+  const running = overview.services.filter((service) => service.status === "running").length;
   const issues = countProblemServices(overview.services);
   const totalMem = overview.services.reduce((sum, service) => sum + (service.memoryBytes ?? 0), 0);
 
@@ -92,8 +93,14 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
         />
         <KpiCard
           label="Services"
-          value={`${running}/${overview.services.length}`}
-          sub={issues > 0 ? `${issues} need attention` : "all healthy"}
+          value={`${healthy}/${overview.services.length}`}
+          sub={
+            !overview.services.length
+              ? "no services"
+              : issues > 0
+                ? `${issues} need attention`
+                : "all healthy"
+          }
           tone={issues > 0 ? "warning" : "success"}
           data={[]}
           color="#10b981"

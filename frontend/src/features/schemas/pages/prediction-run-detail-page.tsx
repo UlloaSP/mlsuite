@@ -7,6 +7,7 @@ import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
@@ -25,17 +26,20 @@ import { SchemaRunMetadataRow } from "@/features/schemas/components/SchemaRunMet
 import { SchemaRunReportsPanel } from "@/features/schemas/components/SchemaRunReportsPanel";
 import {
   countCompletedSchemaFeedbackSteps,
-  isSchemaFeedbackComplete,
+  schemaFeedbackStatus,
 } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
 import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { getVisibleSchemaInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
 import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
+import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 
 type DetailTab = "inputs" | "outputs" | "feedback";
 
 export function PredictionRunDetailPage() {
+  const { data: workspace } = useWorkspaceContext();
   const { schemaId, runId, bookmarkId, versionId } = useParams<{
     schemaId: string;
     runId: string;
@@ -43,7 +47,7 @@ export function PredictionRunDetailPage() {
     versionId: string;
   }>();
   const { data: schema } = useSchema(schemaId);
-  const { data: run, isLoading } = usePredictionRun(runId);
+  const { data: run, isLoading, isError } = usePredictionRun(runId);
   const runBookmarkId = run?.schemaBookmarkId ?? bookmarkId;
   const { data: bookmark } = useSchemaBookmark(runBookmarkId);
   const effectiveVersionId = versionId ?? run?.schemaVersionId;
@@ -57,11 +61,12 @@ export function PredictionRunDetailPage() {
   const runFeedback = usePredictionRunFeedback(run);
   const [tab, setTab] = useState<DetailTab>("inputs");
   const catalog = useSchemaPluginCatalog(executableVersion?.formSchema);
+  const questionnaireError = questionnaireConfigError(executableVersion?.formSchema);
   const feedbackSteps = useMemo(() => {
-    if (!run || !executableVersion) return [];
+    if (!run || !executableVersion || questionnaireError) return [];
     return buildSchemaFeedbackSteps(executableVersion, run.results, runFeedback.data);
-  }, [executableVersion, run, runFeedback.data]);
-  const feedbackStatus = isSchemaFeedbackComplete(feedbackSteps) ? "COMPLETED" : "PENDING";
+  }, [executableVersion, run, runFeedback.data, questionnaireError]);
+  const feedbackStatus = schemaFeedbackStatus(feedbackSteps);
   const inputCount =
     run && executableVersion
       ? getVisibleSchemaInputs(executableVersion.formSchema, run.inputData).length
@@ -80,6 +85,41 @@ export function PredictionRunDetailPage() {
     },
   ];
 
+  if (questionnaireError)
+    return (
+      <AppPage>
+        <AppEmptyState
+          title="Invalid feedback questionnaire"
+          description={questionnaireError}
+          action={
+            <Link to="/inferences">
+              <AppButton>Back to inferences</AppButton>
+            </Link>
+          }
+        />
+      </AppPage>
+    );
+
+  if (isLoading || isError || !run) {
+    return (
+      <AppPage>
+        {isLoading ? (
+          <AppPanel>Loading run...</AppPanel>
+        ) : (
+          <AppEmptyState
+            title="Inference unavailable"
+            description="The inference could not be loaded. It may no longer exist or you may not have access."
+            action={
+              <Link to="/inferences">
+                <AppButton>Back to inferences</AppButton>
+              </Link>
+            }
+          />
+        )}
+      </AppPage>
+    );
+  }
+
   return (
     <AppPage>
       <AppSurface className="flex-1 space-y-6 overflow-auto">
@@ -92,15 +132,16 @@ export function PredictionRunDetailPage() {
             { label: run?.name ?? "Prediction run" },
           ]}
           actions={
-            <Link to={rerunHref}>
-              <AppButton>
-                <RotateCcw size={16} />
-                Predict again
-              </AppButton>
-            </Link>
+            workspace?.permissions.canRunPredictions ? (
+              <Link to={rerunHref}>
+                <AppButton>
+                  <RotateCcw size={16} />
+                  Predict again
+                </AppButton>
+              </Link>
+            ) : null
           }
         />
-        {isLoading ? <AppPanel>Loading run...</AppPanel> : null}
         {run && executableVersion ? (
           <>
             <SchemaRunMetadataRow
@@ -125,6 +166,7 @@ export function PredictionRunDetailPage() {
               ) : null}
               {tab === "feedback" ? (
                 <SchemaRunFeedbackQuestionnaire
+                  canEdit={Boolean(workspace?.permissions.canViewOrganization)}
                   key={run.id}
                   run={run}
                   version={executableVersion}

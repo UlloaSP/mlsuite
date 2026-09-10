@@ -1,6 +1,9 @@
 package dev.ulloasp.mlsuite.admin;
 
 import org.springframework.data.domain.Page;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -83,7 +86,13 @@ public class AdminUserService {
     public void delete(Long id) {
         User user = user(id);
         guardLastSuperadmin(user, SystemRole.USER, false);
-        userRepository.delete(user);
+        try {
+            userRepository.deleteAllByIdInBatch(java.util.List.of(id));
+            userRepository.flush();
+        } catch (DataIntegrityViolationException error) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "User is referenced by protected records. Remove those references before deleting the user.", error);
+        }
     }
 
     private User user(Long id) {

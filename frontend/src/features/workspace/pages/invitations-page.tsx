@@ -1,75 +1,32 @@
-import { Mail, RotateCcw, X } from "lucide-react";
-import { useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { AppButton } from "@/shared/ui/AppButton";
-import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
-import {
-  useBulkRevokeInvitationsMutation,
-  useCreateInvitationMutation,
-  useResendInvitationMutation,
-  useRevokeInvitationMutation,
-} from "@/features/workspace/api/invitation.mutations";
-import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
-import { AdminStatCard } from "@/features/workspace/components/admin/AdminStatCard";
-import { StatusBadge } from "@/features/workspace/components/admin/StatusBadge";
+import { useCreateInvitationMutation } from "@/features/workspace/api/invitation.mutations";
 import { InviteForm } from "@/features/workspace/components/InviteForm";
-import { RoleBadge } from "@/features/workspace/components/RoleBadge";
 import {
   useOrganizationAdminDashboardQuery,
   useOrganizationInvitationCandidatesQuery,
-  useOrganizationInvitationsQuery,
   useOrganizationRolesQuery,
 } from "@/features/workspace/api/workspace.queries";
 import { invitationRoleOptions } from "@/features/workspace/lib/invitation-role-options";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
-import type { InvitationStatus } from "@/capabilities/workspace-context/workspace-context.types";
-
-const statuses: Array<InvitationStatus | "ALL"> = [
-  "ALL",
-  "PENDING",
-  "ACCEPTED",
-  "EXPIRED",
-  "REVOKED",
-];
-const invitationDateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "short" });
+import { InvitationCatalog } from "@/features/workspace/components/InvitationCatalog";
 
 export function InvitationsPage() {
   const { organizationId = "" } = useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
   const permissions = dashboard.data?.permissions;
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState<InvitationStatus | "ALL">("PENDING");
-  const [selected, setSelected] = useState<number[]>([]);
-  const { data: invitations = [] } = useOrganizationInvitationsQuery(
-    id,
-    Boolean(permissions?.canViewInvitations),
-  );
-  const bulkRevoke = useBulkRevokeInvitationsMutation(id);
   const create = useCreateInvitationMutation(id);
-  const resend = useResendInvitationMutation(id);
-  const revoke = useRevokeInvitationMutation(id);
   const canView = Boolean(permissions?.canViewInvitations);
   const canInvite = Boolean(permissions?.canInviteMembers);
   const canManage = Boolean(permissions?.canManageInvitations);
   const { data: roles } = useOrganizationRolesQuery(id, canInvite);
   const { data: candidates = [] } = useOrganizationInvitationCandidatesQuery(id, canInvite);
-  const filtered = useMemo(
-    () =>
-      invitations.filter(
-        (invite) =>
-          invite.email.toLowerCase().includes(query.toLowerCase()) &&
-          (status === "ALL" || invite.status === status),
-      ),
-    [invitations, query, status],
-  );
-  const selectedIds = useMemo(() => new Set(selected), [selected]);
   if (!Number.isFinite(id)) return <RouteStatusPage status={404} />;
   if (dashboard.isError)
     return <RouteStatusPage status={organizationRouteErrorStatus(dashboard.error)} />;
@@ -81,7 +38,7 @@ export function InvitationsPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
+      <AppSurface className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <AppPageHeader
           title="Invitations"
           description="Invite users, assign starting role, and revoke pending access."
@@ -111,121 +68,7 @@ export function InvitationsPage() {
             )}
           </section>
         ) : null}
-        {canView ? (
-          <>
-            <div className="grid gap-4 md:grid-cols-4">
-              {statuses.slice(1).map((item) => (
-                <AdminStatCard
-                  key={item}
-                  label={item}
-                  value={invitations.filter((i) => i.status === item).length}
-                  icon={<Mail size={18} />}
-                />
-              ))}
-            </div>
-            <AdminDataPanel
-              title="All Invitations"
-              description={`${filtered.length} invitations in this view`}
-              search={query}
-              onSearch={setQuery}
-              actions={
-                <>
-                  <AppSelect
-                    value={status}
-                    onValueChange={(nextStatus) =>
-                      setStatus(nextStatus as InvitationStatus | "ALL")
-                    }
-                    options={statuses.map((item) => ({ value: item, label: item }))}
-                  />
-                  {canManage && selected.length ? (
-                    <AppButton
-                      variant="danger"
-                      onClick={() =>
-                        void bulkRevoke.mutateAsync(selected).then(() => {
-                          setSelected([]);
-                        })
-                      }
-                    >
-                      Bulk revoke
-                    </AppButton>
-                  ) : null}
-                </>
-              }
-            >
-              <table className="w-full min-w-[760px] text-sm">
-                <thead className="border-b border-[var(--border-soft)] text-left">
-                  <tr>
-                    <th className="p-4">Email</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Expires</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((invite) => (
-                    <tr
-                      key={invite.id}
-                      className="border-b border-[var(--border-soft)] last:border-0"
-                    >
-                      <td className="p-4 font-semibold">
-                        {canManage ? (
-                          <input
-                            aria-label={`Select invitation ${invite.email}`}
-                            className="mr-3"
-                            type="checkbox"
-                            checked={selectedIds.has(invite.id)}
-                            onChange={(event) =>
-                              setSelected((current) =>
-                                event.target.checked
-                                  ? [...current, invite.id]
-                                  : current.filter((id) => id !== invite.id),
-                              )
-                            }
-                          />
-                        ) : null}
-                        {invite.email}
-                      </td>
-                      <td>
-                        <RoleBadge value={invite.roleDefinition?.name ?? invite.role} />
-                      </td>
-                      <td>
-                        <StatusBadge value={invite.status} />
-                      </td>
-                      <td>{invitationDateFormatter.format(Date.parse(invite.expiresAt))}</td>
-                      <td className="flex gap-2 py-3">
-                        {canManage ? (
-                          <AppButton variant="secondary" onClick={() => resend.mutate(invite.id)}>
-                            <RotateCcw size={14} />
-                            Resend
-                          </AppButton>
-                        ) : null}
-                        {canManage ? (
-                          <AppButton
-                            variant="secondary"
-                            onClick={() =>
-                              void navigator.clipboard?.writeText(
-                                `${window.location.origin}/invite/${invite.token ?? ""}`,
-                              )
-                            }
-                          >
-                            Copy
-                          </AppButton>
-                        ) : null}
-                        {canManage ? (
-                          <AppButton variant="danger" onClick={() => revoke.mutate(invite.id)}>
-                            <X size={14} />
-                            Revoke
-                          </AppButton>
-                        ) : null}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </AdminDataPanel>
-          </>
-        ) : null}
+        {canView ? <InvitationCatalog key={id} organizationId={id} canManage={canManage} /> : null}
       </AppSurface>
     </AppPage>
   );

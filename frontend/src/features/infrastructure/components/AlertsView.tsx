@@ -86,20 +86,6 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
               <p className="text-sm font-medium text-[var(--text-primary)]">{alert.title}</p>
               <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{alert.detail}</p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                type="button"
-                className="rounded-md border border-[var(--border-soft)] px-2.5 py-1 text-[0.65rem] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-              >
-                Snooze
-              </button>
-              <button
-                type="button"
-                className="rounded-md border border-[var(--border-soft)] px-2.5 py-1 text-[0.65rem] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-              >
-                Acknowledge
-              </button>
-            </div>
           </div>
         ))}
         {filtered.length === 0 && (

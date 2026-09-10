@@ -1,7 +1,7 @@
-import { Copy, KeyRound, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useParams } from "react-router";
-import { AppBadge } from "@/shared/ui/AppBadge";
+import { PermissionCatalog } from "@/features/workspace/components/PermissionCatalog";
+import { Copy, Plus } from "lucide-react";
+import { useState } from "react";
+import { useParams, useSearchParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -9,10 +9,8 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabs } from "@/shared/ui/AppTabs";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 import { useRoleMutations } from "@/features/workspace/api/role.mutations";
-import { AdminDataPanel } from "@/features/workspace/components/admin/AdminDataPanel";
 import { RoleDetailsDialog } from "@/features/workspace/components/RoleDetailsDialog";
 import { RoleForm } from "@/features/workspace/components/RoleForm";
-import { RoleRow } from "@/features/workspace/components/RoleRow";
 import {
   useOrganizationAdminDashboardQuery,
   useOrganizationRolesQuery,
@@ -24,7 +22,7 @@ import type {
 } from "@/features/workspace/api/workspace.types";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
-type Tab = "roles" | "templates" | "permissions";
+import { RolesCatalog, type RolesTab } from "@/features/workspace/components/RolesCatalog";
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- Dialog, tab, and search state are separate controls with separate lifetimes.
 export function RolesPage() {
@@ -37,20 +35,25 @@ export function RolesPage() {
     permissions?.canInviteMembers ||
     permissions?.canManageMemberRoles,
   );
-  const { data } = useOrganizationRolesQuery(id, canAccessRoles);
-  const [tab, setTab] = useState<Tab>("roles");
-  const [search, setSearch] = useState("");
+  const rolesQuery = useOrganizationRolesQuery(id, canAccessRoles);
+  const data = rolesQuery.data;
+  const [params, setParams] = useSearchParams();
+  const requestedTab = params.get("tab");
+  const tab: RolesTab =
+    requestedTab === "templates" || requestedTab === "permissions" ? requestedTab : "roles";
+  const setTab = (value: RolesTab) =>
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      if (value === "roles") next.delete("tab");
+      else next.set("tab", value);
+      next.delete("q");
+      next.delete("page");
+      return next;
+    });
   const [selected, setSelected] = useState<RoleDefinitionDto | null>(null);
   const [editing, setEditing] = useState<RoleDefinitionDto | null>(null);
   const [template, setTemplate] = useState<RoleTemplateDto | null>(null);
   const roleMutations = useRoleMutations(id);
-  const roles = useMemo(
-    () =>
-      (data?.roles ?? []).filter((role) =>
-        `${role.name} ${role.description}`.toLowerCase().includes(search.toLowerCase()),
-      ),
-    [data?.roles, search],
-  );
 
   if (!Number.isFinite(id)) return <RouteStatusPage status={404} />;
   if (dashboard.isError)
@@ -60,7 +63,7 @@ export function RolesPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
+      <AppSurface className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <AppPageHeader
           title="Roles & Templates"
           description="Manage role definitions, templates, and permission coverage."
@@ -100,79 +103,47 @@ export function RolesPage() {
             ) : undefined
           }
         />
-        <AppTabs<Tab>
+        <AppTabs<RolesTab>
           items={[
-            { label: "Roles", value: "roles" },
-            { label: "Templates", value: "templates" },
-            { label: "All Permissions", value: "permissions" },
+            { label: data ? `Roles (${data.roles.length})` : "Roles", value: "roles" },
+            {
+              label: data ? `Templates (${data.templates.length})` : "Templates",
+              value: "templates",
+            },
+            {
+              label: data
+                ? `All Permissions (${data.permissionCatalog.reduce((total, group) => total + group.permissions.length, 0)})`
+                : "All Permissions",
+              value: "permissions",
+            },
           ]}
           value={tab}
           onChange={setTab}
         />
-        {tab === "roles" ? (
-          <AdminDataPanel
-            flat
-            title="All Roles"
-            description="Configure access levels for your organization"
-            search={search}
-            onSearch={setSearch}
-          >
-            <div className="space-y-3 p-6 pt-2">
-              {roles.map((role) => (
-                <RoleRow key={role.id} role={role} onOpen={() => setSelected(role)} />
-              ))}
-            </div>
-          </AdminDataPanel>
-        ) : null}
-        {tab === "templates" ? (
-          <AdminDataPanel
-            flat
-            title="Templates"
-            description="Start from predefined access profiles"
-          >
-            <div className="grid gap-3 p-6 pt-2 md:grid-cols-2">
-              {data?.templates.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  disabled={!canManage}
-                  onClick={() => setTemplate(item)}
-                  className="rounded-lg border border-[var(--border-soft)] p-4 text-left transition-colors enabled:hover:border-[var(--text-secondary)] disabled:cursor-default"
-                >
-                  <p className="font-semibold">
-                    {item.name} <AppBadge>{item.category}</AppBadge>
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{item.description}</p>
-                  <p className="mt-4 text-xs text-[var(--text-secondary)]">
-                    {item.permissionKeys.length} permissions
-                  </p>
-                </button>
-              ))}
-            </div>
-          </AdminDataPanel>
-        ) : null}
         {tab === "permissions" ? (
-          <AdminDataPanel flat title="All Permissions" description="Backend permission catalog">
-            <div className="grid gap-4 p-6 pt-2 md:grid-cols-2">
-              {data?.permissionCatalog.map((group) => (
-                <div
-                  key={group.name}
-                  className="rounded-[16px] border border-[var(--border-soft)] p-4"
-                >
-                  <p className="mb-3 font-semibold">{group.name}</p>
-                  <div className="space-y-2">
-                    {group.permissions.map((perm) => (
-                      <p key={perm.key} className="text-sm">
-                        <KeyRound size={14} className="mr-2 inline" />
-                        {perm.label}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </AdminDataPanel>
-        ) : null}
+          <PermissionCatalog
+            groups={data?.permissionCatalog ?? []}
+            loading={dashboard.isPending || rolesQuery.isPending}
+            error={rolesQuery.isError}
+            onRetry={() => {
+              void rolesQuery.refetch();
+            }}
+          />
+        ) : (
+          <RolesCatalog
+            organizationId={id}
+            tab={tab}
+            data={data}
+            loading={dashboard.isPending || rolesQuery.isPending}
+            error={rolesQuery.isError}
+            onRetry={() => {
+              void rolesQuery.refetch();
+            }}
+            canManage={canManage}
+            onRole={setSelected}
+            onTemplate={setTemplate}
+          />
+        )}
         {selected ? (
           <RoleDetailsDialog
             role={selected}

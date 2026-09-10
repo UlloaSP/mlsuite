@@ -90,8 +90,18 @@ export function RoleDetailsDialog({
         </div>
 
         <footer className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-[var(--border-soft)] px-6 py-4">
+          {role.actions.canDelete && role.userCount > 0 ? (
+            <p id="role-delete-help" className="w-full text-sm text-[var(--text-secondary)]">
+              Assign these users to another role before deleting this role.
+            </p>
+          ) : null}
           {role.actions.canDelete ? (
-            <AppButton variant="danger" onClick={onDelete}>
+            <AppButton
+              variant="danger"
+              disabled={role.userCount > 0}
+              aria-describedby={role.userCount > 0 ? "role-delete-help" : undefined}
+              onClick={onDelete}
+            >
               Delete
             </AppButton>
           ) : null}

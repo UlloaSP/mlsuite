@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
@@ -28,7 +29,7 @@ import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/Schema
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const navigate = useNavigate();
-  const { data: schema } = useSchema(schemaId);
+  const { data: schema, isLoading, isError } = useSchema(schemaId);
   const { data: versions = [] } = useSchemaVersions(schemaId);
   const { data: bookmarks = [] } = useSchemaBookmarks(schemaId);
   const { data: drafts = [] } = useSchemaDrafts(schemaId);
@@ -53,9 +54,29 @@ export function SchemaDetailPage() {
     }
   };
 
+  if (isLoading || isError || !schema) {
+    return (
+      <AppPage>
+        {isLoading ? (
+          <AppPanel>Loading schema...</AppPanel>
+        ) : (
+          <AppEmptyState
+            title="Schema unavailable"
+            description="The schema could not be loaded. It may no longer exist or you may not have access."
+            action={
+              <Link to="/schemas">
+                <AppButton>Back to schemas</AppButton>
+              </Link>
+            }
+          />
+        )}
+      </AppPage>
+    );
+  }
+
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto lg:overflow-hidden">
         <AppPageHeader
           title={schema?.name ?? "Schema"}
           description={schema?.description}
@@ -73,7 +94,7 @@ export function SchemaDetailPage() {
           }
         />
         {schemaId ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-6">
+          <div className="flex shrink-0 flex-col gap-6 lg:min-h-0 lg:flex-1">
             <SchemaRepoNav
               active="overview"
               schemaId={schemaId}

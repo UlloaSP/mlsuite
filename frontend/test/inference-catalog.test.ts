@@ -121,7 +121,7 @@ describe("organization inference catalog", () => {
       "utf8",
     );
     const table = readFileSync(
-      new URL("../src/features/inferences/components/InferenceCatalogTable.tsx", import.meta.url),
+      new URL("../src/features/inferences/components/InferenceCatalogList.tsx", import.meta.url),
       "utf8",
     );
 
@@ -133,7 +133,7 @@ describe("organization inference catalog", () => {
     );
     const exportAction = readFileSync(
       new URL(
-        "../src/features/schemas/components/OrganizationInferenceExportButton.tsx",
+        "../src/features/schemas/components/OrganizationInferenceExportDialog.tsx",
         import.meta.url,
       ),
       "utf8",
@@ -141,7 +141,7 @@ describe("organization inference catalog", () => {
     expect(routePage).toContain("<OrganizationInferenceExportButton");
     expect(exportAction).toContain("predictionRunQueryOptions");
     expect(exportAction).toContain("<SchemaRunExportDialog");
-    expect(table).toContain('role="link"');
+    expect(table).toContain("<CatalogEntry");
     expect(table).toContain("<InferenceActionsMenu");
     expect(table).toContain("`/inferences/${item.id}`");
     expect(table).toContain("?section=reviews");

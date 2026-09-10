@@ -6,8 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppCopy } from "@/shared/ui/AppCopy";
-import { AppPanel } from "@/shared/ui/AppPanel";
-import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import {
   formatDisplayValue,
@@ -34,12 +32,8 @@ export function SchemaRunInputsPanel({ schema, inputData }: Props) {
   }, [inputs, query]);
 
   return (
-    <AppPanel className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <AppSectionTitle>Inputs</AppSectionTitle>
-          <AppCopy>{inputs.length} visible values provided by user.</AppCopy>
-        </div>
+    <div className="space-y-4">
+      <div className="flex justify-end">
         <AppTextField
           aria-label="Search inputs"
           placeholder="Search inputs"
@@ -65,6 +59,6 @@ export function SchemaRunInputsPanel({ schema, inputData }: Props) {
       ) : (
         <AppCopy>{`No inputs match "${query.trim()}".`}</AppCopy>
       )}
-    </AppPanel>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ const ACTIONS: Array<{ value: SchemaAction; label: string; icon: typeof Pencil }
 ];
 
 type SchemaActionsMenuProps = {
+  archived: boolean;
   canDelete: boolean;
   canEdit: boolean;
   onAction: (action: SchemaAction) => void;
@@ -25,6 +26,7 @@ type SchemaActionsMenuProps = {
 };
 
 export function SchemaActionsMenu({
+  archived,
   canDelete,
   canEdit,
   onAction,
@@ -56,6 +58,7 @@ export function SchemaActionsMenu({
       {open ? (
         <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
           {ACTIONS.reduce<React.JSX.Element[]>((items, action) => {
+            if (action.value === "archive" && archived) return items;
             if (!(action.value === "delete" ? canDelete : canEdit)) return items;
             const Icon = action.icon;
             items.push(

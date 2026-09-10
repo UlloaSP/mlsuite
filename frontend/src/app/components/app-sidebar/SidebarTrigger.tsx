@@ -15,22 +15,23 @@ type SidebarTriggerProps = ComponentProps<"button"> & {
 };
 
 export function SidebarTrigger({ className, side = "right", ...props }: SidebarTriggerProps) {
-  const { state, toggleSidebar } = useSidebar();
+  const { state, isMobile, openMobile, toggleSidebar } = useSidebar();
+  const expanded = isMobile ? openMobile : state === "expanded";
   const Icon =
     side === "left"
-      ? state === "collapsed"
+      ? !expanded
         ? PanelLeftOpen
         : PanelLeftClose
-      : state === "collapsed"
+      : !expanded
         ? PanelRightOpen
         : PanelRightClose;
-  const label = state === "collapsed" ? "Expand" : "Collapse";
+  const label = expanded ? "Collapse" : "Expand";
 
   return (
     <button
       type="button"
       aria-label={label}
-      aria-expanded={state === "expanded"}
+      aria-expanded={expanded}
       onClick={toggleSidebar}
       className={cx("inline-flex items-center justify-center", FOCUS_RING, className)}
       {...props}

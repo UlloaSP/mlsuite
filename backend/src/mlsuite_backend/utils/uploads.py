@@ -1,3 +1,4 @@
+import pickle
 import tempfile
 from pathlib import Path
 
@@ -23,5 +24,11 @@ async def load_uploaded_object(
         temporary_path = temporary_file.name
     try:
         return joblib.load(temporary_path)
+    except (
+        EOFError, pickle.UnpicklingError, KeyError, ValueError, ImportError, AttributeError
+    ) as error:
+        raise bad_request(
+            "Cannot read joblib artifact: the file is empty, corrupt, or incompatible."
+        ) from error
     finally:
         Path(temporary_path).unlink(missing_ok=True)

@@ -1,0 +1,8 @@
+# A second maintainer can be added when independent review becomes possible.
+/.github/ @UlloaSP
+/.env.example @UlloaSP
+/.gitignore @UlloaSP
+/docker-compose*.yml @UlloaSP
+/**/Dockerfile @UlloaSP
+/**/.dockerignore @UlloaSP
+/api/src/main/resources/ @UlloaSP

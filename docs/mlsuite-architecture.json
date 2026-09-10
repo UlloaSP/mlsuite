@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura de MLSuite",
+    "output": "mlsuite-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Usuario",
+      "sublabel": "Navegador web",
+      "pos": [40, 300],
+      "size": [150, 70]
+    },
+    {
+      "id": "frontend",
+      "type": "frontend",
+      "label": "React SPA",
+      "sublabel": "TypeScript + MLForm :5173",
+      "pos": [270, 300],
+      "size": [170, 70]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Spring Boot API",
+      "sublabel": "Auth, RBAC y orquestación :8080",
+      "pos": [520, 300],
+      "size": [190, 70]
+    },
+    {
+      "id": "analyzer",
+      "type": "backend",
+      "label": "Runtime ML",
+      "sublabel": "FastAPI + Python :8000",
+      "pos": [820, 300],
+      "size": [170, 70]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Estado y trazabilidad",
+      "pos": [410, 80],
+      "size": [170, 70]
+    },
+    {
+      "id": "minio",
+      "type": "cloud",
+      "label": "MinIO",
+      "sublabel": "Artefactos de modelos",
+      "pos": [650, 80],
+      "size": [170, 70]
+    },
+    {
+      "id": "opsAgent",
+      "type": "backend",
+      "label": "Ops Agent",
+      "sublabel": "Métricas, logs y terminal :8091",
+      "pos": [520, 520],
+      "size": [190, 70]
+    },
+    {
+      "id": "dockerEngine",
+      "type": "external",
+      "label": "Motor de contenedores",
+      "sublabel": "Docker / Podman",
+      "pos": [820, 520],
+      "size": [180, 70]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Docker Compose · red appnet",
+      "wraps": ["frontend", "api", "analyzer", "postgres", "minio", "opsAgent"],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "user-ui",
+      "from": "browser",
+      "to": "frontend",
+      "label": "HTTP(S)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ui-api",
+      "from": "frontend",
+      "to": "api",
+      "label": "REST /api",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-runtime",
+      "from": "api",
+      "to": "analyzer",
+      "label": "HTTP multipart",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "postgres",
+      "label": "JPA / JDBC",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "api-storage",
+      "from": "api",
+      "to": "minio",
+      "label": "S3 API",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "api-ops",
+      "from": "api",
+      "to": "opsAgent",
+      "label": "HTTP + WebSocket",
+      "labelAt": [615, 384]
+    },
+    {
+      "id": "ops-engine",
+      "from": "opsAgent",
+      "to": "dockerEngine",
+      "label": "Docker socket",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ruta de inferencia",
+      "items": [
+        "MLForm construye entradas tipadas en React",
+        "Spring valida permisos y coordina la ejecución",
+        "FastAPI carga el artefacto y ejecuta el modelo"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Persistencia",
+      "items": [
+        "PostgreSQL guarda usuarios, esquemas, ejecuciones y feedback",
+        "MinIO conserva los artefactos binarios de modelos"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Operación",
+      "items": [
+        "Ops Agent agrega métricas y logs de los servicios",
+        "Spring protege y retransmite el acceso operativo"
+      ]
+    }
+  ]
+}

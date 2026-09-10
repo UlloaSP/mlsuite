@@ -207,7 +207,7 @@ def test_service_snapshot_treats_running_without_healthcheck_as_healthy_and_shel
     ))
 
     async def fake_run(*args: str) -> str:
-        if args == ("ps", "--format", "json"):
+        if args == ("ps", "--all", "--format", "json"):
             return (
                 '{"Service":"spring-app","Name":"spring-app","State":"running",'
                 '"Health":"","RunningFor":"1m","Publishers":[]}'

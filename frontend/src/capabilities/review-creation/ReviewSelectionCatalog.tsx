@@ -20,6 +20,7 @@ type Props<TId extends SelectionId> = {
   items: ReviewSelectionItem<TId>[];
   loading?: boolean;
   onClear: () => void;
+  onSelectAll: (ids: TId[]) => void;
   onRetry?: () => void;
   onToggle: (id: TId) => void;
   selectedIds: Set<TId>;
@@ -34,6 +35,7 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
   items,
   loading = false,
   onClear,
+  onSelectAll,
   onRetry,
   onToggle,
   selectedIds,
@@ -59,6 +61,11 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
         count={selectedIds.size}
         total={items.length}
         onClear={onClear}
+        onSelectAll={() =>
+          onSelectAll([...new Set([...selectedIds, ...filtered.map((item) => item.id)])])
+        }
+        selectLabel={query.trim() ? "Select results" : "Select all"}
+        selectDisabled={loading || error || !filtered.some((item) => !selectedIds.has(item.id))}
       />
       <AppTextField
         aria-label={`Search ${title.toLowerCase()}`}
@@ -71,7 +78,7 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
           setPage(0);
         }}
       />
-      <div className="mt-3 min-h-[252px] overflow-hidden rounded border border-[var(--border-soft)]">
+      <div className="app-scroll mt-3 min-h-[252px] flex-auto overflow-y-auto rounded border border-[var(--border-soft)]">
         {loading ? (
           <p className="p-4 text-sm text-[var(--text-secondary)]">Loading {title.toLowerCase()}…</p>
         ) : error ? (
@@ -101,15 +108,13 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
           </p>
         )}
       </div>
-      {totalPages > 1 ? (
-        <CatalogPaginationFooter
-          disabled={loading}
-          hasNext={visiblePage + 1 < totalPages}
-          page={visiblePage}
-          setPage={setPage}
-          totalPages={totalPages}
-        />
-      ) : null}
+      <CatalogPaginationFooter
+        disabled={loading || error}
+        hasNext={visiblePage + 1 < totalPages}
+        page={visiblePage}
+        setPage={setPage}
+        totalPages={totalPages}
+      />
     </section>
   );
 }

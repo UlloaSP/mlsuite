@@ -15,7 +15,7 @@ import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { SchemaRunExportButton } from "./SchemaRunExportButton";
 
 export type SchemaRunStatusFilter = "all" | PredictionRunStatus;
-export type SchemaRunFeedbackStatusFilter = "all" | "COMPLETED" | "PENDING";
+export type SchemaRunFeedbackStatusFilter = "all" | "COMPLETED" | "PENDING" | "NOT_REQUIRED";
 export type SchemaRunDateRangeFilter = "all" | "today" | "last7" | "last30";
 
 type Props = {
@@ -44,7 +44,7 @@ export function SchemaRunHistoryToolbar({
   onDateRangeChange,
 }: Props) {
   return (
-    <AppToolbar>
+    <AppToolbar variant="flat">
       <div className="flex flex-1 flex-wrap items-center gap-3">
         <AppTextField
           value={query}
@@ -81,6 +81,7 @@ export function SchemaRunHistoryToolbar({
               { value: "all", label: "All feedback" },
               { value: "COMPLETED", label: "Completed" },
               { value: "PENDING", label: "Pending" },
+              { value: "NOT_REQUIRED", label: "Not configured" },
             ]}
           />
         </div>

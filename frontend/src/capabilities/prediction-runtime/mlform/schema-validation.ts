@@ -19,6 +19,7 @@ import type {
 } from "@/capabilities/prediction-runtime/mlform/shared";
 import { hasBlockingIssues, isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
+import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 
 export type ValidateMlformSchemaOptions = {
   customFieldDefinitions?: readonly CatalogFieldDefinition[];
@@ -41,6 +42,9 @@ const createValidationRegistry = (options: ValidateMlformSchemaOptions): Registr
 
 const appendProductIssues = (schema: unknown, issues: CompatIssue[]): void => {
   if (!isRecord(schema)) return;
+  const questionnaireError = questionnaireConfigError(schema);
+  if (questionnaireError)
+    issues.push({ path: ["reports"], message: questionnaireError, severity: "error" });
   if (Array.isArray(schema.fields)) {
     schema.fields.forEach((field, index) => {
       if (!isRecord(field)) return;

@@ -90,6 +90,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 export type PredictionRunDto = {
+  createdByName?: string | null;
+  createdByEmail?: string | null;
   id: string;
   schemaVersionId: string;
   schemaBookmarkId?: string | null;

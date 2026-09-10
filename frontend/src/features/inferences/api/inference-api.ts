@@ -12,6 +12,8 @@ export type InferenceCatalogItemDto = {
   status: InferenceStatus;
   createdAt: string;
   updatedAt?: string | null;
+  createdByName?: string | null;
+  createdByEmail?: string | null;
   schemaId: number;
   schemaName: string;
   schemaVersionId: number;

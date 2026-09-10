@@ -19,7 +19,9 @@ public record PredictionRunCatalogItemDto(
         int schemaVersion,
         String schemaVersionName,
         Long bookmarkId,
-        String bookmarkName) {
+        String bookmarkName,
+        String createdByName,
+        String createdByEmail) {
 
     public static PredictionRunCatalogItemDto from(PredictionRun run) {
         SchemaVersion version = run.getSchemaVersion();
@@ -27,6 +29,7 @@ public record PredictionRunCatalogItemDto(
         return new PredictionRunCatalogItemDto(run.getId(), run.getName(), run.getStatus(),
                 run.getCreatedAt(), run.getUpdatedAt(), version.getSchema().getId(), version.getSchema().getName(),
                 version.getId(), version.getVersion(), version.getName(),
-                bookmark == null ? null : bookmark.getId(), bookmark == null ? null : bookmark.getName());
+                bookmark == null ? null : bookmark.getId(), bookmark == null ? null : bookmark.getName(),
+                run.getCreatedByName(), run.getCreatedByEmail());
     }
 }

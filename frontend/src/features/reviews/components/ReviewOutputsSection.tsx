@@ -1,71 +1,52 @@
-import type { PredictionReportDescriptor } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
-import {
-  formatProbability,
-  getSchemaAwareTargetValue,
-  getTargetLabel,
-  getTargetProbability,
-} from "@/capabilities/prediction-runtime/mlform/target-utils";
-
-type ReviewOutputsSectionProps = {
-  targets: TargetDto[];
-  reports: PredictionReportDescriptor[];
-  schemaDefinition: unknown;
-  predictionValue: unknown;
-};
-
-export type TargetDto = {
-  id: string;
-  order: number;
-  value: unknown;
-};
+import { useMemo } from "react";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppButton } from "@/shared/ui/AppButton";
+import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
+import { SchemaRunReportRenderer } from "@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer";
+import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
+import type {
+  ReviewPredictionResultDto,
+  ReviewSchemaVersionDto,
+} from "@/features/reviews/api/review-types";
 
 export function ReviewOutputsSection({
-  targets,
-  reports,
-  schemaDefinition,
-  predictionValue,
-}: ReviewOutputsSectionProps) {
+  version,
+  results,
+}: {
+  version: ReviewSchemaVersionDto;
+  results: ReviewPredictionResultDto[];
+}) {
+  const catalog = useSchemaPluginCatalog(version.formSchema, useCurrentOrganizationId() ?? "none");
+  const reports = useMemo(
+    () =>
+      results.flatMap((result) =>
+        getSchemaResultReports(version, result).map((report) => ({ result, report })),
+      ),
+    [results, version],
+  );
+  if (catalog.status === "loading") return <AppCopy>Loading report renderers...</AppCopy>;
+  if (catalog.status === "error")
+    return (
+      <div role="alert">
+        <AppCopy>Report renderers unavailable. {catalog.error}</AppCopy>
+        <AppButton onClick={() => void catalog.retry()}>Retry report renderers</AppButton>
+      </div>
+    );
   return (
-    <div className="divide-y divide-[var(--border-soft)]">
-      {targets.map((target) => {
-        const probability = getTargetProbability(target.value);
-        return (
-          <div key={target.id} className="grid gap-1 py-3 md:grid-cols-[180px_minmax(0,1fr)]">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">
-              {getTargetLabel(schemaDefinition, target.order)}
-            </p>
-            <div className="font-mono text-sm text-[var(--text-primary)]">
-              {String(
-                getSchemaAwareTargetValue(
-                  target.value,
-                  schemaDefinition,
-                  target.order,
-                  predictionValue,
-                ) ?? "",
-              )}
-              {probability === null ? null : (
-                <span className="ml-3 text-[var(--text-secondary)]">
-                  {formatProbability(probability)}
-                </span>
-              )}
-            </div>
-          </div>
-        );
-      })}
-      {reports.map((report, index) => (
-        <div key={report.reportId} className="grid gap-1 py-3 md:grid-cols-[180px_minmax(0,1fr)]">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">
-            Output {targets.length + index + 1}: {report.label}
-          </p>
-          {report.error ? (
-            <p className="text-sm text-[var(--danger-text)]">{report.error}</p>
-          ) : (
-            <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm leading-6 text-[var(--text-primary)]">
-              {report.content.length > 0 ? report.content.join("\n\n") : "No output content."}
-            </pre>
-          )}
-        </div>
-      ))}
+    <div className="grid gap-4 xl:grid-cols-2">
+      {reports.length === 0 ? (
+        <AppCopy>No outputs returned.</AppCopy>
+      ) : (
+        reports.map(({ result, report }) => (
+          <SchemaRunReportRenderer
+            key={`${result.id}-${report.id}`}
+            result={result}
+            report={report}
+            customReportDefinitions={catalog.data.reportDefinitions}
+          />
+        ))
+      )}
     </div>
   );
 }

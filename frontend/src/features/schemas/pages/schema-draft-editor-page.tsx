@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useAtom } from "jotai";
 import { AlertTriangle, GitCompareArrows, MoreHorizontal, PencilLine, Save } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import {
@@ -26,6 +26,7 @@ import { EditorWrapper } from "@/features/schemas/components/EditorWrapper";
 import { ToggleButton } from "@/features/schemas/components/ToggleButton";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
+import { SchemaCodeViewer } from "@/features/schemas/components/SchemaCodeViewer";
 
 type EditorView = "code" | "preview";
 
@@ -106,6 +107,28 @@ export function SchemaDraftEditorPage() {
       });
     }
   };
+
+  if (draft?.status === "PUBLISHED") {
+    return (
+      <AppPage>
+        <AppSurface className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
+          <AppPageHeader
+            title={draft.name}
+            description="This change has been published and is read-only."
+            actions={
+              <Link to={`/schemas/${draft.schemaId}/snapshots`}>
+                <AppButton>View snapshots</AppButton>
+              </Link>
+            }
+          />
+          <SchemaCodeViewer
+            className="min-h-0 flex-1"
+            value={JSON.stringify(draft.formSchema, null, 2)}
+          />
+        </AppSurface>
+      </AppPage>
+    );
+  }
 
   return (
     <AppPage>

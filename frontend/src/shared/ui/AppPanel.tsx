@@ -11,14 +11,16 @@ export function AppPanel({
   className,
   variant = "panel",
   ...props
-}: HTMLAttributes<HTMLDivElement> & { variant?: "flat" | "panel" }) {
+}: HTMLAttributes<HTMLDivElement> & { variant?: "flat" | "panel" | "catalog" }) {
   return (
     <div
       className={cx(
         "text-[var(--text-primary)]",
         variant === "panel"
           ? "rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-card)]"
-          : "bg-transparent",
+          : variant === "catalog"
+            ? "rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4"
+            : "bg-transparent",
         className,
       )}
       {...props}

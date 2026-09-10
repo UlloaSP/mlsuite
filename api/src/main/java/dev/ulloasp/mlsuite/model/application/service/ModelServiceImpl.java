@@ -13,9 +13,6 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -29,7 +26,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelPageDto;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
@@ -61,6 +57,7 @@ public class ModelServiceImpl implements ModelService {
     private final PredictionResultRepository resultRepository;
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
+    private final ModelCatalogReader catalogReader;
 
     @Value("${analyzer.url}")
     private String analyzerUrl;
@@ -80,6 +77,7 @@ public class ModelServiceImpl implements ModelService {
         this.resultRepository = resultRepository;
         this.workspaceAccessService = workspaceAccessService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
+        this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAccessService, workspaceAuthorizationService);
     }
 
     @Override
@@ -160,27 +158,12 @@ public class ModelServiceImpl implements ModelService {
 
     @Override
     public List<Model> getModels(Long userId) {
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
-        return modelRepository.findByOrganizationIdAndArchivedAtIsNull(organizationId);
+        return catalogReader.getModels(userId);
     }
 
     @Override
     public ModelPageDto getModelPage(Long userId, int page, int size, String search, String sort, String status) {
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
-        Page<Model> models = modelRepository.findCatalogPage(
-                organizationId,
-                normalizeSearch(search),
-                "all".equals(status) || "archived".equals(status),
-                "archived".equals(status),
-                PageRequest.of(Math.max(page, 0), normalizePageSize(size), sort(sort)));
-        return new ModelPageDto(
-                ModelDto.toDtoList(models.getContent()),
-                models.getNumber(),
-                models.getSize(),
-                models.getTotalElements(),
-                models.hasNext());
+        return catalogReader.getModelPage(userId, page, size, search, sort, status);
     }
 
     @Override
@@ -292,27 +275,6 @@ public class ModelServiceImpl implements ModelService {
         return name.strip();
     }
 
-    private String normalizeSearch(String search) {
-        return search == null ? "" : search.strip();
-    }
-
-    private int normalizePageSize(int size) {
-        if (size <= 0) {
-            return 24;
-        }
-        return Math.min(size, 100);
-    }
-
-    private Sort sort(String mode) {
-        if ("name".equals(mode)) {
-            return Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("updatedAt"));
-        }
-        if ("algorithm".equals(mode)) {
-            return Sort.by(Sort.Order.asc("type").ignoreCase(), Sort.Order.asc("specificType").ignoreCase());
-        }
-        return Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.asc("name").ignoreCase());
-    }
-
     private byte[] loadModelBytes(Model model) {
         if (model.hasStoredObject()) {
             return objectStorageService.load(model.getStorageBucket(), model.getStorageObjectKey());
@@ -339,4 +301,3 @@ public class ModelServiceImpl implements ModelService {
     }
 
 }
-

@@ -57,7 +57,8 @@ class SchemaDuplicateServiceTest {
     void setUp() {
         service = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, runRepository, reviewRepository,
-                workspaceAccessService, authorizationService);
+                workspaceAccessService, authorizationService, org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository.class),
+                org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository.class));
         when(userLookupService.requireById(7L)).thenReturn(user());
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization());
         when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
