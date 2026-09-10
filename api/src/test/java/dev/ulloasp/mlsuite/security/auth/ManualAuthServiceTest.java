@@ -113,7 +113,7 @@ class ManualAuthServiceTest {
 
         adminUserService.delete(2L);
 
-        verify(userRepository).delete(target);
+        verify(userRepository).deleteAllByIdInBatch(java.util.List.of(target.getId()));
     }
 
     @Test

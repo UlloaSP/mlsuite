@@ -1,38 +1,19 @@
 import { useMemo, useState } from "react";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
-import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { ReviewAccordionSection } from "@/features/reviews/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "@/features/reviews/components/ReviewInputsSection";
-import {
-  ReviewOutputsSection,
-  type TargetDto,
-} from "@/features/reviews/components/ReviewOutputsSection";
-import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
+import { ReviewOutputsSection } from "@/features/reviews/components/ReviewOutputsSection";
 import { getVisibleSchemaInputRecord } from "@/capabilities/prediction-runtime/data/input-display";
-import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { useSchemaReviewRun } from "@/features/reviews/api/review-queries";
 import type { ReviewSchemaVersionDto } from "@/features/reviews/api/review-types";
 import { SchemaReviewCombinedFeedbackForm } from "./SchemaReviewCombinedFeedbackForm";
+import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 
 type Props = {
   reviewId: string;
   reviewRunId: string;
   version: ReviewSchemaVersionDto;
   onReviewChanged: () => unknown;
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const displayTargetValue = (payload: unknown): unknown => {
-  if (!isRecord(payload)) return payload;
-  const probabilities = Array.isArray(payload.probabilities) ? payload.probabilities : [];
-  const labels = Array.isArray(payload.labels) ? payload.labels : [];
-  const inferredIndex = probabilities.indexOf(Math.max(...probabilities));
-  const prediction = payload.prediction ?? payload.value ?? labels[inferredIndex] ?? payload;
-  const index = labels.findIndex((label) => String(label) === String(prediction));
-  const probability = index >= 0 ? probabilities[index] : undefined;
-  return typeof probability === "number" ? { value: prediction, probability } : prediction;
 };
 
 export function SchemaReviewRunDetailPanel({
@@ -49,50 +30,6 @@ export function SchemaReviewRunDetailPanel({
       detail.data ? getVisibleSchemaInputRecord(version.formSchema, detail.data.run.inputData) : {},
     [detail.data, version.formSchema],
   );
-  const feedbackReports = useMemo(
-    () =>
-      detail.data
-        ? detail.data.run.results.flatMap((result) =>
-            getSchemaResultReports(version, result).map((report) => ({
-              order: report.order,
-              reportId: report.id,
-              label: report.label,
-              content: getFormattedReportContent(report.payload),
-              error: null,
-            })),
-          )
-        : [],
-    [detail.data, version],
-  );
-  const outputTargets = useMemo<TargetDto[]>(
-    () =>
-      detail.data
-        ? detail.data.run.results.flatMap((result) =>
-            getSchemaResultReports(version, result).flatMap((report) =>
-              isBuiltinReportKind(report.kind)
-                ? [
-                    {
-                      id: `${result.id}-${report.id}`,
-                      predictionId: result.runId,
-                      order: report.order,
-                      value: displayTargetValue(report.payload),
-                      createdAt: result.createdAt,
-                    },
-                  ]
-                : [],
-            ),
-          )
-        : [],
-    [detail.data, version],
-  );
-  const reportEntries = useMemo(
-    () =>
-      feedbackReports.filter(
-        (report) => !outputTargets.some((target) => target.order === report.order),
-      ),
-    [feedbackReports, outputTargets],
-  );
-
   if (detail.isLoading)
     return <p className="text-sm text-[var(--text-secondary)]">Loading inference</p>;
   if (detail.error || !detail.data) {
@@ -103,6 +40,11 @@ export function SchemaReviewRunDetailPanel({
       />
     );
   }
+  const configurationError = questionnaireConfigError(version.formSchema);
+  if (configurationError)
+    return (
+      <AppEmptyState title="Invalid feedback questionnaire" description={configurationError} />
+    );
   return (
     <div className="space-y-6">
       <div>
@@ -130,12 +72,7 @@ export function SchemaReviewRunDetailPanel({
         open={outputsOpen}
         onToggle={() => setOutputsOpen((current) => !current)}
       >
-        <ReviewOutputsSection
-          targets={outputTargets}
-          reports={reportEntries}
-          schemaDefinition={version.formSchema}
-          predictionValue={detail.data.run.results[0]?.output ?? {}}
-        />
+        <ReviewOutputsSection version={version} results={detail.data.run.results} />
       </ReviewAccordionSection>
       <ReviewAccordionSection
         title="Inputs"

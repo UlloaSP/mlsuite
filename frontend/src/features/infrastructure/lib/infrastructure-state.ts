@@ -97,3 +97,14 @@ export function resolveSelectedService(
   }
   return overview.services[0]?.name ?? null;
 }
+
+export function confirmServiceAction(
+  serviceName: string,
+  action: "START" | "STOP" | "RESTART",
+): boolean {
+  if (action === "START") return true;
+  const verb = action === "STOP" ? "Stop" : "Restart";
+  return window.confirm(
+    `${verb} ${serviceName}? This interrupts the service and may disconnect users, including this dashboard.`,
+  );
+}

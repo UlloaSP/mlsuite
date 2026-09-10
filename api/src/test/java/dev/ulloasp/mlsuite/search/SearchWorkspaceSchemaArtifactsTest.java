@@ -26,6 +26,8 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersi
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
 import dev.ulloasp.mlsuite.search.application.usecase.SearchWorkspaceService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -58,6 +60,32 @@ class SearchWorkspaceSchemaArtifactsTest {
                 bookmarks,
                 runs,
                 plugins);
+    }
+
+    @Test
+    void search_LinksRunsWithAndWithoutBookmarksToInferenceDetails() {
+        Organization organization = new Organization();
+        organization.setId(41L);
+        Schema schema = new Schema(organization, "Risk schema", null);
+        schema.setId(31L);
+        SchemaVersion version = new SchemaVersion(schema, 4, "Release", java.util.Map.of());
+        version.setId(51L);
+        SchemaBookmark bookmark = new SchemaBookmark(schema, version, "Production");
+        bookmark.setId(61L);
+        PredictionRun bookmarked = new PredictionRun(bookmark, version, "Release run", java.util.Map.of(),
+                PredictionRunStatus.SUCCESS);
+        bookmarked.setId(71L);
+        PredictionRun unbookmarked = new PredictionRun(version, "Release legacy", java.util.Map.of(),
+                PredictionRunStatus.SUCCESS);
+        unbookmarked.setId(72L);
+        when(access.requireCurrentOrganization(7L)).thenReturn(organization);
+        when(runs.searchByOrganizationId(eq(41L), eq("release"), any(Pageable.class)))
+                .thenReturn(List.of(bookmarked, unbookmarked));
+
+        SearchResponseDto response = service.search(7L, "release");
+
+        assertEquals(java.util.Set.of("/inferences/71", "/inferences/72"), response.groups().getFirst()
+                .results().stream().map(result -> result.href()).collect(java.util.stream.Collectors.toSet()));
     }
 
     @Test

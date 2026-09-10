@@ -3,7 +3,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { FieldConfig } from "mlform/runtime";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
-import { AppCopy } from "@/shared/ui/AppCopy";
+import { ReviewWithoutQuestionnaire } from "./ReviewWithoutQuestionnaire";
 import { AppButton } from "@/shared/ui/AppButton";
 import {
   buildCombinedFeedbackQuestionnaire,
@@ -68,6 +68,7 @@ export function SchemaReviewCombinedFeedbackForm({
 }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
+  const [submitting, setSubmitting] = useState(false);
   const [savedValues, setSavedValues] = useState<Record<string, unknown> | null>(null);
   const steps = useMemo(
     () => buildSchemaFeedbackSteps(version, run.results, feedback),
@@ -111,16 +112,19 @@ export function SchemaReviewCombinedFeedbackForm({
               value,
             }),
         });
-        setSavedValues(values);
-        await onSaved();
-        setEditing(false);
-        toast.success("Review feedback saved");
       }),
-    [onSaved, reviewId, reviewRunId, steps],
+    [reviewId, reviewRunId, steps],
   );
 
-  if (steps.length === 0) return <AppCopy>No feedback questionnaire configured.</AppCopy>;
-  if (displayComplete && !editing) {
+  if (steps.length === 0)
+    return (
+      <ReviewWithoutQuestionnaire
+        reviewId={reviewId}
+        reviewRunId={reviewRunId}
+        onCompleted={onSaved}
+      />
+    );
+  if (displayComplete && !editing && !submitting) {
     return (
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
@@ -169,6 +173,13 @@ export function SchemaReviewCombinedFeedbackForm({
         theme={theme}
         mode="standalone"
         transport={transport}
+        onSubmittingChange={setSubmitting}
+        onSubmitted={async (values) => {
+          setSavedValues(values);
+          await onSaved();
+          setEditing(false);
+          toast.success("Review feedback saved");
+        }}
         labels={labels}
         square
         onStepChange={(stepId) => {

@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.admin.infrastructure;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ public class OpsAgentClient {
     private static final MediaType JSON = MediaType.parse("application/json");
 
     private final OkHttpClient httpClient;
+    private final OkHttpClient actionClient;
     private final ObjectMapper objectMapper;
     private final OpsAgentProperties properties;
 
@@ -28,6 +30,10 @@ public class OpsAgentClient {
         this.objectMapper = objectMapper;
         this.properties = properties;
         this.httpClient = new OkHttpClient();
+        this.actionClient = httpClient.newBuilder()
+                .readTimeout(Duration.ofSeconds(60))
+                .callTimeout(Duration.ofSeconds(60))
+                .build();
     }
 
     public JsonNode overview() {
@@ -38,7 +44,7 @@ public class OpsAgentClient {
         JsonNode payload = objectMapper.createObjectNode().put("action", action);
         RequestBody body = RequestBody.create(payload.toString(), JSON);
         Request request = buildRequest("/internal/services/" + serviceName + "/actions").post(body).build();
-        executeVoid(request);
+        executeVoid(request, actionClient);
     }
 
     public JsonNode logs(String serviceName, int tail) {
@@ -81,7 +87,11 @@ public class OpsAgentClient {
     }
 
     private void executeVoid(Request request) {
-        try (Response response = httpClient.newCall(request).execute()) {
+        executeVoid(request, httpClient);
+    }
+
+    private void executeVoid(Request request, OkHttpClient client) {
+        try (Response response = client.newCall(request).execute()) {
             String body = response.body() != null ? response.body().string() : "";
             if (!response.isSuccessful()) {
                 throw new OpsAgentException(response.code(), extractMessage(body));

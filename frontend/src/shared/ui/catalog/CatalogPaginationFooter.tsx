@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { cx } from "@/shared/ui/cx";
 
-type PaginationPageItem = number | "ellipsis";
+type PaginationPageItem = number | { before: number };
 
 type CatalogPaginationFooterProps = {
   disabled: boolean;
@@ -37,9 +37,9 @@ export function CatalogPaginationFooter({
         Previous
       </AppButton>
       {getPaginationPages(page, totalPages).map((item) =>
-        item === "ellipsis" ? (
+        typeof item !== "number" ? (
           <span
-            key={`ellipsis-${page}-${totalPages}`}
+            key={`ellipsis-before-${item.before}`}
             className="px-2 text-sm text-[var(--text-muted)]"
           >
             ...
@@ -84,7 +84,7 @@ function getPaginationPages(currentPage: number, totalPages: number): Pagination
   return normalized.flatMap((item, index) => {
     const previous = normalized[index - 1];
     if (index > 0 && previous !== undefined && item - previous > 1) {
-      return ["ellipsis" as const, item];
+      return [{ before: item }, item];
     }
     return [item];
   });

@@ -16,7 +16,6 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraft
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaDraftRequest;
-import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaModelBindingRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaVersionRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PublishSchemaDraftRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaDraftDiffDto;
@@ -162,7 +161,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
             return new SchemaDraftPublishResultDto("conflict", SchemaDraftDto.from(draft), null, diff);
         }
         SchemaVersion version = versionUseCase.createVersion(userId, draft.getSchema().getId(),
-                new CreateSchemaVersionRequest(draft.getName(), draft.getFormSchema(), requestBindings(draft)));
+                new CreateSchemaVersionRequest(draft.getName(), draft.getFormSchema(), SchemaDraftBindingValues.requestBindings(draft)));
         draft.setPublishedVersion(version);
         draft.setStatus(SchemaDraftStatus.PUBLISHED);
         changed(draft, user);
@@ -205,7 +204,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
     private Long requireRead(Long userId) {
         users.requireById(userId);
         Long orgId = workspaces.requireCurrentOrganization(userId).getId();
-        authorization.requireOrganizationRead(userId, orgId);
+        authorization.requireModelView(userId, orgId);
         return orgId;
     }
 
@@ -269,22 +268,6 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
 
     private List<Map<String, Object>> bindingJson(List<dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding> values) {
         return SchemaModelBindingDto.toDraftBindings(values);
-    }
-
-    private List<CreateSchemaModelBindingRequest> requestBindings(SchemaDraft draft) {
-        return draft.getBindings().stream().map(binding -> new CreateSchemaModelBindingRequest(
-                modelId(binding.get("modelId")), pluginPolicy(binding.get("pluginPolicy")))).toList();
-    }
-
-    private Long modelId(Object value) {
-        if (value instanceof Number number) return number.longValue();
-        if (value instanceof String text) try { return Long.valueOf(text); } catch (NumberFormatException ignored) { }
-        throw badRequest("Draft binding modelId missing");
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> pluginPolicy(Object value) {
-        return value instanceof Map<?, ?> ? (Map<String, Object>) value : Map.of();
     }
 
     private void changed(SchemaDraft draft, User user) {

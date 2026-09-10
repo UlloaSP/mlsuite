@@ -52,16 +52,16 @@ class PredictionRunCatalogTest {
         when(runs.findByOrganizationIdOrderByCreatedAtDesc(41L)).thenReturn(List.of(run));
 
         assertEquals(List.of(run), service.listOrganizationRuns(7L));
-        verify(authorization).requireOrganizationRead(7L, 41L);
+        verify(authorization).requireModelView(7L, 41L);
     }
 
     @Test
-    void rejectsCatalogWithoutOrganizationReadPermission() {
+    void rejectsCatalogWithoutModelViewPermission() {
         Organization organization = organization();
         when(users.requireById(7L)).thenReturn(new User());
         when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
         org.mockito.Mockito.doThrow(new OrganizationAccessDeniedException(41L))
-                .when(authorization).requireOrganizationRead(7L, 41L);
+                .when(authorization).requireModelView(7L, 41L);
 
         assertThrows(OrganizationAccessDeniedException.class, () -> service.listOrganizationRuns(7L));
     }

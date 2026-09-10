@@ -6,11 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { formatTimestamp } from "@/capabilities/prediction-runtime/data/model-utils";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
+import type { SchemaFeedbackStatus } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
 
 type Props = {
   run: PredictionRunDto;
   bookmarkName: string;
-  feedbackStatus: "COMPLETED" | "PENDING";
+  feedbackStatus: SchemaFeedbackStatus;
 };
 
 const tone = (status: string) =>
@@ -21,8 +22,20 @@ export function SchemaRunMetadataRow({ run, bookmarkName, feedbackStatus }: Prop
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-[var(--border-soft)] py-4 text-sm text-[var(--text-secondary)]">
       <span>{formatTimestamp(run.createdAt)}</span>
       <AppBadge tone={tone(run.status)}>{run.status}</AppBadge>
-      <AppBadge tone={feedbackStatus === "COMPLETED" ? "success" : "warning"}>
-        {feedbackStatus === "COMPLETED" ? "Feedback given" : "Feedback pending"}
+      <AppBadge
+        tone={
+          feedbackStatus === "NOT_REQUIRED"
+            ? "neutral"
+            : feedbackStatus === "COMPLETED"
+              ? "success"
+              : "warning"
+        }
+      >
+        {feedbackStatus === "NOT_REQUIRED"
+          ? "No feedback configured"
+          : feedbackStatus === "COMPLETED"
+            ? "Feedback given"
+            : "Feedback pending"}
       </AppBadge>
       <span>
         <span className="text-[var(--text-muted)]">Bookmark</span> {bookmarkName}

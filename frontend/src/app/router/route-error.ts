@@ -5,8 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { isRouteErrorResponse } from "react-router";
 import { isHttpError } from "@/shared/api/http";
+import type { RouteStatus } from "@/shared/ui/RouteStatusPage";
 
-export type RouteErrorStatus = 0 | 403 | 404 | 500;
+export type RouteErrorStatus = RouteStatus;
 
 export const classifyRouteError = (error: unknown): RouteErrorStatus => {
   const status = isRouteErrorResponse(error)
@@ -17,9 +18,11 @@ export const classifyRouteError = (error: unknown): RouteErrorStatus => {
   if (status === 403 || status === 404 || status === 0) return status;
   if (
     error instanceof Error &&
-    error.message.includes("Failed to fetch dynamically imported module")
+    /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+      error.message,
+    )
   ) {
-    return 0;
+    return "module-load";
   }
   return 500;
 };

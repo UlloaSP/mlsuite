@@ -30,7 +30,7 @@ export function InferenceCatalogToolbar({ filters, inferences, onChange }: Props
   );
 
   return (
-    <AppToolbar>
+    <AppToolbar variant="flat">
       <div className="flex flex-1 flex-wrap items-center gap-3">
         <AppTextField
           value={filters.query}

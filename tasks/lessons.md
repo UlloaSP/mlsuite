@@ -837,3 +837,51 @@
 
 - Correction: the global theme shortcut remained a binary Light/Dark toggle, theme cards kept obsolete vertical space, and the sidebar guide explained navigation as one block.
 - Rule: global scheme toggles must cycle every exposed mode; remove layout constraints when their content disappears; product tours must target and explain each visible actionable element individually.
+
+# Code graph tooling must earn its footprint
+
+## Branch promotion workflow
+
+- Correction: a feature PR was opened directly against main, bypassing develop.
+- Rule: update remote refs, branch from current develop, open the feature PR into develop;
+  only after integration and validation open a separate develop-to-main PR. Pull the relevant
+  branches before branching/integrating. Never infer permission to bypass develop or auto-merge.
+
+- Correction: Trailmark and diagramming-code produced a large static graph with many unresolved proxies and little value beyond existing Graphify coverage.
+- Rule: before retaining overlapping code-intelligence tooling, compare its focused output against installed capabilities; remove the tool and trial artifacts when signal does not justify another runtime and workflow.
+
+## Responsive grid regression
+- Correction: model tiles placed metadata far from icons at desktop widths; inference lists lacked pagination and organization menus grew without bounds.
+- Rule: verify explicit grid placements at both sides of each breakpoint, with and without actions. Catalog QA must include enough records to exercise pagination and menu overflow. Preserve mobile/tablet support; the proposed viewport restriction was cancelled.
+
+## Complete visual surface review
+- Correction: removing the grey list panel missed the elevated grey filter toolbar; native scrollbars and focus outlines remained conspicuous/clipped.
+- Rule: inspect the entire requested surface including toolbar, scroll tracks and hover/focus states. Compare equivalent catalogs for the same metadata, not just row geometry.
+
+## Pagination reconciliation
+- Correction: multiple ellipses shared one React key, causing stale duplicate DOM after navigation; status text lengths shifted columns.
+- Rule: test repeated bidirectional pagination through two-gap states, and compare row alignment across all status labels.
+
+## Tabs own section labels
+- Correction: inference detail tabs repeated their labels/subtitles inside elevated panels; questionnaire had another square wrapper around rounded content.
+- Rule: a labeled tab owns its section context. Keep meaningful report/question titles, remove duplicate headings and nested decorative frames.
+
+## Dynamic member roles
+- Correction: fixed role KPIs and nested grey panels obscured the Members list.
+- Rule: derive member filters from actual roles; use the shared catalog layout and pagination, with one total instead of fixed role buckets.
+
+## Complete tabbed catalogs
+- Correction: Roles, Templates and Permissions retained duplicate section headings and lacked pagination; role name fields stretched to textarea height.
+- Rule: apply shared catalog behavior to every tab, expose full counts at the tabs, and verify both empty and populated form paths. Use start alignment for mixed-height grid fields and honor textarea rows.
+
+## Preserve grouping and explicit field labels
+- Correction: user wanted stacked, visibly labeled role fields and the original permission grouping; individual permission cards/pagination were an unwanted interpretation.
+- Rule: preserve existing semantic grouping unless explicitly asked to change it. Mixed-height form controls need clear labels and vertical order when requested; aria-label alone is not a visible label.
+
+## Review modal selection
+- Correction: snapshot select options were portaled outside the native modal and inaccessible; bulk controls were missing/hidden, and reviewer pagination disappeared with one page.
+- Rule: mount popup content inside native modal top layers. Both selection columns need explicit bulk selection scope, always-visible clear controls and consistent pagination; keep bookmark filtering within a single snapshot contract.
+
+## Equal-height selection columns and explicit export selection
+- Correction: short reviewer lists stopped early, leaving pagination above the neighboring footer; organization export exposed only a snapshot dropdown.
+- Rule: selection list bodies must grow to fill equal-height columns. Export entry points should make scope and selected runs reviewable before fetching/download, preserving feedback inclusion controls.

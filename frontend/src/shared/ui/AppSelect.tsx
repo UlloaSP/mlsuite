@@ -27,6 +27,7 @@ type AppSelectProps = Omit<ComponentPropsWithoutRef<typeof Select>, "children"> 
   label?: string;
   options: AppSelectOption[];
   placeholder?: string;
+  portalContainer?: HTMLElement | null;
   title?: string;
 };
 
@@ -39,6 +40,7 @@ export function AppSelect({
   label,
   options,
   placeholder,
+  portalContainer,
   title,
   ...selectProps
 }: AppSelectProps) {
@@ -71,7 +73,7 @@ export function AppSelect({
           ) : null}
         </span>
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent container={portalContainer}>
         <SelectGroup>
           {menuLabel ? <SelectLabel>{menuLabel}</SelectLabel> : null}
           {options.map((option) => (

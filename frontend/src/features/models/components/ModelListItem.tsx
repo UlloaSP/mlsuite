@@ -43,14 +43,18 @@ export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: Mo
         "hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
       )}
     >
-      <div className="flex size-11 items-center justify-center rounded bg-[var(--surface-muted)] text-[var(--accent-primary)]">
+      <div className="col-start-1 row-start-1 flex size-11 items-center justify-center rounded bg-[var(--surface-muted)] text-[var(--accent-primary)]">
         <Icon size={18} />
       </div>
 
-      <button type="button" onClick={onOpen} className="min-w-0 cursor-pointer space-y-3 text-left">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="col-start-2 row-start-1 min-w-0 cursor-pointer space-y-3 text-left"
+      >
         <h3 className="truncate text-base font-semibold text-[var(--text-primary)]">{item.name}</h3>
 
-        <p className="text-sm font-medium text-[var(--text-secondary)]">
+        <p className="break-words text-sm font-medium text-[var(--text-secondary)]">
           {getModelAlgorithmLabel(item)}
         </p>
 
@@ -63,14 +67,15 @@ export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: Mo
         </div>
       </button>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="col-span-2 col-start-2 row-start-2 grid grid-cols-2 gap-2 lg:col-span-1 lg:col-start-3 lg:row-start-1">
         <ModelMetric icon={<Rows3 size={14} />} label="Fields" value={item.fieldCount} />
         <ModelMetric icon={<ScrollText size={14} />} label="Reports" value={item.reportCount} />
       </div>
 
       {canDelete || canEdit ? (
-        <div className="justify-self-end self-start">
+        <div className="col-start-3 row-start-1 justify-self-end self-start lg:col-start-4">
           <ModelActionsMenu
+            archived={Boolean(item.archivedAt)}
             canDelete={canDelete}
             canEdit={canEdit}
             modelName={item.name}

@@ -11,7 +11,13 @@ import {
   type FormViewSnapshot,
   type MountedForm,
 } from "mlform/kit";
-import type { FormState, Transport } from "mlform/runtime";
+import type {
+  AfterSubmitContext,
+  FormState,
+  SubmissionInputRecord,
+  SubmitRequest,
+  Transport,
+} from "mlform/runtime";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import {
   buildQuestionnaireFormSchema,
@@ -33,7 +39,7 @@ export type ReportQuestionnaireMountHandle = {
 
 type ReportQuestionnaireMountProps = {
   ref?: Ref<ReportQuestionnaireMountHandle>;
-  title: string;
+  title?: string;
   schema: QuestionnaireSchema;
   initialValues: Record<string, unknown>;
   editable: boolean;
@@ -42,6 +48,8 @@ type ReportQuestionnaireMountProps = {
   onValuesChange?: (values: Record<string, unknown>) => void;
   onStepChange?: (stepId: string | null) => void;
   transport?: Transport;
+  onSubmitted?: (values: Record<string, unknown>) => unknown;
+  onSubmittingChange?: (submitting: boolean) => void;
   labels?: {
     submit?: string;
     submitting?: string;
@@ -92,6 +100,8 @@ type MountQuestionnaireHostOptions = {
   square: boolean;
   theme: "light" | "dark";
   transport?: Transport;
+  onSubmitted?: (values: Record<string, unknown>) => unknown;
+  onSubmittingChange?: (submitting: boolean) => void;
 };
 
 const mountQuestionnaireHost = ({
@@ -107,6 +117,8 @@ const mountQuestionnaireHost = ({
   square,
   theme,
   transport,
+  onSubmitted,
+  onSubmittingChange,
 }: MountQuestionnaireHostOptions): (() => void) => {
   try {
     const mounted = mountForm(container, {
@@ -115,6 +127,24 @@ const mountQuestionnaireHost = ({
       registry: createMlRegistryPack().registry,
       transport: transport ?? createLocalQuestionnaireTransport(),
       initialValues,
+      hooks: {
+        beforeSubmit: () => onSubmittingChange?.(true),
+        afterSubmit: async ({ result }: AfterSubmitContext) => {
+          try {
+            await onSubmitted?.(
+              Object.fromEntries(
+                result.inputs.map((input: SubmissionInputRecord) => [
+                  input.fieldId,
+                  input.serializedValue,
+                ]),
+              ),
+            );
+          } finally {
+            onSubmittingChange?.(false);
+          }
+        },
+        onSubmitError: () => onSubmittingChange?.(false),
+      },
       designSystem: getPredictionDesignSystem(theme),
       labels: {
         submit: labels?.submit ?? (editable ? "Check answers" : "Reviewed"),
@@ -182,21 +212,33 @@ export function ReportQuestionnaireMount({
   onValuesChange,
   onStepChange,
   transport,
+  onSubmitted,
+  onSubmittingChange,
   labels,
   square = false,
 }: ReportQuestionnaireMountProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedForm | null>(null);
   const initialValuesRef = useRef(initialValues);
+  const transportRef = useRef(transport);
+  const submissionRef = useRef({ onSubmitted, onSubmittingChange });
+  const stableTransport = useMemo<Transport>(() => {
+    const local = createLocalQuestionnaireTransport();
+    return { submit: (request: SubmitRequest) => (transportRef.current ?? local).submit(request) };
+  }, []);
+  useEffect(() => {
+    transportRef.current = transport;
+    submissionRef.current = { onSubmitted, onSubmittingChange };
+  }, [transport, onSubmitted, onSubmittingChange]);
   const [initialTheme] = useState(theme);
   const onValuesChangeRef = useRef(onValuesChange);
   const onStepChangeRef = useRef(onStepChange);
   const currentStepIdRef = useRef<string | null>(null);
-  const effectiveSchema = useMemo(
-    () => toQuestionnaireSchema(schema, editable),
-    [editable, schema],
+  const serializedSchema = JSON.stringify(toQuestionnaireSchema(schema, editable));
+  const effectiveSchema = useMemo<QuestionnaireSchema>(
+    () => JSON.parse(serializedSchema),
+    [serializedSchema],
   );
-  const serializedSchema = JSON.stringify(effectiveSchema);
 
   useImperativeHandle(ref, () => ({
     async submit() {
@@ -237,9 +279,11 @@ export function ReportQuestionnaireMount({
       onValuesChange: (values) => onValuesChangeRef.current?.(values),
       square,
       theme: initialTheme,
-      transport,
+      transport: stableTransport,
+      onSubmitted: (values) => submissionRef.current.onSubmitted?.(values),
+      onSubmittingChange: (submitting) => submissionRef.current.onSubmittingChange?.(submitting),
     });
-  }, [effectiveSchema, editable, initialTheme, labels, mode, serializedSchema, square, transport]);
+  }, [effectiveSchema, editable, initialTheme, labels, mode, square, stableTransport]);
 
   useEffect(() => {
     mountedRef.current?.replaceDesignSystem(getPredictionDesignSystem(theme));
@@ -247,11 +291,8 @@ export function ReportQuestionnaireMount({
 
   return (
     <div className="space-y-3">
-      <AppSectionTitle>{title}</AppSectionTitle>
-      <div
-        ref={containerRef}
-        className="min-h-[18rem] overflow-hidden border border-[var(--border-soft)] bg-[var(--surface-primary)]"
-      />
+      {title ? <AppSectionTitle>{title}</AppSectionTitle> : null}
+      <div ref={containerRef} className="min-h-[18rem]" />
     </div>
   );
 }

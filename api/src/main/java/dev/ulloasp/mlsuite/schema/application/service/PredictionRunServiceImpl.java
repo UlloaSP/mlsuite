@@ -114,7 +114,7 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private Long requireRead(Long userId) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireModelView(userId, organizationId);
         return organizationId;
     }
 
@@ -137,8 +137,11 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         }
         List<SchemaModelBinding> bindings = bindingRepository.findBySchemaVersionId(version.getId());
         validateResults(bindings, request.results());
-        PredictionRun run = runRepository.save(new PredictionRun(bookmark, version, request.name(),
-                request.inputData(), aggregateStatus(request.results())));
+        PredictionRun candidate = new PredictionRun(bookmark, version, request.name(),
+                request.inputData(), aggregateStatus(request.results()));
+        candidate.setCreatedByName(user.getFullName());
+        candidate.setCreatedByEmail(user.getEmail());
+        PredictionRun run = runRepository.save(candidate);
         request.results().forEach(item -> {
             PredictionResult result = saveResult(organizationId, run, item);
             item.feedback().forEach(feedback -> feedbackRepository.save(new PredictionResultFeedback(

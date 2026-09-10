@@ -65,7 +65,7 @@ export function SchemaSnapshotDetailPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto lg:overflow-hidden">
         <AppPageHeader
           title={version ? `${version.name} · v${version.version}` : "Snapshot"}
           breadcrumbs={[
@@ -75,7 +75,7 @@ export function SchemaSnapshotDetailPage() {
           ]}
           actions={
             version ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <AppButton variant="secondary" onClick={() => setDialogOpen(true)}>
                   <Tag size={16} />
                   Bookmark

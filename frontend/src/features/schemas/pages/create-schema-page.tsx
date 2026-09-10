@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Save } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
@@ -30,12 +30,20 @@ type Props = {
   models: SchemaSourceModel[];
 };
 
+import { initialSchemaModels } from "@/features/schemas/lib/schema-model-selection";
+
 export function CreateSchemaPage({ isLoading, models }: Props) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const createSchema = useCreateSchemaWithInitialVersionMutation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [selected, setSelected] = useState<SelectedModel[]>([]);
+  const [selection, setSelected] = useState<SelectedModel[] | null>(null);
+  const modelId = searchParams.get("modelId");
+  const selected = useMemo(
+    () => selection ?? initialSchemaModels(models, modelId),
+    [selection, models, modelId],
+  );
 
   const composedVersion = useMemo(
     () =>

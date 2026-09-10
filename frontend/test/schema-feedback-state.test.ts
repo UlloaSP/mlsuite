@@ -7,6 +7,7 @@ import { describe, expect, test } from "vite-plus/test";
 import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
+  schemaFeedbackStatus,
 } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
 import {
   buildCombinedFeedbackQuestionnaire,
@@ -56,6 +57,29 @@ const step = (
 });
 
 describe("schema feedback state", () => {
+  test("honors explicitly optional answers while requiring saved feedback", () => {
+    const optional = step({ assessment: "yes" });
+    optional.schema.steps[0]!.fields.push({
+      id: "note",
+      label: "Note",
+      kind: "text",
+      required: false,
+    });
+    const combined = buildCombinedFeedbackQuestionnaire([optional], { required: true });
+    expect(combined.schema.steps[0]?.fields[1]?.required).toBe(false);
+    expect(isSchemaFeedbackComplete([optional])).toBe(true);
+    expect(
+      isCombinedSchemaFeedbackComplete([optional], { [`${optional.id}-assessment`]: "yes" }),
+    ).toBe(true);
+    expect(isCombinedSchemaFeedbackComplete([optional], {})).toBe(false);
+    optional.targets[0]!.feedback = undefined;
+    expect(isSchemaFeedbackComplete([optional])).toBe(false);
+  });
+  test("distinguishes absent questionnaires from pending and complete feedback", () => {
+    expect(schemaFeedbackStatus([])).toBe("NOT_REQUIRED");
+    expect(schemaFeedbackStatus([step()])).toBe("PENDING");
+    expect(schemaFeedbackStatus([step({ assessment: "yes" })])).toBe("COMPLETED");
+  });
   test("does not complete when no feedback exists", () => {
     expect(isSchemaFeedbackComplete([step()])).toBe(false);
   });

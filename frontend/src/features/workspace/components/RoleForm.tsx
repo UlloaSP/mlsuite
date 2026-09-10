@@ -90,22 +90,35 @@ export function RoleForm({
           </button>
         </header>
         <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 px-6 py-5">
-          <div className="grid gap-3 md:grid-cols-[minmax(220px,0.8fr)_minmax(280px,1.2fr)]">
-            <AppTextField
-              autoFocus
-              className="rounded-xl shadow-none"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Role name"
-            />
-            <AppTextArea
-              className="min-h-24 rounded-xl shadow-none"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description"
-            />
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <label htmlFor="role-name" className="block text-sm font-semibold">
+                Name
+              </label>
+              <AppTextField
+                id="role-name"
+                autoFocus
+                className="w-full shadow-none"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Role name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="role-description" className="block text-sm font-semibold">
+                Description
+              </label>
+              <AppTextArea
+                id="role-description"
+                className="w-full shadow-none"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe this role"
+              />
+            </div>
           </div>
-          <div className="min-h-0 overflow-y-auto pr-2">
+          <div className="app-scroll min-h-0 overflow-y-auto pr-2">
             <div className="space-y-5">
               {permissionGroups.map((group) => (
                 <section key={group.name}>

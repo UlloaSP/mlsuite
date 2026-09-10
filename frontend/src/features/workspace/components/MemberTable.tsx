@@ -38,20 +38,20 @@ export function MemberTable({
   return (
     <div className="space-y-3">
       {rows.map((row) => (
-        <AppPanel key={row.id}>
+        <AppPanel key={row.id} variant="catalog">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2 break-words">
               <p className="text-base font-semibold text-[var(--text-primary)]">{row.fullName}</p>
               <p className="text-sm text-[var(--text-secondary)]">{row.email}</p>
               <div className="flex flex-wrap gap-2">
                 <RoleBadge value={row.role.name} />
-                {row.role.systemKey ? <RoleBadge value={row.role.systemKey} /> : null}
                 <RoleBadge value={row.status} />
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {row.actions.canChangeRole && row.role.id ? (
                 <AppSelect
+                  aria-label={`Role for ${row.fullName}`}
                   value={String(row.role.id)}
                   onValueChange={(roleId) => onRoleChange(row.id, Number(roleId))}
                   className="min-w-40"

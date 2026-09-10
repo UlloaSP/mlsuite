@@ -4,12 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Building2, Check, ChevronsUpDown } from "lucide-react";
+import { useAtomValue } from "jotai";
 import { DropdownMenu } from "radix-ui";
 import { Link, useNavigate } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useSelectOrganization } from "@/features/workspace/api/workspace.mutations";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
+import { sidebarPositionAtom } from "@/shared/ui/sidebar-position";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarMenu } from "./app-sidebar/SidebarMenu";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
@@ -19,6 +21,7 @@ import { useSidebar } from "./app-sidebar/SidebarContext";
 export function SidebarOrganizationHeader() {
   const navigate = useNavigate();
   const { state } = useSidebar();
+  const sidebarPosition = useAtomValue(sidebarPositionAtom);
   const { data: context } = useWorkspaceContext();
   const selectOrganization = useSelectOrganization();
 
@@ -63,38 +66,46 @@ export function SidebarOrganizationHeader() {
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content
-              align="start"
+              align={sidebarPosition === "right" ? "end" : "start"}
               side="bottom"
               sideOffset={8}
-              className="z-[1000] min-w-[260px] rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 text-[var(--text-primary)] shadow-[var(--shadow-hover)]"
+              collisionPadding={8}
+              className={cx(
+                "z-[1000] flex max-h-[var(--radix-dropdown-menu-content-available-height)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 text-[var(--text-primary)] shadow-[var(--shadow-hover)]",
+                collapsed ? "w-64" : "w-[var(--radix-dropdown-menu-trigger-width)]",
+              )}
             >
-              {context.organizations.map((organization) => (
-                <DropdownMenu.Item
-                  key={organization.id}
-                  className={cx(
-                    "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm outline-none hover:bg-[var(--surface-muted)] focus:bg-[var(--surface-muted)]",
-                    FOCUS_RING,
-                  )}
-                  onSelect={() => {
-                    void selectOrganization.mutateAsync(organization.id).then(() => {
-                      void navigate("/home");
-                    });
-                  }}
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate font-semibold">{organization.name}</span>
-                    <span className="block truncate text-xs text-[var(--text-secondary)]">
-                      {organization.slug}
+              <DropdownMenu.Group className="app-scroll max-h-42 min-h-0 overflow-y-auto overscroll-contain">
+                {context.organizations.map((organization) => (
+                  <DropdownMenu.Item
+                    key={organization.id}
+                    className={cx(
+                      "flex h-14 cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm outline-none hover:bg-[var(--surface-muted)] focus:bg-[var(--surface-muted)] focus-visible:ring-inset",
+                      FOCUS_RING,
+                    )}
+                    onSelect={() => {
+                      void selectOrganization.mutateAsync(organization.id).then(() => {
+                        void navigate("/home");
+                      });
+                    }}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold">{organization.name}</span>
+                      <span className="block truncate text-xs text-[var(--text-secondary)]">
+                        {organization.slug}
+                      </span>
                     </span>
-                  </span>
-                  {organization.id === context.currentOrganization.id ? <Check size={16} /> : null}
-                </DropdownMenu.Item>
-              ))}
-              <DropdownMenu.Separator className="my-2 h-px bg-[var(--border-soft)]" />
+                    {organization.id === context.currentOrganization.id ? (
+                      <Check size={16} className="shrink-0" />
+                    ) : null}
+                  </DropdownMenu.Item>
+                ))}
+              </DropdownMenu.Group>
+              <DropdownMenu.Separator className="my-2 h-px shrink-0 bg-[var(--border-soft)]" />
               <DropdownMenu.Item asChild>
                 <Link
                   to="/workspace/organizations"
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--accent-primary-strong)] outline-none hover:bg-[var(--surface-muted)] focus:bg-[var(--surface-muted)]"
+                  className="block shrink-0 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--accent-primary-strong)] outline-none hover:bg-[var(--surface-muted)] focus:bg-[var(--surface-muted)]"
                 >
                   Manage organizations
                 </Link>

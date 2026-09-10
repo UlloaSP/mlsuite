@@ -69,7 +69,7 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
     @Override
     public List<PredictionResultFeedback> listByResult(Long userId, Long resultId) {
         userLookupService.requireById(userId);
-        Long orgId = requireOrg(userId);
+        Long orgId = requireRead(userId);
         if (resultRepository.findByIdAndOrganizationId(resultId, orgId).isEmpty()) {
             throw notFound("Prediction result not found");
         }
@@ -79,7 +79,7 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
     @Override
     public List<PredictionResultFeedback> listByRuns(Long userId, List<Long> runIds) {
         userLookupService.requireById(userId);
-        Long orgId = requireOrg(userId);
+        Long orgId = requireRead(userId);
         if (runIds == null || runIds.isEmpty() || runIds.size() > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "runIds must contain 1 to 100 ids");
         }
@@ -88,6 +88,12 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
             throw notFound("Prediction run not found");
         }
         return feedbackRepository.findByRunIdsAndOrganizationId(uniqueRunIds, orgId);
+    }
+
+    private Long requireRead(Long userId) {
+        Long orgId = workspaceAccessService.requireCurrentOrganization(userId).getId();
+        authorizationService.requireModelView(userId, orgId);
+        return orgId;
     }
 
     private Long requireOrg(Long userId) {

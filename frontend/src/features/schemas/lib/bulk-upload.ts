@@ -44,7 +44,7 @@ const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
     if (field.kind === "onehot-category" && Array.isArray(field.options)) {
       field.options.forEach((option) => {
         mappedTargets(option.mappedTo).forEach((key) => {
-          byKey.set(key, { kind: "number", id: key, label: key, displayKey: key });
+          byKey.set(key, { kind: "number", id: key, label: key, displayKey: key, mappedTo: key });
         });
       });
       return;
@@ -116,3 +116,11 @@ export const toSchemaRunFieldValues = (
 
   return values;
 };
+
+export function bulkUploadSummary(saved: number, failed: number, skipped: number, remaining = 0) {
+  const summary = `${saved} saved, ${failed} failed, ${skipped} skipped`;
+  return {
+    message: remaining > 0 ? `${summary}, ${remaining} not processed` : summary,
+    warning: failed > 0 || skipped > 0 || remaining > 0 || saved === 0,
+  };
+}

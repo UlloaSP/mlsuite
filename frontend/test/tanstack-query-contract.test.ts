@@ -68,7 +68,7 @@ describe("TanStack Query resource contracts", () => {
 
   test("lets Query own tenant plugin sources and forwards cancellation", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ items: [{ id: "plugin-1" }], hasNext: false }), {
+      new Response(JSON.stringify([{ id: "plugin-1" }]), {
         headers: { "content-type": "application/json" },
       }),
     );
@@ -79,7 +79,7 @@ describe("TanStack Query resource contracts", () => {
 
     expect(options.queryKey).toEqual(["org", 7, "pluginRuntimeSources"]);
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/api/plugins?"),
+      expect.stringContaining("/api/plugins/runtime"),
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });

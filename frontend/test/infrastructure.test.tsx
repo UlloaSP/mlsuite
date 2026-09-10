@@ -1,3 +1,4 @@
+import { serviceHealthCategory } from "@/features/infrastructure/lib/status";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   buildDashboardAlerts,
@@ -7,6 +8,7 @@ import {
 } from "@/features/infrastructure/lib/dashboard-summary";
 import {
   appendLogLine,
+  confirmServiceAction,
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
@@ -30,6 +32,23 @@ import {
 } from "@/features/infrastructure/api/infrastructure.queries";
 import { HttpError } from "@/shared/api/http";
 
+const service = {
+  name: "spring-app",
+  containerName: "spring-app",
+  status: "running",
+  health: "healthy",
+  uptime: "1m",
+  cpuPercent: 5,
+  memoryBytes: 1024,
+  memoryLimitBytes: 2048,
+  diskReadBytes: 1024,
+  diskWriteBytes: 2048,
+  networkRxBytes: 4096,
+  networkTxBytes: 8192,
+  ports: [],
+  terminalEnabled: true,
+} satisfies InfrastructureOverviewDto["services"][number];
+
 const overview: InfrastructureOverviewDto = {
   aggregate: {
     cpu: { percent: 10, supported: true },
@@ -39,24 +58,7 @@ const overview: InfrastructureOverviewDto = {
     networkRx: { bytes: 4096, supported: true },
     networkTx: { bytes: 8192, supported: true },
   },
-  services: [
-    {
-      name: "spring-app",
-      containerName: "spring-app",
-      status: "running",
-      health: "healthy",
-      uptime: "1m",
-      cpuPercent: 5,
-      memoryBytes: 1024,
-      memoryLimitBytes: 2048,
-      diskReadBytes: 1024,
-      diskWriteBytes: 2048,
-      networkRxBytes: 4096,
-      networkTxBytes: 8192,
-      ports: [],
-      terminalEnabled: true,
-    },
-  ],
+  services: [service],
   history: {
     sampleIntervalSeconds: 5,
     retentionMinutes: 60,
@@ -69,17 +71,7 @@ const overview: InfrastructureOverviewDto = {
         diskWriteBytes: 2048,
         networkRxBytes: 4096,
         networkTxBytes: 8192,
-        services: [
-          {
-            name: "spring-app",
-            cpuPercent: 5,
-            ramPercent: 50,
-            diskReadBytes: 1024,
-            diskWriteBytes: 2048,
-            networkRxBytes: 4096,
-            networkTxBytes: 8192,
-          },
-        ],
+        services: [{ ...service, ramPercent: 50 }],
       },
     ],
   },
@@ -94,6 +86,48 @@ const jsonResponse = (body: unknown, status = 200) =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe("infra helpers", () => {
+  it.each(["STOP", "RESTART"] as const)(
+    "requires confirmation for %s and respects cancellation",
+    (action) => {
+      const confirm = vi.fn().mockReturnValue(false);
+      vi.stubGlobal("window", { confirm });
+      expect(confirmServiceAction("frontend", action)).toBe(false);
+      expect(confirm).toHaveBeenCalledWith(expect.stringContaining("frontend"));
+      confirm.mockReturnValue(true);
+      expect(confirmServiceAction("frontend", action)).toBe(true);
+      confirm.mockClear();
+      expect(confirmServiceAction("frontend", "START")).toBe(true);
+      expect(confirm).not.toHaveBeenCalled();
+    },
+  );
+  it("keeps health categories exclusive and never claims unknown services healthy", () => {
+    const services = [
+      overview.services[0],
+      ...[null, "unknown", "unhealthy", "starting"].map((health) => ({
+        ...overview.services[0],
+        health,
+      })),
+      { ...overview.services[0], status: "exited", health: null },
+    ];
+    expect(services.map(serviceHealthCategory)).toEqual([
+      "healthy",
+      "unknown",
+      "unknown",
+      "degraded",
+      "degraded",
+      "down",
+    ]);
+    expect(countHealthyServices(services)).toBe(1);
+    expect(countProblemServices(services)).toBe(5);
+    expect(
+      buildDashboardAlerts({ ...overview, services }, true, null).some(
+        (alert) => alert.id === "healthy",
+      ),
+    ).toBe(false);
+    expect(buildDashboardAlerts({ ...overview, services: [] }, true, null)).toEqual([]);
+    expect(buildDashboardAlerts(overview, true, null)[0].id).toBe("healthy");
+  });
+
   it("filters, sorts, and counts service rows", () => {
     const stopped = {
       ...overview.services[0],
@@ -211,19 +245,10 @@ describe("infra helpers", () => {
         services: [
           ...overview.services,
           {
+            ...overview.services[0],
             name: "frontend",
-            containerName: null,
             status: "missing",
             health: null,
-            uptime: null,
-            cpuPercent: null,
-            memoryBytes: null,
-            memoryLimitBytes: null,
-            diskReadBytes: null,
-            diskWriteBytes: null,
-            networkRxBytes: null,
-            networkTxBytes: null,
-            ports: [],
             terminalEnabled: false,
           },
         ],

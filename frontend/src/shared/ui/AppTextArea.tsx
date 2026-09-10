@@ -6,7 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { TextareaHTMLAttributes } from "react";
 import { cx } from "./cx";
 
-export function AppTextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function AppTextArea({
+  className,
+  rows,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <label
       className={cx(
@@ -16,7 +20,11 @@ export function AppTextArea({ className, ...props }: TextareaHTMLAttributes<HTML
     >
       <textarea
         {...props}
-        className="min-h-40 w-full resize-y bg-transparent font-mono text-sm leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+        rows={rows}
+        className={cx(
+          "w-full resize-y bg-transparent font-mono text-sm leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]",
+          rows === undefined ? "min-h-40" : "min-h-0",
+        )}
       />
     </label>
   );

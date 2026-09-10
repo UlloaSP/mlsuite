@@ -198,7 +198,7 @@ export function TerminalView({
             Embedded terminal
           </h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Interactive shell into any running service. Read-only superadmin session.
+            Interactive shell in enabled services. Commands can modify files and interrupt services.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -271,8 +271,8 @@ export function TerminalView({
             ))}
           </div>
           <div className="flex items-center justify-between border-t border-[var(--border-soft)] px-4 py-2.5 text-[0.65rem] text-[var(--text-muted)]">
-            <span>session policy</span>
-            <span>read-only &middot; 30m idle</span>
+            <span>session access</span>
+            <span>container shell permissions</span>
           </div>
         </div>
       </div>

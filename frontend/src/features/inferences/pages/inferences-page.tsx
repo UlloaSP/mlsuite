@@ -1,3 +1,4 @@
+import type { FeedbackStatusDisplay } from "@/capabilities/prediction-runtime/feedback/FeedbackStatusBadge";
 import type { ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
@@ -8,24 +9,29 @@ import {
   useInferenceCatalog,
 } from "@/features/inferences/api/inference-api";
 import { useDeleteInferenceMutation } from "@/features/inferences/api/inference-mutations";
-import { InferenceCatalogTable } from "@/features/inferences/components/InferenceCatalogTable";
+import { InferenceCatalogList } from "@/features/inferences/components/InferenceCatalogList";
 import { InferenceCatalogToolbar } from "@/features/inferences/components/InferenceCatalogToolbar";
 import {
   filterInferences,
   type InferenceFilters,
 } from "@/features/inferences/lib/inference-filter";
-import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
-import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
+import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
+import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
 
 const validStatus = (value: string | null): InferenceFilters["status"] =>
   value === "SUCCESS" || value === "PARTIAL_SUCCESS" || value === "FAILED" ? value : "all";
 
 export function InferencesPage({
   renderExportAction,
+  renderFeedbackStatuses,
 }: {
+  renderFeedbackStatuses?: (
+    items: InferenceCatalogItemDto[],
+    children: (statuses: Map<string, FeedbackStatusDisplay>) => ReactNode,
+  ) => ReactNode;
   renderExportAction?: (items: InferenceCatalogItemDto[]) => ReactNode;
 }) {
   const catalog = useInferenceCatalog();
@@ -41,6 +47,11 @@ export function InferencesPage({
   const items = catalog.data ?? [];
   const filteredItems = filterInferences(items, filters);
   const organizationId = workspace?.currentOrganization.id;
+  const pagination = useClientCatalogPage(
+    filteredItems,
+    JSON.stringify([organizationId, filters]),
+    catalog.isLoading,
+  );
   const canDelete = workspace?.permissions.canRunPredictions ?? false;
   const canManageReviews = workspace?.permissions.canManageReviews ?? false;
   const handleDelete = async (item: (typeof items)[number]) => {
@@ -63,12 +74,24 @@ export function InferencesPage({
     if (value === "" || value === "all") next.delete(keyMap[key]);
     else next.set(keyMap[key], value);
     if (key === "schemaId") next.delete("bookmark");
+    next.delete("page");
     setSearchParams(next, { replace: true });
   };
 
+  const renderList = (statuses?: Map<string, FeedbackStatusDisplay>) => (
+    <InferenceCatalogList
+      feedbackStatuses={statuses}
+      canDelete={canDelete}
+      canManageReviews={canManageReviews}
+      deletePending={deleteInference.isPending}
+      items={pagination.visibleItems}
+      onDelete={(item) => void handleDelete(item)}
+    />
+  );
+
   return (
     <AppPage>
-      <AppSurface className="flex-1 space-y-6 overflow-auto">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           eyebrow="Organization"
           title="Inferences"
@@ -84,6 +107,8 @@ export function InferencesPage({
                     createdAt: item.createdAt,
                     schemaId: String(item.schemaId),
                     versionId: String(item.schemaVersionId),
+                    bookmarkId: item.bookmarkId == null ? null : String(item.bookmarkId),
+                    bookmarkName: item.bookmarkName,
                     groupLabel: `${item.schemaName} · ${item.schemaVersionName} · v${item.schemaVersion}`,
                   }))}
                 />
@@ -95,27 +120,26 @@ export function InferencesPage({
           }
         />
         <InferenceCatalogToolbar filters={filters} inferences={items} onChange={updateFilter} />
-        {catalog.isLoading ? <AppPanel>Loading inferences...</AppPanel> : null}
-        {catalog.error ? <AppPanel>Could not load inferences.</AppPanel> : null}
-        {!catalog.isLoading && !catalog.error && filteredItems.length > 0 ? (
-          <InferenceCatalogTable
-            canDelete={canDelete}
-            canManageReviews={canManageReviews}
-            deletePending={deleteInference.isPending}
-            items={filteredItems}
-            onDelete={(item) => void handleDelete(item)}
-          />
-        ) : null}
-        {!catalog.isLoading && !catalog.error && filteredItems.length === 0 ? (
-          <AppEmptyState
-            title={items.length === 0 ? "No inferences yet" : "No matching inferences"}
-            description={
+        <CatalogListPanel
+          {...pagination}
+          itemCount={filteredItems.length}
+          isLoading={catalog.isLoading}
+          isBusy={catalog.isFetching || deleteInference.isPending}
+          loadingLabel="Loading inferences..."
+          errorMessage={catalog.error ? "Could not load inferences." : null}
+          onRetry={() => void catalog.refetch()}
+          emptyState={{
+            title: items.length === 0 ? "No inferences yet" : "No matching inferences",
+            description:
               items.length === 0
                 ? "Run a schema bookmark to populate this organization catalog."
-                : "Adjust the search or filters to see more results."
-            }
-          />
-        ) : null}
+                : "Adjust the search or filters to see more results.",
+          }}
+        >
+          {renderFeedbackStatuses
+            ? renderFeedbackStatuses(pagination.visibleItems, renderList)
+            : renderList()}
+        </CatalogListPanel>
       </AppSurface>
     </AppPage>
   );

@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppTextField } from "@/shared/ui/AppTextField";
+import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { cx } from "@/shared/ui/cx";
 
 export type CatalogOption<TValue extends string> = {
@@ -52,7 +53,7 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
   const segmented = filterVariant === "segmented";
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--border-soft)] py-3">
+    <AppToolbar variant="flat">
       <div className="min-w-[min(100%,260px)] flex-[1_1_48rem]">
         <AppTextField
           className="w-full"
@@ -99,7 +100,7 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
           onValueChange={(value) => onSortChange(value as TSort)}
         />
       </div>
-    </div>
+    </AppToolbar>
   );
 }
 

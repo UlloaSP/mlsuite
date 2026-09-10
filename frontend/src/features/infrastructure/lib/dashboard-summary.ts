@@ -1,3 +1,4 @@
+import { serviceHealthCategory } from "./status";
 import type {
   InfrastructureOverviewDto,
   ServiceStatusDto,
@@ -105,11 +106,12 @@ export function buildDashboardAlerts(
   if (alerts.length) {
     return alerts;
   }
+  if (!overview.services.length) return [];
   return [
     {
       id: "healthy",
       title: "All managed services stable",
-      detail: `${countHealthyServices(overview.services)} services healthy and reachable.`,
+      detail: `${countHealthyServices(overview.services)} services report healthy.`,
       tone: "success",
     },
   ];
@@ -141,5 +143,5 @@ export function toneForMetric(
 
 /** isServiceHealthy: internal predicate for infrastructure dashboard state/display derivation. @remarks Args: service; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 function isServiceHealthy(service: ServiceStatusDto): boolean {
-  return service.status === "running" && (service.health == null || service.health === "healthy");
+  return serviceHealthCategory(service) === "healthy";
 }

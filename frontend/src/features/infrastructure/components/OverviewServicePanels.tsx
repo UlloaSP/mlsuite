@@ -1,3 +1,4 @@
+import { serviceHealthCategory } from "@/features/infrastructure/lib/status";
 import { ChevronRight } from "lucide-react";
 import { countHealthyServices } from "@/features/infrastructure/lib/dashboard-summary";
 import { formatBytes } from "@/features/infrastructure/lib/formatters";
@@ -54,23 +55,25 @@ export function OverviewServicePanels({
             <CountCell
               label="Degraded"
               value={
-                overview.services.filter(
-                  (service) =>
-                    service.status === "running" &&
-                    service.health != null &&
-                    service.health !== "healthy",
-                ).length
+                overview.services.filter((service) => serviceHealthCategory(service) === "degraded")
+                  .length
               }
               color="#d97706"
             />
             <CountCell
               label="Unknown"
-              value={overview.services.filter((service) => service.health == null).length}
+              value={
+                overview.services.filter((service) => serviceHealthCategory(service) === "unknown")
+                  .length
+              }
               color="var(--text-muted)"
             />
             <CountCell
               label="Down"
-              value={overview.services.filter((service) => service.status !== "running").length}
+              value={
+                overview.services.filter((service) => serviceHealthCategory(service) === "down")
+                  .length
+              }
               color="var(--danger-text)"
             />
           </div>

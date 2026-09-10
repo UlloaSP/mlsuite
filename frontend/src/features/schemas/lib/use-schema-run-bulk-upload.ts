@@ -24,7 +24,7 @@ import { loadPredictionCatalogDefinitions } from "@/capabilities/prediction-runt
 import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
 import { prependMissingPredictionRuns } from "@/features/schemas/lib/run-cache";
-import { getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
+import { bulkUploadSummary, getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
 
 type Status = "idle" | "parsing" | "processing" | "done";
@@ -66,6 +66,9 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
         );
       if (parsed.records.length === 0) {
         setState({ ...INITIAL, status: "done", skipped: parsed.skipped.length });
+        toast.warning(
+          `Bulk upload complete: ${bulkUploadSummary(0, 0, parsed.skipped.length).message}`,
+        );
         return;
       }
 
@@ -124,7 +127,16 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
       }
 
       setState((current) => ({ ...current, status: "done", saved, failed }));
-      toast.success(`Bulk upload complete: ${saved} saved, ${failed} failed`);
+      const summary = bulkUploadSummary(
+        saved,
+        failed,
+        parsed.skipped.length,
+        parsed.records.length - saved - failed,
+      );
+      const notify = summary.warning ? toast.warning : toast.success;
+      notify(
+        `Bulk upload ${controller.signal.aborted ? "cancelled" : "complete"}: ${summary.message}`,
+      );
       if (savedRuns.length > 0) {
         queryClient.setQueryData<PredictionRunDto[]>(runsQueryKey, (current) =>
           prependMissingPredictionRuns(current, savedRuns),

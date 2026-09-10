@@ -24,7 +24,7 @@ export function SchemaSnapshotPreviewPanel({ version }: Props) {
     : 0;
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+    <section className="flex min-h-[640px] shrink-0 flex-col gap-4 overflow-hidden lg:min-h-0 lg:flex-1">
       <div className="grid shrink-0 items-center gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(280px,0.9fr)_auto]">
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">{version.name}</h2>
@@ -32,7 +32,7 @@ export function SchemaSnapshotPreviewPanel({ version }: Props) {
             v{version.version} · Published <LiveRelativeTime value={version.createdAt} /> ago
           </p>
         </div>
-        <div className="grid gap-1.5 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-1.5">
           {[
             ["Fields", fieldCount],
             ["Reports", reportCount],

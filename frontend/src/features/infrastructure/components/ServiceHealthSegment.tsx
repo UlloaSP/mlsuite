@@ -1,3 +1,4 @@
+import { serviceHealthCategory } from "@/features/infrastructure/lib/status";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 
 export function ServiceHealthSegment({
@@ -5,14 +6,18 @@ export function ServiceHealthSegment({
 }: {
   service: InfrastructureOverviewDto["services"][number];
 }) {
-  const ok =
-    service.status === "running" && (service.health == null || service.health === "healthy");
-  const degraded = service.status === "running";
+  const category = serviceHealthCategory(service);
+  const colors = {
+    healthy: "var(--success-text)",
+    unknown: "var(--text-muted)",
+    degraded: "var(--warning-text)",
+    down: "var(--danger-text)",
+  };
   return (
     <div
       className="flex-1"
       style={{
-        background: ok ? "var(--success-text)" : degraded ? "#d97706" : "var(--danger-text)",
+        background: colors[category],
       }}
       title={`${service.name} - ${service.status}/${service.health ?? "unknown"}`}
     />

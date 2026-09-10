@@ -1,3 +1,11 @@
+import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
+
+export function serviceHealthCategory(service: ServiceStatusDto) {
+  if (service.status !== "running") return "down";
+  if (!service.health || service.health === "unknown") return "unknown";
+  return service.health === "healthy" ? "healthy" : "degraded";
+}
+
 /**
  * toneForServiceStatus: performs the exported transformation for this algorithm.
  *

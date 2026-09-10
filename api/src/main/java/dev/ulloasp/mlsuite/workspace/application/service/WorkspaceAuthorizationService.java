@@ -86,6 +86,12 @@ public class WorkspaceAuthorizationService {
         }
     }
 
+    public void requireModelView(Long userId, Long organizationId) {
+        if (!workspacePermissions(userId, organizationId).canViewModels()) {
+            throw new OrganizationAccessDeniedException(organizationId);
+        }
+    }
+
     public void requireOrganizationOperate(Long userId, Long organizationId) {
         if (!workspacePermissions(userId, organizationId).canCreateModels()) {
             throw new OrganizationAccessDeniedException(organizationId);

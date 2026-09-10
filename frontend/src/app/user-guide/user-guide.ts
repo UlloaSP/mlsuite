@@ -201,12 +201,15 @@ export async function startUserGuide({
       doneBtnText: "Done",
       nextBtnText: "Next",
       onDestroyed: finish,
+      onHighlightStarted: (element) => {
+        element?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+      },
       overlayClickBehavior: "close",
       popoverClass: "mlsuite-user-guide",
       prevBtnText: "Previous",
       showProgress: true,
       skipMissingElement: true,
-      smoothScroll: true,
+      smoothScroll: false,
       steps,
     });
     activeGuide = guide;

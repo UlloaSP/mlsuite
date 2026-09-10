@@ -9,6 +9,8 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { useSchemaRunBulkUpload } from "@/features/schemas/lib/use-schema-run-bulk-upload";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
+import { bulkUploadSummary } from "@/features/schemas/lib/bulk-upload";
+
 type Props = {
   version: SchemaVersionDto;
   bookmarkId: string;
@@ -17,6 +19,12 @@ type Props = {
 export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const bulk = useSchemaRunBulkUpload(version, bookmarkId);
+  const summary = bulkUploadSummary(
+    bulk.saved,
+    bulk.failed,
+    bulk.skipped,
+    Math.max(0, bulk.total - bulk.processed),
+  );
   const processing = bulk.status === "processing" || bulk.status === "parsing";
   const label =
     bulk.status === "parsing"
@@ -24,7 +32,7 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
       : bulk.status === "processing"
         ? `Bulk ${bulk.processed}/${bulk.total}`
         : bulk.status === "done"
-          ? `${bulk.saved} saved`
+          ? summary.message
           : "Bulk Upload";
   const icon =
     bulk.status === "parsing" ? (
@@ -66,7 +74,7 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
         onClick={handlePress}
         title={
           bulk.status === "done"
-            ? `${bulk.saved} saved, ${bulk.failed} failed, ${bulk.skipped} skipped. Click to upload another file.`
+            ? `${summary.message}. Click to upload another file.`
             : processing
               ? `Processing ${bulk.processed} of ${bulk.total}. Click to cancel.`
               : "Upload a CSV or XLSX file with up to 10000 records."

@@ -7,11 +7,19 @@ import { Select as SelectPrimitive } from "radix-ui";
 import { type ComponentPropsWithoutRef } from "react";
 import { cx } from "@/shared/ui/cx";
 
-type SelectContentProps = ComponentPropsWithoutRef<typeof SelectPrimitive.Content>;
+type SelectContentProps = ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & {
+  container?: HTMLElement | null;
+};
 
-export function SelectContent({ children, className, position, ...props }: SelectContentProps) {
+export function SelectContent({
+  children,
+  className,
+  position,
+  container,
+  ...props
+}: SelectContentProps) {
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal container={container}>
       <SelectPrimitive.Content
         className={cx(
           "z-[1000] max-h-72 w-[var(--radix-select-trigger-width)] overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 text-[var(--text-primary)] shadow-[var(--shadow-hover)]",

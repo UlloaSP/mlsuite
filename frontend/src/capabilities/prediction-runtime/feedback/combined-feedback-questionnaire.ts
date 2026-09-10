@@ -57,7 +57,11 @@ export const buildCombinedFeedbackQuestionnaire = (
           if (sourceId in step.initialValues) {
             initialValues[nextId] = step.initialValues[sourceId];
           }
-          return { ...field, id: nextId, required: options.required ? true : field.required };
+          return {
+            ...field,
+            id: nextId,
+            required: options.required && field.required !== false ? true : field.required,
+          };
         },
       );
       return {

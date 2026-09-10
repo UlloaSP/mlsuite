@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 
 public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, Long> {
+    void deleteBySchemaId(Long schemaId);
     List<SchemaBookmark> findBySchemaIdOrderByNameAsc(Long schemaId);
 
     Optional<SchemaBookmark> findBySchemaIdAndName(Long schemaId, String name);

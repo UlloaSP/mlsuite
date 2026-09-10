@@ -52,7 +52,7 @@ export function BundleSummaryPanel({
   return (
     <aside
       aria-label="Summary"
-      className="flex w-[288px] flex-shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)]"
+      className="flex w-full flex-shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)] lg:w-[288px]"
     >
       {/* Header */}
       <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--border-soft)] px-[18px] py-[15px]">

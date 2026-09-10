@@ -1706,3 +1706,267 @@ Breaking migration: no compatibility path for pre-0.1.20 report envelopes.
   repository policy forbids it unless explicitly requested. Independent review found no Critical or
   Important findings.
 - Final `graphify update .` completed with 10,448 nodes, 28,377 edges, and 520 communities.
+
+# MLSuite Archify architecture map
+
+- [x] Extract the high-level runtime topology from the knowledge graph and deployment files.
+- [x] Author a compact Archify architecture specification under `docs/`.
+- [x] Reach Archify `showcase` validation and deliver the self-contained HTML.
+- [x] Record deterministic receipts and update the repository graph.
+
+## Review
+
+- Generated an eight-component architecture map covering the browser, React SPA, Spring Boot API,
+  Python ML runtime, PostgreSQL, MinIO, Ops Agent, and host container engine.
+- Archify validation passed 9/9 showcase checks with 0 errors and 0 warnings after one focused
+  geometry correction round.
+- Delivery committed a 3,671-byte specification and 711,706-byte self-contained HTML. Browser
+  evidence and perceptual visual review were skipped because repository policy forbids visual checks
+  unless explicitly requested.
+
+# DevSecOps review for hosted dev and production
+
+## Pre-merge visual and functional application QA
+
+- [x] Inventory every route and user-visible action; identify the running build.
+- [ ] Exercise authentication, workspace, organizations, teams, invitations, roles and users.
+- [ ] Exercise model upload, schemas/versioning/conflicts, bookmarks and predictions.
+- [ ] Exercise feedback, reviews/sharing/export and plugin management.
+- [x] Exercise personal settings, themes, keyboard, responsive layout, transitions and infrastructure.
+- [ ] Reproduce findings, fix authorized defects, verify against rebuilt affected services.
+- [x] Deliver evidence and coverage matrix with explicit remaining limitations; stop at user's request.
+
+User explicitly authorized visual checks and functional testing on localhost:5173.
+Use dedicated QA records; preserve existing user data and keep the PR unmerged.
+
+Progress: headed Chromium browser passes and defects recorded in output/playwright/qa-feature-matrix.md
+and detailed ML, admin, settings, infrastructure and history reports. Current automated verification:
+API 273 tests, Python runtime 43 and ops-agent 16 pass. Frontend last full suite: 270 passing tests
+before final edits; final focused suites: 23 and 13 passing tests, with TypeScript passing.
+Stopped at user's request: no further browser checks, deployment, commit, push or merge.
+Final changes are local and not all deployed. Remaining checks are recorded in docs/QA_PREMERGE.md
+and output/playwright/qa-feature-matrix.md. Unchecked QA tasks remain intentionally incomplete.
+
+## Step 1 implementation
+
+- [x] Preserve local environment, add sanitized template and exclude private environment files.
+- [x] Add four-component CI and fix the existing Java architecture check failure.
+- [x] Publish a branch based on develop and open a review PR toward main.
+- [x] Validate CI on GitHub, then enforce its check and PR protection on main.
+- [x] Record checks and unresolved credential-rotation uncertainty.
+
+### Step 1 results
+
+### Branch workflow correction
+
+- [x] Fetch remote refs and pull current develop into the feature branch with --ff-only.
+- [x] Retarget PR #1 to develop and remove unrelated develop-to-main promotion wording.
+- [x] Document feature -> develop -> main in CI guidance and tasks/lessons.md.
+- [x] Reject main PRs unless sourced from this repository's develop; rerun on base edits.
+- [x] Apply and read back required CI/PR protection for develop, matching main.
+- [x] Verify the latest GitHub CI after the correction.
+
+Review: no merge performed. A separate develop-to-main PR follows integration and validation
+of the feature PR. While checks were pending, GitHub reported PR #1 BLOCKED as expected.
+Run 34336243396 passed all six CI jobs on 99d22c4; PR #1 now reports CLEAN and targets develop.
+
+- PR https://github.com/UlloaSP/mlsuite/pull/1 remains OPEN for user review, based on develop.
+- Commits 4ade4f7 and c59130f contain only the foundation work. Pre-existing task/docs changes remain local.
+- CI run 34335427299 passed all six jobs on Linux. Prior run 34335236177 proved aggregate failure;
+  repaired shell quoting in publication and disabled Node 25 native Web Storage for jsdom tests.
+- Local baseline: frontend 230 tests/build, API 185 tests/package after port fix, backend 40 tests,
+  ops-agent 9 tests. Full vp check fails on 315 formatting files and remains explicitly deferred.
+- Extra local Node 25 test attempts through vp wrappers failed before tests because the wrapper chose
+  Node 24 and rejected NODE_OPTIONS=--no-webstorage. The actual Node 25 GitHub job passed.
+- Main protection applied and read back: PR required, strict CI required from Actions app 15368,
+  administrator enforcement, resolved conversations, force-push/deletion disabled; approvals zero for
+  the sole maintainer. Existing secret scanning/push protection remain enabled.
+- Private .env remains on disk, ignored/untracked. .env.example has blank secret fields. Old branches
+  and history still contain prior configuration. Active credential reuse is unknown; no rotation claimed.
+- Independent delta review found no blockers. Graphify updated successfully with documented tooling
+  warnings; no visual checks, deployment, history rewriting or merge performed.
+
+- [x] Inspect publication workflow, deployment configuration, and current GitHub protections.
+- [x] Assess immutable releases, environment isolation, migrations, and recovery.
+- [x] Deliver a prioritized Spanish proposal with evidence and acceptance criteria.
+
+Scope: analysis and documentation only; preserve existing working-tree changes.
+
+## DevSecOps review results
+
+- Delivered `DEVSECOPS_REVIEW.md`, with local evidence, remote GitHub findings, proposed delivery flow,
+  operational controls, implementation order, and acceptance criteria.
+- Read-only GitHub inspection confirmed public visibility, unprotected main, zero environments/rulesets,
+  and a tracked public `.env`; no credential values reproduced. Remote main differs from local HEAD.
+- Both `docker compose -f docker-compose.prod.yml config --quiet` and
+  `docker compose -f docker-compose.dev.yml config --quiet` passed. No runtime tests, builds, vulnerability
+  scans, deployment, server inspection, or visual checks ran; report distinguishes facts and risks.
+- No application/configuration code changed, so no AST graph refresh was necessary.
+
+## Catalog visual corrections (2026-09-10)
+- [x] Fix model tile placement at wide and narrow widths.
+- [x] Align inference/history layout with catalogs and add pagination.
+- [x] Limit organization menu to three visible rows with internal scroll and aligned width.
+- [x] Verify focused tests, TypeScript and browser screenshots; preserve responsive support.
+
+Review: Docker frontend rebuilt and refreshed on localhost:5173. Chromium screenshots verified at
+1920x1080, 1024x768 and 390x844 for models; inference and bookmark history checked with multiple pages.
+Organization menu: expanded width 247px matches trigger, collapsed 256px, list 168px = 3 rows;
+keyboard navigation scrolls remaining organizations while management footer remains visible.
+Frontend suite: 295 tests pass across 67 files. Build and TypeScript pass; diff check clean;
+128 changed/new source files audited, none above 300 noncomment lines. Graphify updated.
+`vp check` stops on 357 formatting files; no mass formatting applied. React Doctor ran with
+`--verbose --yes --no-supply-chain`: 23 warnings, incomplete maintainability analysis, no score.
+Pagination slices existing API collections client-side; export/review selection still includes all
+filtered entries. Changes remain local, PR unmerged. Evidence: output/playwright/catalog-corrections.md.
+Final review correction: preserve cold history page URLs until runs and filtered feedback finish
+loading; 13/13 focused regressions and final TypeScript pass after the full 295-test run.
+Final Docker image rebuilt/deployed; cold history page 2 with PENDING filter retained URL and
+displayed expected 10 rows starting at #89 in Chromium.
+
+## Inference catalog polish and attribution (2026-09-10)
+- [x] Remove elevated filter toolbars, soften scrolling and fix clipped organization hover/focus.
+- [x] Show consistent feedback state in both inference catalogs.
+- [x] Persist authenticated inference author and show legacy unknown honestly.
+- [x] Verify contracts, tests and live browser with fresh builds.
+
+Review: frontend 306 tests and API 273 tests pass; both Docker builds pass and are running locally.
+Live QA created qa-author-20260910 (#102); author MLSuite Admin and PENDING feedback appear in both
+catalog and bookmark history after reload. Existing #101 shows COMPLETED; invalid legacy #100 shows
+Unavailable rather than false PENDING. Flat toolbars, thin scrollbars and full inset hover/focus ring
+verified in Chromium screenshots under output/playwright/catalog-polish-*.png.
+Creator is an immutable name/email snapshot from the authenticated user; nullable added columns
+preserve legacy data without invented backfill. Both run/detail catalog DTOs expose these fields.
+No commit, push or merge. Graph updated; source-size check 141 files, none over 300 noncomment lines.
+vp check remains blocked by repository formatting; React Doctor incomplete (23 warnings).
+Known preexisting limit: bookmark history feedback batch >100 runs remains outside this correction.
+
+## Pagination reconciliation and status alignment
+- [x] Give pagination gaps unique stable keys and test repeated navigation.
+- [x] Share fixed status columns across inference/history tiles.
+- [x] Verify focused tests, build and browser (middle/end pages and mixed statuses).
+
+Review: reproduced duplicate ellipses in old browser build. Root cause: both gaps shared React key.
+Each gap now keyed by following page, eliminating orphaned reconciled spans. Regression traverses
+all 10 pages forward/back twice and checks gap counts, unique pages and selected page.
+28 focused tests pass, TypeScript and Docker build pass. Updated frontend running localhost:5173.
+Browser sequence 8/9/10/9/8/7/6/5 kept expected one/two gaps. Inference and history badges have
+identical x/width within each list for PENDING/COMPLETED/Unavailable; desktop and narrow layout checked.
+Shared PredictionStatusSummary reserves columns; mobile stacks the statuses. Evidence screenshots:
+output/playwright/pagination-corrected-middle.png and status-alignment-{desktop,mobile,history}.png.
+Graph updated, diff clean, no source above 300 noncomment lines. vp check stops on 353 formatting
+files; targeted React Doctor found no issues but maintainability analysis remains incomplete.
+No commit/push/merge; no API changes in this correction.
+
+## Inference detail tab cleanup
+- [x] Remove redundant tab panel backgrounds and headings from inputs, outputs and feedback.
+- [x] Remove duplicate questionnaire frame while preserving form controls and saved summary.
+- [x] Verify tab UI, search, edit/save lifecycle and build.
+
+Review: four files changed. Tab labels now provide section context; report/question titles remain.
+Questionnaire mount title optional, redundant square border/background/overflow clipping removed.
+17 focused tests pass (detail, permissions, actual questionnaire submission lifecycle, architecture).
+Docker build including TypeScript passes; frontend rebuilt and running localhost:5173.
+Chromium checked Inputs/Outputs/Feedback summary and editor on run102; saved existing Assessment=1
+and returned to summary successfully. Screenshots output/playwright/detail-tabs-*.png.
+Graph updated; diff clean. vp check still blocked by baseline formatting. No commit/push/merge.
+
+## Members catalog cleanup
+- [x] Replace role KPIs and grey container with total count and flat catalog controls.
+- [x] Use real member roles, shared pagination, and compact member cards.
+- [x] Verify tests, build and browser; record results.
+
+Members verification:
+- 26 tests passed: members catalog, shared pagination, frontend architecture.
+- Docker frontend build (including TypeScript) passed; rebuilt container serves localhost:5173.
+- Browser at 1920x1080: total 2, Owner/Reviewer dynamic filter, Reviewer yields 1 of 2, unmatched search empty state, single-page controls disabled. Restored All roles. Screenshot: output/playwright/members-catalog.png.
+- Pagination tested with 21 mock members; live organization has only 2. Role changes/removal were not executed on real memberships.
+- git diff --check passed; 148 changed source files checked, none above 300 lines. graphify update completed.
+- vp check blocked by existing formatting issues in 349 files. React Doctor scanned 3 files, reported page control-flow complexity; maintainability analysis incomplete, no score. Browser logs skipped transitions during rapid filter automation.
+- No commit, push, or merge.
+
+
+## Invitations catalog cleanup
+- [x] Replace status KPIs and grey table panel with total, flat controls, cards and shared pagination.
+- [x] Preserve invitation form and permission-controlled actions; test filters, pagination and load states.
+- [x] Build, verify visually on localhost and record results.
+
+Invitations verification:
+- Replaced four status KPIs and grey table panel with total count, flat search/status filter, cards and shared ten-item pagination. Default is All statuses.
+- Preserved invitation form and permission-controlled actions. Accepted resend disabled to reflect existing API rejection; Copy disabled without a token. Bulk selection scoped to visible page and cleared on page/filter changes.
+- 16 tests passed (catalog and architecture), including 21-record pagination, filtering, empty/loading/error states, permissions, bulk selection and accepted resend.
+- Docker build including TypeScript passed. Local frontend rebuilt. Browser checked real accepted invitation, Pending empty state, unmatched search, disabled next/resend and singular count. Screenshot output/playwright/invitations-catalog.png.
+- No actual invitation sent, resent or revoked; action and multi-page checks use mocks. Existing local organization has one invitation.
+- vp check remains blocked by 349 pre-existing formatting files. React Doctor scanned three files: array-lookup warning in a page capped at ten cards; maintainability analysis incomplete, no score. Browser logs skipped transitions during rapid automated filter changes.
+- git diff --check passed; all 152 changed source files below 300 code lines. No commit, push or merge.
+
+
+## Roles, templates and permissions catalogs
+- [x] Remove repeated tab headings/subtitles; add total tab counts and shared search/pagination to all three lists.
+- [x] Remove template pills and fix role form fields without changing permission rules.
+- [x] Test, build, visually verify catalogs and both form entry points; update graph and record limits.
+
+Roles verification:
+- Removed redundant headings/subtitles from Roles, Templates and All Permissions. Tabs show full totals (6, 5 and 22 in live QA), independent of search. Templates no longer show category pills or duplicate descriptions.
+- All three catalogs use shared search and ten-entry pagination. Permissions paginate individual permissions with their category retained. Tab switches reset search/page.
+- RoleForm aligns mixed-height fields at the top; name 46px, description 98px in both Create Role and From Template. Shared textarea honors explicit rows, preserving defaults for callers without rows.
+- 24 focused tests passed (roles catalog, role details, architecture); production Docker build and TypeScript passed. Frontend rebuilt and running on localhost.
+- Browser: all three tabs and both form entry points visually checked; real permission pages 1->2->3->2, audit search reset, unmatched-search state and tab reset passed. Restored Roles with no search/dialog. Screenshots output/playwright/roles-*.png.
+- Roles/templates pagination exercised with 21 mock entries because live lists contain 6/5. No role created, edited, deleted or assigned during visual verification.
+- graphify update completed; git diff --check passed; 157 changed source files audited, none above 300 code lines.
+- vp check blocked by 348 pre-existing formatting files. React Doctor scanned 4 files, reports RolesPage complexity and incomplete maintainability analysis, no score. Rapid browser automation logged skipped transitions.
+- No commit, push or merge.
+
+
+## Role form hierarchy and grouped permissions correction
+- [x] Stack labeled name/description fields in both role form paths.
+- [x] Restore permission category cards without pagination; keep internal scroll/search/count.
+- [x] Update tests, build and visually verify.
+
+Grouped-permissions correction verification:
+- Name above Description, visible associated labels and full-width fields in RoleForm; both blank and template-populated paths checked visually.
+- Restored seven category cards containing all 22 permissions, no pagination. Shared subtle internal scroll confirmed at 1280x800: viewport 520px, content 720px, scrollTop reaches 200. Search retains categories; viewport restored to 1920x1080.
+- 25 tests passed; Docker/TypeScript build passed; local frontend updated. No role mutations performed.
+- graphify update completed; git diff --check passed; all 158 changed source files below 300 code lines.
+- vp check still blocked by 348 pre-existing formatting files; React Doctor maintainability incomplete with RolesPage complexity warning.
+- No commit, push or merge.
+
+
+## Review creation selectors and selection controls
+- [x] Fix modal select portal and expose bookmark filter within a snapshot.
+- [x] Add Select all/results and always-visible Clear controls to both lists; show both paginators.
+- [x] Verify selection isolation, tests, build and browser without creating real assignments.
+
+Review creation verification:
+- Reproduced native-dialog select bug: listbox portal outside dialog. Added opt-in portal container to shared select and mounted both review selectors inside dialog; browser selected a different snapshot and its bookmark successfully.
+- Added bookmark metadata from inference catalog and local filtering within selected snapshot. Changing snapshot/bookmark refreshes inference selection; review API contract unchanged.
+- Both columns show Select all / Select results and Clear, plus pagination even for one page. Filtered selection spans all result pages and preserves other selections.
+- 19 tests passed (bookmark/snapshot isolation, bulk selection catalogs, architecture). Final Docker frontend/TypeScript build passed, local frontend rebuilt and reloaded.
+- Browser: reviewer Select all -> 2 of 2, Clear -> 0 of 2; inference clear/reselect; bulk search -> 14 of 17 selected, page 2 retained all six selections. Snapshot and bookmark options selectable inside native dialog. Screenshot output/playwright/review-create-fixed.png inspected.
+- Reviewer multi-page behavior tested with mocks; live organization has only 2 eligible reviewers. No actual review assignments created; dialog cancelled.
+- vp check blocked by 342 pre-existing formatting files. Fixed new exhaustive-deps warning; targeted dialog React Doctor rerun reports no issues but maintainability incomplete. Catalog complexity warning remains.
+- Source audit: 167 changed source files, none above 300 code lines. git diff --check passed. No commit, push or merge.
+
+
+## Review column height and CSV selection dialog
+- [x] Make review selection columns fill equal available height with aligned pagination.
+- [x] Replace organization CSV dropdown with snapshot/bookmark/inference selection dialog, retaining feedback export review.
+- [x] Verify tests, CSV preparation/download, modal selectors and layout; update graph and document results.
+
+Review height and CSV picker verification:
+- Both review list bodies fill the column; pagination top is 779px in both columns at 1920x1080. Internal subtle scroll preserves access to rows when vertical space is limited (334px viewport / 365px content for six inference rows).
+- Organization export button opens a dialog with snapshot/bookmark, search, pagination and Select all/results/Clear. Continue fetches only selected runs and preserves the existing feedback inclusion screen before download.
+- 31 tests passed (picker, catalog integration, CSV parity, review selection, architecture). Final Docker/TypeScript build passed and local frontend rebuilt.
+- Browser selected qa-baseline then only qa-author-20260910. Continued to existing export review with 1/1 inferences and 1/1 reviewers; downloaded CSV successfully. Parsed artifact output/playwright/selected-inference-export.csv contains exactly one data row, selected run name, nine columns including reviewer feedback.
+- Export Continue stays visible at 1280x800 (bottom 767px). Restored 1920x1080 and closed dialogs. Screenshots output/playwright/review-aligned-columns.png and export-selection-dialog.png inspected.
+- No review assignments or server-side data changes made. No commit, push or merge.
+- vp check remains blocked by 341 pre-existing formatting files. React Doctor: existing selection-catalog complexity warning, incomplete maintainability analysis. Source audit: 171 changed source files, none above 300 code lines; git diff --check passed.
+
+
+## Cleanup and commit (2026-09-10)
+- [x] Exclude generated Playwright artifacts and screenshots from Git.
+- [ ] Delete local artifacts: automatic execution policy rejected removal of .playwright-cli and output/playwright.
+- [x] Prepare all pending project changes for a local commit.
+
+Review: checks skipped at the user's explicit request. No new tests, build, visual checks or CI. Generated files remain locally but are ignored. No push or merge.
+

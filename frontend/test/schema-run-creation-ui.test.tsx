@@ -211,7 +211,7 @@ describe("schema run creation UI", () => {
     mounted.unmount();
   });
 
-  test("resets the run name per prediction and saves each result once", async () => {
+  test("refreshes default names, preserves edited names and saves each result once", async () => {
     const store = createStore();
     const container = document.createElement("div");
     document.body.append(container);
@@ -269,6 +269,13 @@ describe("schema run creation UI", () => {
     expect(save.textContent).toContain("Save inference");
     expect(save.disabled).toBe(false);
 
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
+        name,
+        "Reviewed case",
+      );
+      name.dispatchEvent(new Event("input", { bubbles: true }));
+    });
     let resolveOldSave!: (value: { id: string }) => void;
     pageState.mutateAsync.mockReset();
     pageState.mutateAsync
@@ -290,7 +297,7 @@ describe("schema run creation UI", () => {
       mountOptions.onRunningChange(true);
       mountOptions.onSubmit({ age: 43 }, completedRaw, false);
     });
-    expect(name.value).toBe("run-2026-08-24T14:50:00.000Z");
+    expect(name.value).toBe("Reviewed case");
     await act(async () => resolveOldSave({ id: "run-1" }));
     expect(save.textContent).toContain("Save inference");
     expect(save.disabled).toBe(false);
@@ -301,7 +308,7 @@ describe("schema run creation UI", () => {
     });
     expect(pageState.mutateAsync).toHaveBeenCalledTimes(2);
     expect(pageState.mutateAsync).toHaveBeenLastCalledWith(
-      expect.objectContaining({ name: "run-2026-08-24T14:50:00.000Z" }),
+      expect.objectContaining({ name: "Reviewed case" }),
     );
     expect(save.textContent).toContain("Inference saved");
   });

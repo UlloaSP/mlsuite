@@ -14,6 +14,11 @@ import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 const queryState = vi.hoisted(() => ({ refetch: vi.fn() }));
+vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useWorkspaceContext: () => ({
+    data: { permissions: { canRunPredictions: true, canViewOrganization: true } },
+  }),
+}));
 
 const version: SchemaVersionDto = {
   id: "version-1",
@@ -104,7 +109,7 @@ vi.mock("@/features/schemas/components/SchemaRunFeedbackQuestionnaire", () => ({
   SchemaRunFeedbackQuestionnaire: () => <div>Feedback questionnaire</div>,
 }));
 
-vi.mock("@/features/schemas/components/SchemaRunReportRenderer", () => ({
+vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () => ({
   SchemaRunReportRenderer: ({
     result,
     report,

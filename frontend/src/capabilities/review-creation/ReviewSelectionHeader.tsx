@@ -5,9 +5,20 @@ type Props = {
   count: number;
   total: number;
   onClear: () => void;
+  onSelectAll: () => void;
+  selectLabel: string;
+  selectDisabled: boolean;
 };
 
-export function ReviewSelectionHeader({ title, count, total, onClear }: Props) {
+export function ReviewSelectionHeader({
+  title,
+  count,
+  total,
+  onClear,
+  onSelectAll,
+  selectLabel,
+  selectDisabled,
+}: Props) {
   return (
     <div className="flex items-center justify-between gap-3">
       <div>
@@ -16,11 +27,14 @@ export function ReviewSelectionHeader({ title, count, total, onClear }: Props) {
           {count} of {total} selected
         </p>
       </div>
-      {count ? (
-        <AppButton type="button" variant="ghost" onClick={onClear}>
+      <div className="flex items-center gap-1">
+        <AppButton type="button" variant="ghost" disabled={selectDisabled} onClick={onSelectAll}>
+          {selectLabel}
+        </AppButton>
+        <AppButton type="button" variant="ghost" disabled={!count} onClick={onClear}>
           Clear
         </AppButton>
-      ) : null}
+      </div>
     </div>
   );
 }

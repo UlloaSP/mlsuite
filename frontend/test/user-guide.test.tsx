@@ -114,6 +114,17 @@ describe("user guide", () => {
     expect(steps[1].popover.description).toContain("registered models");
     expect(steps[2].popover.description).toContain("schemas");
     expect(steps[3].popover.description).toContain("System, Light, and Dark");
+    const highlight = driverMocks.configs[0].onHighlightStarted as (element?: Element) => void;
+    const target = container.querySelector('[data-user-guide-item="nav:Models"]')!;
+    const scrollIntoView = vi.fn();
+    target.scrollIntoView = scrollIntoView;
+    highlight(target);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: "nearest",
+      inline: "nearest",
+      behavior: "instant",
+    });
+    expect(() => highlight(undefined)).not.toThrow();
 
     await act(async () => driverMocks.instances[0].destroy());
     await Promise.resolve();
