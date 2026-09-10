@@ -25,11 +25,6 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
                 OR lower(o.slug) LIKE lower(concat('%', :search, '%'))
                 OR lower(coalesce(o.description, '')) LIKE lower(concat('%', :search, '%'))
             )
-            AND (
-                :filter = 'all'
-                OR :filter = 'public'
-                OR (:filter = 'private' AND o.id IS NULL)
-            )
             """)
-    Page<Organization> findCatalogPage(String search, String filter, Pageable pageable);
+    Page<Organization> findCatalogPage(String search, Pageable pageable);
 }

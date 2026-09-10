@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static dev.ulloasp.mlsuite.schema.SchemaFlowFixtures.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +35,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModel
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
+import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
@@ -72,7 +74,7 @@ class SchemaFlowServiceTest {
     @Mock private PredictionRunRepository runRepository;
     @Mock private PredictionResultRepository resultRepository;
     @Mock private PredictionResultFeedbackRepository feedbackRepository;
-    @Mock private SchemaReviewLinkRepository reviewLinkRepository;
+    @Mock private SchemaReviewRepository reviewRepository;
     @Mock private ModelRepository modelRepository;
     @Mock private WorkspaceAccessService workspaceAccessService;
     @Mock private WorkspaceAuthorizationService authorizationService;
@@ -85,15 +87,16 @@ class SchemaFlowServiceTest {
     @BeforeEach
     void setUp() {
         schemaService = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, runRepository, reviewLinkRepository,
-                workspaceAccessService, authorizationService);
+                bindingRepository, runRepository, reviewRepository,
+                workspaceAccessService, authorizationService, org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository.class),
+                org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository.class));
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, modelRepository, workspaceAccessService, authorizationService);
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, bindingRepository,
-                runRepository, resultRepository, modelRepository,
+                runRepository, resultRepository, feedbackRepository, modelRepository,
                 workspaceAccessService, authorizationService);
         feedbackService = new PredictionResultFeedbackService(userLookupService, workspaceAccessService,
-                authorizationService, resultRepository, feedbackRepository);
+                authorizationService, resultRepository, feedbackRepository, runRepository);
         when(userLookupService.requireById(7L)).thenReturn(user());
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization());
     }
@@ -125,7 +128,7 @@ class SchemaFlowServiceTest {
         assertEquals(2L, page.items().get(0).modelCount());
         assertEquals(1L, page.items().get(0).fieldCount());
         assertEquals("Alice", page.items().get(0).updatedByName());
-        verify(authorizationService).requireOrganizationRead(7L, 41L);
+        verify(authorizationService).requireModelView(7L, 41L);
     }
 
     @Test
@@ -199,6 +202,9 @@ class SchemaFlowServiceTest {
 
     @Test
     void createRun_PersistsPartialSuccessWhenEachBindingHasAResult() {
+        User creator = user();
+        creator.setEmail("alice@example.com");
+        when(userLookupService.requireById(7L)).thenReturn(creator);
         SchemaBookmark bookmark = bookmark();
         SchemaVersion version = bookmark.getVersion();
         when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark));
@@ -214,6 +220,19 @@ class SchemaFlowServiceTest {
                                 result(12L, PredictionResultStatus.FAILED))));
 
         assertEquals(PredictionRunStatus.PARTIAL_SUCCESS, run.getStatus());
+        assertEquals("Alice", run.getCreatedByName());
+        assertEquals("alice@example.com", run.getCreatedByEmail());
+        creator.setFullName("Renamed later");
+        assertEquals("Alice", run.getCreatedByName());
+        var detail = dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto.from(run, List.of());
+        var catalog = dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto.from(run);
+        assertEquals(detail.createdByName(), catalog.createdByName());
+        assertEquals("alice@example.com", catalog.createdByEmail());
+        var legacy = new PredictionRun(version, "legacy", Map.of(), PredictionRunStatus.SUCCESS);
+        org.junit.jupiter.api.Assertions.assertNull(
+                dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto.from(legacy, List.of()).createdByName());
+        org.junit.jupiter.api.Assertions.assertNull(
+                dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto.from(legacy).createdByEmail());
         verify(resultRepository, times(2)).save(any());
     }
 
@@ -250,7 +269,7 @@ class SchemaFlowServiceTest {
         when(runRepository.findLastPredictionRunId()).thenReturn(41L);
 
         assertEquals(41L, runService.getLastPredictionRunId(7L));
-        verify(authorizationService).requireOrganizationOperate(7L, 41L);
+        verify(authorizationService).requireRunPredictions(7L, 41L);
     }
 
     @Test
@@ -280,63 +299,4 @@ class SchemaFlowServiceTest {
                         JsonNodeFactory.instance.objectNode())));
     }
 
-    private CreatePredictionResultRequest result(Long modelId, PredictionResultStatus status) {
-        return new CreatePredictionResultRequest(modelId, Map.of("age", 52),
-                status == PredictionResultStatus.SUCCESS ? Map.of("reports", List.of()) : Map.of(),
-                status,
-                status == PredictionResultStatus.FAILED ? "failed" : null,
-                status == PredictionResultStatus.FAILED ? Map.of("status", 500) : null);
-    }
-
-    private Map<String, Object> formSchema() {
-        return Map.of("fields", List.of(Map.of("id", "age", "kind", "number", "label", "Age")));
-    }
-
-    private SchemaModelBinding binding(SchemaVersion version, Long modelId) {
-        return new SchemaModelBinding(version, model(modelId), Map.of());
-    }
-
-    private SchemaVersion version() {
-        SchemaVersion version = new SchemaVersion(schema(), 1, "v1", formSchema());
-        version.setId(9L);
-        return version;
-    }
-
-    private SchemaBookmark bookmark() {
-        SchemaBookmark bookmark = new SchemaBookmark(schema(), version(), "production");
-        bookmark.setId(70L);
-        return bookmark;
-    }
-
-    private PredictionResult predictionResult() {
-        PredictionRun run = new PredictionRun(version(), "case", Map.of(), PredictionRunStatus.SUCCESS);
-        PredictionResult result = new PredictionResult(run, model(11L),
-                Map.of(), Map.of(), PredictionResultStatus.SUCCESS, null, null);
-        result.setId(77L);
-        return result;
-    }
-
-    private Model model(Long id) {
-        Model model = new Model(); model.setId(id); model.setOrganization(organization());
-        model.setUser(user()); model.setName("model-" + id); return model;
-    }
-
-    private Schema schema() {
-        Schema schema = new Schema(organization(), "Risk", null); schema.setId(5L); schema.setUpdatedBy(user()); return schema;
-    }
-
-    private Organization organization() {
-        Organization organization = new Organization();
-        organization.setId(41L); organization.setName("Org"); organization.setSlug("org");
-        organization.setCreatedBy(user()); return organization;
-    }
-
-    private User user() {
-        User user = new User(); user.setId(7L); user.setUsername("alice"); user.setFullName("Alice"); return user;
-    }
-
-    private WorkspacePermissionsDto permissions() {
-        return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true, true, true);
-    }
 }

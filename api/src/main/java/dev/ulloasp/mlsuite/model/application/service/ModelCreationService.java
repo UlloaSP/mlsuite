@@ -5,14 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 package dev.ulloasp.mlsuite.model.application.service;
 
-import java.util.Map;
-
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
+import dev.ulloasp.mlsuite.model.application.port.in.ModelCreationUseCase;
 import dev.ulloasp.mlsuite.model.application.upload.BufferedMultipartFile;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
@@ -20,7 +19,7 @@ import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 
 @Service
-public class ModelCreationService {
+public class ModelCreationService implements ModelCreationUseCase {
 
     private final ModelCatalogUseCase modelCatalogUseCase;
     private final AnalyzerUseCase analyzerUseCase;
@@ -35,6 +34,7 @@ public class ModelCreationService {
         this.objectStorageService = objectStorageService;
     }
 
+    @Override
     @Transactional
     public CreateModelDto create(
             Long userId,

@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Pageable;
 
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
@@ -18,4 +19,15 @@ public interface SchemaVersionRepository extends JpaRepository<SchemaVersion, Lo
 
     @Query("SELECT COALESCE(MAX(sv.version), 0) FROM SchemaVersion sv WHERE sv.schema.id = :schemaId")
     int findMaxVersionBySchemaId(Long schemaId);
+
+    @Query("""
+            SELECT sv FROM SchemaVersion sv
+            WHERE sv.schema.organization.id = :organizationId
+            AND sv.schema.archivedAt IS NULL
+            AND (
+                lower(coalesce(sv.name, '')) LIKE lower(concat('%', :search, '%'))
+                OR lower(sv.schema.name) LIKE lower(concat('%', :search, '%'))
+            )
+            """)
+    List<SchemaVersion> searchByOrganizationId(Long organizationId, String search, Pageable pageable);
 }

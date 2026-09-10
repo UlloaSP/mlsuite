@@ -6,51 +6,28 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { FormEvent } from "react";
 import { useAtom } from "jotai";
 import { useState } from "react";
-import { themeWithHtmlAtom } from "../atoms";
-import type { LoginPayload, RegisterPayload } from "../../api/user/services";
-import { useLogin, useRegister } from "../../api/user/hooks";
+import { useSearchParams } from "react-router";
+import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
+import type { LoginPayload, RegisterPayload } from "@/capabilities/workspace-context/session-api";
+import { safeReturnTo, useLogin, useRegister } from "@/capabilities/workspace-context/session";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
 import { AuthHeader } from "./auth-landing/AuthHeader";
 import { AuthHero } from "./auth-landing/AuthHero";
-import { AuthOptions } from "./auth-landing/AuthOptions";
 import type { AuthMode } from "./auth-landing/authLandingCopy";
 
-const DEFAULT_AUTH_MODES = ["login", "register"] as const satisfies readonly AuthMode[];
-
-type AuthLandingPageProps = {
-  defaultMode?: AuthMode | null;
-  availableModes?: readonly AuthMode[];
-  onLogin?: (request: LoginPayload) => void;
-  onRegister?: (request: RegisterPayload) => void;
-  loginBusy?: boolean;
-  registerBusy?: boolean;
-  loginError?: unknown;
-  registerError?: unknown;
-};
-
-export function AuthLandingPage({
-  defaultMode = null,
-  availableModes = DEFAULT_AUTH_MODES,
-  onLogin,
-  onRegister,
-  loginBusy,
-  registerBusy,
-  loginError,
-  registerError,
-}: AuthLandingPageProps = {}) {
+export function AuthLandingPage() {
   const [theme] = useAtom(themeWithHtmlAtom);
-  const [selectedMode, setSelectedMode] = useState<AuthMode | null>(null);
-  const mode = selectedMode ?? defaultMode;
-  const login = useLogin();
-  const register = useRegister();
-  const busy = (loginBusy ?? login.isPending) || (registerBusy ?? register.isPending);
-  const submitError =
-    mode === "login" ? (loginError ?? login.error) : (registerError ?? register.error);
-  const enabledModes = availableModes.length > 0 ? availableModes : DEFAULT_AUTH_MODES;
+  const [searchParams] = useSearchParams();
+  const destination = safeReturnTo(searchParams.get("returnTo"));
+  const [mode, setMode] = useState<AuthMode>("login");
+  const login = useLogin(destination);
+  const register = useRegister(destination);
+  const busy = mode === "login" ? login.isPending : register.isPending;
+  const submitError = mode === "login" ? login.error : register.error;
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (mode === null || busy) return;
+    if (busy) return;
 
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get("email") ?? "");
@@ -58,10 +35,6 @@ export function AuthLandingPage({
 
     if (mode === "login") {
       const request: LoginPayload = { email, password };
-      if (onLogin) {
-        onLogin(request);
-        return;
-      }
       login.mutate(request);
       return;
     }
@@ -71,10 +44,6 @@ export function AuthLandingPage({
       password,
       fullName: String(formData.get("fullName") ?? ""),
     };
-    if (onRegister) {
-      onRegister(request);
-      return;
-    }
     register.mutate(request);
   };
 
@@ -95,18 +64,13 @@ export function AuthLandingPage({
             aria-label="Authentication"
           >
             <div className="w-full max-w-[620px] lg:mt-auto lg:max-w-none">
-              {mode === null ? (
-                <AuthOptions modes={enabledModes} onSelect={setSelectedMode} />
-              ) : (
-                <AuthFormPanel
-                  mode={mode}
-                  modes={enabledModes}
-                  busy={busy}
-                  error={submitError}
-                  onModeChange={setSelectedMode}
-                  onSubmit={submit}
-                />
-              )}
+              <AuthFormPanel
+                mode={mode}
+                busy={busy}
+                error={submitError}
+                onModeChange={setMode}
+                onSubmit={submit}
+              />
             </div>
           </aside>
         </section>

@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.plugin.application.service;
 
+import static dev.ulloasp.mlsuite.plugin.application.service.PluginCatalogValues.*;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
@@ -11,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,13 +51,7 @@ public class PluginServiceImpl implements
     private static final String ROOT_PREFIX = "plugins";
     private static final int DEFAULT_PAGE_SIZE = 24;
     private static final int MAX_PAGE_SIZE = 100;
-    private static final Pattern FIELD_KIND = Pattern.compile(
-            "defineField(?:Kind|Definition)\\s*\\([^)]*kind\\s*:\\s*['\"]([^'\"]+)['\"]",
-            Pattern.DOTALL);
-    private static final Pattern REPORT_KIND = Pattern.compile(
-            "defineReport(?:Kind|Definition)\\s*\\([^)]*kind\\s*:\\s*['\"]([^'\"]+)['\"]",
-            Pattern.DOTALL);
-
+    private final PluginObjectReader pluginObjects;
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
     private final ObjectMapper objectMapper;
@@ -74,6 +68,7 @@ public class PluginServiceImpl implements
             WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
             PluginMetadataRepository pluginMetadataRepository) {
+        this.pluginObjects = new PluginObjectReader(objectStorageService, storageProperties, objectMapper);
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
         this.objectMapper = objectMapper;
@@ -148,7 +143,7 @@ public class PluginServiceImpl implements
         workspaceAuthorizationService.requirePluginView(userId, organization.getId());
         Map<String, StoredPlugin> storedItems = new LinkedHashMap<>();
         Map<String, String> origins = new LinkedHashMap<>();
-        readItems(itemsPrefix(organization.getId()))
+        pluginObjects.list(organization.getId())
                 .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         List<PluginDto> catalog = new ArrayList<>();
         storedItems.values().forEach(item -> {
@@ -193,26 +188,9 @@ public class PluginServiceImpl implements
         Optional<byte[]> bytes =
                 objectStorageService.loadOptional(storageProperties.getBucket(), itemObjectKey(organizationId, id));
         if (bytes.isPresent()) {
-            return readStored(bytes.get());
+            return pluginObjects.decode(bytes.get());
         }
         throw new PluginNotFoundException(id);
-    }
-
-    private StoredPlugin readStored(byte[] bytes) {
-        try {
-            return objectMapper.readValue(bytes, StoredPlugin.class);
-        } catch (IOException ex) {
-            throw new IllegalStateException("Could not deserialize plugin.", ex);
-        }
-    }
-
-    private List<StoredPlugin> readItems(String prefix) {
-        return objectStorageService.list(prefix).stream()
-                .filter(item -> item.objectKey().endsWith(".json"))
-                .map(item -> objectStorageService.loadOptional(storageProperties.getBucket(), item.objectKey())
-                        .orElseThrow(() -> new IllegalStateException("Could not load plugin object.")))
-                .map(this::readStored)
-                .toList();
     }
 
     private void putStored(
@@ -230,75 +208,6 @@ public class PluginServiceImpl implements
         if (!ROOT_PREFIX.equals(existingOrigin) && !existingOrigin.equals(origin)) {
             throw new IllegalStateException("Duplicate legacy plugin id '" + item.id() + "' detected across storage roots.");
         }
-    }
-
-    private PluginDto toDto(StoredPlugin stored) {
-        PluginDescriptor descriptor = describe(stored.source());
-        return new PluginDto(
-                stored.id(),
-                stored.fileName(),
-                stored.contentType(),
-                stored.sizeBytes(),
-                stored.createdAt(),
-                stored.updatedAt(),
-                stored.updatedByName(),
-                stored.updatedByEmail(),
-                stored.updatedByAvatarUrl(),
-                stored.source(),
-                descriptor.type(),
-                descriptor.kind());
-    }
-
-    private PluginDescriptor describe(String source) {
-        PluginDescriptor field = matchDescriptor(source, "field", FIELD_KIND);
-        if (field != null) {
-            return field;
-        }
-        PluginDescriptor report = matchDescriptor(source, "report", REPORT_KIND);
-        if (report != null) {
-            return report;
-        }
-        return new PluginDescriptor("invalid", null);
-    }
-
-    private PluginDescriptor matchDescriptor(String source, String type, Pattern pattern) {
-        Matcher matcher = pattern.matcher(source);
-        return matcher.find() ? new PluginDescriptor(type, matcher.group(1)) : null;
-    }
-
-    private boolean matchesType(PluginDto item, String type) {
-        if ("field".equals(type) || "report".equals(type)) {
-            return type.equals(item.pluginType());
-        }
-        return true;
-    }
-
-    private boolean matchesSearch(PluginDto item, String search) {
-        String needle = search == null ? "" : search.strip().toLowerCase();
-        if (needle.isEmpty()) {
-            return true;
-        }
-        return item.fileName().toLowerCase().contains(needle)
-                || (item.kind() != null && item.kind().toLowerCase().contains(needle));
-    }
-
-    private Comparator<PluginDto> sortComparator(String sort) {
-        if ("name".equals(sort)) {
-            return Comparator
-                    .comparing((PluginDto item) -> displayName(item), String.CASE_INSENSITIVE_ORDER)
-                    .thenComparing(PluginDto::updatedAt, Comparator.reverseOrder());
-        }
-        return Comparator
-                .comparing(PluginDto::updatedAt, Comparator.reverseOrder())
-                .thenComparing(PluginDto::fileName, String.CASE_INSENSITIVE_ORDER);
-    }
-
-    private String displayName(PluginDto item) {
-        return item.kind() == null ? item.fileName() : item.kind();
-    }
-
-    private String itemsPrefix(Long organizationId) {
-        return PluginStoragePaths.organizationItemsPrefix(ROOT_PREFIX, organizationId);
     }
 
     private String itemObjectKey(Long organizationId, String id) {
@@ -320,6 +229,4 @@ public class PluginServiceImpl implements
         return value == null || value.isBlank() ? "application/typescript" : value;
     }
 
-    private record PluginDescriptor(String type, String kind) {
-    }
 }

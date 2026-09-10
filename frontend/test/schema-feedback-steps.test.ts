@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vite-plus/test";
-import { skippedSchemaReportPayload } from "../src/algorithms/schema/report-plugin-context";
-import { buildSchemaFeedbackSteps } from "../src/algorithms/schema/feedback-steps";
-import { getSchemaResultReports } from "../src/algorithms/schema/report-display";
-import type { PredictionRunDto, SchemaVersionDto } from "../src/api/schemas/dtos";
+import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
+import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 
 const version: SchemaVersionDto = {
   id: "version-1",
@@ -60,7 +60,7 @@ const run: PredictionRunDto = {
 describe("schema feedback steps", () => {
   test("builds output and explanation steps for successful mapped reports only", () => {
     const steps = buildSchemaFeedbackSteps(version, run.results, []);
-    expect(steps.map((step) => [step.resultId, step.type, step.title])).toEqual([
+    expect(steps.map((step) => [step.targets[0]?.resultId, step.type, step.title])).toEqual([
       ["result-1", "OUTPUT", "Score"],
       ["result-1", "EXPLANATION", "Score review"],
     ]);
@@ -216,11 +216,7 @@ describe("schema feedback steps", () => {
           ...run.results[0]!,
           id: "result-2",
           modelId: "model-2",
-          output: {
-            reports: [
-              { id: "tree_2", mappedTo: "crystal-tree", payload: skippedSchemaReportPayload },
-            ],
-          },
+          output: { reports: [] },
         },
       ],
     };
@@ -230,7 +226,9 @@ describe("schema feedback steps", () => {
     ).toEqual(["tree_1"]);
     expect(getSchemaResultReports(customVersion, customRun.results[1]!)).toEqual([]);
     expect(
-      buildSchemaFeedbackSteps(customVersion, customRun.results, []).map((step) => step.resultId),
+      buildSchemaFeedbackSteps(customVersion, customRun.results, []).map(
+        (step) => step.targets[0]?.resultId,
+      ),
     ).toEqual(["result-1"]);
   });
 
@@ -299,5 +297,89 @@ describe("schema feedback steps", () => {
     expect(
       buildSchemaFeedbackSteps(customVersion, customRun.results, []).map((step) => step.title),
     ).toEqual(["Crystal Tree 1 review"]);
+  });
+
+  test("builds one logical assessment for one report mapped to multiple models", () => {
+    const multiModelVersion: SchemaVersionDto = {
+      ...version,
+      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      formSchema: {
+        fields: [],
+        reports: [
+          {
+            id: "shared-score",
+            label: "Shared score",
+            kind: "classifier",
+            mappedTo: { "model-1": "classifier9", "model-2": "classifier9" },
+            labels: ["No", "Yes"],
+          },
+        ],
+      },
+    };
+    const results: PredictionRunDto["results"] = [
+      {
+        ...run.results[0]!,
+        output: {
+          reports: [{ id: "shared-score-model-1", mappedTo: "classifier9", prediction: "Yes" }],
+        },
+      },
+      {
+        ...run.results[0]!,
+        id: "result-2",
+        modelId: "model-2",
+        output: {
+          reports: [{ id: "shared-score-model-2", mappedTo: "classifier9", prediction: "No" }],
+        },
+      },
+    ];
+
+    const steps = buildSchemaFeedbackSteps(multiModelVersion, results, []);
+
+    expect(steps).toHaveLength(1);
+    expect(steps[0]?.targets.map((target) => target.resultId)).toEqual(["result-1", "result-2"]);
+  });
+
+  test("keeps separate assessments for separate reports sharing an analyzer key", () => {
+    const separateVersion: SchemaVersionDto = {
+      ...version,
+      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      formSchema: {
+        fields: [],
+        reports: [
+          {
+            id: "score-a",
+            label: "Score A",
+            kind: "classifier",
+            mappedTo: { "model-1": "classifier9" },
+          },
+          {
+            id: "score-b",
+            label: "Score B",
+            kind: "classifier",
+            mappedTo: { "model-2": "classifier9" },
+          },
+        ],
+      },
+    };
+    const results: PredictionRunDto["results"] = [
+      {
+        ...run.results[0]!,
+        output: { reports: [{ id: "score-a", mappedTo: "classifier9", prediction: "Yes" }] },
+      },
+      {
+        ...run.results[0]!,
+        id: "result-2",
+        modelId: "model-2",
+        output: { reports: [{ id: "score-b", mappedTo: "classifier9", prediction: "No" }] },
+      },
+    ];
+
+    const steps = buildSchemaFeedbackSteps(separateVersion, results, []);
+
+    expect(steps.map((step) => step.title)).toEqual(["Score A", "Score B"]);
+    expect(steps.map((step) => step.targets)).toMatchObject([
+      [{ resultId: "result-1" }],
+      [{ resultId: "result-2" }],
+    ]);
   });
 });

@@ -15,6 +15,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
 @Service
@@ -41,12 +42,21 @@ public class WorkspaceBootstrapService {
     }
 
     public Organization ensureCurrentOrganization(User user) {
-        if (user.getCurrentOrganization() != null) {
+        if (user.getSystemRole() == SystemRole.SUPERADMIN && user.getCurrentOrganization() != null) {
             backfillModels(user, user.getCurrentOrganization());
             return user.getCurrentOrganization();
         }
 
         List<OrganizationMembership> memberships = membershipRepository.findActiveByUserId(user.getId());
+        if (user.getCurrentOrganization() != null) {
+            var currentMembership = memberships.stream()
+                    .filter(membership -> membership.getOrganization().getId().equals(user.getCurrentOrganization().getId()))
+                    .findFirst();
+            if (currentMembership.isPresent()) {
+                backfillModels(user, user.getCurrentOrganization());
+                return user.getCurrentOrganization();
+            }
+        }
         if (!memberships.isEmpty()) {
             Organization current = memberships.get(0).getOrganization();
             user.setCurrentOrganization(current);
@@ -62,12 +72,14 @@ public class WorkspaceBootstrapService {
                 user.getAvatarUrl(),
                 user));
         roleSeedService.ensureOrganizationRoles(organization);
-        roleSeedService.externalReviewerRole(organization);
-        membershipRepository.save(new OrganizationMembership(
+        roleSeedService.reviewerRole(organization);
+        OrganizationMembership membership = new OrganizationMembership(
                 organization,
                 user,
                 OrganizationRole.OWNER,
-                MembershipStatus.ACTIVE));
+                MembershipStatus.ACTIVE);
+        membership.setRoleDefinition(roleSeedService.orgRole(organization, OrganizationRole.OWNER));
+        membershipRepository.save(membership);
         user.setCurrentOrganization(organization);
         userRepository.save(user);
         backfillModels(user, organization);

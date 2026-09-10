@@ -10,9 +10,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundExc
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
-import dev.ulloasp.mlsuite.team.domain.exception.TeamNotFoundException;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -25,19 +22,16 @@ public class WorkspaceAccessService {
     private final WorkspaceBootstrapService workspaceBootstrapService;
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
-    private final TeamRepository teamRepository;
 
     public WorkspaceAccessService(
             UserLookupService userLookupService,
             WorkspaceBootstrapService workspaceBootstrapService,
             OrganizationRepository organizationRepository,
-            OrganizationMembershipRepository membershipRepository,
-            TeamRepository teamRepository) {
+            OrganizationMembershipRepository membershipRepository) {
         this.userLookupService = userLookupService;
         this.workspaceBootstrapService = workspaceBootstrapService;
         this.organizationRepository = organizationRepository;
         this.membershipRepository = membershipRepository;
-        this.teamRepository = teamRepository;
     }
 
     public User requireUser(Long userId) {
@@ -47,7 +41,7 @@ public class WorkspaceAccessService {
     }
 
     public Organization requireCurrentOrganization(Long userId) {
-        return workspaceBootstrapService.ensureCurrentOrganization(requireUser(userId));
+        return requireUser(userId).getCurrentOrganization();
     }
 
     public OrganizationMembership requireMembership(Long userId, Long organizationId) {
@@ -57,40 +51,8 @@ public class WorkspaceAccessService {
         if (isSuperadmin(user)) {
             return new OrganizationMembership(organization, user, OrganizationRole.OWNER, dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE);
         }
-        return membershipRepository.findByOrganizationIdAndUserId(organizationId, userId)
+        return membershipRepository.findActiveByOrganizationIdAndUserId(organizationId, userId)
                 .orElseThrow(() -> new OrganizationAccessDeniedException(organizationId));
-    }
-
-    public Organization requireAdminOrganization(Long userId, Long organizationId) {
-        User user = requireUser(userId);
-        if (isSuperadmin(user)) {
-            return organizationRepository.findById(organizationId)
-                    .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        }
-        OrganizationMembership membership = requireMembership(userId, organizationId);
-        if (membership.getRole() != OrganizationRole.OWNER && membership.getRole() != OrganizationRole.ADMIN) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-        return membership.getOrganization();
-    }
-
-    public Organization requireOwnerOrganization(Long userId, Long organizationId) {
-        User user = requireUser(userId);
-        if (isSuperadmin(user)) {
-            return organizationRepository.findById(organizationId)
-                    .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        }
-        OrganizationMembership membership = requireMembership(userId, organizationId);
-        if (membership.getRole() != OrganizationRole.OWNER) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-        return membership.getOrganization();
-    }
-
-    public Team requireTeamInAccessibleOrganization(Long userId, Long teamId) {
-        Team team = teamRepository.findById(teamId).orElseThrow(() -> new TeamNotFoundException(teamId));
-        requireMembership(userId, team.getOrganization().getId());
-        return team;
     }
 
     public boolean isSuperadmin(Long userId) {

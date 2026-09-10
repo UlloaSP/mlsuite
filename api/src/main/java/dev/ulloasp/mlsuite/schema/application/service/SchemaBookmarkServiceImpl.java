@@ -83,7 +83,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     private Long requireRead(Long userId) {
         userLookupService.requireById(userId);
         Long orgId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, orgId);
+        authorizationService.requireModelView(userId, orgId);
         return orgId;
     }
 

@@ -7,9 +7,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/src/shared/ui/appearance.css" />
     <!-- 1. El navegador sabe que hay dos esquemas de color -->
     <meta name="color-scheme" content="dark light" />
 
@@ -23,68 +24,43 @@
 
       :root {
         color-scheme: light;
-        --font-sans:
-          "Airbnb Cereal VF", "Circular", "Avenir Next", "Segoe UI", -apple-system,
-          BlinkMacSystemFont, sans-serif;
-        --font-display:
-          "Airbnb Cereal VF", "Circular", "Avenir Next", "Segoe UI", -apple-system,
-          BlinkMacSystemFont, sans-serif;
-        --page-bg: #f7f7f7;
-        --page-bg-accent: rgba(255, 56, 92, 0.08);
-        --surface-primary: #ffffff;
-        --surface-secondary: #fcfcfc;
-        --surface-muted: #f2f2f2;
-        --surface-inverse: #222222;
-        --text-primary: #222222;
-        --text-secondary: #6a6a6a;
-        --text-muted: #929292;
-        --text-inverse: #ffffff;
-        --border-soft: #ebebeb;
-        --border-strong: #dddddd;
-        --accent-primary: #ff385c;
-        --accent-primary-strong: #e00b41;
-        --accent-quiet: #fff1f3;
-        --success-quiet: #edfdf5;
-        --success-text: #047857;
-        --warning-quiet: #fff7ed;
-        --warning-text: #c2410c;
-        --danger-quiet: #fff1f3;
-        --danger-text: #c13515;
-        --shadow-card:
-          rgba(0, 0, 0, 0.02) 0px 0px 0px 1px, rgba(0, 0, 0, 0.04) 0px 2px 6px,
-          rgba(0, 0, 0, 0.1) 0px 4px 8px;
-        --shadow-hover: rgba(0, 0, 0, 0.08) 0px 4px 12px;
+        --ui-font-size: 16px;
+        --code-font-size: 13px;
+        --font-sans: "Manrope", "Trebuchet MS", sans-serif;
+        --font-display: "Manrope", "Trebuchet MS", sans-serif;
+        --font-mono: "DM Mono", "Consolas", ui-monospace, monospace;
         --radius-card: 24px;
         --radius-pill: 999px;
-        --sidebar-bg: rgba(255, 255, 255, 0.92);
         background: var(--page-bg);
+        font-size: var(--ui-font-size);
         font-family: var(--font-sans);
+      }
+
+      html[data-interface-font="segoe"] {
+        --font-sans: "IBM Plex Sans", Arial, sans-serif;
+        --font-display: "IBM Plex Sans", Arial, sans-serif;
+      }
+
+      html[data-interface-font="avenir"] {
+        --font-sans: "Source Sans 3", Verdana, sans-serif;
+        --font-display: "Source Sans 3", Verdana, sans-serif;
+      }
+
+      html[data-interface-font="system"] {
+        --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+        --font-display: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+
+      html[data-monospace-font="consolas"] {
+        --font-mono: "Consolas", "Courier New", monospace;
+      }
+
+      html[data-monospace-font="system-mono"] {
+        --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
       }
 
       html.dark {
         color-scheme: dark;
-        --page-bg: #101418;
-        --page-bg-accent: rgba(255, 56, 92, 0.12);
-        --surface-primary: #171a1d;
-        --surface-secondary: #1d2125;
-        --surface-muted: #262b31;
-        --surface-inverse: #ffffff;
-        --text-primary: #f5f5f5;
-        --text-secondary: #c1c1c1;
-        --text-muted: #929292;
-        --text-inverse: #222222;
-        --border-soft: #2d3238;
-        --border-strong: #3b4148;
-        --accent-quiet: rgba(255, 56, 92, 0.18);
-        --success-quiet: rgba(4, 120, 87, 0.16);
-        --success-text: #6ee7b7;
-        --warning-quiet: rgba(194, 65, 12, 0.16);
-        --warning-text: #fdba74;
-        --danger-quiet: rgba(193, 53, 21, 0.2);
-        --danger-text: #fda4af;
-        --shadow-card: rgba(0, 0, 0, 0.16) 0px 0px 0px 1px, rgba(0, 0, 0, 0.22) 0px 12px 28px;
-        --shadow-hover: rgba(0, 0, 0, 0.24) 0px 18px 36px;
-        --sidebar-bg: rgba(23, 26, 29, 0.94);
       }
 
       html,
@@ -131,6 +107,10 @@
       .theme-corner-transition::view-transition-old(root) {
         animation: none;
         mix-blend-mode: normal;
+      }
+
+      :root.theme-corner-transition::view-transition-group(root) {
+        animation: none !important;
       }
 
       ::view-transition-old(app-content),
@@ -197,33 +177,6 @@
         background-clip: padding-box;
       }
 
-      .schema-editor-line-added {
-        background: color-mix(in srgb, var(--success-text) 14%, transparent);
-      }
-
-      .schema-editor-line-modified {
-        background: color-mix(in srgb, var(--warning-text) 14%, transparent);
-      }
-
-      .schema-editor-line-deleted {
-        background: color-mix(in srgb, var(--danger-text) 14%, transparent);
-      }
-
-      .schema-editor-gutter-added,
-      .schema-editor-glyph-added {
-        border-left: 3px solid var(--success-text);
-      }
-
-      .schema-editor-gutter-modified,
-      .schema-editor-glyph-modified {
-        border-left: 3px solid var(--warning-text);
-      }
-
-      .schema-editor-gutter-deleted,
-      .schema-editor-glyph-deleted {
-        border-left: 3px solid var(--danger-text);
-      }
-
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -242,47 +195,11 @@
         }
       }
     </style>
-    <script>
-      (function () {
-        const KEY = "ui/theme";
-        const modes = ["dark", "light", "system"];
-        const resolveTheme = (mode) =>
-          mode === "system"
-            ? matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light"
-            : mode;
-        const applyTheme = (mode) => {
-          const safeMode = modes.includes(mode) ? mode : "system";
-          const theme = resolveTheme(safeMode);
-
-          document.documentElement.classList.toggle("dark", theme === "dark");
-
-          const meta = document.querySelector('meta[name="theme-color"][media*="color-scheme"]');
-          if (meta) meta.setAttribute("content", theme === "dark" ? "#101418" : "#f7f7f7");
-          return theme;
-        };
-        const raw = localStorage.getItem(KEY);
-        let saved = null;
-        try {
-          saved = raw ? JSON.parse(raw) : null;
-        } catch {
-          saved = raw;
-        }
-        window.__MLSUITE_APPLY_THEME__ = applyTheme;
-        applyTheme(saved);
-
-        const transitionStyle = document.createElement("style");
-        transitionStyle.textContent =
-          ":root.theme-corner-transition::view-transition-group(root){animation:none!important;}" +
-          ":root.theme-corner-transition::view-transition-new(root){animation:theme-corner-reveal 520ms cubic-bezier(0.22,1,0.36,1) both!important;}";
-        document.head.append(transitionStyle);
-      })();
-    </script>
+    <script src="/appearance-boot.js"></script>
   </head>
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/app/main.tsx"></script>
   </body>
 </html>

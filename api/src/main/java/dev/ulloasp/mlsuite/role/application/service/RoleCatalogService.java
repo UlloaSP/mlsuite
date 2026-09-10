@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
 import dev.ulloasp.mlsuite.role.application.dto.PermissionDto;
@@ -54,7 +53,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
 
     @Override
     public RolesResponseDto list(Long userId, Long organizationId) {
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireOrganizationRoleView(userId, organizationId);
         roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId)));
         var roles = roleRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)
@@ -69,9 +68,8 @@ public class RoleCatalogService implements RoleCatalogUseCase {
                 group("Organization", "VIEW_WORKSPACE", "VIEW_ORGANIZATION", "EDIT_ORGANIZATION", "DELETE_ORGANIZATION", "TRANSFER_OWNERSHIP"),
                 group("Members", "VIEW_MEMBERS", "INVITE_MEMBERS", "MANAGE_MEMBER_ROLES", "REMOVE_MEMBERS"),
                 group("Invitations", "VIEW_INVITATIONS", "MANAGE_INVITATIONS"),
-                group("Teams", "VIEW_TEAMS", "CREATE_TEAMS", "EDIT_TEAMS", "DELETE_TEAMS"),
-                group("Models", "VIEW_MODELS", "CREATE_MODELS", "EDIT_MODELS", "DELETE_MODELS", "RUN_PREDICTIONS", "EXPORT_PREDICTIONS", "MANAGE_REVIEW_LINKS"),
-                group("Reviews", "EXTERNAL_REVIEW"),
+                group("Models", "VIEW_MODELS", "CREATE_MODELS", "EDIT_MODELS", "DELETE_MODELS", "RUN_PREDICTIONS", "EXPORT_PREDICTIONS"),
+                group("Reviews", "REVIEW", "MANAGE_REVIEWS"),
                 group("Plugins", "VIEW_PLUGINS", "MANAGE_PLUGINS"),
                 group("Audit", "VIEW_AUDIT_LOG"));
     }
@@ -84,7 +82,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
 
     public RoleDefinitionDto toDto(Long userId, Long orgId, RoleDefinition role) {
         boolean canManage = authorizationService.workspacePermissions(userId, orgId).canManageMemberRoles();
-        long users = membershipRepository.countByRoleDefinitionIdAndStatus(role.getId(), MembershipStatus.ACTIVE);
+        long users = membershipRepository.countActiveByRoleDefinitionId(role.getId());
         return new RoleDefinitionDto(
                 role.getId(),
                 role.getName(),

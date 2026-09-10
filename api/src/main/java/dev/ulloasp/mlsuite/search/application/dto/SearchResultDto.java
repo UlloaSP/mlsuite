@@ -7,6 +7,5 @@ public record SearchResultDto(
         String subtitle,
         String href,
         Long organizationId,
-        Long teamId,
         Long modelId) {
 }

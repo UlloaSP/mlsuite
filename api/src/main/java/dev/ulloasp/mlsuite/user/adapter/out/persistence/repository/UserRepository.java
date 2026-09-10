@@ -15,7 +15,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
@@ -35,15 +34,13 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                 SELECT 1 FROM OrganizationMembership m
                 WHERE m.organization.id = :organizationId
                 AND m.user.id = u.id
-                AND m.status = :status
+                AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE
             )
             ORDER BY LOWER(u.fullName) ASC, LOWER(u.email) ASC
             """)
-    List<User> findEnabledUsersOutsideOrganization(
-            @Param("organizationId") Long organizationId,
-            @Param("status") MembershipStatus status);
+    List<User> findEnabledUsersOutsideActiveOrganization(@Param("organizationId") Long organizationId);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE User u SET u.currentOrganization = null WHERE u.currentOrganization.id = :organizationId")
     void clearCurrentOrganization(@Param("organizationId") Long organizationId);
 }

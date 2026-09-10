@@ -1,6 +1,7 @@
 from io import BytesIO
 
 import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
 from mlsuite_backend.main import app
@@ -13,6 +14,16 @@ from tests.helpers import (
 )
 
 client = TestClient(app)
+
+
+@pytest.mark.parametrize("content", [b"", b"This is not a joblib artifact.", b"\x80\x04"])
+def test_inspect_artifact_rejects_corrupted_joblib(content: bytes) -> None:
+    response = client.post(
+        "/inspect_artifact",
+        files={"artifact_file": ("corrupt.joblib", BytesIO(content), "application/octet-stream")},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Cannot read joblib artifact: the file is empty, corrupt, or incompatible."
 
 
 def test_inspect_artifact_identifies_model() -> None:

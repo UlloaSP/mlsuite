@@ -22,15 +22,12 @@ import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
+import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
-import dev.ulloasp.mlsuite.team.domain.model.TeamMembership;
-import dev.ulloasp.mlsuite.team.domain.model.TeamRole;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -44,9 +41,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     private final WorkspaceAccessService workspaceAccessService;
     private final InvitationRepository invitationRepository;
-    private final TeamRepository teamRepository;
     private final OrganizationMembershipRepository organizationMembershipRepository;
-    private final TeamMembershipRepository teamMembershipRepository;
+    private final OrganizationRepository organizationRepository;
     private final UserLookupService userLookupService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final AuditLogService auditLogService;
@@ -57,9 +53,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     public InvitationManagementService(
             WorkspaceAccessService workspaceAccessService,
             InvitationRepository invitationRepository,
-            TeamRepository teamRepository,
             OrganizationMembershipRepository organizationMembershipRepository,
-            TeamMembershipRepository teamMembershipRepository,
+            OrganizationRepository organizationRepository,
             UserLookupService userLookupService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
             AuditLogService auditLogService,
@@ -68,9 +63,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
             UserRepository userRepository) {
         this.workspaceAccessService = workspaceAccessService;
         this.invitationRepository = invitationRepository;
-        this.teamRepository = teamRepository;
         this.organizationMembershipRepository = organizationMembershipRepository;
-        this.teamMembershipRepository = teamMembershipRepository;
+        this.organizationRepository = organizationRepository;
         this.userLookupService = userLookupService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.auditLogService = auditLogService;
@@ -81,16 +75,16 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     @Override
     public List<InvitationDto> listInvitations(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
+        var permissions = workspaceAuthorizationService.requireInvitationView(userId, organizationId);
         return invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
-                .map(InvitationDto::from)
+                .map(invitation -> InvitationDto.from(invitation, permissions.canManageInvitations()))
                 .toList();
     }
 
     @Override
     public List<InvitationCandidateDto> listInvitationCandidates(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
-        return userRepository.findEnabledUsersOutsideOrganization(organizationId, MembershipStatus.ACTIVE)
+        workspaceAuthorizationService.requireInvitationCreate(userId, organizationId);
+        return userRepository.findEnabledUsersOutsideActiveOrganization(organizationId)
                 .stream()
                 .map(InvitationCandidateDto::from)
                 .toList();
@@ -99,21 +93,17 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     @Override
     public InvitationDto createInvitation(Long userId, Long organizationId, CreateInvitationRequest request) {
         User user = workspaceAccessService.requireUser(userId);
-        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
-        var organization = workspaceAccessService.requireMembership(userId, organizationId).getOrganization();
+        workspaceAuthorizationService.requireInvitationCreate(userId, organizationId);
+        var organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         roleSeedService.ensureOrganizationRoles(organization);
         RoleDefinition roleDefinition = resolveRoleDefinition(organization, request);
         OrganizationRole legacyRole = legacyRole(roleDefinition);
         if (!workspaceAuthorizationService.workspacePermissions(userId, organizationId).canTransferOwnership() && legacyRole == OrganizationRole.OWNER) {
             throw new IllegalArgumentException("Only owners can transfer ownership.");
         }
-        Team team = request.teamId() != null ? teamRepository.findById(request.teamId())
-                .filter(candidate -> candidate.getOrganization().getId().equals(organizationId))
-                .orElseThrow(() -> new IllegalArgumentException("Team does not belong to organization."))
-                : null;
         Invitation invitation = new Invitation(
                 organization,
-                team,
                 request.email().strip().toLowerCase(),
                 legacyRole,
                 roleDefinition,
@@ -214,35 +204,22 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     private void acceptPendingInvitation(Invitation invitation, User user) {
         roleSeedService.ensureOrganizationRoles(invitation.getOrganization());
-        organizationMembershipRepository.findByOrganizationIdAndUserId(invitation.getOrganization().getId(), user.getId())
-                .orElseGet(() -> {
-                    OrganizationMembership membership = new OrganizationMembership(invitation.getOrganization(), user, invitation.getRole(), MembershipStatus.ACTIVE);
-                    membership.setRoleDefinition(invitation.getRoleDefinition() != null
-                            ? invitation.getRoleDefinition()
-                            : roleSeedService.orgRole(invitation.getOrganization(), invitation.getRole()));
-                    return organizationMembershipRepository.save(membership);
-                });
-        if (invitation.getTeam() != null) {
-            roleSeedService.ensureTeamRoles(invitation.getTeam());
-            teamMembershipRepository.findByTeamIdAndUserId(invitation.getTeam().getId(), user.getId())
-                    .orElseGet(() -> {
-                        TeamRole role = mapRole(invitation.getRole());
-                        TeamMembership membership = new TeamMembership(invitation.getTeam(), user, role, MembershipStatus.ACTIVE);
-                        membership.setRoleDefinition(roleSeedService.teamRole(invitation.getTeam(), role));
-                        return teamMembershipRepository.save(membership);
-                    });
+        RoleDefinition roleDefinition = invitation.getRoleDefinition() != null
+                ? invitation.getRoleDefinition()
+                : roleSeedService.orgRole(invitation.getOrganization(), invitation.getRole());
+        var existingMembership = organizationMembershipRepository
+                .findByOrganizationIdAndUserId(invitation.getOrganization().getId(), user.getId());
+        OrganizationMembership membership = existingMembership.orElseGet(() -> new OrganizationMembership(
+                invitation.getOrganization(), user, invitation.getRole(), MembershipStatus.ACTIVE));
+        if (existingMembership.isEmpty() || membership.getStatus() != MembershipStatus.ACTIVE) {
+            membership.setStatus(MembershipStatus.ACTIVE);
+            membership.setRole(invitation.getRole());
+            membership.setRoleDefinition(roleDefinition);
+            organizationMembershipRepository.save(membership);
         }
         user.setCurrentOrganization(invitation.getOrganization());
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepository.save(invitation);
-    }
-
-    private TeamRole mapRole(OrganizationRole role) {
-        return switch (role) {
-            case OWNER, ADMIN -> TeamRole.TEAM_ADMIN;
-            case MEMBER -> TeamRole.TEAM_MEMBER;
-            case VIEWER -> TeamRole.TEAM_VIEWER;
-        };
     }
 
     private RoleDefinition resolveRoleDefinition(Organization organization, CreateInvitationRequest request) {

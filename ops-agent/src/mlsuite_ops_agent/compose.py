@@ -69,7 +69,7 @@ class ComposeGateway:
         return stdout.decode("utf-8", "ignore")
 
     async def service_snapshot(self) -> list[dict[str, Any]]:
-        ps_output = await self.run("ps", "--format", "json")
+        ps_output = await self.run("ps", "--all", "--format", "json")
         ps_rows = _parse_json_rows(ps_output)
         stats_output = await self._docker_stats()
         stats = {row.get("Name"): row for row in _parse_json_rows(stats_output)}
@@ -137,7 +137,7 @@ class ComposeGateway:
         self.assert_managed(service_name)
         match action:
             case "START":
-                await self.run("up", "-d", service_name)
+                await self.run("up", "-d", "--no-deps", service_name)
             case "STOP":
                 await self.run("stop", service_name)
             case "RESTART":

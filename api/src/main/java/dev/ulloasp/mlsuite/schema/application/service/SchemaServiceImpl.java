@@ -17,6 +17,8 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
@@ -26,7 +28,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewLinkRepository;
+import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -42,22 +44,27 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     private final SchemaVersionRepository versionRepository;
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
-    private final SchemaReviewLinkRepository reviewLinkRepository;
+    private final SchemaReviewRepository reviewRepository;
+    private final SchemaDraftRepository draftRepository;
+    private final SchemaBookmarkRepository bookmarkRepository;
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
 
     public SchemaServiceImpl(UserLookupService userLookupService, SchemaRepository schemaRepository,
             SchemaVersionRepository versionRepository, SchemaModelBindingRepository bindingRepository,
-            PredictionRunRepository runRepository, SchemaReviewLinkRepository reviewLinkRepository,
-            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService) {
+            PredictionRunRepository runRepository, SchemaReviewRepository reviewRepository,
+            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService,
+            SchemaDraftRepository draftRepository, SchemaBookmarkRepository bookmarkRepository) {
         this.userLookupService = userLookupService;
         this.schemaRepository = schemaRepository;
         this.versionRepository = versionRepository;
         this.bindingRepository = bindingRepository;
         this.runRepository = runRepository;
-        this.reviewLinkRepository = reviewLinkRepository;
+        this.reviewRepository = reviewRepository;
         this.workspaceAccessService = workspaceAccessService;
         this.authorizationService = authorizationService;
+        this.draftRepository = draftRepository;
+        this.bookmarkRepository = bookmarkRepository;
     }
 
     @Override
@@ -79,7 +86,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     public List<Schema> listSchemas(Long userId) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireModelView(userId, organizationId);
         return schemaRepository.findByOrganizationIdAndArchivedAtIsNullOrderByCreatedAtDesc(organizationId);
     }
 
@@ -87,7 +94,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     public SchemaPageDto getSchemaPage(Long userId, int page, int size, String search, String sort, String status) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireModelView(userId, organizationId);
         Page<Schema> schemas = schemaRepository.findCatalogPage(
                 organizationId,
                 normalizeSearch(search),
@@ -106,7 +113,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     public Schema getSchema(Long userId, Long schemaId) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireModelView(userId, organizationId);
         return requireSchema(schemaId, organizationId);
     }
 
@@ -163,10 +170,12 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireDelete(userId, organization.getId());
         Schema schema = requireSchema(schemaId, organization.getId());
-        if (runRepository.existsBySchemaId(schemaId) || reviewLinkRepository.existsBySchemaId(schemaId)) {
+        if (runRepository.existsBySchemaId(schemaId) || reviewRepository.existsBySchemaId(schemaId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Schema is used by prediction runs or review links. Archive it instead.");
+                    "Schema is used by prediction runs or reviews. Archive it instead.");
         }
+        draftRepository.deleteBySchemaId(schemaId);
+        bookmarkRepository.deleteBySchemaId(schemaId);
         versionRepository.findBySchemaIdOrderByVersionDesc(schemaId).forEach(version -> {
             bindingRepository.findBySchemaVersionId(version.getId()).forEach(bindingRepository::delete);
             versionRepository.delete(version);

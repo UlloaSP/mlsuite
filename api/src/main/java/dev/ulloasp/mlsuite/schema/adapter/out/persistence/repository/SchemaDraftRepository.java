@@ -12,6 +12,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraft;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
 
 public interface SchemaDraftRepository extends JpaRepository<SchemaDraft, Long> {
+    void deleteBySchemaId(Long schemaId);
     List<SchemaDraft> findBySchemaIdAndStatusNotOrderByUpdatedAtDesc(
             Long schemaId, SchemaDraftStatus status);
 

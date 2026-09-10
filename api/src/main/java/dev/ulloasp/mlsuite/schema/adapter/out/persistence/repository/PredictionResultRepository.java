@@ -11,6 +11,8 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 public interface PredictionResultRepository extends JpaRepository<PredictionResult, Long> {
     List<PredictionResult> findByRunIdOrderByIdAsc(Long runId);
 
+    void deleteByRun_Id(Long runId);
+
     @Query("""
             SELECT r FROM PredictionResult r
             WHERE r.id = :id

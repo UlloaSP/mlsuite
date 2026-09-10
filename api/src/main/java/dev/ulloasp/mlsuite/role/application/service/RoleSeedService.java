@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.role.application.service;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.boot.ApplicationArguments;
@@ -8,9 +10,10 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
+import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
-import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
@@ -21,35 +24,27 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.role.domain.model.RoleTemplate;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
-import dev.ulloasp.mlsuite.team.domain.model.TeamMembership;
-import dev.ulloasp.mlsuite.team.domain.model.TeamRole;
 
 @Service
 public class RoleSeedService implements ApplicationRunner {
 
     private final OrganizationRepository organizationRepository;
-    private final TeamRepository teamRepository;
     private final OrganizationMembershipRepository orgMembershipRepository;
-    private final TeamMembershipRepository teamMembershipRepository;
+    private final InvitationRepository invitationRepository;
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final RoleTemplateRepository roleTemplateRepository;
     private final LegacyRolePermissionMapper mapper;
 
     public RoleSeedService(
             OrganizationRepository organizationRepository,
-            TeamRepository teamRepository,
             OrganizationMembershipRepository orgMembershipRepository,
-            TeamMembershipRepository teamMembershipRepository,
+            InvitationRepository invitationRepository,
             RoleDefinitionRepository roleDefinitionRepository,
             RoleTemplateRepository roleTemplateRepository,
             LegacyRolePermissionMapper mapper) {
         this.organizationRepository = organizationRepository;
-        this.teamRepository = teamRepository;
         this.orgMembershipRepository = orgMembershipRepository;
-        this.teamMembershipRepository = teamMembershipRepository;
+        this.invitationRepository = invitationRepository;
         this.roleDefinitionRepository = roleDefinitionRepository;
         this.roleTemplateRepository = roleTemplateRepository;
         this.mapper = mapper;
@@ -59,36 +54,49 @@ public class RoleSeedService implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         seedTemplates();
-        organizationRepository.findAll().forEach(this::ensureOrganizationRoles);
-        teamRepository.findAll().forEach(this::ensureTeamRoles);
+        organizationRepository.findAll().forEach(organization -> {
+            Map<OrganizationRole, RoleDefinition> systemRoles = organizationRoles(organization);
+            migrateLegacyAssignments(organization, systemRoles);
+        });
     }
 
     @Transactional
     public void ensureOrganizationRoles(Organization organization) {
-        for (OrganizationRole role : OrganizationRole.values()) {
-            RoleDefinition def = orgRole(organization, role);
-            orgMembershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(organization.getId(), MembershipStatus.ACTIVE)
-                    .stream()
-                    .filter(membership -> membership.getRoleDefinition() == null && membership.getRole() == role)
-                    .forEach(membership -> membership.setRoleDefinition(def));
-        }
+        organizationRoles(organization);
     }
 
-    @Transactional
-    public void ensureTeamRoles(Team team) {
-        for (TeamRole role : TeamRole.values()) {
-            RoleDefinition def = teamRole(team, role);
-            teamMembershipRepository.findByTeamIdAndStatusOrderByCreatedAtAsc(team.getId(), MembershipStatus.ACTIVE)
-                    .stream()
-                    .filter(membership -> membership.getRoleDefinition() == null && membership.getRole() == role)
-                    .forEach(membership -> membership.setRoleDefinition(def));
+    private Map<OrganizationRole, RoleDefinition> organizationRoles(Organization organization) {
+        Map<OrganizationRole, RoleDefinition> roles = new EnumMap<>(OrganizationRole.class);
+        for (OrganizationRole role : OrganizationRole.values()) {
+            roles.put(role, orgRole(organization, role));
+        }
+        return roles;
+    }
+
+    private void migrateLegacyAssignments(
+            Organization organization,
+            Map<OrganizationRole, RoleDefinition> systemRoles) {
+        List<OrganizationMembership> memberships = orgMembershipRepository.findByOrganizationId(organization.getId()).stream()
+                .filter(membership -> membership.getRoleDefinition() == null)
+                .toList();
+        memberships.forEach(membership -> membership.setRoleDefinition(systemRoles.get(membership.getRole())));
+        if (!memberships.isEmpty()) {
+            orgMembershipRepository.saveAll(memberships);
+        }
+
+        List<Invitation> invitations = invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organization.getId()).stream()
+                .filter(invitation -> invitation.getRoleDefinition() == null)
+                .toList();
+        invitations.forEach(invitation -> invitation.setRoleDefinition(systemRoles.get(invitation.getRole())));
+        if (!invitations.isEmpty()) {
+            invitationRepository.saveAll(invitations);
         }
     }
 
     public RoleDefinition orgRole(Organization org, OrganizationRole role) {
         return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.name())
                 .map(definition -> ensureSystemRolePermissions(definition, mapper.organization(role)))
-                .orElseGet(() -> saveRole(new RoleDefinition(org, null, RoleScope.ORGANIZATION, label(role.name()), role.name().toLowerCase(), role.name()), mapper.organization(role)));
+                .orElseGet(() -> saveRole(new RoleDefinition(org, RoleScope.ORGANIZATION, label(role.name()), role.name().toLowerCase(), role.name()), mapper.organization(role)));
     }
 
     private RoleDefinition ensureSystemRolePermissions(RoleDefinition role, Set<PermissionKey> permissions) {
@@ -99,35 +107,29 @@ public class RoleSeedService implements ApplicationRunner {
         return role;
     }
 
-    public RoleDefinition externalReviewerRole(Organization org) {
-        OrganizationSystemRole role = OrganizationSystemRole.EXTERNAL_REVIEWER;
+    public RoleDefinition reviewerRole(Organization org) {
+        OrganizationSystemRole role = OrganizationSystemRole.REVIEWER;
         return roleDefinitionRepository.findByOrganizationIdAndSystemKey(org.getId(), role.systemKey())
-                .map(this::ensureExternalReviewPermission)
+                .map(this::ensureReviewPermission)
                 .orElseGet(() -> {
                     RoleDefinition definition = new RoleDefinition(
                         org,
-                        null,
                         RoleScope.ORGANIZATION,
                         role.label(),
                         role.slug(),
                         role.systemKey());
                     definition.setLocked(false);
-                    return saveRole(definition, Set.of(PermissionKey.EXTERNAL_REVIEW));
+                    return saveRole(definition, Set.of(PermissionKey.REVIEW));
                 });
     }
 
-    private RoleDefinition ensureExternalReviewPermission(RoleDefinition role) {
+    private RoleDefinition ensureReviewPermission(RoleDefinition role) {
         role.setLocked(false);
-        if (!role.getPermissions().contains(PermissionKey.EXTERNAL_REVIEW)) {
-            role.getPermissions().add(PermissionKey.EXTERNAL_REVIEW);
+        if (!role.getPermissions().contains(PermissionKey.REVIEW)) {
+            role.getPermissions().add(PermissionKey.REVIEW);
             return roleDefinitionRepository.save(role);
         }
         return role;
-    }
-
-    public RoleDefinition teamRole(Team team, TeamRole role) {
-        return roleDefinitionRepository.findByTeamIdAndSystemKey(team.getId(), role.name())
-                .orElseGet(() -> saveRole(new RoleDefinition(null, team, RoleScope.TEAM, label(role.name()), role.name().toLowerCase(), role.name()), mapper.team(role)));
     }
 
     private RoleDefinition saveRole(RoleDefinition role, Set<PermissionKey> permissions) {
@@ -140,8 +142,7 @@ public class RoleSeedService implements ApplicationRunner {
         template("full-engineer", "Full Access Engineer", "Engineering", mapper.organization(OrganizationRole.MEMBER));
         template("read-only", "Read-Only Analyst", "Analytics", mapper.organization(OrganizationRole.VIEWER));
         template("inference", "Inference Operator", "Operations", Set.of(PermissionKey.VIEW_MODELS, PermissionKey.RUN_PREDICTIONS));
-        template("external-reviewer", "External Reviewer", "Review", Set.of(PermissionKey.EXTERNAL_REVIEW));
-        template("team-manager", "Team Manager", "Management", mapper.organization(OrganizationRole.ADMIN));
+        template("reviewer", "Reviewer", "Review", Set.of(PermissionKey.REVIEW));
         template("data-scientist", "Data Scientist", "ML", mapper.organization(OrganizationRole.MEMBER));
     }
 

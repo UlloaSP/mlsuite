@@ -28,7 +28,7 @@ async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str,
     if not isinstance(raw_traces, list):
         raise bad_request("Invalid traces JSON: traces must be a JSON array")
 
-    frame = build_prediction_dataframe(model, record, require_all_features=True)
+    frame = build_prediction_dataframe(runtime.feature_metadata(), record)
     feature_names = list(frame.columns)
     trace_definitions = parse_trace_definitions(raw_traces)
 

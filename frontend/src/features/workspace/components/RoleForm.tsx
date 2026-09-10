@@ -1,0 +1,182 @@
+import { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
+import { AppButton } from "@/shared/ui/AppButton";
+import { AppTextArea } from "@/shared/ui/AppTextArea";
+import { AppTextField } from "@/shared/ui/AppTextField";
+import type { PermissionKey, RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
+
+type RolePermission = {
+  key: PermissionKey;
+  label: string;
+  description: string;
+  dangerous: boolean;
+};
+
+type RolePermissionGroup = {
+  name: string;
+  permissions: RolePermission[];
+};
+
+export function RoleForm({
+  roleDefinition,
+  initial,
+  permissionGroups,
+  onClose,
+  onSave,
+}: {
+  roleDefinition: RoleDefinitionDto | null;
+  initial?: { name: string; description?: string; permissionKeys: PermissionKey[] };
+  permissionGroups: RolePermissionGroup[];
+  onClose: () => void;
+  onSave: (payload: {
+    name: string;
+    description?: string;
+    permissionKeys: PermissionKey[];
+  }) => void;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [name, setName] = useState(initial?.name ?? roleDefinition?.name ?? "");
+  const [description, setDescription] = useState(
+    initial?.description ?? roleDefinition?.description ?? "",
+  );
+  const [selected, setSelected] = useState<PermissionKey[]>(
+    initial?.permissionKeys ?? roleDefinition?.permissions.map((p) => p.key) ?? [],
+  );
+  const selectedSet = new Set(selected);
+  const canSave = Boolean(name.trim() && selected.length > 0);
+  const toggle = (permission: PermissionKey, checked: boolean) => {
+    setSelected((current) =>
+      checked ? [...current, permission] : current.filter((key) => key !== permission),
+    );
+  };
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    return () => {
+      if (dialog.open && typeof dialog.close === "function") dialog.close();
+    };
+  }, []);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="role-form-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      className="m-auto h-[min(86vh,760px)] w-[calc(100%-2rem)] max-w-[840px] overflow-hidden rounded-xl border-0 bg-[var(--surface-primary)] p-0 text-[var(--text-primary)] shadow-[var(--shadow-card)] backdrop:bg-black/35"
+    >
+      <div className="flex h-full flex-col">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-soft)] px-6 py-5">
+          <div>
+            <h2 id="role-form-title" className="text-xl font-semibold">
+              {roleDefinition ? "Edit Role" : "Create New Role"}
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)]">
+              {selected.length} permissions selected
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close role form"
+            onClick={onClose}
+            className="inline-flex size-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+          >
+            <X size={18} />
+          </button>
+        </header>
+        <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-5 px-6 py-5">
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <label htmlFor="role-name" className="block text-sm font-semibold">
+                Name
+              </label>
+              <AppTextField
+                id="role-name"
+                autoFocus
+                className="w-full shadow-none"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Role name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="role-description" className="block text-sm font-semibold">
+                Description
+              </label>
+              <AppTextArea
+                id="role-description"
+                className="w-full shadow-none"
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe this role"
+              />
+            </div>
+          </div>
+          <div className="app-scroll min-h-0 overflow-y-auto pr-2">
+            <div className="space-y-5">
+              {permissionGroups.map((group) => (
+                <section key={group.name}>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                      {group.name}
+                    </h3>
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {
+                        group.permissions.filter((permission) => selectedSet.has(permission.key))
+                          .length
+                      }
+                      /{group.permissions.length}
+                    </span>
+                  </div>
+                  <div className="divide-y divide-[var(--border-soft)] border-y border-[var(--border-soft)]">
+                    {group.permissions.map((permission) => (
+                      <label
+                        key={permission.key}
+                        className="flex cursor-pointer gap-3 py-3 text-sm hover:bg-[var(--surface-muted)]"
+                      >
+                        <input
+                          type="checkbox"
+                          aria-label={permission.label}
+                          checked={selectedSet.has(permission.key)}
+                          onChange={(e) => toggle(permission.key, e.target.checked)}
+                          className="mt-1"
+                        />
+                        <span>
+                          <span className="font-semibold text-[var(--text-primary)]">
+                            {permission.label}
+                          </span>
+                          <br />
+                          <span className="text-[var(--text-secondary)]">
+                            {permission.description}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </div>
+        </div>
+        <footer className="flex shrink-0 justify-end gap-3 border-t border-[var(--border-soft)] px-6 py-4">
+          <AppButton variant="secondary" className="rounded-xl" onClick={onClose}>
+            Cancel
+          </AppButton>
+          <AppButton
+            className="rounded-xl"
+            disabled={!canSave}
+            onClick={() => onSave({ name, description, permissionKeys: selected })}
+          >
+            {roleDefinition ? "Save Role" : "Create Role"}
+          </AppButton>
+        </footer>
+      </div>
+    </dialog>
+  );
+}

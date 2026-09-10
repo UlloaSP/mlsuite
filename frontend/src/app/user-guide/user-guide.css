@@ -1,0 +1,27 @@
+.driver-popover.mlsuite-user-guide {
+  --driver-popover-font-family: var(--font-sans);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-hover);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-description,
+.driver-popover.mlsuite-user-guide .driver-popover-progress-text {
+  color: var(--text-secondary);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-footer-btn {
+  border-color: var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  text-shadow: none;
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-next-btn {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary);
+  color: white;
+}

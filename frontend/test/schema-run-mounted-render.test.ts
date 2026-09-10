@@ -8,8 +8,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { mountSchemaRunForm } from "../src/app/utils/mlform/schema-run-mount";
-import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -31,25 +31,17 @@ const crystal = (id = "crystal"): CatalogReportDefinition => ({
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
     payloadSchema: z.object({ explanation: z.string() }),
-    resolve: ({ report, result }) => {
-      const item = result.reports.find(
-        (value): value is Record<string, unknown> =>
-          typeof value === "object" &&
-          value !== null &&
-          !Array.isArray(value) &&
-          value.id === report.id,
-      );
-      return item && "payload" in item ? item.payload : item;
-    },
     fetch: ({ config }: { config: { endpoint: string } }) => ({
-      submit: async (request: { meta?: Record<string, unknown> }) => {
-        if (typeof request.meta?.modelId !== "string") {
+      submit: async (request: {
+        reportContext?: { modelValues?: Record<string, unknown>; meta: Record<string, unknown> };
+      }) => {
+        if (typeof request.reportContext?.meta.modelId !== "string") {
           throw new Error("Missing modelId in report fetch meta.");
         }
-        const modelId = request.meta.modelId;
+        const modelId = request.reportContext.meta.modelId;
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, {
           method: "POST",
-          body: JSON.stringify({ instance: request.meta?.backendFieldValues }),
+          body: JSON.stringify({ instance: request.reportContext.modelValues }),
         });
         return response.json();
       },
@@ -78,7 +70,7 @@ describe("schema run mounted render", () => {
     const mounted = mountSchemaRunForm({
       container,
       schema: {
-        fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [{ id: "prediction", kind: "regressor", mappedTo: "prediction" }],
       },
       bindings: [{ modelId: "model-1" }],
@@ -100,7 +92,7 @@ describe("schema run mounted render", () => {
     await flush();
 
     expect(root?.querySelectorAll("mlf-report-frame")).toHaveLength(1);
-    expect(submitted[0]).toEqual({ Age: 42 });
+    expect(submitted[0]).toEqual({ age: 42 });
     mounted.unmount();
   });
 
@@ -122,7 +114,7 @@ describe("schema run mounted render", () => {
     const mounted = mountSchemaRunForm({
       container,
       schema: {
-        fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [{ id: "report-2", kind: "classifier", mappedTo: "predicted" }],
       },
       bindings: [{ modelId: 1 } as never],
@@ -162,7 +154,7 @@ describe("schema run mounted render", () => {
     const mounted = mountSchemaRunForm({
       container,
       schema: {
-        fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [{ id: "crystal", kind: "Crystal Tree", mappedTo: { "model-1": "crystal-tree" } }],
       },
       bindings: [{ modelId: "model-1" }],
@@ -207,7 +199,7 @@ describe("schema run mounted render", () => {
     const mounted = mountSchemaRunForm({
       container,
       schema: {
-        fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "report-2",
@@ -259,7 +251,9 @@ describe("schema run mounted render", () => {
     const mounted = mountSchemaRunForm({
       container,
       schema: {
-        fields: [{ id: "age", label: "Age", kind: "number", mappedTo: { 1: "age" } }],
+        fields: [
+          { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: { 1: "age" } },
+        ],
         reports: [{ id: "crystal", kind: "Crystal Tree", mappedTo: { 1: "crystal-tree" } }],
       },
       bindings: [{ modelId: 1 } as never],

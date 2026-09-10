@@ -65,7 +65,7 @@ class PluginServiceImplTest {
                 "organizations/41/plugins/items/field.json", bytes(plugin(
                         "field", "alpha.ts", "export default defineFieldKind({ kind: \"alpha-field\" });")),
                 "organizations/41/plugins/items/report.json", bytes(plugin(
-                        "report", "zeta.ts", "export default defineReportKind({ kind: \"zeta-report\" });")),
+                        "report", "zeta.ts", "export default defineReportKind<Config, Payload>({ kind: \"zeta-report\" });")),
                 "organizations/41/plugins/items/invalid.json", bytes(plugin(
                         "invalid", "invalid.ts", "not a plugin")));
         Organization organization = new Organization();

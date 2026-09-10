@@ -1,4 +1,4 @@
-import { appFetch } from "../../api/core/services";
+import { appFetch } from "@/shared/api/http";
 
 export type StartupDependencyDto = {
   name: string;
@@ -11,47 +11,18 @@ export type StartupReadinessDto = {
   dependencies: StartupDependencyDto[];
 };
 
-let clientRuntimePromise: Promise<void> | null = null;
-
-export async function getStartupReadiness(): Promise<StartupReadinessDto> {
-  const [server, client] = await Promise.all([readServerReadiness(), readClientReadiness()]);
-  const dependencies = [...server.dependencies, client];
-
-  return {
-    ready: server.ready && client.ready,
-    dependencies,
-  };
+export async function getStartupReadiness(signal?: AbortSignal): Promise<StartupReadinessDto> {
+  return readServerReadiness(signal);
 }
 
-async function readServerReadiness(): Promise<StartupReadinessDto> {
+async function readServerReadiness(signal?: AbortSignal): Promise<StartupReadinessDto> {
   try {
-    return await appFetch<StartupReadinessDto>("/api/readiness");
+    return await appFetch<StartupReadinessDto>("/api/readiness", { signal });
   } catch {
+    if (signal?.aborted) throw signal.reason;
     return {
       ready: false,
       dependencies: [{ name: "api", ready: false, message: "unavailable" }],
     };
   }
-}
-
-async function readClientReadiness(): Promise<StartupDependencyDto> {
-  try {
-    await preloadClientRuntime();
-    return { name: "client-runtime", ready: true, message: "ready" };
-  } catch {
-    return { name: "client-runtime", ready: false, message: "unavailable" };
-  }
-}
-
-function preloadClientRuntime(): Promise<void> {
-  clientRuntimePromise ??= Promise.all([
-    import("typescript"),
-    import("monaco-editor"),
-    import("@monaco-editor/react"),
-    import("mlform/runtime"),
-    import("mlform/kit"),
-    import("mlform/builtins"),
-  ]).then(() => undefined);
-
-  return clientRuntimePromise;
 }

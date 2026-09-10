@@ -1,16 +1,18 @@
 import { Search } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog } from "radix-ui";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
-import { useSearchResults } from "../../api/search/hooks";
-import { isGlobalSearchShortcut } from "../../algorithms/search/shortcut";
-import { SearchResultGroup } from "../../search/components/SearchResultGroup";
-import { useDebouncedValue } from "../../search/hooks";
-import { globalSearchOpenAtom } from "../atoms";
-import { AppCopy } from "./AppCopy";
-import { cx } from "./cx";
-import { FOCUS_RING } from "./focus-ring";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import { searchQueryOptions } from "@/features/search/api/search.queries";
+import { SearchResultGroup } from "@/features/search/components/SearchResultGroup";
+import { useDebouncedValue } from "@/features/search/lib/use-debounced-value";
+import { globalSearchOpenAtom } from "@/shared/ui/ui-state";
+import { AppCopy } from "@/shared/ui/AppCopy";
+import { cx } from "@/shared/ui/cx";
+import { FOCUS_RING } from "@/shared/ui/focus-ring";
+import { matchesShortcut, shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
 
 const isTypingTarget = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
@@ -35,12 +37,14 @@ export function AppGlobalSearch() {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useAtom(globalSearchOpenAtom);
+  const bindings = useAtomValue(shortcutBindingsAtom);
   const [{ query, activeIndex }, dispatch] = useReducer(searchReducer, {
     query: "",
     activeIndex: 0,
   });
   const debouncedQuery = useDebouncedValue(query);
-  const { data, isFetching } = useSearchResults(debouncedQuery);
+  const organizationId = useCurrentOrganizationId();
+  const { data, isFetching } = useQuery(searchQueryOptions(organizationId, debouncedQuery));
 
   const flatResults = useMemo(
     () => (data?.groups ?? []).flatMap((group) => group.results),
@@ -49,14 +53,14 @@ export function AppGlobalSearch() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isGlobalSearchShortcut(event) && !isTypingTarget(event.target)) {
+      if (matchesShortcut(event, bindings["global-search"]) && !isTypingTarget(event.target)) {
         event.preventDefault();
         setOpen(true);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setOpen]);
+  }, [bindings, setOpen]);
 
   useEffect(() => {
     if (open) {
@@ -113,7 +117,7 @@ export function AppGlobalSearch() {
                     }
                   }
                 }}
-                placeholder="Search models, teams, plugins, schemas"
+                placeholder="Search snapshots, bookmarks, models, schemas"
                 className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
               />
               <kbd className="hidden rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] px-2 py-1 text-[0.68rem] font-medium lowercase text-[var(--text-muted)] md:block">

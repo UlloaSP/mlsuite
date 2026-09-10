@@ -53,6 +53,13 @@ public class PredictionResultFeedbackController {
                 feedbackUseCase.listByResult(userId(authentication), resultId)));
     }
 
+    @GetMapping("/by-runs")
+    public ResponseEntity<List<PredictionResultFeedbackDto>> listByRuns(Authentication authentication,
+            @RequestParam List<Long> runIds) {
+        return ResponseEntity.ok(PredictionResultFeedbackDto.fromList(
+                feedbackUseCase.listByRuns(userId(authentication), runIds)));
+    }
+
     private Long userId(Authentication authentication) {
         return currentUserResolver.resolve(authentication).userId();
     }

@@ -3,7 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { LucideIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  LayoutGrid,
+  List,
+  Server,
+  SquareTerminal,
+  type LucideIcon,
+} from "lucide-react";
 
 export type NavigationChild = {
   to: string;
@@ -19,6 +26,14 @@ export type NavigationItem = {
   activeWhen?: (pathname: string) => boolean;
   children?: NavigationChild[];
 };
+
+export const INFRA_CHILDREN: NavigationChild[] = [
+  { to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview", exact: true },
+  { to: "/admin/infrastructure?tab=services", icon: Server, label: "Services" },
+  { to: "/admin/infrastructure?tab=logs", icon: List, label: "Logs" },
+  { to: "/admin/infrastructure?tab=terminal", icon: SquareTerminal, label: "Terminal" },
+  { to: "/admin/infrastructure?tab=alerts", icon: AlertTriangle, label: "Alerts" },
+];
 
 function splitHref(to: string) {
   const [pathname, search = ""] = to.split("?");

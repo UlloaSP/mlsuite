@@ -119,7 +119,7 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     private Long requireRead(Long userId) {
         userLookupService.requireById(userId);
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, organizationId);
+        authorizationService.requireModelView(userId, organizationId);
         return organizationId;
     }
 

@@ -17,7 +17,9 @@ public record PredictionRunDto(
         PredictionRunStatus status,
         List<PredictionResultDto> results,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt) {
+        OffsetDateTime updatedAt,
+        String createdByName,
+        String createdByEmail) {
 
     public static PredictionRunDto from(PredictionRun run, List<PredictionResult> results) {
         return new PredictionRunDto(
@@ -29,6 +31,8 @@ public record PredictionRunDto(
                 run.getStatus(),
                 PredictionResultDto.fromList(results),
                 run.getCreatedAt(),
-                run.getUpdatedAt());
+                run.getUpdatedAt(),
+                run.getCreatedByName(),
+                run.getCreatedByEmail());
     }
 }

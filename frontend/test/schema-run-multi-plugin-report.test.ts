@@ -8,8 +8,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
-import { mountSchemaRunForm } from "../src/app/utils/mlform/schema-run-mount";
-import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -31,17 +31,10 @@ const crystal = (): CatalogReportDefinition => ({
       endpoint: z.string().default("/api/analyzer/explanations"),
     }),
     payloadSchema: z.object({ explanation: z.string() }),
-    resolve: ({ report, result }) =>
-      result.reports.find(
-        (value): value is { id: string; payload: unknown } =>
-          typeof value === "object" &&
-          value !== null &&
-          "id" in value &&
-          (value as { id?: unknown }).id === report.id,
-      )?.payload,
     fetch: ({ config }: { config: { endpoint: string } }) => ({
-      submit: async (request: { meta?: Record<string, unknown> }) => {
-        const modelId = String(request.meta?.modelId ?? "");
+      submit: async (request: { reportContext?: { meta: Record<string, unknown> } }) => {
+        const rawModelId = request.reportContext?.meta.modelId;
+        const modelId = typeof rawModelId === "string" ? rawModelId : "";
         const response = await fetch(`${config.endpoint}?modelId=${modelId}`, { method: "POST" });
         return response.json();
       },
@@ -70,7 +63,7 @@ describe("schema run multi-model plugin reports", () => {
     const mounted = mountSchemaRunForm({
       container,
       schema: {
-        fields: [{ id: "age", label: "Age", kind: "number", mappedTo: "age" }],
+        fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [
           {
             id: "crystal",

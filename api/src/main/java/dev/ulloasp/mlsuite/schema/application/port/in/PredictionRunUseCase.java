@@ -10,7 +10,11 @@ public interface PredictionRunUseCase {
 
     List<PredictionRun> listRunsForBookmark(Long userId, Long schemaBookmarkId);
 
+    List<PredictionRun> listOrganizationRuns(Long userId);
+
     PredictionRun getRun(Long userId, Long runId);
+
+    void deleteRun(Long userId, Long runId);
 
     Long getLastPredictionRunId(Long userId);
 }

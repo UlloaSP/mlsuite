@@ -70,7 +70,5 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     long countByOrganizationId(Long organizationId);
 
-    long countByTeamId(Long teamId);
-
 }
 

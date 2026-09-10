@@ -19,12 +19,10 @@ public record OrganizationCatalogItemDto(
         String updatedByName,
         String updatedByEmail,
         String updatedByAvatarUrl,
-        long teamCount,
         long modelCount,
         long schemaCount,
         long pluginCount,
         long inferenceCount,
-        boolean publicAccess,
         long memberCount) {
 
     public static OrganizationCatalogItemDto from(
@@ -32,12 +30,10 @@ public record OrganizationCatalogItemDto(
             String ownerName,
             String ownerEmail,
             String ownerAvatarUrl,
-            long teamCount,
             long modelCount,
             long schemaCount,
             long pluginCount,
             long inferenceCount,
-            boolean publicAccess,
             long memberCount) {
         User modifier = organization.getUpdatedBy() == null ? organization.getCreatedBy() : organization.getUpdatedBy();
         return new OrganizationCatalogItemDto(
@@ -54,12 +50,10 @@ public record OrganizationCatalogItemDto(
                 modifier == null ? null : modifier.getFullName(),
                 modifier == null ? null : modifier.getEmail(),
                 modifier == null ? null : modifier.getAvatarUrl(),
-                teamCount,
                 modelCount,
                 schemaCount,
                 pluginCount,
                 inferenceCount,
-                publicAccess,
                 memberCount);
     }
 }

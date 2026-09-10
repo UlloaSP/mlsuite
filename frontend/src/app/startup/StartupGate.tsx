@@ -1,23 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { EditorAssemblyLoader } from "../../router/EditorAssemblyLoader";
-import { getStartupReadiness } from "./startupReadiness";
-
-const STARTUP_QUERY_KEY = ["startup", "readiness"] as const;
-const RETRY_MS = 1_500;
+import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
+import { useStartupReadinessQuery } from "./startup-query";
 
 type StartupGateProps = {
   children: ReactNode;
 };
 
 export function StartupGate({ children }: StartupGateProps) {
-  const { data } = useQuery({
-    queryKey: STARTUP_QUERY_KEY,
-    queryFn: getStartupReadiness,
-    retry: false,
-    staleTime: 0,
-    refetchInterval: (query) => (query.state.data?.ready ? false : RETRY_MS),
-  });
+  const { data } = useStartupReadinessQuery();
 
   if (data?.ready) {
     return <>{children}</>;

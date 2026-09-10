@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test, vi } from "vite-plus/test";
-import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
+import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 
 describe("schema run transport mapping", () => {
   test("runs every binding when labels changed but mappedTo keeps model keys", async () => {
@@ -68,19 +68,19 @@ describe("schema run transport mapping", () => {
     const result = await transport.submit({
       modelValues: { rec_uci_hours: 36 },
       displayValues: { icuHours: 36 },
-      fieldValues: { rec_uci_hours: 36 },
-      serializedValues: { rec_uci_hours: 36 },
+      inputs: [],
       reports,
     } as never);
     const raw = (result as { raw: { results: Array<{ status: string; modelInput: unknown }> } })
       .raw;
-    const reportPayloads = (result as { reports: Array<{ id?: string }> }).reports;
+    const reportPayloads = (result as { reports: Array<{ status?: string }> }).reports;
 
     expect(raw.results).toHaveLength(6);
     expect(raw.results.every((item) => item.status === "SUCCESS")).toBe(true);
     expect(raw.results.map((item) => item.modelInput)).toEqual(
       Array.from({ length: 6 }, () => ({ rec_uci_hours: 36 })),
     );
-    expect(reportPayloads.filter((item) => item.id?.startsWith("report-"))).toHaveLength(7);
+    expect(reportPayloads).toHaveLength(7);
+    expect(reportPayloads.every((item) => item.status === "ready")).toBe(true);
   });
 });

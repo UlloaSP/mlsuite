@@ -29,7 +29,7 @@ This repository contains pre-configured compose files that define all required s
 
 3. Superadmin Setup: MLSuite uses manual email/password authentication with server-side sessions. Configure the initial superadmin account so you can manage users after startup.
 
-4. Configure Environment Variables: Copy `.env.example` to `.env` and edit the values before startup. Keep the env file as the source of truth for ports, URLs, CORS, storage, and the superadmin seed.
+4. Configure Environment Variables: Copy `.env.example` to `.env` and edit the values before startup. Fill every blank password/secret with an independent random value. `.env` is private and ignored by Git; commit only sanitized changes to `.env.example`.
 
 ```env
 SPRING_PORT=8080
@@ -40,11 +40,13 @@ ANALYZER_BASE_URL=http://py-analyzer:8000
 VITE_BACKEND_URL=
 CORS_ALLOW_ORIGINS=http://localhost:5173,http://localhost:8080
 MLSUITE_SUPERADMIN_EMAIL=admin@example.com
-MLSUITE_SUPERADMIN_PASSWORD=change_me_superadmin
+MLSUITE_SUPERADMIN_PASSWORD=
 MLSUITE_SUPERADMIN_FULL_NAME=MLSuite Admin
 ```
 
-You can also adjust other settings (database, storage, registry/image tags) there. Keep `.env` and `.env.example` aligned when adding new config.
+You can also adjust other settings (database, storage, registry/image tags) there. Keep variable names aligned with `.env.example`. Match `OPS_AGENT_COMPOSE_PROJECT` to `COMPOSE_PROJECT_NAME` or the project supplied through `-p`.
+
+Existing clones: preserve your local `.env` outside Git before updating to the commit that removes it from tracking, then restore it as an ignored file. Previously committed credentials remain in Git history. Rotate any value reused on an active service; deleting the file does not revoke credentials. See [CI and repository protection](.github/CI.md).
 
 5. Launch the Application: Run one of the following commands to build and start all services:
 

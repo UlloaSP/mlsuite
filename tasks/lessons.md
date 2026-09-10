@@ -1,5 +1,41 @@
 # Lessons
 
+## 2026-08-23 - Derived display-key ownership
+
+- Correction: the initial diagnosis assigned `displayKey` generation to MLSchema, but the clarified contract keeps it optional in persisted schemas and derives it at the MLForm runtime boundary.
+- Rule: distinguish persisted producer data from runtime-normalized data before assigning ownership; optional derived identifiers belong at the consumer boundary and every prefill reader must reuse that resolution.
+
+## 2026-08-23 - Alpha contract migration
+
+- Correction: the first report-contract plan preserved pre-0.1.20 envelopes although the user explicitly treats both releases as alpha.
+- Rule: ask whether alpha compatibility matters before designing adapters; when breaking change is allowed, define one contract and migrate every producer directly.
+
+## 2026-08-20 - Development-only entity removal
+
+- Correction: a planned entity cleanup assumed production migration constraints, but this repository is still in development and the user explicitly allowed destructive schema changes.
+- Rule: when the user declares development-only data disposable, remove the entity and schema contract directly; do not add phased migration machinery or compatibility code.
+
+## 2026-07-23 - Review status placement correction
+
+- Correction: reviewer status and reopening were implemented in a modal, but this management workflow needs a durable, linkable inference context.
+- Rule: multi-row resource management belongs on a canonical detail route with URL-owned sections; overflow actions navigate there instead of mounting a second transient workspace.
+- Correction: inference detail was split into tabs even though Reviews is one additive section, not an alternate workspace.
+- Rule: when detail content forms one readable flow, render inline sections; deep links may scroll to a section without introducing tabs or display modes.
+
+## 2026-07-23 - Review correction workflow
+
+- Correction: completed reviewer submissions had no manager recovery path, even though persisted feedback already supported correction after removing the submission marker.
+- Rule: terminal workflow states need an explicit authorized recovery action; reopen the exact actor-scoped submission while retaining work, instead of deleting the parent review or creating duplicate work.
+
+## 2026-07-23 - Inference catalog action correction
+
+- Correction: organization Inferences shipped data and filters but omitted the existing review-creation and export workflows.
+- Rule: aggregate catalogs must preserve applicable primary actions from scoped catalogs; acceptance review compares actions and permissions, not only data and filters.
+- Correction: detail navigation was isolated in a View link while the catalog item still exposed an Actions column.
+- Rule: catalog items use their full primary surface for navigation; reserve the far-right action affordance for an overflow menu and destructive commands.
+- Correction: Inferences received a new compact CSV instead of the established schema-run export with reviewer/feedback selection and schema-derived columns.
+- Rule: when a user asks to expose an existing action on another surface, reuse its complete behavior and contract; do not substitute a simpler action with the same label.
+
 ## 2026-07-07 - Schema change base selection correction
 
 - Correction: schema change creation made the important base-version choice feel secondary, while editable metadata got equal weight.
@@ -670,3 +706,185 @@
 - Rule: merge editors need fixed scrollable viewports and explicit per-change actions wired through the diff library resolution API; unresolved counts must match every selectable block.
 - Correction: fixed-pixel merge editor height ignored theme/layout changes and left the page with the wrong scroll owner.
 - Rule: full-page merge editors should resolve theme from app state and use parent flex sizing with `min-h-0` plus internal diff scrolling, not pixel heights.
+# Test Alias Typechecking
+
+- When introducing frontend source aliases, verify a representative test with static TypeScript checking, not only Vitest. Tests outside the application `tsconfig` can execute through Vite while editors still report unresolved aliases. Add a dedicated test `tsconfig` and reference it from the solution config.
+
+# Reproducible Frontend Builds
+
+- Correction: frontend build used floating Vite+ versions, non-frozen Docker installs, preserved stale output, and suppressed the toolchain's preferred React transform.
+- Rule: pin build-tool versions across package metadata and containers, enforce the lockfile in Docker, accept clean output defaults, and never suppress migration guidance without a measured incompatibility.
+
+# Infrastructure Feature Ownership
+
+- Correction: frontend infrastructure remote state was grouped under admin because its routes require admin access, but authorization does not define domain ownership.
+- Rule: infrastructure owns its feature modules under `features/infrastructure`; admin may gate or compose them but must not absorb their transport, contracts, queries, or runtime lifecycle.
+
+# Interactive Container Semantics
+
+- Correction: replacing a clickable drop-zone button with a passive `div` fixed nested controls but made most of the zone inert.
+- Rule: when a whole surface is one action, keep one native outer button and render button-like descendants as non-interactive visual elements; verify clicks from the surface, not only its action label.
+
+# Monaco Wrapper Type Ownership
+
+- Correction: incremental TypeScript and build passed while the editor reported incompatible `onMount` and `options` types after Monaco 0.56, because app code typed wrapper props from a separate Monaco entry point.
+- Rule: type `@monaco-editor/react` callbacks and options from its exported types; use direct Monaco types only for runtime APIs absent from the wrapper contract, and force a clean TypeScript build after Monaco upgrades.
+
+# Review Assignment Ownership
+
+- Correction: an organization-wide open review pool did not let the creator choose the intended reviewers.
+- Rule: review assignments must be persisted and enforced by the backend; creation may select only active organization members with `REVIEW`, and the Review page should open directly as the user's review catalog without a schema-selection gate.
+
+# MLForm Feedback Submission Contract
+
+- Correction: review questionnaires read `serializedValues`, which contains model-mapped values and can be empty for unmapped questionnaire fields.
+- Rule: questionnaire persistence must consume MLForm's field-keyed submission values and have a regression test where model serialization is empty but serialized field answers are populated.
+
+# Reviewer Inbox Entry Point
+
+- Correction: replacing schema selection with a review-card catalog still left an unnecessary selection step before the actual rail workspace.
+- Rule: `/review` is the current reviewer's inbox: load all assigned review runs directly into one rail/detail workspace; management authority must not turn reviewer work into a global organization pool.
+
+# Breaking Flow Cleanup
+
+- Correction: deleting the external-review route left configurable auth modes/callbacks and unused global review lifecycle endpoints behind.
+- Rule: after a breaking flow replacement, trace every former injection point and endpoint consumer; delete orphaned configurability, DTOs, components, and states in the same change while preserving only independently used behavior.
+
+# Prediction Run Cache Fan-out
+
+- Correction: creating an inference refreshed its bookmark history but left the organization Inferences catalog stale.
+- Rule: every prediction-run creation path must invalidate all visible collection projections of that resource; centralize shared cache identity instead of importing one feature's internals from another.
+
+# Breaking Entity Cleanup Against Live DDL
+
+- Correction: removing active entity fields while relying on Hibernate `ddl-auto=update` left a live `NOT NULL` column that broke every review insert with a fallback 500.
+- Rule: before deleting persisted fields, inspect live DDL behavior; fields required by the current product should remain mapped, while genuinely removed columns need an explicit schema reset/change instead of assuming `update` will drop them.
+
+# Runtime Report Identity
+
+- Correction: multi-model report payloads reused the analyzer's persisted `mappedTo` as MLForm's global result key, so equal targets collided regardless of report labels.
+- Rule: keep runtime report identity unique per report controller while preserving the analyzer target in model output, report context, modal data, and persistence.
+
+# MLForm Pipeline Result Ownership
+
+- Correction: the mounted submit adapter consumed only `submitResult.raw`, discarding custom report payloads returned separately in `pipelineResult.reportFetchResults`.
+- Rule: merge fetched report results into ready report state before deriving modal/save data, then attach each payload to the result identified by its report context.
+
+# Theme Changes Must Preserve Runtime State
+
+- Correction: MLForm mounts treated the active theme as construction data, so toggling light/dark destroyed completed reports and questionnaire state.
+- Rule: mount stateful third-party runtimes once for structural inputs and update their design system in place; readonly report hosts must receive the same theme tokens without recreating payload-bearing DOM.
+
+# Preview And Feedback Identity
+
+- Correction: inference runtime used unique report identities, but schema draft/version preview retained a second expansion path that still collided when several models shared one analyzer key.
+- Rule: preview and execution must reuse one report preparation contract; analyzer target, logical source-report identity, and runtime payload identity are separate values.
+- Correction: unique preview report frames still failed because runtime adaptation added a `default` alias pointing to the same target, and the local transport emitted one payload per alias.
+- Rule: report transport responses must deduplicate by resolved runtime target, not by mapping-entry key; preview tests must assert returned payload cardinality and frame content, not only frame count.
+- Correction: feedback cardinality followed prediction results, so one source report mapped to several models rendered several assessments.
+- Rule: build assessments by source-report position/identity, then persist one logical answer to every successful mapped result; equal analyzer keys must never merge separate source reports.
+
+# Alpha contract cleanup
+
+- Correction: core report migration passed tests while schema repair fallbacks, local package links, duplicated mapped-target logic, and old plugin renderers remained.
+- Rule: when compatibility is explicitly forbidden, audit every consumer and example after core changes; delete all fallback paths before calling migration complete.
+
+# Bulk Analyzer Backpressure
+
+- Correction: saving model/dataframe bundles concurrently overloaded blocking analyzer work, while swallowed per-item failures still caused success navigation.
+- Rule: serialize artifact creation unless analyzer concurrency is proven safe; batch completion must come from explicit per-item outcomes and failed items must remain retryable.
+
+# Organization settings navigation
+
+- Correction: organization settings duplicated sidebar navigation with a second tab bar and kept extra title margins.
+- Correction: removing header spacing globally also removed the intended separation around the settings content.
+- Rule: when a persistent sidebar owns navigation, do not add page-level tabs. Keep the standard page header as its own full-width block, and apply centering/margins only to the settings block beneath it.
+
+# Organization roles presentation
+
+- Correction: Roles & Templates needs its internal tabs, but not pill styling, gray panel fills, or a drawer that competes with the persistent sidebar.
+- Rule: keep tabs when they switch local content; render them as a flat tab rail. Use centered dialogs for role details and editing, and keep catalog surfaces white/transparent.
+## 2026-08-24 - Inference loading starts after validation
+
+- Correction: treating the submit-button event as inference start shows a false running state while MLForm is still validating invalid inputs.
+- Rule: derive cross-component loading from the operation boundary (`beforeSubmit`/transport start), not from the user's click or a pre-validation UI event.
+# Prediction detail tab cardinality
+
+- Correction: the inference detail tabs were added without the item counts shown in the agreed design.
+- Rule: when replacing an existing navigation summary with task tabs, preserve useful cardinality in each tab and derive it from the same data used by its panel.
+
+# Output search corpus
+
+- Correction: Outputs search was shipped with a negative empty-state assertion but no positive multi-result filtering case.
+- Rule: search tests must prove one real result remains and another disappears; include every identity users see or use, especially human model names instead of only internal ids.
+
+# Search must earn its place
+
+- Correction: repeated corpus fixes did not make Outputs search useful in the real report surface.
+- Rule: remove a secondary search control when its searchable representation cannot reliably match rendered plugin content; keep search only where displayed data and filter data share one source of truth.
+
+# Personal settings completeness
+
+- Correction: initial personal Settings shipped theme presets as one global choice and omitted custom themes, typography, and keybindings.
+- Rule: when a settings reference shows a configurable subsystem, implement its real persisted behavior and every active consumer; a gallery preview or read-only list does not count as a setting.
+
+# Personal settings interaction fidelity
+
+- Correction: typography options collapsed to the same unavailable-font fallback, theme cards exposed an unwanted Apply both control, and opening the theme editor forced Light through its initial preview.
+- Rule: test the visible result of settings, not only storage; theme hit targets must match the agreed interaction exactly, and previews must start only after user edits.
+
+# Theme cycle and guide granularity
+
+- Correction: the global theme shortcut remained a binary Light/Dark toggle, theme cards kept obsolete vertical space, and the sidebar guide explained navigation as one block.
+- Rule: global scheme toggles must cycle every exposed mode; remove layout constraints when their content disappears; product tours must target and explain each visible actionable element individually.
+
+# Code graph tooling must earn its footprint
+
+## Branch promotion workflow
+
+- Correction: a feature PR was opened directly against main, bypassing develop.
+- Rule: update remote refs, branch from current develop, open the feature PR into develop;
+  only after integration and validation open a separate develop-to-main PR. Pull the relevant
+  branches before branching/integrating. Never infer permission to bypass develop or auto-merge.
+
+- Correction: Trailmark and diagramming-code produced a large static graph with many unresolved proxies and little value beyond existing Graphify coverage.
+- Rule: before retaining overlapping code-intelligence tooling, compare its focused output against installed capabilities; remove the tool and trial artifacts when signal does not justify another runtime and workflow.
+
+## Responsive grid regression
+- Correction: model tiles placed metadata far from icons at desktop widths; inference lists lacked pagination and organization menus grew without bounds.
+- Rule: verify explicit grid placements at both sides of each breakpoint, with and without actions. Catalog QA must include enough records to exercise pagination and menu overflow. Preserve mobile/tablet support; the proposed viewport restriction was cancelled.
+
+## Complete visual surface review
+- Correction: removing the grey list panel missed the elevated grey filter toolbar; native scrollbars and focus outlines remained conspicuous/clipped.
+- Rule: inspect the entire requested surface including toolbar, scroll tracks and hover/focus states. Compare equivalent catalogs for the same metadata, not just row geometry.
+
+## Pagination reconciliation
+- Correction: multiple ellipses shared one React key, causing stale duplicate DOM after navigation; status text lengths shifted columns.
+- Rule: test repeated bidirectional pagination through two-gap states, and compare row alignment across all status labels.
+
+## Tabs own section labels
+- Correction: inference detail tabs repeated their labels/subtitles inside elevated panels; questionnaire had another square wrapper around rounded content.
+- Rule: a labeled tab owns its section context. Keep meaningful report/question titles, remove duplicate headings and nested decorative frames.
+
+## Dynamic member roles
+- Correction: fixed role KPIs and nested grey panels obscured the Members list.
+- Rule: derive member filters from actual roles; use the shared catalog layout and pagination, with one total instead of fixed role buckets.
+
+## Complete tabbed catalogs
+- Correction: Roles, Templates and Permissions retained duplicate section headings and lacked pagination; role name fields stretched to textarea height.
+- Rule: apply shared catalog behavior to every tab, expose full counts at the tabs, and verify both empty and populated form paths. Use start alignment for mixed-height grid fields and honor textarea rows.
+
+## Preserve grouping and explicit field labels
+- Correction: user wanted stacked, visibly labeled role fields and the original permission grouping; individual permission cards/pagination were an unwanted interpretation.
+- Rule: preserve existing semantic grouping unless explicitly asked to change it. Mixed-height form controls need clear labels and vertical order when requested; aria-label alone is not a visible label.
+
+## Review modal selection
+- Correction: snapshot select options were portaled outside the native modal and inaccessible; bulk controls were missing/hidden, and reviewer pagination disappeared with one page.
+- Rule: mount popup content inside native modal top layers. Both selection columns need explicit bulk selection scope, always-visible clear controls and consistent pagination; keep bookmark filtering within a single snapshot contract.
+
+## Equal-height selection columns and explicit export selection
+- Correction: short reviewer lists stopped early, leaving pagination above the neighboring footer; organization export exposed only a snapshot dropdown.
+- Rule: selection list bodies must grow to fill equal-height columns. Export entry points should make scope and selected runs reviewable before fetching/download, preserving feedback inclusion controls.
+
+- Before switching to a branch that still tracks private configuration, preserve the local ignored .env outside the checkout and restore it after switching/pulling. Git can overwrite or remove it while transitioning from tracked to ignored. Never display its values.
+

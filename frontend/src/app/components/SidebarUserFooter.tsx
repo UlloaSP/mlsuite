@@ -6,15 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Bell, ChevronsUpDown, LogOut, ShieldCheck, User2 } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { Link } from "react-router";
-import { useLogout, useUser } from "../../api/user/hooks";
-import { usePendingInvitations } from "../../api/workspace/hooks";
-import {
-  SidebarLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "./app-sidebar";
+import { useLogout, useUser } from "@/capabilities/workspace-context/session";
+import { usePendingInvitations } from "@/features/workspace/api/workspace.queries";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
+import { SidebarMenu } from "./app-sidebar/SidebarMenu";
+import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
+import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
+import { useSidebar } from "./app-sidebar/SidebarContext";
 
 export function SidebarUserFooter() {
   const { state } = useSidebar();
@@ -37,6 +35,7 @@ export function SidebarUserFooter() {
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <SidebarMenuButton
+              data-user-guide-item="user-menu"
               className={collapsed ? "mx-auto size-9 min-h-9 rounded-full p-0" : "min-h-13 rounded"}
               title={displayName}
             >

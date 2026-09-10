@@ -1,19 +1,21 @@
+import { runMatchesQuery } from "@/features/schemas/lib/run-matches-query";
+import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test } from "vite-plus/test";
-import { buildSchemaRunExport } from "../src/algorithms/schema/export";
+import { buildSchemaRunExport } from "@/features/schemas/lib/export";
 import {
   getModelInputBulkSchema,
-  toSchemaRunSerializedValues,
-} from "../src/algorithms/schema/bulk-upload";
+  toSchemaRunFieldValues,
+} from "@/features/schemas/lib/bulk-upload";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
-  SchemaVersionDto,
-} from "../src/api/schemas/dtos";
+} from "@/features/schemas/api/prediction-types";
 
 const version: SchemaVersionDto = {
   id: "version-1",
@@ -70,6 +72,15 @@ const run: PredictionRunDto = {
 };
 
 describe("schema run history helpers", () => {
+  test("searches numeric API ids without crashing on nonmatching names", () => {
+    const numericRun = { ...run, id: 20 };
+    expect(runMatchesQuery(numericRun, "20")).toBe(true);
+    expect(runMatchesQuery(numericRun, " CASE-1 ")).toBe(true);
+    expect(runMatchesQuery(numericRun, "success")).toBe(true);
+    expect(runMatchesQuery(numericRun, "missing")).toBe(false);
+    expect(runMatchesQuery(numericRun, "")).toBe(true);
+    expect(runMatchesQuery(run, "run-1")).toBe(true);
+  });
   test("bulk schema exposes mapped one-hot model inputs", () => {
     const bulkSchema = getModelInputBulkSchema(version) as { fields: Array<{ label: string }> };
 
@@ -82,8 +93,25 @@ describe("schema run history helpers", () => {
 
   test("serializes technical one-hot bulk input to visible field id", () => {
     expect(
-      toSchemaRunSerializedValues(version, { blood_group__A: 0, blood_group__B: 1, age: 52 }),
+      toSchemaRunFieldValues(version, { blood_group__A: 0, blood_group__B: 1, age: 52 }),
     ).toEqual({ "blood-group": "B", age: 52 });
+  });
+
+  test("parses one-hot numeric columns and rejects unknown or nonnumeric input", () => {
+    const schema = getModelInputBulkSchema(version);
+    const parsed = parseCsvPredictionFile(
+      "name,blood_group__A,blood_group__B,age\ncase,0,1,52",
+      schema,
+    );
+    expect(parsed.skipped).toEqual([]);
+    expect(parsed.records[0]?.inputs).toEqual({ blood_group__A: 0, blood_group__B: 1, age: 52 });
+    expect(
+      parseCsvPredictionFile("name,blood_group__A,blood_group__B,age\ncase,wrong,1,52", schema)
+        .skipped,
+    ).toHaveLength(1);
+    const unknown = parseCsvPredictionFile("name,unexpected,age\ncase,1,52", schema);
+    expect(unknown.records).toEqual([]);
+    expect(unknown.skipped.length).toBeGreaterThan(0);
   });
 
   test("exports technical model inputs and mapped report labels", () => {

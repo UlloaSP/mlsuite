@@ -14,15 +14,9 @@ public interface RoleDefinitionRepository extends JpaRepository<RoleDefinition, 
 
     List<RoleDefinition> findByOrganizationIdAndScopeOrderByLockedDescNameAsc(Long organizationId, RoleScope scope);
 
-    List<RoleDefinition> findByTeamIdAndScopeOrderByLockedDescNameAsc(Long teamId, RoleScope scope);
-
     Optional<RoleDefinition> findByOrganizationIdAndSystemKey(Long organizationId, String systemKey);
 
-    Optional<RoleDefinition> findByTeamIdAndSystemKey(Long teamId, String systemKey);
-
     Optional<RoleDefinition> findByIdAndOrganizationId(Long id, Long organizationId);
-
-    Optional<RoleDefinition> findByIdAndTeamId(Long id, Long teamId);
 
     boolean existsByOrganizationIdAndScopeAndSlug(Long organizationId, RoleScope scope, String slug);
 

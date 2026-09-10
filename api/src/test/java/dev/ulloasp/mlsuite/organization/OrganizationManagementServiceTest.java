@@ -1,8 +1,10 @@
 package dev.ulloasp.mlsuite.organization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,16 +18,16 @@ import org.mockito.Mock;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamMembershipRepository;
-import dev.ulloasp.mlsuite.team.adapter.out.persistence.repository.TeamRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
-import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
+import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationDeletionService;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationManagementService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
@@ -41,6 +43,7 @@ import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
+import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -60,12 +63,6 @@ class OrganizationManagementServiceTest {
     private OrganizationMembershipRepository membershipRepository;
 
     @Mock
-    private TeamRepository teamRepository;
-
-    @Mock
-    private TeamMembershipRepository teamMembershipRepository;
-
-    @Mock
     private ModelRepository modelRepository;
 
     @Mock
@@ -77,6 +74,12 @@ class OrganizationManagementServiceTest {
     @Mock
     private RoleDefinitionRepository roleDefinitionRepository;
 
+    @Mock
+    private OrganizationDeletionService organizationDeletionService;
+
+    @Mock
+    private WorkspacePermissionsDto workspacePermissions;
+
     private OrganizationManagementService service;
 
     @BeforeEach
@@ -86,12 +89,11 @@ class OrganizationManagementServiceTest {
                 workspaceAuthorizationService,
                 organizationRepository,
                 membershipRepository,
-                teamRepository,
-                teamMembershipRepository,
                 modelRepository,
                 invitationRepository,
                 roleSeedService,
-                roleDefinitionRepository);
+                roleDefinitionRepository,
+                organizationDeletionService);
     }
 
     @Test
@@ -127,11 +129,44 @@ class OrganizationManagementServiceTest {
     }
 
     @Test
+    void getAdminDashboard_OmitsCollectionsWithoutTheirPermissions() {
+        when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization()));
+        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(workspacePermissions);
+
+        var result = service.getAdminDashboard(7L, 41L);
+
+        assertEquals(0, result.stats().totalMembers());
+        assertEquals(0, result.stats().pendingInvitations());
+        assertEquals(List.of(), result.recentMembers());
+        assertEquals(List.of(), result.recentInvitations());
+        var statsJson = new ObjectMapper().valueToTree(result.stats());
+        assertFalse(statsJson.has("quotaUsed"));
+        assertFalse(statsJson.has("quotaLimit"));
+        verify(membershipRepository, never())
+                .findActiveByOrganizationIdOrderByCreatedAtAsc(41L);
+        verify(invitationRepository, never()).findByOrganizationIdOrderByCreatedAtDesc(41L);
+    }
+
+    @Test
+    void getAdminDashboard_LoadsAuthorizedMemberAndInvitationSummaries() {
+        when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization()));
+        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(workspacePermissions);
+        when(workspacePermissions.canViewMembers()).thenReturn(true);
+        when(workspacePermissions.canViewInvitations()).thenReturn(true);
+
+        service.getAdminDashboard(7L, 41L);
+
+        verify(membershipRepository)
+                .findActiveByOrganizationIdOrderByCreatedAtAsc(41L);
+        verify(invitationRepository).findByOrganizationIdOrderByCreatedAtDesc(41L);
+    }
+
+    @Test
     void transferOwnership_MovesOwnerToTargetActiveMember() {
         OrganizationMembership owner = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
-        when(membershipRepository.findById(2L)).thenReturn(Optional.of(target));
-        when(membershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE))
+        when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.of(target));
+        when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(owner, target));
         when(membershipRepository.save(owner)).thenReturn(owner);
         when(membershipRepository.save(target)).thenReturn(target);
@@ -155,8 +190,7 @@ class OrganizationManagementServiceTest {
 
     @Test
     void transferOwnership_RejectsInactiveTarget() {
-        when(membershipRepository.findById(2L))
-                .thenReturn(Optional.of(membership(2L, OrganizationRole.MEMBER, MembershipStatus.REMOVED)));
+        when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.transferOwnership(7L, 41L, new TransferOrganizationOwnershipRequest(2L)));
@@ -165,8 +199,8 @@ class OrganizationManagementServiceTest {
     @Test
     void transferOwnership_RejectsOrganizationWithoutOwner() {
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
-        when(membershipRepository.findById(2L)).thenReturn(Optional.of(target));
-        when(membershipRepository.findByOrganizationIdAndStatusOrderByCreatedAtAsc(41L, MembershipStatus.ACTIVE))
+        when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.of(target));
+        when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(target));
 
         assertThrows(IllegalArgumentException.class,
@@ -174,39 +208,10 @@ class OrganizationManagementServiceTest {
     }
 
     @Test
-    void updateOrganization_UpdatesSlugWhenProvided() {
-        OrganizationMembership membership = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
-        Organization organization = membership.getOrganization();
-        when(workspaceAccessService.requireMembership(7L, 41L)).thenReturn(membership);
-        when(organizationRepository.save(organization)).thenReturn(organization);
-
-        var result = service.updateOrganization(
-                7L,
-                41L,
-                new UpdateOrganizationRequest("Acme Lab", "acme-lab", "Description"));
-
-        assertEquals("acme-lab", result.slug());
-        assertEquals("acme-lab", organization.getSlug());
-        verify(workspaceAuthorizationService).requireOrganizationEdit(7L, 41L);
-    }
-
-    @Test
-    void updateOrganization_PreservesSlugWhenOmitted() {
-        OrganizationMembership membership = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
-        Organization organization = membership.getOrganization();
-        when(workspaceAccessService.requireMembership(7L, 41L)).thenReturn(membership);
-        when(organizationRepository.save(organization)).thenReturn(organization);
-
-        service.updateOrganization(7L, 41L, new UpdateOrganizationRequest("Acme Lab", null, "Description"));
-
-        assertEquals("org", organization.getSlug());
-    }
-
-    @Test
-    void updateMemberRole_AllowsExternalReviewerAsLegacyViewer() {
+    void updateMemberRole_AllowsReviewerAsLegacyViewer() {
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
-        RoleDefinition reviewerRole = externalReviewerRole();
-        when(membershipRepository.findById(2L)).thenReturn(Optional.of(target));
+        RoleDefinition reviewerRole = reviewerRole();
+        when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.of(target));
         when(workspaceAuthorizationService.organizationMemberActions(7L, 41L, target))
                 .thenReturn(new MembershipActionsDto(
                         true,
@@ -241,11 +246,10 @@ class OrganizationManagementServiceTest {
         return organization;
     }
 
-    private RoleDefinition externalReviewerRole() {
-        OrganizationSystemRole systemRole = OrganizationSystemRole.EXTERNAL_REVIEWER;
+    private RoleDefinition reviewerRole() {
+        OrganizationSystemRole systemRole = OrganizationSystemRole.REVIEWER;
         RoleDefinition role = new RoleDefinition(
                 organization(),
-                null,
                 RoleScope.ORGANIZATION,
                 systemRole.label(),
                 systemRole.slug(),
@@ -255,7 +259,7 @@ class OrganizationManagementServiceTest {
     }
 
     private RoleDefinition orgRole(OrganizationRole role) {
-        return new RoleDefinition(organization(), null, RoleScope.ORGANIZATION, role.name(), role.name(), role.name());
+        return new RoleDefinition(organization(), RoleScope.ORGANIZATION, role.name(), role.name(), role.name());
     }
 
     private User user(Long id) {

@@ -9,7 +9,6 @@ public record InvitationDto(
         Long id,
         Long organizationId,
         String organizationName,
-        Long teamId,
         String email,
         String role,
         RoleSummaryDto roleDefinition,
@@ -19,16 +18,19 @@ public record InvitationDto(
         OffsetDateTime createdAt) {
 
     public static InvitationDto from(Invitation invitation) {
+        return from(invitation, true);
+    }
+
+    public static InvitationDto from(Invitation invitation, boolean includeToken) {
         return new InvitationDto(
                 invitation.getId(),
                 invitation.getOrganization().getId(),
                 invitation.getOrganization().getName(),
-                invitation.getTeam() != null ? invitation.getTeam().getId() : null,
                 invitation.getEmail(),
                 invitation.getRole().name(),
                 invitation.getRoleDefinition() != null ? RoleSummaryDto.from(invitation.getRoleDefinition()) : null,
                 invitation.getStatus().name(),
-                invitation.getToken(),
+                includeToken ? invitation.getToken() : null,
                 invitation.getExpiresAt(),
                 invitation.getCreatedAt());
     }

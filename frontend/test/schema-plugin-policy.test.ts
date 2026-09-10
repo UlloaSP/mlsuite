@@ -7,15 +7,10 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
-import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
-import { createSchemaRunRuntime } from "../src/algorithms/schema/runtime-assembly";
-import { buildSchemaRunRawFromSubmitResult } from "../src/algorithms/mlform/schema-run-result-state";
-import {
-  isSkippedSchemaReportPayload,
-  wrapSchemaReportDefinitions,
-} from "../src/algorithms/schema/report-plugin-context";
-import { readReportContext } from "../src/algorithms/mlform/schema-run-report-mapping";
-import type { CatalogReportDefinition } from "../src/algorithms/plugin/custom-report-catalog";
+import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
+import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
+import { buildSchemaRunRawFromSubmitResult } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 
 const stringMeta = (value: unknown, fallback = ""): string =>
   typeof value === "string" ? value : fallback;
@@ -57,14 +52,16 @@ const customReportDefinition = (): CatalogReportDefinition => ({
 
 const explanationFetch = ({ config }: { config: { endpoint?: string } }) => ({
   submit: async (request: {
-    meta?: Record<string, unknown>;
-    serializedFieldValues?: Record<string, unknown>;
+    reportContext?: {
+      modelValues?: Record<string, unknown>;
+      meta: Record<string, unknown>;
+    };
   }) => {
-    const modelId = stringMeta(request.meta?.modelId);
+    const modelId = stringMeta(request.reportContext?.meta.modelId);
     return fetch(`${config.endpoint ?? "/api/analyzer/explanations"}?modelId=${modelId}`, {
       method: "POST",
       body: JSON.stringify({
-        instance: request.meta?.backendFieldValues ?? request.serializedFieldValues,
+        instance: request.reportContext?.modelValues,
       }),
     }).then((response) => response.json());
   },
@@ -93,7 +90,9 @@ describe("schema binding plugin policy", () => {
     );
 
     const result = await transport.submit({
-      serializedValues: {},
+      inputs: [],
+      displayValues: {},
+      modelValues: {},
       reports: [
         {
           id: "report_1",
@@ -105,7 +104,12 @@ describe("schema binding plugin policy", () => {
     } as never);
 
     expect((result as { reports: unknown[] }).reports).toMatchObject([
-      { mappedTo: "score", value: 1 },
+      {
+        backend: "model-1",
+        mappedTo: "score",
+        status: "ready",
+        payload: { value: 1 },
+      },
     ]);
   });
 
@@ -126,7 +130,9 @@ describe("schema binding plugin policy", () => {
       [],
     );
     const result = await transport.submit({
-      serializedValues: {},
+      inputs: [],
+      displayValues: {},
+      modelValues: {},
       reports: [
         {
           id: "report_a",
@@ -142,10 +148,10 @@ describe("schema binding plugin policy", () => {
         },
       ],
     } as never);
-    const context = (result as { raw: { reportContextById: Record<string, { modelId: string }> } })
-      .raw.reportContextById;
-    expect(readReportContext(context, "report_a")?.modelId).toBe("model-1");
-    expect(readReportContext(context, "report_b")?.modelId).toBe("model-2");
+    const reports = (result as { reports: Array<{ context?: { meta?: { modelId?: string } } }> })
+      .reports;
+    expect(reports[0]?.context?.meta?.modelId).toBe("model-1");
+    expect(reports[1]?.context?.meta?.modelId).toBe("model-2");
   });
 
   test("schema report context exists when custom report payload must be fetched", async () => {
@@ -155,7 +161,9 @@ describe("schema binding plugin policy", () => {
     );
     const transport = createSchemaRunTransport([{ modelId: "model-1" }], []);
     const result = await transport.submit({
-      serializedValues: {},
+      inputs: [],
+      displayValues: {},
+      modelValues: {},
       reports: [
         {
           id: "report_1",
@@ -165,9 +173,14 @@ describe("schema binding plugin policy", () => {
         },
       ],
     } as never);
-    const raw = (result as { raw: { reportContextById: Record<string, { modelId: string }> } }).raw;
-    expect((result as { reports: unknown[] }).reports).toEqual([]);
-    expect(readReportContext(raw.reportContextById, "report_1")?.modelId).toBe("model-1");
+    expect((result as { reports: unknown[] }).reports).toMatchObject([
+      {
+        backend: "model-1",
+        mappedTo: "score",
+        status: "pending",
+        context: { meta: { modelId: "model-1" } },
+      },
+    ]);
   });
 
   test("registered schema report fetch handles real mlform request shape", async () => {
@@ -221,34 +234,13 @@ describe("schema binding plugin policy", () => {
     expect(JSON.parse(requestBody(explanationCall?.[1])).instance).toEqual({ age: 42 });
   });
 
-  test("wrapped custom report fetch exposes missing context errors", async () => {
-    const definition = {
-      ...customReportDefinition(),
-      definition: {
-        ...customReportDefinition().definition,
-        fetch: () => ({
-          submit: async () => {
-            throw new Error("unsupported");
-          },
-        }),
-      },
-    };
-    const [wrapped] = wrapSchemaReportDefinitions([definition]);
-    const fetcher = wrapped?.definition.definition.fetch?.({ reportId: "report_1" } as never);
-    await expect(
-      fetcher?.submit({ meta: {}, raw: { reportContextById: { report_1: {} } } } as never),
-    ).rejects.toThrow("unsupported");
-  });
-
-  test("schema raw builder ignores skipped custom report payloads", () => {
-    const payload = { __mlsuiteSchemaReportSkipped: true };
+  test("schema raw builder treats skipped as terminal", () => {
     const built = buildSchemaRunRawFromSubmitResult(
-      { reports: [], results: [], reportContextById: { report_1: {} } },
-      [{ id: "report_1", state: { status: "ready", payload } }],
+      { reports: [], results: [] },
+      [{ id: "report_1", state: { status: "skipped" } }],
       {},
       [],
     );
-    expect(isSkippedSchemaReportPayload(payload)).toBe(true);
     expect(built.raw.reports).toEqual([]);
     expect(built.reportsPending).toBe(false);
   });
@@ -262,14 +254,6 @@ describe("schema binding plugin policy", () => {
           output: { reports: [], meta: { modelId: "model-1" } },
         },
       ],
-      reportContextById: {
-        report_1: {
-          modelId: "model-1",
-          modelInput: {},
-          meta: {},
-          raw: {},
-        },
-      },
     };
     const built = buildSchemaRunRawFromSubmitResult(
       initialRaw,
@@ -282,6 +266,19 @@ describe("schema binding plugin policy", () => {
       ],
       {},
       [{ modelId: "model-1" }],
+      {
+        report_1: {
+          reportId: "report_1",
+          kind: "plugin-report",
+          target: "score",
+          backend: "model-1",
+          displayValues: {},
+          modelValues: {},
+          reports: [],
+          meta: { modelId: "model-1" },
+          raw: {},
+        },
+      },
     );
     const raw = built.raw as {
       results: Array<{ output?: { reports: Array<Record<string, unknown>> } }>;

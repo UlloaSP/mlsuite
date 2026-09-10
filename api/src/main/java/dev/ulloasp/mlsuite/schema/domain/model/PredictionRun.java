@@ -70,6 +70,13 @@ public class PredictionRun {
     @Column(name = "status", nullable = false, length = 32)
     private PredictionRunStatus status;
 
+    // Identity snapshot: existing runs remain unattributed; later profile edits do not rewrite history.
+    @Column(name = "created_by_name", updatable = false)
+    private String createdByName;
+
+    @Column(name = "created_by_email", updatable = false)
+    private String createdByEmail;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;

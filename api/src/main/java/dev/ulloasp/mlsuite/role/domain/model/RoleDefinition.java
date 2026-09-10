@@ -8,7 +8,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.team.domain.model.Team;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -34,14 +33,12 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Table(name = "role_definition", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_role_org_scope_slug", columnNames = { "organization_id", "scope", "slug" }),
-        @UniqueConstraint(name = "uq_role_team_scope_slug", columnNames = { "team_id", "scope", "slug" })
+        @UniqueConstraint(name = "uq_role_org_scope_slug", columnNames = { "organization_id", "scope", "slug" })
 })
 public class RoleDefinition {
 
-    public RoleDefinition(Organization org, Team team, RoleScope scope, String name, String slug, String systemKey) {
+    public RoleDefinition(Organization org, RoleScope scope, String name, String slug, String systemKey) {
         this.organization = org;
-        this.team = team;
         this.scope = scope;
         this.name = name;
         this.slug = slug;
@@ -56,10 +53,6 @@ public class RoleDefinition {
     @ManyToOne
     @JoinColumn(name = "organization_id", foreignKey = @ForeignKey(name = "fk_role_org"))
     private Organization organization;
-
-    @ManyToOne
-    @JoinColumn(name = "team_id", foreignKey = @ForeignKey(name = "fk_role_team"))
-    private Team team;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "scope", nullable = false, length = 32)

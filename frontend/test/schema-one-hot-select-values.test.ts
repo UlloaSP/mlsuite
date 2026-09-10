@@ -4,9 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { describe, expect, test, vi } from "vite-plus/test";
-import { createSchemaRunTransport } from "../src/algorithms/schema/run-transport";
-import { toSchemaRunSerializedValues } from "../src/algorithms/schema/bulk-upload";
-import type { SchemaVersionDto } from "../src/api/schemas/dtos";
+import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
+import { toSchemaRunFieldValues } from "@/features/schemas/lib/bulk-upload";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 const version: SchemaVersionDto = {
   id: "version-1",
@@ -36,7 +36,7 @@ const version: SchemaVersionDto = {
 describe("schema one-hot select values", () => {
   test("bulk maps technical columns back to one visible field", () => {
     expect(
-      toSchemaRunSerializedValues(version, {
+      toSchemaRunFieldValues(version, {
         blood_group__O_positive: 0,
         blood_group__A_negative: 1,
         age: 52,
@@ -61,8 +61,7 @@ describe("schema one-hot select values", () => {
         age: 52,
       },
       displayValues: { bloodGroup: "O_positive", age: 52 },
-      fieldValues: { "blood-group": "O_positive", age: 52 },
-      serializedValues: { "blood-group": "O_positive", age: 52 },
+      inputs: [],
       reports: [],
     } as never);
 

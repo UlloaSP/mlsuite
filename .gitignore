@@ -57,6 +57,13 @@ backend/.venv/
 ops-agent/.venv/
 
 # Environment files
-.env.local
-.env.local.*.backup
+.env
+.env.*
+!.env.example
 *.env.backup
+
+# Generated browser QA artifacts
+.playwright-cli/
+output/playwright/
+playwright-report/
+test-results/

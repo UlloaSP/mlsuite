@@ -6,27 +6,38 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import {
   Maximize,
   Minimize,
+  Monitor,
   Moon,
   PanelRightClose,
   PanelRightOpen,
   Search,
+  Settings,
   Sun,
 } from "lucide-react";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useEffectEvent } from "react";
-import { fullscreenAtom, globalSearchOpenAtom, themeWithHtmlAtom } from "../atoms";
-import { isModShortcut, isTypingTarget } from "../utils/keyboard-shortcuts";
-import { Kbd, KbdGroup } from "./Kbd";
+import { Link } from "react-router";
+import { nextThemeMode, themeModeAtom } from "@/shared/ui/appearance-state";
+import { fullscreenAtom, globalSearchOpenAtom } from "@/shared/ui/ui-state";
+import { isTypingTarget } from "@/app/utils/keyboard-shortcuts";
+import { AppKbd } from "@/shared/ui/AppKbd";
+import { AppKbdGroup } from "@/shared/ui/AppKbdGroup";
 import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "./app-sidebar";
+  matchesShortcut,
+  shortcutBindingsAtom,
+  shortcutLabels,
+  shortcutToAria,
+  type ShortcutBinding,
+} from "@/shared/ui/shortcut-state";
+import { UserGuideButton } from "./UserGuideButton";
+import { SidebarGroup } from "./app-sidebar/SidebarGroup";
+import { SidebarGroupContent } from "./app-sidebar/SidebarGroupContent";
+import { SidebarGroupLabel } from "./app-sidebar/SidebarGroupLabel";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
+import { SidebarMenu } from "./app-sidebar/SidebarMenu";
+import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
+import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
+import { useSidebar } from "./app-sidebar/SidebarContext";
 
 type ViewTransitionDocument = Document & {
   startViewTransition?: (callback: () => void) => { finished: Promise<void> };
@@ -40,15 +51,24 @@ const restoreRouteTransition = (element: HTMLElement, previousValue: string) => 
   }
 };
 
-const modifierLabel = /mac/i.test(navigator.platform) ? "⌘" : "Ctrl";
+const shortcutHint = (binding: ShortcutBinding) => (
+  <AppKbdGroup className="ml-auto">
+    {shortcutLabels(binding).map((label) => (
+      <AppKbd key={label}>{label}</AppKbd>
+    ))}
+  </AppKbdGroup>
+);
 
 export function SidebarActions() {
-  const [theme, setTheme] = useAtom(themeWithHtmlAtom);
+  const [theme, setTheme] = useAtom(themeModeAtom);
   const [isFullscreen, setIsFullscreen] = useAtom(fullscreenAtom);
   const [searchOpen, setSearchOpen] = useAtom(globalSearchOpenAtom);
+  const bindings = useAtomValue(shortcutBindingsAtom);
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const collapseLabel = collapsed ? "Expand" : "Collapse";
+  const nextTheme = nextThemeMode(theme);
+  const nextThemeLabel = `${nextTheme === "system" ? "System" : nextTheme === "light" ? "Light" : "Dark"} Mode`;
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       void document.documentElement.requestFullscreen().then(() => setIsFullscreen(true));
@@ -57,7 +77,6 @@ export function SidebarActions() {
     }
   };
   const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
     const transitionDocument = document as ViewTransitionDocument;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -83,12 +102,12 @@ export function SidebarActions() {
   const handleWindowKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (isTypingTarget(event.target)) return;
 
-    if (isModShortcut(event, "l", true)) {
+    if (matchesShortcut(event, bindings["toggle-theme"])) {
       event.preventDefault();
       toggleTheme();
     }
 
-    if (isModShortcut(event, "f", true)) {
+    if (matchesShortcut(event, bindings["toggle-fullscreen"])) {
       event.preventDefault();
       toggleFullscreen();
     }
@@ -101,48 +120,53 @@ export function SidebarActions() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Actions</SidebarGroupLabel>
+      <SidebarGroupLabel>Tooling</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
+          <UserGuideButton />
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild title="Settings">
+              <Link data-user-guide-item="settings" to="/settings" viewTransition>
+                <Settings size={18} />
+                <SidebarLabel className="truncate">Settings</SidebarLabel>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              aria-keyshortcuts="Control+K Meta+K"
+              data-user-guide-item="global-search"
+              aria-keyshortcuts={shortcutToAria(bindings["global-search"])}
               title="Global Search"
               isActive={searchOpen}
               onClick={() => setSearchOpen(true)}
             >
               <Search size={18} />
               <SidebarLabel className="truncate">Global Search</SidebarLabel>
-              {!collapsed ? (
-                <KbdGroup className="ml-auto">
-                  <Kbd>{modifierLabel}</Kbd>
-                  <Kbd>K</Kbd>
-                </KbdGroup>
-              ) : null}
+              {!collapsed ? shortcutHint(bindings["global-search"]) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              aria-keyshortcuts="Control+Shift+L Meta+Shift+L"
-              title={theme === "light" ? "Dark Mode" : "Light Mode"}
+              data-user-guide-item="toggle-theme"
+              aria-keyshortcuts={shortcutToAria(bindings["toggle-theme"])}
+              title={nextThemeLabel}
               onClick={toggleTheme}
             >
-              {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
-              <SidebarLabel className="truncate">
-                {theme === "light" ? "Dark Mode" : "Light Mode"}
-              </SidebarLabel>
-              {!collapsed ? (
-                <KbdGroup className="ml-auto">
-                  <Kbd>{modifierLabel}</Kbd>
-                  <Kbd>Shift</Kbd>
-                  <Kbd>L</Kbd>
-                </KbdGroup>
-              ) : null}
+              {nextTheme === "light" ? (
+                <Sun size={18} />
+              ) : nextTheme === "dark" ? (
+                <Moon size={18} />
+              ) : (
+                <Monitor size={18} />
+              )}
+              <SidebarLabel className="truncate">{nextThemeLabel}</SidebarLabel>
+              {!collapsed ? shortcutHint(bindings["toggle-theme"]) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              aria-keyshortcuts="Control+Shift+F Meta+Shift+F"
+              data-user-guide-item="toggle-fullscreen"
+              aria-keyshortcuts={shortcutToAria(bindings["toggle-fullscreen"])}
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               onClick={toggleFullscreen}
             >
@@ -150,30 +174,20 @@ export function SidebarActions() {
               <SidebarLabel className="truncate">
                 {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
               </SidebarLabel>
-              {!collapsed ? (
-                <KbdGroup className="ml-auto">
-                  <Kbd>{modifierLabel}</Kbd>
-                  <Kbd>Shift</Kbd>
-                  <Kbd>F</Kbd>
-                </KbdGroup>
-              ) : null}
+              {!collapsed ? shortcutHint(bindings["toggle-fullscreen"]) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              aria-keyshortcuts="Control+B Meta+B"
+              data-user-guide-item="toggle-sidebar"
+              aria-keyshortcuts={shortcutToAria(bindings["toggle-sidebar"])}
               title={collapseLabel}
               aria-expanded={!collapsed}
               onClick={toggleSidebar}
             >
               {collapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
               <SidebarLabel className="truncate">{collapseLabel}</SidebarLabel>
-              {!collapsed ? (
-                <KbdGroup className="ml-auto">
-                  <Kbd>{modifierLabel}</Kbd>
-                  <Kbd>B</Kbd>
-                </KbdGroup>
-              ) : null}
+              {!collapsed ? shortcutHint(bindings["toggle-sidebar"]) : null}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
