@@ -885,3 +885,6 @@
 ## Equal-height selection columns and explicit export selection
 - Correction: short reviewer lists stopped early, leaving pagination above the neighboring footer; organization export exposed only a snapshot dropdown.
 - Rule: selection list bodies must grow to fill equal-height columns. Export entry points should make scope and selected runs reviewable before fetching/download, preserving feedback inclusion controls.
+
+- Before switching to a branch that still tracks private configuration, preserve the local ignored .env outside the checkout and restore it after switching/pulling. Git can overwrite or remove it while transitioning from tracked to ignored. Never display its values.
+
