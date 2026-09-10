@@ -1970,3 +1970,17 @@ Review height and CSV picker verification:
 
 Review: checks skipped at the user's explicit request. No new tests, build, visual checks or CI. Generated files remain locally but are ignored. No push or merge.
 
+
+## API proxy DNS recovery
+- [x] Reproduce 502 while direct API readiness returns 200; cached IP .5 differs from current .7.
+- [ ] Resolve API hostname through Docker DNS at runtime and reload Nginx.
+- [ ] Verify proxied readiness and document outcome.
+
+- [x] Configure Docker DNS resolution every 5 seconds; validate nginx -t and reload live proxy.
+- [x] Proxied readiness now returns HTTP 200. API remains running; no data or environment changes.
+
+Review: root cause was Nginx startup-only DNS resolution after API container recreation. Source configuration and running container corrected; no full application suite or visual checks run.
+
+- [x] Built frontend image and recreated frontend only; readiness remains 200.
+- Graph update attempted: graphify update . refused to overwrite because new graph has 10735 nodes versus 10796; existing graph preserved. No forced overwrite.
+
