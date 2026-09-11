@@ -85,7 +85,7 @@ rollback remain the next implementation stages.
   point to published release digests and must not be deleted by a blanket cleanup.
   Immutability prevents content substitution, not deletion of GHCR packages.
 
-Docker build inputs and Actions are pinned to reviewed digests/SHAs. Build cache
+Docker base images and Actions are pinned to reviewed digests/SHAs. Build cache
 is scoped by service. Package repositories and build metadata can still change;
 this does not claim byte-for-byte reproducible rebuilding. Promotion must reuse
 the manifest digests rather than rebuild from the same source commit.

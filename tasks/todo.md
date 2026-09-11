@@ -1996,9 +1996,11 @@ Plan approved by task: integrate main into develop with a merge commit, branch f
 - [x] Harden publication: pinned actions/tooling/base images, restricted refs, serialized publication, SBOM/provenance and vulnerability scan gate.
 - [x] Make retry behavior explicit: completed immutable releases are verified and reused; incomplete drafts can resume; no release for partial failure.
 - [x] Provide a digest-only Compose override and documented release retrieval/verification. No deployment, migrations or environment provisioning.
-- [ ] Validate scripts, failure cases, workflows and remote PR CI. Report limits of pre-merge publication verification.
-- [ ] Commit and open feature PR into develop; leave PR open.
+- [x] Validate scripts, failure cases, workflows and remote PR CI. Report limits of pre-merge publication verification.
+- [x] Commit and open feature PR into develop; leave PR open.
 
 Acceptance: private env remains untouched and untracked; injected secret fails CI; missing/mismatched image records cannot produce release; published manifest fixes exactly four SHA256 digests; retry cannot mutate a published release. Existing latest images remain untouched and are no longer deployment identity. App version remains 0.1.0.
 
 Review so far: 31 Python script tests passed, actionlint 1.7.12 passed (Windows, shellcheck/pyflakes unavailable), read-only prepare against main passed. GitHub immutable releases enabled and read back true. Historical credentials confirmed local-only; obsolete tracked TLS keystore removed with private backup outside checkout. Docker daemon unavailable, so no local image build/scan was claimed. Actual draft publication is tested with mocked writes and will first execute after promotion to main.
+
+Final review: feature implementation committed as 36a312d; PR #5 targets develop and remains open. CI run 34592949319 passed all seven jobs, including real Linux secret scanning and the release lifecycle tests. Committed-tree/new-history scan returned zero findings. Graph updated to 10837 nodes/29080 edges. Private .env matches its pre-task backup. No release or environment deployment performed.
