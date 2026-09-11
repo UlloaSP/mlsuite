@@ -4,6 +4,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -12,6 +13,31 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import release_publish as publisher
 from release_manifest import IMAGES, build_manifest, write_assets
+
+
+class CommandTests(unittest.TestCase):
+    def test_success_preserves_binary_input_and_output(self):
+        payload = b"release input\x00\xff\n"
+        result = publisher.command(sys.executable, "-c",
+            "import sys; sys.stdout.buffer.write(sys.stdin.buffer.read())", data=payload)
+        self.assertEqual(result, payload)
+
+    def test_nonzero_exit_preserves_stderr_error(self):
+        with self.assertRaisesRegex(RuntimeError, "^Registry unavailable$"):
+            publisher.command(sys.executable, "-c",
+                "import sys; sys.stderr.write('Registry unavailable\\n'); sys.exit(7)")
+
+    def test_timeout_becomes_controlled_failure_without_arguments_or_output(self):
+        script = "import time; print('private-output', flush=True); time.sleep(10)"
+        with self.assertRaises(RuntimeError) as caught:
+            publisher.command(sys.executable, "-c", script, "private-argument", timeout=0.1)
+        self.assertEqual(str(caught.exception), f"Command timed out after 0.1s: {sys.executable}")
+        self.assertIsInstance(caught.exception.__cause__, subprocess.TimeoutExpired)
+
+    def test_missing_executable_preserves_os_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(FileNotFoundError):
+                publisher.command(str(Path(directory) / "missing-command"))
 
 
 class PublicationTests(unittest.TestCase):

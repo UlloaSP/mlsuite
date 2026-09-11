@@ -69,6 +69,9 @@ rollback remain the next implementation stages.
 
 ## Failure and retry behavior
 
+- External commands in the release helper have a 300-second timeout. A timeout
+  fails the operation with the executable name, without logging arguments or
+  captured output. The publication job retains its ten-minute overall limit.
 - A failed build or scan leaves only unpromoted candidate images. It cannot create
   a complete release because publication requires every matrix job to succeed.
 - Upload failure leaves a draft. Rerunning can replace only its expected draft

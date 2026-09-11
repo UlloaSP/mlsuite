@@ -28,10 +28,46 @@ the promotion PR. Opening a PR does not authorize its automatic merge.
   commits. Logs expose only finding metadata, never secret values. Download,
   scan, or history-boundary errors fail the required gate.
 
-Full frontend formatting/lint is not yet a required check: the initial
-`vp check` baseline reported formatting failures in 315 files. Resolve that debt
-in a separate change before adding the gate. This workflow does not suppress its
-failures or claim that the repository passes full lint.
+Full frontend formatting/lint is not yet a required check. The 2026-09-11 audit
+with Vite+ 0.2.5 reports formatting failures in 392 files from `vp check`, and
+22 warnings across 13 files from `vp lint --format json`. Adding
+`--deny-warnings` makes lint fail. Resolve that debt in a separate change before
+adding the gate. This workflow does not suppress those failures or claim that
+the repository passes full lint.
+
+## Follow-up quality plan
+
+1. Keep the existing Gitleaks job in `CI required`; do not add a second secret
+   scanner to perform the same check. Preserve the private ignored `.env`.
+2. Normalize frontend formatting in a dedicated feature PR from updated develop
+   using the installed Vite+ formatter. Fix the lint warnings with focused tests
+   where promise handling or value conversion changes behavior. Require formatting,
+   type-aware lint with no warnings, tests and build before adding these commands
+   to required CI. Use the same configuration locally and in Actions.
+3. Introduce Python and Java rules in separate, reviewable changes. Neither
+   component currently has a configured formatter/linter. Evaluate Ruff for both
+   Python components and a Maven-integrated Java checker/formatter; pin versions,
+   document the commands and normalize existing files before enforcing them.
+   Keep new tooling in development/build dependencies.
+4. Reassess MegaLinter only if coordinating those checks becomes useful. Select
+   explicit linters/configurations, avoid competing formatters and duplicate
+   Gitleaks/actionlint checks, and start without automatic source edits. A failing
+   result blocks merges only when included in the protected required gate.
+5. Optionally trial Qodo Cover on one component, manually triggered and with a
+   bounded generation budget. Supply its coverage report and provider credential
+   separately, review the generated tests in a complementary PR, and keep the
+   generator non-blocking. A passing generated test or higher coverage alone does
+   not prove the intended behavior. No generator or provider secret is configured
+   by the release foundation PR.
+
+For CodeRabbit, evaluate comments against the code before changing it. PR #5's
+publisher timeout is addressed with real subprocess tests. Its default 80%
+docstring-coverage warning is not an adopted project requirement or a test
+coverage result. Document contracts and non-obvious decisions instead of adding
+redundant docstrings to satisfy that percentage.
+
+References: [MegaLinter](https://megalinter.io/latest/),
+[Qodo Cover action and limitations](https://github.com/qodo-ai/qodo-ci#limitations).
 
 ## Develop and main protection
 

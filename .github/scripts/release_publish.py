@@ -14,8 +14,12 @@ from release_manifest import canonical_json, compose_override, validate_identity
 ASSETS = {"release.json", "release.json.sha256", "docker-compose.release.yml"}
 
 
-def command(*args, data=None):
-    result = subprocess.run(args, input=data, capture_output=True)
+def command(*args, data=None, timeout=300):
+    """Run an argument vector without a shell, failing if the process exceeds its budget."""
+    try:
+        result = subprocess.run(args, input=data, capture_output=True, timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(f"Command timed out after {timeout}s: {args[0]}") from error
     if result.returncode:
         raise RuntimeError(result.stderr.decode(errors="replace").strip())
     return result.stdout

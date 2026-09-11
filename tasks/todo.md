@@ -2004,3 +2004,19 @@ Acceptance: private env remains untouched and untracked; injected secret fails C
 Review so far: 31 Python script tests passed, actionlint 1.7.12 passed (Windows, shellcheck/pyflakes unavailable), read-only prepare against main passed. GitHub immutable releases enabled and read back true. Historical credentials confirmed local-only; obsolete tracked TLS keystore removed with private backup outside checkout. Docker daemon unavailable, so no local image build/scan was claimed. Actual draft publication is tested with mocked writes and will first execute after promotion to main.
 
 Final review: feature implementation committed as 36a312d; PR #5 targets develop and remains open. CI run 34592949319 passed all seven jobs, including real Linux secret scanning and the release lifecycle tests. Committed-tree/new-history scan returned zero findings. Graph updated to 10837 nodes/29080 edges. Private .env matches its pre-task backup. No release or environment deployment performed.
+
+## PR #5 review follow-up and merge (2026-09-11)
+
+User authorizes implementation, PR supervision and merge into develop. Main promotion remains separate.
+
+- [x] Fetch current branches and inspect CodeRabbit comments, CI results and branch protection.
+- [x] Bound publisher subprocesses to 300 seconds; preserve input/output and existing error handling, translate timeouts into the CLI's controlled failure path.
+- [x] Test successful execution, nonzero exit, timeout and unavailable executable in the existing publication test file.
+- [x] Record a staged lint/format plan using existing tools; retain the Gitleaks gate, defer overlapping MegaLinter and keep test generation optional.
+- [ ] Run focused checks, independent review and graph update; preserve the ignored local .env.
+- [ ] Commit/push, inspect the final-head CI and reviews, resolve addressed conversations and fix valid findings.
+- [ ] Merge PR #5 into develop with a two-parent merge, update local develop and verify post-merge CI.
+
+Acceptance: a hung external command fails with a useful error before the ten-minute publish job deadline; no secret-bearing arguments or subprocess output appear in the timeout message. Existing release contracts remain intact. Merge uses protected-branch checks, with no bypass, squash, rebase or promotion to main.
+
+Local review: all 35 script tests pass, including four real-process command tests. Graph updated to 10841 nodes/29082 edges; git diff --check passes. Read-only frontend audit reports 392 formatting files and 22 lint warnings, documented in .github/CI.md with a separate cleanup/gate plan. No application formatting, new services or generator credentials introduced.
