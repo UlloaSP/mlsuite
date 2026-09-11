@@ -2013,10 +2013,13 @@ User authorizes implementation, PR supervision and merge into develop. Main prom
 - [x] Bound publisher subprocesses to 300 seconds; preserve input/output and existing error handling, translate timeouts into the CLI's controlled failure path.
 - [x] Test successful execution, nonzero exit, timeout and unavailable executable in the existing publication test file.
 - [x] Record a staged lint/format plan using existing tools; retain the Gitleaks gate, defer overlapping MegaLinter and keep test generation optional.
-- [ ] Run focused checks, independent review and graph update; preserve the ignored local .env.
+- [x] Run focused checks, independent review and graph update; preserve the ignored local .env.
+- [x] Enable CodeRabbit auto-reviews for develop; its default branch-only setting skipped feature PR updates despite a green bot status.
 - [ ] Commit/push, inspect the final-head CI and reviews, resolve addressed conversations and fix valid findings.
 - [ ] Merge PR #5 into develop with a two-parent merge, update local develop and verify post-merge CI.
 
 Acceptance: a hung external command fails with a useful error before the ten-minute publish job deadline; no secret-bearing arguments or subprocess output appear in the timeout message. Existing release contracts remain intact. Merge uses protected-branch checks, with no bypass, squash, rebase or promotion to main.
 
 Local review: all 35 script tests pass, including four real-process command tests. Graph updated to 10841 nodes/29082 edges; git diff --check passes. Read-only frontend audit reports 392 formatting files and 22 lint warnings, documented in .github/CI.md with a separate cleanup/gate plan. No application formatting, new services or generator credentials introduced.
+
+Independent review through 22daaf5 found no blockers and independently passed all 35 script tests. Remaining work is remote review/CI supervision and protected merge, not further application changes.

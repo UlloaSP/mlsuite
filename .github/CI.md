@@ -65,9 +65,13 @@ publisher timeout is addressed with real subprocess tests. Its default 80%
 docstring-coverage warning is not an adopted project requirement or a test
 coverage result. Document contracts and non-obvious decisions instead of adding
 redundant docstrings to satisfy that percentage.
+The root `.coderabbit.yaml` includes `develop` in automatic reviews alongside the
+default branch, so feature PRs receive reviews before promotion to main. Check
+the bot's review details: a green status can also mean the review was skipped.
 
 References: [MegaLinter](https://megalinter.io/latest/),
-[Qodo Cover action and limitations](https://github.com/qodo-ai/qodo-ci#limitations).
+[Qodo Cover action and limitations](https://github.com/qodo-ai/qodo-ci#limitations),
+[CodeRabbit branch selection](https://docs.coderabbit.ai/configuration/auto-review).
 
 ## Develop and main protection
 
