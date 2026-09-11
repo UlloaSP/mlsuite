@@ -1984,3 +1984,21 @@ Review: root cause was Nginx startup-only DNS resolution after API container rec
 - [x] Built frontend image and recreated frontend only; readiness remains 200.
 - Graph update attempted: graphify update . refused to overwrite because new graph has 10735 nodes versus 10796; existing graph preserved. No forced overwrite.
 
+
+## Secrets and immutable releases (2026-09-11)
+
+Plan approved by task: integrate main into develop with a merge commit, branch from develop, implement stages 1/2, verify, commit and open PR to develop without merging it.
+
+- [x] Preserve private .env; merge main into develop through PR #4 with two-parent merge a1e2171; create feature/secure-immutable-releases.
+- [x] Confirm old credentials are used only in local Docker. Preserve local configuration; do not reuse these values for future deployed environments.
+- [x] Add checksum-pinned secret scanning of tracked content and incoming commits to required CI; retain branch and GitHub secret protections.
+- [x] Replace moving latest publication with complete releases: four candidate images, per-image digest records, exact inventory validation and immutable GitHub release assets.
+- [x] Harden publication: pinned actions/tooling/base images, restricted refs, serialized publication, SBOM/provenance and vulnerability scan gate.
+- [x] Make retry behavior explicit: completed immutable releases are verified and reused; incomplete drafts can resume; no release for partial failure.
+- [x] Provide a digest-only Compose override and documented release retrieval/verification. No deployment, migrations or environment provisioning.
+- [ ] Validate scripts, failure cases, workflows and remote PR CI. Report limits of pre-merge publication verification.
+- [ ] Commit and open feature PR into develop; leave PR open.
+
+Acceptance: private env remains untouched and untracked; injected secret fails CI; missing/mismatched image records cannot produce release; published manifest fixes exactly four SHA256 digests; retry cannot mutate a published release. Existing latest images remain untouched and are no longer deployment identity. App version remains 0.1.0.
+
+Review so far: 31 Python script tests passed, actionlint 1.7.12 passed (Windows, shellcheck/pyflakes unavailable), read-only prepare against main passed. GitHub immutable releases enabled and read back true. Historical credentials confirmed local-only; obsolete tracked TLS keystore removed with private backup outside checkout. Docker daemon unavailable, so no local image build/scan was claimed. Actual draft publication is tested with mocked writes and will first execute after promotion to main.
