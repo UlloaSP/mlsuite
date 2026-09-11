@@ -17,6 +17,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  secrets:
+    name: Secrets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify secret-scan success and failure cases
+        run: python3 -m unittest discover -s .github/tests -p test_secret_scan.py
+      - name: Scan tracked tree and new commits
+        env:
+          SCAN_BASE: ${{ github.event.pull_request.base.sha || github.event.before || '' }}
+          SCAN_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 .github/scripts/scan-secrets.py --base "$SCAN_BASE" --head "$SCAN_HEAD"
+
   frontend:
     name: Frontend
     runs-on: ubuntu-24.04
@@ -125,6 +142,8 @@ jobs:
         run: |
           docker compose --env-file .env.example -f docker-compose.dev.yml config --quiet
           docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet
+      - name: Validate release contracts and failure handling
+        run: python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
       - name: Validate workflows
         run: |
           curl -fsSL -o "$RUNNER_TEMP/actionlint.tar.gz" \
@@ -136,7 +155,7 @@ jobs:
   required:
     name: CI required
     if: always()
-    needs: [frontend, api, python, configuration]
+    needs: [frontend, api, python, configuration, secrets]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:

@@ -1984,3 +1984,42 @@ Review: root cause was Nginx startup-only DNS resolution after API container rec
 - [x] Built frontend image and recreated frontend only; readiness remains 200.
 - Graph update attempted: graphify update . refused to overwrite because new graph has 10735 nodes versus 10796; existing graph preserved. No forced overwrite.
 
+
+## Secrets and immutable releases (2026-09-11)
+
+Plan approved by task: integrate main into develop with a merge commit, branch from develop, implement stages 1/2, verify, commit and open PR to develop without merging it.
+
+- [x] Preserve private .env; merge main into develop through PR #4 with two-parent merge a1e2171; create feature/secure-immutable-releases.
+- [x] Confirm old credentials are used only in local Docker. Preserve local configuration; do not reuse these values for future deployed environments.
+- [x] Add checksum-pinned secret scanning of tracked content and incoming commits to required CI; retain branch and GitHub secret protections.
+- [x] Replace moving latest publication with complete releases: four candidate images, per-image digest records, exact inventory validation and immutable GitHub release assets.
+- [x] Harden publication: pinned actions/tooling/base images, restricted refs, serialized publication, SBOM/provenance and vulnerability scan gate.
+- [x] Make retry behavior explicit: completed immutable releases are verified and reused; incomplete drafts can resume; no release for partial failure.
+- [x] Provide a digest-only Compose override and documented release retrieval/verification. No deployment, migrations or environment provisioning.
+- [x] Validate scripts, failure cases, workflows and remote PR CI. Report limits of pre-merge publication verification.
+- [x] Commit and open feature PR into develop; leave PR open.
+
+Acceptance: private env remains untouched and untracked; injected secret fails CI; missing/mismatched image records cannot produce release; published manifest fixes exactly four SHA256 digests; retry cannot mutate a published release. Existing latest images remain untouched and are no longer deployment identity. App version remains 0.1.0.
+
+Review so far: 31 Python script tests passed, actionlint 1.7.12 passed (Windows, shellcheck/pyflakes unavailable), read-only prepare against main passed. GitHub immutable releases enabled and read back true. Historical credentials confirmed local-only; obsolete tracked TLS keystore removed with private backup outside checkout. Docker daemon unavailable, so no local image build/scan was claimed. Actual draft publication is tested with mocked writes and will first execute after promotion to main.
+
+Final review: feature implementation committed as 36a312d; PR #5 targets develop and remains open. CI run 34592949319 passed all seven jobs, including real Linux secret scanning and the release lifecycle tests. Committed-tree/new-history scan returned zero findings. Graph updated to 10837 nodes/29080 edges. Private .env matches its pre-task backup. No release or environment deployment performed.
+
+## PR #5 review follow-up and merge (2026-09-11)
+
+User authorizes implementation, PR supervision and merge into develop. Main promotion remains separate.
+
+- [x] Fetch current branches and inspect CodeRabbit comments, CI results and branch protection.
+- [x] Bound publisher subprocesses to 300 seconds; preserve input/output and existing error handling, translate timeouts into the CLI's controlled failure path.
+- [x] Test successful execution, nonzero exit, timeout and unavailable executable in the existing publication test file.
+- [x] Record a staged lint/format plan using existing tools; retain the Gitleaks gate, defer overlapping MegaLinter and keep test generation optional.
+- [x] Run focused checks, independent review and graph update; preserve the ignored local .env.
+- [x] Enable CodeRabbit auto-reviews for develop; its default branch-only setting skipped feature PR updates despite a green bot status.
+- [ ] Commit/push, inspect the final-head CI and reviews, resolve addressed conversations and fix valid findings.
+- [ ] Merge PR #5 into develop with a two-parent merge, update local develop and verify post-merge CI.
+
+Acceptance: a hung external command fails with a useful error before the ten-minute publish job deadline; no secret-bearing arguments or subprocess output appear in the timeout message. Existing release contracts remain intact. Merge uses protected-branch checks, with no bypass, squash, rebase or promotion to main.
+
+Local review: all 35 script tests pass, including four real-process command tests. Graph updated to 10841 nodes/29082 edges; git diff --check passes. Read-only frontend audit reports 392 formatting files and 22 lint warnings, documented in .github/CI.md with a separate cleanup/gate plan. No application formatting, new services or generator credentials introduced.
+
+Independent review through 22daaf5 found no blockers and independently passed all 35 script tests. Remaining work is remote review/CI supervision and protected merge, not further application changes.
