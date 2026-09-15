@@ -124,9 +124,10 @@ deploy:shelob:
       cd /home/pablo.ulloa/mlsuite
       test -f .env
       test -z "$(git status --porcelain)"
-      git fetch origin main
-      test "$(git rev-parse origin/main)" = "$1" || {
-        echo 'GitHub main does not contain the GitLab pipeline commit.' >&2
+      export GIT_SSH_COMMAND='ssh -i ~/.ssh/mlsuite_gitlab_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes'
+      git fetch gitlab main
+      test "$(git rev-parse FETCH_HEAD)" = "$1" || {
+        echo 'GitLab main does not contain the pipeline commit.' >&2
         exit 1
       }
       git switch main

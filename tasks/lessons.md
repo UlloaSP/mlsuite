@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-09-15 - Deployment branch confirmation
+
+- Correction: initial CI/CD design targeted automatic deployment from `develop`; user required deployment only from `main`.
+- Rule: confirm deployment trigger branch separately from test branches before creating credentials or environment jobs.
+
 ## 2026-08-23 - Derived display-key ownership
 
 - Correction: the initial diagnosis assigned `displayKey` generation to MLSchema, but the clarified contract keeps it optional in persisted schemas and derives it at the MLForm runtime boundary.
