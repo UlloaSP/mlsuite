@@ -1,3 +1,17 @@
+# GitHub-canonical GitLab mirror
+
+- [x] Keep GitHub as the only merge authority and remove the local multi-push configuration.
+- [x] Mirror GitHub `main` and `develop` to GitLab with a dedicated least-privilege credential.
+- [ ] Preserve GitLab CI deployment on mirrored pushes to `main`.
+- [x] Reconcile divergent branch histories without losing unique documentation.
+- [ ] Verify identical refs, pipeline trigger, and Shelob deployment.
+
+## Review
+
+- GitHub Actions mirror run 34973385481 updated GitLab `develop` to exact SHA `23fd2e50bb8c550cb3a1d62361ecb6394eae85a6`.
+- GitLab pipeline 16447 started from the mirrored push; its first secret scan exposed an unreachable pre-force base and prompted a full-tree fallback.
+- Previous deploy evidence retained: pipeline 16443 deployed GitLab main SHA `7d878edfea2c47747e40e5ae4df2e9ffe588be41`; all six services were up and readiness returned `ready: true`.
+
 # GitLab runner connectivity probe
 
 - [x] Verify `develop` matches on GitHub and GitLab.

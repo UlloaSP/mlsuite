@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-09-15 - One forge owns merge history
+
+- Correction: equivalent GitHub PRs and GitLab MRs produced different merge commits even when their trees matched.
+- Rule: choose one canonical forge before integration. Mirror its exact refs to the other forge; never recreate the same merge independently on both.
+
 ## 2026-09-15 - Deployment branch confirmation
 
 - Correction: initial CI/CD design targeted automatic deployment from `develop`; user required deployment only from `main`.
