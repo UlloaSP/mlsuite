@@ -1,0 +1,31 @@
+name: Mirror GitLab
+
+on:
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mirror-gitlab
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Push exact branch commit to GitLab
+        env:
+          GITLAB_USERNAME: ${{ secrets.GITLAB_MIRROR_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
+        run: |
+          auth=$(printf '%s:%s' "$GITLAB_USERNAME" "$GITLAB_TOKEN" | base64 -w0)
+          git -c "http.extraHeader=Authorization: Basic $auth" push --force \
+            https://gitlab.irlab.org/pablo.ulloa/mlsuite.git \
+            "$GITHUB_REF:$GITHUB_REF"
