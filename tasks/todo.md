@@ -3,11 +3,14 @@
 - [x] Verify `develop` matches on GitHub and GitLab.
 - [x] Add an untagged, read-only runner probe for Shelob DNS and TCP/22.
 - [x] Confirm the instance runner accepts untagged Docker jobs; DNS lookup failed.
-- [ ] Validate the GitLab pipeline result before adding SSH credentials or deployment.
+- [x] Validate the GitLab pipeline result before adding SSH credentials or deployment.
 
 ## Review
 
-- Pending GitLab runner execution.
+- Pipeline 16430 passed on `balrog-docker-runner` using its Docker executor.
+- Runner has no tags and accepts untagged jobs.
+- Shelob FQDN is not resolvable there; direct TCP/22 to `10.56.35.200` succeeds.
+- No SSH credentials were loaded and no remote command or deployment ran.
 
 # Restore schema display-key prefill
 
