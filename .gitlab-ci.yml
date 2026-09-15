@@ -12,5 +12,5 @@ probe:shelob:
     - apk add --no-cache netcat-openbsd
   script:
     - echo "Runner=${CI_RUNNER_DESCRIPTION} tags=${CI_RUNNER_TAGS}"
-    - getent hosts shelob.irlab.citic.udc.es
-    - nc -vz -w 5 shelob.irlab.citic.udc.es 22
+    - getent hosts shelob.irlab.citic.udc.es || echo "Shelob DNS unavailable; testing private IP"
+    - nc -vz -w 5 10.56.35.200 22

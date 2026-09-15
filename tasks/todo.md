@@ -2,6 +2,7 @@
 
 - [x] Verify `develop` matches on GitHub and GitLab.
 - [x] Add an untagged, read-only runner probe for Shelob DNS and TCP/22.
+- [x] Confirm the instance runner accepts untagged Docker jobs; DNS lookup failed.
 - [ ] Validate the GitLab pipeline result before adding SSH credentials or deployment.
 
 ## Review
