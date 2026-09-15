@@ -1,3 +1,35 @@
+# GitLab runner connectivity probe
+
+- [x] Verify `develop` matches on GitHub and GitLab.
+- [x] Add an untagged, read-only runner probe for Shelob DNS and TCP/22.
+- [x] Confirm the instance runner accepts untagged Docker jobs; DNS lookup failed.
+- [x] Validate the GitLab pipeline result before adding SSH credentials or deployment.
+
+## Review
+
+- Pipeline 16430 passed on `balrog-docker-runner` using its Docker executor.
+- Runner has no tags and accepts untagged jobs.
+- Shelob FQDN is not resolvable there; direct TCP/22 to `10.56.35.200` succeeds.
+- No SSH credentials were loaded and no remote command or deployment ran.
+
+# GitLab CI/CD and Shelob deployment
+
+- [x] Confirm automatic deployment target: push to `main` only.
+- [x] Mirror existing frontend, API, Python, secret, configuration, and release checks.
+- [x] Gate and serialize SSH deployment after all checks pass.
+- [x] Require exact GitHub/GitLab commit parity and a clean remote checkout.
+- [x] Run detached development Compose and require readiness JSON `ready: true`.
+- [x] Install a dedicated CI deploy key and protected GitLab file variables.
+- [x] Validate merge-request pipeline; document exact results.
+
+## Review
+
+- Dedicated ED25519 key fingerprint: `SHA256:0j47BGjmqa9CVeYPtwWxUT5SX5etkLp0QA/UBo4dh7I`.
+- GitLab stores private key and verified host key as protected File variables.
+- Temporary local private-key copy was removed after upload and authentication check.
+- Pipeline 16434 passed frontend, API, both Python components, secret scanning, and configuration validation.
+- Deploy job was absent from the merge-request pipeline, as required; first execution remains gated on a push to `main`.
+
 # Restore schema display-key prefill
 
 - [x] Reproduce validation and prefill failure for generated fields without `displayKey`.
