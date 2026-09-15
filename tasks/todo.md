@@ -1,3 +1,15 @@
+# GitHub-canonical GitLab mirror
+
+- [ ] Keep GitHub as the only merge authority and remove the local multi-push configuration.
+- [ ] Mirror GitHub `main` and `develop` to GitLab with a dedicated least-privilege credential.
+- [ ] Preserve GitLab CI deployment on mirrored pushes to `main`.
+- [ ] Reconcile divergent branch histories without losing unique documentation.
+- [ ] Verify identical refs, pipeline trigger, and Shelob deployment.
+
+## Review
+
+- Pending.
+
 # GitLab runner connectivity probe
 
 - [x] Verify `develop` matches on GitHub and GitLab.
