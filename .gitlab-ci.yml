@@ -14,6 +14,8 @@ secrets:
   image: python:3.14-alpine
   variables:
     GIT_DEPTH: "0"
+  before_script:
+    - apk add --no-cache git
   script:
     - python -m unittest discover -s .github/tests -p test_secret_scan.py
     - python .github/scripts/scan-secrets.py --base "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}" --head "$CI_COMMIT_SHA"
@@ -49,6 +51,8 @@ python:
       - COMPONENT:
           - backend
           - ops-agent
+  before_script:
+    - apt-get update && apt-get install --yes --no-install-recommends git
   script:
     - cd "$COMPONENT"
     - uv sync --locked --extra dev
