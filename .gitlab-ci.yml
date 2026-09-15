@@ -18,7 +18,10 @@ secrets:
     - apk add --no-cache git
   script:
     - python -m unittest discover -s .github/tests -p test_secret_scan.py
-    - python .github/scripts/scan-secrets.py --base "${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}" --head "$CI_COMMIT_SHA"
+    - |
+      base="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
+      git cat-file -e "$base^{commit}" 2>/dev/null || base=
+      python .github/scripts/scan-secrets.py --base "$base" --head "$CI_COMMIT_SHA"
 
 frontend:
   stage: test
