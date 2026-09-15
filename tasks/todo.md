@@ -17,7 +17,7 @@
 - [x] Confirm automatic deployment target: push to `main` only.
 - [x] Mirror existing frontend, API, Python, secret, configuration, and release checks.
 - [x] Gate and serialize SSH deployment after all checks pass.
-- [x] Require exact GitHub/GitLab commit parity and a clean remote checkout.
+- [x] Require exact GitLab commit identity and a clean remote checkout.
 - [x] Run detached development Compose and require readiness JSON `ready: true`.
 - [x] Install a dedicated CI deploy key and protected GitLab file variables.
 - [x] Validate merge-request pipeline; document exact results.
@@ -26,6 +26,7 @@
 
 - Dedicated ED25519 key fingerprint: `SHA256:0j47BGjmqa9CVeYPtwWxUT5SX5etkLp0QA/UBo4dh7I`.
 - GitLab stores private key and verified host key as protected File variables.
+- Shelob fetches GitLab through a separate read-only deploy key on SSH port 7022.
 - Temporary local private-key copy was removed after upload and authentication check.
 - Pipeline 16434 passed frontend, API, both Python components, secret scanning, and configuration validation.
 - Deploy job was absent from the merge-request pipeline, as required; first execution remains gated on a push to `main`.
