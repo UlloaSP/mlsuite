@@ -14,6 +14,12 @@ In practical terms, MLSuite lets you upload a machine learning model (e.g. a sci
 
 ## Getting Started (Production Deployment with Docker Compose or Podman)
 
+New builds are published as immutable `build-<commit>` releases containing four
+image digests and a Compose override. See [release selection and verification](docs/RELEASES.md).
+The publisher no longer updates `latest`; the base Compose commands below use
+legacy image tags unless you explicitly provide the release override. Managed
+dev/production deployment and ops-agent configuration alignment are still pending.
+
 **Follow these steps to deploy MLSuite using Docker Compose or Podman.** This guide assumes minimal experience with containers and environment setup, and will walk you through the process in detail.
 
 1. **Prerequisites**: Install either **Docker** with **Docker Compose** or **Podman** with `podman compose`/`podman-compose`. Verify your chosen engine works before continuing.

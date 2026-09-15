@@ -2,8 +2,8 @@
 
 `ci.yml` validates PRs targeting main/develop and pushes to those branches. It is
 also callable by image publication, which cannot start until CI succeeds.
-The stable required check is `CI required`; it succeeds only when frontend, API,
-both Python components, and configuration checks succeed. Failed, skipped, and
+The stable required check is `CI required`; it succeeds only when secret scanning,
+frontend, API, both Python components, and configuration checks succeed. Failed, skipped, and
 cancelled dependencies do not satisfy it.
 
 CI uses hosted Ubuntu runners and read-only repository permissions. It receives
@@ -23,12 +23,55 @@ the promotion PR. Opening a PR does not authorize its automatic merge.
 - API: Maven verify, including architecture tests and packaging.
 - Backend/ops-agent: locked dependency validation and all pytest tests.
 - Configuration: no tracked private `.env` files, both Compose definitions
-  resolved with the public template, and checksum-verified actionlint.
+  resolved with the public template, release contract/lifecycle tests, and checksum-verified actionlint.
+- Secrets: checksum-pinned Gitleaks 8.30.1 scans the committed tree and incoming
+  commits. Logs expose only finding metadata, never secret values. Download,
+  scan, or history-boundary errors fail the required gate.
 
-Full frontend formatting/lint is not yet a required check: the initial
-`vp check` baseline reported formatting failures in 315 files. Resolve that debt
-in a separate change before adding the gate. This workflow does not suppress its
-failures or claim that the repository passes full lint.
+Full frontend formatting/lint is not yet a required check. The 2026-09-11 audit
+with Vite+ 0.2.5 reports formatting failures in 392 files from `vp check`, and
+22 warnings across 13 files from `vp lint --format json`. Adding
+`--deny-warnings` makes lint fail. Resolve that debt in a separate change before
+adding the gate. This workflow does not suppress those failures or claim that
+the repository passes full lint.
+
+## Follow-up quality plan
+
+1. Keep the existing Gitleaks job in `CI required`; do not add a second secret
+   scanner to perform the same check. Preserve the private ignored `.env`.
+2. Normalize frontend formatting in a dedicated feature PR from updated develop
+   using the installed Vite+ formatter. Fix the lint warnings with focused tests
+   where promise handling or value conversion changes behavior. Require formatting,
+   type-aware lint with no warnings, tests and build before adding these commands
+   to required CI. Use the same configuration locally and in Actions.
+3. Introduce Python and Java rules in separate, reviewable changes. Neither
+   component currently has a configured formatter/linter. Evaluate Ruff for both
+   Python components and a Maven-integrated Java checker/formatter; pin versions,
+   document the commands and normalize existing files before enforcing them.
+   Keep new tooling in development/build dependencies.
+4. Reassess MegaLinter only if coordinating those checks becomes useful. Select
+   explicit linters/configurations, avoid competing formatters and duplicate
+   Gitleaks/actionlint checks, and start without automatic source edits. A failing
+   result blocks merges only when included in the protected required gate.
+5. Optionally trial Qodo Cover on one component, manually triggered and with a
+   bounded generation budget. Supply its coverage report and provider credential
+   separately, review the generated tests in a complementary PR, and keep the
+   generator non-blocking. A passing generated test or higher coverage alone does
+   not prove the intended behavior. No generator or provider secret is configured
+   by the release foundation PR.
+
+For CodeRabbit, evaluate comments against the code before changing it. PR #5's
+publisher timeout is addressed with real subprocess tests. Its default 80%
+docstring-coverage warning is not an adopted project requirement or a test
+coverage result. Document contracts and non-obvious decisions instead of adding
+redundant docstrings to satisfy that percentage.
+The root `.coderabbit.yaml` includes `develop` in automatic reviews alongside the
+default branch, so feature PRs receive reviews before promotion to main. Check
+the bot's review details: a green status can also mean the review was skipped.
+
+References: [MegaLinter](https://megalinter.io/latest/),
+[Qodo Cover action and limitations](https://github.com/qodo-ai/qodo-ci#limitations),
+[CodeRabbit branch selection](https://docs.coderabbit.ai/configuration/auto-review).
 
 ## Develop and main protection
 
@@ -48,12 +91,24 @@ Copy `.env.example` to `.env` and fill blank secrets locally. Never commit an
 active `.env` or copy its values to CI. Compose validation uses only the example;
 it is not a runtime test and does not establish that its blank credentials work.
 
-The old `.env` remains in repository history and older branches. Determine where
-its credentials were reused, rotate them at each service, update private
-configuration, and verify clients before retiring the old values. No credentials
-were rotated by this change because active usage is unknown. Coordinate any
-history rewrite separately; it does not replace rotation.
+The maintainer confirmed on 2026-09-11 that credentials from the old `.env` were
+used only in local Docker. That private file is preserved; no deployed-service
+credential rotation is outstanding based on that confirmation. Never reuse those
+historically published values for deployed environments. If external reuse is
+later discovered, rotate it at the issuing service and update its consumers.
+No history rewrite or local credential change was performed.
 
-Image immutability, deployment environments, migrations, runtime secret
-validation, and production deployment are subsequent work. Existing `latest`
-publication semantics have not been changed by this CI foundation.
+The obsolete, unreferenced local TLS keystore was removed from the current tree.
+It also remains in history and must never be reused for deployed TLS.
+
+Secret scanning has an explicit history boundary at cleanup commit
+`4ade4f783a3b8c121cac9d623e4f162e5260e0e5`. Historical credentials before that boundary
+are not re-scanned by this gate. The complete current committed tree is always
+scanned, plus the incoming commit range after that boundary, including secrets
+added and later removed within a PR. Ignored local files are never read. The
+scanner does not honor repository allowlists or inline suppression comments.
+GitHub secret scanning and push protection remain enabled independently.
+
+Image publication now creates complete immutable build releases. See
+[release contract and limitations](../docs/RELEASES.md). Deployments, migrations,
+runtime secret validation and production promotion are subsequent work.

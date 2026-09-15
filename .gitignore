@@ -67,3 +67,6 @@ ops-agent/.venv/
 output/playwright/
 playwright-report/
 test-results/
+.releases/
+*.p12
+*.pfx
