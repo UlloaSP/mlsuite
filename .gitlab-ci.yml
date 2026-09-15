@@ -28,8 +28,8 @@ frontend:
     - npm install --global vite-plus@0.2.5
     - vp install --frozen-lockfile
   script:
-    - NODE_OPTIONS=--no-webstorage vp test --run
-    - vp run build
+    - NODE_OPTIONS=--no-webstorage ./node_modules/.bin/vp test --run
+    - ./node_modules/.bin/vp run build
 
 api:
   stage: test
