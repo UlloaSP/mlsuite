@@ -1,0 +1,16 @@
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+stages:
+  - probe
+
+probe:shelob:
+  stage: probe
+  image: alpine:3.21
+  before_script:
+    - apk add --no-cache netcat-openbsd
+  script:
+    - echo "Runner=${CI_RUNNER_DESCRIPTION} tags=${CI_RUNNER_TAGS}"
+    - getent hosts shelob.irlab.citic.udc.es
+    - nc -vz -w 5 shelob.irlab.citic.udc.es 22

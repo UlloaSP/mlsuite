@@ -1,3 +1,13 @@
+# GitLab runner connectivity probe
+
+- [x] Verify `develop` matches on GitHub and GitLab.
+- [x] Add an untagged, read-only runner probe for Shelob DNS and TCP/22.
+- [ ] Validate the GitLab pipeline result before adding SSH credentials or deployment.
+
+## Review
+
+- Pending GitLab runner execution.
+
 # Restore schema display-key prefill
 
 - [x] Reproduce validation and prefill failure for generated fields without `displayKey`.
