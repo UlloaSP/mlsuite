@@ -150,7 +150,7 @@ export function AppGlobalSearch() {
                 )
               ) : (
                 <div className="px-6 py-5">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Search MLSuite</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Search ML Suite</p>
                   <AppCopy className="mt-1">Type at least two characters.</AppCopy>
                 </div>
               )}
