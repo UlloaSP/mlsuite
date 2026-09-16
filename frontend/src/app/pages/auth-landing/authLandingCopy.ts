@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export const APP_NAME = "MLSuite";
+export const APP_NAME = "ML Suite";
 export const ISSUE_LABEL = "Vol. 2 · Issue 4";
 export const EYEBROW = "Machine Learning Infrastructure";
 export const HERO_LINES = ["The suite that", "runs your", "models."] as const;

@@ -77,7 +77,7 @@ export function RouteStatusPage({
           <div className="flex items-center justify-center py-2.5">
             <div className="flex items-center gap-2.5">
               <MLSuiteMark />
-              <span className="text-[28px] font-bold leading-none tracking-[-0.04em]">MLSuite</span>
+              <span className="text-[28px] font-bold leading-none tracking-[-0.04em]">ML Suite</span>
             </div>
           </div>
           <div className="h-px bg-[#111]" />
