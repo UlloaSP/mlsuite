@@ -13,6 +13,7 @@ import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
@@ -113,17 +114,16 @@ export function SchemaFormPreview({ schema }: Props) {
   }, [theme]);
 
   if (catalog.needsPlugins && catalog.status !== "ready") {
+    if (catalog.status === "loading") {
+      return <AppLoadingState compact label="Loading plugin catalog." />;
+    }
     return (
       <AppPanel className="space-y-4">
-        <AppCopy>
-          {catalog.status === "loading" ? "Loading plugin catalog." : catalog.error}
-        </AppCopy>
-        {catalog.status === "error" ? (
-          <AppButton type="button" onClick={() => void catalog.retry()}>
-            <RefreshCcw size={16} />
-            Retry
-          </AppButton>
-        ) : null}
+        <AppCopy>{catalog.error}</AppCopy>
+        <AppButton type="button" onClick={() => void catalog.retry()}>
+          <RefreshCcw size={16} />
+          Retry
+        </AppButton>
       </AppPanel>
     );
   }

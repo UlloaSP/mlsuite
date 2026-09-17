@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
-import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -210,7 +210,7 @@ export function SchemaDraftConflictPage() {
             onResolve={setResolution}
           />
         ) : (
-          <AppCopy>Loading diff.</AppCopy>
+          <AppLoadingState label="Loading diff." />
         )}
       </AppSurface>
     </AppPage>

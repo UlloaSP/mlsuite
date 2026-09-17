@@ -7,9 +7,9 @@ import { Check, LoaderCircle, PencilLine, Save } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppButton } from "@/shared/ui/AppButton";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
@@ -184,7 +184,7 @@ export function CreateSchemaRunPage() {
             }
           />
         </div>
-        {isLoading ? <AppPanel>Loading schema version...</AppPanel> : null}
+        {isLoading ? <AppLoadingState label="Loading schema version..." /> : null}
         {executableVersion && isRecord(executableVersion.formSchema) ? (
           <div className="min-h-0 flex-1 overflow-hidden">
             <SchemaRunForm

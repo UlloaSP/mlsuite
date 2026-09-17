@@ -14,6 +14,7 @@ import {
 import { HttpError } from "@/shared/api/http";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
@@ -68,13 +69,7 @@ export function ReviewsPage() {
   }, [inbox.isLoading, navigate, reviewId, reviewRunId, selected]);
 
   if (inbox.isLoading) {
-    return (
-      <AppPage>
-        <AppSurface className="flex flex-1 items-center justify-center">
-          <p className="text-sm text-[var(--text-secondary)]">Loading review inbox</p>
-        </AppSurface>
-      </AppPage>
-    );
+    return <AppPageLoader label="Loading review inbox" />;
   }
   if (inbox.error instanceof HttpError && inbox.error.status === 403) {
     return <ReviewUnavailable title="Access denied" description="Your role cannot review." />;

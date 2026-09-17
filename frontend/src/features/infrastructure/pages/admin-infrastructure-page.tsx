@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { useUser } from "@/capabilities/workspace-context/session";
@@ -168,9 +169,11 @@ export function AdminInfrastructurePage() {
                 />
               )}
             </>
+          ) : isLoading ? (
+            <AppLoadingState label="Loading infrastructure snapshot" />
           ) : (
             <AppEmptyState
-              title={isLoading ? "Loading infrastructure snapshot" : "No infrastructure snapshot"}
+              title="No infrastructure snapshot"
               description="The dashboard needs an ops-agent overview before it can render service metrics and controls."
             />
           )}

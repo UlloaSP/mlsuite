@@ -7,6 +7,7 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { cx } from "@/shared/ui/cx";
 import { CatalogPaginationFooter } from "./CatalogPaginationFooter";
@@ -63,9 +64,7 @@ export function CatalogListPanel({
     <>
       <section className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4">
         <div className={bodyClassName}>
-          {!hasItems && isLoading ? (
-            <AppPanel className="text-sm text-[var(--text-secondary)]">{loadingLabel}</AppPanel>
-          ) : null}
+          {!hasItems && isLoading ? <AppLoadingState label={loadingLabel} /> : null}
           {!hasItems && errorMessage ? (
             <AppPanel className="flex flex-col gap-3 border-[var(--status-danger-border)] text-sm text-[var(--status-danger-text)]">
               <p>{errorMessage}</p>

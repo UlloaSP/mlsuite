@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { CatalogPaginationFooter } from "@/shared/ui/catalog/CatalogPaginationFooter";
 import { ReviewSelectionHeader } from "./ReviewSelectionHeader";
@@ -80,7 +81,7 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
       />
       <div className="app-scroll mt-3 min-h-[252px] flex-auto overflow-y-auto rounded border border-[var(--border-soft)]">
         {loading ? (
-          <p className="p-4 text-sm text-[var(--text-secondary)]">Loading {title.toLowerCase()}…</p>
+          <AppLoadingState compact label={`Loading ${title.toLowerCase()}…`} />
         ) : error ? (
           <div className="grid justify-items-start gap-3 p-4">
             <p className="text-sm text-[var(--danger-text)]">

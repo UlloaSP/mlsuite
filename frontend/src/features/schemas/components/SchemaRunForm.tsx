@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppButton } from "@/shared/ui/AppButton";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
@@ -176,21 +177,19 @@ export function SchemaRunForm({
       <AppCopy>This schema version has no model bindings.</AppCopy>
     </AppPanel>
   ) : needsPlugins && status !== "ready" ? (
-    <AppPanel className="space-y-4">
-      <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-        {status === "loading" ? "Loading plugin catalog" : "Plugin catalog unavailable"}
-      </h2>
-      <AppCopy>
-        {status === "loading"
-          ? "Schema form waits for plugin definitions before rendering custom fields and reports."
-          : catalog.error}
-      </AppCopy>
-      {status === "error" ? (
+    status === "loading" ? (
+      <AppLoadingState compact label="Loading plugin catalog" />
+    ) : (
+      <AppPanel className="space-y-4">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+          Plugin catalog unavailable
+        </h2>
+        <AppCopy>{catalog.error}</AppCopy>
         <AppButton type="button" onClick={() => void catalog.retry()}>
           Retry
         </AppButton>
-      ) : null}
-    </AppPanel>
+      </AppPanel>
+    )
   ) : (
     <div className="size-full min-h-0 overflow-auto" ref={containerRef} />
   );

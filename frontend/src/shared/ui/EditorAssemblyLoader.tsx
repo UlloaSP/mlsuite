@@ -24,7 +24,13 @@ type NodeParticle = {
   delay: number;
 };
 
-export function EditorAssemblyLoader() {
+export function EditorAssemblyLoader({
+  label = "Loading application",
+  scope = "container",
+}: {
+  label?: string;
+  scope?: "container" | "viewport";
+}) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const scanRef = useRef<HTMLDivElement | null>(null);
@@ -76,9 +82,7 @@ export function EditorAssemblyLoader() {
   );
 
   useEffect(() => {
-    if (!rootRef.current) {
-      return;
-    }
+    if (!rootRef.current || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -191,13 +195,16 @@ export function EditorAssemblyLoader() {
   return (
     <div
       ref={rootRef}
-      className="relative flex size-full min-h-[460px] items-center justify-center overflow-hidden bg-[#F7F7F7] text-[#222222] dark:bg-[#050505] dark:text-white"
+      role="status"
+      data-loading-scope={scope}
+      className={`relative flex items-center justify-center overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)] ${scope === "viewport" ? "h-svh w-full" : "size-full min-h-full"}`}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(34,34,34,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(34,34,34,0.06)_1px,transparent_1px)] bg-[size:34px_34px] opacity-70 [mask-image:radial-gradient(circle_at_center,black_0_54%,transparent_82%)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.055)_1px,transparent_1px)]" />
+      <span className="sr-only">{label}</span>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-soft)_1px,transparent_1px)] bg-[size:34px_34px] opacity-70 [mask-image:radial-gradient(circle_at_center,black_0_54%,transparent_82%)]" />
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,56,92,0.10)_0%,rgba(247,247,247,0.3)_42%,rgba(247,247,247,1)_88%)] dark:bg-[radial-gradient(circle_at_center,rgba(255,56,92,0.14)_0%,rgba(0,0,0,0.18)_44%,rgba(5,5,5,1)_88%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--accent-quiet)_0%,transparent_50%,var(--page-bg)_88%)]" />
 
-      <div className="absolute left-1/2 top-1/2 h-0 w-0">
+      <div className="absolute left-1/2 top-1/2 h-0 w-0 motion-reduce:hidden">
         {nodes.map((node, index) => (
           <span
             key={index}
@@ -206,7 +213,7 @@ export function EditorAssemblyLoader() {
                 nodesRef.current[index] = element;
               }
             }}
-            className="absolute rounded-full bg-[#FF385C] shadow-[0_0_14px_rgba(255,56,92,0.35)] dark:shadow-[0_0_18px_rgba(255,56,92,0.55)]"
+            className="absolute rounded-full bg-[var(--accent-primary)] shadow-[0_0_18px_var(--accent-quiet)]"
             style={{
               width: `${node.size}px`,
               height: `${node.size}px`,
@@ -217,7 +224,7 @@ export function EditorAssemblyLoader() {
         ))}
       </div>
 
-      <div className="absolute left-1/2 top-1/2 h-0 w-0">
+      <div className="absolute left-1/2 top-1/2 h-0 w-0 motion-reduce:hidden">
         {cards.map((_, index) => (
           <div
             key={index}
@@ -226,30 +233,30 @@ export function EditorAssemblyLoader() {
                 cardsRef.current[index] = element;
               }
             }}
-            className="absolute -left-16 -top-8 h-16 w-32 border border-neutral-200 bg-white/76 p-3 shadow-[0_12px_36px_rgba(34,34,34,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-neutral-950/58 dark:shadow-[0_14px_40px_rgba(0,0,0,0.45)]"
+            className="absolute -left-16 -top-8 h-16 w-32 border border-[var(--border-soft)] bg-[color-mix(in_srgb,var(--surface-primary)_76%,transparent)] p-3 shadow-[var(--shadow-card)] backdrop-blur-md"
           >
-            <div className="mb-3 h-1.5 w-10 bg-[#FF385C]" />
-            <div className="h-1.5 w-20 bg-neutral-300 dark:bg-neutral-700" />
-            <div className="mt-2 h-1.5 w-14 bg-neutral-200 dark:bg-neutral-800" />
+            <div className="mb-3 h-1.5 w-10 bg-[var(--accent-primary)]" />
+            <div className="h-1.5 w-20 bg-[var(--text-muted)]" />
+            <div className="mt-2 h-1.5 w-14 bg-[var(--surface-muted)]" />
           </div>
         ))}
       </div>
 
       <div
         ref={panelRef}
-        className="relative z-10 h-[300px] w-[440px] max-w-[82vw] overflow-hidden border border-neutral-200 bg-white/88 shadow-[0_24px_80px_rgba(34,34,34,0.13)] backdrop-blur-xl dark:border-white/10 dark:bg-neutral-950/84 dark:shadow-[0_26px_86px_rgba(0,0,0,0.64)]"
+        className="relative z-10 h-[300px] w-[440px] max-w-[82vw] overflow-hidden border border-[var(--border-soft)] bg-[color-mix(in_srgb,var(--surface-primary)_88%,transparent)] shadow-[var(--shadow-hover)] backdrop-blur-xl"
       >
-        <div className="flex h-10 items-center border-b border-neutral-200 px-4 dark:border-white/10">
-          <span className="h-2 w-2 bg-[#FF385C]" />
-          <span className="ml-2 h-2 w-2 bg-[#FC642D]" />
-          <span className="ml-2 h-2 w-2 bg-[#00A699]" />
-          <span className="ml-4 h-1.5 w-24 bg-neutral-200 dark:bg-neutral-800" />
+        <div className="flex h-10 items-center border-b border-[var(--border-soft)] px-4">
+          <span className="h-2 w-2 bg-[var(--accent-primary)]" />
+          <span className="ml-2 h-2 w-2 bg-[var(--accent-primary-strong)]" />
+          <span className="ml-2 h-2 w-2 bg-[var(--text-secondary)]" />
+          <span className="ml-4 h-1.5 w-24 bg-[var(--surface-muted)]" />
         </div>
 
         <div className="relative h-[260px] px-8 py-7">
           <div
             ref={scanRef}
-            className="absolute left-0 top-0 h-12 w-full bg-gradient-to-b from-transparent via-[#FF385C]/18 to-transparent dark:via-[#FF385C]/24"
+            className="absolute left-0 top-0 h-12 w-full bg-gradient-to-b from-transparent via-[var(--accent-quiet)] to-transparent motion-reduce:hidden"
           />
 
           {codeRows.map((row, index) => (
@@ -261,7 +268,7 @@ export function EditorAssemblyLoader() {
                 }
               }}
               className={`mb-5 h-2 origin-left ${
-                index % 4 === 0 ? "bg-[#FF385C]/80" : "bg-neutral-300 dark:bg-neutral-700"
+                index % 4 === 0 ? "bg-[var(--accent-primary)]" : "bg-[var(--text-muted)]"
               }`}
               style={{
                 width: row.width,
@@ -271,9 +278,9 @@ export function EditorAssemblyLoader() {
           ))}
 
           <div className="absolute bottom-6 left-8 right-8 grid grid-cols-3 gap-3">
-            <span className="h-8 border border-neutral-200 bg-neutral-50 dark:border-white/10 dark:bg-neutral-900" />
-            <span className="h-8 border border-neutral-200 bg-neutral-50 dark:border-white/10 dark:bg-neutral-900" />
-            <span className="h-8 border border-[#FF385C]/30 bg-[#FF385C]/10 dark:border-[#FF385C]/40 dark:bg-[#FF385C]/15" />
+            <span className="h-8 border border-[var(--border-soft)] bg-[var(--surface-secondary)]" />
+            <span className="h-8 border border-[var(--border-soft)] bg-[var(--surface-secondary)]" />
+            <span className="h-8 border border-[var(--accent-primary)] bg-[var(--accent-quiet)]" />
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { Bell } from "lucide-react";
-import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -11,6 +11,8 @@ import { NotificationInvitationItem } from "@/features/workspace/components/Noti
 export function NotificationsPage() {
   const { data: invitations = [], isLoading } = usePendingInvitations();
 
+  if (isLoading) return <AppPageLoader label="Loading notifications..." />;
+
   return (
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
@@ -19,11 +21,7 @@ export function NotificationsPage() {
           title="Notifications"
           description="Pending invitations and account-level updates."
         />
-        {isLoading ? (
-          <AppPanel className="rounded p-5">
-            <AppCopy>Loading notifications...</AppCopy>
-          </AppPanel>
-        ) : invitations.length === 0 ? (
+        {invitations.length === 0 ? (
           <AppEmptyState
             icon={<Bell size={18} />}
             title="No notifications"

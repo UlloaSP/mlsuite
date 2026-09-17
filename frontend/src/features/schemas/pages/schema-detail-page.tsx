@@ -10,6 +10,7 @@ import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -55,21 +56,18 @@ export function SchemaDetailPage() {
   };
 
   if (isLoading || isError || !schema) {
+    if (isLoading) return <AppPageLoader label="Loading schema..." />;
     return (
       <AppPage>
-        {isLoading ? (
-          <AppPanel>Loading schema...</AppPanel>
-        ) : (
-          <AppEmptyState
-            title="Schema unavailable"
-            description="The schema could not be loaded. It may no longer exist or you may not have access."
-            action={
-              <Link to="/schemas">
-                <AppButton>Back to schemas</AppButton>
-              </Link>
-            }
-          />
-        )}
+        <AppEmptyState
+          title="Schema unavailable"
+          description="The schema could not be loaded. It may no longer exist or you may not have access."
+          action={
+            <Link to="/schemas">
+              <AppButton>Back to schemas</AppButton>
+            </Link>
+          }
+        />
       </AppPage>
     );
   }

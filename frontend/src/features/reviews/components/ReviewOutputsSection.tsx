@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { SchemaRunReportRenderer } from "@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer";
 import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
@@ -25,7 +26,8 @@ export function ReviewOutputsSection({
       ),
     [results, version],
   );
-  if (catalog.status === "loading") return <AppCopy>Loading report renderers...</AppCopy>;
+  if (catalog.status === "loading")
+    return <AppLoadingState compact label="Loading report renderers..." />;
   if (catalog.status === "error")
     return (
       <div role="alert">

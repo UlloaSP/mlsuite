@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { ReviewAccordionSection } from "@/features/reviews/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "@/features/reviews/components/ReviewInputsSection";
 import { ReviewOutputsSection } from "@/features/reviews/components/ReviewOutputsSection";
@@ -30,8 +31,7 @@ export function SchemaReviewRunDetailPanel({
       detail.data ? getVisibleSchemaInputRecord(version.formSchema, detail.data.run.inputData) : {},
     [detail.data, version.formSchema],
   );
-  if (detail.isLoading)
-    return <p className="text-sm text-[var(--text-secondary)]">Loading inference</p>;
+  if (detail.isLoading) return <AppLoadingState compact label="Loading inference" />;
   if (detail.error || !detail.data) {
     return (
       <AppEmptyState

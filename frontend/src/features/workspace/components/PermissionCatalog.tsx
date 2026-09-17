@@ -2,6 +2,7 @@ import { KeyRound, Search } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
@@ -57,7 +58,7 @@ export function PermissionCatalog({
         className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4"
       >
         {loading ? (
-          <p>Loading permissions...</p>
+          <AppLoadingState compact label="Loading permissions..." />
         ) : error ? (
           <div className="space-y-3">
             <p role="alert">Could not load permissions.</p>

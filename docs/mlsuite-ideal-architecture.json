@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura ideal de MLSuite",
+    "output": "docs/mlsuite-ideal-architecture.html",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "hidden"
+    },
+    "viewBox": [1360, 860]
+  },
+  "components": [
+    {
+      "id": "users",
+      "type": "external",
+      "label": "Usuarios y revisores",
+      "sublabel": "crean · predicen · corrigen",
+      "pos": [20, 360],
+      "size": [170, 72]
+    },
+    {
+      "id": "frontend",
+      "type": "frontend",
+      "label": "React + MLForm",
+      "sublabel": "schema → formulario · revisión",
+      "tag": "frontend/",
+      "pos": [240, 360],
+      "size": [190, 72]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Spring Boot API",
+      "sublabel": "auth · permisos · reglas · trazabilidad",
+      "tag": "api/",
+      "pos": [640, 360],
+      "size": [220, 72]
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "Python ML Runtime",
+      "sublabel": "inspect · coerce · predict · explain",
+      "tag": "backend/",
+      "pos": [1080, 360],
+      "size": [220, 72]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "modelo + schema + prediction + feedback",
+      "tag": "estado durable",
+      "pos": [455, 650],
+      "size": [220, 76]
+    },
+    {
+      "id": "minio",
+      "type": "database",
+      "label": "MinIO",
+      "sublabel": "artefactos ML inmutables",
+      "tag": "object storage",
+      "pos": [880, 650],
+      "size": [200, 76]
+    },
+    {
+      "id": "exports",
+      "type": "external",
+      "label": "Evaluación y retraining",
+      "sublabel": "datasets reproducibles",
+      "pos": [135, 650],
+      "size": [190, 72]
+    },
+    {
+      "id": "ops",
+      "type": "cloud",
+      "label": "Operations Agent",
+      "sublabel": "salud · métricas · logs del stack",
+      "tag": "ops-agent",
+      "pos": [640, 90],
+      "size": [220, 72]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "MLSuite · red privada de aplicación",
+      "wraps": ["frontend", "api", "runtime", "postgres", "minio", "ops"],
+      "pad": 28
+    }
+  ],
+  "connections": [
+    {
+      "id": "user_ui",
+      "from": "users",
+      "to": "frontend",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ui_api",
+      "from": "frontend",
+      "to": "api",
+      "label": "REST/JSON · identidad de workspace",
+      "variant": "security"
+    },
+    {
+      "id": "api_runtime",
+      "from": "api",
+      "to": "runtime",
+      "label": "HTTP · artifact + schema + inputs",
+      "labelAt": [970, 340],
+      "variant": "emphasis"
+    },
+    {
+      "id": "runtime_api",
+      "from": "runtime",
+      "to": "api",
+      "label": "outputs + explanations tipados",
+      "labelAt": [1000, 456],
+      "variant": "emphasis"
+    },
+    {
+      "id": "api_state",
+      "from": "api",
+      "to": "postgres",
+      "label": "SQL · fuente de verdad",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [570, 555],
+      "variant": "security"
+    },
+    {
+      "id": "api_artifacts",
+      "from": "api",
+      "to": "minio",
+      "label": "S3 · artefactos versionados",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [970, 555]
+    },
+    {
+      "id": "api_exports",
+      "from": "api",
+      "to": "exports",
+      "label": "CSV/JSON · inputs + outputs + feedback",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [340, 555],
+      "variant": "dashed"
+    },
+    {
+      "id": "api_ops",
+      "from": "api",
+      "to": "ops",
+      "label": "HMAC · estado y logs",
+      "variant": "security"
+    }
+  ]
+}
