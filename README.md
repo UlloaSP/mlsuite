@@ -102,9 +102,6 @@ Contributions are welcome. For large features or contract changes, start with an
 Project documentation lives in [docs/](./docs):
 
 - [Immutable releases](./docs/RELEASES.md)
-- [Pre-merge QA](./docs/QA_PREMERGE.md)
-- [Inference catalog QA](./docs/INFERENCE_CATALOG_QA.md)
-- [Architecture map](./docs/mlsuite-architecture.html)
 - [CI and repository protection](./.github/CI.md)
 
 Working on the frontend? Read [frontend architecture](./frontend/ARCHITECTURE.md) and the [design system](./DESIGN.md).
