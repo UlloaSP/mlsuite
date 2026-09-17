@@ -1,0 +1,86 @@
+name: Bug report
+description: Report reproducible behavior that is broken in MLSuite.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Remove secrets, tokens, private model data, and personal information from every field.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web interface
+        - Spring API
+        - Python ML runtime
+        - Infrastructure or Docker Compose
+        - Plugins or MLForm integration
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Commit SHA or immutable build identifier where the bug occurs.
+      placeholder: build-<commit> or commit SHA
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser if relevant, container engine, and deployment mode.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal ordered steps and safe test data needed to reproduce the problem.
+      placeholder: |
+        1. Open...
+        2. Select...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or evidence
+      description: Paste relevant sanitized logs, screenshots, or error output.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and discussions for this problem.
+          required: true
+        - label: I removed credentials, private data, and sensitive model inputs from this report.
+          required: true
+        - label: I reproduced this on the newest version available to me.
+          required: true

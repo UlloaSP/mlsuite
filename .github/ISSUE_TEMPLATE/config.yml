@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Feature ideas
+    url: https://github.com/UlloaSP/mlsuite/discussions/categories/ideas
+    about: Propose and discuss product changes before opening implementation work.
+  - name: Questions and support
+    url: https://github.com/UlloaSP/mlsuite/discussions/categories/q-a
+    about: Ask for help using, configuring, or understanding MLSuite.
+  - name: Security vulnerability
+    url: https://github.com/UlloaSP/mlsuite/security/advisories/new
+    about: Report vulnerabilities privately. Do not disclose them in a public issue.

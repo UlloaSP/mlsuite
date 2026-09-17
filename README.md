@@ -95,7 +95,7 @@ We are early in this project. Expect bugs.
 
 MLSuite is research-driven and currently centered on Python model runtimes. The contracts are designed to support more model types without making the UI or API depend on one framework.
 
-Contributions are welcome. For large features or contract changes, start with an issue so the direction is agreed before implementation.
+Contributions are welcome. Report bugs through [Issues](https://github.com/UlloaSP/mlsuite/issues), propose features in [Ideas](https://github.com/UlloaSP/mlsuite/discussions/categories/ideas), and ask usage questions in [Q&A](https://github.com/UlloaSP/mlsuite/discussions/categories/q-a). For large features or contract changes, agree on direction before implementation.
 
 ## Documentation
 
@@ -103,12 +103,15 @@ Project documentation lives in [docs/](./docs):
 
 - [Immutable releases](./docs/RELEASES.md)
 - [CI and repository protection](./.github/CI.md)
+- [Contributing](./CONTRIBUTING.md)
+- [Security policy](./SECURITY.md)
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
 
 Working on the frontend? Read [frontend architecture](./frontend/ARCHITECTURE.md) and the [design system](./DESIGN.md).
 
 ## If you REALLY want to contribute still... read this first
 
-Read [AGENTS.md](./AGENTS.md) before changing code.
+Read [CONTRIBUTING.md](./CONTRIBUTING.md) and [AGENTS.md](./AGENTS.md) before changing code.
 
 ### Frontend
 
