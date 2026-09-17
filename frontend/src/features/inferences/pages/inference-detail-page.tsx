@@ -12,6 +12,7 @@ import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -38,13 +39,7 @@ export function InferenceDetailPage() {
   }, [item, reviewRequested]);
 
   if (catalog.isLoading) {
-    return (
-      <AppPage>
-        <AppSurface className="flex-1">
-          <AppPanel>Loading inference...</AppPanel>
-        </AppSurface>
-      </AppPage>
-    );
+    return <AppPageLoader label="Loading inference..." />;
   }
 
   if (catalog.error || !item) {

@@ -1,6 +1,6 @@
 import { useParams } from "react-router";
-import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
@@ -20,13 +20,7 @@ export function OrganizationSettingsPage() {
     return <RouteStatusPage status={organizationRouteErrorStatus(dashboard.error)} />;
   }
   if (dashboard.isLoading || !organization || !permissions) {
-    return (
-      <AppPage>
-        <AppSurface className="flex flex-1 items-center justify-center overflow-auto">
-          <AppCopy>Loading organization settings...</AppCopy>
-        </AppSurface>
-      </AppPage>
-    );
+    return <AppPageLoader label="Loading organization settings..." />;
   }
   if (!permissions.canViewOrganization) return <RouteStatusPage status={403} />;
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { OrganizationMembershipRowDto } from "@/features/workspace/api/workspace.types";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 
 export function TransferOrganizationOwnerDialog({
   disabled,
@@ -27,7 +28,9 @@ export function TransferOrganizationOwnerDialog({
           permissions after confirming.
         </p>
         {loading ? (
-          <p className="mt-4 text-sm text-[var(--text-secondary)]">Loading members...</p>
+          <div className="mt-4">
+            <AppLoadingState compact label="Loading members..." />
+          </div>
         ) : null}
         {error ? (
           <p role="alert" className="mt-4 text-sm text-[var(--danger-text)]">

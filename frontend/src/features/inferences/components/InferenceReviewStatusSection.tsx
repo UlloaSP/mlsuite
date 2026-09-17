@@ -10,6 +10,7 @@ import {
   useReopenInferenceReviewMutation,
 } from "@/features/inferences/api/inference-mutations";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
@@ -147,7 +148,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
       </header>
       <div className="p-5 sm:p-6">
         {assignments.isLoading ? (
-          <p className="text-sm text-[var(--text-secondary)]">Loading reviews…</p>
+          <AppLoadingState compact label="Loading reviews…" />
         ) : assignments.error ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-[var(--danger-text)]">Review status unavailable.</p>

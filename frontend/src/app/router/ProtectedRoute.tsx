@@ -14,7 +14,7 @@ export function ProtectedRoute() {
   const workspace = useWorkspaceContext(Boolean(user) && !error);
 
   if (isLoading || workspace.isLoading) {
-    return <EditorAssemblyLoader />;
+    return <EditorAssemblyLoader scope="viewport" />;
   }
 
   if (!user || error || workspace.error) {
