@@ -4,6 +4,7 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { CatalogPaginationFooter } from "@/shared/ui/catalog/CatalogPaginationFooter";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { ReviewSelectionHeader } from "./ReviewSelectionHeader";
 import { ReviewSelectionRow } from "./ReviewSelectionRow";
 
@@ -44,6 +45,7 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
 }: Props<TId>) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const showLoading = useStableLoading(loading);
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return items;
@@ -80,7 +82,7 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
         }}
       />
       <div className="app-scroll mt-3 min-h-[252px] flex-auto overflow-y-auto rounded border border-[var(--border-soft)]">
-        {loading ? (
+        {showLoading ? (
           <AppLoadingState compact label={`Loading ${title.toLowerCase()}…`} />
         ) : error ? (
           <div className="grid justify-items-start gap-3 p-4">

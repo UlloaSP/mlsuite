@@ -16,6 +16,7 @@ import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { CatalogPaginationFooter } from "@/shared/ui/catalog/CatalogPaginationFooter";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { InferenceReviewTile } from "./InferenceReviewTile";
 
 type Props = {
@@ -34,6 +35,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
   const [query, setQuery] = useState("");
   const [state, setState] = useState<StateFilter>("ALL");
   const [page, setPage] = useState(0);
+  const showLoading = useStableLoading(assignments.isLoading);
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return (assignments.data ?? []).filter(
@@ -147,7 +149,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
         ) : null}
       </header>
       <div className="p-5 sm:p-6">
-        {assignments.isLoading ? (
+        {showLoading ? (
           <AppLoadingState compact label="Loading reviews…" />
         ) : assignments.error ? (
           <div className="flex flex-wrap items-center justify-between gap-3">

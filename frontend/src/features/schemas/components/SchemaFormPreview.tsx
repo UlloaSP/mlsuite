@@ -15,6 +15,7 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
 import {
@@ -44,6 +45,7 @@ export function SchemaFormPreview({ schema }: Props) {
   const [initialTheme] = useState(theme);
   const [mountError, setMountError] = useState<string | null>(null);
   const catalog = useSchemaPluginCatalog(schema);
+  const showCatalogLoading = useStableLoading(catalog.needsPlugins && catalog.status === "loading");
 
   const resolvedSchema = useMemo<ResolvedSchema>(() => {
     if (catalog.needsPlugins && catalog.status !== "ready") return { status: "pending" };
@@ -69,7 +71,7 @@ export function SchemaFormPreview({ schema }: Props) {
   ]);
 
   useEffect(() => {
-    if (!containerRef.current || resolvedSchema.status !== "ready") return;
+    if (showCatalogLoading || !containerRef.current || resolvedSchema.status !== "ready") return;
     const pack = createMlRegistryPack();
     catalog.data.fieldDefinitions.forEach((definition) => {
       registerDefinedFieldKind(pack.registry, pack.descriptorRegistry, definition.definition);
@@ -107,16 +109,14 @@ export function SchemaFormPreview({ schema }: Props) {
       mounted?.unmount();
       if (mountedRef.current === mounted) mountedRef.current = null;
     };
-  }, [catalog.data.fieldDefinitions, initialTheme, resolvedSchema]);
+  }, [catalog.data.fieldDefinitions, initialTheme, resolvedSchema, showCatalogLoading]);
 
   useEffect(() => {
     mountedRef.current?.replaceDesignSystem(getPredictionDesignSystem(theme));
   }, [theme]);
 
+  if (showCatalogLoading) return <AppLoadingState compact label="Loading plugin catalog." />;
   if (catalog.needsPlugins && catalog.status !== "ready") {
-    if (catalog.status === "loading") {
-      return <AppLoadingState compact label="Loading plugin catalog." />;
-    }
     return (
       <AppPanel className="space-y-4">
         <AppCopy>{catalog.error}</AppCopy>

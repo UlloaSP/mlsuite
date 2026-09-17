@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { useStartupReadinessQuery } from "./startup-query";
 
 type StartupGateProps = {
@@ -8,10 +9,9 @@ type StartupGateProps = {
 
 export function StartupGate({ children }: StartupGateProps) {
   const { data } = useStartupReadinessQuery();
+  const showLoader = useStableLoading(!data?.ready);
 
-  if (data?.ready) {
-    return <>{children}</>;
-  }
+  if (showLoader) return <EditorAssemblyLoader scope="viewport" />;
 
-  return <EditorAssemblyLoader scope="viewport" />;
+  return <>{children}</>;
 }

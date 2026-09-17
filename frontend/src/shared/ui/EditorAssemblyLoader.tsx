@@ -197,7 +197,7 @@ export function EditorAssemblyLoader({
       ref={rootRef}
       role="status"
       data-loading-scope={scope}
-      className={`relative flex items-center justify-center overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)] ${scope === "viewport" ? "h-svh w-full" : "size-full min-h-full"}`}
+      className={`app-loading-reveal relative flex items-center justify-center overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)] ${scope === "viewport" ? "h-svh w-full" : "size-full min-h-full"}`}
     >
       <span className="sr-only">{label}</span>
       <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-soft)_1px,transparent_1px)] bg-[size:34px_34px] opacity-70 [mask-image:radial-gradient(circle_at_center,black_0_54%,transparent_82%)]" />

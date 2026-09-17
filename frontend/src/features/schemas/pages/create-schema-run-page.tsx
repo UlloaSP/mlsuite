@@ -8,6 +8,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -45,6 +46,7 @@ export function CreateSchemaRunPage() {
   const { data: bookmark } = useSchemaBookmark(bookmarkId);
   const effectiveVersionId = bookmark?.versionId;
   const { data: version, isLoading } = useSchemaVersion(effectiveVersionId);
+  const showLoading = useStableLoading(isLoading);
   const executableVersion = useMemo(
     () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
     [version],
@@ -184,8 +186,8 @@ export function CreateSchemaRunPage() {
             }
           />
         </div>
-        {isLoading ? <AppLoadingState label="Loading schema version..." /> : null}
-        {executableVersion && isRecord(executableVersion.formSchema) ? (
+        {showLoading ? <AppLoadingState label="Loading schema version..." /> : null}
+        {!showLoading && executableVersion && isRecord(executableVersion.formSchema) ? (
           <div className="min-h-0 flex-1 overflow-hidden">
             <SchemaRunForm
               version={executableVersion}

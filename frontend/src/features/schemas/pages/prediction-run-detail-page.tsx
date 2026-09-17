@@ -10,6 +10,7 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabs } from "@/shared/ui/AppTabs";
@@ -48,6 +49,7 @@ export function PredictionRunDetailPage() {
   }>();
   const { data: schema } = useSchema(schemaId);
   const { data: run, isLoading, isError } = usePredictionRun(runId);
+  const showLoader = useStableLoading(isLoading);
   const runBookmarkId = run?.schemaBookmarkId ?? bookmarkId;
   const { data: bookmark } = useSchemaBookmark(runBookmarkId);
   const effectiveVersionId = versionId ?? run?.schemaVersionId;
@@ -100,8 +102,8 @@ export function PredictionRunDetailPage() {
       </AppPage>
     );
 
-  if (isLoading || isError || !run) {
-    if (isLoading) return <AppPageLoader label="Loading run..." />;
+  if (showLoader || isError || !run) {
+    if (showLoader) return <AppPageLoader label="Loading run..." />;
     return (
       <AppPage>
         <AppEmptyState

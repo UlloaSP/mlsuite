@@ -2,6 +2,7 @@ import { Bell } from "lucide-react";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -10,8 +11,9 @@ import { NotificationInvitationItem } from "@/features/workspace/components/Noti
 
 export function NotificationsPage() {
   const { data: invitations = [], isLoading } = usePendingInvitations();
+  const showLoader = useStableLoading(isLoading);
 
-  if (isLoading) return <AppPageLoader label="Loading notifications..." />;
+  if (showLoader) return <AppPageLoader label="Loading notifications..." />;
 
   return (
     <AppPage>
