@@ -10,7 +10,6 @@ volumes:
 services:
   ops-agent:
     image: ${REGISTRY:-ghcr.io}/${OWNER}/${OPS_AGENT_IMAGE:-mlsuite-ops-agent}:${OPS_AGENT_VERSION:-latest}
-    container_name: ops-agent
     environment:
       OPS_AGENT_HOST: ${OPS_AGENT_HOST}
       OPS_AGENT_PORT: ${OPS_AGENT_PORT}
@@ -33,7 +32,6 @@ services:
 
   postgres:
     image: postgres:latest
-    container_name: db-postgres
     environment:
       POSTGRES_DB: ${DB_PROD}
       POSTGRES_USER: ${DB_USER}
@@ -53,7 +51,6 @@ services:
 
   py-analyzer:
     image: ${REGISTRY:-ghcr.io}/${OWNER}/${BACKEND_IMAGE:-mlsuite-sklearn-backend}:${BACKEND_VERSION:-latest}
-    container_name: py-analyzer
     environment:
       PYTHON_HOST: ${PYTHON_HOST}
       PYTHON_PORT: ${PYTHON_PORT}
@@ -66,7 +63,6 @@ services:
 
   minio:
     image: quay.io/minio/minio:latest
-    container_name: minio
     command: server /data --console-address "${MINIO_CONSOLE_ADDRESS}"
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
@@ -78,7 +74,6 @@ services:
 
   spring-app:
     image: ${REGISTRY:-ghcr.io}/${OWNER}/${API_IMAGE:-mlsuite-api}:${API_VERSION:-latest}
-    container_name: spring-app
     environment:
       SPRING_PORT: ${SPRING_PORT}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
@@ -116,7 +111,6 @@ services:
 
   frontend:
     image: ${REGISTRY:-ghcr.io}/${OWNER}/${FRONTEND_IMAGE:-mlsuite-frontend}:${FRONTEND_VERSION:-latest}
-    container_name: web-frontend
     ports:
       - ${WEB_PORT}:5173
     depends_on:

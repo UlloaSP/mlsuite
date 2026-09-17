@@ -9,7 +9,7 @@ ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 WORKDIR /app
 
-COPY pyproject.toml README.md uv.lock ./
+COPY pyproject.toml uv.lock ./
 COPY src ./src
 
 RUN uv sync --frozen --no-dev
