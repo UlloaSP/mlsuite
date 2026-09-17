@@ -1,257 +1,80 @@
-# Design System Inspired by Airbnb
+# MLSuite design
 
-## 1. Visual Theme & Atmosphere
+MLSuite is a technical workspace for managing models, schemas, predictions, reviews, and infrastructure. The interface should make dense information calm, traceable, and easy to act on.
 
-Airbnb's website is a warm, photography-forward marketplace that feels like flipping through a travel magazine where every page invites you to book. MLSuite adapts that foundation into a personal theme system. The default MLSuite preset uses white/lavender surfaces with indigo in light mode and navy/black surfaces with soft violet in dark mode. Built-in presets may replace the interactive accent and surrounding neutral surfaces while preserving the product mark and semantic status colors.
+This document records durable design decisions. CSS tokens and shared UI components are the source of truth for exact values.
 
-The default typography uses Manrope, loaded with the application instead of relying on an unavailable proprietary font. Personal settings also offer IBM Plex Sans, Source Sans 3, and the native system stack. The interface uses a tight weight range: 500 for most UI, 600 for emphasis, and 700 for primary headings. Slight negative letter-spacing (-0.18px to -0.44px) keeps headings compact without making them feel compressed.
+## Principles
 
-What distinguishes Airbnb is its palette-based token system (`--palette-*`) and multi-layered shadow approach. The primary card shadow uses a three-layer stack (`rgba(0,0,0,0.02) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 6px, rgba(0,0,0,0.1) 0px 4px 8px`) that creates a subtle, warm lift. Combined with generous border-radius (8px–32px), circular navigation controls (50%), and a category pill bar with horizontal scrolling, the interface feels tactile and inviting — designed for browsing, not commanding.
+### Data first
 
-**Key Characteristics:**
-- White/lavender and navy/black variants with indigo/violet accents in the default MLSuite preset
-- Manrope by default, with three distinct selectable interface stacks
-- Palette-based token system (`--palette-*`) for systematic color management
-- Three-layer card shadows: border ring + soft blur + stronger blur
-- Generous border-radius: 8px buttons, 14px badges, 20px cards, 32px large elements
-- Circular navigation controls (50% radius)
-- Photography-first listing cards — images are the hero content
-- Near-black text (`#222222`) — warm, not cold
-- Luxe Purple (`#460479`) and Plus Magenta (`#92174d`) for premium tiers
+Names, versions, status, ownership, and next actions matter more than decoration. Keep primary data visible and move secondary actions into predictable overflow menus.
 
-## 2. Color Palette & Roles
+### Clear hierarchy
 
-### Personal theme presets
+Each screen needs one obvious purpose, one primary heading, and a small number of primary actions. Tabs own their section labels; cards and panels should not repeat them.
 
-- Six built-in presets ship with coordinated light and dark variants: MLSuite, Airbnb, Grove, Ocean, Ember, and Iris.
-- Color scheme (`system`, `light`, `dark`) is independent from palette selection. Each preset may be assigned as a complete Light/Dark pair or to either mode alone.
-- Custom themes define background, primary and muted surfaces, primary and muted text, and accent colors for both modes. MLSuite derives borders, quiet accents, inverse roles, and sidebar surfaces from those semantic inputs.
-- Presets may change page, surface, border, sidebar, focus, selection, and interactive accent tokens.
-- Product marks and semantic success, warning, and danger roles stay stable across presets.
-- Interface contrast ranges from 100% to 125% in 5% steps. It adjusts semantic text, surface, and border separation, never images or the entire rendered page.
+### Flat by default
 
-### Primary Brand
-- **Rausch Red** (`#ff385c`): Airbnb preset inspiration for primary CTA and active states
-- **Deep Rausch** (`#e00b41`): `--palette-bg-tertiary-core`, pressed/dark variant of brand red
-- **Error Red** (`#c13515`): `--palette-text-primary-error`, error text on light
-- **Error Dark** (`#b32505`): `--palette-text-secondary-error-hover`, error hover
+Use spacing, typography, borders, and restrained surface changes before elevation. Avoid nested grey panels, decorative wrappers, and shadows that compete with content.
 
-### Premium Tiers
-- **Luxe Purple** (`#460479`): `--palette-bg-primary-luxe`, Airbnb Luxe tier branding
-- **Plus Magenta** (`#92174d`): `--palette-bg-primary-plus`, Airbnb Plus tier branding
+### Honest states
 
-### Text Scale
-- **Near Black** (`#222222`): `--palette-text-primary`, primary text — warm, not cold
-- **Focused Gray** (`#3f3f3f`): `--palette-text-focused`, focused state text
-- **Secondary Gray** (`#6a6a6a`): Secondary text, descriptions
-- **Disabled** (`rgba(0,0,0,0.24)`): `--palette-text-material-disabled`, disabled state
-- **Link Disabled** (`#929292`): `--palette-text-link-disabled`, disabled links
+Loading, empty, denied, unavailable, partial, failed, and completed states must look different and say what happened. UI claims come from fetched state.
 
-### Interactive
-- **Legal Blue** (`#428bff`): `--palette-text-legal`, legal links, informational
-- **Border Gray** (`#c1c1c1`): Border color for cards and dividers
-- **Light Surface** (`#f2f2f2`): Circular navigation buttons, secondary surfaces
+### Stable interactions
 
-### Surface & Shadows
-- **Pure White** (`#ffffff`): Page background, card surfaces
-- **Card Shadow** (`rgba(0,0,0,0.02) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 6px, rgba(0,0,0,0.1) 0px 4px 8px`): Three-layer warm lift
-- **Hover Shadow** (`rgba(0,0,0,0.08) 0px 4px 12px`): Button hover elevation
+Do not unmount stateful editors, forms, or report runtimes for cosmetic changes. Preserve user input across theme changes, tabs, and recoverable failures.
 
-## 3. Typography Rules
+## Visual system
 
-### Font Family
-- **Primary**: `Manrope`, fallback: `Trebuchet MS, sans-serif`
-- **Selectable alternatives**: `IBM Plex Sans`, `Source Sans 3`, and the native system UI stack
-- **OpenType Features**: `"salt"` (stylistic alternates) on specific caption elements
+- Use semantic theme tokens from `frontend/src/shared/ui/theme-presets.css`; never hardcode a preset color in a feature.
+- MLSuite, Airbnb, Grove, Ocean, Ember, Iris, and custom themes support light and dark modes.
+- Product identity and success, warning, danger, focus, and selection roles remain semantic across themes.
+- Manrope is the default interface font. IBM Plex Sans, Source Sans 3, and the system stack are supported alternatives.
+- Use the shared radius, typography, spacing, shadow, and motion tokens instead of feature-local scales.
+- Treat tables, code, schemas, logs, and reports as first-class content surfaces.
 
-### Hierarchy
+## Layout
 
-| Role | Font | Size | Weight | Line Height | Letter Spacing | Notes |
-|------|------|------|--------|-------------|----------------|-------|
-| Section Heading | Selected interface font | 28px (1.75rem) | 700 | 1.43 | normal | Primary headings |
-| Card Heading | Selected interface font | 22px (1.38rem) | 600 | 1.18 (tight) | -0.44px | Category/card titles |
-| Card Heading Medium | Selected interface font | 22px (1.38rem) | 500 | 1.18 (tight) | -0.44px | Lighter variant |
-| Sub-heading | Selected interface font | 21px (1.31rem) | 700 | 1.43 | normal | Bold sub-headings |
-| Feature Title | Selected interface font | 20px (1.25rem) | 600 | 1.20 (tight) | -0.18px | Feature headings |
-| UI Medium | Selected interface font | 16px (1.00rem) | 500 | 1.25 (tight) | normal | Nav, emphasized text |
-| UI Semibold | Selected interface font | 16px (1.00rem) | 600 | 1.25 (tight) | normal | Strong emphasis |
-| Button | Selected interface font | 16px (1.00rem) | 500 | 1.25 (tight) | normal | Button labels |
-| Body / Link | Selected interface font | 14px (0.88rem) | 400 | 1.43 | normal | Standard body |
-| Body Medium | Selected interface font | 14px (0.88rem) | 500 | 1.29 (tight) | normal | Medium body |
-| Caption Salt | Selected interface font | 14px (0.88rem) | 600 | 1.43 | normal | `"salt"` feature |
-| Small | Selected interface font | 13px (0.81rem) | 400 | 1.23 (tight) | normal | Descriptions |
-| Tag | Selected interface font | 12px (0.75rem) | 400–700 | 1.33 | normal | Tags, prices |
-| Badge | Selected interface font | 11px (0.69rem) | 600 | 1.18 (tight) | normal | `"salt"` feature |
-| Micro Uppercase | Selected interface font | 8px (0.50rem) | 700 | 1.25 (tight) | 0.32px | `text-transform: uppercase` |
+- Persistent navigation owns global and section navigation. Do not repeat it as local tabs.
+- Keep page headers separate from centered or width-constrained content.
+- Catalogs use consistent toolbar, list, empty, loading, error, pagination, and overflow-action placement.
+- Dense resources use full-width rows or cards. Tiles are for genuinely scannable, low-density content.
+- Detail pages expose durable, linkable sections. Use dialogs for bounded actions, not complete workspaces.
+- Every layout must remain usable on mobile and tablet; do not solve desktop density by blocking smaller viewports.
 
-### Principles
-- **Warm weight range**: 500–700 dominate. No weight 300 or 400 for headings — Airbnb's type is always at least medium weight, creating a warm, confident voice.
-- **Negative tracking on headings**: -0.18px to -0.44px letter-spacing on display creates intimate, cozy headings rather than cold, compressed ones.
-- **"salt" OpenType feature**: Stylistic alternates on specific UI elements (badges, captions) create subtle glyph variations that add visual interest.
-- **Variable font precision**: Loaded interface fonts support continuous weight interpolation, while the design system uses discrete stops at 500, 600, and 700.
-- Personal typography may replace the interface family, root UI size, monospace family, code size, and editor wrapping. The selected interface family remains shared by UI and heading roles; code choices propagate to Monaco and terminal surfaces.
+## Components
 
-## 4. Component Stylings
+- Shared visual primitives, variants, tokens, and interaction states belong in `frontend/src/shared/ui`.
+- Feature components compose those primitives and own domain behavior.
+- Use native controls and semantics where possible.
+- Keep primary surfaces clickable without nesting interactive controls.
+- Put destructive actions behind explicit confirmation and explain blocked actions.
+- Show labels users recognize; internal ids may support them but should not replace them.
 
-### Buttons
+## Motion
 
-**Primary Dark**
-- Background: `#222222` (near-black, not pure black)
-- Text: `#ffffff`
-- Padding: 0px 24px
-- Radius: 8px
-- Hover: transitions to error/brand accent via `var(--accent-bg-error)`
-- Focus: `0 0 0 2px var(--palette-grey1000)` ring + scale(0.92)
+- Motion communicates navigation, hierarchy, or state change.
+- Avoid continuously repainting effects and decorative animation.
+- Respect reduced-motion preferences.
+- Theme and route transitions must preserve runtime state and avoid flashes.
 
-**Circular Nav**
-- Background: `#f2f2f2`
-- Text: `#222222`
-- Radius: 50% (circle)
-- Hover: shadow `rgba(0,0,0,0.08) 0px 4px 12px` + translateX(50%)
-- Active: 4px white border ring + focus shadow
-- Focus: scale(0.92) shrink animation
+## Accessibility
 
-### Cards & Containers
-- Background: `#ffffff`
-- Radius: 14px (badges), 20px (cards/buttons), 32px (large)
-- Shadow: `rgba(0,0,0,0.02) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 6px, rgba(0,0,0,0.1) 0px 4px 8px` (three-layer)
-- Listing cards: full-width photography on top, details below
-- Carousel controls: circular 50% buttons
+- Keyboard access, visible focus, semantic controls, labels, contrast, and touch targets are baseline requirements.
+- Color is never the only status signal.
+- Popup content must remain inside the active modal or top layer.
+- Scroll containers need visible reachability without clipped focus rings or controls.
 
-### Inputs
-- Search: `#222222` text
-- Focus: `var(--palette-bg-primary-error)` background tint + `0 0 0 2px` ring
-- Radius: depends on context (search bar uses pill-like rounding)
+## Avoid
 
-### Navigation
-- White sticky header with search bar centered
-- MLSuite mark left-aligned; its form remains stable across presets
-- Category filter pills: horizontal scroll below search
-- Circular nav controls for carousel navigation
-- "Become a Host" text link, avatar/menu right-aligned
+- Invented data, fake metrics, inactive controls, and optimistic copy unsupported by the backend.
+- One-off colors, shadows, spacing scales, or components when a shared primitive exists.
+- Duplicate headings, nested decorative frames, and panels used only to fill space.
+- Search or filters whose data source does not match what users see.
+- Architecture or design exceptions added to bypass an inconvenient boundary.
 
-### Image Treatment
-- Listing photography fills card top with generous height
-- Image carousel with dot indicators
-- Heart/wishlist icon overlay on images
-- 8px–14px radius on contained images
+## Review
 
-## 5. Layout Principles
-
-### Spacing System
-- Base unit: 8px
-- Scale: 2px, 3px, 4px, 6px, 8px, 10px, 11px, 12px, 15px, 16px, 22px, 24px, 32px
-
-### Grid & Container
-- Full-width header with centered search
-- Category pill bar: horizontal scrollable row
-- Listing grid: responsive multi-column (3–5 columns on desktop)
-- Full-width footer with link columns
-
-### Whitespace Philosophy
-- **Travel-magazine spacing**: Generous vertical padding between sections creates a leisurely browsing pace — you're meant to scroll slowly, like browsing a magazine.
-- **Photography density**: Listing cards are packed relatively tightly, but each image is large enough to feel immersive.
-- **Search bar prominence**: The search bar gets maximum vertical space in the header — finding your destination is the primary action.
-
-### Border Radius Scale
-- Subtle (4px): Small links
-- Standard (8px): Buttons, tabs, search elements
-- Badge (14px): Status badges, labels
-- Card (20px): Feature cards, large buttons
-- Large (32px): Large containers, hero elements
-- Circle (50%): Nav controls, avatars, icons
-
-## 6. Depth & Elevation
-
-| Level | Treatment | Use |
-|-------|-----------|-----|
-| Flat (Level 0) | No shadow | Page background, text blocks |
-| Card (Level 1) | `rgba(0,0,0,0.02) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 6px, rgba(0,0,0,0.1) 0px 4px 8px` | Listing cards, search bar |
-| Hover (Level 2) | `rgba(0,0,0,0.08) 0px 4px 12px` | Button hover, interactive lift |
-| Active Focus (Level 3) | `rgb(255,255,255) 0px 0px 0px 4px` + focus ring | Active/focused elements |
-
-**Shadow Philosophy**: Airbnb's three-layer shadow system creates a warm, natural lift. Layer 1 (`0px 0px 0px 1px` at 0.02 opacity) is an ultra-subtle border. Layer 2 (`0px 2px 6px` at 0.04) provides soft ambient shadow. Layer 3 (`0px 4px 8px` at 0.1) adds the primary lift. This graduated approach creates shadows that feel like natural light rather than CSS effects.
-
-## 7. Do's and Don'ts
-
-### Do
-- Use `#222222` (warm near-black) for text — never pure `#000000`
-- Use the active preset accent only for primary CTAs, focus, selection, and active states
-- Use the selected interface font at weight 500–700 for headings
-- Apply the three-layer card shadow for all elevated surfaces
-- Use generous border-radius: 8px for buttons, 20px for cards, 50% for controls
-- Use photography as the primary visual content — listings are image-first
-- Apply negative letter-spacing (-0.18px to -0.44px) on headings for intimacy
-- Use circular (50%) buttons for carousel/navigation controls
-
-### Don't
-- Don't use pure black (`#000000`) for text — always `#222222` (warm)
-- In the Airbnb preset, keep Rausch Red as an accent rather than a large background field
-- Don't use thin font weights (300, 400) for headings — 500 minimum
-- Don't use heavy shadows (>0.1 opacity as primary layer) — keep them warm and graduated
-- Don't use sharp corners (0–4px) on cards — the generous rounding (20px+) is core
-- Don't introduce colors outside the active preset or stable semantic status roles
-- Don't override the palette token system — use `--palette-*` variables consistently
-
-## 8. Responsive Behavior
-
-### Breakpoints
-| Name | Width | Key Changes |
-|------|-------|-------------|
-| Mobile Small | <375px | Single column, compact search |
-| Mobile | 375–550px | Standard mobile listing grid |
-| Tablet Small | 550–744px | 2-column listings |
-| Tablet | 744–950px | Search bar expansion |
-| Desktop Small | 950–1128px | 3-column listings |
-| Desktop | 1128–1440px | 4-column grid, full header |
-| Large Desktop | 1440–1920px | 5-column grid |
-| Ultra-wide | >1920px | Maximum grid width |
-
-*Note: Airbnb has 61 detected breakpoints — one of the most granular responsive systems observed, reflecting their obsession with layout at every possible screen size.*
-
-### Touch Targets
-- Circular nav buttons: adequate 50% radius sizing
-- Listing cards: full-card tap target on mobile
-- Search bar: prominently sized for thumb interaction
-- Category pills: horizontally scrollable with generous padding
-
-### Collapsing Strategy
-- Listing grid: 5 → 4 → 3 → 2 → 1 columns
-- Search: expanded bar → compact bar → overlay
-- Category pills: horizontal scroll at all sizes
-- Navigation: full header → mobile simplified
-- Map: side panel → overlay/toggle
-
-### Image Behavior
-- Listing photos: carousel with swipe on mobile
-- Responsive image sizing with aspect ratio maintained
-- Heart overlay positioned consistently across sizes
-- Photo quality adjusts based on viewport
-
-## 9. Agent Prompt Guide
-
-### Quick Color Reference
-- Background: Pure White (`#ffffff`)
-- Text: Near Black (`#222222`)
-- Default preset accents: indigo (`#4f46e5`) in light mode and soft violet (`#a9a4ff`) in dark mode
-- Secondary text: `#6a6a6a`
-- Disabled: `rgba(0,0,0,0.24)`
-- Card border: `rgba(0,0,0,0.02) 0px 0px 0px 1px`
-- Card shadow: full three-layer stack
-- Button surface: `#f2f2f2`
-
-### Example Component Prompts
-- "Create a listing card: white background, 20px radius. Three-layer shadow: rgba(0,0,0,0.02) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 6px, rgba(0,0,0,0.1) 0px 4px 8px. Photo area on top (16:10 ratio), details below: 16px selected interface font weight 600 title, 14px weight 400 description in #6a6a6a."
-- "Design search bar: white background, full card shadow, 32px radius on container. Search text at 14px selected interface font weight 400. Red search button (#ff385c, 50% radius, white icon)."
-- "Build category pill bar: horizontal scrollable row. Each pill: 14px selected interface font weight 600, #222222 text, bottom border on active. Circular prev/next arrows (#f2f2f2 bg, 50% radius)."
-- "Create a CTA button: #222222 background, white text, 8px radius, 16px selected interface font weight 500, 0px 24px padding. Hover: brand red accent."
-- "Design a heart/wishlist button: transparent background, 50% radius, white heart icon with dark shadow outline."
-
-### Iteration Guide
-1. Start with white — the photography provides all the color
-2. The active preset owns one accent; use it sparingly for CTAs and interactive state
-3. Near-black (#222222) for text — the warmth matters
-4. Three-layer shadows create natural, warm lift — always use all three layers
-5. Generous radius: 8px buttons, 20px cards, 50% controls
-6. Selected interface font at 500–700 weight; no thin headings
-7. Photography is hero — every listing card is image-first
+For requested visual work, check the complete affected surface at relevant widths, themes, keyboard states, and reduced motion. Compare equivalent catalogs and workflows so shared behavior stays shared.

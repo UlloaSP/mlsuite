@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "mlsuite-ops-agent"
 version = "0.1.0"
 description = "Host-side operations agent for MLSuite infrastructure dashboard"
-readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.120.3",

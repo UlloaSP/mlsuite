@@ -8,7 +8,6 @@ import { describe, expect, test } from "vite-plus/test";
 const ROOT = process.cwd();
 const SRC = join(ROOT, "src");
 const CONTRACT = join(ROOT, "ARCHITECTURE.md");
-const AGENTS = join(ROOT, "AGENTS.md");
 const TARGET_ROOTS = new Set(["app", "shared", "capabilities", "features"]);
 const ALLOWED_ROOTS = TARGET_ROOTS;
 const ALLOWED_ROOT_FILES = new Set(["vite-env.d.ts"]);
@@ -156,13 +155,11 @@ function codeLineCount(file: string): number {
 }
 
 describe("frontend architecture contract", () => {
-  test("keeps the contract present and mandatory for agents", () => {
+  test("keeps the contract present and toolchain aligned", () => {
     const contract = source(CONTRACT);
-    const agents = source(AGENTS);
     const configuration =
       source(join(ROOT, "tsconfig.app.json")) + source(join(ROOT, "vite.config.ts"));
 
-    expect(agents).toContain("[`ARCHITECTURE.md`](./ARCHITECTURE.md)");
     expect(contract).toContain("Use `@/`");
     expect(configuration).toMatch(/"@\/\*".*alias: \{ "@"/s);
   });

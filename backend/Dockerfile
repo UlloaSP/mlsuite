@@ -13,7 +13,6 @@ WORKDIR /app
 # Copiar archivos de configuración del proyecto
 COPY pyproject.toml .
 COPY uv.lock .
-COPY README.md .
 
 RUN uv sync --frozen --no-dev --no-install-project   # deps only
 COPY src ./src
