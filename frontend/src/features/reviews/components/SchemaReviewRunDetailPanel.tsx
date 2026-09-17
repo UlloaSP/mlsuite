@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { ReviewAccordionSection } from "@/features/reviews/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "@/features/reviews/components/ReviewInputsSection";
 import { ReviewOutputsSection } from "@/features/reviews/components/ReviewOutputsSection";
@@ -24,6 +25,7 @@ export function SchemaReviewRunDetailPanel({
   onReviewChanged,
 }: Props) {
   const detail = useSchemaReviewRun(reviewId, reviewRunId);
+  const showLoading = useStableLoading(detail.isLoading);
   const [outputsOpen, setOutputsOpen] = useState(false);
   const [inputsOpen, setInputsOpen] = useState(false);
   const visibleInputs = useMemo(
@@ -31,7 +33,7 @@ export function SchemaReviewRunDetailPanel({
       detail.data ? getVisibleSchemaInputRecord(version.formSchema, detail.data.run.inputData) : {},
     [detail.data, version.formSchema],
   );
-  if (detail.isLoading) return <AppLoadingState compact label="Loading inference" />;
+  if (showLoading) return <AppLoadingState compact label="Loading inference" />;
   if (detail.error || !detail.data) {
     return (
       <AppEmptyState

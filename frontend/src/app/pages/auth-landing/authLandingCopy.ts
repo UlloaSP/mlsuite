@@ -3,37 +3,29 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export const APP_NAME = "ML Suite";
-export const ISSUE_LABEL = "Vol. 2 · Issue 4";
-export const EYEBROW = "Machine Learning Infrastructure";
-export const HERO_LINES = ["The suite that", "runs your", "models."] as const;
-export const HERO_DESCRIPTION =
-  "Deploy, evaluate, and review machine learning models from one controlled workspace.";
 export const PASSWORD_MIN_LENGTH = 10;
 
 export type AuthMode = "login" | "register";
 
-export const DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
-
 export const AUTH_COPY = {
   login: {
-    tab: "Iniciar sesión",
-    submit: "Take me in →",
-    switch: "or create account",
-    foot: "Forgot password?",
-    emailPlaceholder: "my email",
+    titleLead: "Access your",
+    titleEmphasis: "workspace.",
+    submit: "Sign in",
+    pending: "Signing in",
+    switchPrompt: "New to ML Suite?",
+    switchAction: "Create an account",
+    error: "We couldn't sign you in. Check your details and try again.",
     passwordAutoComplete: "current-password",
   },
   register: {
-    tab: "Crear cuenta",
-    submit: "Create my account →",
-    switch: "or sign in",
-    foot: "By signing up, you agree to the Terms.",
-    emailPlaceholder: "email",
+    titleLead: "Create",
+    titleEmphasis: "account.",
+    submit: "Create account",
+    pending: "Creating account",
+    switchPrompt: "Already have an account?",
+    switchAction: "Sign in",
+    error: "We couldn't create your account. Review your details and try again.",
     passwordAutoComplete: "new-password",
   },
 } as const;

@@ -26,6 +26,7 @@ describe("application loading screen", () => {
     expect(markup).toContain("h-svh");
     expect(markup).toContain("var(--accent-primary)");
     expect(markup).toContain("var(--page-bg)");
+    expect(markup).toContain("app-loading-reveal");
     expect(markup).not.toContain("#FF385C");
     expect(markup).not.toContain("#F7F7F7");
     expect(markup).not.toContain("#050505");
@@ -72,6 +73,7 @@ describe("application loading screen", () => {
     const markup = renderToStaticMarkup(<AppLoadingState compact label="Loading members" />);
 
     expect(markup).toContain("min-h-16");
+    expect(markup).toContain("app-loading-reveal");
     expect(markup).toContain('class="sr-only"');
     expect(markup).toContain(">Loading members</span>");
   });

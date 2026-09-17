@@ -4,8 +4,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { FormEvent } from "react";
-import { AUTH_COPY, type AuthMode } from "./authLandingCopy";
-import { FormSentence } from "./FormSentence";
+import { ArrowRight, LoaderCircle } from "lucide-react";
+import { AppButton } from "@/shared/ui/AppButton";
+import { AUTH_COPY, PASSWORD_MIN_LENGTH, type AuthMode } from "./authLandingCopy";
+import { AuthField } from "./AuthField";
 
 export function AuthFormPanel({
   mode,
@@ -20,40 +22,95 @@ export function AuthFormPanel({
   onModeChange: (mode: AuthMode) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const copy = AUTH_COPY[mode];
+
   return (
-    <div>
-      <p className="mb-[22px] text-[10px] uppercase tracking-[0.14em] text-[#999] [font-family:'DM_Mono',monospace] dark:text-[#8d97a3] xl:mb-7 xl:text-[11px]">
-        {AUTH_COPY[mode].tab}
-      </p>
+    <div className="mx-auto my-auto w-full max-w-md">
+      <div className="mb-10">
+        <h2
+          aria-label={`${copy.titleLead} ${copy.titleEmphasis}`}
+          className="text-[3.75rem] leading-[0.82] tracking-[-0.06em] text-[var(--text-primary)] sm:text-[4.5rem] xl:text-[5rem]"
+        >
+          <span aria-hidden="true" className="block font-light">
+            {copy.titleLead}
+          </span>
+          <span aria-hidden="true" className="block font-extrabold">
+            {copy.titleEmphasis}
+          </span>
+        </h2>
+      </div>
 
-      <form onSubmit={onSubmit}>
-        <FormSentence mode={mode} disabled={busy} />
-
-        <div className="mt-6 flex flex-col items-stretch gap-3.5 sm:flex-row sm:items-center xl:mt-8 xl:gap-[18px]">
-          <button
-            type="submit"
+      <form className="grid gap-6" onSubmit={onSubmit}>
+        {mode === "register" ? (
+          <AuthField
+            required
             disabled={busy}
-            className="bg-[#111] px-[22px] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#ff385c] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#f5f5f5] dark:text-[#101418] dark:hover:bg-[#ff385c] dark:hover:text-white xl:px-7 xl:py-[13px] xl:text-base"
-          >
-            {AUTH_COPY[mode].submit}
-          </button>
-          <button
-            type="button"
-            onClick={() => onModeChange(mode === "login" ? "register" : "login")}
-            className="bg-transparent p-0 text-left text-[11px] text-[#999] transition [font-family:'DM_Mono',monospace] hover:text-[#ff385c] dark:text-[#8d97a3] sm:text-center xl:text-[13px]"
-          >
-            {AUTH_COPY[mode].switch}
-          </button>
-        </div>
+            marker="01"
+            label="Full name"
+            name="fullName"
+            autoComplete="name"
+            placeholder="Your name"
+          />
+        ) : null}
+        <AuthField
+          required
+          disabled={busy}
+          marker={mode === "register" ? "02" : "01"}
+          label="Email"
+          name="email"
+          type="email"
+          autoComplete={mode === "login" ? "username" : "email"}
+          placeholder="you@company.com"
+        />
+        <AuthField
+          required
+          disabled={busy}
+          marker={mode === "register" ? "03" : "02"}
+          label="Password"
+          name="password"
+          type="password"
+          minLength={PASSWORD_MIN_LENGTH}
+          autoComplete={copy.passwordAutoComplete}
+          placeholder="At least 10 characters"
+        />
 
         {error ? (
-          <p className="mt-3.5 text-[11px] font-semibold text-[#c13515] dark:text-[#fda4af]">
-            {mode === "login" ? "Sign in failed." : "Account creation failed."}
+          <p
+            className="rounded bg-[var(--danger-quiet)] px-4 py-3 text-sm text-[var(--danger-text)]"
+            role="alert"
+          >
+            {copy.error}
           </p>
         ) : null}
-        <p className="mt-3.5 text-[10px] tracking-[0.06em] text-[#bbb] [font-family:'DM_Mono',monospace] xl:mt-[18px] xl:text-[11px]">
-          {AUTH_COPY[mode].foot}
-        </p>
+
+        <AppButton
+          type="submit"
+          disabled={busy}
+          className="mt-2 h-14 w-full justify-between px-5 text-base font-semibold"
+        >
+          {busy ? copy.pending : copy.submit}
+          {busy ? (
+            <LoaderCircle
+              className="animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+              size={17}
+            />
+          ) : (
+            <ArrowRight aria-hidden="true" size={17} />
+          )}
+        </AppButton>
+
+        <div className="flex flex-wrap items-center gap-x-1 text-sm text-[var(--text-secondary)]">
+          <span>{copy.switchPrompt}</span>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onModeChange(mode === "login" ? "register" : "login")}
+            className="rounded px-1 py-0.5 font-semibold text-[var(--accent-primary-strong)] outline-none transition hover:text-[var(--accent-primary)] focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {copy.switchAction}
+          </button>
+        </div>
       </form>
     </div>
   );

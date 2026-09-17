@@ -15,6 +15,7 @@ import { HttpError } from "@/shared/api/http";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
@@ -39,6 +40,7 @@ export function ReviewsPage() {
   const { reviewId, reviewRunId } = useParams<{ reviewId?: string; reviewRunId?: string }>();
   const navigate = useNavigate();
   const inbox = useSchemaReviewInbox();
+  const showLoader = useStableLoading(inbox.isLoading);
   const submitMutation = useSubmitSchemaReviewInboxMutation();
   const items = useMemo(() => inboxItems(inbox.data ?? []), [inbox.data]);
   const selected = useMemo(
@@ -68,7 +70,7 @@ export function ReviewsPage() {
     });
   }, [inbox.isLoading, navigate, reviewId, reviewRunId, selected]);
 
-  if (inbox.isLoading) {
+  if (showLoader) {
     return <AppPageLoader label="Loading review inbox" />;
   }
   if (inbox.error instanceof HttpError && inbox.error.status === 403) {

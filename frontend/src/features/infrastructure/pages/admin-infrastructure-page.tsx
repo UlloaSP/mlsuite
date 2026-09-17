@@ -4,6 +4,7 @@ import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AlertsView } from "@/features/infrastructure/components/AlertsView";
 import { LogsView } from "@/features/infrastructure/components/LogsView";
@@ -39,6 +40,7 @@ const INFRA_TABS: InfraTab[] = ["overview", "services", "logs", "terminal", "ale
 export function AdminInfrastructurePage() {
   const { data: user } = useUser();
   const { data, isLoading } = useInfrastructureOverview();
+  const showLoading = useStableLoading(isLoading);
   const action = useServiceAction();
   const [overview, setOverview] = useState<InfrastructureOverviewDto | null>(null);
   const [selectedService, setSelectedService] = useState<string | null>(null);
@@ -121,7 +123,7 @@ export function AdminInfrastructurePage() {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll bg-[var(--page-bg)]">
         <div className="flex-1 px-6 py-5">
-          {currentOverview ? (
+          {currentOverview && !showLoading ? (
             <>
               {activeTab === "overview" && (
                 <OverviewView
@@ -169,7 +171,7 @@ export function AdminInfrastructurePage() {
                 />
               )}
             </>
-          ) : isLoading ? (
+          ) : showLoading ? (
             <AppLoadingState label="Loading infrastructure snapshot" />
           ) : (
             <AppEmptyState
