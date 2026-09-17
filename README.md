@@ -34,7 +34,7 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 > [!WARNING]
 > MLSuite is early software. Expect rough edges and breaking changes.
 
-You need Git an Docker with Docker Compose.
+You need Git and Docker with Docker Compose.
 
 ### Clone and configure
 

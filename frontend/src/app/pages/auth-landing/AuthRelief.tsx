@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAnimationFrame, useInView, useMotionValue, useReducedMotion } from "motion/react";
+import { useInView, useMotionValue, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { AuthMode } from "./authLandingCopy";
 import { AUTH_RELIEF_CHANNELS } from "./authReliefChannels";
@@ -27,10 +27,21 @@ export function AuthRelief({ mode }: { mode: AuthMode }) {
 
   const animateRelief = inView && pageVisible && !reduceMotion;
 
-  useAnimationFrame((_time, delta) => {
+  useEffect(() => {
     if (!animateRelief) return;
-    flow.set(flow.get() + delta * (registering ? 1 : -1));
-  });
+
+    let frameId = 0;
+    let previousTime = performance.now();
+    const updateFlow = (time: number) => {
+      const delta = time - previousTime;
+      previousTime = time;
+      flow.set(flow.get() + delta * (registering ? 1 : -1));
+      frameId = requestAnimationFrame(updateFlow);
+    };
+
+    frameId = requestAnimationFrame(updateFlow);
+    return () => cancelAnimationFrame(frameId);
+  }, [animateRelief, flow, registering]);
 
   return (
     <div ref={reliefRef} aria-hidden="true" className="pointer-events-none absolute inset-0">
