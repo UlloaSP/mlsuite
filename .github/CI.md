@@ -29,6 +29,10 @@ Protect `develop` and `main` with:
 
 A pull request to `main` must originate from this repository's `develop` branch. Repository settings enforce protection; workflow YAML alone does not.
 
+Use squash merge for short-lived branches targeting `develop`, then delete those branches. Use a merge commit for `develop` to `main` so the long-lived branches retain shared ancestry. Never squash or rebase the promotion PR.
+
+Automatic head-branch deletion is enabled. Both long-lived branches have deletion disabled by branch protection, so only merged short-lived branches are removed automatically.
+
 `CODEOWNERS` identifies responsibility without requiring an impossible self-review for a sole maintainer.
 
 ## Secrets

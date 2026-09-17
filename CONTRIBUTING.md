@@ -17,6 +17,10 @@ Read [README.md](./README.md) for setup and [AGENTS.md](./AGENTS.md) for reposit
 
 Use a feature branch based on the current `develop` branch. Pull requests for normal work target `develop`; promotion from `develop` to `main` is a separate maintainer action.
 
+- Merge short-lived `feature/*`, `fix/*`, and `chore/*` branches into `develop` with squash merge, then delete them.
+- Merge `develop` into `main` with a merge commit. Do not squash or rebase this promotion; preserving ancestry keeps later promotions predictable.
+- `develop` and `main` are protected against deletion and force pushes.
+
 Keep each change focused. Update tests with behavior or contract changes, run the narrowest relevant checks first, and state exactly what was and was not verified.
 
 ## Pull requests
