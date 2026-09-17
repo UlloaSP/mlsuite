@@ -1,8 +1,8 @@
-### AI SLOPE ###
+# Local agent configuration
+.codex/
 
-# Ignore Graphify for now
+# Generated analysis output
 graphify-out/
-.graphify_python
 
 
 
