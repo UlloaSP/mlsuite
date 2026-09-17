@@ -9,8 +9,9 @@ import { Link, useParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabs } from "@/shared/ui/AppTabs";
 import {
@@ -48,6 +49,7 @@ export function PredictionRunDetailPage() {
   }>();
   const { data: schema } = useSchema(schemaId);
   const { data: run, isLoading, isError } = usePredictionRun(runId);
+  const showLoader = useStableLoading(isLoading);
   const runBookmarkId = run?.schemaBookmarkId ?? bookmarkId;
   const { data: bookmark } = useSchemaBookmark(runBookmarkId);
   const effectiveVersionId = versionId ?? run?.schemaVersionId;
@@ -100,22 +102,19 @@ export function PredictionRunDetailPage() {
       </AppPage>
     );
 
-  if (isLoading || isError || !run) {
+  if (showLoader || isError || !run) {
+    if (showLoader) return <AppPageLoader label="Loading run..." />;
     return (
       <AppPage>
-        {isLoading ? (
-          <AppPanel>Loading run...</AppPanel>
-        ) : (
-          <AppEmptyState
-            title="Inference unavailable"
-            description="The inference could not be loaded. It may no longer exist or you may not have access."
-            action={
-              <Link to="/inferences">
-                <AppButton>Back to inferences</AppButton>
-              </Link>
-            }
-          />
-        )}
+        <AppEmptyState
+          title="Inference unavailable"
+          description="The inference could not be loaded. It may no longer exist or you may not have access."
+          action={
+            <Link to="/inferences">
+              <AppButton>Back to inferences</AppButton>
+            </Link>
+          }
+        />
       </AppPage>
     );
   }

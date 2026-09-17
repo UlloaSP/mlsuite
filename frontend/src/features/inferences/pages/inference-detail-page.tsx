@@ -12,6 +12,8 @@ import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -28,6 +30,7 @@ export function InferenceDetailPage() {
   const { inferenceId = "" } = useParams<{ inferenceId: string }>();
   const [searchParams] = useSearchParams();
   const catalog = useInferenceCatalog();
+  const showLoader = useStableLoading(catalog.isLoading);
   const { data: workspace } = useWorkspaceContext();
   const item = catalog.data?.find((candidate) => String(candidate.id) === inferenceId);
   const canManageReviews = workspace?.permissions.canManageReviews ?? false;
@@ -37,14 +40,8 @@ export function InferenceDetailPage() {
     if (reviewRequested && item) document.getElementById("reviews")?.scrollIntoView();
   }, [item, reviewRequested]);
 
-  if (catalog.isLoading) {
-    return (
-      <AppPage>
-        <AppSurface className="flex-1">
-          <AppPanel>Loading inference...</AppPanel>
-        </AppSurface>
-      </AppPage>
-    );
+  if (showLoader) {
+    return <AppPageLoader label="Loading inference..." />;
   }
 
   if (catalog.error || !item) {

@@ -8,7 +8,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppButton } from "@/shared/ui/AppButton";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
@@ -59,6 +61,7 @@ export function SchemaRunForm({
   );
   const catalog = useSchemaPluginCatalog(formSchema);
   const { data, needsPlugins, status } = catalog;
+  const showCatalogLoading = useStableLoading(needsPlugins && status === "loading");
   schemaRunDebug("form.render", {
     versionId: version.id,
     needsPlugins,
@@ -73,7 +76,7 @@ export function SchemaRunForm({
   }, [onResultUpdate, onRunningChange, onSubmit]);
 
   useEffect(() => {
-    if (!containerRef.current || (needsPlugins && status !== "ready")) {
+    if (showCatalogLoading || !containerRef.current || (needsPlugins && status !== "ready")) {
       schemaRunDebug("form.mount.wait", {
         hasContainer: Boolean(containerRef.current),
         needsPlugins,
@@ -162,6 +165,7 @@ export function SchemaRunForm({
     formSchema,
     initialTheme,
     needsPlugins,
+    showCatalogLoading,
     status,
     version.bindings,
     version.id,
@@ -175,21 +179,17 @@ export function SchemaRunForm({
     <AppPanel>
       <AppCopy>This schema version has no model bindings.</AppCopy>
     </AppPanel>
+  ) : showCatalogLoading ? (
+    <AppLoadingState compact label="Loading plugin catalog" />
   ) : needsPlugins && status !== "ready" ? (
     <AppPanel className="space-y-4">
       <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-        {status === "loading" ? "Loading plugin catalog" : "Plugin catalog unavailable"}
+        Plugin catalog unavailable
       </h2>
-      <AppCopy>
-        {status === "loading"
-          ? "Schema form waits for plugin definitions before rendering custom fields and reports."
-          : catalog.error}
-      </AppCopy>
-      {status === "error" ? (
-        <AppButton type="button" onClick={() => void catalog.retry()}>
-          Retry
-        </AppButton>
-      ) : null}
+      <AppCopy>{catalog.error}</AppCopy>
+      <AppButton type="button" onClick={() => void catalog.retry()}>
+        Retry
+      </AppButton>
     </AppPanel>
   ) : (
     <div className="size-full min-h-0 overflow-auto" ref={containerRef} />

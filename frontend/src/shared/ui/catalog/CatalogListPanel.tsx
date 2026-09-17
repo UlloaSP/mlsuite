@@ -7,8 +7,10 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { cx } from "@/shared/ui/cx";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { CatalogPaginationFooter } from "./CatalogPaginationFooter";
 
 export type CatalogEmptyState = {
@@ -52,21 +54,21 @@ export function CatalogListPanel({
   totalPages,
 }: CatalogListPanelProps) {
   const hasItems = itemCount > 0;
+  const showLoading = useStableLoading(isLoading);
+  const showItems = hasItems && !showLoading;
   const bodyClassName = cx(
-    layout === "grid"
+    showItems && layout === "grid"
       ? "grid gap-3 pr-1 md:grid-cols-2 xl:grid-cols-3"
       : "flex flex-col gap-3 pr-1",
-    !hasItems && "min-h-full",
+    !showItems && "min-h-full",
   );
 
   return (
     <>
       <section className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4">
         <div className={bodyClassName}>
-          {!hasItems && isLoading ? (
-            <AppPanel className="text-sm text-[var(--text-secondary)]">{loadingLabel}</AppPanel>
-          ) : null}
-          {!hasItems && errorMessage ? (
+          {showLoading ? <AppLoadingState label={loadingLabel} /> : null}
+          {!hasItems && !showLoading && errorMessage ? (
             <AppPanel className="flex flex-col gap-3 border-[var(--status-danger-border)] text-sm text-[var(--status-danger-text)]">
               <p>{errorMessage}</p>
               {onRetry ? (
@@ -76,7 +78,7 @@ export function CatalogListPanel({
               ) : null}
             </AppPanel>
           ) : null}
-          {!hasItems && !isLoading && !errorMessage ? (
+          {!hasItems && !showLoading && !errorMessage ? (
             <div className={cx("flex min-h-full", emptyWrapperClassName)}>
               <AppEmptyState
                 className="flex-1"
@@ -87,7 +89,7 @@ export function CatalogListPanel({
               />
             </div>
           ) : null}
-          {children}
+          {!showLoading ? children : null}
         </div>
       </section>
       <CatalogPaginationFooter

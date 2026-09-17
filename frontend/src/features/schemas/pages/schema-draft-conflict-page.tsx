@@ -8,10 +8,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
-import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
+import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { isHttpError } from "@/shared/api/http";
 import type {
   SchemaDraftBindingDto,
@@ -39,7 +41,16 @@ export function SchemaDraftConflictPage() {
   const draft = draftQuery.data;
   const diffQuery = useSchemaDraftDiff(draftId);
   const diff = diffQuery.data;
-  const { data: currentVersion } = useSchemaVersion(diff?.currentVersionId);
+  const currentVersionQuery = useSchemaVersion(diff?.currentVersionId);
+  const currentVersion = currentVersionQuery.data;
+  const loadError = draftQuery.error ?? diffQuery.error ?? currentVersionQuery.error;
+  const missingConflictData = !draft || !diff || !currentVersion;
+  const showLoading = useStableLoading(
+    draftQuery.isLoading ||
+      diffQuery.isLoading ||
+      currentVersionQuery.isLoading ||
+      (!loadError && missingConflictData),
+  );
   const mergeMutation = useMergeSchemaDraftMutation(draftId ?? "", schemaId ?? "");
   const publishMutation = usePublishSchemaDraftMutation(draftId ?? "", schemaId ?? "");
   const [resolutions, setResolutions] = useState<Record<string, SchemaDraftMergeSide | undefined>>(
@@ -151,6 +162,14 @@ export function SchemaDraftConflictPage() {
     }));
   };
 
+  const retryLoad = () => {
+    void Promise.all([
+      draftQuery.refetch(),
+      diffQuery.refetch(),
+      ...(diff?.currentVersionId ? [currentVersionQuery.refetch()] : []),
+    ]);
+  };
+
   return (
     <AppPage>
       <AppSurface className="flex min-w-0 flex-1 flex-col gap-5 overflow-hidden">
@@ -199,7 +218,16 @@ export function SchemaDraftConflictPage() {
             </div>
           }
         />
-        {currentVersion && draft ? (
+        {showLoading ? (
+          <AppLoadingState label="Loading diff." />
+        ) : loadError || missingConflictData ? (
+          <AppPanel className="flex flex-col items-start gap-3 border-[var(--status-danger-border)] text-sm text-[var(--status-danger-text)]">
+            <p>Could not load the comparison.</p>
+            <AppButton variant="secondary" onClick={retryLoad}>
+              Retry
+            </AppButton>
+          </AppPanel>
+        ) : (
           <SchemaMergeDiffViewer
             className="flex-1"
             currentLabel={currentLabel}
@@ -209,8 +237,6 @@ export function SchemaDraftConflictPage() {
             changes={diff?.changes}
             onResolve={setResolution}
           />
-        ) : (
-          <AppCopy>Loading diff.</AppCopy>
         )}
       </AppSurface>
     </AppPage>

@@ -19,13 +19,21 @@ export function FeedbackStatusBadge({ status = "LOADING" }: { status?: FeedbackS
                 : "neutral"
         }
       >
-        {status === "NOT_REQUIRED"
-          ? "Not configured"
-          : status === "LOADING"
-            ? "Loading…"
-            : status === "ERROR"
-              ? "Unavailable"
-              : status}
+        {status === "NOT_REQUIRED" ? (
+          "Not configured"
+        ) : status === "LOADING" ? (
+          <>
+            <span
+              aria-hidden="true"
+              className="size-2 animate-pulse bg-current motion-reduce:animate-none"
+            />
+            <span className="sr-only">Loading…</span>
+          </>
+        ) : status === "ERROR" ? (
+          "Unavailable"
+        ) : (
+          status
+        )}
       </AppBadge>
     </span>
   );

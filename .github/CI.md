@@ -1,114 +1,56 @@
 # CI and repository protection
 
-`ci.yml` validates PRs targeting main/develop and pushes to those branches. It is
-also callable by image publication, which cannot start until CI succeeds.
-The stable required check is `CI required`; it succeeds only when secret scanning,
-frontend, API, both Python components, and configuration checks succeed. Failed, skipped, and
-cancelled dependencies do not satisfy it.
+GitHub is the canonical source repository. Feature work targets `develop`; promotion to `main` happens through a separate pull request after validation. GitHub mirrors the resulting refs to GitLab, where the deployment pipeline runs.
 
-CI uses hosted Ubuntu runners and read-only repository permissions. It receives
-no deployment secrets. Actions are pinned to complete commit SHAs. Python and
-Java test reports are retained for seven days; frontend results appear in logs.
+## Required GitHub checks
 
-## Checks
+`.github/workflows/ci.yml` runs for pull requests and pushes to `develop` and `main`, and is callable by the release workflow. Its stable aggregate check is `CI required`.
 
-Branch flow is feature branch -> PR to develop -> PR from develop to main.
-Fetch/pull the relevant branches before branching or integrating changes. Feature
-PRs must not target main; CI rejects main PRs unless their source is this
-repository's develop branch. Integrate and validate in develop before opening
-the promotion PR. Opening a PR does not authorize its automatic merge.
+The workflow verifies:
 
-- Frontend: locked install, all tests, TypeScript and production build.
-  Tests disable Node 25's native Web Storage so jsdom supplies browser storage.
-- API: Maven verify, including architecture tests and packaging.
-- Backend/ops-agent: locked dependency validation and all pytest tests.
-- Configuration: no tracked private `.env` files, both Compose definitions
-  resolved with the public template, release contract/lifecycle tests, and checksum-verified actionlint.
-- Secrets: checksum-pinned Gitleaks 8.30.1 scans the committed tree and incoming
-  commits. Logs expose only finding metadata, never secret values. Download,
-  scan, or history-boundary errors fail the required gate.
+- committed-secret history with the repository scanner;
+- frontend locked install, tests, TypeScript, and production build;
+- Maven tests and API packaging;
+- backend and ops-agent locked Python tests;
+- Compose resolution and immutable-release contract tests.
 
-Full frontend formatting/lint is not yet a required check. The 2026-09-11 audit
-with Vite+ 0.2.5 reports formatting failures in 392 files from `vp check`, and
-22 warnings across 13 files from `vp lint --format json`. Adding
-`--deny-warnings` makes lint fail. Resolve that debt in a separate change before
-adding the gate. This workflow does not suppress those failures or claim that
-the repository passes full lint.
+CI uses hosted Ubuntu runners, read-only repository permissions, and no deployment secrets. Actions are pinned to full commit SHAs. A skipped, cancelled, or failed dependency does not satisfy the aggregate check.
 
-## Follow-up quality plan
+Full frontend formatting and lint are not required until the existing baseline is clean. Do not add a required gate that the repository cannot pass, and do not hide failures with `continue-on-error`.
 
-1. Keep the existing Gitleaks job in `CI required`; do not add a second secret
-   scanner to perform the same check. Preserve the private ignored `.env`.
-2. Normalize frontend formatting in a dedicated feature PR from updated develop
-   using the installed Vite+ formatter. Fix the lint warnings with focused tests
-   where promise handling or value conversion changes behavior. Require formatting,
-   type-aware lint with no warnings, tests and build before adding these commands
-   to required CI. Use the same configuration locally and in Actions.
-3. Introduce Python and Java rules in separate, reviewable changes. Neither
-   component currently has a configured formatter/linter. Evaluate Ruff for both
-   Python components and a Maven-integrated Java checker/formatter; pin versions,
-   document the commands and normalize existing files before enforcing them.
-   Keep new tooling in development/build dependencies.
-4. Reassess MegaLinter only if coordinating those checks becomes useful. Select
-   explicit linters/configurations, avoid competing formatters and duplicate
-   Gitleaks/actionlint checks, and start without automatic source edits. A failing
-   result blocks merges only when included in the protected required gate.
-5. Optionally trial Qodo Cover on one component, manually triggered and with a
-   bounded generation budget. Supply its coverage report and provider credential
-   separately, review the generated tests in a complementary PR, and keep the
-   generator non-blocking. A passing generated test or higher coverage alone does
-   not prove the intended behavior. No generator or provider secret is configured
-   by the release foundation PR.
+## Branch protection
 
-For CodeRabbit, evaluate comments against the code before changing it. PR #5's
-publisher timeout is addressed with real subprocess tests. Its default 80%
-docstring-coverage warning is not an adopted project requirement or a test
-coverage result. Document contracts and non-obvious decisions instead of adding
-redundant docstrings to satisfy that percentage.
-The root `.coderabbit.yaml` includes `develop` in automatic reviews alongside the
-default branch, so feature PRs receive reviews before promotion to main. Check
-the bot's review details: a green status can also mean the review was skipped.
+Protect `develop` and `main` with:
 
-References: [MegaLinter](https://megalinter.io/latest/),
-[Qodo Cover action and limitations](https://github.com/qodo-ai/qodo-ci#limitations),
-[CodeRabbit branch selection](https://docs.coderabbit.ai/configuration/auto-review).
+- pull requests required;
+- `CI required` required and up to date;
+- resolved review conversations;
+- force-push and deletion disabled.
 
-## Develop and main protection
+A pull request to `main` must originate from this repository's `develop` branch. Repository settings enforce protection; workflow YAML alone does not.
 
-Both branches require a PR, `CI required` from GitHub Actions, an up-to-date branch, resolved
-review conversations, and no force-pushes or branch deletion. Apply protection
-to administrators too. The sole current maintainer can merge their own PR after
-checks pass: no independent approval is required until another reviewer exists.
-CODEOWNERS identifies responsibility without creating an impossible self-review.
+Use squash merge for short-lived branches targeting `develop`, then delete those branches. Use a merge commit for `develop` to `main` so the long-lived branches retain shared ancestry. Never squash or rebase the promotion PR.
 
-Keep GitHub secret scanning and push protection enabled. Status-check protection
-must be configured in GitHub repository settings; the YAML alone does not enforce
-merges. Verify the check has actually run before making it required.
+Automatic head-branch deletion is enabled. Both long-lived branches have deletion disabled by branch protection, so only merged short-lived branches are removed automatically.
 
-## Private configuration
+`CODEOWNERS` identifies responsibility without requiring an impossible self-review for a sole maintainer.
 
-Copy `.env.example` to `.env` and fill blank secrets locally. Never commit an
-active `.env` or copy its values to CI. Compose validation uses only the example;
-it is not a runtime test and does not establish that its blank credentials work.
+## Secrets
 
-The maintainer confirmed on 2026-09-11 that credentials from the old `.env` were
-used only in local Docker. That private file is preserved; no deployed-service
-credential rotation is outstanding based on that confirmation. Never reuse those
-historically published values for deployed environments. If external reuse is
-later discovered, rotate it at the issuing service and update its consumers.
-No history rewrite or local credential change was performed.
+Keep active configuration in ignored `.env` files. Commit only sanitized names and defaults to `.env.example`.
 
-The obsolete, unreferenced local TLS keystore was removed from the current tree.
-It also remains in history and must never be reused for deployed TLS.
+The secret scanner always checks the current committed tree and incoming commits after cleanup boundary `4ade4f783a3b8c121cac9d623e4f162e5260e0e5`. Historical credentials before that boundary are not accepted for reuse; deleting a secret from Git does not revoke it.
 
-Secret scanning has an explicit history boundary at cleanup commit
-`4ade4f783a3b8c121cac9d623e4f162e5260e0e5`. Historical credentials before that boundary
-are not re-scanned by this gate. The complete current committed tree is always
-scanned, plus the incoming commit range after that boundary, including secrets
-added and later removed within a PR. Ignored local files are never read. The
-scanner does not honor repository allowlists or inline suppression comments.
-GitHub secret scanning and push protection remain enabled independently.
+GitHub secret scanning and push protection remain independent safeguards. Pull requests and forked code never receive deployment credentials.
 
-Image publication now creates complete immutable build releases. See
-[release contract and limitations](../docs/RELEASES.md). Deployments, migrations,
-runtime secret validation and production promotion are subsequent work.
+## Releases
+
+`.github/workflows/publish-ghcr.yml` runs CI before publishing four immutable application images and their release manifest. It does not update `latest`.
+
+See [the release contract](../docs/RELEASES.md) for image identity, verification, retry behavior, and consumption limits.
+
+## GitLab
+
+`.github/workflows/mirror-gitlab.yml` mirrors canonical GitHub refs. GitLab CI repeats component and configuration checks before deployment so the target forge verifies the exact mirrored commit it receives.
+
+Keep check commands aligned across both systems. GitLab deployment credentials must remain protected and separate from GitHub CI.

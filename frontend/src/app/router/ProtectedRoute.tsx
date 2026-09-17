@@ -7,14 +7,16 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 
 export function ProtectedRoute() {
   const location = useLocation();
   const { data: user, error, isLoading } = useUser();
   const workspace = useWorkspaceContext(Boolean(user) && !error);
+  const showLoader = useStableLoading(isLoading || workspace.isLoading);
 
-  if (isLoading || workspace.isLoading) {
-    return <EditorAssemblyLoader />;
+  if (showLoader) {
+    return <EditorAssemblyLoader scope="viewport" />;
   }
 
   if (!user || error || workspace.error) {

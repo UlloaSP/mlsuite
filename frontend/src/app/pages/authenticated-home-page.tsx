@@ -1,11 +1,13 @@
 import { Navigate } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 
 export function AuthenticatedHomePage() {
   const workspace = useWorkspaceContext();
+  const showLoader = useStableLoading(workspace.isLoading);
 
-  if (workspace.isLoading) return <EditorAssemblyLoader />;
+  if (showLoader) return <AppPageLoader label="Loading workspace" />;
   const permissions = workspace.data?.permissions;
   if (permissions?.canViewWorkspace) return <Navigate to="/workspace" replace />;
   if (permissions?.canReview || permissions?.canManageReviews) {

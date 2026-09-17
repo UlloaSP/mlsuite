@@ -10,6 +10,8 @@ import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -30,6 +32,7 @@ export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const navigate = useNavigate();
   const { data: schema, isLoading, isError } = useSchema(schemaId);
+  const showLoader = useStableLoading(isLoading);
   const { data: versions = [] } = useSchemaVersions(schemaId);
   const { data: bookmarks = [] } = useSchemaBookmarks(schemaId);
   const { data: drafts = [] } = useSchemaDrafts(schemaId);
@@ -54,22 +57,19 @@ export function SchemaDetailPage() {
     }
   };
 
-  if (isLoading || isError || !schema) {
+  if (showLoader || isError || !schema) {
+    if (showLoader) return <AppPageLoader label="Loading schema..." />;
     return (
       <AppPage>
-        {isLoading ? (
-          <AppPanel>Loading schema...</AppPanel>
-        ) : (
-          <AppEmptyState
-            title="Schema unavailable"
-            description="The schema could not be loaded. It may no longer exist or you may not have access."
-            action={
-              <Link to="/schemas">
-                <AppButton>Back to schemas</AppButton>
-              </Link>
-            }
-          />
-        )}
+        <AppEmptyState
+          title="Schema unavailable"
+          description="The schema could not be loaded. It may no longer exist or you may not have access."
+          action={
+            <Link to="/schemas">
+              <AppButton>Back to schemas</AppButton>
+            </Link>
+          }
+        />
       </AppPage>
     );
   }

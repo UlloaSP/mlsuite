@@ -2,10 +2,12 @@ import { KeyRound, Search } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import type { PermissionGroupDto } from "@/features/workspace/api/workspace.types";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 
 export function PermissionCatalog({
   groups,
@@ -19,6 +21,7 @@ export function PermissionCatalog({
   onRetry: () => void;
 }) {
   const [params, setParams] = useSearchParams();
+  const showLoading = useStableLoading(loading);
   const search = params.get("q") ?? "";
   const query = search.trim().toLowerCase();
   const filtered = groups
@@ -56,8 +59,8 @@ export function PermissionCatalog({
         aria-label="Permission groups"
         className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4"
       >
-        {loading ? (
-          <p>Loading permissions...</p>
+        {showLoading ? (
+          <AppLoadingState compact label="Loading permissions..." />
         ) : error ? (
           <div className="space-y-3">
             <p role="alert">Could not load permissions.</p>

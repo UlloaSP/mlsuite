@@ -1,6 +1,7 @@
 import { useParams } from "react-router";
-import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
@@ -12,6 +13,7 @@ export function OrganizationSettingsPage() {
   const { organizationId = "" } = useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
+  const showLoader = useStableLoading(dashboard.isLoading);
   const permissions = dashboard.data?.permissions;
   const organization = dashboard.data?.organization;
 
@@ -19,14 +21,8 @@ export function OrganizationSettingsPage() {
   if (dashboard.isError) {
     return <RouteStatusPage status={organizationRouteErrorStatus(dashboard.error)} />;
   }
-  if (dashboard.isLoading || !organization || !permissions) {
-    return (
-      <AppPage>
-        <AppSurface className="flex flex-1 items-center justify-center overflow-auto">
-          <AppCopy>Loading organization settings...</AppCopy>
-        </AppSurface>
-      </AppPage>
-    );
+  if (showLoader || !organization || !permissions) {
+    return <AppPageLoader label="Loading organization settings..." />;
   }
   if (!permissions.canViewOrganization) return <RouteStatusPage status={403} />;
 
