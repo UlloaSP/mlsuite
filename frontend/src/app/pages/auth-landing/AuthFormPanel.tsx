@@ -69,9 +69,9 @@ export function AuthFormPanel({
           label="Password"
           name="password"
           type="password"
-          minLength={PASSWORD_MIN_LENGTH}
+          minLength={mode === "register" ? PASSWORD_MIN_LENGTH : undefined}
           autoComplete={copy.passwordAutoComplete}
-          placeholder="At least 10 characters"
+          placeholder={mode === "register" ? "At least 10 characters" : "Your password"}
         />
 
         {error ? (

@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { InputHTMLAttributes } from "react";
+import { useId, type InputHTMLAttributes } from "react";
 import { cx } from "@/shared/ui/cx";
 
 export function AuthField({
@@ -12,7 +12,8 @@ export function AuthField({
   className = "",
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & { label: string; marker: string }) {
-  const fieldId = `auth-${props.name}`;
+  const generatedId = useId();
+  const fieldId = props.id ?? generatedId;
 
   return (
     <div className={cx("grid gap-1.5", className)}>

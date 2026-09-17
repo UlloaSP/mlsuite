@@ -46,9 +46,9 @@ export function SchemaDraftConflictPage() {
   const loadError = draftQuery.error ?? diffQuery.error ?? currentVersionQuery.error;
   const missingConflictData = !draft || !diff || !currentVersion;
   const showLoading = useStableLoading(
-    draftQuery.isFetching ||
-      diffQuery.isFetching ||
-      currentVersionQuery.isFetching ||
+    draftQuery.isLoading ||
+      diffQuery.isLoading ||
+      currentVersionQuery.isLoading ||
       (!loadError && missingConflictData),
   );
   const mergeMutation = useMergeSchemaDraftMutation(draftId ?? "", schemaId ?? "");
