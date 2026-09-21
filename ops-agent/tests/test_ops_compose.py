@@ -7,6 +7,21 @@ from mlsuite_ops_agent.compose import ComposeError, ComposeGateway
 from mlsuite_ops_agent.config import Settings
 
 
+def test_command_uses_every_configured_compose_file():
+    gateway = ComposeGateway(Settings(
+        compose_files=("docker-compose.prod.yml", "docker-compose.release.yml"),
+        compose_project="mlsuite",
+    ))
+
+    assert gateway.compose_command("ps") == [
+        "docker", "compose",
+        "-f", "docker-compose.prod.yml",
+        "-f", "docker-compose.release.yml",
+        "-p", "mlsuite",
+        "ps",
+    ]
+
+
 def test_snapshot_distinguishes_stopped_container_from_missing(monkeypatch):
     gateway = ComposeGateway(Settings(managed_services=("py-analyzer", "spring-app")))
 

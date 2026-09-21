@@ -35,19 +35,44 @@ services:
     image: postgres:17.11-alpine3.24
     environment:
       POSTGRES_DB: ${DB_PROD}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_USER: ${DB_ADMIN_USER}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASS}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - ${DB_HOST_PORT}:5432
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_PROD}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_ADMIN_USER} -d ${DB_PROD}" ]
       interval: 10s
       timeout: 5s
       retries: 10
     networks: [ appnet ]
+
+  db-provision:
+    image: postgres:17.11-alpine3.24
+    command: [ "/bin/sh", "/usr/local/bin/provision-roles.sh" ]
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${DB_PROD}
+      PGUSER: ${DB_ADMIN_USER}
+      PGPASSWORD: ${DB_ADMIN_PASS}
+      DB_ADMIN_USER: ${DB_ADMIN_USER}
+      DB_ADMIN_PASS: ${DB_ADMIN_PASS}
+      DB_LEGACY_OWNER: ${DB_LEGACY_OWNER}
+      DB_LEGACY_PASS: ${DB_LEGACY_PASS}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_MIGRATION_USER: ${DB_MIGRATION_USER}
+      DB_MIGRATION_PASS: ${DB_MIGRATION_PASS}
+    volumes:
+      - ./deploy/postgres/provision-roles.sh:/usr/local/bin/provision-roles.sh:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [ appnet ]
+    restart: "no"
 
   py-analyzer:
     build:
@@ -70,7 +95,34 @@ services:
       MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/ready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks: [ appnet ]
+
+  minio-init:
+    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - |
+        set -eu
+        mc alias set local "$$STORAGE_ENDPOINT" "$$STORAGE_ACCESS_KEY" "$$STORAGE_SECRET_KEY"
+        mc mb --ignore-existing "local/$$STORAGE_BUCKET"
+        mc version enable "local/$$STORAGE_BUCKET"
+        version_info=$$(mc version info "local/$$STORAGE_BUCKET")
+        case "$$version_info" in *[Ee]nabled*) printf '%s\n' "$$version_info";; *) printf '%s\n' "$$version_info" >&2; exit 1;; esac
+    environment:
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks: [ appnet ]
+    restart: "no"
 
   spring-app:
     build:
@@ -99,6 +151,9 @@ services:
       STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET}
       STORAGE_RETAIN_INLINE_COPY: ${STORAGE_RETAIN_INLINE_COPY}
       STORAGE_DELETION_ENABLED: ${STORAGE_DELETION_ENABLED}
+      STORAGE_DELETION_BATCH_SIZE: ${STORAGE_DELETION_BATCH_SIZE:-20}
+      STORAGE_DELETION_STALE_AFTER_SECONDS: ${STORAGE_DELETION_STALE_AFTER_SECONDS:-300}
+      MODEL_MUTATIONS_REQUIRE_VERSION: ${MODEL_MUTATIONS_REQUIRE_VERSION:-false}
       DB_MIGRATION_USER: ${DB_MIGRATION_USER}
       DB_MIGRATION_PASS: ${DB_MIGRATION_PASS}
       FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-false}
@@ -113,8 +168,10 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_started
+      db-provision:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
     networks: [ appnet ]
 
   frontend:

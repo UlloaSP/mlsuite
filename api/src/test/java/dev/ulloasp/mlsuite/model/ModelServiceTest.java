@@ -46,14 +46,11 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 @ExtendWith(MockitoExtension.class)
 class ModelServiceTest {
 
-    @Mock
-    private UserLookupService userLookupService;
+    @Mock private UserLookupService userLookupService;
 
-    @Mock
-    private ModelRepository modelRepository;
+    @Mock private ModelRepository modelRepository;
 
-    @Mock
-    private ObjectStorageService objectStorageService;
+    @Mock private ObjectStorageService objectStorageService;
 
     @Mock
     private SchemaModelBindingRepository bindingRepository;
@@ -140,7 +137,7 @@ class ModelServiceTest {
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
-        assertEquals("new", service.renameModel(3L, 9L, " new ").getName());
+        assertEquals("new", service.renameModel(3L, 9L, " new ", 0L).getName());
         assertEquals("Alice", model.getUpdatedBy().getFullName());
     }
 
@@ -152,7 +149,7 @@ class ModelServiceTest {
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
-        service.archiveModel(3L, 9L);
+        service.archiveModel(3L, 9L, 0L);
 
         org.junit.jupiter.api.Assertions.assertNotNull(model.getArchivedAt());
     }
@@ -163,7 +160,8 @@ class ModelServiceTest {
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model("demo")));
         when(bindingRepository.existsByModelId(9L)).thenReturn(true);
 
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> service.deleteModel(3L, 9L));
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.deleteModel(3L, 9L, 0L));
         verify(modelRepository, never()).delete(any());
     }
 
@@ -176,11 +174,25 @@ class ModelServiceTest {
         when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
 
-        service.deleteModel(3L, 9L);
+        service.deleteModel(3L, 9L, 0L);
 
         verify(deletionQueue).enqueue("models", model.getStorageObjectKey(), "version-7");
         verify(modelRepository).delete(model);
         verify(objectStorageService, never()).delete(anyString(), anyString());
+    }
+
+    @Test
+    void renameModelRejectsASequentiallyStaleClientVersion() {
+        Model model = model("current");
+        model.setVersion(4L);
+        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
+        when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
+
+        var error = assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.renameModel(3L, 9L, "stale", 3L));
+
+        assertEquals(org.springframework.http.HttpStatus.CONFLICT, error.getStatusCode());
+        verify(modelRepository, never()).save(any());
     }
 
     @Test
@@ -267,6 +279,7 @@ class ModelServiceTest {
         Model model = new Model();
         model.setId(9L);
         model.setName(name);
+        model.setVersion(0L);
         model.setType("classifier");
         model.setSpecificType("random_forest");
         model.setFileName("model.pkl");

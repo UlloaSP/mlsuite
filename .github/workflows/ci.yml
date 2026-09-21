@@ -77,6 +77,28 @@ jobs:
           cache: maven
           cache-dependency-path: api/pom.xml
       - run: mvn -B -ntp verify
+      - name: Require PostgreSQL integration tests
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          import xml.etree.ElementTree as ET
+
+          expected = {
+              "dev.ulloasp.mlsuite.storage.FlywayMigrationTest": 2,
+              "dev.ulloasp.mlsuite.storage.PostgresArtifactMigrationQueueTest": 1,
+              "dev.ulloasp.mlsuite.storage.PostgresStorageDeletionWorkQueueTest": 2,
+              "dev.ulloasp.mlsuite.model.ModelOptimisticLockTest": 1,
+          }
+          for name, minimum in expected.items():
+              report = pathlib.Path(f"target/surefire-reports/TEST-{name}.xml")
+              if not report.is_file():
+                  raise SystemExit(f"missing PostgreSQL test report: {report}")
+              suite = ET.parse(report).getroot()
+              tests = int(suite.attrib.get("tests", 0))
+              skipped = int(suite.attrib.get("skipped", 0))
+              if tests < minimum or skipped:
+                  raise SystemExit(f"{name} did not run completely: tests={tests}, skipped={skipped}")
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -142,6 +164,10 @@ jobs:
         run: |
           docker compose --env-file .env.example -f docker-compose.dev.yml config --quiet
           docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet
+      - name: Verify PostgreSQL role upgrade
+        run: bash deploy/postgres/test-provision-roles.sh
+      - name: Verify non-empty backup restore lifecycle
+        run: bash deploy/test-backup-restore.sh
       - name: Validate release contracts and failure handling
         run: python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
       - name: Validate workflows

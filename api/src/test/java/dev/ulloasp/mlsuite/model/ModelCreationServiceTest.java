@@ -80,6 +80,7 @@ class ModelCreationServiceTest {
         CreateModelDto result = service.create(4L, "demo", modelFile, dataframeFile, "_");
 
         assertEquals(Map.of("dataframe", "schema"), result.model().inputSchema());
+        assertEquals(0, result.model().version());
         ArgumentCaptor<MultipartFile> modelCaptor = ArgumentCaptor.forClass(MultipartFile.class);
         verify(modelCatalogUseCase).createModel(eq(4L), eq("demo"), modelCaptor.capture());
         MultipartFile reusable = modelCaptor.getValue();

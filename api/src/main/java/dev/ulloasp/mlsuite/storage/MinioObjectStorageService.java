@@ -138,6 +138,25 @@ class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
+    public StoredObjectVerification verify(String bucket, String objectKey) {
+        ensureBucketExists();
+        try (InputStream inputStream = minioClient.getObject(
+                GetObjectArgs.builder().bucket(bucket).object(objectKey).build())) {
+            long size = 0;
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[64 * 1024];
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+                size += read;
+            }
+            return new StoredObjectVerification(size, java.util.HexFormat.of().formatHex(digest.digest()));
+        } catch (Exception ex) {
+            throw new ObjectStorageException("No se pudo verificar el objeto en MinIO", ex);
+        }
+    }
+
+    @Override
     public List<StoredObjectItem> list(String prefix) {
         ensureBucketExists();
 

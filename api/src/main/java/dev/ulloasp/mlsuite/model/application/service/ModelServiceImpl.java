@@ -66,6 +66,8 @@ public class ModelServiceImpl implements ModelService {
 
     @Value("${analyzer.url}")
     private String analyzerUrl;
+    @Value("${model.mutations.require-version:false}")
+    private boolean requireMutationVersion;
 
     public ModelServiceImpl(
             UserLookupService userLookupService,
@@ -172,10 +174,11 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public Model renameModel(Long userId, Long modelId, String name) {
+    public Model renameModel(Long userId, Long modelId, String name, Long expectedVersion) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireEdit(userId, organization.getId());
         Model model = requireModel(userId, organization.getId(), modelId);
+        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
         String nextName = normalizeName(name);
         if (modelRepository.existsByNameAndOrganizationIdAndIdNot(nextName, organization.getId(), modelId)) {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
@@ -186,10 +189,11 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public Model archiveModel(Long userId, Long modelId) {
+    public Model archiveModel(Long userId, Long modelId, Long expectedVersion) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireEdit(userId, organization.getId());
         Model model = requireModel(userId, organization.getId(), modelId);
+        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
         if (model.getArchivedAt() == null) {
             model.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
         }
@@ -221,10 +225,11 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public void deleteModel(Long userId, Long modelId) {
+    public void deleteModel(Long userId, Long modelId, Long expectedVersion) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireDelete(userId, organization.getId());
         Model model = requireModel(userId, organization.getId(), modelId);
+        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
         if (bindingRepository.existsByModelId(modelId) || resultRepository.existsByModelId(modelId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Model is used by schemas or prediction runs. Archive it instead.");
         }

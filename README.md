@@ -97,6 +97,19 @@ Read [release selection and verification](./docs/RELEASES.md) before using publi
 
 ### Production database and artifact rollout
 
+For a real cutover, run the repeatable, gated operator wizard from the repository
+root: `./scripts/production-cutover.sh`. It creates coordinated backups, requires
+an isolated restore rehearsal, runs both migrations, checks readiness, and records
+the rollback prerequisites. Review the procedure before running it; it changes the
+configured production environment only after explicit confirmations.
+
+The wizard requires the production `.env` to identify the external PITR provider,
+off-site backup target, last successful restore time, and agreed RPO/RTO. MLSuite
+does not pretend that a volume or a `pg_dump` on the application host is PITR. WAL
+archiving, encryption, retention and off-site replication remain responsibilities
+of the selected PostgreSQL backup system. The cutover stops unless the operator
+confirms that system is healthy and its restore drill meets the declared policy.
+
 MLSuite uses Flyway as the only schema owner. Hibernate validates the result and
 never creates or updates production tables. `docker-compose.prod.yml` runs the
 same immutable API image in a one-shot `db-migrate` service before the API is
@@ -104,9 +117,13 @@ allowed to start.
 
 Before the first Flyway-managed release:
 
-1. Stop writes or take a consistent snapshot while inspecting the existing schema.
+1. Stop the frontend and API so PostgreSQL and MinIO are captured at one
+   write-consistent point.
 2. Back up PostgreSQL with PITR/WAL coverage and back up or replicate MinIO to a
-   separate failure domain. A MinIO replica is not a backup.
+   separate failure domain. A MinIO replica is not a backup. For the supported
+   single-server Compose deployment, the wizard takes a cold archive of the MinIO
+   data volume, preserving object versions, delete markers, and version IDs that
+   PostgreSQL references. Keep the MinIO server image pinned when restoring it.
 3. Enable and verify bucket versioning. Do not configure lifecycle expiry inside
    the rollback window.
 4. Compare the existing schema with `api/src/main/resources/db/migration/V1__baseline.sql`.
@@ -121,11 +138,17 @@ docker compose --env-file .env -f docker-compose.prod.yml \
 ```
 
 Never leave `FLYWAY_BASELINE_ON_MIGRATE` enabled. An empty installation
-does not need a baseline; run `db-migrate` normally. Use a separate
-`DB_MIGRATION_USER` with DDL permission and an application `DB_USER` without DDL
-permission wherever the database platform supports that separation. The
-migration role must also be allowed to install `pg_trgm`; alternatively, have a
-database administrator install that extension before the release.
+does not need a baseline; run `db-migrate` normally. Compose provisions three
+roles idempotently: `DB_ADMIN_USER` owns the PostgreSQL service,
+`DB_MIGRATION_USER` owns DDL and Flyway objects, and `DB_USER` receives only the
+DML privileges needed by the application. Use distinct credentials in
+production. On an externally managed database, create equivalent roles before
+running Compose. For a volume created by an older MLSuite Compose, set
+`DB_LEGACY_OWNER` and `DB_LEGACY_PASS` to its original `DB_USER` credentials;
+the provisioner transfers table and sequence ownership before Flyway runs. PostgreSQL
+cannot demote its bootstrap superuser, so the provisioner revokes that legacy role's
+login after the new administrator is verified. The migration role must also be allowed to install `pg_trgm`;
+alternatively, have a database administrator install that extension first.
 
 After the schema migration and before artifact cutover, inspect status and run
 the resumable backfill:
@@ -170,12 +193,25 @@ request receives `409 Conflict`. Hikari bounds database concurrency with
 `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, and `DB_POOL_CONNECTION_TIMEOUT_MS`;
 size the pool from the PostgreSQL connection budget, leaving capacity for the
 migration job and operations rather than matching it to the HTTP thread count.
+Monitor `storageDeletionQueue` on `/actuator/info`; alert on any `failed` row or
+on a `pending` count that grows continuously. Cleanup workers use database
+leases, so several API instances process disjoint tasks and an expired worker
+cannot complete or fail work reclaimed by another instance.
+
+`MODEL_MUTATIONS_REQUIRE_VERSION=false` is available only for a controlled
+compatibility window before production promotion, allowing an already-open older
+frontend to mutate models without the new parameter. The production cutover requires
+`true`: old cached clients must refresh, missing versions receive `428 Precondition
+Required`, and mismatched versions receive `409 Conflict`. New clients always send
+the version and therefore retain stale-write protection.
 
 Persistence is abstracted by capability, not by a generic database wrapper.
 Spring Data repository interfaces isolate aggregate persistence, while
 `ArtifactMigrationQueue` hides the PostgreSQL-specific claiming implementation.
-The latter uses leases and `FOR UPDATE SKIP LOCKED`, so concurrent migration
-workers claim disjoint rows. Object storage remains a separate port because it
+`StorageDeletionWorkQueue` provides the same boundary for asynchronous cleanup.
+Both use per-claim fencing tokens, leases and `FOR UPDATE SKIP LOCKED`, so
+concurrent workers claim disjoint rows and late workers cannot finalize reclaimed
+work. Object storage remains a separate port because it
 is a genuinely external system with different failure and consistency modes.
 
 Deploy backward-compatible API instances gradually. On application failure,

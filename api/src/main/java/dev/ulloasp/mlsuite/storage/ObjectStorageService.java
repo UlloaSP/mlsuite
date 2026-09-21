@@ -40,6 +40,8 @@ public interface ObjectStorageService {
 
     Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey);
 
+    StoredObjectVerification verify(String bucket, String objectKey);
+
     List<StoredObjectItem> list(String prefix);
 
     void delete(String bucket, String objectKey);

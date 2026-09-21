@@ -1,9 +1,5 @@
 package dev.ulloasp.mlsuite.storage;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.UUID;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -25,18 +21,6 @@ public class ArtifactMigrationProperties {
 
     @Min(1)
     private long staleAfterSeconds = 900;
-    private String workerId;
-
-    public String effectiveWorkerId() {
-        if (workerId != null && !workerId.isBlank()) {
-            return workerId;
-        }
-        try {
-            return InetAddress.getLocalHost().getHostName() + "-" + UUID.randomUUID();
-        } catch (UnknownHostException ex) {
-            return "worker-" + UUID.randomUUID();
-        }
-    }
 
     public String getCommand() { return command; }
     public void setCommand(String command) { this.command = command; }
@@ -46,6 +30,4 @@ public class ArtifactMigrationProperties {
     public void setMaxAttempts(int maxAttempts) { this.maxAttempts = maxAttempts; }
     public long getStaleAfterSeconds() { return staleAfterSeconds; }
     public void setStaleAfterSeconds(long staleAfterSeconds) { this.staleAfterSeconds = staleAfterSeconds; }
-    public String getWorkerId() { return workerId; }
-    public void setWorkerId(String workerId) { this.workerId = workerId; }
 }

@@ -34,6 +34,11 @@ class DisabledObjectStorageService implements ObjectStorageService {
     }
 
     @Override
+    public StoredObjectVerification verify(String bucket, String objectKey) {
+        throw new ObjectStorageException(MESSAGE);
+    }
+
+    @Override
     public List<StoredObjectItem> list(String prefix) {
         throw new ObjectStorageException(MESSAGE);
     }

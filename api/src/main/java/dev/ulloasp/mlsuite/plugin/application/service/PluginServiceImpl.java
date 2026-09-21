@@ -188,9 +188,12 @@ public class PluginServiceImpl implements
             User updatedBy,
             StoredObject uploaded) {
         PluginDescriptor descriptor = describe(stored.source());
-        PluginMetadata metadata = pluginMetadataRepository
-                .findByIdAndOrganizationId(stored.id(), organization.getId())
-                .orElseGet(PluginMetadata::new);
+        Optional<PluginMetadata> existing = pluginMetadataRepository
+                .findByIdAndOrganizationId(stored.id(), organization.getId());
+        if (uploaded == null && existing.isPresent()) {
+            return;
+        }
+        PluginMetadata metadata = existing.orElseGet(PluginMetadata::new);
         metadata.setId(stored.id());
         metadata.setOrganization(organization);
         metadata.setObjectKey(itemObjectKey(organization.getId(), stored.id()));
@@ -199,7 +202,9 @@ public class PluginServiceImpl implements
         metadata.setSizeBytes(stored.sizeBytes());
         metadata.setCreatedAt(stored.createdAt());
         metadata.setUpdatedAt(stored.updatedAt());
-        metadata.setUpdatedBy(updatedBy);
+        if (updatedBy != null) {
+            metadata.setUpdatedBy(updatedBy);
+        }
         metadata.setPluginType(descriptor.type());
         metadata.setKind(descriptor.kind());
         if (uploaded != null) {

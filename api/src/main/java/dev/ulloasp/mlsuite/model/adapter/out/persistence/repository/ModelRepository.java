@@ -10,12 +10,14 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
+import dev.ulloasp.mlsuite.storage.StoredArtifactReference;
 
 @Repository
 public interface ModelRepository extends JpaRepository<Model, Long> {
@@ -59,7 +61,14 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     List<Model> findByUserIdAndOrganizationIdIsNull(Long userId);
 
-    List<Model> findByStorageObjectKeyIsNotNullOrderByIdAsc();
+    @Query("""
+            SELECT new dev.ulloasp.mlsuite.storage.StoredArtifactReference(
+                m.id, m.storageBucket, m.storageObjectKey, m.modelSizeBytes, m.artifactSha256)
+            FROM Model m
+            WHERE m.storageObjectKey IS NOT NULL
+            ORDER BY m.id
+            """)
+    Slice<StoredArtifactReference> findStoredArtifactReferences(Pageable pageable);
 
     long countByArtifactState(ModelArtifactState state);
 

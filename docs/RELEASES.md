@@ -62,14 +62,16 @@ docker compose --env-file .env -f docker-compose.prod.yml \
   -f <download-directory>/docker-compose.release.yml config --images
 ```
 
-This step supplies release artifacts, not the deployment procedure. Before using
-them for managed dev/production, make the deployment command and ops-agent consume
-the same effective configuration. Currently ops-agent reads only the base Compose
-file; its START operation can reconcile that configuration without this override.
-The base production Compose file now gates the API on a one-shot Flyway migration
+This step supplies release artifacts, not the deployment procedure. Keep the
+downloaded override inside the repository path named by `RELEASE_COMPOSE`; both
+the cutover wizard and ops-agent then consume the same digest-pinned configuration.
+The base production Compose file gates the API on a one-shot Flyway migration
 and deep readiness checks. The operator must still provide environment-specific
 backup, restore, promotion and rollback orchestration; follow the production
 database and artifact rollout in `README.md` before starting the release.
+The cutover wizard additionally requires a declared external PITR provider,
+off-site target, restore-drill timestamp and RPO/RTO. These are operational gates,
+not backup services implemented by the application repository.
 
 ## Failure and retry behavior
 

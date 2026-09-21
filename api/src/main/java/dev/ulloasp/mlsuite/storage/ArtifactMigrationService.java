@@ -3,9 +3,11 @@ package dev.ulloasp.mlsuite.storage;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
@@ -38,26 +40,27 @@ public class ArtifactMigrationService {
     }
 
     public ArtifactMigrationReport migrate(ArtifactMigrationProperties properties) {
-        String workerId = properties.effectiveWorkerId();
         long examined = 0;
         long verified = 0;
         long failed = 0;
-        List<Long> ids;
+        List<ArtifactMigrationWorkItem> items;
         do {
-            ids = queue.claim(
+            String leaseToken = UUID.randomUUID().toString();
+            items = queue.claim(
                     properties.getBatchSize(),
                     properties.getMaxAttempts(),
                     properties.getStaleAfterSeconds(),
-                    workerId);
-            for (Long id : ids) {
+                    leaseToken);
+            for (ArtifactMigrationWorkItem item : items) {
                 examined++;
-                if (migrateOne(id)) {
+                MigrationOutcome outcome = migrateOne(item.id(), item.leaseToken());
+                if (outcome == MigrationOutcome.VERIFIED) {
                     verified++;
-                } else {
+                } else if (outcome == MigrationOutcome.FAILED) {
                     failed++;
                 }
             }
-        } while (!ids.isEmpty());
+        } while (!items.isEmpty());
         return new ArtifactMigrationReport(examined, verified, failed);
     }
 
@@ -65,17 +68,23 @@ public class ArtifactMigrationService {
         long examined = 0;
         long verified = 0;
         long failed = 0;
-        for (Model model : models.findByStorageObjectKeyIsNotNullOrderByIdAsc()) {
-            examined++;
-            try {
-                byte[] bytes = objectStorage.load(model.getStorageBucket(), model.getStorageObjectKey());
-                verifyBytes(model, bytes);
-                verified++;
-            } catch (RuntimeException ex) {
-                failed++;
-                log.warn("Artifact verification failed for model {}: {}", model.getId(), ex.getMessage());
+        int page = 0;
+        boolean hasNext;
+        do {
+            var references = models.findStoredArtifactReferences(PageRequest.of(page++, 100));
+            for (StoredArtifactReference reference : references) {
+                examined++;
+                try {
+                    StoredObjectVerification actual = objectStorage.verify(reference.bucket(), reference.objectKey());
+                    verifyStoredReference(reference, actual);
+                    verified++;
+                } catch (RuntimeException ex) {
+                    failed++;
+                    log.warn("Artifact verification failed for model {}: {}", reference.id(), ex.getMessage());
+                }
             }
-        }
+            hasNext = references.hasNext();
+        } while (hasNext);
         return new ArtifactMigrationReport(examined, verified, failed);
     }
 
@@ -83,9 +92,12 @@ public class ArtifactMigrationService {
         return queue.retryFailed();
     }
 
-    private boolean migrateOne(Long id) {
+    private MigrationOutcome migrateOne(Long id, String workerId) {
         try {
             Model model = models.findById(id).orElseThrow();
+            if (!ownsClaim(model, workerId)) {
+                return MigrationOutcome.LOST;
+            }
             byte[] bytes = model.getModelFile();
             String previousBucket = model.getStorageBucket();
             String previousKey = model.getStorageObjectKey();
@@ -101,27 +113,63 @@ public class ArtifactMigrationService {
                 throw new ArtifactIntegrityException("Model has neither inline nor stored artifact bytes");
             }
             transactions.executeWithoutResult(status -> {
-                model.setArtifactState(ModelArtifactState.VERIFIED);
-                model.setArtifactVerifiedAt(OffsetDateTime.now(ZoneOffset.UTC));
-                model.setArtifactMigrationStartedAt(null);
-                model.setArtifactMigrationWorker(null);
-                model.setArtifactMigrationError(null);
-                models.save(model);
+                Model claimed = models.findById(id).orElseThrow();
+                if (!ownsClaim(claimed, workerId)) {
+                    throw new LostArtifactMigrationClaimException(id);
+                }
+                copyArtifactResult(model, claimed);
+                models.save(claimed);
                 if (previousKey != null && !previousKey.equals(model.getStorageObjectKey())) {
                     deletionQueue.enqueue(previousBucket, previousKey, previousVersion);
                 }
             });
-            return true;
+            return MigrationOutcome.VERIFIED;
+        } catch (LostArtifactMigrationClaimException ex) {
+            return MigrationOutcome.LOST;
         } catch (RuntimeException ex) {
+            return markFailedIfOwned(id, workerId, ex);
+        }
+    }
+
+    private MigrationOutcome markFailedIfOwned(Long id, String workerId, RuntimeException failure) {
+        try {
             transactions.executeWithoutResult(status -> models.findById(id).ifPresent(model -> {
+                if (!ownsClaim(model, workerId)) {
+                    return;
+                }
                 model.setArtifactState(ModelArtifactState.FAILED);
                 model.setArtifactMigrationStartedAt(null);
                 model.setArtifactMigrationWorker(null);
-                model.setArtifactMigrationError(truncate(ex.getMessage()));
+                model.setArtifactMigrationError(truncate(failure.getMessage()));
                 models.save(model);
             }));
-            return false;
+            Model current = models.findById(id).orElse(null);
+            return current != null && current.getArtifactState() == ModelArtifactState.FAILED
+                    ? MigrationOutcome.FAILED
+                    : MigrationOutcome.LOST;
+        } catch (RuntimeException concurrentUpdate) {
+            return MigrationOutcome.LOST;
         }
+    }
+
+    private boolean ownsClaim(Model model, String workerId) {
+        return model.getArtifactState() == ModelArtifactState.RUNNING
+                && workerId.equals(model.getArtifactMigrationWorker());
+    }
+
+    private void copyArtifactResult(Model source, Model target) {
+        target.setStorageBucket(source.getStorageBucket());
+        target.setStorageObjectKey(source.getStorageObjectKey());
+        target.setStorageEtag(source.getStorageEtag());
+        target.setStorageVersionId(source.getStorageVersionId());
+        target.setModelSizeBytes(source.getModelSizeBytes());
+        target.setArtifactSha256(source.getArtifactSha256());
+        target.setModelFile(source.getModelFile());
+        target.setArtifactState(ModelArtifactState.VERIFIED);
+        target.setArtifactVerifiedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        target.setArtifactMigrationStartedAt(null);
+        target.setArtifactMigrationWorker(null);
+        target.setArtifactMigrationError(null);
     }
 
     private void verifyStoredOnly(Model model) {
@@ -157,18 +205,23 @@ public class ArtifactMigrationService {
         }
     }
 
-    private void verifyBytes(Model model, byte[] bytes) {
-        if (model.getModelSizeBytes() == null || model.getModelSizeBytes() != bytes.length) {
-            throw new ArtifactIntegrityException("Size mismatch for model " + model.getId());
+    private void verifyStoredReference(StoredArtifactReference expected, StoredObjectVerification actual) {
+        if (expected.sizeBytes() == null || expected.sizeBytes() != actual.sizeBytes()) {
+            throw new ArtifactIntegrityException("Size mismatch for model " + expected.id());
         }
-        if (model.getArtifactSha256() == null
-                || !model.getArtifactSha256().equals(ArtifactHash.sha256(bytes))) {
-            throw new ArtifactIntegrityException("SHA-256 mismatch for model " + model.getId());
+        if (expected.sha256() == null || !expected.sha256().equals(actual.sha256())) {
+            throw new ArtifactIntegrityException("SHA-256 mismatch for model " + expected.id());
         }
     }
 
     private String truncate(String message) {
         String value = message == null ? "Unknown migration failure" : message;
         return value.substring(0, Math.min(value.length(), 1000));
+    }
+
+    private enum MigrationOutcome {
+        VERIFIED,
+        FAILED,
+        LOST
     }
 }

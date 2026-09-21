@@ -66,4 +66,10 @@ public class StorageDeletionTask {
 
     @Column(name = "completed_at", columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime completedAt;
+
+    @Column(name = "processing_started_at", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime processingStartedAt;
+
+    @Column(name = "processing_token", length = 128)
+    private String processingToken;
 }

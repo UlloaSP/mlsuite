@@ -1,7 +1,5 @@
 package dev.ulloasp.mlsuite.storage;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,16 +17,17 @@ public class PostgresArtifactMigrationQueue implements ArtifactMigrationQueue {
 
     @Override
     @Transactional
-    public List<Long> claim(int batchSize, int maxAttempts, long staleAfterSeconds, String workerId) {
-        OffsetDateTime staleBefore = OffsetDateTime.now(ZoneOffset.UTC).minusSeconds(staleAfterSeconds);
-        return jdbcTemplate.queryForList("""
+    public List<ArtifactMigrationWorkItem> claim(
+            int batchSize, int maxAttempts, long staleAfterSeconds, String leaseToken) {
+        return jdbcTemplate.query("""
                 WITH candidates AS (
                     SELECT id
                     FROM model
                     WHERE artifact_migration_attempts < ?
                       AND (
                           artifact_state IN ('INLINE_ONLY', 'UNVERIFIED', 'FAILED')
-                          OR (artifact_state = 'RUNNING' AND artifact_migration_started_at < ?)
+                          OR (artifact_state = 'RUNNING' AND artifact_migration_started_at
+                              < CURRENT_TIMESTAMP - (? * INTERVAL '1 second'))
                       )
                     ORDER BY id
                     FOR UPDATE SKIP LOCKED
@@ -44,7 +43,14 @@ public class PostgresArtifactMigrationQueue implements ArtifactMigrationQueue {
                 FROM candidates
                 WHERE target.id = candidates.id
                 RETURNING target.id
-                """, Long.class, maxAttempts, staleBefore, batchSize, workerId);
+                """,
+                (result, row) -> new ArtifactMigrationWorkItem(
+                        result.getLong("id"),
+                        leaseToken),
+                maxAttempts,
+                staleAfterSeconds,
+                batchSize,
+                leaseToken);
     }
 
     @Override

@@ -4,10 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.DriverManager;
+import java.util.Map;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -16,7 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class FlywayMigrationTest {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17.11-alpine3.24")
+    final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17.11-alpine3.24")
             .withDatabaseName("mlsuite")
             .withUsername("mlsuite")
             .withPassword("mlsuite");
@@ -25,9 +28,9 @@ class FlywayMigrationTest {
     void appliesCompleteHistoryToEmptyPostgresAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh", null);
 
-        assertEquals(4, flyway.migrate().migrationsExecuted);
+        assertEquals(5, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("4", flyway.info().current().getVersion().toString());
+        assertEquals("5", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -46,13 +49,12 @@ class FlywayMigrationTest {
 
     @Test
     void upgradesVersionOneDataWithoutDiscardingInlineArtifacts() throws Exception {
-        Flyway baseline = flyway("upgrade_path", MigrationVersion.fromVersion("1"));
-        assertEquals(1, baseline.migrate().migrationsExecuted);
-
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
                 var statement = connection.createStatement()) {
+            statement.execute("CREATE SCHEMA upgrade_path");
             statement.execute("SET search_path TO upgrade_path");
+            ScriptUtils.executeSqlScript(connection, new ClassPathResource("db/migration/V1__baseline.sql"));
             statement.execute("""
                     INSERT INTO app_user
                         (username, email, password_hash, full_name, system_role, enabled, created_at, updated_at)
@@ -72,8 +74,15 @@ class FlywayMigrationTest {
                     """);
         }
 
-        Flyway upgraded = flyway("upgrade_path", null);
-        assertEquals(3, upgraded.migrate().migrationsExecuted);
+        Flyway upgraded = Flyway.configure()
+                .configuration(postgresFlywaySettings())
+                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
+                .defaultSchema("upgrade_path")
+                .schemas("upgrade_path")
+                .baselineOnMigrate(true)
+                .baselineVersion(MigrationVersion.fromVersion("1"))
+                .load();
+        assertEquals(4, upgraded.migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -96,6 +105,7 @@ class FlywayMigrationTest {
 
     private Flyway flyway(String schema, MigrationVersion target) {
         var configuration = Flyway.configure()
+                .configuration(postgresFlywaySettings())
                 .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
                 .defaultSchema(schema)
                 .schemas(schema)
@@ -105,5 +115,9 @@ class FlywayMigrationTest {
             configuration.target(target);
         }
         return configuration.load();
+    }
+
+    private Map<String, String> postgresFlywaySettings() {
+        return Map.of("flyway.postgresql.transactional.lock", "false");
     }
 }

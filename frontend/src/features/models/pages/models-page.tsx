@@ -71,7 +71,7 @@ export function ModelsPage() {
     try {
       if (action === "edit") {
         const name = window.prompt("Model name", model.name)?.trim();
-        if (name) await renameMutation.mutateAsync({ id: model.id, name });
+        if (name) await renameMutation.mutateAsync({ id: model.id, name, version: model.version });
         if (name) toast.success("Model renamed.");
       }
       if (action === "duplicate") {
@@ -80,11 +80,11 @@ export function ModelsPage() {
         if (name) toast.success("Model duplicated.");
       }
       if (action === "archive" && window.confirm(`Archive ${model.name}?`)) {
-        await archiveMutation.mutateAsync(model.id);
+        await archiveMutation.mutateAsync({ id: model.id, version: model.version });
         toast.success("Model archived.");
       }
       if (action === "delete" && window.confirm(`Delete ${model.name}? This cannot be undone.`)) {
-        await deleteMutation.mutateAsync(model.id);
+        await deleteMutation.mutateAsync({ id: model.id, version: model.version });
         toast.success("Model deleted.");
       }
     } catch (actionError: unknown) {
