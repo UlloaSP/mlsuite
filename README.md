@@ -65,11 +65,17 @@ Keep `.env` private. Commit only sanitized defaults to `.env.example`.
 ### Start the development stack
 
 ```bash
-docker compose -f docker-compose.dev.yml up --build -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 ```
 
+`docker-compose.yml` is the single operational topology. The development override
+only builds local application images; the production override only selects published
+images. CI compares their fully rendered models and rejects any other drift. The
+production cutover records the base, production and digest-pinned release files in
+`OPS_AGENT_COMPOSE_FILES` so operational restarts use the same release.
+
 An old disposable development volume can be recreated with `docker compose -f
-docker-compose.dev.yml down -v`. To preserve an existing pre-Flyway development
+docker-compose.yml -f docker-compose.dev.yml down -v`. To preserve an existing pre-Flyway development
 database, audit it against the baseline first and set
 `FLYWAY_BASELINE_ON_MIGRATE=true` for exactly one startup; return it to `false`
 immediately afterwards.
@@ -79,14 +85,14 @@ Then open [http://localhost:5173](http://localhost:5173) and sign in with the su
 Inspect service state or logs with:
 
 ```bash
-docker compose -f docker-compose.dev.yml ps
-docker compose -f docker-compose.dev.yml logs -f
+docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
+docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
 ```
 
 Stop the stack with:
 
 ```bash
-docker compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 ```
 
 ### Production images
@@ -127,9 +133,10 @@ isolated restore rehearsal: roughly 2.5 times the live PostgreSQL plus MinIO dat
 in addition to the configured free-space reserve.
 
 MLSuite uses Flyway as the only schema owner. Hibernate validates the result and
-never creates or updates production tables. `docker-compose.prod.yml` runs the
-same immutable API image in a one-shot `db-migrate` service before the API is
-allowed to start.
+never creates or updates production tables. `docker-compose.yml` contains the
+shared topology and `docker-compose.prod.yml` supplies published images; together
+they run the same immutable API image in a one-shot `db-migrate` service before the
+API is allowed to start.
 
 Before the first Flyway-managed release:
 
@@ -145,7 +152,7 @@ Before the first Flyway-managed release:
 5. If and only if it represents that schema, explicitly baseline and migrate it:
 
 ```bash
-docker compose --env-file .env -f docker-compose.prod.yml \
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
   run --rm \
   -e FLYWAY_BASELINE_ON_MIGRATE=true \
   -e FLYWAY_BASELINE_VERSION=1 \
@@ -169,15 +176,15 @@ After the schema migration and before artifact cutover, inspect status and run
 the resumable backfill:
 
 ```bash
-docker compose --env-file .env -f docker-compose.prod.yml \
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
   --profile operations run --rm \
   -e ARTIFACT_MIGRATION_COMMAND=status artifact-migrate
 
-docker compose --env-file .env -f docker-compose.prod.yml \
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
   --profile operations run --rm \
   -e ARTIFACT_MIGRATION_COMMAND=migrate artifact-migrate
 
-docker compose --env-file .env -f docker-compose.prod.yml \
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
   --profile operations run --rm \
   -e ARTIFACT_MIGRATION_COMMAND=verify artifact-migrate
 ```

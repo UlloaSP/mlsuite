@@ -35,7 +35,7 @@ backup_root=$(cd "$backup_root" && pwd -P)
 [[ "$backup_root" != / && "$backup_root" != "$root" ]] || { echo "unsafe LOCAL_BACKUP_ROOT: $backup_root" >&2; exit 1; }
 chmod 700 "$backup_root"
 
-compose=("$DOCKER_BIN" compose --env-file "$ENV_FILE" -f docker-compose.prod.yml)
+compose=("$DOCKER_BIN" compose --env-file "$ENV_FILE" -f docker-compose.yml -f docker-compose.prod.yml)
 release_compose=$(env_value RELEASE_COMPOSE || true)
 if [[ -n "$release_compose" ]]; then
   [[ "$release_compose" != /* && "$release_compose" != *..* && -f "$release_compose" ]] || {

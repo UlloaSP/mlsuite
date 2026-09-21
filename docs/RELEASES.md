@@ -53,12 +53,13 @@ it does not perform independent cryptographic verification of attestations.
 The Compose asset overrides all application service references and platform. The
 single API image is reused by `db-migrate`, `artifact-migrate`, and `spring-app`
 so migrations always run from the exact digest being promoted.
-It is intended to accompany `docker-compose.prod.yml`; PostgreSQL, MinIO, secrets,
+It is intended to accompany `docker-compose.yml` and `docker-compose.prod.yml`;
+PostgreSQL, MinIO, secrets,
 volumes, networking and host requirements are outside this application manifest.
 You can inspect the selected images without starting services:
 
 ```bash
-docker compose --env-file .env -f docker-compose.prod.yml \
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
   -f <download-directory>/docker-compose.release.yml config --images
 ```
 

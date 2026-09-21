@@ -162,8 +162,9 @@ jobs:
           fi
       - name: Validate Compose using the public template
         run: |
-          docker compose --env-file .env.example -f docker-compose.dev.yml config --quiet
-          docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet
+          docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.dev.yml --profile operations config --quiet
+          docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.prod.yml --profile operations config --quiet
+          python3 deploy/test_compose_parity.py
       - name: Verify PostgreSQL role upgrade
         run: bash deploy/postgres/test-provision-roles.sh
       - name: Verify non-empty backup restore lifecycle

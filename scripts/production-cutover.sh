@@ -185,7 +185,7 @@ finish() {
 # ──────────────────────────────────────────────────────────────────────────
 
 TOTAL_STAGES=9
-COMPOSE=(docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml)
+COMPOSE=(docker compose --env-file "$ENV_FILE" -f docker-compose.yml -f docker-compose.prod.yml)
 umask 077
 restore_state=
 cleanup_restore() {
@@ -223,6 +223,8 @@ write_env API_VERSION "$API_VERSION"
 ask RELEASE_COMPOSE "Digest-pinned Compose override inside this repository:"
 [[ "$RELEASE_COMPOSE" != /* && "$RELEASE_COMPOSE" != *..* && -f "$RELEASE_COMPOSE" ]] || { warn "Release override must be an existing path inside this repository"; exit 1; }
 write_env RELEASE_COMPOSE "$RELEASE_COMPOSE"
+write_env OPS_AGENT_COMPOSE_FILES \
+  "/workspace/docker-compose.yml,/workspace/docker-compose.prod.yml,/workspace/$RELEASE_COMPOSE"
 COMPOSE+=(-f "$RELEASE_COMPOSE")
 "${COMPOSE[@]}" config --quiet
 step "Verify the release checksums and digest-pinned override using docs/RELEASES.md."

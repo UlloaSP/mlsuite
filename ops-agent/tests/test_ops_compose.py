@@ -9,12 +9,17 @@ from mlsuite_ops_agent.config import Settings
 
 def test_command_uses_every_configured_compose_file():
     gateway = ComposeGateway(Settings(
-        compose_files=("docker-compose.prod.yml", "docker-compose.release.yml"),
+        compose_files=(
+            "docker-compose.yml",
+            "docker-compose.prod.yml",
+            "docker-compose.release.yml",
+        ),
         compose_project="mlsuite",
     ))
 
     assert gateway.compose_command("ps") == [
         "docker", "compose",
+        "-f", "docker-compose.yml",
         "-f", "docker-compose.prod.yml",
         "-f", "docker-compose.release.yml",
         "-p", "mlsuite",

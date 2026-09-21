@@ -24,7 +24,7 @@ smoke_project=${api_container/mlsuite-restore-api-/mlsuite-restore-smoke-}
   exit 1
 }
 COMPOSE=(docker compose --project-name "$smoke_project" --env-file "$ENV_FILE" \
-  -f docker-compose.prod.yml -f "$RELEASE_COMPOSE")
+  -f docker-compose.yml -f docker-compose.prod.yml -f "$RELEASE_COMPOSE")
 cleanup_smoke() {
   docker rm -f "$api_container" >/dev/null 2>&1 || true
   "${COMPOSE[@]}" down --remove-orphans >/dev/null 2>&1 || true
