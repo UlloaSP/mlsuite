@@ -32,7 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
     "spring.datasource.url=jdbc:h2:mem:schemadelete;MODE=PostgreSQL;INIT=CREATE DOMAIN IF NOT EXISTS TIMESTAMPTZ AS TIMESTAMP WITH TIME ZONE",
     "spring.datasource.driver-class-name=org.h2.Driver",
     "spring.datasource.username=sa", "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
+    "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(SchemaServiceImpl.class)

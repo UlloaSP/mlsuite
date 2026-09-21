@@ -35,10 +35,13 @@ import dev.ulloasp.mlsuite.plugin.domain.model.PluginStoragePaths;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
+import dev.ulloasp.mlsuite.storage.StoredObject;
+import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PluginServiceImpl implements
@@ -59,6 +62,7 @@ public class PluginServiceImpl implements
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final PluginMetadataRepository pluginMetadataRepository;
+    private final StorageDeletionQueue deletionQueue;
 
     public PluginServiceImpl(
             ObjectStorageService objectStorageService,
@@ -67,7 +71,8 @@ public class PluginServiceImpl implements
             UserLookupService userLookupService,
             WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
-            PluginMetadataRepository pluginMetadataRepository) {
+            PluginMetadataRepository pluginMetadataRepository,
+            StorageDeletionQueue deletionQueue) {
         this.pluginObjects = new PluginObjectReader(objectStorageService, storageProperties, objectMapper);
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
@@ -76,6 +81,7 @@ public class PluginServiceImpl implements
         this.workspaceAccessService = workspaceAccessService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.pluginMetadataRepository = pluginMetadataRepository;
+        this.deletionQueue = deletionQueue;
     }
 
     @Override
@@ -97,12 +103,17 @@ public class PluginServiceImpl implements
                     user.getEmail(),
                     user.getAvatarUrl(),
                     new String(file.getBytes(), StandardCharsets.UTF_8));
-            objectStorageService.store(
+            StoredObject uploaded = objectStorageService.store(
                     itemObjectKey(organization.getId(), id),
                     stored.fileName(),
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
-            persistMetadata(organization, stored, user);
+            try {
+                persistMetadata(organization, stored, user, uploaded);
+            } catch (RuntimeException ex) {
+                objectStorageService.delete(uploaded.bucket(), uploaded.objectKey(), uploaded.versionId());
+                throw ex;
+            }
             return toDto(stored);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
@@ -147,7 +158,7 @@ public class PluginServiceImpl implements
                 .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         List<PluginDto> catalog = new ArrayList<>();
         storedItems.values().forEach(item -> {
-            persistMetadata(organization, item, null);
+            persistMetadata(organization, item, null, null);
             catalog.add(toDto(item));
         });
         catalog.sort(Comparator
@@ -157,30 +168,45 @@ public class PluginServiceImpl implements
     }
 
     @Override
+    @Transactional
     public void delete(Long userId, String id) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
         readStored(user, id);
-        objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(organization.getId(), id));
-        pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId())
-                .ifPresent(pluginMetadataRepository::delete);
+        Optional<PluginMetadata> metadata = pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId());
+        deletionQueue.enqueue(
+                storageProperties.getBucket(),
+                itemObjectKey(organization.getId(), id),
+                metadata.map(PluginMetadata::getStorageVersionId).orElse(null));
+        metadata.ifPresent(pluginMetadataRepository::delete);
     }
 
-    private void persistMetadata(Organization organization, StoredPlugin stored, User updatedBy) {
+    private void persistMetadata(
+            Organization organization,
+            StoredPlugin stored,
+            User updatedBy,
+            StoredObject uploaded) {
         PluginDescriptor descriptor = describe(stored.source());
-        pluginMetadataRepository.save(new PluginMetadata(
-                stored.id(),
-                organization,
-                itemObjectKey(organization.getId(), stored.id()),
-                stored.fileName(),
-                stored.contentType(),
-                stored.sizeBytes(),
-                stored.createdAt(),
-                stored.updatedAt(),
-                updatedBy,
-                descriptor.type(),
-                descriptor.kind()));
+        PluginMetadata metadata = pluginMetadataRepository
+                .findByIdAndOrganizationId(stored.id(), organization.getId())
+                .orElseGet(PluginMetadata::new);
+        metadata.setId(stored.id());
+        metadata.setOrganization(organization);
+        metadata.setObjectKey(itemObjectKey(organization.getId(), stored.id()));
+        metadata.setFileName(stored.fileName());
+        metadata.setContentType(stored.contentType());
+        metadata.setSizeBytes(stored.sizeBytes());
+        metadata.setCreatedAt(stored.createdAt());
+        metadata.setUpdatedAt(stored.updatedAt());
+        metadata.setUpdatedBy(updatedBy);
+        metadata.setPluginType(descriptor.type());
+        metadata.setKind(descriptor.kind());
+        if (uploaded != null) {
+            metadata.setSha256(uploaded.sha256());
+            metadata.setStorageVersionId(uploaded.versionId());
+        }
+        pluginMetadataRepository.save(metadata);
     }
 
     private StoredPlugin readStored(User user, String id) {

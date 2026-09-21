@@ -68,6 +68,12 @@ Keep `.env` private. Commit only sanitized defaults to `.env.example`.
 docker compose -f docker-compose.dev.yml up --build -d
 ```
 
+An old disposable development volume can be recreated with `docker compose -f
+docker-compose.dev.yml down -v`. To preserve an existing pre-Flyway development
+database, audit it against the baseline first and set
+`FLYWAY_BASELINE_ON_MIGRATE=true` for exactly one startup; return it to `false`
+immediately afterwards.
+
 Then open [http://localhost:5173](http://localhost:5173) and sign in with the superadmin account configured in `.env`.
 
 Inspect service state or logs with:
@@ -88,6 +94,80 @@ docker compose -f docker-compose.dev.yml down
 Successful publications from `main` create immutable `build-<commit>` releases with digest-pinned images and a Compose override. MLSuite does not update `latest`.
 
 Read [release selection and verification](./docs/RELEASES.md) before using published images. The release bundle supplies verified artifacts; deployment, migration, backup, readiness, promotion, and rollback remain operator responsibilities.
+
+### Production database and artifact rollout
+
+MLSuite uses Flyway as the only schema owner. Hibernate validates the result and
+never creates or updates production tables. `docker-compose.prod.yml` runs the
+same immutable API image in a one-shot `db-migrate` service before the API is
+allowed to start.
+
+Before the first Flyway-managed release:
+
+1. Stop writes or take a consistent snapshot while inspecting the existing schema.
+2. Back up PostgreSQL with PITR/WAL coverage and back up or replicate MinIO to a
+   separate failure domain. A MinIO replica is not a backup.
+3. Enable and verify bucket versioning. Do not configure lifecycle expiry inside
+   the rollback window.
+4. Compare the existing schema with `api/src/main/resources/db/migration/V1__baseline.sql`.
+5. If and only if it represents that schema, explicitly baseline and migrate it:
+
+```bash
+docker compose --env-file .env -f docker-compose.prod.yml \
+  run --rm \
+  -e FLYWAY_BASELINE_ON_MIGRATE=true \
+  -e FLYWAY_BASELINE_VERSION=1 \
+  db-migrate
+```
+
+Never leave `FLYWAY_BASELINE_ON_MIGRATE` enabled. An empty installation
+does not need a baseline; run `db-migrate` normally. Use a separate
+`DB_MIGRATION_USER` with DDL permission and an application `DB_USER` without DDL
+permission wherever the database platform supports that separation. The
+migration role must also be allowed to install `pg_trgm`; alternatively, have a
+database administrator install that extension before the release.
+
+After the schema migration and before artifact cutover, inspect status and run
+the resumable backfill:
+
+```bash
+docker compose --env-file .env -f docker-compose.prod.yml \
+  --profile operations run --rm \
+  -e ARTIFACT_MIGRATION_COMMAND=status artifact-migrate
+
+docker compose --env-file .env -f docker-compose.prod.yml \
+  --profile operations run --rm \
+  -e ARTIFACT_MIGRATION_COMMAND=migrate artifact-migrate
+
+docker compose --env-file .env -f docker-compose.prod.yml \
+  --profile operations run --rm \
+  -e ARTIFACT_MIGRATION_COMMAND=verify artifact-migrate
+```
+
+After correcting an operational cause, reset exhausted rows with
+`ARTIFACT_MIGRATION_COMMAND=retry-failed` and run `migrate` again. Stopping the
+job is safe; expired `RUNNING` leases are reclaimed on the next execution.
+
+The job claims rows with `FOR UPDATE SKIP LOCKED`, records attempts and failures,
+uploads to immutable model/hash keys, reads each upload back, and compares its
+SHA-256 before marking it verified. It never clears `model_file`. Keep
+`STORAGE_RETAIN_INLINE_COPY=true` for this release so the previous application
+can still read every model during the rollback window.
+
+Production promotion gates are:
+
+- `db-migrate` completed and Flyway validation has no drift;
+- artifact `status` reports no `FAILED`, `RUNNING`, `INLINE_ONLY`, or
+  `UNVERIFIED` rows before declaring the backfill complete;
+- artifact `verify` succeeds with no missing, truncated, or hash-mismatched object;
+- `/actuator/health/readiness` is healthy on the canary API;
+- a PostgreSQL plus MinIO restore has been exercised in an isolated environment.
+
+Deploy backward-compatible API instances gradually. On application failure,
+roll back the image while the inline copies remain. On an incompatible persistent
+state, prefer roll-forward or restore PostgreSQL and MinIO together. Clearing
+`model_file` and dropping it are intentionally deferred to later releases, after
+the retention window and a successful restore drill.
 
 ## Some notes
 

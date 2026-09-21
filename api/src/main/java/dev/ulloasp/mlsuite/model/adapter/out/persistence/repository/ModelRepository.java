@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
 
 @Repository
 public interface ModelRepository extends JpaRepository<Model, Long> {
@@ -58,7 +59,9 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     List<Model> findByUserIdAndOrganizationIdIsNull(Long userId);
 
-    List<Model> findTop10ByStorageObjectKeyIsNullOrderByIdAsc();
+    List<Model> findByStorageObjectKeyIsNotNullOrderByIdAsc();
+
+    long countByArtifactState(ModelArtifactState state);
 
     boolean existsByNameAndOrganizationId(String name, Long organizationId);
 
@@ -71,4 +74,3 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
     long countByOrganizationId(Long organizationId);
 
 }
-

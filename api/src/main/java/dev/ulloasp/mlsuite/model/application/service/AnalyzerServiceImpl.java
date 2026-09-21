@@ -28,8 +28,7 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
-import dev.ulloasp.mlsuite.storage.ObjectStorageException;
-import dev.ulloasp.mlsuite.storage.ObjectStorageService;
+import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import jakarta.annotation.Nullable;
@@ -41,7 +40,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
     private final RestTemplate restTemplate;
     private final ModelRepository modelRepository;
-    private final ObjectStorageService objectStorageService;
+    private final ModelArtifactContentReader artifactReader;
     private final UserLookupService userLookupService;
     private final WorkspaceAccessService workspaceAccessService;
     private final ObjectMapper objectMapper;
@@ -52,13 +51,13 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     public AnalyzerServiceImpl(
             RestTemplate restTemplate,
             ModelRepository modelRepository,
-            ObjectStorageService objectStorageService,
+            ModelArtifactContentReader artifactReader,
             UserLookupService userLookupService,
             WorkspaceAccessService workspaceAccessService,
             ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.modelRepository = modelRepository;
-        this.objectStorageService = objectStorageService;
+        this.artifactReader = artifactReader;
         this.userLookupService = userLookupService;
         this.workspaceAccessService = workspaceAccessService;
         this.objectMapper = objectMapper;
@@ -143,7 +142,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     @Override
     public Map<String, Object> predict(Long userId, Long modelId, Map<String, Object> data) {
         Model model = requireModel(userId, modelId);
-        byte[] bytes = loadModelBytes(model);
+        byte[] bytes = artifactReader.loadVerified(model);
 
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("model_file", bytes)
@@ -169,7 +168,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
     @Override
     public Map<String, Object> explain(Long userId, Long modelId, ExplainRequest request) {
         Model model = requireModel(userId, modelId);
-        byte[] bytes = loadModelBytes(model);
+        byte[] bytes = artifactReader.loadVerified(model);
 
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("model_file", bytes)
@@ -206,29 +205,9 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                         Map.Entry::getValue));
     }
 
-    private byte[] loadModelBytes(Model model) {
-        if (model.hasStoredObject()) {
-            try {
-                return objectStorageService.load(model.getStorageBucket(), model.getStorageObjectKey());
-            } catch (ObjectStorageException ex) {
-                if (model.hasInlineModelFile()) {
-                    return model.getModelFile();
-                }
-                throw ex;
-            }
-        }
-
-        if (model.hasInlineModelFile()) {
-            return model.getModelFile();
-        }
-
-        throw new IllegalStateException("El modelo no tiene binario en object storage ni en base de datos");
-    }
-
     private Model requireModel(Long userId, Long modelId) {
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
         return modelRepository.findByIdAndOrganizationId(modelId, organizationId)
                 .orElseThrow(() -> new ModelDoesNotExistsException(modelId, userLookupService.requireById(userId).getUsername()));
     }
 }
-

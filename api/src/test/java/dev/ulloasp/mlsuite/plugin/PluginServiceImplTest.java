@@ -27,6 +27,7 @@ import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StoredObjectItem;
+import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -44,6 +45,8 @@ class PluginServiceImplTest {
     private WorkspaceAuthorizationService workspaceAuthorizationService;
     @Mock
     private PluginMetadataRepository pluginMetadataRepository;
+    @Mock
+    private StorageDeletionQueue deletionQueue;
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private PluginServiceImpl service;
@@ -60,7 +63,8 @@ class PluginServiceImplTest {
                 userLookupService,
                 workspaceAccessService,
                 workspaceAuthorizationService,
-                pluginMetadataRepository);
+                pluginMetadataRepository,
+                deletionQueue);
         objects = Map.of(
                 "organizations/41/plugins/items/field.json", bytes(plugin(
                         "field", "alpha.ts", "export default defineFieldKind({ kind: \"alpha-field\" });")),

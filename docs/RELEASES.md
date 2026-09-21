@@ -50,7 +50,9 @@ manifest, Compose/image agreement, and registry availability. It does not overwr
 an existing download directory. It uses GitHub's authenticated metadata checks;
 it does not perform independent cryptographic verification of attestations.
 
-The Compose asset overrides the four application image references and platform.
+The Compose asset overrides all application service references and platform. The
+single API image is reused by `db-migrate`, `artifact-migrate`, and `spring-app`
+so migrations always run from the exact digest being promoted.
 It is intended to accompany `docker-compose.prod.yml`; PostgreSQL, MinIO, secrets,
 volumes, networking and host requirements are outside this application manifest.
 You can inspect the selected images without starting services:
@@ -64,8 +66,10 @@ This step supplies release artifacts, not the deployment procedure. Before using
 them for managed dev/production, make the deployment command and ops-agent consume
 the same effective configuration. Currently ops-agent reads only the base Compose
 file; its START operation can reconcile that configuration without this override.
-Multi-environment wiring, migrations, runtime readiness, restore, promotion and
-rollback remain the next implementation stages.
+The base production Compose file now gates the API on a one-shot Flyway migration
+and deep readiness checks. The operator must still provide environment-specific
+backup, restore, promotion and rollback orchestration; follow the production
+database and artifact rollout in `README.md` before starting the release.
 
 ## Failure and retry behavior
 

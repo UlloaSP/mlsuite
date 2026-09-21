@@ -1,1 +1,0 @@
--- Intentionally empty. Users are created through manual auth or superadmin seed.

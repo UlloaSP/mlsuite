@@ -17,6 +17,8 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -93,6 +95,31 @@ public class Model {
     @Column(name = "model_size_bytes")
     private Long modelSizeBytes;
 
+    @Column(name = "artifact_sha256", length = 64)
+    private String artifactSha256;
+
+    @Column(name = "storage_version_id", length = 255)
+    private String storageVersionId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "artifact_state", nullable = false, length = 32)
+    private ModelArtifactState artifactState = ModelArtifactState.INLINE_ONLY;
+
+    @Column(name = "artifact_verified_at", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime artifactVerifiedAt;
+
+    @Column(name = "artifact_migration_attempts", nullable = false)
+    private int artifactMigrationAttempts;
+
+    @Column(name = "artifact_migration_error", length = 1000)
+    private String artifactMigrationError;
+
+    @Column(name = "artifact_migration_started_at", columnDefinition = "TIMESTAMPTZ")
+    private OffsetDateTime artifactMigrationStartedAt;
+
+    @Column(name = "artifact_migration_worker", length = 128)
+    private String artifactMigrationWorker;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "input_schema", nullable = false)
     private Map<String, Object> inputSchema = Map.of();
@@ -119,4 +146,3 @@ public class Model {
         return this.modelFile != null && this.modelFile.length > 0;
     }
 }
-

@@ -8,8 +8,13 @@ class DisabledObjectStorageService implements ObjectStorageService {
     private static final String MESSAGE = "Object storage is disabled";
 
     @Override
-    public StoredObject store(String objectKey, String fileName, String contentType, java.io.InputStream inputStream,
-            long sizeBytes) {
+    public StoredObject store(
+            String objectKey,
+            String fileName,
+            String contentType,
+            java.io.InputStream inputStream,
+            long sizeBytes,
+            String sha256) {
         throw new ObjectStorageException(MESSAGE);
     }
 
@@ -24,6 +29,11 @@ class DisabledObjectStorageService implements ObjectStorageService {
     }
 
     @Override
+    public Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey) {
+        throw new ObjectStorageException(MESSAGE);
+    }
+
+    @Override
     public List<StoredObjectItem> list(String prefix) {
         throw new ObjectStorageException(MESSAGE);
     }
@@ -32,4 +42,3 @@ class DisabledObjectStorageService implements ObjectStorageService {
     public void delete(String bucket, String objectKey) {
     }
 }
-

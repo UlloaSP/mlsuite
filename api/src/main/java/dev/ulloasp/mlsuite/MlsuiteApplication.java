@@ -7,11 +7,22 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@EnableScheduling
 public class MlsuiteApplication {
 
     public static void main(String[] args) {
+        String mode = System.getenv().getOrDefault("MLSUITE_MODE", "serve");
+        if ("migrate".equalsIgnoreCase(mode)) {
+            DatabaseMigrationApplication.run(args);
+            return;
+        }
+        if ("artifact-migrate".equalsIgnoreCase(mode)) {
+            ArtifactMigrationApplication.run(args);
+            return;
+        }
         SpringApplication.run(MlsuiteApplication.class, args);
     }
 
@@ -32,4 +43,3 @@ public class MlsuiteApplication {
         return rt;
     }
 }
-

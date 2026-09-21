@@ -38,6 +38,7 @@ import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelReposit
 import dev.ulloasp.mlsuite.model.application.service.AnalyzerServiceImpl;
 import dev.ulloasp.mlsuite.storage.ObjectStorageException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
+import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -72,7 +73,7 @@ class AnalyzerServiceTest {
         service = new AnalyzerServiceImpl(
                 restTemplate,
                 modelRepository,
-                objectStorageService,
+                new ModelArtifactContentReader(objectStorageService),
                 userLookupService,
                 workspaceAccessService,
                 objectMapper);
@@ -253,4 +254,3 @@ class AnalyzerServiceTest {
                 StandardCharsets.UTF_8);
     }
 }
-

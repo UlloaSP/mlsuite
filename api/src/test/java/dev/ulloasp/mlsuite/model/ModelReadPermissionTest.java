@@ -23,6 +23,9 @@ import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
+import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
+import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
+import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -40,7 +43,9 @@ class ModelReadPermissionTest {
         var authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class),
                 mock(RoleSeedService.class), new LegacyRolePermissionMapper());
         service = new ModelServiceImpl(mock(UserLookupService.class), models, mock(ObjectStorageService.class),
-                mock(SchemaModelBindingRepository.class), mock(PredictionResultRepository.class), access, authorization);
+                mock(SchemaModelBindingRepository.class), mock(PredictionResultRepository.class), access, authorization,
+                mock(ModelArtifactWriter.class), mock(ModelArtifactContentReader.class),
+                mock(StorageDeletionQueue.class));
     }
 
     @ParameterizedTest
