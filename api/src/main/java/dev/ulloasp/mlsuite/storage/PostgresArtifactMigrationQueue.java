@@ -9,14 +9,15 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-public class ArtifactMigrationClaimRepository {
+public class PostgresArtifactMigrationQueue implements ArtifactMigrationQueue {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public ArtifactMigrationClaimRepository(JdbcTemplate jdbcTemplate) {
+    public PostgresArtifactMigrationQueue(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Override
     @Transactional
     public List<Long> claim(int batchSize, int maxAttempts, long staleAfterSeconds, String workerId) {
         OffsetDateTime staleBefore = OffsetDateTime.now(ZoneOffset.UTC).minusSeconds(staleAfterSeconds);
@@ -35,6 +36,7 @@ public class ArtifactMigrationClaimRepository {
                 )
                 UPDATE model AS target
                 SET artifact_state = 'RUNNING',
+                    version = version + 1,
                     artifact_migration_attempts = artifact_migration_attempts + 1,
                     artifact_migration_started_at = CURRENT_TIMESTAMP,
                     artifact_migration_worker = ?,
@@ -45,6 +47,7 @@ public class ArtifactMigrationClaimRepository {
                 """, Long.class, maxAttempts, staleBefore, batchSize, workerId);
     }
 
+    @Override
     @Transactional
     public int retryFailed() {
         return jdbcTemplate.update("""
@@ -56,7 +59,8 @@ public class ArtifactMigrationClaimRepository {
                     artifact_migration_attempts = 0,
                     artifact_migration_error = NULL,
                     artifact_migration_started_at = NULL,
-                    artifact_migration_worker = NULL
+                    artifact_migration_worker = NULL,
+                    version = version + 1
                 WHERE artifact_state = 'FAILED'
                 """);
     }

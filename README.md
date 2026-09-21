@@ -163,6 +163,21 @@ Production promotion gates are:
 - `/actuator/health/readiness` is healthy on the canary API;
 - a PostgreSQL plus MinIO restore has been exercised in an isolated environment.
 
+The API supports concurrent clients through one transaction per request, database
+constraints as the final authority, and optimistic versioning on models. Two
+clients changing the same model cannot silently overwrite each other: the stale
+request receives `409 Conflict`. Hikari bounds database concurrency with
+`DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`, and `DB_POOL_CONNECTION_TIMEOUT_MS`;
+size the pool from the PostgreSQL connection budget, leaving capacity for the
+migration job and operations rather than matching it to the HTTP thread count.
+
+Persistence is abstracted by capability, not by a generic database wrapper.
+Spring Data repository interfaces isolate aggregate persistence, while
+`ArtifactMigrationQueue` hides the PostgreSQL-specific claiming implementation.
+The latter uses leases and `FOR UPDATE SKIP LOCKED`, so concurrent migration
+workers claim disjoint rows. Object storage remains a separate port because it
+is a genuinely external system with different failure and consistency modes.
+
 Deploy backward-compatible API instances gradually. On application failure,
 roll back the image while the inline copies remain. On an incompatible persistent
 state, prefer roll-forward or restore PostgreSQL and MinIO together. Clearing

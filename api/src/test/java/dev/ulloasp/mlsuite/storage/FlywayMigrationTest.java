@@ -25,9 +25,9 @@ class FlywayMigrationTest {
     void appliesCompleteHistoryToEmptyPostgresAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh", null);
 
-        assertEquals(3, flyway.migrate().migrationsExecuted);
+        assertEquals(4, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("3", flyway.info().current().getVersion().toString());
+        assertEquals("4", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -35,11 +35,11 @@ class FlywayMigrationTest {
                         SELECT COUNT(*)
                         FROM information_schema.columns
                         WHERE table_name = 'model'
-                          AND column_name IN ('artifact_sha256', 'artifact_state', 'storage_version_id')
+                          AND column_name IN ('artifact_sha256', 'artifact_state', 'storage_version_id', 'version')
                         """)) {
             try (var result = statement.executeQuery()) {
                 assertTrue(result.next());
-                assertEquals(3, result.getInt(1));
+                assertEquals(4, result.getInt(1));
             }
         }
     }
@@ -73,7 +73,7 @@ class FlywayMigrationTest {
         }
 
         Flyway upgraded = flyway("upgrade_path", null);
-        assertEquals(2, upgraded.migrate().migrationsExecuted);
+        assertEquals(3, upgraded.migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());

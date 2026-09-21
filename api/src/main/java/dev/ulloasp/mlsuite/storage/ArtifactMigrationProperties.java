@@ -5,13 +5,25 @@ import java.net.UnknownHostException;
 import java.util.UUID;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 
 @ConfigurationProperties(prefix = "artifact.migration")
+@Validated
 public class ArtifactMigrationProperties {
 
+    @NotBlank
     private String command = "status";
+
+    @Min(1)
     private int batchSize = 10;
+
+    @Min(1)
     private int maxAttempts = 5;
+
+    @Min(1)
     private long staleAfterSeconds = 900;
     private String workerId;
 

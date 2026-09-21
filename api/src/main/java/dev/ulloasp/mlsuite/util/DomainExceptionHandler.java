@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -55,10 +57,22 @@ public class DomainExceptionHandler {
     @ExceptionHandler({
             ModelAlreadyExistsException.class,
             UserAlreadyExistsException.class,
-            OrganizationAlreadyExistsException.class
+            OrganizationAlreadyExistsException.class,
+            OptimisticLockingFailureException.class
     })
     public ResponseEntity<ErrorDto> handleConflict(RuntimeException ex, HttpServletRequest req) {
         return respond(HttpStatus.CONFLICT, ex, req);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorDto> handleDataConflict(
+            DataIntegrityViolationException ex,
+            HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorDto.of(
+                        HttpStatus.CONFLICT.value(),
+                        "Request conflicts with the current persisted state.",
+                        req.getRequestURI()));
     }
 
     // ---- 403 FORBIDDEN ----
@@ -134,4 +148,3 @@ public class DomainExceptionHandler {
                 .body(ErrorDto.of(status.value(), ex.getMessage(), req.getRequestURI()));
     }
 }
-

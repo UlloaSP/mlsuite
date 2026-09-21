@@ -18,7 +18,7 @@ public class ArtifactMigrationService {
     private final ModelRepository models;
     private final ObjectStorageService objectStorage;
     private final ModelArtifactWriter writer;
-    private final ArtifactMigrationClaimRepository claims;
+    private final ArtifactMigrationQueue queue;
     private final TransactionTemplate transactions;
     private final StorageDeletionQueue deletionQueue;
 
@@ -26,13 +26,13 @@ public class ArtifactMigrationService {
             ModelRepository models,
             ObjectStorageService objectStorage,
             ModelArtifactWriter writer,
-            ArtifactMigrationClaimRepository claims,
+            ArtifactMigrationQueue queue,
             TransactionTemplate transactions,
             StorageDeletionQueue deletionQueue) {
         this.models = models;
         this.objectStorage = objectStorage;
         this.writer = writer;
-        this.claims = claims;
+        this.queue = queue;
         this.transactions = transactions;
         this.deletionQueue = deletionQueue;
     }
@@ -44,7 +44,7 @@ public class ArtifactMigrationService {
         long failed = 0;
         List<Long> ids;
         do {
-            ids = claims.claim(
+            ids = queue.claim(
                     properties.getBatchSize(),
                     properties.getMaxAttempts(),
                     properties.getStaleAfterSeconds(),
@@ -80,7 +80,7 @@ public class ArtifactMigrationService {
     }
 
     public int retryFailed() {
-        return claims.retryFailed();
+        return queue.retryFailed();
     }
 
     private boolean migrateOne(Long id) {

@@ -10,12 +10,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-import dev.ulloasp.mlsuite.storage.ArtifactMigrationClaimRepository;
 import dev.ulloasp.mlsuite.storage.ArtifactMigrationCommand;
 import dev.ulloasp.mlsuite.storage.ArtifactMigrationProperties;
 import dev.ulloasp.mlsuite.storage.ArtifactMigrationService;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
 import dev.ulloasp.mlsuite.storage.ObjectStorageConfig;
+import dev.ulloasp.mlsuite.storage.PostgresArtifactMigrationQueue;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 
 @Configuration(proxyBeanMethods = false)
@@ -28,7 +28,7 @@ import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
         ObjectStorageConfig.class,
         ModelArtifactWriter.class,
         StorageDeletionQueue.class,
-        ArtifactMigrationClaimRepository.class,
+        PostgresArtifactMigrationQueue.class,
         ArtifactMigrationService.class,
         ArtifactMigrationCommand.class
 })

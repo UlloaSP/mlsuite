@@ -24,7 +24,7 @@ class ArtifactMigrationServiceTest {
     private final ModelRepository models = mock(ModelRepository.class);
     private final ObjectStorageService storage = mock(ObjectStorageService.class);
     private final ModelArtifactWriter writer = mock(ModelArtifactWriter.class);
-    private final ArtifactMigrationClaimRepository claims = mock(ArtifactMigrationClaimRepository.class);
+    private final ArtifactMigrationQueue queue = mock(ArtifactMigrationQueue.class);
     private final TransactionTemplate transactions = mock(TransactionTemplate.class);
     private final StorageDeletionQueue deletionQueue = mock(StorageDeletionQueue.class);
     private final ArtifactMigrationProperties properties = new ArtifactMigrationProperties();
@@ -39,13 +39,13 @@ class ArtifactMigrationServiceTest {
             callback.accept(mock(TransactionStatus.class));
             return null;
         }).when(transactions).executeWithoutResult(any());
-        service = new ArtifactMigrationService(models, storage, writer, claims, transactions, deletionQueue);
+        service = new ArtifactMigrationService(models, storage, writer, queue, transactions, deletionQueue);
     }
 
     @Test
     void migrationClaimsFiniteBatchesAndMarksVerified() {
         Model model = inlineModel();
-        when(claims.claim(10, 5, 900, "test-worker"))
+        when(queue.claim(10, 5, 900, "test-worker"))
                 .thenReturn(List.of(7L), List.of());
         when(models.findById(7L)).thenReturn(Optional.of(model));
 
@@ -58,7 +58,7 @@ class ArtifactMigrationServiceTest {
     @Test
     void migrationPersistsFailureAndContinuesInsteadOfLoopingOnPoisonRow() {
         Model model = inlineModel();
-        when(claims.claim(10, 5, 900, "test-worker"))
+        when(queue.claim(10, 5, 900, "test-worker"))
                 .thenReturn(List.of(7L), List.of());
         when(models.findById(7L)).thenReturn(Optional.of(model));
         org.mockito.Mockito.doThrow(new ObjectStorageException("down"))
