@@ -168,6 +168,8 @@ jobs:
         run: bash deploy/postgres/test-provision-roles.sh
       - name: Verify non-empty backup restore lifecycle
         run: bash deploy/test-backup-restore.sh
+      - name: Verify single-disk local backup contract
+        run: bash deploy/test-local-backup.sh
       - name: Validate release contracts and failure handling
         run: python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
       - name: Validate workflows

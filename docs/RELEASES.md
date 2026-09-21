@@ -69,9 +69,11 @@ The base production Compose file gates the API on a one-shot Flyway migration
 and deep readiness checks. The operator must still provide environment-specific
 backup, restore, promotion and rollback orchestration; follow the production
 database and artifact rollout in `README.md` before starting the release.
-The cutover wizard additionally requires a declared external PITR provider,
-off-site target, restore-drill timestamp and RPO/RTO. These are operational gates,
-not backup services implemented by the application repository.
+The initial on-premise contract is `local-single-disk`. The cutover wizard creates
+a coordinated local PostgreSQL plus MinIO backup, verifies it through an isolated
+restore rehearsal, and requires explicit acceptance that loss of the only disk is
+unrecoverable. Its RPO/RTO apply only to logical recovery; this is not PITR or
+disaster recovery. Add another physical failure domain before making either claim.
 
 ## Failure and retry behavior
 

@@ -184,7 +184,7 @@ finish() {
 # Replace the example below. Set TOTAL_STAGES to match the stages you write.
 # ──────────────────────────────────────────────────────────────────────────
 
-TOTAL_STAGES=10
+TOTAL_STAGES=9
 COMPOSE=(docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml)
 umask 077
 restore_state=
@@ -203,14 +203,16 @@ for command in docker curl find sha256sum sort; do command -v "$command" >/dev/n
 for key in DB_ADMIN_USER DB_ADMIN_PASS DB_LEGACY_OWNER DB_LEGACY_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS STORAGE_ACCESS_KEY STORAGE_SECRET_KEY; do
   [[ -n "$(_existing "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
 done
-for key in PITR_PROVIDER PITR_OFFSITE_TARGET PITR_LAST_RESTORE_UTC RECOVERY_RPO_MINUTES RECOVERY_RTO_MINUTES; do
+for key in RECOVERY_MODE SINGLE_DISK_RISK_ACCEPTED LOCAL_BACKUP_ROOT LOCAL_BACKUP_RETENTION_COUNT LOCAL_BACKUP_MIN_FREE_PERCENT RECOVERY_RPO_MINUTES RECOVERY_RTO_MINUTES; do
   [[ -n "$(_existing "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
 done
 [[ "$(_existing MODEL_MUTATIONS_REQUIRE_VERSION)" == true ]] || { warn "Production requires MODEL_MUTATIONS_REQUIRE_VERSION=true"; exit 1; }
+[[ "$(_existing RECOVERY_MODE)" == local-single-disk ]] || { warn "This deployment supports RECOVERY_MODE=local-single-disk"; exit 1; }
+[[ "$(_existing SINGLE_DISK_RISK_ACCEPTED)" == true ]] || { warn "Set SINGLE_DISK_RISK_ACCEPTED=true only after accepting that disk loss is unrecoverable"; exit 1; }
 [[ "$(_existing RECOVERY_RPO_MINUTES)" =~ ^[0-9]+$ && "$(_existing RECOVERY_RTO_MINUTES)" =~ ^[0-9]+$ ]] || { warn "RPO/RTO must be integer minutes"; exit 1; }
-[[ "$(_existing PITR_LAST_RESTORE_UTC)" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || { warn "PITR_LAST_RESTORE_UTC must use UTC ISO-8601"; exit 1; }
-step "PITR provider: $(_existing PITR_PROVIDER); off-site target: $(_existing PITR_OFFSITE_TARGET); last restore: $(_existing PITR_LAST_RESTORE_UTC)."
-confirm "Is WAL archiving healthy and is the recorded restore drill inside the declared RPO/RTO policy?" || exit 1
+warn "Backups share the only physical disk. They cover logical mistakes, not disk loss, theft or total host failure."
+step "Declared logical-recovery RPO: $(_existing RECOVERY_RPO_MINUTES) minutes; RTO: $(_existing RECOVERY_RTO_MINUTES) minutes."
+confirm "Do you explicitly accept launching without recovery from physical disk failure?" || exit 1
 "${COMPOSE[@]}" config --quiet
 say "Compose configuration is valid. This wizard never performs an automatic destructive restore."
 
@@ -232,42 +234,22 @@ confirm "Are new uploads, edits, predictions, feedback and administrative writes
 "${COMPOSE[@]}" stop frontend spring-app
 say "Frontend and API are stopped so PostgreSQL and MinIO are captured at one write-consistent point."
 
-stage "PostgreSQL backup"
-backup_dir="backups/production-$(date -u +%Y%m%dT%H%M%SZ)"
-mkdir -p "$backup_dir"
-"${COMPOSE[@]}" up -d postgres minio
-db_user=$(_existing DB_ADMIN_USER); legacy_user=$(_existing DB_LEGACY_OWNER); db_name=$(_existing DB_PROD)
-if ! "${COMPOSE[@]}" exec -T postgres pg_dump -U "$db_user" -d "$db_name" -Fc > "$backup_dir/postgres.dump"; then
-  "${COMPOSE[@]}" exec -T postgres pg_dump -U "$legacy_user" -d "$db_name" -Fc > "$backup_dir/postgres.dump"
-fi
-sha256sum "$backup_dir/postgres.dump" > "$backup_dir/postgres.dump.sha256"
-say "Created $backup_dir/postgres.dump. Keep WAL/PITR coverage from before the freeze."
-
-stage "Artifact backup"
-project=$(_existing COMPOSE_PROJECT_NAME || true); project=${project:-mlsuite}
-storage_bucket=$(_existing STORAGE_BUCKET)
-[[ "$storage_bucket" =~ ^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$ ]] || { warn "STORAGE_BUCKET is not a valid S3 bucket name"; exit 1; }
-minio_volume="${project}_minio_data"
-docker volume inspect "$minio_volume" >/dev/null
-"${COMPOSE[@]}" stop minio
-MSYS_NO_PATHCONV=1 docker run --rm -v "$minio_volume:/data:ro" postgres:17.11-alpine3.24 \
-  tar -C /data -czf - . > "$backup_dir/minio-data.tar.gz"
-printf '%s\n' "$storage_bucket" > "$backup_dir/storage.bucket"
-(cd "$backup_dir" && sha256sum postgres.dump minio-data.tar.gz storage.bucket > backup.manifest)
-"${COMPOSE[@]}" up -d minio minio-init
-say "Copy $backup_dir to an encrypted target in a separate failure domain before continuing."
-confirm "Is the encrypted database and artifact backup now stored outside this host?" || exit 1
+stage "Coordinated local backup"
+backup_dir=$(ENV_FILE="$ENV_FILE" ./scripts/create-local-backup.sh --leave-app-stopped)
+say "Created and checksummed $backup_dir on the local disk."
+warn "This recovery point will be lost if the physical disk is lost."
 
 stage "Restore rehearsal"
 baseline_flag=
 say "Existing pre-Flyway databases may be baselined only after comparing them with V1__baseline.sql."
 confirm "Is this a verified pre-Flyway schema that exactly matches V1 and requires the one-time baseline?" && baseline_flag=--baseline
 ./scripts/verify-production-backup.sh "$backup_dir" --keep
-restore_state="$PWD/$backup_dir/restore.env"
+restore_state="$backup_dir/restore.env"
 ./scripts/smoke-restored-release.sh start "$restore_state" "$ENV_FILE" "$RELEASE_COMPOSE" "$baseline_flag"
 restore_smoke_port=$(_existing RESTORE_SMOKE_PORT || true); restore_smoke_port=${restore_smoke_port:-18080}
 step "Against http://127.0.0.1:${restore_smoke_port}, exercise login, model download, prediction, review and export."
 confirm "Did every restored-release smoke test pass?" || exit 1
+write_env RECOVERY_LAST_RESTORE_UTC "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 cleanup_restore
 restore_state=
 

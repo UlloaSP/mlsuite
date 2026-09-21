@@ -103,12 +103,28 @@ an isolated restore rehearsal, runs both migrations, checks readiness, and recor
 the rollback prerequisites. Review the procedure before running it; it changes the
 configured production environment only after explicit confirmations.
 
-The wizard requires the production `.env` to identify the external PITR provider,
-off-site backup target, last successful restore time, and agreed RPO/RTO. MLSuite
-does not pretend that a volume or a `pg_dump` on the application host is PITR. WAL
-archiving, encryption, retention and off-site replication remain responsibilities
-of the selected PostgreSQL backup system. The cutover stops unless the operator
-confirms that system is healthy and its restore drill meets the declared policy.
+The initial supported on-premise topology is explicitly `local-single-disk`. The
+wizard creates a coordinated PostgreSQL plus MinIO recovery point, checksums it,
+restores it in an isolated environment, and requires an explicit acknowledgement
+that physical disk loss is not covered. These local backups protect against a bad
+deployment or logical deletion; they are not PITR or disaster recovery. The
+documented initial objective is a 24-hour logical-recovery RPO and an 8-hour RTO.
+
+Run the same coordinated backup outside a release with:
+
+```bash
+ENV_FILE=.env ./scripts/create-local-backup.sh
+```
+
+Schedule it once per day from the host. The command pauses the frontend and API,
+dumps PostgreSQL, takes a cold archive of MinIO that preserves version IDs, verifies
+checksums, applies `LOCAL_BACKUP_RETENTION_COUNT`, checks the remaining disk space,
+and restarts only application services that were running. Keep at least 15% free
+with `LOCAL_BACKUP_MIN_FREE_PERCENT`. Backups live under `LOCAL_BACKUP_ROOT`, outside
+the Docker data volumes but currently on the same physical disk. Before stopping
+writes, the command requires conservative headroom for both the archive and the
+isolated restore rehearsal: roughly 2.5 times the live PostgreSQL plus MinIO data,
+in addition to the configured free-space reserve.
 
 MLSuite uses Flyway as the only schema owner. Hibernate validates the result and
 never creates or updates production tables. `docker-compose.prod.yml` runs the
@@ -119,11 +135,10 @@ Before the first Flyway-managed release:
 
 1. Stop the frontend and API so PostgreSQL and MinIO are captured at one
    write-consistent point.
-2. Back up PostgreSQL with PITR/WAL coverage and back up or replicate MinIO to a
-   separate failure domain. A MinIO replica is not a backup. For the supported
-   single-server Compose deployment, the wizard takes a cold archive of the MinIO
-   data volume, preserving object versions, delete markers, and version IDs that
-   PostgreSQL references. Keep the MinIO server image pinned when restoring it.
+2. Create the coordinated local PostgreSQL and MinIO backup. The cold MinIO archive
+   preserves object versions, delete markers, and version IDs that PostgreSQL
+   references. Keep the MinIO image pinned when restoring it. Until another physical
+   device exists, record disk or host loss as an accepted, unrecoverable risk.
 3. Enable and verify bucket versioning. Do not configure lifecycle expiry inside
    the rollback window.
 4. Compare the existing schema with `api/src/main/resources/db/migration/V1__baseline.sql`.
