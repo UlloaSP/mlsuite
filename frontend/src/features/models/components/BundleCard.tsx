@@ -8,6 +8,7 @@ import { m as motion } from "motion/react";
 import type { DragEvent } from "react";
 import { cx } from "@/shared/ui/cx";
 import type { Bundle } from "@/features/models/lib/bundle-types";
+import { MODEL_EXT_LABEL } from "@/features/models/lib/bundle-utils";
 import { BundleFilePill } from "./BundleFilePill";
 
 type Props = {
@@ -77,7 +78,9 @@ export function BundleCard({
             >
               <Plus size={12} />
               Select model{" "}
-              <span className="cursor-pointer font-mono text-[10px] opacity-70">(.joblib)</span>
+              <span className="cursor-pointer font-mono text-[10px] opacity-70">
+                ({MODEL_EXT_LABEL})
+              </span>
             </button>
           )}
 

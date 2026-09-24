@@ -84,6 +84,16 @@ test("saves all valid models and returns to catalog", async () => {
   expect(mocks.create).toHaveBeenCalledTimes(2);
   expect(mocks.navigate).toHaveBeenCalledWith("/models");
 });
+test("inspects and saves an ONNX model", async () => {
+  await upload("risk.onnx");
+  expect(mocks.inspect).toHaveBeenCalledWith(expect.objectContaining({ name: "risk.onnx" }));
+  await saveAll();
+  expect(mocks.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      modelFile: expect.objectContaining({ name: "risk.onnx" }),
+    }),
+  );
+});
 test("retains a nameless bundle after saving the valid bundle", async () => {
   await upload("first.joblib", "second.joblib");
   await blankFirstName();

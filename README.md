@@ -29,6 +29,10 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 - Manage organizations, teams, roles, invitations, and workspace permissions.
 - Monitor the local Compose stack through the operations service.
 
+### Model artifacts
+
+Upload `.joblib` estimators or self-contained `.onnx` models for tabular classification and regression. ONNX models need numeric, two-dimensional inputs with a fixed feature count. Classifiers must expose class labels and probabilities; regressors must return one value per row. Optional pandas DataFrames for schema generation remain `.joblib` files. Crystal Tree explanations apply to supported decision-tree estimators only.
+
 ## Installation
 
 > [!WARNING]
