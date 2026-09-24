@@ -1,0 +1,12 @@
+[Unit]
+Description=MLSuite coordinated local backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=@@SERVICE_USER@@
+ExecStart=/usr/local/sbin/mlsuite-backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

@@ -31,12 +31,15 @@ class ComposeError(RuntimeError):
 class ComposeGateway:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.compose_file = str(Path(settings.compose_file))
+        configured_files = settings.compose_files or (settings.compose_file,)
+        self.compose_files = tuple(str(Path(path)) for path in configured_files)
         self.managed_services = set(settings.managed_services)
         self.terminal_services = set(settings.terminal_services)
 
     def compose_command(self, *args: str) -> list[str]:
-        command = [self.settings.docker_bin, "compose", "-f", self.compose_file]
+        command = [self.settings.docker_bin, "compose"]
+        for compose_file in self.compose_files:
+            command.extend(["-f", compose_file])
         if self.settings.compose_project:
             command.extend(["-p", self.settings.compose_project])
         command.extend(args)

@@ -19,7 +19,11 @@ class Settings:
     host: str = _env("OPS_AGENT_HOST", "127.0.0.1")
     port: int = int(_env("OPS_AGENT_PORT", "8091"))
     shared_secret: str = _env("OPS_AGENT_SHARED_SECRET", "mlsuite-dev-secret")
-    compose_file: str = _env("OPS_AGENT_COMPOSE_FILE", "docker-compose.dev.yml")
+    compose_file: str = _env("OPS_AGENT_COMPOSE_FILE", "docker-compose.yml")
+    compose_files: tuple[str, ...] = _env_list(
+        "OPS_AGENT_COMPOSE_FILES",
+        "docker-compose.yml,docker-compose.dev.yml",
+    )
     compose_project: str = _env("OPS_AGENT_COMPOSE_PROJECT", "")
     docker_bin: str = _env("OPS_AGENT_DOCKER_BIN", "docker")
     managed_services: tuple[str, ...] = _env_list(

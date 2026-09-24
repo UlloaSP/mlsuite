@@ -77,6 +77,28 @@ jobs:
           cache: maven
           cache-dependency-path: api/pom.xml
       - run: mvn -B -ntp verify
+      - name: Require PostgreSQL integration tests
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          import xml.etree.ElementTree as ET
+
+          expected = {
+              "dev.ulloasp.mlsuite.storage.FlywayMigrationTest": 2,
+              "dev.ulloasp.mlsuite.storage.PostgresArtifactMigrationQueueTest": 1,
+              "dev.ulloasp.mlsuite.storage.PostgresStorageDeletionWorkQueueTest": 2,
+              "dev.ulloasp.mlsuite.model.ModelOptimisticLockTest": 1,
+          }
+          for name, minimum in expected.items():
+              report = pathlib.Path(f"target/surefire-reports/TEST-{name}.xml")
+              if not report.is_file():
+                  raise SystemExit(f"missing PostgreSQL test report: {report}")
+              suite = ET.parse(report).getroot()
+              tests = int(suite.attrib.get("tests", 0))
+              skipped = int(suite.attrib.get("skipped", 0))
+              if tests < minimum or skipped:
+                  raise SystemExit(f"{name} did not run completely: tests={tests}, skipped={skipped}")
+          PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -140,8 +162,20 @@ jobs:
           fi
       - name: Validate Compose using the public template
         run: |
-          docker compose --env-file .env.example -f docker-compose.dev.yml config --quiet
-          docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet
+          docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.dev.yml --profile operations config --quiet
+          python3 deploy/test_compose_parity.py
+      - name: Verify PostgreSQL role upgrade
+        run: bash deploy/postgres/test-provision-roles.sh
+      - name: Verify non-empty backup restore lifecycle
+        run: bash deploy/test-backup-restore.sh
+      - name: Verify single-disk local backup contract
+        run: bash deploy/test-local-backup.sh
+      - name: Verify backup RPO gate
+        run: bash deploy/test-backup-rpo.sh
+      - name: Verify backup timer installer
+        run: sudo bash deploy/test-backup-timer-install.sh
+      - name: Verify recovery RTO gate
+        run: bash deploy/test-recovery-rto.sh
       - name: Validate release contracts and failure handling
         run: python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
       - name: Validate workflows

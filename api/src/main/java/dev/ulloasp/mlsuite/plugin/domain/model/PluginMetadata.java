@@ -67,6 +67,12 @@ public class PluginMetadata {
     @Column(name = "size_bytes", nullable = false)
     private long sizeBytes;
 
+    @Column(name = "sha256", length = 64)
+    private String sha256;
+
+    @Column(name = "storage_version_id", length = 255)
+    private String storageVersionId;
+
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime createdAt;
 

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the MLSuite local backup every day
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+AccuracySec=1m
+Unit=mlsuite-backup.service
+
+[Install]
+WantedBy=timers.target

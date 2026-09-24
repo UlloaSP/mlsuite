@@ -1,124 +1,33 @@
-networks:
-  appnet:
-
-
-volumes:
-  pg_data:
-  minio_data:
-
+# Development selects locally built images; service behavior lives in docker-compose.yml.
+x-api-dev: &api-dev
+  image: mlsuite-api:dev
+  build:
+    context: ./api
+    dockerfile: ./Dockerfile
 
 services:
   ops-agent:
+    image: mlsuite-ops-agent:dev
     build:
       context: ./ops-agent
       dockerfile: ./Dockerfile
     environment:
-      OPS_AGENT_HOST: ${OPS_AGENT_HOST}
-      OPS_AGENT_PORT: ${OPS_AGENT_PORT}
-      OPS_AGENT_SHARED_SECRET: ${OPS_AGENT_SHARED_SECRET}
-      OPS_AGENT_DOCKER_BIN: ${OPS_AGENT_DOCKER_BIN}
-      OPS_AGENT_COMPOSE_FILE: /workspace/docker-compose.dev.yml
-      OPS_AGENT_COMPOSE_PROJECT: ${OPS_AGENT_COMPOSE_PROJECT}
-      OPS_AGENT_MANAGED_SERVICES: ${OPS_AGENT_MANAGED_SERVICES}
-      OPS_AGENT_SAMPLE_INTERVAL_SECONDS: ${OPS_AGENT_SAMPLE_INTERVAL_SECONDS}
-      OPS_AGENT_RETENTION_MINUTES: ${OPS_AGENT_RETENTION_MINUTES}
-      OPS_AGENT_TERMINAL_SERVICES: ${OPS_AGENT_TERMINAL_SERVICES}
-      OPS_AGENT_TERMINAL_IDLE_MINUTES: ${OPS_AGENT_TERMINAL_IDLE_MINUTES}
-      OPS_AGENT_TERMINAL_MAX_SESSIONS: ${OPS_AGENT_TERMINAL_MAX_SESSIONS}
-      OPS_AGENT_LOG_TAIL_LINES: ${OPS_AGENT_LOG_TAIL_LINES}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./:/workspace:ro
-    networks: [ appnet ]
-
-  postgres:
-    image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
-    environment:
-      POSTGRES_DB: ${DB_PROD}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    ports:
-      - ${DB_HOST_PORT}:5432
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_PROD}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks: [ appnet ]
+      OPS_AGENT_COMPOSE_FILES: /workspace/docker-compose.yml,/workspace/docker-compose.dev.yml
 
   py-analyzer:
+    image: mlsuite-sklearn-backend:dev
     build:
       context: ./backend
       dockerfile: ./Dockerfile
-    environment:
-      PYTHON_HOST: ${PYTHON_HOST}
-      PYTHON_PORT: ${PYTHON_PORT}
-      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks: [ appnet ]
 
-  minio:
-    image: quay.io/minio/minio:latest
-    command: server /data --console-address "${MINIO_CONSOLE_ADDRESS}"
-    environment:
-      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
-    volumes:
-      - minio_data:/data
-    networks: [ appnet ]
-
-  spring-app:
-    build:
-      context: ./api
-      dockerfile: ./Dockerfile
-    environment:
-      SPRING_PORT: ${SPRING_PORT}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      LOG_PATH: ${LOG_PATH}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_PROD: ${DB_PROD}
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
-      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
-      ANALYZER_BASE_URL: ${ANALYZER_BASE_URL}
-      REVIEW_LINK_SECRET: ${REVIEW_LINK_SECRET}
-      STORAGE_ENABLED: ${STORAGE_ENABLED}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
-      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
-      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
-      STORAGE_BUCKET: ${STORAGE_BUCKET}
-      STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET}
-      STORAGE_BACKFILL_ON_STARTUP: ${STORAGE_BACKFILL_ON_STARTUP}
-      MLSUITE_SUPERADMIN_EMAIL: ${MLSUITE_SUPERADMIN_EMAIL}
-      MLSUITE_SUPERADMIN_PASSWORD: ${MLSUITE_SUPERADMIN_PASSWORD}
-      MLSUITE_SUPERADMIN_FULL_NAME: ${MLSUITE_SUPERADMIN_FULL_NAME}
-      MLSUITE_SUPERADMIN_USERNAME: ${MLSUITE_SUPERADMIN_USERNAME}
-      OPS_AGENT_BASE_URL: ${OPS_AGENT_BASE_URL}
-      OPS_AGENT_SHARED_SECRET: ${OPS_AGENT_SHARED_SECRET}
-    depends_on:
-      ops-agent:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_started
-    networks: [ appnet ]
+  db-migrate: *api-dev
+  artifact-migrate: *api-dev
+  spring-app: *api-dev
 
   frontend:
+    image: mlsuite-frontend:dev
     build:
       context: ./frontend
       dockerfile: ./Dockerfile
       args:
         VITE_BACKEND_URL: ${VITE_BACKEND_URL}
-    ports:
-      - ${WEB_PORT}:5173
-    depends_on:
-      spring-app:
-        condition: service_started
-    networks: [ appnet ]

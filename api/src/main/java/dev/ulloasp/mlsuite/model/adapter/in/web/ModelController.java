@@ -48,10 +48,14 @@ public interface ModelController {
     public ResponseEntity<ModelDto> rename(
             Authentication authentication,
             @PathVariable Long modelId,
-            @RequestParam String name);
+            @RequestParam String name,
+            @RequestParam(required = false) Long version);
 
     @PostMapping("/{modelId}/archive")
-    public ResponseEntity<ModelDto> archive(Authentication authentication, @PathVariable Long modelId);
+    public ResponseEntity<ModelDto> archive(
+            Authentication authentication,
+            @PathVariable Long modelId,
+            @RequestParam(required = false) Long version);
 
     @PostMapping("/{modelId}/duplicate")
     public ResponseEntity<ModelDto> duplicate(
@@ -60,7 +64,9 @@ public interface ModelController {
             @RequestParam String name);
 
     @DeleteMapping("/{modelId}")
-    public ResponseEntity<Void> delete(Authentication authentication, @PathVariable Long modelId);
+    public ResponseEntity<Void> delete(
+            Authentication authentication,
+            @PathVariable Long modelId,
+            @RequestParam(required = false) Long version);
 
 }
-

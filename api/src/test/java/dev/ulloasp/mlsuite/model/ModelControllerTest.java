@@ -57,6 +57,7 @@ class ModelControllerTest {
         Model model = new Model();
         model.setId(11L);
         model.setName("demo");
+        model.setVersion(0L);
         CreateModelDto dto = CreateModelDto.toDto(model);
         when(modelCreationService.create(4L, "demo", modelFile, dataframeFile, "_")).thenReturn(dto);
 
@@ -76,7 +77,9 @@ class ModelControllerTest {
 
     @Test
     void getAllModels_UsesInternalUserId() {
-        when(modelCatalogUseCase.getModels(4L)).thenReturn(List.of(new Model()));
+        Model model = new Model();
+        model.setVersion(0L);
+        when(modelCatalogUseCase.getModels(4L)).thenReturn(List.of(model));
 
         assertEquals(1, controller.getAllModels(authentication).getBody().size());
         verify(modelCatalogUseCase).getModels(4L);
@@ -85,19 +88,27 @@ class ModelControllerTest {
     @Test
     void rename_DelegatesToCatalogUseCase() {
         Model model = model();
-        when(modelCatalogUseCase.renameModel(4L, 9L, "new")).thenReturn(model);
+        when(modelCatalogUseCase.renameModel(4L, 9L, "new", 3L)).thenReturn(model);
 
-        assertEquals("demo", controller.rename(authentication, 9L, "new").getBody().name());
-        verify(modelCatalogUseCase).renameModel(4L, 9L, "new");
+        assertEquals("demo", controller.rename(authentication, 9L, "new", 3L).getBody().name());
+        verify(modelCatalogUseCase).renameModel(4L, 9L, "new", 3L);
+    }
+
+    @Test
+    void rename_AllowsAnOlderClientWithoutVersionDuringTheCompatibilityWindow() {
+        when(modelCatalogUseCase.renameModel(4L, 9L, "new", null)).thenReturn(model());
+
+        assertEquals(HttpStatus.OK, controller.rename(authentication, 9L, "new", null).getStatusCode());
+        verify(modelCatalogUseCase).renameModel(4L, 9L, "new", null);
     }
 
     @Test
     void archive_DelegatesToCatalogUseCase() {
         Model model = model();
-        when(modelCatalogUseCase.archiveModel(4L, 9L)).thenReturn(model);
+        when(modelCatalogUseCase.archiveModel(4L, 9L, 3L)).thenReturn(model);
 
-        assertEquals("demo", controller.archive(authentication, 9L).getBody().name());
-        verify(modelCatalogUseCase).archiveModel(4L, 9L);
+        assertEquals("demo", controller.archive(authentication, 9L, 3L).getBody().name());
+        verify(modelCatalogUseCase).archiveModel(4L, 9L, 3L);
     }
 
     @Test
@@ -111,15 +122,15 @@ class ModelControllerTest {
 
     @Test
     void delete_DelegatesToCatalogUseCase() {
-        assertEquals(HttpStatus.NO_CONTENT, controller.delete(authentication, 9L).getStatusCode());
-        verify(modelCatalogUseCase).deleteModel(4L, 9L);
+        assertEquals(HttpStatus.NO_CONTENT, controller.delete(authentication, 9L, 3L).getStatusCode());
+        verify(modelCatalogUseCase).deleteModel(4L, 9L, 3L);
     }
 
     private Model model() {
         Model model = new Model();
         model.setId(9L);
         model.setName("demo");
+        model.setVersion(0L);
         return model;
     }
 }
-

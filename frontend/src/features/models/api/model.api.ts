@@ -12,6 +12,7 @@ import type {
   MatchArtifactsRequest,
   ModelDto,
   ModelNameRequest,
+  ModelVersionRequest,
   ModelPageDto,
   ModelPageRequest,
 } from "./model.types";
@@ -47,11 +48,11 @@ export const createModel = ({
   return appFetch<CreateModelDto>("/api/models", { method: "POST", body: formData });
 };
 
-export const archiveModel = (id: string): Promise<ModelDto> =>
-  appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}/archive`, { method: "POST" });
+export const archiveModel = ({ id, version }: ModelVersionRequest): Promise<ModelDto> =>
+  appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}/archive?version=${version}`, { method: "POST" });
 
-export const deleteModel = async (id: string): Promise<void> => {
-  await appFetch(`/api/models/${encodeURIComponent(id)}`, { method: "DELETE" });
+export const deleteModel = async ({ id, version }: ModelVersionRequest): Promise<void> => {
+  await appFetch(`/api/models/${encodeURIComponent(id)}?version=${version}`, { method: "DELETE" });
 };
 
 export const duplicateModel = ({ id, name }: ModelNameRequest): Promise<ModelDto> => {
@@ -62,8 +63,9 @@ export const duplicateModel = ({ id, name }: ModelNameRequest): Promise<ModelDto
   );
 };
 
-export const renameModel = ({ id, name }: ModelNameRequest): Promise<ModelDto> => {
-  const params = new URLSearchParams({ name });
+export const renameModel = ({ id, name, version }: ModelNameRequest): Promise<ModelDto> => {
+  if (version === undefined) throw new Error("Model version is required for rename");
+  const params = new URLSearchParams({ name, version: String(version) });
   return appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}?${params.toString()}`, {
     method: "PATCH",
   });

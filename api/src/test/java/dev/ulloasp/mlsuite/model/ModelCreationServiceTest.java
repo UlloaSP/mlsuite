@@ -80,12 +80,14 @@ class ModelCreationServiceTest {
         CreateModelDto result = service.create(4L, "demo", modelFile, dataframeFile, "_");
 
         assertEquals(Map.of("dataframe", "schema"), result.model().inputSchema());
+        assertEquals(0, result.model().version());
         ArgumentCaptor<MultipartFile> modelCaptor = ArgumentCaptor.forClass(MultipartFile.class);
         verify(modelCatalogUseCase).createModel(eq(4L), eq("demo"), modelCaptor.capture());
         MultipartFile reusable = modelCaptor.getValue();
         assertNotSame(modelFile, reusable);
         assertEquals("x", new String(reusable.getInputStream().readAllBytes()));
         verify(objectStorageService, never()).delete(any(), any());
+        verify(objectStorageService, never()).delete(any(), any(), any());
     }
 
     @Test
@@ -101,7 +103,7 @@ class ModelCreationServiceTest {
                 () -> service.create(4L, "demo", modelFile, null, "__"));
 
         assertEquals(failure, thrown);
-        verify(objectStorageService).delete("bucket", "key");
+        verify(objectStorageService).delete("bucket", "key", "version-1");
     }
 
     @Test
@@ -116,6 +118,7 @@ class ModelCreationServiceTest {
 
         assertEquals(failure, thrown);
         verify(objectStorageService, never()).delete(any(), any());
+        verify(objectStorageService, never()).delete(any(), any(), any());
     }
 
     private Model storedModel() {
@@ -127,6 +130,7 @@ class ModelCreationServiceTest {
         model.setFileName("model.joblib");
         model.setStorageBucket("bucket");
         model.setStorageObjectKey("key");
+        model.setStorageVersionId("version-1");
         return model;
     }
 }
