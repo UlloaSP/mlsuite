@@ -6,7 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { describe, expect, it } from "vite-plus/test";
 import { applyInspectedBundleFiles } from "@/features/models/lib/bundle-planner";
 import { saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
-import { ALL_EXTS, DF_EXTS, isJoblibFile } from "@/features/models/lib/bundle-utils";
+import {
+  ALL_EXTS,
+  DF_EXTS,
+  isDfFile,
+  isJoblibFile,
+  isModelFile,
+} from "@/features/models/lib/bundle-utils";
 
 const file = (name: string) => new File(["x"], name);
 
@@ -19,6 +25,12 @@ describe("model bundle file handling", () => {
   it("routes joblib artifacts to backend inspection", () => {
     expect(isJoblibFile("risk-model.joblib")).toBe(true);
     expect(isJoblibFile("risk-model.pkl")).toBe(false);
+  });
+
+  it("accepts ONNX only as a model artifact", () => {
+    expect(ALL_EXTS).toContain(".onnx");
+    expect(isModelFile("risk-model.onnx")).toBe(true);
+    expect(isDfFile("risk-model.onnx")).toBe(false);
   });
 
   it("creates a pending bundle when a dataframe arrives before its model", () => {

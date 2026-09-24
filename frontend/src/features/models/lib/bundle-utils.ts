@@ -12,8 +12,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
 export const JOBLIB_EXT = ".joblib";
+export const ONNX_EXT = ".onnx";
 /** MODEL_EXTS: internal constant/cache for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const MODEL_EXTS = [JOBLIB_EXT];
+export const MODEL_EXTS = [JOBLIB_EXT, ONNX_EXT];
 /**
  * DF_EXTS: exposes a stable constant used by this algorithm.
  *
@@ -40,7 +41,7 @@ export const ALL_EXTS = [...new Set([...MODEL_EXTS, ...DF_EXTS])];
  * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
-export const MODEL_EXT_LABEL = ".joblib";
+export const MODEL_EXT_LABEL = ".joblib or .onnx";
 /**
  * DF_EXT_LABEL: exposes a stable constant used by this algorithm.
  *

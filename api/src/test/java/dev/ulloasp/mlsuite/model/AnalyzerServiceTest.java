@@ -36,6 +36,7 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.service.AnalyzerServiceImpl;
+import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.storage.ObjectStorageException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -200,6 +201,27 @@ class AnalyzerServiceTest {
     }
 
     @Test
+    void predictAndExplain_ForwardStoredOnnxFilename() {
+        Model model = model(user());
+        model.setFileName("risk.onnx");
+        when(modelRepository.findByIdAndOrganizationId(11L, 5L)).thenReturn(Optional.of(model));
+        when(objectStorageService.load("bucket", "key")).thenReturn(new byte[] { 1, 2, 3 });
+        when(restTemplate.postForObject(any(String.class), any(), eq(Map.class))).thenReturn(Map.of());
+
+        service.predict(3L, 11L, Map.of("x", 1));
+        service.explain(3L, 11L, new ExplainRequest(Map.of("x", 1), List.of()));
+
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(restTemplate, org.mockito.Mockito.times(2)).postForObject(any(String.class), captor.capture(), eq(Map.class));
+        for (Object request : captor.getAllValues()) {
+            HttpEntity<?> entity = (HttpEntity<?>) request;
+            @SuppressWarnings("unchecked")
+            MultiValueMap<String, HttpEntity<?>> body = (MultiValueMap<String, HttpEntity<?>>) entity.getBody();
+            assertEquals("risk.onnx", body.getFirst("model_file").getHeaders().getContentDisposition().getFilename());
+        }
+    }
+
+    @Test
     void predict_FallsBackToInlineBytesWhenStorageFails() {
         User user = user();
         Model model = model(user);
@@ -234,6 +256,7 @@ class AnalyzerServiceTest {
         model.setUser(user);
         model.setStorageBucket("bucket");
         model.setStorageObjectKey("key");
+        model.setFileName("model.joblib");
         return model;
     }
 
@@ -253,4 +276,3 @@ class AnalyzerServiceTest {
                 StandardCharsets.UTF_8);
     }
 }
-

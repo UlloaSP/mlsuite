@@ -1,6 +1,6 @@
 import time
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 
 from ..model_adapters import load_runtime_model_from_upload
 from ..utils.dataframe import build_prediction_dataframe, parse_record_json
@@ -20,6 +20,8 @@ async def predict(model_upload: UploadFile, data: str) -> dict[str, object]:
             started = time.perf_counter()
             probabilities = runtime.predict_classifier(frame)
             execution_time = time.perf_counter() - started
+        except HTTPException:
+            raise
         except Exception as exc:
             raise internal_runtime_error(f"Error during inference: {exc}") from exc
         return {
@@ -39,6 +41,8 @@ async def predict(model_upload: UploadFile, data: str) -> dict[str, object]:
             started = time.perf_counter()
             predictions = runtime.predict_regressor(frame)
             execution_time = time.perf_counter() - started
+        except HTTPException:
+            raise
         except Exception as exc:
             raise internal_runtime_error(f"Error during inference: {exc}") from exc
 
