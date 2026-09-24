@@ -22,6 +22,7 @@ export default defineConfig({
     },
   },
   plugins: [react(), tailwindcss()],
+  test: { maxWorkers: 4 },
   build: {
     outDir: "./dist",
     rolldownOptions: {

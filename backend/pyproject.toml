@@ -26,7 +26,8 @@ dependencies = [
 dev = ["httpx>=0.28.1", "pytest>=8.4.1"]
 
 [tool.uv.sources]
-crystal-tree = { git = "https://github.com/bramucas/crystal-tree.git"}
+# The explanation adapter uses crystal-tree 0.2 APIs; migrate it before updating this rev.
+crystal-tree = { git = "https://github.com/bramucas/crystal-tree.git", rev = "ec92d54163246dca94bb8076866ce4734885b128" }
 
 [tool.setuptools]
 package-dir = {"" = "src"}

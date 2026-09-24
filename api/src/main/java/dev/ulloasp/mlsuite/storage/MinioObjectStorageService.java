@@ -46,7 +46,7 @@ class MinioObjectStorageService implements ObjectStorageService {
                             .bucket(properties.getBucket())
                             .object(objectKey)
                             .contentType(effectiveContentType)
-                            .stream(inputStream, sizeBytes, -1)
+                            .stream(inputStream, sizeBytes, -1L)
                             .build())
                     .etag();
 
@@ -168,4 +168,3 @@ class MinioObjectStorageService implements ObjectStorageService {
         }
     }
 }
-
