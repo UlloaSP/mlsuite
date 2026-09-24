@@ -133,6 +133,26 @@ def test_zipmap_classifier_keeps_probability_label_order() -> None:
     assert sum(report["probabilities"][0]) == pytest.approx(1.0)
 
 
+def test_classifier_accepts_probabilities_before_labels() -> None:
+    model = onnx.load_model_from_string(_classifier())
+    outputs = list(model.graph.output)
+    model.graph.ClearField("output")
+    model.graph.output.extend(reversed(outputs))
+    onnx.checker.check_model(model)
+    content = model.SerializeToString()
+
+    inspected = client.post("/inspect_artifact", files={"artifact_file": _upload(content)})
+    assert inspected.status_code == 200, inspected.text
+    assert inspected.json()["type"] == "classifier"
+
+    prediction = client.post(
+        "/predict", files={"model_file": _upload(content)},
+        data={"data": json.dumps({"first": 2, "second": 1})},
+    )
+    assert prediction.status_code == 200, prediction.text
+    assert prediction.json()["reports"][0]["mapping"] == ["low", "high"]
+
+
 def test_classifier_rejects_unnormalized_scores() -> None:
     response = client.post(
         "/predict", files={"model_file": _upload(_classifier(post_transform="NONE"))},
@@ -211,6 +231,17 @@ def test_unsupported_onnx_output_is_rejected() -> None:
     response = client.post("/metadata", files={"model_file": _upload(model)})
     assert response.status_code == 400
     assert "class probabilities or one regression value" in response.json()["detail"]
+
+
+def test_fixed_batch_larger_than_one_is_rejected_during_inspection() -> None:
+    model = _model(
+        [helper.make_node("Identity", ["features"], ["prediction"])],
+        [helper.make_tensor_value_info("features", TensorProto.FLOAT, [2, 1])],
+        [helper.make_tensor_value_info("prediction", TensorProto.FLOAT, [2, 1])],
+    )
+    response = client.post("/inspect_artifact", files={"artifact_file": _upload(model)})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "ONNX inputs must accept a single row for prediction."
 
 
 def test_invalid_onnx_values_are_client_errors() -> None:

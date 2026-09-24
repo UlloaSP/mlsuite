@@ -47,13 +47,11 @@ def _class_labels(graph: onnx.GraphProto) -> list[str | int]:
 
 def _model_kind(outputs: list[ort.NodeArg], labels: list[str | int]) -> tuple[str, int | None]:
     if len(outputs) == 2 and labels:
-        label_type = outputs[0].type
-        probability_type = outputs[1].type
-        if label_type in ("tensor(int64)", "tensor(string)") and (
-            probability_type.startswith("seq(map(")
-            or probability_type in ("tensor(float)", "tensor(double)")
-        ):
-            return "classifier", 1
+        for index, output in enumerate(outputs):
+            if output.type.startswith("seq(map(") or output.type in ("tensor(float)", "tensor(double)"):
+                other = outputs[1 - index]
+                if other.type in ("tensor(int64)", "tensor(string)"):
+                    return "classifier", index
     if len(outputs) == 1 and labels and outputs[0].type.startswith("seq(map("):
         return "classifier", 0
     if len(outputs) == 1 and outputs[0].type in ("tensor(float)", "tensor(double)"):
@@ -80,6 +78,8 @@ def load_onnx_model(content: bytes) -> OnnxModel:
         dtype = INPUT_DTYPES.get(item.type)
         if len(shape) != 2 or not isinstance(shape[1], int) or shape[1] < 1 or dtype is None:
             raise bad_request("ONNX inputs must be two-dimensional numeric tensors with a fixed feature count.")
+        if isinstance(shape[0], int) and shape[0] != 1:
+            raise bad_request("ONNX inputs must accept a single row for prediction.")
         widths.append(shape[1])
         dtypes.append(dtype)
     if len(inputs) > 1 and any(width != 1 for width in widths):
