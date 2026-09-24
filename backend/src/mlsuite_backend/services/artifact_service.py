@@ -4,7 +4,7 @@ import pandas as pd
 from fastapi import UploadFile
 
 from ..config import JOBLIB_SUFFIX
-from ..model_adapters import resolve_runtime_model
+from ..model_adapters import RuntimeModel, load_runtime_model_from_upload, resolve_runtime_model
 from ..utils.errors import bad_request
 from ..utils.uploads import load_uploaded_object
 
@@ -20,9 +20,23 @@ def _dataframe_summary(
     }
 
 
+def _model_summary(filename: str, runtime: RuntimeModel) -> dict[str, Any]:
+    return {
+        "kind": "model",
+        "fileName": filename,
+        "type": runtime.kind,
+        "specificType": runtime.specific_type,
+        "library": runtime.adapter.library,
+        "features": runtime.feature_names(),
+        "featureSource": runtime.feature_metadata().source,
+    }
+
+
 async def inspect_artifact(upload: UploadFile) -> dict[str, Any]:
-    artifact = await load_uploaded_object(upload, allowed_suffix=JOBLIB_SUFFIX)
     filename = upload.filename or ""
+    if (upload.filename or "").lower().endswith(".onnx"):
+        return _model_summary(filename, await load_runtime_model_from_upload(upload))
+    artifact = await load_uploaded_object(upload, allowed_suffix=JOBLIB_SUFFIX)
 
     if isinstance(artifact, pd.DataFrame):
         return {
@@ -37,15 +51,7 @@ async def inspect_artifact(upload: UploadFile) -> dict[str, Any]:
     except Exception:
         raise bad_request("Artifact must be a supported model or pandas DataFrame.")
 
-    return {
-        "kind": "model",
-        "fileName": filename,
-        "type": runtime.kind,
-        "specificType": runtime.specific_type,
-        "library": runtime.adapter.library,
-        "features": runtime.feature_names(),
-        "featureSource": runtime.feature_metadata().source,
-    }
+    return _model_summary(filename, runtime)
 
 
 async def match_artifacts(
@@ -56,8 +62,7 @@ async def match_artifacts(
     dataframes = []
 
     for index, upload in enumerate(model_uploads):
-        artifact = await load_uploaded_object(upload, allowed_suffix=JOBLIB_SUFFIX)
-        runtime = resolve_runtime_model(artifact)
+        runtime = await load_runtime_model_from_upload(upload)
         features = runtime.feature_metadata()
         models.append(
             {

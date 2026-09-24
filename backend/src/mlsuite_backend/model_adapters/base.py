@@ -33,7 +33,7 @@ class RuntimeModel:
 
     @property
     def specific_type(self) -> str:
-        return self.model.__class__.__name__
+        return getattr(self.model, "specific_type", self.model.__class__.__name__)
 
     def feature_names(self) -> list[str]:
         return self.adapter.feature_names(self.model)

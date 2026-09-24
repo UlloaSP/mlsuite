@@ -147,7 +147,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("model_file", bytes)
-                .filename("model.joblib")
+                .filename(model.getFileName())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM);
         try {
             builder.part("data", objectMapper.writeValueAsString(data))
@@ -173,7 +173,7 @@ public class AnalyzerServiceImpl implements AnalyzerService {
 
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("model_file", bytes)
-                .filename("model.joblib")
+                .filename(model.getFileName())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM);
         try {
             builder.part("data", objectMapper.writeValueAsString(request.instance()))
@@ -231,4 +231,3 @@ public class AnalyzerServiceImpl implements AnalyzerService {
                 .orElseThrow(() -> new ModelDoesNotExistsException(modelId, userLookupService.requireById(userId).getUsername()));
     }
 }
-

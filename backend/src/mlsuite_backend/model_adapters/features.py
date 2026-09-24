@@ -35,8 +35,9 @@ def list_feature_names(model: object) -> list[str]:
 
 
 def _explicit_feature_names(model: object) -> list[str]:
-    if hasattr(model, "feature_names_in_"):
-        return [str(item) for item in getattr(model, "feature_names_in_")]
+    names = getattr(model, "feature_names_in_", None)
+    if names is not None:
+        return [str(item) for item in names]
     if hasattr(model, "get_feature_names_out"):
         return [str(item) for item in model.get_feature_names_out()]
     booster_names = _booster_feature_names(model)
