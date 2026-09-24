@@ -85,8 +85,8 @@ configuration:
         echo 'Private environment files must not be tracked.' >&2
         exit 1
       fi
-    - docker compose --env-file .env.example -f docker-compose.dev.yml config --quiet
-    - docker compose --env-file .env.example -f docker-compose.prod.yml config --quiet
+    - docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.dev.yml --profile operations config --quiet
+    - python3 deploy/test_compose_parity.py
     - python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
     - |
       curl -fsSL -o /tmp/actionlint.tar.gz \
@@ -136,7 +136,7 @@ deploy:shelob:
       git switch main
       git merge --ff-only "$1"
       test "$(git rev-parse HEAD)" = "$1"
-      docker compose --env-file .env -f docker-compose.dev.yml up -d --build
+      docker compose --env-file .env -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
       web_port=$(sed -n 's/^WEB_PORT=//p' .env | tail -n 1)
       case "$web_port" in ''|*[!0-9]*) echo 'Invalid WEB_PORT in .env' >&2; exit 1;; esac
@@ -147,7 +147,7 @@ deploy:shelob:
         fi
         sleep 5
       done
-      docker compose --env-file .env -f docker-compose.dev.yml ps
+      docker compose --env-file .env -f docker-compose.yml -f docker-compose.dev.yml ps
       echo 'Deployment did not become ready within five minutes.' >&2
       exit 1
       REMOTE
