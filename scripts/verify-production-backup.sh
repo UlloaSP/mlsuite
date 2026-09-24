@@ -75,11 +75,12 @@ trap cleanup EXIT INT TERM
 docker network create "$network" >/dev/null
 docker volume create "$postgres_volume" >/dev/null
 docker volume create "$minio_volume" >/dev/null
-docker run --rm -v "$minio_volume:/data" -v "$BACKUP_DIR:/backup:ro" postgres:17.11-alpine3.24 \
+docker run --rm -v "$minio_volume:/data" -v "$BACKUP_DIR:/backup:ro" postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 \
   sh -c 'tar -C /data -xzf /backup/minio-data.tar.gz'
 docker run -d --name "$postgres" --network "$network" -p 127.0.0.1::5432 \
   -e POSTGRES_DB=restored -e POSTGRES_USER=restore -e POSTGRES_PASSWORD=restore-pass \
-  -v "$postgres_volume:/var/lib/postgresql/data" postgres:17.11-alpine3.24 >/dev/null
+  -e PGDATA=/var/lib/postgresql/data/pgdata \
+  -v "$postgres_volume:/var/lib/postgresql/data" postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 >/dev/null
 docker run -d --name "$minio" --network "$network" -p 127.0.0.1::9000 \
   -e MINIO_ROOT_USER=restore -e MINIO_ROOT_PASSWORD=restore-secret \
   -v "$minio_volume:/data" quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z \

@@ -29,7 +29,7 @@ docker network create "$network" >/dev/null
 docker volume create "$minio_volume" >/dev/null
 docker run -d --name "$postgres" --network "$network" \
   -e POSTGRES_DB=source -e POSTGRES_USER=source -e POSTGRES_PASSWORD=source-pass \
-  postgres:17.11-alpine3.24 >/dev/null
+  postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 >/dev/null
 docker run -d --name "$minio" --network "$network" \
   -e MINIO_ROOT_USER=source -e MINIO_ROOT_PASSWORD=source-secret \
   -v "$minio_volume:/data" quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data >/dev/null
@@ -66,7 +66,7 @@ source_version=$(docker run --rm --network "$network" --entrypoint /bin/sh \
   sed -n 's/.*"versionID":"\([^"]*\)".*/\1/p')
 [[ -n "$source_version" ]]
 docker stop "$minio" >/dev/null
-docker run --rm -v "$minio_volume:/data:ro" postgres:17.11-alpine3.24 \
+docker run --rm -v "$minio_volume:/data:ro" postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 \
   tar -C /data -czf - . > "$work/minio-data.tar.gz"
 printf 'mlsuite\n' > "$work/storage.bucket"
 (cd "$work" && sha256sum postgres.dump minio-data.tar.gz storage.bucket > backup.manifest)

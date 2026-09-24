@@ -24,12 +24,14 @@ import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ArtifactIntegrityException;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
+import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 
 class PluginObjectReaderTest {
 
     private static final String KEY = "organizations/41/plugins/items/plugin.json";
     private final ObjectStorageService storage = mock(ObjectStorageService.class);
     private final PluginMetadataRepository metadata = mock(PluginMetadataRepository.class);
+    private final StorageDeletionQueue deletionQueue = mock(StorageDeletionQueue.class);
     private PluginObjectReader reader;
 
     @BeforeEach
@@ -37,7 +39,8 @@ class PluginObjectReaderTest {
         StorageProperties properties = new StorageProperties();
         properties.setBucket("plugins");
         reader = new PluginObjectReader(
-                storage, properties, new ObjectMapper().registerModule(new JavaTimeModule()), metadata);
+                storage, properties, new ObjectMapper().registerModule(new JavaTimeModule()), metadata,
+                deletionQueue);
     }
 
     @Test
@@ -108,6 +111,14 @@ class PluginObjectReaderTest {
         when(storage.loadOptional("plugins", KEY, null)).thenReturn(Optional.empty());
 
         assertThrows(PluginNotFoundException.class, () -> reader.load(41L, "plugin"));
+    }
+
+    @Test
+    void loadHidesAnObjectWhoseDeletionWasRequested() {
+        when(deletionQueue.isDeletionRequested("plugins", KEY)).thenReturn(true);
+
+        assertThrows(PluginNotFoundException.class, () -> reader.load(41L, "plugin"));
+        verify(storage, never()).loadOptional("plugins", KEY, null);
     }
 
     @Test

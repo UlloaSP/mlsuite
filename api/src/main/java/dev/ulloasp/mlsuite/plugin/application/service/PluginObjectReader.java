@@ -14,6 +14,7 @@ import dev.ulloasp.mlsuite.storage.ArtifactIntegrityException;
 import dev.ulloasp.mlsuite.storage.ArtifactIntegrityVerifier;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
+import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 
 @Component
 public class PluginObjectReader {
@@ -21,16 +22,19 @@ public class PluginObjectReader {
     private final StorageProperties properties;
     private final ObjectMapper mapper;
     private final PluginMetadataRepository metadata;
+    private final StorageDeletionQueue deletionQueue;
 
     public PluginObjectReader(
             ObjectStorageService storage,
             StorageProperties properties,
             ObjectMapper mapper,
-            PluginMetadataRepository metadata) {
+            PluginMetadataRepository metadata,
+            StorageDeletionQueue deletionQueue) {
         this.storage = storage;
         this.properties = properties;
         this.mapper = mapper;
         this.metadata = metadata;
+        this.deletionQueue = deletionQueue;
     }
 
     public List<StoredPlugin> list(Long organizationId) {
@@ -40,6 +44,7 @@ public class PluginObjectReader {
     public List<ReadPlugin> listWithIdentity(Long organizationId) {
         return storage.list(PluginStoragePaths.organizationItemsPrefix("plugins", organizationId)).stream()
                 .filter(item -> item.objectKey().endsWith(".json"))
+                .filter(item -> !deletionQueue.isDeletionRequested(properties.getBucket(), item.objectKey()))
                 .map(item -> readVerified(
                         organizationId,
                         item.objectKey(),
@@ -50,6 +55,9 @@ public class PluginObjectReader {
 
     public StoredPlugin load(Long organizationId, String id) {
         String objectKey = PluginStoragePaths.organizationItemObjectKey("plugins", organizationId, id);
+        if (deletionQueue.isDeletionRequested(properties.getBucket(), objectKey)) {
+            throw new PluginNotFoundException(id);
+        }
         return readVerified(organizationId, objectKey, id, true).plugin();
     }
 

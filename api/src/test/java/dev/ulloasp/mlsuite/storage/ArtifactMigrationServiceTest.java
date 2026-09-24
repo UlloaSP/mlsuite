@@ -89,6 +89,8 @@ class ArtifactMigrationServiceTest {
         model.setModelFile(new byte[0]);
         model.setStorageBucket("models");
         model.setStorageObjectKey("legacy-key");
+        model.setStorageEtag("etag");
+        model.setModelSizeBytes(5L);
         Model claimed = inlineModel();
         claimed.setModelFile(new byte[0]);
         when(queue.claim(anyInt(), anyLong(), anyString()))
@@ -119,6 +121,68 @@ class ArtifactMigrationServiceTest {
                 .storeAndAttach(
                         org.mockito.Mockito.eq(model), any(byte[].class),
                         org.mockito.Mockito.eq("application/octet-stream"));
+    }
+
+    @Test
+    void migrationRejectsStoredOnlyBytesThatDisagreeWithPersistedHash() {
+        Model model = inlineModel();
+        model.setModelFile(new byte[0]);
+        model.setStorageBucket("models");
+        model.setStorageObjectKey("key");
+        model.setStorageVersionId("version-1");
+        model.setModelSizeBytes(5L);
+        model.setArtifactSha256(ArtifactHash.sha256("model".getBytes()));
+        when(queue.claim(anyInt(), anyLong(), anyString()))
+                .thenReturn(Optional.of(new ArtifactMigrationWorkItem(7L, "test-worker")), Optional.empty());
+        when(models.findById(7L)).thenReturn(Optional.of(model));
+        when(storage.inspectOptional("models", "key", "version-1")).thenReturn(Optional.of(
+                new StoredObjectMetadata("models", "key", 5, "etag", "version-1", null)));
+        when(storage.load("models", "key", "version-1")).thenReturn("wrong".getBytes());
+
+        ArtifactMigrationReport report = service.migrate(properties);
+
+        assertEquals(1, report.failed());
+        assertEquals(ModelArtifactState.FAILED, model.getArtifactState());
+    }
+
+    @Test
+    void migrationRejectsStoredOnlyLegacyObjectWithoutPersistedIdentity() {
+        Model model = inlineModel();
+        model.setModelFile(new byte[0]);
+        model.setStorageBucket("models");
+        model.setStorageObjectKey("legacy-key");
+        when(queue.claim(anyInt(), anyLong(), anyString()))
+                .thenReturn(Optional.of(new ArtifactMigrationWorkItem(7L, "test-worker")), Optional.empty());
+        when(models.findById(7L)).thenReturn(Optional.of(model));
+        when(storage.inspectOptional("models", "legacy-key", null)).thenReturn(Optional.of(
+                new StoredObjectMetadata("models", "legacy-key", 5, "etag", null, null)));
+        when(storage.load("models", "legacy-key", null)).thenReturn("model".getBytes());
+
+        ArtifactMigrationReport report = service.migrate(properties);
+
+        assertEquals(1, report.failed());
+        assertEquals(ModelArtifactState.FAILED, model.getArtifactState());
+    }
+
+    @Test
+    void migrationRejectsStoredOnlyLegacyObjectWhoseEtagChanged() {
+        Model model = inlineModel();
+        model.setModelFile(new byte[0]);
+        model.setStorageBucket("models");
+        model.setStorageObjectKey("legacy-key");
+        model.setStorageEtag("original-etag");
+        model.setModelSizeBytes(5L);
+        when(queue.claim(anyInt(), anyLong(), anyString()))
+                .thenReturn(Optional.of(new ArtifactMigrationWorkItem(7L, "test-worker")), Optional.empty());
+        when(models.findById(7L)).thenReturn(Optional.of(model));
+        when(storage.inspectOptional("models", "legacy-key", null)).thenReturn(Optional.of(
+                new StoredObjectMetadata("models", "legacy-key", 5, "changed-etag", null, null)));
+        when(storage.load("models", "legacy-key", null)).thenReturn("model".getBytes());
+
+        ArtifactMigrationReport report = service.migrate(properties);
+
+        assertEquals(1, report.failed());
+        assertEquals(ModelArtifactState.FAILED, model.getArtifactState());
     }
 
     @Test

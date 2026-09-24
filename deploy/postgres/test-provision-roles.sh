@@ -19,7 +19,7 @@ trap cleanup EXIT INT TERM
 docker network create "$network" >/dev/null
 docker run -d --name "$postgres" --network "$network" \
   -e POSTGRES_DB=mlsuite -e POSTGRES_USER=mlsuite -e POSTGRES_PASSWORD=legacy-pass \
-  postgres:17.11-alpine3.24 >/dev/null
+  postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 >/dev/null
 for _ in $(seq 1 30); do
   docker exec "$postgres" pg_isready -U mlsuite -d mlsuite >/dev/null 2>&1 && break
   sleep 1
@@ -38,7 +38,7 @@ provision() {
     -e DB_LEGACY_OWNER=mlsuite -e DB_LEGACY_PASS=legacy-pass \
     -e DB_USER=mlsuite_app -e DB_PASS=app-pass \
     -e DB_MIGRATION_USER=mlsuite_migrator -e DB_MIGRATION_PASS=migrator-pass \
-    postgres:17.11-alpine3.24 /bin/sh /provision-roles.sh >/dev/null
+    postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 /bin/sh /provision-roles.sh >/dev/null
 }
 
 provision mlsuite_admin admin-pass

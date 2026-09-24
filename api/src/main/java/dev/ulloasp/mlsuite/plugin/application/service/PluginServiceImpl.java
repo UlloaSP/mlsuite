@@ -73,7 +73,7 @@ public class PluginServiceImpl implements
             PluginMetadataRepository pluginMetadataRepository,
             StorageDeletionQueue deletionQueue) {
         this.pluginObjects = new PluginObjectReader(
-                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository);
+                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository, deletionQueue);
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
         this.objectMapper = objectMapper;

@@ -19,7 +19,7 @@ class PostgresArtifactMigrationQueueTest {
     private static final String SCHEMA = "artifact_queue";
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17.11-alpine3.24")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.6")
             .withDatabaseName("mlsuite")
             .withUsername("mlsuite")
             .withPassword("mlsuite");

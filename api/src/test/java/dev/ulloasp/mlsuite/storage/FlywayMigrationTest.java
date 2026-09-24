@@ -19,7 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class FlywayMigrationTest {
 
     @Container
-    final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17.11-alpine3.24")
+    final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.6")
             .withDatabaseName("mlsuite")
             .withUsername("mlsuite")
             .withPassword("mlsuite");

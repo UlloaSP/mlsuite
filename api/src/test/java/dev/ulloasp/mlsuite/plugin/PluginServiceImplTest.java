@@ -34,6 +34,7 @@ import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StoredObjectItem;
 import dev.ulloasp.mlsuite.storage.StoredObjectMetadata;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
+import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -137,6 +138,21 @@ class PluginServiceImplTest {
         assertEquals(content.length, field.getSizeBytes());
         assertEquals(ArtifactHash.sha256(content), field.getSha256());
         assertEquals("v1", field.getStorageVersionId());
+    }
+
+    @Test
+    void deletedPluginStaysAbsentWhileObjectDeletionIsQueued() {
+        User user = new User();
+        user.setId(7L);
+        when(userLookupService.requireById(7L)).thenReturn(user);
+        when(deletionQueue.isDeletionRequested(
+                "bucket", "organizations/41/plugins/items/field.json")).thenReturn(false, true);
+
+        service.delete(7L, "field");
+        PluginPageDto page = service.list(7L, 0, 10, "all", "", "name");
+
+        assertEquals(2, page.totalItems());
+        verify(deletionQueue).enqueue("bucket", "organizations/41/plugins/items/field.json", null);
     }
 
     private byte[] bytes(StoredPlugin plugin) throws Exception {

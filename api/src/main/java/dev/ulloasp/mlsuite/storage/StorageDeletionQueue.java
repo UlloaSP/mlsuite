@@ -14,4 +14,8 @@ public class StorageDeletionQueue {
     public void enqueue(String bucket, String objectKey, String versionId) {
         tasks.save(new StorageDeletionTask(bucket, objectKey, versionId));
     }
+
+    public boolean isDeletionRequested(String bucket, String objectKey) {
+        return tasks.existsByBucketAndObjectKey(bucket, objectKey);
+    }
 }

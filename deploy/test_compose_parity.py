@@ -107,6 +107,15 @@ def main() -> None:
     assert normalize(development) == normalize(production), (
         "development and production Compose differ outside build/image selection"
     )
+    # The persistent pg_data volume on develop uses PostgreSQL 18. A major-version
+    # change requires an explicit data migration, not an image substitution.
+    postgres_image = production["services"]["postgres"]["image"]
+    assert postgres_image.startswith("postgres:18."), (
+        "the persistent PostgreSQL volume must stay on major version 18"
+    )
+    assert production["services"]["db-provision"]["image"] == postgres_image, (
+        "database provisioner must use the server's PostgreSQL version"
+    )
     for name in APP_SERVICES:
         image = production["services"][name].get("image", "")
         assert IMAGE_DIGEST.fullmatch(image), f"production release must pin {name} by digest"

@@ -123,7 +123,7 @@ prune_backups "$((retention - 1))"
 # The single-quoted program must expand inside the measurement container.
 # shellcheck disable=SC2016
 volume_stats=$(MSYS_NO_PATHCONV=1 "$DOCKER_BIN" run --rm \
-  -v "$pg_volume:/pg:ro" -v "$minio_volume:/minio:ro" postgres:17.11-alpine3.24 \
+  -v "$pg_volume:/pg:ro" -v "$minio_volume:/minio:ro" postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 \
   sh -c '
     source_kib=$(du -sk /pg /minio | awk "{total += \$1} END {print total}")
     pg_total=$(df -Pk /pg | awk "NR==2 {print \$2}")
@@ -168,7 +168,7 @@ fi
 
 "${compose[@]}" stop minio >/dev/null
 minio_stopped=true
-MSYS_NO_PATHCONV=1 "$DOCKER_BIN" run --rm -v "$minio_volume:/data:ro" postgres:17.11-alpine3.24 \
+MSYS_NO_PATHCONV=1 "$DOCKER_BIN" run --rm -v "$minio_volume:/data:ro" postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 \
   tar -C /data -czf - . > "$partial/minio-data.tar.gz"
 [[ -s "$partial/minio-data.tar.gz" ]] || { echo "MinIO backup is empty" >&2; exit 1; }
 printf '%s\n' "$bucket" > "$partial/storage.bucket"

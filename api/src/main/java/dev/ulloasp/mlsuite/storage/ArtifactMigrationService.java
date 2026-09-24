@@ -189,6 +189,25 @@ public class ArtifactMigrationService {
                 .orElseThrow(() -> new ArtifactIntegrityException("Stored object is missing"));
         byte[] stored = objectStorage.load(
                 model.getStorageBucket(), model.getStorageObjectKey(), metadata.versionId());
+        if (metadata.sizeBytes() != stored.length) {
+            throw new ArtifactIntegrityException("Stored object size changed while reading model " + model.getId());
+        }
+        if (model.getStorageVersionId() != null
+                && !model.getStorageVersionId().equals(metadata.versionId())) {
+            throw new ArtifactIntegrityException("Stored object version mismatch for model " + model.getId());
+        }
+        ArtifactIntegrityVerifier.verify(
+                "model " + model.getId(), model.getModelSizeBytes(), model.getArtifactSha256(), stored);
+        if (model.getArtifactSha256() == null) {
+            if (model.getModelSizeBytes() == null || model.getStorageEtag() == null
+                    || model.getStorageEtag().isBlank()) {
+                throw new ArtifactIntegrityException("Stored-only model " + model.getId()
+                        + " has no persisted artifact identity");
+            }
+            if (!model.getStorageEtag().equals(metadata.etag())) {
+                throw new ArtifactIntegrityException("Stored object ETag mismatch for model " + model.getId());
+            }
+        }
         if (metadata.versionId() == null || metadata.versionId().isBlank()) {
             writer.storeAndAttach(model, stored, "application/octet-stream");
             return;
