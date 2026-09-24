@@ -50,22 +50,33 @@ manifest, Compose/image agreement, and registry availability. It does not overwr
 an existing download directory. It uses GitHub's authenticated metadata checks;
 it does not perform independent cryptographic verification of attestations.
 
-The Compose asset overrides the four application image references and platform.
-It is intended to accompany `docker-compose.prod.yml`; PostgreSQL, MinIO, secrets,
+The Compose asset provides all application service references and platform; the
+base production override deliberately contains no fallback application images. The
+single API image is reused by `db-migrate`, `artifact-migrate`, and `spring-app`
+so migrations always run from the exact digest being promoted.
+It is intended to accompany `docker-compose.yml` and `docker-compose.prod.yml`;
+PostgreSQL, MinIO, secrets,
 volumes, networking and host requirements are outside this application manifest.
 You can inspect the selected images without starting services:
 
 ```bash
-docker compose --env-file .env -f docker-compose.prod.yml \
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml \
   -f <download-directory>/docker-compose.release.yml config --images
 ```
 
-This step supplies release artifacts, not the deployment procedure. Before using
-them for managed dev/production, make the deployment command and ops-agent consume
-the same effective configuration. Currently ops-agent reads only the base Compose
-file; its START operation can reconcile that configuration without this override.
-Multi-environment wiring, migrations, runtime readiness, restore, promotion and
-rollback remain the next implementation stages.
+This step supplies release artifacts, not the deployment procedure. Keep the
+downloaded override inside the repository path named by `RELEASE_COMPOSE`; both
+the cutover wizard and ops-agent then consume the same digest-pinned configuration.
+The base production Compose file gates the API on a one-shot Flyway migration
+and deep readiness checks. The operator must still provide environment-specific
+backup, restore, promotion and rollback orchestration; follow the production
+database and artifact rollout in `README.md` before starting the release.
+The initial on-premise contract is `local-single-disk`. The cutover wizard creates
+a coordinated local PostgreSQL plus MinIO backup, verifies it through an isolated
+restore rehearsal, rejects a rehearsal that exceeds `RECOVERY_RTO_MINUTES`, and
+requires explicit acceptance that loss of the only disk is unrecoverable. Its
+RPO/RTO apply only to logical recovery; this is not PITR or disaster recovery. Add
+another physical failure domain before making either claim.
 
 ## Failure and retry behavior
 

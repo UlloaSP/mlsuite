@@ -11,7 +11,7 @@ public class StorageProperties {
     private String secretKey;
     private String bucket;
     private boolean autoCreateBucket;
-    private boolean backfillOnStartup;
+    private boolean retainInlineCopy = true;
 
     public boolean isEnabled() {
         return enabled;
@@ -61,12 +61,11 @@ public class StorageProperties {
         this.autoCreateBucket = autoCreateBucket;
     }
 
-    public boolean isBackfillOnStartup() {
-        return backfillOnStartup;
+    public boolean isRetainInlineCopy() {
+        return retainInlineCopy;
     }
 
-    public void setBackfillOnStartup(boolean backfillOnStartup) {
-        this.backfillOnStartup = backfillOnStartup;
+    public void setRetainInlineCopy(boolean retainInlineCopy) {
+        this.retainInlineCopy = retainInlineCopy;
     }
 }
-

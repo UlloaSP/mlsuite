@@ -13,6 +13,7 @@ export interface ModelDto {
   createdAt: string;
   updatedAt: string;
   archivedAt: string | null;
+  version: number;
   updatedByName?: string | null;
   updatedByEmail?: string | null;
   updatedByAvatarUrl?: string | null;
@@ -39,6 +40,12 @@ export interface ModelPageDto {
 export interface ModelNameRequest {
   id: string;
   name: string;
+  version?: number;
+}
+
+export interface ModelVersionRequest {
+  id: string;
+  version: number;
 }
 
 export interface CreateModelRequest {

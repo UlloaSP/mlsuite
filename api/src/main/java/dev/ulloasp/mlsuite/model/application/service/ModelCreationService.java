@@ -63,7 +63,8 @@ public class ModelCreationService implements ModelCreationUseCase {
             return;
         }
         try {
-            objectStorageService.delete(model.getStorageBucket(), model.getStorageObjectKey());
+            objectStorageService.delete(
+                    model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());
         } catch (RuntimeException cleanupFailure) {
             original.addSuppressed(cleanupFailure);
         }

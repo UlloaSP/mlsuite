@@ -29,7 +29,8 @@ const model = (fields: unknown[], reports: unknown[] = [], id = "model-1"): Mode
   inputSchema: { fields: withMappedTo(fields), reports: withMappedTo(reports) },
   createdAt: "2026-06-02T00:00:00Z",
   updatedAt: "2026-06-02T00:00:00Z",
-  archivedAt: null,
+    archivedAt: null,
+    version: 0,
   fieldCount: fields.length,
   reportCount: reports.length,
 });

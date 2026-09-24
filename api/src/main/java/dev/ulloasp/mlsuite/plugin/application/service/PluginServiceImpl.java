@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
@@ -29,16 +30,20 @@ import dev.ulloasp.mlsuite.plugin.application.port.in.GetPluginStatsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.UploadPluginUseCase;
-import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginStoragePaths;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
+import dev.ulloasp.mlsuite.storage.StoredObject;
+import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class PluginServiceImpl implements
@@ -59,6 +64,8 @@ public class PluginServiceImpl implements
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final PluginMetadataRepository pluginMetadataRepository;
+    private final StorageDeletionQueue deletionQueue;
+    private final OrganizationRepository organizations;
 
     public PluginServiceImpl(
             ObjectStorageService objectStorageService,
@@ -67,8 +74,11 @@ public class PluginServiceImpl implements
             UserLookupService userLookupService,
             WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
-            PluginMetadataRepository pluginMetadataRepository) {
-        this.pluginObjects = new PluginObjectReader(objectStorageService, storageProperties, objectMapper);
+            PluginMetadataRepository pluginMetadataRepository,
+            StorageDeletionQueue deletionQueue,
+            PluginObjectReader pluginObjects,
+            OrganizationRepository organizations) {
+        this.pluginObjects = pluginObjects;
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
         this.objectMapper = objectMapper;
@@ -76,13 +86,17 @@ public class PluginServiceImpl implements
         this.workspaceAccessService = workspaceAccessService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.pluginMetadataRepository = pluginMetadataRepository;
+        this.deletionQueue = deletionQueue;
+        this.organizations = organizations;
     }
 
     @Override
+    @Transactional
     public PluginDto upload(Long userId, MultipartFile file) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
+        organizations.lockById(organization.getId()).orElseThrow();
         try {
             String id = UUID.randomUUID().toString();
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -97,12 +111,20 @@ public class PluginServiceImpl implements
                     user.getEmail(),
                     user.getAvatarUrl(),
                     new String(file.getBytes(), StandardCharsets.UTF_8));
-            objectStorageService.store(
+            StoredObject uploaded = objectStorageService.store(
                     itemObjectKey(organization.getId(), id),
                     stored.fileName(),
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
-            persistMetadata(organization, stored, user);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status != STATUS_COMMITTED) {
+                        objectStorageService.delete(uploaded.bucket(), uploaded.objectKey(), uploaded.versionId());
+                    }
+                }
+            });
+            persistMetadata(organization, stored, user, uploaded, null);
             return toDto(stored);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
@@ -110,6 +132,7 @@ public class PluginServiceImpl implements
     }
 
     @Override
+    @Transactional
     public PluginPageDto list(Long userId, int page, int size, String type, String search, String sort) {
         List<PluginDto> allItems = listAll(userId);
         List<PluginDto> visibleItems = allItems.stream()
@@ -130,6 +153,7 @@ public class PluginServiceImpl implements
     }
 
     @Override
+    @Transactional
     public PluginStatsDto stats(Long userId) {
         List<PluginDto> allItems = listAll(userId);
         return new PluginStatsDto(
@@ -138,17 +162,20 @@ public class PluginServiceImpl implements
     }
 
     @Override
+    @Transactional
     public List<PluginDto> listAll(Long userId) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginView(userId, organization.getId());
-        Map<String, StoredPlugin> storedItems = new LinkedHashMap<>();
+        // Catalog backfill and deletion must agree on one visible plugin state.
+        organizations.lockById(organization.getId()).orElseThrow();
+        Map<String, PluginObjectReader.ReadPlugin> storedItems = new LinkedHashMap<>();
         Map<String, String> origins = new LinkedHashMap<>();
-        pluginObjects.list(organization.getId())
+        pluginObjects.listWithIdentity(organization.getId())
                 .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         List<PluginDto> catalog = new ArrayList<>();
         storedItems.values().forEach(item -> {
-            persistMetadata(organization, item, null);
-            catalog.add(toDto(item));
+            persistMetadata(organization, item.plugin(), null, null, item);
+            catalog.add(toDto(item.plugin()));
         });
         catalog.sort(Comparator
                 .comparing(PluginDto::updatedAt, Comparator.reverseOrder())
@@ -157,56 +184,79 @@ public class PluginServiceImpl implements
     }
 
     @Override
+    @Transactional
     public void delete(Long userId, String id) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
+        organizations.lockById(organization.getId()).orElseThrow();
         readStored(user, id);
-        objectStorageService.delete(storageProperties.getBucket(), itemObjectKey(organization.getId(), id));
-        pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId())
-                .ifPresent(pluginMetadataRepository::delete);
+        Optional<PluginMetadata> metadata = pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId());
+        deletionQueue.enqueue(
+                storageProperties.getBucket(),
+                itemObjectKey(organization.getId(), id),
+                metadata.map(PluginMetadata::getStorageVersionId).orElse(null));
+        metadata.ifPresent(pluginMetadataRepository::delete);
     }
 
-    private void persistMetadata(Organization organization, StoredPlugin stored, User updatedBy) {
+    private void persistMetadata(
+            Organization organization,
+            StoredPlugin stored,
+            User updatedBy,
+            StoredObject uploaded,
+            PluginObjectReader.ReadPlugin read) {
         PluginDescriptor descriptor = describe(stored.source());
-        pluginMetadataRepository.save(new PluginMetadata(
-                stored.id(),
-                organization,
-                itemObjectKey(organization.getId(), stored.id()),
-                stored.fileName(),
-                stored.contentType(),
-                stored.sizeBytes(),
-                stored.createdAt(),
-                stored.updatedAt(),
-                updatedBy,
-                descriptor.type(),
-                descriptor.kind()));
+        Optional<PluginMetadata> existing = pluginMetadataRepository
+                .findByIdAndOrganizationId(stored.id(), organization.getId());
+        if (uploaded == null && existing.isPresent()) {
+            return;
+        }
+        PluginMetadata metadata = existing.orElseGet(PluginMetadata::new);
+        metadata.setId(stored.id());
+        metadata.setOrganization(organization);
+        metadata.setObjectKey(itemObjectKey(organization.getId(), stored.id()));
+        metadata.setFileName(stored.fileName());
+        metadata.setContentType(stored.contentType());
+        metadata.setSizeBytes(stored.sizeBytes());
+        metadata.setCreatedAt(stored.createdAt());
+        metadata.setUpdatedAt(stored.updatedAt());
+        if (updatedBy != null) {
+            metadata.setUpdatedBy(updatedBy);
+        }
+        metadata.setPluginType(descriptor.type());
+        metadata.setKind(descriptor.kind());
+        if (uploaded != null) {
+            metadata.setSizeBytes(uploaded.sizeBytes());
+            metadata.setSha256(uploaded.sha256());
+            metadata.setStorageVersionId(uploaded.versionId());
+        } else if (read != null) {
+            metadata.setSizeBytes(read.sizeBytes());
+            metadata.setSha256(read.sha256());
+            metadata.setStorageVersionId(read.versionId());
+        }
+        pluginMetadataRepository.save(metadata);
     }
 
     private StoredPlugin readStored(User user, String id) {
         Long organizationId = workspaceAccessService.requireCurrentOrganization(user.getId()).getId();
-        Optional<byte[]> bytes =
-                objectStorageService.loadOptional(storageProperties.getBucket(), itemObjectKey(organizationId, id));
-        if (bytes.isPresent()) {
-            return pluginObjects.decode(bytes.get());
-        }
-        throw new PluginNotFoundException(id);
+        return pluginObjects.load(organizationId, id);
     }
 
     private void putStored(
-            Map<String, StoredPlugin> storedItems,
+            Map<String, PluginObjectReader.ReadPlugin> storedItems,
             Map<String, String> origins,
-            StoredPlugin item,
+            PluginObjectReader.ReadPlugin item,
             String origin,
             boolean replaceExisting) {
-        String existingOrigin = origins.get(item.id());
+        String id = item.plugin().id();
+        String existingOrigin = origins.get(id);
         if (existingOrigin == null || replaceExisting) {
-            storedItems.put(item.id(), item);
-            origins.put(item.id(), origin);
+            storedItems.put(id, item);
+            origins.put(id, origin);
             return;
         }
         if (!ROOT_PREFIX.equals(existingOrigin) && !existingOrigin.equals(origin)) {
-            throw new IllegalStateException("Duplicate legacy plugin id '" + item.id() + "' detected across storage roots.");
+            throw new IllegalStateException("Duplicate legacy plugin id '" + id + "' detected across storage roots.");
         }
     }
 

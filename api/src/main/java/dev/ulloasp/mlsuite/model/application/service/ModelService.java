@@ -21,12 +21,11 @@ public interface ModelService extends ModelCatalogUseCase {
 
     public ModelPageDto getModelPage(Long userId, int page, int size, String search, String sort, String status);
 
-    public Model renameModel(Long userId, Long modelId, String name);
+    public Model renameModel(Long userId, Long modelId, String name, Long expectedVersion);
 
-    public Model archiveModel(Long userId, Long modelId);
+    public Model archiveModel(Long userId, Long modelId, Long expectedVersion);
 
     public Model duplicateModel(Long userId, Long modelId, String name);
 
-    public void deleteModel(Long userId, Long modelId);
+    public void deleteModel(Long userId, Long modelId, Long expectedVersion);
 }
-

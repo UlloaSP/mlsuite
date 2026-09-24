@@ -9,7 +9,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,7 +36,10 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
-import dev.ulloasp.mlsuite.storage.StoredObject;
+import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
+import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
+import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
+import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -58,9 +60,14 @@ public class ModelServiceImpl implements ModelService {
     private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final ModelCatalogReader catalogReader;
+    private final ModelArtifactWriter artifactWriter;
+    private final ModelArtifactContentReader artifactReader;
+    private final StorageDeletionQueue deletionQueue;
 
     @Value("${analyzer.url}")
     private String analyzerUrl;
+    @Value("${model.mutations.require-version:false}")
+    private boolean requireMutationVersion;
 
     public ModelServiceImpl(
             UserLookupService userLookupService,
@@ -69,7 +76,10 @@ public class ModelServiceImpl implements ModelService {
             SchemaModelBindingRepository bindingRepository,
             PredictionResultRepository resultRepository,
             WorkspaceAccessService workspaceAccessService,
-            WorkspaceAuthorizationService workspaceAuthorizationService) {
+            WorkspaceAuthorizationService workspaceAuthorizationService,
+            ModelArtifactWriter artifactWriter,
+            ModelArtifactContentReader artifactReader,
+            StorageDeletionQueue deletionQueue) {
         this.userLookupService = userLookupService;
         this.modelRepository = modelRepository;
         this.objectStorageService = objectStorageService;
@@ -77,6 +87,9 @@ public class ModelServiceImpl implements ModelService {
         this.resultRepository = resultRepository;
         this.workspaceAccessService = workspaceAccessService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
+        this.artifactWriter = artifactWriter;
+        this.artifactReader = artifactReader;
+        this.deletionQueue = deletionQueue;
         this.catalogReader = new ModelCatalogReader(modelRepository, workspaceAccessService, workspaceAuthorizationService);
     }
 
@@ -121,15 +134,9 @@ public class ModelServiceImpl implements ModelService {
         String fileName = response.get("fileName") != null
                 ? response.get("fileName").toString()
                 : reusableModelFile.getOriginalFilename();
-        String objectKey = buildObjectKey(organization.getId(), name, fileName);
-        StoredObject storedObject;
+        byte[] artifactBytes;
         try {
-            storedObject = objectStorageService.store(
-                    objectKey,
-                    fileName,
-                    reusableModelFile.getContentType(),
-                    reusableModelFile.getInputStream(),
-                    reusableModelFile.getSize());
+            artifactBytes = reusableModelFile.getBytes();
         } catch (Exception ex) {
             throw new IllegalArgumentException("Model file is empty or invalid", ex);
         }
@@ -142,16 +149,16 @@ public class ModelServiceImpl implements ModelService {
         model.setType(type);
         model.setSpecificType(specificType);
         model.setFileName(fileName);
-        model.setModelFile(new byte[0]);
-        model.setStorageBucket(storedObject.bucket());
-        model.setStorageObjectKey(storedObject.objectKey());
-        model.setStorageEtag(storedObject.etag());
-        model.setModelSizeBytes(storedObject.sizeBytes());
+        model.setModelFile(artifactBytes);
+        model.setModelSizeBytes((long) artifactBytes.length);
+        model.setArtifactState(ModelArtifactState.INLINE_ONLY);
 
         try {
+            modelRepository.saveAndFlush(model);
+            artifactWriter.storeAndAttach(model, artifactBytes, reusableModelFile.getContentType());
             return modelRepository.save(model);
         } catch (RuntimeException ex) {
-            objectStorageService.delete(storedObject.bucket(), storedObject.objectKey());
+            deleteStoredObject(model, ex);
             throw ex;
         }
     }
@@ -167,10 +174,11 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public Model renameModel(Long userId, Long modelId, String name) {
+    public Model renameModel(Long userId, Long modelId, String name, Long expectedVersion) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireEdit(userId, organization.getId());
         Model model = requireModel(userId, organization.getId(), modelId);
+        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
         String nextName = normalizeName(name);
         if (modelRepository.existsByNameAndOrganizationIdAndIdNot(nextName, organization.getId(), modelId)) {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
@@ -181,10 +189,11 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
-    public Model archiveModel(Long userId, Long modelId) {
+    public Model archiveModel(Long userId, Long modelId, Long expectedVersion) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireEdit(userId, organization.getId());
         Model model = requireModel(userId, organization.getId(), modelId);
+        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
         if (model.getArchivedAt() == null) {
             model.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
         }
@@ -203,46 +212,31 @@ public class ModelServiceImpl implements ModelService {
             throw new ModelAlreadyExistsException(nextName, organization.getName());
         }
 
-        byte[] bytes = loadModelBytes(source);
-        String objectKey = buildObjectKey(organization.getId(), nextName, source.getFileName());
-        StoredObject stored = objectStorageService.store(
-                objectKey,
-                source.getFileName(),
-                "application/octet-stream",
-                bytes);
-        Model copy = copyModel(user, organization, source, nextName, stored);
+        byte[] bytes = artifactReader.loadVerified(source);
+        Model copy = copyModel(user, organization, source, nextName, bytes);
         try {
+            modelRepository.saveAndFlush(copy);
+            artifactWriter.storeAndAttach(copy, bytes, "application/octet-stream");
             return modelRepository.save(copy);
         } catch (RuntimeException ex) {
-            objectStorageService.delete(stored.bucket(), stored.objectKey());
+            deleteStoredObject(copy, ex);
             throw ex;
         }
     }
 
     @Override
-    public void deleteModel(Long userId, Long modelId) {
+    public void deleteModel(Long userId, Long modelId, Long expectedVersion) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         requireDelete(userId, organization.getId());
         Model model = requireModel(userId, organization.getId(), modelId);
+        ModelVersionGuard.requireCurrent(model, expectedVersion, requireMutationVersion);
         if (bindingRepository.existsByModelId(modelId) || resultRepository.existsByModelId(modelId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Model is used by schemas or prediction runs. Archive it instead.");
         }
-        modelRepository.delete(model);
         if (model.hasStoredObject()) {
-            objectStorageService.delete(model.getStorageBucket(), model.getStorageObjectKey());
+            deletionQueue.enqueue(model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());
         }
-    }
-
-    private String buildObjectKey(Long organizationId, String modelName, String fileName) {
-        String safeModelName = sanitizePathSegment(modelName);
-        String safeFileName = sanitizePathSegment(fileName != null ? fileName : "model.bin");
-        return "organizations/" + organizationId + "/models/" + safeModelName + "/" + UUID.randomUUID() + "/" + safeFileName;
-    }
-
-    private String sanitizePathSegment(String value) {
-        return value
-                .replaceAll("[^a-zA-Z0-9._-]", "_")
-                .replaceAll("_+", "_");
+        modelRepository.delete(model);
     }
 
     private Model requireModel(Long userId, Long organizationId, Long modelId) {
@@ -275,14 +269,7 @@ public class ModelServiceImpl implements ModelService {
         return name.strip();
     }
 
-    private byte[] loadModelBytes(Model model) {
-        if (model.hasStoredObject()) {
-            return objectStorageService.load(model.getStorageBucket(), model.getStorageObjectKey());
-        }
-        return model.getModelFile();
-    }
-
-    private Model copyModel(User user, Organization organization, Model source, String name, StoredObject stored) {
+    private Model copyModel(User user, Organization organization, Model source, String name, byte[] bytes) {
         Model copy = new Model();
         copy.setUser(user);
         copy.setUpdatedBy(user);
@@ -291,13 +278,23 @@ public class ModelServiceImpl implements ModelService {
         copy.setType(source.getType());
         copy.setSpecificType(source.getSpecificType());
         copy.setFileName(source.getFileName());
-        copy.setModelFile(new byte[0]);
-        copy.setStorageBucket(stored.bucket());
-        copy.setStorageObjectKey(stored.objectKey());
-        copy.setStorageEtag(stored.etag());
-        copy.setModelSizeBytes(stored.sizeBytes());
+        copy.setModelFile(bytes);
+        copy.setModelSizeBytes((long) bytes.length);
+        copy.setArtifactState(ModelArtifactState.INLINE_ONLY);
         copy.setInputSchema(source.getInputSchema());
         return copy;
+    }
+
+    private void deleteStoredObject(Model model, RuntimeException original) {
+        if (!model.hasStoredObject()) {
+            return;
+        }
+        try {
+            objectStorageService.delete(
+                    model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());
+        } catch (RuntimeException cleanupFailure) {
+            original.addSuppressed(cleanupFailure);
+        }
     }
 
 }

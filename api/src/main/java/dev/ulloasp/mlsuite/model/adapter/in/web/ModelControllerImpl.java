@@ -81,18 +81,20 @@ public class ModelControllerImpl implements ModelController {
     }
 
     @Override
-    public ResponseEntity<ModelDto> rename(Authentication authentication, Long modelId, String name) {
+    public ResponseEntity<ModelDto> rename(Authentication authentication, Long modelId, String name, Long version) {
         return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.renameModel(
                 currentUserResolver.resolve(authentication).userId(),
                 modelId,
-                name)));
+                name,
+                version)));
     }
 
     @Override
-    public ResponseEntity<ModelDto> archive(Authentication authentication, Long modelId) {
+    public ResponseEntity<ModelDto> archive(Authentication authentication, Long modelId, Long version) {
         return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.archiveModel(
                 currentUserResolver.resolve(authentication).userId(),
-                modelId)));
+                modelId,
+                version)));
     }
 
     @Override
@@ -104,9 +106,8 @@ public class ModelControllerImpl implements ModelController {
     }
 
     @Override
-    public ResponseEntity<Void> delete(Authentication authentication, Long modelId) {
-        modelCatalogUseCase.deleteModel(currentUserResolver.resolve(authentication).userId(), modelId);
+    public ResponseEntity<Void> delete(Authentication authentication, Long modelId, Long version) {
+        modelCatalogUseCase.deleteModel(currentUserResolver.resolve(authentication).userId(), modelId, version);
         return ResponseEntity.noContent().build();
     }
 }
-

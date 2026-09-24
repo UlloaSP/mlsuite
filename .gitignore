@@ -61,6 +61,8 @@ ops-agent/.venv/
 .env.*
 !.env.example
 *.env.backup
+backups/
+docker-compose.release.yml
 
 # Generated browser QA artifacts
 .playwright-cli/

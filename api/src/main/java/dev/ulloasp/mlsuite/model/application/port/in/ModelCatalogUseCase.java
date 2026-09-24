@@ -15,11 +15,11 @@ public interface ModelCatalogUseCase {
 
     ModelPageDto getModelPage(Long userId, int page, int size, String search, String sort, String status);
 
-    Model renameModel(Long userId, Long modelId, String name);
+    Model renameModel(Long userId, Long modelId, String name, Long expectedVersion);
 
-    Model archiveModel(Long userId, Long modelId);
+    Model archiveModel(Long userId, Long modelId, Long expectedVersion);
 
     Model duplicateModel(Long userId, Long modelId, String name);
 
-    void deleteModel(Long userId, Long modelId);
+    void deleteModel(Long userId, Long modelId, Long expectedVersion);
 }

@@ -1,0 +1,242 @@
+# Shared service topology. Always combine this file with the dev or prod image override.
+networks:
+  appnet:
+
+
+volumes:
+  pg_data:
+  minio_data:
+
+
+services:
+  ops-agent:
+    environment:
+      OPS_AGENT_HOST: ${OPS_AGENT_HOST}
+      OPS_AGENT_PORT: ${OPS_AGENT_PORT}
+      OPS_AGENT_SHARED_SECRET: ${OPS_AGENT_SHARED_SECRET}
+      OPS_AGENT_DOCKER_BIN: ${OPS_AGENT_DOCKER_BIN}
+      OPS_AGENT_COMPOSE_FILE: /workspace/docker-compose.yml
+      OPS_AGENT_COMPOSE_PROJECT: ${OPS_AGENT_COMPOSE_PROJECT}
+      OPS_AGENT_MANAGED_SERVICES: ${OPS_AGENT_MANAGED_SERVICES}
+      OPS_AGENT_SAMPLE_INTERVAL_SECONDS: ${OPS_AGENT_SAMPLE_INTERVAL_SECONDS}
+      OPS_AGENT_RETENTION_MINUTES: ${OPS_AGENT_RETENTION_MINUTES}
+      OPS_AGENT_TERMINAL_SERVICES: ${OPS_AGENT_TERMINAL_SERVICES}
+      OPS_AGENT_TERMINAL_IDLE_MINUTES: ${OPS_AGENT_TERMINAL_IDLE_MINUTES}
+      OPS_AGENT_TERMINAL_MAX_SESSIONS: ${OPS_AGENT_TERMINAL_MAX_SESSIONS}
+      OPS_AGENT_LOG_TAIL_LINES: ${OPS_AGENT_LOG_TAIL_LINES}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace:ro
+    networks: [ appnet ]
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+    environment:
+      POSTGRES_DB: ${DB_PROD}
+      POSTGRES_USER: ${DB_ADMIN_USER}
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASS}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - ${DB_HOST_PORT}:5432
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "grep -qx postgres /proc/1/comm && pg_isready -U ${DB_ADMIN_USER} -d ${DB_PROD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [ appnet ]
+    restart: unless-stopped
+
+  db-provision:
+    image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+    command: [ "/bin/sh", "/usr/local/bin/provision-roles.sh" ]
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${DB_PROD}
+      PGUSER: ${DB_ADMIN_USER}
+      PGPASSWORD: ${DB_ADMIN_PASS}
+      DB_ADMIN_USER: ${DB_ADMIN_USER}
+      DB_ADMIN_PASS: ${DB_ADMIN_PASS}
+      DB_LEGACY_OWNER: ${DB_LEGACY_OWNER}
+      DB_LEGACY_PASS: ${DB_LEGACY_PASS}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_MIGRATION_USER: ${DB_MIGRATION_USER}
+      DB_MIGRATION_PASS: ${DB_MIGRATION_PASS}
+    volumes:
+      - ./deploy/postgres/provision-roles.sh:/usr/local/bin/provision-roles.sh:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [ appnet ]
+    restart: "no"
+
+  py-analyzer:
+    environment:
+      PYTHON_HOST: ${PYTHON_HOST}
+      PYTHON_PORT: ${PYTHON_PORT}
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [ appnet ]
+    restart: unless-stopped
+
+  minio:
+    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+    command: server /data --console-address "${MINIO_CONSOLE_ADDRESS}"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/ready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [ appnet ]
+    restart: unless-stopped
+
+  minio-init:
+    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+    entrypoint: [ "/bin/sh", "/config/provision.sh" ]
+    environment:
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+    volumes:
+      - ./deploy/minio/provision.sh:/config/provision.sh:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks: [ appnet ]
+    restart: "no"
+
+  db-migrate:
+    environment:
+      MLSUITE_MODE: migrate
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      LOG_PATH: ${LOG_PATH}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_PROD: ${DB_PROD}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_MIGRATION_USER: ${DB_MIGRATION_USER}
+      DB_MIGRATION_PASS: ${DB_MIGRATION_PASS}
+      FLYWAY_ENABLED: "true"
+      FLYWAY_BASELINE_ON_MIGRATE: ${FLYWAY_BASELINE_ON_MIGRATE:-false}
+      FLYWAY_BASELINE_VERSION: ${FLYWAY_BASELINE_VERSION:-1}
+    depends_on:
+      db-provision:
+        condition: service_completed_successfully
+    networks: [ appnet ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"
+
+  artifact-migrate:
+    profiles: [ operations ]
+    environment:
+      MLSUITE_MODE: artifact-migrate
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      LOG_PATH: ${LOG_PATH}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_PROD: ${DB_PROD}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-10}
+      DB_POOL_MIN_IDLE: ${DB_POOL_MIN_IDLE:-2}
+      DB_POOL_CONNECTION_TIMEOUT_MS: ${DB_POOL_CONNECTION_TIMEOUT_MS:-30000}
+      FLYWAY_ENABLED: "false"
+      STORAGE_ENABLED: "true"
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_AUTO_CREATE_BUCKET: "false"
+      STORAGE_RETAIN_INLINE_COPY: "true"
+      ARTIFACT_MIGRATION_COMMAND: ${ARTIFACT_MIGRATION_COMMAND:-status}
+      ARTIFACT_MIGRATION_MAX_ATTEMPTS: ${ARTIFACT_MIGRATION_MAX_ATTEMPTS:-5}
+      ARTIFACT_MIGRATION_STALE_AFTER_SECONDS: ${ARTIFACT_MIGRATION_STALE_AFTER_SECONDS:-900}
+      ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS: ${ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS:-86400}
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    networks: [ appnet ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"
+
+  spring-app:
+    environment:
+      SPRING_PORT: ${SPRING_PORT}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      LOG_PATH: ${LOG_PATH}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_PROD: ${DB_PROD}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-10}
+      DB_POOL_MIN_IDLE: ${DB_POOL_MIN_IDLE:-2}
+      DB_POOL_CONNECTION_TIMEOUT_MS: ${DB_POOL_CONNECTION_TIMEOUT_MS:-30000}
+      FLYWAY_ENABLED: "false"
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
+      ANALYZER_BASE_URL: ${ANALYZER_BASE_URL}
+      REVIEW_LINK_SECRET: ${REVIEW_LINK_SECRET}
+      STORAGE_ENABLED: ${STORAGE_ENABLED}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET}
+      STORAGE_RETAIN_INLINE_COPY: ${STORAGE_RETAIN_INLINE_COPY}
+      STORAGE_DELETION_ENABLED: ${STORAGE_DELETION_ENABLED}
+      STORAGE_DELETION_BATCH_SIZE: ${STORAGE_DELETION_BATCH_SIZE:-20}
+      STORAGE_DELETION_STALE_AFTER_SECONDS: ${STORAGE_DELETION_STALE_AFTER_SECONDS:-300}
+      MODEL_MUTATIONS_REQUIRE_VERSION: ${MODEL_MUTATIONS_REQUIRE_VERSION:-true}
+      MLSUITE_SUPERADMIN_EMAIL: ${MLSUITE_SUPERADMIN_EMAIL}
+      MLSUITE_SUPERADMIN_PASSWORD: ${MLSUITE_SUPERADMIN_PASSWORD}
+      MLSUITE_SUPERADMIN_FULL_NAME: ${MLSUITE_SUPERADMIN_FULL_NAME}
+      MLSUITE_SUPERADMIN_USERNAME: ${MLSUITE_SUPERADMIN_USERNAME}
+      OPS_AGENT_BASE_URL: ${OPS_AGENT_BASE_URL}
+      OPS_AGENT_SHARED_SECRET: ${OPS_AGENT_SHARED_SECRET}
+    depends_on:
+      ops-agent:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O - http://localhost:${SPRING_PORT}/actuator/health/readiness >/dev/null" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [ appnet ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    ports:
+      - ${WEB_PORT}:5173
+    depends_on:
+      spring-app:
+        condition: service_healthy
+    networks: [ appnet ]
+    restart: unless-stopped

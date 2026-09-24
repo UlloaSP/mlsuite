@@ -11,6 +11,7 @@ import java.util.Map;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+
 public record ModelDto(
         Long id,
         String name,
@@ -21,6 +22,7 @@ public record ModelDto(
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
         OffsetDateTime archivedAt,
+        long version,
         String updatedByName,
         String updatedByEmail,
         String updatedByAvatarUrl,
@@ -39,6 +41,7 @@ public record ModelDto(
                 model.getCreatedAt(),
                 model.getUpdatedAt(),
                 model.getArchivedAt(),
+                model.getVersion() == null ? 0 : model.getVersion(),
                 modifier == null ? null : modifier.getFullName(),
                 modifier == null ? null : modifier.getEmail(),
                 modifier == null ? null : modifier.getAvatarUrl(),
@@ -67,4 +70,3 @@ public record ModelDto(
         return reports instanceof List<?> list ? list.size() : 0;
     }
 }
-

@@ -13,7 +13,10 @@ IMAGES = {
     "frontend": "mlsuite-frontend",
     "ops-agent": "mlsuite-ops-agent",
 }
-COMPOSE_SERVICES = {"api": "spring-app", "backend": "py-analyzer"}
+COMPOSE_SERVICES = {
+    "api": ("artifact-migrate", "db-migrate", "spring-app"),
+    "backend": ("py-analyzer",),
+}
 PLATFORM = "linux/amd64"
 MANIFEST_KEYS = {"schema_version", "repository", "commit", "release", "platform", "images"}
 RECORD_KEYS = {"service", "image", "digest", "commit"}
@@ -98,8 +101,10 @@ def canonical_json(data):
 def compose_override(data):
     lines = ["services:"]
     for service, reference in sorted(data["images"].items()):
-        lines.extend((f"  {COMPOSE_SERVICES.get(service, service)}:",
-                      f"    image: {reference}", f"    platform: {PLATFORM}"))
+        targets = COMPOSE_SERVICES.get(service, (service,))
+        for target in targets:
+            lines.extend((f"  {target}:", f"    image: {reference}",
+                          f"    platform: {PLATFORM}"))
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 

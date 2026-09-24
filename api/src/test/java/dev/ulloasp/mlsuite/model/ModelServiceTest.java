@@ -34,6 +34,9 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StoredObject;
+import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
+import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
+import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
@@ -43,14 +46,11 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
 @ExtendWith(MockitoExtension.class)
 class ModelServiceTest {
 
-    @Mock
-    private UserLookupService userLookupService;
+    @Mock private UserLookupService userLookupService;
 
-    @Mock
-    private ModelRepository modelRepository;
+    @Mock private ModelRepository modelRepository;
 
-    @Mock
-    private ObjectStorageService objectStorageService;
+    @Mock private ObjectStorageService objectStorageService;
 
     @Mock
     private SchemaModelBindingRepository bindingRepository;
@@ -70,6 +70,15 @@ class ModelServiceTest {
     @Mock
     private WorkspaceAuthorizationService workspaceAuthorizationService;
 
+    @Mock
+    private ModelArtifactWriter artifactWriter;
+
+    @Mock
+    private ModelArtifactContentReader artifactReader;
+
+    @Mock
+    private StorageDeletionQueue deletionQueue;
+
     private ModelServiceImpl service;
 
     @BeforeEach
@@ -81,7 +90,10 @@ class ModelServiceTest {
                 bindingRepository,
                 resultRepository,
                 workspaceAccessService,
-                workspaceAuthorizationService);
+                workspaceAuthorizationService,
+                artifactWriter,
+                artifactReader,
+                deletionQueue);
         ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
         ReflectionTestUtils.setField(service, "analyzerUrl", "http://analyzer");
         when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
@@ -125,7 +137,7 @@ class ModelServiceTest {
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
-        assertEquals("new", service.renameModel(3L, 9L, " new ").getName());
+        assertEquals("new", service.renameModel(3L, 9L, " new ", 0L).getName());
         assertEquals("Alice", model.getUpdatedBy().getFullName());
     }
 
@@ -137,7 +149,7 @@ class ModelServiceTest {
         when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
-        service.archiveModel(3L, 9L);
+        service.archiveModel(3L, 9L, 0L);
 
         org.junit.jupiter.api.Assertions.assertNotNull(model.getArchivedAt());
     }
@@ -148,8 +160,39 @@ class ModelServiceTest {
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model("demo")));
         when(bindingRepository.existsByModelId(9L)).thenReturn(true);
 
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> service.deleteModel(3L, 9L));
+        assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.deleteModel(3L, 9L, 0L));
         verify(modelRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteModel_QueuesStoredObjectBeforeDeletingDatabaseRecord() {
+        Model model = model("demo");
+        model.setStorageBucket("models");
+        model.setStorageObjectKey("organizations/41/models/9/artifacts/hash/model.pkl");
+        model.setStorageVersionId("version-7");
+        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
+        when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
+
+        service.deleteModel(3L, 9L, 0L);
+
+        verify(deletionQueue).enqueue("models", model.getStorageObjectKey(), "version-7");
+        verify(modelRepository).delete(model);
+        verify(objectStorageService, never()).delete(anyString(), anyString());
+    }
+
+    @Test
+    void renameModelRejectsASequentiallyStaleClientVersion() {
+        Model model = model("current");
+        model.setVersion(4L);
+        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
+        when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
+
+        var error = assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> service.renameModel(3L, 9L, "stale", 3L));
+
+        assertEquals(org.springframework.http.HttpStatus.CONFLICT, error.getStatusCode());
+        verify(modelRepository, never()).save(any());
     }
 
     @Test
@@ -161,9 +204,13 @@ class ModelServiceTest {
         when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(source));
         when(modelRepository.existsByNameAndOrganizationId("copy", 41L)).thenReturn(false);
-        when(objectStorageService.load("bucket", "old-key")).thenReturn("bytes".getBytes());
-        when(objectStorageService.store(any(), eq("model.pkl"), eq("application/octet-stream"), any(byte[].class)))
-                .thenReturn(new StoredObject("bucket", "new-key", 5L, "etag"));
+        when(artifactReader.loadVerified(source)).thenReturn("bytes".getBytes());
+        org.mockito.Mockito.doAnswer(invocation -> {
+            Model copy = invocation.getArgument(0);
+            copy.setStorageBucket("bucket");
+            copy.setStorageObjectKey("new-key");
+            return null;
+        }).when(artifactWriter).storeAndAttach(any(Model.class), any(byte[].class), eq("application/octet-stream"));
         when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Model copy = service.duplicateModel(3L, 9L, "copy");
@@ -183,14 +230,14 @@ class ModelServiceTest {
         when(modelFile.getName()).thenReturn("modelFile");
         when(modelFile.getOriginalFilename()).thenReturn("model.pkl");
         when(modelFile.getContentType()).thenReturn("application/octet-stream");
-        when(objectStorageService.store(any(), any(), any(), any(), anyLong()))
-                .thenReturn(new StoredObject("bucket", "key", 1L, "etag"));
         when(modelRepository.save(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(modelRepository.saveAndFlush(any(Model.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Model result = service.createModel(3L, "demo", modelFile);
 
         assertEquals("demo", result.getName());
         verify(modelRepository).save(any(Model.class));
+        verify(artifactWriter).storeAndAttach(any(Model.class), any(byte[].class), eq("application/octet-stream"));
     }
 
     @Test
@@ -204,12 +251,10 @@ class ModelServiceTest {
         when(modelFile.getName()).thenReturn("modelFile");
         when(modelFile.getOriginalFilename()).thenReturn("model.pkl");
         when(modelFile.getContentType()).thenReturn("application/octet-stream");
-        when(objectStorageService.store(any(), any(), any(), any(), anyLong()))
-                .thenReturn(new StoredObject("bucket", "key", 1L, "etag"));
-        when(modelRepository.save(any(Model.class))).thenThrow(failure);
+        when(modelRepository.saveAndFlush(any(Model.class))).thenThrow(failure);
 
         assertEquals(failure, assertThrows(RuntimeException.class, () -> service.createModel(3L, "demo", modelFile)));
-        verify(objectStorageService).delete("bucket", "key");
+        verify(artifactWriter, never()).storeAndAttach(any(), any(), any());
     }
 
     private User user() {
@@ -234,6 +279,7 @@ class ModelServiceTest {
         Model model = new Model();
         model.setId(9L);
         model.setName(name);
+        model.setVersion(0L);
         model.setType("classifier");
         model.setSpecificType("random_forest");
         model.setFileName("model.pkl");
@@ -251,4 +297,3 @@ class ModelServiceTest {
                 true, true, true, true, true, true, true, true, true, true);
     }
 }
-

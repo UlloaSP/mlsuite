@@ -51,11 +51,12 @@ class ReleaseManifestTest(unittest.TestCase):
             checksum = (output / "release.json.sha256").read_text()
             self.assertEqual(checksum, hashlib.sha256(content).hexdigest() + "  release.json\n")
             compose = (output / "docker-compose.release.yml").read_text()
-            for service in ("spring-app", "py-analyzer", "frontend", "ops-agent"):
+            for service in ("artifact-migrate", "db-migrate", "spring-app",
+                            "py-analyzer", "frontend", "ops-agent"):
                 self.assertIn(f"  {service}:\n", compose)
             for image in data["images"].values():
                 self.assertIn(f"    image: {image}\n", compose)
-            self.assertEqual(compose.count("    platform: linux/amd64\n"), 4)
+            self.assertEqual(compose.count("    platform: linux/amd64\n"), 6)
             self.assertNotIn("latest", compose)
 
     def test_invalid_identity(self):

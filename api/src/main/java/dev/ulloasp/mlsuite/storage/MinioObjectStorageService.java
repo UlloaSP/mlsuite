@@ -6,6 +6,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.minio.BucketExistsArgs;
@@ -32,8 +33,13 @@ class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public StoredObject store(String objectKey, String fileName, String contentType, InputStream inputStream,
-            long sizeBytes) {
+    public StoredObject store(
+            String objectKey,
+            String fileName,
+            String contentType,
+            InputStream inputStream,
+            long sizeBytes,
+            String sha256) {
         ensureBucketExists();
 
         try {
@@ -41,16 +47,34 @@ class MinioObjectStorageService implements ObjectStorageService {
                     ? contentType
                     : "application/octet-stream";
 
-            String etag = minioClient.putObject(
-                    PutObjectArgs.builder()
+            PutObjectArgs.Builder builder = PutObjectArgs.builder()
                             .bucket(properties.getBucket())
                             .object(objectKey)
                             .contentType(effectiveContentType)
-                            .stream(inputStream, sizeBytes, -1)
-                            .build())
-                    .etag();
+                            .stream(inputStream, sizeBytes, -1L);
+            if (sha256 != null) {
+                builder.userMetadata(Map.of("sha256", sha256));
+            }
 
-            return new StoredObject(properties.getBucket(), objectKey, sizeBytes, etag);
+            var response = minioClient.putObject(builder.build());
+            String versionId = response.versionId();
+            if (versionId == null || versionId.isBlank()) {
+                throw new ObjectStorageException("MinIO bucket versioning is required");
+            }
+            StoredObjectMetadata metadata = inspectVersion(objectKey, versionId);
+            if (metadata.sizeBytes() != sizeBytes || sha256 != null && !sha256.equals(metadata.sha256())) {
+                throw new ObjectStorageException("MinIO object verification failed for " + objectKey);
+            }
+
+            return new StoredObject(
+                    properties.getBucket(),
+                    objectKey,
+                    sizeBytes,
+                    response.etag(),
+                    versionId,
+                    sha256);
+        } catch (ObjectStorageException ex) {
+            throw ex;
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudo almacenar el modelo en MinIO", ex);
         }
@@ -58,13 +82,18 @@ class MinioObjectStorageService implements ObjectStorageService {
 
     @Override
     public byte[] load(String bucket, String objectKey) {
+        return load(bucket, objectKey, null);
+    }
+
+    @Override
+    public byte[] load(String bucket, String objectKey, String versionId) {
         ensureBucketExists();
 
-        try (InputStream inputStream = minioClient.getObject(
-                GetObjectArgs.builder()
-                        .bucket(bucket)
-                        .object(objectKey)
-                        .build())) {
+        GetObjectArgs.Builder builder = GetObjectArgs.builder().bucket(bucket).object(objectKey);
+        if (versionId != null && !versionId.isBlank()) {
+            builder.versionId(versionId);
+        }
+        try (InputStream inputStream = minioClient.getObject(builder.build())) {
             return inputStream.readAllBytes();
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudo cargar el modelo desde MinIO", ex);
@@ -73,15 +102,20 @@ class MinioObjectStorageService implements ObjectStorageService {
 
     @Override
     public Optional<byte[]> loadOptional(String bucket, String objectKey) {
+        return loadOptional(bucket, objectKey, null);
+    }
+
+    @Override
+    public Optional<byte[]> loadOptional(String bucket, String objectKey, String versionId) {
         ensureBucketExists();
 
         try {
-            minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(objectKey)
-                            .build());
-            return Optional.of(load(bucket, objectKey));
+            StatObjectArgs.Builder builder = StatObjectArgs.builder().bucket(bucket).object(objectKey);
+            if (versionId != null && !versionId.isBlank()) {
+                builder.versionId(versionId);
+            }
+            minioClient.statObject(builder.build());
+            return Optional.of(load(bucket, objectKey, versionId));
         } catch (ErrorResponseException ex) {
             if ("NoSuchKey".equals(ex.errorResponse().code()) || "NoSuchObject".equals(ex.errorResponse().code())) {
                 return Optional.empty();
@@ -92,6 +126,65 @@ class MinioObjectStorageService implements ObjectStorageService {
             throw ex;
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudo comprobar el objeto en MinIO", ex);
+        }
+    }
+
+    @Override
+    public Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey) {
+        return inspectOptional(bucket, objectKey, null);
+    }
+
+    @Override
+    public Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey, String versionId) {
+        ensureBucketExists();
+        try {
+            StatObjectArgs.Builder builder = StatObjectArgs.builder().bucket(bucket).object(objectKey);
+            if (versionId != null && !versionId.isBlank()) {
+                builder.versionId(versionId);
+            }
+            var response = minioClient.statObject(builder.build());
+            return Optional.of(new StoredObjectMetadata(
+                    bucket,
+                    objectKey,
+                    response.size(),
+                    response.etag(),
+                    response.versionId(),
+                    response.userMetadata().getFirst("sha256")));
+        } catch (ErrorResponseException ex) {
+            if ("NoSuchKey".equals(ex.errorResponse().code()) || "NoSuchObject".equals(ex.errorResponse().code())) {
+                return Optional.empty();
+            }
+            throw new ObjectStorageException("No se pudo comprobar el objeto en MinIO", ex);
+        } catch (Exception ex) {
+            throw new ObjectStorageException("No se pudo comprobar el objeto en MinIO", ex);
+        }
+    }
+
+    @Override
+    public StoredObjectVerification verify(String bucket, String objectKey) {
+        return verify(bucket, objectKey, null);
+    }
+
+    @Override
+    public StoredObjectVerification verify(String bucket, String objectKey, String versionId) {
+        ensureBucketExists();
+        GetObjectArgs.Builder builder = GetObjectArgs.builder().bucket(bucket).object(objectKey);
+        if (versionId != null && !versionId.isBlank()) {
+            builder.versionId(versionId);
+        }
+        try (InputStream inputStream = minioClient.getObject(
+                builder.build())) {
+            long size = 0;
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[64 * 1024];
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+                digest.update(buffer, 0, read);
+                size += read;
+            }
+            return new StoredObjectVerification(size, java.util.HexFormat.of().formatHex(digest.digest()));
+        } catch (Exception ex) {
+            throw new ObjectStorageException("No se pudo verificar el objeto en MinIO", ex);
         }
     }
 
@@ -128,13 +221,21 @@ class MinioObjectStorageService implements ObjectStorageService {
 
     @Override
     public void delete(String bucket, String objectKey) {
+        delete(bucket, objectKey, null);
+    }
+
+    @Override
+    public void delete(String bucket, String objectKey, String versionId) {
         ensureBucketExists();
 
         try {
-            minioClient.removeObject(RemoveObjectArgs.builder()
+            RemoveObjectArgs.Builder builder = RemoveObjectArgs.builder()
                     .bucket(bucket)
-                    .object(objectKey)
-                    .build());
+                    .object(objectKey);
+            if (versionId != null && !versionId.isBlank()) {
+                builder.versionId(versionId);
+            }
+            minioClient.removeObject(builder.build());
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudo eliminar el modelo de MinIO", ex);
         }
@@ -167,5 +268,20 @@ class MinioObjectStorageService implements ObjectStorageService {
             throw new ObjectStorageException("No se pudo inicializar el bucket de MinIO", ex);
         }
     }
-}
 
+    private StoredObjectMetadata inspectVersion(String objectKey, String versionId) throws Exception {
+        var response = minioClient.statObject(
+                StatObjectArgs.builder()
+                        .bucket(properties.getBucket())
+                        .object(objectKey)
+                        .versionId(versionId)
+                        .build());
+        return new StoredObjectMetadata(
+                properties.getBucket(),
+                objectKey,
+                response.size(),
+                response.etag(),
+                versionId,
+                response.userMetadata().getFirst("sha256"));
+    }
+}
