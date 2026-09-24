@@ -191,7 +191,7 @@ class AnalyzerServiceTest {
         Model model = model(user);
         lenient().when(userLookupService.requireById(3L)).thenReturn(user);
         when(modelRepository.findByIdAndOrganizationId(11L, 5L)).thenReturn(Optional.of(model));
-        when(objectStorageService.load("bucket", "key")).thenReturn(new byte[] { 1, 2, 3 });
+        when(objectStorageService.load("bucket", "key", null)).thenReturn(new byte[] { 1, 2, 3 });
         when(restTemplate.postForObject(eq("http://py-analyzer:8000/predict"), any(), eq(Map.class)))
                 .thenReturn(Map.of("prediction", 1));
 
@@ -206,7 +206,7 @@ class AnalyzerServiceTest {
         Model model = model(user());
         model.setFileName("risk.onnx");
         when(modelRepository.findByIdAndOrganizationId(11L, 5L)).thenReturn(Optional.of(model));
-        when(objectStorageService.load("bucket", "key")).thenReturn(new byte[] { 1, 2, 3 });
+        when(objectStorageService.load("bucket", "key", null)).thenReturn(new byte[] { 1, 2, 3 });
         when(restTemplate.postForObject(any(String.class), any(), eq(Map.class))).thenReturn(Map.of());
 
         service.predict(3L, 11L, Map.of("x", 1));
@@ -229,7 +229,7 @@ class AnalyzerServiceTest {
         model.setModelFile(new byte[] { 9, 8, 7 });
         lenient().when(userLookupService.requireById(3L)).thenReturn(user);
         when(modelRepository.findByIdAndOrganizationId(11L, 5L)).thenReturn(Optional.of(model));
-        when(objectStorageService.load("bucket", "key")).thenThrow(new ObjectStorageException("down"));
+        when(objectStorageService.load("bucket", "key", null)).thenThrow(new ObjectStorageException("down"));
         when(restTemplate.postForObject(eq("http://py-analyzer:8000/predict"), any(), eq(Map.class)))
                 .thenReturn(Map.of("prediction", 1));
 

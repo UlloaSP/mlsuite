@@ -62,10 +62,12 @@ class PostgresArtifactMigrationQueueTest {
                         'INLINE_ONLY', now(), now(), 0)
                 """);
 
-        var first = queue.claim(1, 5, 300, "lease-a").getFirst();
+        var first = queue.claim(5, 300, "lease-a").orElseThrow();
+        assertEquals(true, queue.renew(first.id(), "lease-a"));
+        assertEquals(false, queue.renew(first.id(), "wrong-lease"));
         jdbc.update("UPDATE model SET artifact_migration_started_at = now() - interval '10 minutes' WHERE id = ?",
                 first.id());
-        var reclaimed = queue.claim(1, 5, 300, "lease-b").getFirst();
+        var reclaimed = queue.claim(5, 300, "lease-b").orElseThrow();
 
         assertEquals(first.id(), reclaimed.id());
         assertEquals("lease-b", reclaimed.leaseToken());

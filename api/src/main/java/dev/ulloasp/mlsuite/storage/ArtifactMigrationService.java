@@ -43,24 +43,25 @@ public class ArtifactMigrationService {
         long examined = 0;
         long verified = 0;
         long failed = 0;
-        List<ArtifactMigrationWorkItem> items;
-        do {
+        ArtifactMigrationWorkItem item;
+        while (true) {
             String leaseToken = UUID.randomUUID().toString();
-            items = queue.claim(
-                    properties.getBatchSize(),
+            item = queue.claim(
                     properties.getMaxAttempts(),
                     properties.getStaleAfterSeconds(),
-                    leaseToken);
-            for (ArtifactMigrationWorkItem item : items) {
-                examined++;
-                MigrationOutcome outcome = migrateOne(item.id(), item.leaseToken());
-                if (outcome == MigrationOutcome.VERIFIED) {
-                    verified++;
-                } else if (outcome == MigrationOutcome.FAILED) {
-                    failed++;
-                }
+                    leaseToken).orElse(null);
+            if (item == null) {
+                break;
             }
-        } while (!items.isEmpty());
+            examined++;
+            MigrationOutcome outcome = migrateOne(
+                    item.id(), item.leaseToken(), properties.getStaleAfterSeconds());
+            if (outcome == MigrationOutcome.VERIFIED) {
+                verified++;
+            } else if (outcome == MigrationOutcome.FAILED) {
+                failed++;
+            }
+        }
         return new ArtifactMigrationReport(examined, verified, failed);
     }
 
@@ -75,7 +76,8 @@ public class ArtifactMigrationService {
             for (StoredArtifactReference reference : references) {
                 examined++;
                 try {
-                    StoredObjectVerification actual = objectStorage.verify(reference.bucket(), reference.objectKey());
+                    StoredObjectVerification actual = objectStorage.verify(
+                            reference.bucket(), reference.objectKey(), reference.versionId());
                     verifyStoredReference(reference, actual);
                     verified++;
                 } catch (RuntimeException ex) {
@@ -92,37 +94,45 @@ public class ArtifactMigrationService {
         return queue.retryFailed();
     }
 
-    private MigrationOutcome migrateOne(Long id, String workerId) {
+    private MigrationOutcome migrateOne(Long id, String workerId, long staleAfterSeconds) {
         try {
             Model model = models.findById(id).orElseThrow();
             if (!ownsClaim(model, workerId)) {
                 return MigrationOutcome.LOST;
             }
-            byte[] bytes = model.getModelFile();
             String previousBucket = model.getStorageBucket();
             String previousKey = model.getStorageObjectKey();
             String previousVersion = model.getStorageVersionId();
-            if (bytes != null && bytes.length > 0) {
-                String sha256 = ArtifactHash.sha256(bytes);
-                if (!verifyExisting(model, bytes, sha256)) {
-                    writer.storeAndAttach(model, bytes, "application/octet-stream");
+            try (ArtifactMigrationLease lease = new ArtifactMigrationLease(
+                    queue, id, workerId, staleAfterSeconds)) {
+                byte[] bytes = model.getModelFile();
+                if (bytes != null && bytes.length > 0) {
+                    String sha256 = ArtifactHash.sha256(bytes);
+                    if (!verifyExisting(model, bytes, sha256)) {
+                        if (!writer.attachExisting(model, bytes)) {
+                            writer.storeAndAttach(model, bytes, "application/octet-stream");
+                        }
+                    }
+                } else if (model.hasStoredObject()) {
+                    verifyStoredOnly(model);
+                } else {
+                    throw new ArtifactIntegrityException("Model has neither inline nor stored artifact bytes");
                 }
-            } else if (model.hasStoredObject()) {
-                verifyStoredOnly(model);
-            } else {
-                throw new ArtifactIntegrityException("Model has neither inline nor stored artifact bytes");
+                if (!lease.isOwned()) {
+                    return MigrationOutcome.LOST;
+                }
+                transactions.executeWithoutResult(status -> {
+                    Model claimed = models.findById(id).orElseThrow();
+                    if (!ownsClaim(claimed, workerId)) {
+                        throw new LostArtifactMigrationClaimException(id);
+                    }
+                    copyArtifactResult(model, claimed);
+                    models.save(claimed);
+                    if (previousKey != null && !previousKey.equals(model.getStorageObjectKey())) {
+                        deletionQueue.enqueue(previousBucket, previousKey, previousVersion);
+                    }
+                });
             }
-            transactions.executeWithoutResult(status -> {
-                Model claimed = models.findById(id).orElseThrow();
-                if (!ownsClaim(claimed, workerId)) {
-                    throw new LostArtifactMigrationClaimException(id);
-                }
-                copyArtifactResult(model, claimed);
-                models.save(claimed);
-                if (previousKey != null && !previousKey.equals(model.getStorageObjectKey())) {
-                    deletionQueue.enqueue(previousBucket, previousKey, previousVersion);
-                }
-            });
             return MigrationOutcome.VERIFIED;
         } catch (LostArtifactMigrationClaimException ex) {
             return MigrationOutcome.LOST;
@@ -173,10 +183,16 @@ public class ArtifactMigrationService {
     }
 
     private void verifyStoredOnly(Model model) {
-        byte[] stored = objectStorage.load(model.getStorageBucket(), model.getStorageObjectKey());
         StoredObjectMetadata metadata = objectStorage
-                .inspectOptional(model.getStorageBucket(), model.getStorageObjectKey())
+                .inspectOptional(
+                        model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId())
                 .orElseThrow(() -> new ArtifactIntegrityException("Stored object is missing"));
+        byte[] stored = objectStorage.load(
+                model.getStorageBucket(), model.getStorageObjectKey(), metadata.versionId());
+        if (metadata.versionId() == null || metadata.versionId().isBlank()) {
+            writer.storeAndAttach(model, stored, "application/octet-stream");
+            return;
+        }
         model.setArtifactSha256(ArtifactHash.sha256(stored));
         model.setModelSizeBytes((long) stored.length);
         model.setStorageEtag(metadata.etag());
@@ -188,13 +204,18 @@ public class ArtifactMigrationService {
             return false;
         }
         try {
-            byte[] stored = objectStorage.load(model.getStorageBucket(), model.getStorageObjectKey());
+            StoredObjectMetadata metadata = objectStorage
+                    .inspectOptional(
+                            model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId())
+                    .orElseThrow();
+            if (metadata.versionId() == null || metadata.versionId().isBlank()) {
+                return false;
+            }
+            byte[] stored = objectStorage.load(
+                    model.getStorageBucket(), model.getStorageObjectKey(), metadata.versionId());
             if (stored.length != source.length || !sha256.equals(ArtifactHash.sha256(stored))) {
                 return false;
             }
-            StoredObjectMetadata metadata = objectStorage
-                    .inspectOptional(model.getStorageBucket(), model.getStorageObjectKey())
-                    .orElseThrow();
             model.setArtifactSha256(sha256);
             model.setModelSizeBytes((long) stored.length);
             model.setStorageEtag(metadata.etag());
@@ -206,12 +227,8 @@ public class ArtifactMigrationService {
     }
 
     private void verifyStoredReference(StoredArtifactReference expected, StoredObjectVerification actual) {
-        if (expected.sizeBytes() == null || expected.sizeBytes() != actual.sizeBytes()) {
-            throw new ArtifactIntegrityException("Size mismatch for model " + expected.id());
-        }
-        if (expected.sha256() == null || !expected.sha256().equals(actual.sha256())) {
-            throw new ArtifactIntegrityException("SHA-256 mismatch for model " + expected.id());
-        }
+        ArtifactIntegrityVerifier.verifyRequired(
+                "model " + expected.id(), expected.sizeBytes(), expected.sha256(), actual);
     }
 
     private String truncate(String message) {

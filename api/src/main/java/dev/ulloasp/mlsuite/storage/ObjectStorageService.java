@@ -36,17 +36,23 @@ public interface ObjectStorageService {
 
     byte[] load(String bucket, String objectKey);
 
+    byte[] load(String bucket, String objectKey, String versionId);
+
     Optional<byte[]> loadOptional(String bucket, String objectKey);
+
+    Optional<byte[]> loadOptional(String bucket, String objectKey, String versionId);
 
     Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey);
 
+    Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey, String versionId);
+
     StoredObjectVerification verify(String bucket, String objectKey);
+
+    StoredObjectVerification verify(String bucket, String objectKey, String versionId);
 
     List<StoredObjectItem> list(String prefix);
 
     void delete(String bucket, String objectKey);
 
-    default void delete(String bucket, String objectKey, String versionId) {
-        delete(bucket, objectKey);
-    }
+    void delete(String bucket, String objectKey, String versionId);
 }

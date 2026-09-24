@@ -87,6 +87,7 @@ class ModelCreationServiceTest {
         assertNotSame(modelFile, reusable);
         assertEquals("x", new String(reusable.getInputStream().readAllBytes()));
         verify(objectStorageService, never()).delete(any(), any());
+        verify(objectStorageService, never()).delete(any(), any(), any());
     }
 
     @Test
@@ -102,7 +103,7 @@ class ModelCreationServiceTest {
                 () -> service.create(4L, "demo", modelFile, null, "__"));
 
         assertEquals(failure, thrown);
-        verify(objectStorageService).delete("bucket", "key");
+        verify(objectStorageService).delete("bucket", "key", "version-1");
     }
 
     @Test
@@ -117,6 +118,7 @@ class ModelCreationServiceTest {
 
         assertEquals(failure, thrown);
         verify(objectStorageService, never()).delete(any(), any());
+        verify(objectStorageService, never()).delete(any(), any(), any());
     }
 
     private Model storedModel() {
@@ -128,6 +130,7 @@ class ModelCreationServiceTest {
         model.setFileName("model.joblib");
         model.setStorageBucket("bucket");
         model.setStorageObjectKey("key");
+        model.setStorageVersionId("version-1");
         return model;
     }
 }

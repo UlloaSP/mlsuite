@@ -3,6 +3,7 @@ set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd -P)
 work=$(mktemp -d)
+release_compose_relative="docker-compose.dev.yml"
 cleanup() { rm -rf -- "$work"; }
 trap cleanup EXIT INT TERM
 
@@ -25,6 +26,17 @@ cat > "$fake_docker" <<'EOF'
 set -euo pipefail
 printf '%s\n' "$*" >> "$FAKE_DOCKER_CALLS"
 if [[ "${1:-}" == compose ]]; then
+  if [[ "$*" == *'config --format json'* ]]; then
+    digest=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    printf '{"services":{'
+    printf '"artifact-migrate":{"image":"ghcr.io/example/mlsuite-api@%s"},' "$digest"
+    printf '"db-migrate":{"image":"ghcr.io/example/mlsuite-api@%s"},' "$digest"
+    printf '"spring-app":{"image":"ghcr.io/example/mlsuite-api@%s"},' "$digest"
+    printf '"frontend":{"image":"ghcr.io/example/mlsuite-frontend@%s"},' "$digest"
+    printf '"ops-agent":{"image":"ghcr.io/example/mlsuite-ops-agent@%s"},' "$digest"
+    printf '"py-analyzer":{"image":"ghcr.io/example/mlsuite-sklearn-backend@%s"}}}' "$digest"
+    exit 0
+  fi
   for ((i=1; i<=$#; i++)); do
     arg=${!i}
     if [[ "$arg" == ps && "$*" == *' -q '* ]]; then printf 'fake-container'; exit 0; fi
@@ -58,7 +70,7 @@ COMPOSE_PROJECT_NAME=mlsuite
 LOCAL_BACKUP_ROOT=$backup_root
 LOCAL_BACKUP_RETENTION_COUNT=2
 LOCAL_BACKUP_MIN_FREE_PERCENT=0
-RELEASE_COMPOSE=
+RELEASE_COMPOSE=$release_compose_relative
 EOF
 
 export FAKE_DOCKER_CALLS="$calls"

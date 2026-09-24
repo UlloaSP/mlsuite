@@ -15,14 +15,17 @@ public class ArtifactMigrationCommand implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(ArtifactMigrationCommand.class);
     private final ArtifactMigrationProperties properties;
     private final ArtifactMigrationService service;
+    private final ArtifactOrphanReconciliationService orphanReconciliation;
     private final ModelRepository models;
 
     public ArtifactMigrationCommand(
             ArtifactMigrationProperties properties,
             ArtifactMigrationService service,
+            ArtifactOrphanReconciliationService orphanReconciliation,
             ModelRepository models) {
         this.properties = properties;
         this.service = service;
+        this.orphanReconciliation = orphanReconciliation;
         this.models = models;
     }
 
@@ -33,8 +36,18 @@ public class ArtifactMigrationCommand implements ApplicationRunner {
             case "migrate" -> requireSuccess("migration", service.migrate(properties));
             case "verify" -> requireSuccess("verification", service.verifyAll());
             case "retry-failed" -> log.info("Reset {} failed artifacts for retry", service.retryFailed());
+            case "prune-orphans" -> pruneOrphans();
             case "status" -> logStatus();
             default -> throw new IllegalArgumentException("Unknown artifact migration command: " + command);
+        }
+    }
+
+    private void pruneOrphans() {
+        ArtifactOrphanReport report = orphanReconciliation.prune(properties.getOrphanGraceSeconds());
+        log.info("Artifact orphan reconciliation completed. examined={}, deleted={}, failed={}",
+                report.examined(), report.deleted(), report.failed());
+        if (report.failed() > 0) {
+            throw new IllegalStateException("Artifact orphan reconciliation finished with failures");
         }
     }
 

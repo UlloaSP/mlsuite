@@ -19,7 +19,8 @@ public class ModelArtifactContentReader {
     public byte[] loadVerified(Model model) {
         if (model.hasStoredObject()) {
             try {
-                byte[] stored = objectStorageService.load(model.getStorageBucket(), model.getStorageObjectKey());
+                byte[] stored = objectStorageService.load(
+                        model.getStorageBucket(), model.getStorageObjectKey(), model.getStorageVersionId());
                 verify(model, stored);
                 return stored;
             } catch (ObjectStorageException | ArtifactIntegrityException ex) {
@@ -39,12 +40,7 @@ public class ModelArtifactContentReader {
     }
 
     private void verify(Model model, byte[] bytes) {
-        if (model.getModelSizeBytes() != null && model.getModelSizeBytes() != bytes.length) {
-            throw new ArtifactIntegrityException("Artifact size mismatch for model " + model.getId());
-        }
-        if (model.getArtifactSha256() != null
-                && !model.getArtifactSha256().equals(ArtifactHash.sha256(bytes))) {
-            throw new ArtifactIntegrityException("Artifact SHA-256 mismatch for model " + model.getId());
-        }
+        ArtifactIntegrityVerifier.verify(
+                "model " + model.getId(), model.getModelSizeBytes(), model.getArtifactSha256(), bytes);
     }
 }

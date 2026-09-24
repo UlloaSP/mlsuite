@@ -37,12 +37,12 @@ chmod 700 "$backup_root"
 
 compose=("$DOCKER_BIN" compose --env-file "$ENV_FILE" -f docker-compose.yml -f docker-compose.prod.yml)
 release_compose=$(env_value RELEASE_COMPOSE || true)
-if [[ -n "$release_compose" ]]; then
-  [[ "$release_compose" != /* && "$release_compose" != *..* && -f "$release_compose" ]] || {
-    echo "RELEASE_COMPOSE must be an existing repository-relative path" >&2; exit 1;
-  }
-  compose+=(-f "$release_compose")
-fi
+[[ -n "$release_compose" && "$release_compose" != /* && "$release_compose" != *..* && -f "$release_compose" ]] || {
+  echo "RELEASE_COMPOSE must be an existing digest-pinned repository-relative path" >&2; exit 1;
+}
+compose+=(-f "$release_compose")
+python3 deploy/verify_release_images.py --docker-bin "$DOCKER_BIN" \
+  --env-file "$ENV_FILE" --release-compose "$release_compose" >/dev/null
 "${compose[@]}" config --quiet
 
 running=$("${compose[@]}" ps --status running --services 2>/dev/null || true)
@@ -50,6 +50,7 @@ lock="$backup_root/.backup.lock"
 exec 9>"$lock"
 flock -n 9 || { echo "another local backup is running" >&2; exit 1; }
 timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+created_epoch=$(date -u +%s)
 partial="$backup_root/.partial-$timestamp-$$"
 destination="$backup_root/production-$timestamp-$$"
 [[ ! -e "$destination" ]] || { echo "backup destination already exists: $destination" >&2; exit 1; }
@@ -175,6 +176,7 @@ cat > "$partial/recovery.scope" <<EOF
 mode=local-single-disk
 physical_disk_failure_covered=false
 created_utc=$timestamp
+created_epoch=$created_epoch
 EOF
 (cd "$partial" && sha256sum postgres.dump minio-data.tar.gz storage.bucket recovery.scope > backup.manifest)
 (cd "$partial" && sha256sum --check backup.manifest >/dev/null)

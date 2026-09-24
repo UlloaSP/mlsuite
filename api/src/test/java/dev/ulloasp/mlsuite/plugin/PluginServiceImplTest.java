@@ -3,6 +3,8 @@ package dev.ulloasp.mlsuite.plugin;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,10 +26,13 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
 import dev.ulloasp.mlsuite.plugin.application.service.PluginServiceImpl;
+import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
+import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StoredObjectItem;
+import dev.ulloasp.mlsuite.storage.StoredObjectMetadata;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -79,7 +85,14 @@ class PluginServiceImplTest {
                 .thenReturn(objects.keySet().stream()
                         .map(key -> new StoredObjectItem("bucket", key, objects.get(key).length, "etag", now()))
                         .toList());
-        when(objectStorageService.loadOptional(eq("bucket"), anyString()))
+        when(objectStorageService.inspectOptional(eq("bucket"), anyString()))
+                .thenAnswer(invocation -> {
+                    String key = invocation.getArgument(1);
+                    byte[] bytes = objects.get(key);
+                    return bytes == null ? Optional.empty() : Optional.of(
+                            new StoredObjectMetadata("bucket", key, bytes.length, "etag", "v1", null));
+                });
+        when(objectStorageService.loadOptional(eq("bucket"), anyString(), eq("v1")))
                 .thenAnswer(invocation -> Optional.ofNullable(objects.get(invocation.getArgument(1))));
     }
 
@@ -108,6 +121,22 @@ class PluginServiceImplTest {
 
         assertEquals(List.of("alpha-field", "invalid.ts", "zeta-report"),
                 page.items().stream().map(item -> item.kind() == null ? item.fileName() : item.kind()).toList());
+    }
+
+    @Test
+    void listEstablishesStoredJsonIdentityWhenMetadataIsMissing() {
+        service.list(7L, 0, 10, "all", "", "name");
+
+        ArgumentCaptor<PluginMetadata> captor = ArgumentCaptor.forClass(PluginMetadata.class);
+        verify(pluginMetadataRepository, atLeastOnce()).save(captor.capture());
+        PluginMetadata field = captor.getAllValues().stream()
+                .filter(item -> "field".equals(item.getId()))
+                .findFirst()
+                .orElseThrow();
+        byte[] content = objects.get("organizations/41/plugins/items/field.json");
+        assertEquals(content.length, field.getSizeBytes());
+        assertEquals(ArtifactHash.sha256(content), field.getSha256());
+        assertEquals("v1", field.getStorageVersionId());
     }
 
     private byte[] bytes(StoredPlugin plugin) throws Exception {

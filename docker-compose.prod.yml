@@ -1,21 +1,6 @@
-# Production selects published images; service behavior lives in docker-compose.yml.
+# Production behavior lives in docker-compose.yml. Application images are supplied
+# only by the mandatory digest-pinned release override.
 services:
   ops-agent:
-    image: ${REGISTRY:-ghcr.io}/${OWNER}/${OPS_AGENT_IMAGE:-mlsuite-ops-agent}:${OPS_AGENT_VERSION:-latest}
     environment:
       OPS_AGENT_COMPOSE_FILES: /workspace/docker-compose.yml,/workspace/docker-compose.prod.yml,/workspace/${RELEASE_COMPOSE}
-
-  py-analyzer:
-    image: ${REGISTRY:-ghcr.io}/${OWNER}/${BACKEND_IMAGE:-mlsuite-sklearn-backend}:${BACKEND_VERSION:-latest}
-
-  db-migrate:
-    image: ${REGISTRY:-ghcr.io}/${OWNER}/${API_IMAGE:-mlsuite-api}:${API_VERSION}
-
-  artifact-migrate:
-    image: ${REGISTRY:-ghcr.io}/${OWNER}/${API_IMAGE:-mlsuite-api}:${API_VERSION}
-
-  spring-app:
-    image: ${REGISTRY:-ghcr.io}/${OWNER}/${API_IMAGE:-mlsuite-api}:${API_VERSION:-latest}
-
-  frontend:
-    image: ${REGISTRY:-ghcr.io}/${OWNER}/${FRONTEND_IMAGE:-mlsuite-frontend}:${FRONTEND_VERSION:-latest}

@@ -163,7 +163,6 @@ jobs:
       - name: Validate Compose using the public template
         run: |
           docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.dev.yml --profile operations config --quiet
-          docker compose --env-file .env.example -f docker-compose.yml -f docker-compose.prod.yml --profile operations config --quiet
           python3 deploy/test_compose_parity.py
       - name: Verify PostgreSQL role upgrade
         run: bash deploy/postgres/test-provision-roles.sh
@@ -171,6 +170,12 @@ jobs:
         run: bash deploy/test-backup-restore.sh
       - name: Verify single-disk local backup contract
         run: bash deploy/test-local-backup.sh
+      - name: Verify backup RPO gate
+        run: bash deploy/test-backup-rpo.sh
+      - name: Verify backup timer installer
+        run: sudo bash deploy/test-backup-timer-install.sh
+      - name: Verify recovery RTO gate
+        run: bash deploy/test-recovery-rto.sh
       - name: Validate release contracts and failure handling
         run: python3 -m unittest discover -s .github/tests -p 'test_release_*.py'
       - name: Validate workflows

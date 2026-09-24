@@ -1,10 +1,12 @@
 package dev.ulloasp.mlsuite.storage;
 
-import java.util.List;
+import java.util.Optional;
 
 public interface ArtifactMigrationQueue {
 
-    List<ArtifactMigrationWorkItem> claim(int batchSize, int maxAttempts, long staleAfterSeconds, String leaseToken);
+    Optional<ArtifactMigrationWorkItem> claim(int maxAttempts, long staleAfterSeconds, String leaseToken);
+
+    boolean renew(Long id, String leaseToken);
 
     int retryFailed();
 }

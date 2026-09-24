@@ -23,6 +23,8 @@ smoke_project=${api_container/mlsuite-restore-api-/mlsuite-restore-smoke-}
   echo "environment or release Compose file not found" >&2
   exit 1
 }
+python3 deploy/verify_release_images.py \
+  --env-file "$ENV_FILE" --release-compose "$RELEASE_COMPOSE" >/dev/null
 COMPOSE=(docker compose --project-name "$smoke_project" --env-file "$ENV_FILE" \
   -f docker-compose.yml -f docker-compose.prod.yml -f "$RELEASE_COMPOSE")
 cleanup_smoke() {

@@ -29,7 +29,6 @@ import dev.ulloasp.mlsuite.plugin.application.port.in.GetPluginStatsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.UploadPluginUseCase;
-import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginStoragePaths;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
@@ -73,7 +72,8 @@ public class PluginServiceImpl implements
             WorkspaceAuthorizationService workspaceAuthorizationService,
             PluginMetadataRepository pluginMetadataRepository,
             StorageDeletionQueue deletionQueue) {
-        this.pluginObjects = new PluginObjectReader(objectStorageService, storageProperties, objectMapper);
+        this.pluginObjects = new PluginObjectReader(
+                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository);
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
         this.objectMapper = objectMapper;
@@ -109,7 +109,7 @@ public class PluginServiceImpl implements
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
             try {
-                persistMetadata(organization, stored, user, uploaded);
+                persistMetadata(organization, stored, user, uploaded, null);
             } catch (RuntimeException ex) {
                 objectStorageService.delete(uploaded.bucket(), uploaded.objectKey(), uploaded.versionId());
                 throw ex;
@@ -152,14 +152,14 @@ public class PluginServiceImpl implements
     public List<PluginDto> listAll(Long userId) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginView(userId, organization.getId());
-        Map<String, StoredPlugin> storedItems = new LinkedHashMap<>();
+        Map<String, PluginObjectReader.ReadPlugin> storedItems = new LinkedHashMap<>();
         Map<String, String> origins = new LinkedHashMap<>();
-        pluginObjects.list(organization.getId())
+        pluginObjects.listWithIdentity(organization.getId())
                 .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         List<PluginDto> catalog = new ArrayList<>();
         storedItems.values().forEach(item -> {
-            persistMetadata(organization, item, null, null);
-            catalog.add(toDto(item));
+            persistMetadata(organization, item.plugin(), null, null, item);
+            catalog.add(toDto(item.plugin()));
         });
         catalog.sort(Comparator
                 .comparing(PluginDto::updatedAt, Comparator.reverseOrder())
@@ -186,7 +186,8 @@ public class PluginServiceImpl implements
             Organization organization,
             StoredPlugin stored,
             User updatedBy,
-            StoredObject uploaded) {
+            StoredObject uploaded,
+            PluginObjectReader.ReadPlugin read) {
         PluginDescriptor descriptor = describe(stored.source());
         Optional<PluginMetadata> existing = pluginMetadataRepository
                 .findByIdAndOrganizationId(stored.id(), organization.getId());
@@ -208,36 +209,37 @@ public class PluginServiceImpl implements
         metadata.setPluginType(descriptor.type());
         metadata.setKind(descriptor.kind());
         if (uploaded != null) {
+            metadata.setSizeBytes(uploaded.sizeBytes());
             metadata.setSha256(uploaded.sha256());
             metadata.setStorageVersionId(uploaded.versionId());
+        } else if (read != null) {
+            metadata.setSizeBytes(read.sizeBytes());
+            metadata.setSha256(read.sha256());
+            metadata.setStorageVersionId(read.versionId());
         }
         pluginMetadataRepository.save(metadata);
     }
 
     private StoredPlugin readStored(User user, String id) {
         Long organizationId = workspaceAccessService.requireCurrentOrganization(user.getId()).getId();
-        Optional<byte[]> bytes =
-                objectStorageService.loadOptional(storageProperties.getBucket(), itemObjectKey(organizationId, id));
-        if (bytes.isPresent()) {
-            return pluginObjects.decode(bytes.get());
-        }
-        throw new PluginNotFoundException(id);
+        return pluginObjects.load(organizationId, id);
     }
 
     private void putStored(
-            Map<String, StoredPlugin> storedItems,
+            Map<String, PluginObjectReader.ReadPlugin> storedItems,
             Map<String, String> origins,
-            StoredPlugin item,
+            PluginObjectReader.ReadPlugin item,
             String origin,
             boolean replaceExisting) {
-        String existingOrigin = origins.get(item.id());
+        String id = item.plugin().id();
+        String existingOrigin = origins.get(id);
         if (existingOrigin == null || replaceExisting) {
-            storedItems.put(item.id(), item);
-            origins.put(item.id(), origin);
+            storedItems.put(id, item);
+            origins.put(id, origin);
             return;
         }
         if (!ROOT_PREFIX.equals(existingOrigin) && !existingOrigin.equals(origin)) {
-            throw new IllegalStateException("Duplicate legacy plugin id '" + item.id() + "' detected across storage roots.");
+            throw new IllegalStateException("Duplicate legacy plugin id '" + id + "' detected across storage roots.");
         }
     }
 

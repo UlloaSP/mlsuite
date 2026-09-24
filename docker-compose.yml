@@ -89,8 +89,8 @@ services:
     image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
     command: server /data --console-address "${MINIO_CONSOLE_ADDRESS}"
     environment:
-      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio_data:/data
     healthcheck:
@@ -103,20 +103,16 @@ services:
 
   minio-init:
     image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
-    entrypoint: [ "/bin/sh", "-c" ]
-    command:
-      - |
-        set -eu
-        mc alias set local "$$STORAGE_ENDPOINT" "$$STORAGE_ACCESS_KEY" "$$STORAGE_SECRET_KEY"
-        mc mb --ignore-existing "local/$$STORAGE_BUCKET"
-        mc version enable "local/$$STORAGE_BUCKET"
-        version_info=$$(mc version info "local/$$STORAGE_BUCKET")
-        case "$$version_info" in *[Ee]nabled*) printf '%s\n' "$$version_info";; *) printf '%s\n' "$$version_info" >&2; exit 1;; esac
+    entrypoint: [ "/bin/sh", "/config/provision.sh" ]
     environment:
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
       STORAGE_BUCKET: ${STORAGE_BUCKET}
+    volumes:
+      - ./deploy/minio/provision.sh:/config/provision.sh:ro
     depends_on:
       minio:
         condition: service_healthy
@@ -169,9 +165,9 @@ services:
       STORAGE_AUTO_CREATE_BUCKET: "false"
       STORAGE_RETAIN_INLINE_COPY: "true"
       ARTIFACT_MIGRATION_COMMAND: ${ARTIFACT_MIGRATION_COMMAND:-status}
-      ARTIFACT_MIGRATION_BATCH_SIZE: ${ARTIFACT_MIGRATION_BATCH_SIZE:-10}
       ARTIFACT_MIGRATION_MAX_ATTEMPTS: ${ARTIFACT_MIGRATION_MAX_ATTEMPTS:-5}
       ARTIFACT_MIGRATION_STALE_AFTER_SECONDS: ${ARTIFACT_MIGRATION_STALE_AFTER_SECONDS:-900}
+      ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS: ${ARTIFACT_MIGRATION_ORPHAN_GRACE_SECONDS:-86400}
     depends_on:
       db-migrate:
         condition: service_completed_successfully

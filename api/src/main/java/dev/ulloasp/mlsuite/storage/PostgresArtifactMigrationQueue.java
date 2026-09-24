@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.storage;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -17,9 +18,9 @@ public class PostgresArtifactMigrationQueue implements ArtifactMigrationQueue {
 
     @Override
     @Transactional
-    public List<ArtifactMigrationWorkItem> claim(
-            int batchSize, int maxAttempts, long staleAfterSeconds, String leaseToken) {
-        return jdbcTemplate.query("""
+    public Optional<ArtifactMigrationWorkItem> claim(
+            int maxAttempts, long staleAfterSeconds, String leaseToken) {
+        List<ArtifactMigrationWorkItem> claimed = jdbcTemplate.query("""
                 WITH candidates AS (
                     SELECT id
                     FROM model
@@ -31,7 +32,7 @@ public class PostgresArtifactMigrationQueue implements ArtifactMigrationQueue {
                       )
                     ORDER BY id
                     FOR UPDATE SKIP LOCKED
-                    LIMIT ?
+                    LIMIT 1
                 )
                 UPDATE model AS target
                 SET artifact_state = 'RUNNING',
@@ -49,8 +50,20 @@ public class PostgresArtifactMigrationQueue implements ArtifactMigrationQueue {
                         leaseToken),
                 maxAttempts,
                 staleAfterSeconds,
-                batchSize,
                 leaseToken);
+        return claimed.stream().findFirst();
+    }
+
+    @Override
+    @Transactional
+    public boolean renew(Long id, String leaseToken) {
+        return jdbcTemplate.update("""
+                UPDATE model
+                SET artifact_migration_started_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                  AND artifact_state = 'RUNNING'
+                  AND artifact_migration_worker = ?
+                """, id, leaseToken) == 1;
     }
 
     @Override

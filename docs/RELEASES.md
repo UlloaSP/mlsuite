@@ -50,7 +50,8 @@ manifest, Compose/image agreement, and registry availability. It does not overwr
 an existing download directory. It uses GitHub's authenticated metadata checks;
 it does not perform independent cryptographic verification of attestations.
 
-The Compose asset overrides all application service references and platform. The
+The Compose asset provides all application service references and platform; the
+base production override deliberately contains no fallback application images. The
 single API image is reused by `db-migrate`, `artifact-migrate`, and `spring-app`
 so migrations always run from the exact digest being promoted.
 It is intended to accompany `docker-compose.yml` and `docker-compose.prod.yml`;
@@ -72,9 +73,10 @@ backup, restore, promotion and rollback orchestration; follow the production
 database and artifact rollout in `README.md` before starting the release.
 The initial on-premise contract is `local-single-disk`. The cutover wizard creates
 a coordinated local PostgreSQL plus MinIO backup, verifies it through an isolated
-restore rehearsal, and requires explicit acceptance that loss of the only disk is
-unrecoverable. Its RPO/RTO apply only to logical recovery; this is not PITR or
-disaster recovery. Add another physical failure domain before making either claim.
+restore rehearsal, rejects a rehearsal that exceeds `RECOVERY_RTO_MINUTES`, and
+requires explicit acceptance that loss of the only disk is unrecoverable. Its
+RPO/RTO apply only to logical recovery; this is not PITR or disaster recovery. Add
+another physical failure domain before making either claim.
 
 ## Failure and retry behavior
 

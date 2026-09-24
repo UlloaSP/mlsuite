@@ -63,12 +63,15 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     @Query("""
             SELECT new dev.ulloasp.mlsuite.storage.StoredArtifactReference(
-                m.id, m.storageBucket, m.storageObjectKey, m.modelSizeBytes, m.artifactSha256)
+                m.id, m.storageBucket, m.storageObjectKey, m.storageVersionId,
+                m.modelSizeBytes, m.artifactSha256)
             FROM Model m
             WHERE m.storageObjectKey IS NOT NULL
             ORDER BY m.id
             """)
     Slice<StoredArtifactReference> findStoredArtifactReferences(Pageable pageable);
+
+    boolean existsByStorageBucketAndStorageObjectKey(String storageBucket, String storageObjectKey);
 
     long countByArtifactState(ModelArtifactState state);
 
