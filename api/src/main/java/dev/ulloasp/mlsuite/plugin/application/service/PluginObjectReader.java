@@ -3,12 +3,14 @@ package dev.ulloasp.mlsuite.plugin.application.service;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginStoragePaths;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ArtifactIntegrityException;
 import dev.ulloasp.mlsuite.storage.ArtifactIntegrityVerifier;
@@ -23,25 +25,32 @@ public class PluginObjectReader {
     private final ObjectMapper mapper;
     private final PluginMetadataRepository metadata;
     private final StorageDeletionQueue deletionQueue;
+    private final OrganizationRepository organizations;
 
     public PluginObjectReader(
             ObjectStorageService storage,
             StorageProperties properties,
             ObjectMapper mapper,
             PluginMetadataRepository metadata,
-            StorageDeletionQueue deletionQueue) {
+            StorageDeletionQueue deletionQueue,
+            OrganizationRepository organizations) {
         this.storage = storage;
         this.properties = properties;
         this.mapper = mapper;
         this.metadata = metadata;
         this.deletionQueue = deletionQueue;
+        this.organizations = organizations;
     }
 
+    @Transactional
     public List<StoredPlugin> list(Long organizationId) {
         return listWithIdentity(organizationId).stream().map(ReadPlugin::plugin).toList();
     }
 
+    @Transactional
     public List<ReadPlugin> listWithIdentity(Long organizationId) {
+        // Legacy version and metadata repair must not race with deletion.
+        organizations.lockById(organizationId).orElseThrow();
         return storage.list(PluginStoragePaths.organizationItemsPrefix("plugins", organizationId)).stream()
                 .filter(item -> item.objectKey().endsWith(".json"))
                 .filter(item -> !deletionQueue.isDeletionRequested(properties.getBucket(), item.objectKey()))
@@ -53,7 +62,9 @@ public class PluginObjectReader {
                 .toList();
     }
 
+    @Transactional
     public StoredPlugin load(Long organizationId, String id) {
+        organizations.lockById(organizationId).orElseThrow();
         String objectKey = PluginStoragePaths.organizationItemObjectKey("plugins", organizationId, id);
         if (deletionQueue.isDeletionRequested(properties.getBucket(), objectKey)) {
             throw new PluginNotFoundException(id);

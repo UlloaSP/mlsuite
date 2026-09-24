@@ -42,7 +42,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_ADMIN_USER} -d ${DB_PROD}" ]
+      test: [ "CMD-SHELL", "grep -qx postgres /proc/1/comm && pg_isready -U ${DB_ADMIN_USER} -d ${DB_PROD}" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -86,7 +86,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
     command: server /data --console-address "${MINIO_CONSOLE_ADDRESS}"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -102,7 +102,7 @@ services:
     restart: unless-stopped
 
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    image: ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
     entrypoint: [ "/bin/sh", "/config/provision.sh" ]
     environment:
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}

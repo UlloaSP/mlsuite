@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.plugin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
@@ -15,6 +16,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.mockito.Mock;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,15 +27,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
 import dev.ulloasp.mlsuite.plugin.application.service.PluginServiceImpl;
+import dev.ulloasp.mlsuite.plugin.application.service.PluginObjectReader;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.StorageProperties;
 import dev.ulloasp.mlsuite.storage.StoredObjectItem;
+import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.storage.StoredObjectMetadata;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -54,6 +61,8 @@ class PluginServiceImplTest {
     private PluginMetadataRepository pluginMetadataRepository;
     @Mock
     private StorageDeletionQueue deletionQueue;
+    @Mock
+    private OrganizationRepository organizations;
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
     private PluginServiceImpl service;
@@ -63,6 +72,9 @@ class PluginServiceImplTest {
     void setUp() throws Exception {
         StorageProperties storageProperties = new StorageProperties();
         storageProperties.setBucket("bucket");
+        PluginObjectReader reader = new PluginObjectReader(
+                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository, deletionQueue,
+                organizations);
         service = new PluginServiceImpl(
                 objectStorageService,
                 storageProperties,
@@ -71,7 +83,9 @@ class PluginServiceImplTest {
                 workspaceAccessService,
                 workspaceAuthorizationService,
                 pluginMetadataRepository,
-                deletionQueue);
+                deletionQueue,
+                reader,
+                organizations);
         objects = Map.of(
                 "organizations/41/plugins/items/field.json", bytes(plugin(
                         "field", "alpha.ts", "export default defineFieldKind({ kind: \"alpha-field\" });")),
@@ -82,6 +96,10 @@ class PluginServiceImplTest {
         Organization organization = new Organization();
         organization.setId(41L);
         when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
+        when(organizations.lockById(41L)).thenReturn(Optional.of(organization));
+    }
+
+    private void prepareStoredObjects() {
         when(objectStorageService.list("organizations/41/plugins/items/"))
                 .thenReturn(objects.keySet().stream()
                         .map(key -> new StoredObjectItem("bucket", key, objects.get(key).length, "etag", now()))
@@ -99,6 +117,7 @@ class PluginServiceImplTest {
 
     @Test
     void list_FiltersSearchesAndPaginatesPlugins() {
+        prepareStoredObjects();
         PluginPageDto page = service.list(7L, 0, 10, "report", "zeta", "updated");
 
         assertEquals(1, page.items().size());
@@ -110,6 +129,7 @@ class PluginServiceImplTest {
 
     @Test
     void stats_CountsPluginTypesSeparatelyFromPagedList() {
+        prepareStoredObjects();
         var stats = service.stats(7L);
 
         assertEquals(1, stats.fieldPlugins());
@@ -118,6 +138,7 @@ class PluginServiceImplTest {
 
     @Test
     void list_SortsByBackendDisplayName() {
+        prepareStoredObjects();
         PluginPageDto page = service.list(7L, 0, 10, "all", "", "name");
 
         assertEquals(List.of("alpha-field", "invalid.ts", "zeta-report"),
@@ -126,6 +147,7 @@ class PluginServiceImplTest {
 
     @Test
     void listEstablishesStoredJsonIdentityWhenMetadataIsMissing() {
+        prepareStoredObjects();
         service.list(7L, 0, 10, "all", "", "name");
 
         ArgumentCaptor<PluginMetadata> captor = ArgumentCaptor.forClass(PluginMetadata.class);
@@ -142,6 +164,7 @@ class PluginServiceImplTest {
 
     @Test
     void deletedPluginStaysAbsentWhileObjectDeletionIsQueued() {
+        prepareStoredObjects();
         User user = new User();
         user.setId(7L);
         when(userLookupService.requireById(7L)).thenReturn(user);
@@ -153,6 +176,31 @@ class PluginServiceImplTest {
 
         assertEquals(2, page.totalItems());
         verify(deletionQueue).enqueue("bucket", "organizations/41/plugins/items/field.json", null);
+    }
+
+    @Test
+    void failedUploadCommitDeletesTheExactStoredVersion() {
+        User user = new User();
+        user.setId(7L);
+        when(userLookupService.requireById(7L)).thenReturn(user);
+        when(objectStorageService.store(anyString(), anyString(), eq("application/json"), any(byte[].class)))
+                .thenAnswer(invocation -> new StoredObject(
+                        "bucket", invocation.getArgument(0), 10, "etag", "version-1", "sha"));
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "field.ts", "application/typescript",
+                "export default defineFieldKind({ kind: \"field\" });".getBytes());
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            var uploaded = service.upload(7L, file);
+            TransactionSynchronizationManager.getSynchronizations().forEach(
+                    synchronization -> synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
+
+            verify(objectStorageService).delete(
+                    "bucket", "organizations/41/plugins/items/" + uploaded.id() + ".json", "version-1");
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     private byte[] bytes(StoredPlugin plugin) throws Exception {

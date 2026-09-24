@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
@@ -41,6 +42,8 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class PluginServiceImpl implements
@@ -62,6 +65,7 @@ public class PluginServiceImpl implements
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final PluginMetadataRepository pluginMetadataRepository;
     private final StorageDeletionQueue deletionQueue;
+    private final OrganizationRepository organizations;
 
     public PluginServiceImpl(
             ObjectStorageService objectStorageService,
@@ -71,9 +75,10 @@ public class PluginServiceImpl implements
             WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
             PluginMetadataRepository pluginMetadataRepository,
-            StorageDeletionQueue deletionQueue) {
-        this.pluginObjects = new PluginObjectReader(
-                objectStorageService, storageProperties, objectMapper, pluginMetadataRepository, deletionQueue);
+            StorageDeletionQueue deletionQueue,
+            PluginObjectReader pluginObjects,
+            OrganizationRepository organizations) {
+        this.pluginObjects = pluginObjects;
         this.objectStorageService = objectStorageService;
         this.storageProperties = storageProperties;
         this.objectMapper = objectMapper;
@@ -82,13 +87,16 @@ public class PluginServiceImpl implements
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.pluginMetadataRepository = pluginMetadataRepository;
         this.deletionQueue = deletionQueue;
+        this.organizations = organizations;
     }
 
     @Override
+    @Transactional
     public PluginDto upload(Long userId, MultipartFile file) {
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
+        organizations.lockById(organization.getId()).orElseThrow();
         try {
             String id = UUID.randomUUID().toString();
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -108,12 +116,15 @@ public class PluginServiceImpl implements
                     stored.fileName(),
                     "application/json",
                     objectMapper.writeValueAsBytes(stored));
-            try {
-                persistMetadata(organization, stored, user, uploaded, null);
-            } catch (RuntimeException ex) {
-                objectStorageService.delete(uploaded.bucket(), uploaded.objectKey(), uploaded.versionId());
-                throw ex;
-            }
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status != STATUS_COMMITTED) {
+                        objectStorageService.delete(uploaded.bucket(), uploaded.objectKey(), uploaded.versionId());
+                    }
+                }
+            });
+            persistMetadata(organization, stored, user, uploaded, null);
             return toDto(stored);
         } catch (IOException ex) {
             throw new IllegalStateException("Could not serialize plugin.", ex);
@@ -121,6 +132,7 @@ public class PluginServiceImpl implements
     }
 
     @Override
+    @Transactional
     public PluginPageDto list(Long userId, int page, int size, String type, String search, String sort) {
         List<PluginDto> allItems = listAll(userId);
         List<PluginDto> visibleItems = allItems.stream()
@@ -141,6 +153,7 @@ public class PluginServiceImpl implements
     }
 
     @Override
+    @Transactional
     public PluginStatsDto stats(Long userId) {
         List<PluginDto> allItems = listAll(userId);
         return new PluginStatsDto(
@@ -149,9 +162,12 @@ public class PluginServiceImpl implements
     }
 
     @Override
+    @Transactional
     public List<PluginDto> listAll(Long userId) {
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginView(userId, organization.getId());
+        // Catalog backfill and deletion must agree on one visible plugin state.
+        organizations.lockById(organization.getId()).orElseThrow();
         Map<String, PluginObjectReader.ReadPlugin> storedItems = new LinkedHashMap<>();
         Map<String, String> origins = new LinkedHashMap<>();
         pluginObjects.listWithIdentity(organization.getId())
@@ -173,6 +189,7 @@ public class PluginServiceImpl implements
         User user = userLookupService.requireById(userId);
         Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
         workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
+        organizations.lockById(organization.getId()).orElseThrow();
         readStored(user, id);
         Optional<PluginMetadata> metadata = pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId());
         deletionQueue.enqueue(

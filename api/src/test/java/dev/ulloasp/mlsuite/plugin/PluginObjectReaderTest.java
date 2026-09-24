@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
+import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.plugin.application.service.PluginObjectReader;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
@@ -32,15 +34,19 @@ class PluginObjectReaderTest {
     private final ObjectStorageService storage = mock(ObjectStorageService.class);
     private final PluginMetadataRepository metadata = mock(PluginMetadataRepository.class);
     private final StorageDeletionQueue deletionQueue = mock(StorageDeletionQueue.class);
+    private final OrganizationRepository organizations = mock(OrganizationRepository.class);
     private PluginObjectReader reader;
 
     @BeforeEach
     void setUp() {
         StorageProperties properties = new StorageProperties();
         properties.setBucket("plugins");
+        Organization organization = new Organization();
+        organization.setId(41L);
+        when(organizations.lockById(41L)).thenReturn(Optional.of(organization));
         reader = new PluginObjectReader(
                 storage, properties, new ObjectMapper().registerModule(new JavaTimeModule()), metadata,
-                deletionQueue);
+                deletionQueue, organizations);
     }
 
     @Test

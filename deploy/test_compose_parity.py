@@ -116,6 +116,11 @@ def main() -> None:
     assert production["services"]["db-provision"]["image"] == postgres_image, (
         "database provisioner must use the server's PostgreSQL version"
     )
+    minio_image = production["services"]["minio"]["image"]
+    assert IMAGE_DIGEST.fullmatch(minio_image), "object storage image must be pinned by digest"
+    assert production["services"]["minio-init"]["image"] == minio_image, (
+        "object storage provisioner must use the same pinned image"
+    )
     for name in APP_SERVICES:
         image = production["services"][name].get("image", "")
         assert IMAGE_DIGEST.fullmatch(image), f"production release must pin {name} by digest"
