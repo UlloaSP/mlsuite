@@ -20,9 +20,9 @@ import type { Bundle } from "@/features/models/lib/bundle-types";
 import { saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
 import {
   DF_EXTS,
+  MODEL_EXTS,
+  MODEL_EXT_LABEL,
   getStem,
-  isDfFile,
-  isJoblibFile,
   isModelFile,
   slugToTitle,
 } from "@/features/models/lib/bundle-utils";
@@ -52,7 +52,7 @@ export function CreateModelPage() {
     async (files: File[]) => {
       const inspected = await Promise.all(
         files.map(async (file) => {
-          if (isJoblibFile(file.name)) {
+          if (isModelFile(file.name)) {
             try {
               const inspection = await inspectArtifact.mutateAsync(file);
               return { file, kind: inspection.kind };
@@ -61,9 +61,9 @@ export function CreateModelPage() {
             }
             return null;
           }
-          if (isDfFile(file.name)) return { file, kind: "dataframe" as const };
-          if (isModelFile(file.name)) return { file, kind: "model" as const };
-          toast.error(`Unsupported file: ${file.name}. Choose a .joblib model or dataframe.`);
+          toast.error(
+            `Unsupported file: ${file.name}. Choose a model (${MODEL_EXT_LABEL}) or a .joblib dataframe.`,
+          );
           return null;
         }),
       );
@@ -145,7 +145,7 @@ export function CreateModelPage() {
   const attachModel = (bundleId: number) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".joblib";
+    input.accept = MODEL_EXTS.join(",");
     input.onchange = async (e) => {
       const files = Array.from((e.target as HTMLInputElement).files ?? []);
       if (!files.length) return;
