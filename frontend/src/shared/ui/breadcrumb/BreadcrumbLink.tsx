@@ -11,7 +11,7 @@ export function BreadcrumbLink({ className, ...props }: ComponentProps<typeof Li
   return (
     <Link
       className={cx(
-        "truncate font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]",
+        "min-w-0 break-words font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]",
         className,
       )}
       {...props}

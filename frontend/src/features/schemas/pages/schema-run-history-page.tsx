@@ -180,10 +180,11 @@ export function SchemaRunHistoryPage() {
           breadcrumbs={[
             { label: "Schemas", to: "/schemas" },
             { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
+            { label: "Bookmarks", to: `/schemas/${schemaId}/bookmarks` },
             {
               label: executableVersion
                 ? `${bookmark?.name ?? executableVersion.name} · v${executableVersion.version}`
-                : "Version",
+                : "Bookmark",
             },
             { label: "Inference History" },
           ]}

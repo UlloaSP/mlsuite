@@ -127,6 +127,8 @@ export function PredictionRunDetailPage() {
           breadcrumbs={[
             { label: "Schemas", to: "/schemas" },
             { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
+            { label: "Bookmarks", to: `/schemas/${schemaId}/bookmarks` },
+            { label: bookmark ? `${bookmark.name} · v${bookmark.version}` : "Bookmark" },
             { label: "Inference History", to: historyHref },
             { label: run?.name ?? "Prediction run" },
           ]}

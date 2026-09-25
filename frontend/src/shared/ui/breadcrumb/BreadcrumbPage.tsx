@@ -10,7 +10,7 @@ export function BreadcrumbPage({ className, ...props }: ComponentProps<"span">) 
   return (
     <span
       aria-current="page"
-      className={cx("truncate font-medium text-[var(--text-primary)]", className)}
+      className={cx("min-w-0 break-words font-medium text-[var(--text-primary)]", className)}
       {...props}
     />
   );
