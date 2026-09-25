@@ -71,7 +71,8 @@ export function SchemaSnapshotDetailPage() {
           breadcrumbs={[
             { label: "Schemas", to: "/schemas" },
             ...(schemaId ? [{ label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` }] : []),
-            { label: "Snapshot" },
+            { label: "Snapshots", to: `/schemas/${schemaId}/snapshots` },
+            { label: version ? `${version.name} · v${version.version}` : "Snapshot" },
           ]}
           actions={
             version ? (

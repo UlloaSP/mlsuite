@@ -181,7 +181,9 @@ export function SchemaDraftConflictPage() {
             ...(schemaId
               ? [{ label: schemaDto?.name ?? "Schema", to: `/schemas/${schemaId}` }]
               : []),
-            { label: "Review" },
+            { label: "Changes", to: `/schemas/${schemaId}/changes` },
+            { label: draft?.name ?? "Change", to: `/schemas/${schemaId}/drafts/${draftId}` },
+            { label: "Review changes" },
           ]}
           actions={
             <div className="flex flex-wrap gap-2">

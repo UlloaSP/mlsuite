@@ -143,6 +143,7 @@ export function SchemaDraftEditorPage() {
             ...(schemaId
               ? [{ label: schemaDto?.name ?? "Schema", to: `/schemas/${schemaId}` }]
               : []),
+            { label: "Changes", to: `/schemas/${schemaId}/changes` },
             { label: draft?.name ?? "Change" },
           ]}
           actions={

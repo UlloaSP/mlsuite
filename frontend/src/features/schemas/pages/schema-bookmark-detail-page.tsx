@@ -33,6 +33,7 @@ export function SchemaBookmarkDetailPage() {
           breadcrumbs={[
             { label: "Schemas", to: "/schemas" },
             ...(schemaId ? [{ label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` }] : []),
+            { label: "Bookmarks", to: `/schemas/${schemaId}/bookmarks` },
             { label: bookmark?.name ?? "Bookmark" },
           ]}
           actions={

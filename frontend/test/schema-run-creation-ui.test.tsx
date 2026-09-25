@@ -44,7 +44,9 @@ vi.mock("@/features/schemas/lib/schema-plugin-catalog", () => ({
 vi.mock("@/features/schemas/api/schema-queries", () => ({
   usePredictionRun: () => ({ data: undefined }),
   useSchema: () => ({ data: { name: "Risk schema" } }),
-  useSchemaBookmark: () => ({ data: { versionId: "version-1" } }),
+  useSchemaBookmark: () => ({
+    data: { name: "Risk bookmark", version: 1, versionId: "version-1" },
+  }),
   useSchemaVersion: () => ({ data: pageState.version, isLoading: false }),
 }));
 
@@ -236,6 +238,19 @@ describe("schema run creation UI", () => {
 
     const name = document.body.querySelector<HTMLInputElement>('[aria-label="Inference name"]')!;
     const save = document.body.querySelector<HTMLButtonElement>("[data-schema-run-save]")!;
+    const breadcrumbs = document.body.querySelector('nav[aria-label="Breadcrumb"]')!;
+    expect(
+      [...breadcrumbs.querySelectorAll("a")].map((link) => [
+        link.textContent,
+        link.getAttribute("href"),
+      ]),
+    ).toEqual([
+      ["Schemas", "/schemas"],
+      ["Risk schema", "/schemas/schema-1"],
+      ["Bookmarks", "/schemas/schema-1/bookmarks"],
+    ]);
+    expect(breadcrumbs.textContent).toContain("Risk bookmark");
+    expect(breadcrumbs.textContent).toContain("New inference");
     expect(name.value).toBe("run-2026-08-24T14:48:41.705Z");
     expect(save.textContent).toContain("Run inference first");
     expect(save.disabled).toBe(true);
