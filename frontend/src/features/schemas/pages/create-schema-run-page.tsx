@@ -164,14 +164,8 @@ export function CreateSchemaRunPage() {
             breadcrumbs={[
               { label: "Schemas", to: "/schemas" },
               { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
-              ...(executableVersion
-                ? [
-                    {
-                      label: `${executableVersion.name} v${executableVersion.version}`,
-                      to: `/schemas/${schemaId}/bookmarks/${bookmarkId}/runs`,
-                    },
-                  ]
-                : []),
+              { label: "Bookmarks", to: `/schemas/${schemaId}/bookmarks` },
+              { label: bookmark ? `${bookmark.name} · v${bookmark.version}` : "Bookmark" },
               { label: "New inference" },
             ]}
             actions={

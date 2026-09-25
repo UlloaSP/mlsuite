@@ -18,7 +18,7 @@ export function SchemaBookmarkCatalogItem({ bookmark, schemaId }: Props) {
   return (
     <article className="grid gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 transition hover:border-[var(--text-primary)] lg:grid-cols-[minmax(0,1fr)_auto]">
       <Link
-        to={`/schemas/${schemaId}/bookmarks/${bookmark.id}`}
+        to={`/schemas/${schemaId}/bookmarks/${bookmark.id}/runs/create`}
         className="min-w-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
       >
         <div className="flex items-center gap-2">
