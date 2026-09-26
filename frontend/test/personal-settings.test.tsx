@@ -158,6 +158,10 @@ describe("personal settings", () => {
       "/?section=layout",
     );
     expect(layoutTab.getAttribute("aria-controls")).toBe("personal-settings-panel-layout");
+    const panel = container.querySelector<HTMLElement>("#personal-settings-panel-layout")!;
+    expect(panel.classList.contains("overflow-y-auto")).toBe(true);
+    expect(panel.contains(container.querySelector("h1"))).toBe(false);
+    expect(panel.contains(layoutTab)).toBe(false);
     const left = container.querySelector<HTMLInputElement>('input[value="left"]')!;
     act(() => left.click());
 
