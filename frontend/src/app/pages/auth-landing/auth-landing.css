@@ -20,19 +20,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
   font-family: var(--font-sans);
 }
 
-.auth-wordmark {
-  letter-spacing: -0.04em;
-}
-
-.auth-wordmark-ml {
-  font-weight: 800;
-}
-
-.auth-wordmark-suite {
-  font-weight: 200;
-  margin-left: 0.06em;
-}
-
 /* 1. Frosted type background */
 .auth-bands {
   position: absolute;

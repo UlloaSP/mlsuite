@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { CSSProperties } from "react";
 import type { AuthMode } from "./authLandingCopy";
-import { AuthWordmark } from "./AuthWordmark";
+import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
 import type { AuthReveal } from "./useAuthAccess";
 
 export function AuthAccessOverlay({
@@ -31,7 +31,7 @@ export function AuthAccessOverlay({
           {mode === "login" ? (
             <>
               <span className="font-extralight">Welcome to </span>
-              <AuthWordmark suffix="." />
+              <MLSuiteWordmark suffix="." />
             </>
           ) : (
             <>
