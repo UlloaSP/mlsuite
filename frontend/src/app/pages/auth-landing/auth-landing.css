@@ -1,0 +1,143 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+/* Stage: reference frame is 1280x800. --auth-scale (>= 1) scales it uniformly on larger
+   viewports; the min height keeps the pass above the horizon logo. */
+.auth-stage {
+  --u: calc(var(--auth-scale, 1) * 1px);
+  position: relative;
+  height: max(100dvh, calc(760 * var(--u)));
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  /* 32px in the reference frame; taller viewports center the pass above the horizon
+     (81.25% of the height), which the 1280x800 frame fills exactly with 650px. */
+  padding: max(calc(32 * var(--u)), calc((81.25dvh - 650 * var(--u)) / 2 + 32 * var(--u))) 16px 0;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.auth-wordmark {
+  letter-spacing: -0.04em;
+}
+
+.auth-wordmark-ml {
+  font-weight: 800;
+}
+
+.auth-wordmark-suite {
+  font-weight: 200;
+  margin-left: 0.06em;
+}
+
+/* 1. Frosted type background */
+.auth-bands {
+  position: absolute;
+  inset: calc(-120 * var(--u));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transform: rotate(-8deg);
+  color: var(--accent-primary);
+  pointer-events: none;
+}
+
+.auth-band {
+  white-space: nowrap;
+  /* Six rows must still cover tall, narrow viewports. */
+  font-size: max(calc(150 * var(--u)), 100dvh / 5.3);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  width: max-content;
+  animation: auth-band-marquee linear infinite;
+}
+
+.auth-band > span {
+  padding-right: calc(40em / 150);
+}
+
+@keyframes auth-band-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* 2. Horizon glow and 3. tinted glass segment, scaled from the 1280px reference. */
+.auth-horizon-glow {
+  position: absolute;
+  left: 50%;
+  top: calc(81.25% - 11.72vw);
+  width: 140.625vw;
+  height: 70.3125vw;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklch, var(--accent-primary) 42%, transparent),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.auth-horizon {
+  position: absolute;
+  left: 50%;
+  top: 81.25%;
+  width: 187.5vw;
+  height: 109.375vw;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.28) 0,
+      rgba(255, 255, 255, 0.06) calc(46 * var(--u)),
+      transparent calc(120 * var(--u))
+    ),
+    radial-gradient(
+      ellipse calc(820 * var(--u)) calc(200 * var(--u)) at 50% 0,
+      color-mix(in oklch, var(--accent-primary) 55%, white),
+      transparent
+    ),
+    color-mix(in oklch, var(--accent-primary) 64%, transparent);
+  -webkit-backdrop-filter: blur(calc(26 * var(--u))) saturate(1.6);
+  backdrop-filter: blur(calc(26 * var(--u))) saturate(1.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.18),
+    0 calc(-40 * var(--u)) calc(120 * var(--u)) calc(-30 * var(--u))
+      color-mix(in oklch, var(--accent-primary) 65%, transparent);
+  pointer-events: none;
+}
+
+/* 4. Logo inside the segment */
+.auth-horizon-logo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(40 * var(--u));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: calc(22 * var(--u));
+  color: var(--text-inverse);
+  font-size: min(calc(74 * var(--u)), 12vw);
+  line-height: 1;
+}
+
+.auth-horizon-logo img {
+  height: min(calc(62 * var(--u)), 10vw);
+  width: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-band {
+    animation-play-state: paused;
+  }
+}

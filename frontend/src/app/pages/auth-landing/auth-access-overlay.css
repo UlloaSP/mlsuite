@@ -1,0 +1,87 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+/* Access overlay */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  font-family: var(--font-sans);
+  clip-path: circle(0 at var(--auth-reveal-x) var(--auth-reveal-y));
+  transition: clip-path 1s cubic-bezier(0.7, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.auth-overlay[data-open="true"] {
+  clip-path: circle(var(--auth-reveal-r) at var(--auth-reveal-x) var(--auth-reveal-y));
+  pointer-events: auto;
+}
+
+.auth-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  zoom: var(--auth-scale, 1);
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.6s 0.45s,
+    transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.45s;
+}
+
+.auth-overlay[data-open="true"] .auth-overlay-content {
+  opacity: 1;
+  transform: none;
+}
+
+.auth-overlay-bar {
+  width: 240px;
+  height: 2px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--text-inverse) 25%, transparent);
+}
+
+.auth-overlay-bar > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--text-inverse);
+}
+
+.auth-overlay[data-open="true"] .auth-overlay-bar > span {
+  width: 100%;
+  transition: width 2.4s ease 0.6s;
+}
+
+/* Reduced motion: a 200ms crossfade replaces the tear and circle reveal. */
+@media (prefers-reduced-motion: reduce) {
+  .auth-overlay {
+    clip-path: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .auth-overlay[data-open="true"] {
+    clip-path: none;
+    opacity: 1;
+  }
+
+  .auth-overlay-content,
+  .auth-overlay[data-open="true"] .auth-overlay-bar > span {
+    transform: none;
+    transition: none;
+  }
+
+  .auth-overlay[data-open="true"] .auth-overlay-content {
+    opacity: 1;
+  }
+}

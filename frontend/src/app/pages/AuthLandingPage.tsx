@@ -3,19 +3,24 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 import { useAtom } from "jotai";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import type { LoginPayload, RegisterPayload } from "@/capabilities/workspace-context/session-api";
 import { safeReturnTo, useLogin, useRegister } from "@/capabilities/workspace-context/session";
+import { AuthAccessOverlay } from "./auth-landing/AuthAccessOverlay";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
-import { AuthHeader } from "./auth-landing/AuthHeader";
-import { AuthHero } from "./auth-landing/AuthHero";
-import { AuthRelief } from "./auth-landing/AuthRelief";
-import { AuthTrace } from "./auth-landing/AuthTrace";
+import { AuthHorizon } from "./auth-landing/AuthHorizon";
+import { AuthPassStub } from "./auth-landing/AuthPassStub";
+import { AuthTypeBands } from "./auth-landing/AuthTypeBands";
 import type { AuthMode } from "./auth-landing/authLandingCopy";
+import { useAuthAccess } from "./auth-landing/useAuthAccess";
+import { useAuthStageScale } from "./auth-landing/useAuthStageScale";
+import "./auth-landing/auth-landing.css";
+import "./auth-landing/auth-pass.css";
+import "./auth-landing/auth-access-overlay.css";
 
 function readFormValue(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -25,24 +30,33 @@ function readFormValue(formData: FormData, name: string) {
 export function AuthLandingPage() {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [searchParams] = useSearchParams();
-  const destination = safeReturnTo(searchParams.get("returnTo"));
+  const access = useAuthAccess(safeReturnTo(searchParams.get("returnTo")));
+  const passRef = useRef<HTMLDivElement>(null);
+  const scale = useAuthStageScale();
   const [mode, setMode] = useState<AuthMode>("login");
-  const login = useLogin(destination);
-  const register = useRegister(destination);
-  const busy = mode === "login" ? login.isPending : register.isPending;
-  const submitError = mode === "login" ? login.error : register.error;
+  const login = useLogin();
+  const register = useRegister();
+  const mutation = mode === "login" ? login : register;
+
+  const changeMode = (next: AuthMode) => {
+    login.reset();
+    register.reset();
+    setMode(next);
+  };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (busy) return;
+    if (access.phase !== 0) return;
 
     const formData = new FormData(event.currentTarget);
     const email = readFormValue(formData, "email");
     const password = readFormValue(formData, "password");
+    const callbacks = { onSuccess: access.succeed, onError: access.fail };
+    access.start(passRef.current);
 
     if (mode === "login") {
       const request: LoginPayload = { email, password };
-      login.mutate(request);
+      login.mutate(request, callbacks);
       return;
     }
 
@@ -51,41 +65,34 @@ export function AuthLandingPage() {
       password,
       fullName: readFormValue(formData, "fullName"),
     };
-    register.mutate(request);
+    register.mutate(request, callbacks);
   };
 
   return (
-    <div
-      className={`min-h-dvh bg-[var(--page-bg)] text-[var(--text-primary)] ${theme === "dark" ? "dark" : ""}`}
+    <main
+      className={`auth-stage ${theme === "dark" ? "dark" : ""}`}
+      aria-labelledby="auth-title"
+      style={{ "--auth-scale": scale } as CSSProperties}
     >
-      <main className="relative isolate grid min-h-dvh w-full overflow-hidden bg-[var(--surface-secondary)] lg:grid-cols-[minmax(0,7fr)_minmax(28rem,5fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto]">
-        <AuthRelief mode={mode} />
-        <AuthHeader />
+      <AuthTypeBands />
+      <AuthHorizon />
 
-        <section
-          className="relative z-10 order-2 flex min-h-[19rem] border-b border-[var(--border-soft)] px-5 py-10 sm:min-h-[22rem] sm:px-8 sm:py-14 lg:col-start-1 lg:row-start-2 lg:min-h-0 lg:border-b-0 lg:border-r lg:px-12 lg:py-12 xl:px-16 xl:py-[clamp(2rem,6dvh,4rem)]"
-          aria-labelledby="auth-title"
-        >
-          <AuthHero />
-        </section>
-
-        <section
-          className="relative z-10 order-1 flex items-start overflow-y-auto border-b border-[var(--border-soft)] bg-[color-mix(in_srgb,var(--surface-primary)_90%,transparent)] px-5 py-12 sm:px-8 lg:col-start-2 lg:row-span-2 lg:row-start-2 lg:min-h-0 lg:border-b-0 lg:px-12 lg:py-12 xl:px-16"
-          aria-label="Authentication"
-        >
+      <div ref={passRef} className="auth-pass" data-phase={access.phase}>
+        <div className="auth-pass-top">
+          <AuthPassStub mode={mode} />
+        </div>
+        <div className="auth-pass-bottom">
           <AuthFormPanel
             mode={mode}
-            busy={busy}
-            error={submitError}
-            onModeChange={setMode}
+            locked={access.phase !== 0}
+            failed={mutation.isError && access.phase === 0}
+            onModeChange={changeMode}
             onSubmit={submit}
           />
-        </section>
+        </div>
+      </div>
 
-        <section className="relative z-10 order-3 hidden lg:col-start-1 lg:row-start-3 lg:block lg:border-r lg:border-[var(--border-soft)]">
-          <AuthTrace />
-        </section>
-      </main>
-    </div>
+      <AuthAccessOverlay mode={mode} open={access.phase === 2} reveal={access.reveal} />
+    </main>
   );
 }

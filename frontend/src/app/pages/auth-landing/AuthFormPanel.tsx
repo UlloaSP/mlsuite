@@ -3,115 +3,106 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { FormEvent } from "react";
-import { ArrowRight, LoaderCircle } from "lucide-react";
-import { AppButton } from "@/shared/ui/AppButton";
+import { useId, type FormEvent } from "react";
 import { AUTH_COPY, PASSWORD_MIN_LENGTH, type AuthMode } from "./authLandingCopy";
 import { AuthField } from "./AuthField";
 
 export function AuthFormPanel({
   mode,
-  busy,
-  error,
+  locked,
+  failed,
   onModeChange,
   onSubmit,
 }: {
   mode: AuthMode;
-  busy: boolean;
-  error?: unknown;
+  locked: boolean;
+  failed: boolean;
   onModeChange: (mode: AuthMode) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const copy = AUTH_COPY[mode];
+  const errorId = useId();
+  const field = { required: true, readOnly: locked, invalid: failed, errorId };
+  const error = failed ? (
+    <p
+      id={errorId}
+      role="alert"
+      className="mt-1 text-[13px] leading-[18px] text-[var(--danger-text)]"
+    >
+      {copy.error}
+    </p>
+  ) : null;
 
   return (
-    <div className="mx-auto my-auto w-full max-w-md">
-      <div className="mb-10">
-        <h2
-          aria-label={`${copy.titleLead} ${copy.titleEmphasis}`}
-          className="text-[3.75rem] leading-[0.82] tracking-[-0.06em] text-[var(--text-primary)] sm:text-[4.5rem] xl:text-[5rem]"
-        >
-          <span aria-hidden="true" className="block font-light">
-            {copy.titleLead}
-          </span>
-          <span aria-hidden="true" className="block font-extrabold">
-            {copy.titleEmphasis}
-          </span>
-        </h2>
-      </div>
-
-      <form className="grid gap-6" onSubmit={onSubmit}>
-        {mode === "register" ? (
-          <AuthField
-            required
-            disabled={busy}
-            marker="01"
-            label="Full name"
-            name="fullName"
-            autoComplete="name"
-            placeholder="Your name"
-          />
-        ) : null}
-        <AuthField
-          required
-          disabled={busy}
-          marker={mode === "register" ? "02" : "01"}
-          label="Email"
-          name="email"
-          type="email"
-          autoComplete={mode === "login" ? "username" : "email"}
-          placeholder="you@company.com"
-        />
-        <AuthField
-          required
-          disabled={busy}
-          marker={mode === "register" ? "03" : "02"}
-          label="Password"
-          name="password"
-          type="password"
-          minLength={mode === "register" ? PASSWORD_MIN_LENGTH : undefined}
-          autoComplete={copy.passwordAutoComplete}
-          placeholder={mode === "register" ? "At least 10 characters" : "Your password"}
-        />
-
-        {error ? (
-          <p
-            className="rounded bg-[var(--danger-quiet)] px-4 py-3 text-sm text-[var(--danger-text)]"
-            role="alert"
-          >
-            {copy.error}
-          </p>
-        ) : null}
-
-        <AppButton
-          type="submit"
-          disabled={busy}
-          className="mt-2 h-14 w-full justify-between px-5 text-base font-semibold"
-        >
-          {busy ? copy.pending : copy.submit}
-          {busy ? (
-            <LoaderCircle
-              className="animate-spin motion-reduce:animate-none"
-              aria-hidden="true"
-              size={17}
+    <form className="auth-glass" aria-busy={locked} onSubmit={onSubmit}>
+      <div aria-hidden="true" className="auth-perforation" />
+      <div className="flex flex-1 flex-col justify-between">
+        {mode === "login" ? (
+          <div className="flex flex-col gap-4">
+            <AuthField
+              {...field}
+              label="EMAIL"
+              name="email"
+              type="email"
+              autoComplete="username"
+              placeholder="admin@example.com"
             />
-          ) : (
-            <ArrowRight aria-hidden="true" size={17} />
-          )}
-        </AppButton>
+            <AuthField
+              {...field}
+              label="PASSWORD"
+              name="password"
+              type="password"
+              autoComplete={copy.passwordAutoComplete}
+              placeholder="••••••••••••"
+            />
+            {error}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            <AuthField {...field} name="fullName" autoComplete="name" placeholder="Full name" />
+            <AuthField
+              {...field}
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="Email"
+            />
+            <AuthField
+              {...field}
+              name="password"
+              type="password"
+              minLength={PASSWORD_MIN_LENGTH}
+              autoComplete={copy.passwordAutoComplete}
+              placeholder="Password"
+            />
+            {error}
+          </div>
+        )}
 
-        <div className="flex flex-wrap items-center gap-x-1 text-sm text-[var(--text-secondary)]">
-          <span>{copy.switchPrompt}</span>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onModeChange(mode === "login" ? "register" : "login")}
-            className="rounded px-1 py-0.5 font-semibold text-[var(--accent-primary-strong)] outline-none transition hover:text-[var(--accent-primary)] focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {copy.switchAction}
+        <div className="flex flex-col gap-3.5">
+          <button type="submit" disabled={locked} className="auth-submit">
+            {locked ? (
+              <span aria-label={copy.submit}>✓</span>
+            ) : (
+              <>
+                {copy.submit}
+                <span aria-hidden="true">&nbsp;&nbsp;→</span>
+              </>
+            )}
           </button>
+          <div className="flex justify-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            {copy.switchPrompt}
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() => onModeChange(mode === "login" ? "register" : "login")}
+              className="auth-link"
+            >
+              {copy.switchAction}
+            </button>
+          </div>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }

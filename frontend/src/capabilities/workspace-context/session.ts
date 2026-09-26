@@ -33,30 +33,26 @@ export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "
 export const safeReturnTo = (value: string | null | undefined, fallback = "/home") =>
   value?.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : fallback;
 
-export const useLogin = (destination = "/home") => {
+export const useLogin = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   return useMutation({
     meta: { errorHandledLocally: true },
     mutationFn: login,
     onSuccess: (user) => {
       queryClient.setQueryData(USER_QUERY_KEY, user);
       void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      void navigate(destination, { replace: true });
     },
   });
 };
 
-export const useRegister = (destination = "/home") => {
+export const useRegister = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   return useMutation({
     meta: { errorHandledLocally: true },
     mutationFn: register,
     onSuccess: (user) => {
       queryClient.setQueryData(USER_QUERY_KEY, user);
       void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      void navigate(destination, { replace: true });
     },
   });
 };
