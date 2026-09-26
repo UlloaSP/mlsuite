@@ -32,7 +32,7 @@ export function UserCatalogTile({
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <article className="grid gap-5 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 md:grid-cols-[minmax(0,1fr)_auto]">
+    <article className="grid gap-5 rounded border border-line bg-surface p-4 md:grid-cols-[minmax(0,1fr)_auto]">
       <div className="flex min-w-0 items-start gap-3">
         {item.avatarUrl ? (
           <img
@@ -42,16 +42,14 @@ export function UserCatalogTile({
             referrerPolicy="no-referrer"
           />
         ) : (
-          <span className="grid size-12 shrink-0 place-items-center rounded bg-[var(--accent-quiet)] text-sm font-semibold text-[var(--accent-primary-strong)]">
+          <span className="grid size-12 shrink-0 place-items-center rounded bg-accent-subtle text-sm font-semibold text-accent-strong">
             {initials}
           </span>
         )}
         <div className="min-w-0 space-y-2">
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold text-[var(--text-primary)]">
-              {displayName}
-            </h2>
-            <p className="truncate text-sm text-[var(--text-secondary)]">{item.email}</p>
+            <h2 className="truncate text-lg font-semibold text-fg">{displayName}</h2>
+            <p className="truncate text-sm text-fg-secondary">{item.email}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <UserInfoBadge icon={<ShieldCheck size={14} />} label={item.systemRole} />

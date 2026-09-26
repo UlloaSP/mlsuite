@@ -45,7 +45,7 @@ export function InvitationsPage() {
           breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Invitations" }]}
         />
         {canInvite ? (
-          <section className="border-y border-[var(--border-soft)] py-5">
+          <section className="border-y border-line py-5">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <AppSectionTitle>Invite member</AppSectionTitle>

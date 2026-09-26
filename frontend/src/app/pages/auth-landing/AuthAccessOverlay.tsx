@@ -41,9 +41,7 @@ export function AuthAccessOverlay({
           )}
         </p>
         <div className="flex flex-col items-center gap-3">
-          <span className="font-[family-name:var(--font-mono)] text-xs tracking-[0.35em]">
-            OPENING WORKSPACE
-          </span>
+          <span className="font-mono text-xs tracking-[0.35em]">OPENING WORKSPACE</span>
           <div aria-hidden="true" className="auth-overlay-bar">
             <span />
           </div>

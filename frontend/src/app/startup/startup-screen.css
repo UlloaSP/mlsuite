@@ -11,8 +11,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
   justify-content: center;
   gap: 40px;
   padding: 24px;
-  background: var(--page-bg);
-  color: var(--text-primary);
+  background: var(--color-page);
+  color: var(--color-fg);
   font-family: var(--font-sans);
   text-align: center;
 }
@@ -57,7 +57,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 .startup-hint {
   margin-top: -28px;
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--color-fg-secondary);
 }
 
 .startup-hint code {

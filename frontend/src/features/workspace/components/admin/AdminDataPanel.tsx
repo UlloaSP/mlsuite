@@ -28,9 +28,7 @@ export function AdminDataPanel({
       <div className="flex flex-wrap items-start justify-between gap-4 p-6">
         <div>
           <AppSectionTitle>{title}</AppSectionTitle>
-          {description ? (
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">{description}</p>
-          ) : null}
+          {description ? <p className="mt-1 text-sm text-fg-secondary">{description}</p> : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {onSearch ? (

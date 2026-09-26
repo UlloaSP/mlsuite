@@ -23,7 +23,7 @@ export function ReviewSelectionHeader({
     <div className="flex items-center justify-between gap-3">
       <div>
         <h3 className="font-semibold">{title}</h3>
-        <p className="text-xs text-[var(--text-secondary)]">
+        <p className="text-xs text-fg-secondary">
           {count} of {total} selected
         </p>
       </div>

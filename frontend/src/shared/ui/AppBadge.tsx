@@ -7,11 +7,11 @@ import type { HTMLAttributes } from "react";
 import { cx } from "./cx";
 
 const TONES = {
-  neutral: "border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-secondary)]",
-  accent: "border-transparent bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]",
-  success: "border-transparent bg-[var(--success-quiet)] text-[var(--success-text)]",
-  warning: "border-transparent bg-[var(--warning-quiet)] text-[var(--warning-text)]",
-  danger: "border-transparent bg-[var(--danger-quiet)] text-[var(--danger-text)]",
+  neutral: "border-line bg-surface-muted text-fg-secondary",
+  accent: "border-transparent bg-accent-subtle text-accent-strong",
+  success: "border-transparent bg-success-subtle text-success-fg",
+  warning: "border-transparent bg-warning-subtle text-warning-fg",
+  danger: "border-transparent bg-danger-subtle text-danger-fg",
 };
 
 export function AppBadge({

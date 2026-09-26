@@ -16,18 +16,16 @@ type Props = {
 
 export function SchemaBookmarkCatalogItem({ bookmark, schemaId }: Props) {
   return (
-    <article className="grid gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 transition hover:border-[var(--text-primary)] lg:grid-cols-[minmax(0,1fr)_auto]">
+    <article className="grid gap-4 rounded border border-line bg-surface p-4 transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_auto]">
       <Link
         to={`/schemas/${schemaId}/bookmarks/${bookmark.id}/runs/create`}
-        className="min-w-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+        className="min-w-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         <div className="flex items-center gap-2">
-          <Tag size={16} className="shrink-0 text-[var(--text-secondary)]" />
-          <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">
-            {bookmark.name}
-          </h2>
+          <Tag size={16} className="shrink-0 text-fg-secondary" />
+          <h2 className="truncate text-base font-semibold text-fg">{bookmark.name}</h2>
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--text-secondary)]">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg-secondary">
           <span className="inline-flex items-center gap-1">
             <GitCommitHorizontal size={15} />
             {bookmark.versionName} · v{bookmark.version}

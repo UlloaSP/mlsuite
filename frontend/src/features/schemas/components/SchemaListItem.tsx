@@ -32,7 +32,7 @@ export function SchemaListItem({
 }: SchemaListItemProps) {
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
   return (
-    <article className="group grid gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 transition hover:border-[var(--text-primary)] lg:grid-cols-[minmax(0,1fr)_minmax(300px,auto)_auto]">
+    <article className="group grid gap-4 rounded border border-line bg-surface p-4 transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_minmax(300px,auto)_auto]">
       <button
         type="button"
         onClick={onOpen}
@@ -40,25 +40,23 @@ export function SchemaListItem({
       >
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <FileJson size={16} className="shrink-0 text-[var(--text-muted)]" />
-            <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">
-              {item.name}
-            </h2>
+            <FileJson size={16} className="shrink-0 text-fg-muted" />
+            <h2 className="truncate text-base font-semibold text-fg">{item.name}</h2>
             {item.archivedAt ? (
-              <span className="rounded border border-[var(--border-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--text-secondary)]">
+              <span className="rounded border border-line px-2 py-0.5 text-xs font-semibold text-fg-secondary">
                 Archived
               </span>
             ) : null}
           </div>
-          <p className="mt-2 line-clamp-2 text-sm text-[var(--text-secondary)]">
+          <p className="mt-2 line-clamp-2 text-sm text-fg-secondary">
             {item.description || "Organization-level form snapshot"}
           </p>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-[var(--text-muted)]">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-fg-muted">
             <span className="inline-flex items-center gap-2">
               {item.updatedByAvatarUrl ? (
                 <img src={item.updatedByAvatarUrl} alt="" className="size-5 rounded object-cover" />
               ) : (
-                <span className="grid size-5 place-items-center rounded bg-[var(--surface-muted)] text-[0.65rem] font-semibold text-[var(--text-secondary)]">
+                <span className="grid size-5 place-items-center rounded bg-surface-muted text-3xs font-semibold text-fg-secondary">
                   {modifier.slice(0, 1).toUpperCase()}
                 </span>
               )}
@@ -75,14 +73,12 @@ export function SchemaListItem({
           {metrics.map((metric) => {
             const Icon = metric.icon;
             return (
-              <div key={metric.key} className="rounded bg-[var(--surface-secondary)] px-3 py-2">
-                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+              <div key={metric.key} className="rounded bg-surface-subtle px-3 py-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-fg-secondary">
                   <Icon size={14} />
                   {metric.label}
                 </div>
-                <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
-                  {item[metric.key]}
-                </p>
+                <p className="mt-1 text-xl font-semibold text-fg">{item[metric.key]}</p>
               </div>
             );
           })}

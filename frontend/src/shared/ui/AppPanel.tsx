@@ -15,11 +15,11 @@ export function AppPanel({
   return (
     <div
       className={cx(
-        "text-[var(--text-primary)]",
+        "text-fg",
         variant === "panel"
-          ? "rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-card)]"
+          ? "rounded border border-line bg-surface-subtle p-5 shadow-card"
           : variant === "catalog"
-            ? "rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4"
+            ? "rounded border border-line bg-surface p-4"
             : "bg-transparent",
         className,
       )}

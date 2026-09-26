@@ -86,11 +86,11 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
           {label}
         </span>
         {processing ? (
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--danger-text)]">
+          <span className="text-2xs font-semibold uppercase tracking-[0.18em] text-danger-fg">
             Stop
           </span>
         ) : bulk.status === "done" ? (
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span className="text-2xs font-semibold uppercase tracking-[0.18em] text-fg-muted">
             Again
           </span>
         ) : null}

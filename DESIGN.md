@@ -28,11 +28,14 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 
 ## Visual system
 
-- Use semantic theme tokens from `frontend/src/shared/ui/theme-presets.css`; never hardcode a preset color in a feature.
-- MLSuite, Airbnb, Grove, Ocean, Ember, Iris, and custom themes support light and dark modes.
-- Product identity and success, warning, danger, focus, and selection roles remain semantic across themes.
-- Manrope is the default interface font. IBM Plex Sans, Source Sans 3, and the system stack are supported alternatives.
-- Use the shared radius, typography, spacing, shadow, and motion tokens instead of feature-local scales.
+- `frontend/src/shared/ui/tokens.css` is the single token source and replaces Tailwind's default palette, radius, and shadow scales. Themes in `theme-presets.css` and custom themes only set `--theme-*` inputs; every token derives from them.
+- Style with token utilities (`bg-surface`, `text-fg-muted`, `border-line`, `bg-accent`, `text-on-accent`), never hex values, Tailwind palette colors, or `[var(--…)]` wrappers.
+- Color roles: page, surface (`subtle`, `muted`, `hover`, `selected`, `raised`, `inverse`), `overlay`, `fg` (`secondary`, `muted`, `disabled`, `inverse`), `line` (`strong`), accent (`hover`, `strong`, `subtle`, `border`, `on-accent`), `focus`, `chart-1…6`, and `code` surfaces for logs and terminals.
+- Status roles `success`, `warning`, `danger`, and `info` each provide a solid color, `-fg`, `-subtle`, and `-border`. Pair them with text or icons; color is never the only signal.
+- Scales: text `3xs`, `2xs`, then Tailwind's `xs` upward; radius `sm` to `3xl`; shadows `card`, `hover`, and `overlay`; motion `--duration-fast|base|slow` with `--ease-emphasized`; fixed layers `z-(--z-drawer|overlay|modal|popover)`.
+- Built-in themes (MLSuite, Airbnb, Grove, Ocean, Ember, Iris, and the community palettes Graphite, Nord, Catppuccin, Rosé Pine, Tokyo Night, Gruvbox, and Solarized) and custom themes support light and dark modes.
+- Fonts are presets in `frontend/src/shared/ui/font-catalog.ts`, like themes. Manrope and DM Mono are the defaults; Inter, Geist, IBM Plex Sans, Source Sans 3, Figtree, DM Sans, Atkinson Hyperlegible, and the system stack are the interface alternatives, and JetBrains Mono, Geist Mono, IBM Plex Mono, Fira Code, Source Code Pro, and the system stack the monospace ones. One stylesheet in `index.html` declares every family; browsers only download the family in use. Style text with `font-sans`, `font-mono`, and `text-code`.
+- `frontend/test/design-tokens.test.ts` rejects palette and hex classes and undefined color tokens. Add a role to `tokens.css` instead of an exception.
 - Treat tables, code, schemas, logs, and reports as first-class content surfaces.
 
 ## Layout

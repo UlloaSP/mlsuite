@@ -15,14 +15,12 @@ export function KpiCard({
   color: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 pb-3 pt-3.5">
-      <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-[var(--text-secondary)]">
+    <div className="relative overflow-hidden rounded-xl border border-line bg-surface px-4 pb-3 pt-3.5">
+      <p className="text-3xs font-semibold uppercase tracking-[0.12em] text-fg-secondary">
         {label}
       </p>
-      <p className="mt-1.5 font-mono text-xl font-medium tracking-tight text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-1 text-[0.68rem] text-[var(--text-secondary)]">{sub}</p>
+      <p className="mt-1.5 font-mono text-xl font-medium tracking-tight text-fg">{value}</p>
+      <p className="mt-1 text-2xs text-fg-secondary">{sub}</p>
       {data.length > 0 && <Sparkline data={data} color={color} />}
     </div>
   );

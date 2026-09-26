@@ -9,10 +9,12 @@ import {
 import { formatBytes, formatPercent } from "@/features/infrastructure/lib/formatters";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 import { KpiCard } from "./KpiCard";
-import { OverviewSegmentedControl } from "./OverviewSegmentedControl";
 import { OverviewChartPanel } from "./OverviewChartPanel";
 import { OverviewServicePanels } from "./OverviewServicePanels";
 import { OverviewSignalsPanel } from "./OverviewSignalsPanel";
+import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
+
+const CHART_RANGES = ["15m", "60m", "6h", "24h"];
 
 type Props = {
   overview: InfrastructureOverviewDto;
@@ -33,19 +35,18 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+          <p className="text-3xs font-semibold uppercase tracking-[0.14em] text-fg-secondary">
             Infrastructure overview
           </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Control dashboard
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Control dashboard</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
             Managed services, live logs, shell access, and aggregate resource use.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <OverviewSegmentedControl
-            options={["15m", "60m", "6h", "24h"]}
+          <AppSegmentedControl
+            label="Chart range"
+            options={CHART_RANGES.map((range) => ({ value: range, label: range }))}
             value={chartRange}
             onChange={setChartRange}
           />
@@ -65,7 +66,7 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
           sub="summed service CPU"
           tone={toneForMetric(aggregate.cpu.percent)}
           data={points.map((point) => ({ v: point.cpuPercent }))}
-          color="#6366f1"
+          color="var(--color-chart-1)"
         />
         <KpiCard
           label="RAM"
@@ -73,7 +74,7 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
           sub="service memory share"
           tone={toneForMetric(aggregate.ram.percent)}
           data={points.map((point) => ({ v: point.ramPercent }))}
-          color="#10b981"
+          color="var(--color-chart-2)"
         />
         <KpiCard
           label="Disk R/W"
@@ -81,7 +82,7 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
           sub="Docker BlockIO"
           tone="neutral"
           data={points.map((point) => ({ v: point.diskReadBytes }))}
-          color="#f59e0b"
+          color="var(--color-chart-3)"
         />
         <KpiCard
           label="Network I/O"
@@ -89,7 +90,7 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
           sub="Docker NetIO"
           tone="neutral"
           data={points.map((point) => ({ v: point.networkRxBytes }))}
-          color="#0ea5e9"
+          color="var(--color-chart-5)"
         />
         <KpiCard
           label="Services"
@@ -103,7 +104,7 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
           }
           tone={issues > 0 ? "warning" : "success"}
           data={[]}
-          color="#10b981"
+          color="var(--color-chart-2)"
         />
       </div>
 

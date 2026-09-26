@@ -27,7 +27,7 @@ export function ThemeColorFields({
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {COLOR_FIELDS.map(([key, label]) => (
-        <div key={key} className="grid gap-1.5 text-sm font-semibold text-[var(--text-primary)]">
+        <div key={key} className="grid gap-1.5 text-sm font-semibold text-fg">
           <span>{label}</span>
           <div className="flex items-center gap-2">
             <input
@@ -35,7 +35,7 @@ export function ThemeColorFields({
               type="color"
               value={/^#[0-9a-f]{6}$/i.test(palette[key]) ? palette[key] : "#000000"}
               onChange={(event) => onChange({ ...palette, [key]: event.target.value })}
-              className="size-10 shrink-0 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-1"
+              className="size-10 shrink-0 rounded border border-line bg-surface p-1"
             />
             <AppTextField
               aria-label={`${mode} ${label}`}

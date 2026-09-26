@@ -11,21 +11,51 @@
     typography: "ui/typography",
   };
   const modes = ["dark", "light", "system"];
-  const presets = ["mlsuite", "airbnb", "grove", "ocean", "ember", "iris"];
+  const presets = [
+    "mlsuite",
+    "airbnb",
+    "grove",
+    "ocean",
+    "ember",
+    "iris",
+    "graphite",
+    "nord",
+    "catppuccin",
+    "rose-pine",
+    "tokyo-night",
+    "gruvbox",
+    "solarized",
+  ];
   const contrasts = [100, 105, 110, 115, 120, 125];
-  const interfaceFonts = ["cereal", "segoe", "avenir", "system"];
-  const monospaceFonts = ["dm-mono", "consolas", "system-mono"];
+  // Mirrors src/shared/ui/font-catalog.ts; test/font-catalog.test.ts keeps them in sync.
   const interfaceStacks = {
-    cereal: "'Manrope', 'Trebuchet MS', sans-serif",
-    segoe: "'IBM Plex Sans', Arial, sans-serif",
-    avenir: "'Source Sans 3', Verdana, sans-serif",
+    manrope: "'Manrope', 'Trebuchet MS', sans-serif",
+    inter: "'Inter', Arial, sans-serif",
+    geist: "'Geist', Arial, sans-serif",
+    "ibm-plex-sans": "'IBM Plex Sans', Arial, sans-serif",
+    "source-sans-3": "'Source Sans 3', Verdana, sans-serif",
+    figtree: "'Figtree', Arial, sans-serif",
+    "dm-sans": "'DM Sans', Arial, sans-serif",
+    "atkinson-hyperlegible": "'Atkinson Hyperlegible Next', Verdana, sans-serif",
     system: "system-ui, -apple-system, 'Segoe UI', sans-serif",
   };
   const monospaceStacks = {
-    "dm-mono": "'DM Mono', 'Consolas', ui-monospace, monospace",
-    consolas: "'Consolas', 'Courier New', monospace",
-    "system-mono": "ui-monospace, 'SFMono-Regular', Menlo, monospace",
+    "dm-mono": "'DM Mono', Consolas, ui-monospace, monospace",
+    "jetbrains-mono": "'JetBrains Mono', Consolas, ui-monospace, monospace",
+    "geist-mono": "'Geist Mono', Consolas, ui-monospace, monospace",
+    "ibm-plex-mono": "'IBM Plex Mono', Consolas, ui-monospace, monospace",
+    "fira-code": "'Fira Code', Consolas, ui-monospace, monospace",
+    "source-code-pro": "'Source Code Pro', Consolas, ui-monospace, monospace",
+    "system-mono": "ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Menlo, Consolas, monospace",
   };
+  const legacyFontIds = {
+    cereal: "manrope",
+    segoe: "ibm-plex-sans",
+    avenir: "source-sans-3",
+    consolas: "system-mono",
+  };
+  const interfaceFonts = Object.keys(interfaceStacks);
+  const monospaceFonts = Object.keys(monospaceStacks);
   const interfaceSizes = [14, 15, 16, 17, 18];
   const monospaceSizes = [12, 13, 14, 15, 16];
   const paletteKeys = ["background", "surface", "muted", "text", "textMuted", "accent"];
@@ -48,7 +78,7 @@
     "--theme-sidebar-bg",
   ];
   const defaultTypography = {
-    interfaceFont: "cereal",
+    interfaceFont: "manrope",
     interfaceSize: 16,
     monospaceFont: "dm-mono",
     monospaceSize: 13,
@@ -159,21 +189,21 @@
       : mode;
   const paletteVariables = (palette) => ({
     "--theme-page-bg": palette.background,
-    "--theme-page-bg-accent": `color-mix(in srgb, ${palette.accent} 10%, transparent)`,
+    "--theme-page-bg-accent": `color-mix(in oklch, ${palette.accent} 10%, transparent)`,
     "--theme-surface-primary": palette.surface,
-    "--theme-surface-secondary": `color-mix(in srgb, ${palette.surface}, ${palette.background} 45%)`,
+    "--theme-surface-secondary": `color-mix(in oklch, ${palette.surface}, ${palette.background} 45%)`,
     "--theme-surface-muted": palette.muted,
     "--theme-surface-inverse": palette.text,
     "--theme-text-primary": palette.text,
     "--theme-text-secondary": palette.textMuted,
-    "--theme-text-muted": `color-mix(in srgb, ${palette.textMuted}, ${palette.background} 28%)`,
+    "--theme-text-muted": `color-mix(in oklch, ${palette.textMuted}, ${palette.background} 28%)`,
     "--theme-text-inverse": palette.background,
-    "--theme-border-soft": `color-mix(in srgb, ${palette.muted}, ${palette.text} 12%)`,
-    "--theme-border-strong": `color-mix(in srgb, ${palette.muted}, ${palette.text} 24%)`,
+    "--theme-border-soft": `color-mix(in oklch, ${palette.muted}, ${palette.text} 12%)`,
+    "--theme-border-strong": `color-mix(in oklch, ${palette.muted}, ${palette.text} 24%)`,
     "--theme-accent-primary": palette.accent,
-    "--theme-accent-primary-strong": `color-mix(in srgb, ${palette.accent}, ${palette.text} 18%)`,
-    "--theme-accent-quiet": `color-mix(in srgb, ${palette.accent} 14%, transparent)`,
-    "--theme-sidebar-bg": `color-mix(in srgb, ${palette.surface} 94%, transparent)`,
+    "--theme-accent-primary-strong": `color-mix(in oklch, ${palette.accent}, ${palette.text} 18%)`,
+    "--theme-accent-quiet": `color-mix(in oklch, ${palette.accent} 14%, transparent)`,
+    "--theme-sidebar-bg": `color-mix(in oklch, ${palette.surface} 94%, transparent)`,
   });
   const applyAppearance = (appearance) => {
     const current = readAppearance();
@@ -202,18 +232,22 @@
         root.style.setProperty(property, value),
       );
     }
+    // Browser chrome follows the active theme, built-in or custom.
+    const pageBackground = getComputedStyle(root).getPropertyValue("--theme-page-bg").trim();
     document
-      .querySelectorAll('meta[name="theme-color"][media*="color-scheme"]')
-      .forEach((meta) =>
-        meta.setAttribute(
-          "content",
-          custom?.[resolved].background ?? (resolved === "dark" ? "#0b0d14" : "#f7f7fb"),
-        ),
-      );
+      .querySelectorAll('meta[name="theme-color"]')
+      .forEach((meta) => meta.setAttribute("content", pageBackground));
     return resolved;
   };
+  const withCurrentFontIds = (value) =>
+    value && {
+      ...value,
+      interfaceFont: legacyFontIds[value.interfaceFont] ?? value.interfaceFont,
+      monospaceFont: legacyFontIds[value.monospaceFont] ?? value.monospaceFont,
+    };
   const applyTypography = (value) => {
-    const typography = validTypography(value) ? value : defaultTypography;
+    const current = withCurrentFontIds(value);
+    const typography = validTypography(current) ? current : defaultTypography;
     const root = document.documentElement;
     root.dataset.interfaceFont = typography.interfaceFont;
     root.dataset.monospaceFont = typography.monospaceFont;
@@ -221,7 +255,6 @@
     root.style.setProperty("--ui-font-size", `${typography.interfaceSize}px`);
     root.style.setProperty("--code-font-size", `${typography.monospaceSize}px`);
     root.style.setProperty("--font-sans", interfaceStacks[typography.interfaceFont]);
-    root.style.setProperty("--font-display", interfaceStacks[typography.interfaceFont]);
     root.style.setProperty("--font-mono", monospaceStacks[typography.monospaceFont]);
     save(KEYS.typography, typography);
   };

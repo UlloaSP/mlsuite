@@ -19,16 +19,16 @@ type Props = {
 };
 
 const rowClass = (active: boolean, tone: "revision" | "pending") =>
-  `relative w-full border-b border-[var(--border-soft)] px-3 py-3 text-left transition last:border-b-0 ${
+  `relative w-full border-b border-line px-3 py-3 text-left transition last:border-b-0 ${
     active
       ? tone === "revision"
-        ? "bg-[var(--success-quiet)]"
-        : "bg-[var(--warning-quiet)]"
-      : "bg-[var(--surface-primary)] hover:bg-[var(--surface-muted)]"
+        ? "bg-success-subtle"
+        : "bg-warning-subtle"
+      : "bg-surface hover:bg-surface-muted"
   }`;
 
 const statusDot = (tone: "revision" | "pending") =>
-  tone === "revision" ? "bg-[#16a34a]" : "bg-[#f59e0b]";
+  tone === "revision" ? "bg-success" : "bg-warning";
 
 export function SchemaReviewRunRail({
   items,
@@ -67,16 +67,16 @@ export function SchemaReviewRunRail({
   });
 
   return (
-    <aside className="flex flex-col rounded-lg border border-[var(--border-strong)] bg-[var(--surface-primary)] p-5 lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)] lg:overflow-hidden">
+    <aside className="flex flex-col rounded-lg border border-line-strong bg-surface p-5 lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)] lg:overflow-hidden">
       <div className="shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xl font-semibold text-[var(--text-primary)]">Review tray</p>
-            <p className="mt-2 text-sm leading-5 text-[var(--text-secondary)]">
+            <p className="text-xl font-semibold text-fg">Review tray</p>
+            <p className="mt-2 text-sm leading-5 text-fg-secondary">
               Review items move from pending to revision.
             </p>
           </div>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[var(--surface-muted)] text-[var(--text-primary)]">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-surface-muted text-fg">
             <Send size={17} />
           </span>
         </div>
@@ -84,7 +84,7 @@ export function SchemaReviewRunRail({
           type="button"
           disabled={revision.length === 0 || submitting}
           onClick={() => onSubmitRevision(revision)}
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[var(--accent-primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-primary-strong)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Send size={15} />
           Complete review ({revision.length})
@@ -113,10 +113,10 @@ export function SchemaReviewRunRail({
                 onClick={() => onSelect(item)}
                 className={rowClass(active, "revision")}
               >
-                <span className="block truncate pr-5 text-sm font-semibold text-[var(--text-primary)]">
+                <span className="block truncate pr-5 text-sm font-semibold text-fg">
                   {item.schemaName} · {item.run.name}
                 </span>
-                <span className="mt-1.5 block text-xs text-[var(--text-secondary)]">
+                <span className="mt-1.5 block text-xs text-fg-secondary">
                   Feedback saved · {formatTimestamp(enteredAt)}
                 </span>
                 <span
@@ -148,10 +148,10 @@ export function SchemaReviewRunRail({
                 onClick={() => onSelect(item)}
                 className={rowClass(active, "pending")}
               >
-                <span className="block truncate pr-5 text-sm font-semibold text-[var(--text-primary)]">
+                <span className="block truncate pr-5 text-sm font-semibold text-fg">
                   {item.schemaName} · {item.run.name}
                 </span>
-                <span className="mt-1.5 block text-xs text-[var(--text-secondary)]">
+                <span className="mt-1.5 block text-xs text-fg-secondary">
                   Entered pending · {formatTimestamp(enteredAt)}
                 </span>
                 <span

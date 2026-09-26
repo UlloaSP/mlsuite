@@ -197,12 +197,12 @@ export function EditorAssemblyLoader({
       ref={rootRef}
       role="status"
       data-loading-scope={scope}
-      className={`app-loading-reveal relative flex items-center justify-center overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)] ${scope === "viewport" ? "h-svh w-full" : "size-full min-h-full"}`}
+      className={`app-loading-reveal relative flex items-center justify-center overflow-hidden bg-page text-fg ${scope === "viewport" ? "h-svh w-full" : "size-full min-h-full"}`}
     >
       <span className="sr-only">{label}</span>
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border-soft)_1px,transparent_1px),linear-gradient(to_bottom,var(--border-soft)_1px,transparent_1px)] bg-[size:34px_34px] opacity-70 [mask-image:radial-gradient(circle_at_center,black_0_54%,transparent_82%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--color-line)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-line)_1px,transparent_1px)] bg-[size:34px_34px] opacity-70 [mask-image:radial-gradient(circle_at_center,black_0_54%,transparent_82%)]" />
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--accent-quiet)_0%,transparent_50%,var(--page-bg)_88%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--color-accent-subtle)_0%,transparent_50%,var(--color-page)_88%)]" />
 
       <div className="absolute left-1/2 top-1/2 h-0 w-0 motion-reduce:hidden">
         {nodes.map((node, index) => (
@@ -213,7 +213,7 @@ export function EditorAssemblyLoader({
                 nodesRef.current[index] = element;
               }
             }}
-            className="absolute rounded-full bg-[var(--accent-primary)] shadow-[0_0_18px_var(--accent-quiet)]"
+            className="absolute rounded-full bg-accent shadow-[0_0_18px_var(--color-accent-subtle)]"
             style={{
               width: `${node.size}px`,
               height: `${node.size}px`,
@@ -233,30 +233,30 @@ export function EditorAssemblyLoader({
                 cardsRef.current[index] = element;
               }
             }}
-            className="absolute -left-16 -top-8 h-16 w-32 border border-[var(--border-soft)] bg-[color-mix(in_srgb,var(--surface-primary)_76%,transparent)] p-3 shadow-[var(--shadow-card)] backdrop-blur-md"
+            className="absolute -left-16 -top-8 h-16 w-32 border border-line bg-surface/76 p-3 shadow-card backdrop-blur-md"
           >
-            <div className="mb-3 h-1.5 w-10 bg-[var(--accent-primary)]" />
-            <div className="h-1.5 w-20 bg-[var(--text-muted)]" />
-            <div className="mt-2 h-1.5 w-14 bg-[var(--surface-muted)]" />
+            <div className="mb-3 h-1.5 w-10 bg-accent" />
+            <div className="h-1.5 w-20 bg-fg-muted" />
+            <div className="mt-2 h-1.5 w-14 bg-surface-muted" />
           </div>
         ))}
       </div>
 
       <div
         ref={panelRef}
-        className="relative z-10 h-[300px] w-[440px] max-w-[82vw] overflow-hidden border border-[var(--border-soft)] bg-[color-mix(in_srgb,var(--surface-primary)_88%,transparent)] shadow-[var(--shadow-hover)] backdrop-blur-xl"
+        className="relative z-10 h-[300px] w-[440px] max-w-[82vw] overflow-hidden border border-line bg-surface/88 shadow-hover backdrop-blur-xl"
       >
-        <div className="flex h-10 items-center border-b border-[var(--border-soft)] px-4">
-          <span className="h-2 w-2 bg-[var(--accent-primary)]" />
-          <span className="ml-2 h-2 w-2 bg-[var(--accent-primary-strong)]" />
-          <span className="ml-2 h-2 w-2 bg-[var(--text-secondary)]" />
-          <span className="ml-4 h-1.5 w-24 bg-[var(--surface-muted)]" />
+        <div className="flex h-10 items-center border-b border-line px-4">
+          <span className="h-2 w-2 bg-accent" />
+          <span className="ml-2 h-2 w-2 bg-accent-strong" />
+          <span className="ml-2 h-2 w-2 bg-fg-secondary" />
+          <span className="ml-4 h-1.5 w-24 bg-surface-muted" />
         </div>
 
         <div className="relative h-[260px] px-8 py-7">
           <div
             ref={scanRef}
-            className="absolute left-0 top-0 h-12 w-full bg-gradient-to-b from-transparent via-[var(--accent-quiet)] to-transparent motion-reduce:hidden"
+            className="absolute left-0 top-0 h-12 w-full bg-gradient-to-b from-transparent via-accent-subtle to-transparent motion-reduce:hidden"
           />
 
           {codeRows.map((row, index) => (
@@ -267,9 +267,7 @@ export function EditorAssemblyLoader({
                   codeRowsRef.current[index] = element;
                 }
               }}
-              className={`mb-5 h-2 origin-left ${
-                index % 4 === 0 ? "bg-[var(--accent-primary)]" : "bg-[var(--text-muted)]"
-              }`}
+              className={`mb-5 h-2 origin-left ${index % 4 === 0 ? "bg-accent" : "bg-fg-muted"}`}
               style={{
                 width: row.width,
                 marginLeft: row.left,
@@ -278,9 +276,9 @@ export function EditorAssemblyLoader({
           ))}
 
           <div className="absolute bottom-6 left-8 right-8 grid grid-cols-3 gap-3">
-            <span className="h-8 border border-[var(--border-soft)] bg-[var(--surface-secondary)]" />
-            <span className="h-8 border border-[var(--border-soft)] bg-[var(--surface-secondary)]" />
-            <span className="h-8 border border-[var(--accent-primary)] bg-[var(--accent-quiet)]" />
+            <span className="h-8 border border-line bg-surface-subtle" />
+            <span className="h-8 border border-line bg-surface-subtle" />
+            <span className="h-8 border border-accent bg-accent-subtle" />
           </div>
         </div>
       </div>

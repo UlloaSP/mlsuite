@@ -5,16 +5,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ButtonHTMLAttributes } from "react";
 import { cx } from "./cx";
+import { FOCUS_RING } from "./focus-ring";
 
 const VARIANTS = {
-  primary:
-    "bg-[var(--accent-primary)] text-[var(--text-inverse)] hover:bg-[var(--accent-primary-strong)]",
+  primary: "bg-accent text-on-accent hover:bg-accent-hover active:bg-accent-strong",
   secondary:
-    "border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-primary)] hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
-  ghost:
-    "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
+    "border border-line bg-surface text-fg hover:border-line-strong hover:bg-surface-hover",
+  ghost: "bg-transparent text-fg-secondary hover:bg-surface-hover hover:text-fg",
   danger:
-    "bg-[var(--surface-primary)] text-[var(--danger-text)] border border-transparent hover:border-[color:var(--danger-quiet)] hover:bg-[var(--danger-quiet)]",
+    "border border-transparent bg-surface text-danger-fg hover:border-danger-border hover:bg-danger-subtle",
 };
 
 export function AppButton({
@@ -32,6 +31,7 @@ export function AppButton({
       type={type}
       className={cx(
         "inline-flex cursor-pointer items-center justify-center gap-2 rounded px-4 py-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-45",
+        FOCUS_RING,
         VARIANTS[variant],
         className,
       )}

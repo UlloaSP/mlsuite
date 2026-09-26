@@ -67,12 +67,7 @@ export function SchemaMergeDiffViewer({
   }, [selectableChanges, currentLabel, currentDocument, incomingLabel, incomingDocument]);
 
   return (
-    <div
-      className={cx(
-        "min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]",
-        className,
-      )}
-    >
+    <div className={cx("min-h-0 overflow-hidden rounded border border-line bg-surface", className)}>
       {selectableChanges.length > 0 ? (
         <div className="size-full min-h-0 overflow-auto">
           <UnresolvedFile
@@ -91,7 +86,7 @@ export function SchemaMergeDiffViewer({
             renderHeaderMetadata={() => `${selectableChanges.length} changes`}
             renderMergeConflictUtility={(action) => (
               <div data-merge-conflict-actions-content="">
-                <span className="mr-2 max-w-[40ch] min-w-0 truncate font-mono text-[11px] text-[var(--text-muted)]">
+                <span className="mr-2 max-w-[40ch] min-w-0 truncate font-mono text-2xs text-fg-muted">
                   {mergeData.groups[action.conflictIndex]?.paths.join(", ") ??
                     `change ${action.conflictIndex + 1}`}
                 </span>

@@ -45,7 +45,7 @@ export function OrganizationCatalogTile({
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
 
   return (
-    <article className="grid gap-5 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.9fr)_auto]">
+    <article className="grid gap-5 rounded border border-line bg-surface p-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.9fr)_auto]">
       <div className="min-w-0 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-2">
@@ -69,7 +69,7 @@ export function OrganizationCatalogTile({
           </div>
         </div>
         <OrganizationOwnerButton item={item} />
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-muted">
           <span>By {modifier}</span>
           <span className="inline-flex items-center gap-1">
             <CalendarDays size={14} />
@@ -93,17 +93,12 @@ export function OrganizationCatalogTile({
         {dashboardItems.map((dashboardItem) => {
           const Icon = dashboardItem.icon;
           return (
-            <div
-              key={dashboardItem.key}
-              className="rounded bg-[var(--surface-secondary)] px-3 py-2"
-            >
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
+            <div key={dashboardItem.key} className="rounded bg-surface-subtle px-3 py-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-fg-secondary">
                 <Icon size={14} />
                 {dashboardItem.label}
               </div>
-              <p className="mt-1 text-xl font-semibold text-[var(--text-primary)]">
-                {item[dashboardItem.key]}
-              </p>
+              <p className="mt-1 text-xl font-semibold text-fg">{item[dashboardItem.key]}</p>
             </div>
           );
         })}

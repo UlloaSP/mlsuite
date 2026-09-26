@@ -69,12 +69,12 @@ export function SchemaRunExportReviewModal({
     });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-hover)]">
-        <header className="flex items-start justify-between gap-4 border-b border-[var(--border-soft)] px-6 py-5">
+    <div className="fixed inset-0 z-(--z-overlay) flex items-center justify-center bg-overlay p-4">
+      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-surface text-fg shadow-hover">
+        <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div>
             <h2 className="text-2xl font-semibold">Export reviews</h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-fg-secondary">
               {runs.length - selection.excludedRunIds.size}/{runs.length} inferences ·{" "}
               {reviewers.length - selection.excludedReviewers.size}/{reviewers.length} reviewers
             </p>
@@ -84,11 +84,11 @@ export function SchemaRunExportReviewModal({
           </AppIconButton>
         </header>
         <div className="grid min-h-0 flex-1 lg:grid-cols-[240px_minmax(0,1fr)]">
-          <aside className="border-r border-[var(--border-soft)] px-5 py-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <aside className="border-r border-line px-5 py-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">
               Reviewers
             </p>
-            <div className="max-h-[48vh] overflow-auto border-y border-[var(--border-soft)]">
+            <div className="max-h-[48vh] overflow-auto border-y border-line">
               {reviewers.map((reviewer) => {
                 const selected = !selection.excludedReviewers.has(reviewer);
                 return (
@@ -96,10 +96,10 @@ export function SchemaRunExportReviewModal({
                     key={reviewer}
                     type="button"
                     onClick={() => toggleReviewer(reviewer)}
-                    className="flex w-full items-center gap-3 border-b border-[var(--border-soft)] px-2 py-3 text-left text-sm last:border-b-0 hover:bg-[var(--surface-muted)]"
+                    className="flex w-full items-center gap-3 border-b border-line px-2 py-3 text-left text-sm last:border-b-0 hover:bg-surface-muted"
                   >
                     <span
-                      className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${selected ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white" : "border-[var(--border-strong)] text-transparent"}`}
+                      className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${selected ? "border-accent bg-accent text-on-accent" : "border-line-strong text-transparent"}`}
                     >
                       ✓
                     </span>
@@ -111,7 +111,7 @@ export function SchemaRunExportReviewModal({
           </aside>
           <main className="min-h-0 overflow-auto px-6 py-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">
                 Inferences
               </p>
               <div className="flex gap-2">
@@ -135,7 +135,7 @@ export function SchemaRunExportReviewModal({
                 </AppButton>
               </div>
             </div>
-            <div className="border-y border-[var(--border-soft)]">
+            <div className="border-y border-line">
               {summaries.map((summary) => (
                 <SchemaRunExportRunRow
                   key={summary.run.id}
@@ -157,7 +157,7 @@ export function SchemaRunExportReviewModal({
             </div>
           </main>
         </div>
-        <footer className="flex justify-end gap-3 border-t border-[var(--border-soft)] px-6 py-4">
+        <footer className="flex justify-end gap-3 border-t border-line px-6 py-4">
           <AppButton type="button" variant="ghost" className="rounded-md" onClick={onClose}>
             Cancel
           </AppButton>

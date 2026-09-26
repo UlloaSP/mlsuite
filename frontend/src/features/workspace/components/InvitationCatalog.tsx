@@ -70,10 +70,10 @@ export function InvitationCatalog({
           className="min-w-[min(100%,260px)] flex-1"
           aria-label="Search invitations"
           placeholder="Search invitations by email..."
-          prefix={<Search className="size-4 text-[var(--text-muted)]" />}
+          prefix={<Search className="size-4 text-fg-muted" />}
           suffix={
             request.isSuccess ? (
-              <span className="shrink-0 whitespace-nowrap border-l border-[var(--border-soft)] pl-3 text-sm font-semibold text-[var(--text-secondary)]">
+              <span className="shrink-0 whitespace-nowrap border-l border-line pl-3 text-sm font-semibold text-fg-secondary">
                 {query || status !== "ALL"
                   ? `${filtered.length} of ${invitations.length}`
                   : invitations.length}{" "}

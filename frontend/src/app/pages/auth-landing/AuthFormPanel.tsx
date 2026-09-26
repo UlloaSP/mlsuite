@@ -24,11 +24,7 @@ export function AuthFormPanel({
   const errorId = useId();
   const field = { required: true, readOnly: locked, invalid: failed, errorId };
   const error = failed ? (
-    <p
-      id={errorId}
-      role="alert"
-      className="mt-1 text-[13px] leading-[18px] text-[var(--danger-text)]"
-    >
+    <p id={errorId} role="alert" className="mt-1 text-sm leading-[18px] text-danger-fg">
       {copy.error}
     </p>
   ) : null;
@@ -90,7 +86,7 @@ export function AuthFormPanel({
               </>
             )}
           </button>
-          <div className="flex justify-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          <div className="flex justify-center gap-1.5 text-sm text-fg-secondary">
             {copy.switchPrompt}
             <button
               type="button"

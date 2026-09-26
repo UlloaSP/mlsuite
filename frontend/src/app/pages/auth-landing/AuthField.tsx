@@ -31,7 +31,7 @@ export function AuthField({
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={fieldId} className="auth-mono text-[11px] tracking-[0.2em]">
+      <label htmlFor={fieldId} className="auth-mono text-2xs tracking-[0.2em]">
         {label}
       </label>
       {input}

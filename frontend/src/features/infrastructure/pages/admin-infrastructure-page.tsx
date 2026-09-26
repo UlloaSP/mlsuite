@@ -121,7 +121,7 @@ export function AdminInfrastructurePage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll bg-[var(--page-bg)]">
+      <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll bg-page">
         <div className="flex-1 px-6 py-5">
           {currentOverview && !showLoading ? (
             <>

@@ -15,8 +15,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
   /* 32px in the reference frame; taller viewports center the pass above the horizon
      (81.25% of the height), which the 1280x800 frame fills exactly with 650px. */
   padding: max(calc(32 * var(--u)), calc((81.25dvh - 650 * var(--u)) / 2 + 32 * var(--u))) 16px 0;
-  background: var(--page-bg);
-  color: var(--text-primary);
+  background: var(--color-page);
+  color: var(--color-fg);
   font-family: var(--font-sans);
 }
 
@@ -28,7 +28,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
   flex-direction: column;
   justify-content: center;
   transform: rotate(-8deg);
-  color: var(--accent-primary);
+  color: var(--color-accent);
   pointer-events: none;
 }
 
@@ -66,7 +66,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
   border-radius: 50%;
   background: radial-gradient(
     closest-side,
-    color-mix(in oklch, var(--accent-primary) 42%, transparent),
+    color-mix(in oklch, var(--color-accent) 42%, transparent),
     transparent
   );
   pointer-events: none;
@@ -89,17 +89,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
     ),
     radial-gradient(
       ellipse calc(820 * var(--u)) calc(200 * var(--u)) at 50% 0,
-      color-mix(in oklch, var(--accent-primary) 55%, white),
+      color-mix(in oklch, var(--color-accent) 55%, white),
       transparent
     ),
-    color-mix(in oklch, var(--accent-primary) 64%, transparent);
+    color-mix(in oklch, var(--color-accent) 64%, transparent);
   -webkit-backdrop-filter: blur(calc(26 * var(--u))) saturate(1.6);
   backdrop-filter: blur(calc(26 * var(--u))) saturate(1.6);
   border-top: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.18),
     0 calc(-40 * var(--u)) calc(120 * var(--u)) calc(-30 * var(--u))
-      color-mix(in oklch, var(--accent-primary) 65%, transparent);
+      color-mix(in oklch, var(--color-accent) 65%, transparent);
   pointer-events: none;
 }
 
@@ -113,7 +113,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
   justify-content: center;
   align-items: center;
   gap: calc(22 * var(--u));
-  color: var(--text-inverse);
+  color: var(--color-fg-inverse);
   font-size: min(calc(74 * var(--u)), 12vw);
   line-height: 1;
 }

@@ -3,7 +3,20 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export type BuiltInThemeId = "mlsuite" | "airbnb" | "grove" | "ocean" | "ember" | "iris";
+export type BuiltInThemeId =
+  | "mlsuite"
+  | "airbnb"
+  | "grove"
+  | "ocean"
+  | "ember"
+  | "iris"
+  | "graphite"
+  | "nord"
+  | "catppuccin"
+  | "rose-pine"
+  | "tokyo-night"
+  | "gruvbox"
+  | "solarized";
 export type CustomThemeId = `custom-${string}`;
 export type ThemeId = BuiltInThemeId | CustomThemeId;
 
@@ -53,6 +66,41 @@ export const THEME_PRESETS = [
     value: "iris",
     label: "Iris",
     preview: { light: ["#f8f5fc", "#7047eb"], dark: ["#15111d", "#b69cff"] },
+  },
+  {
+    value: "graphite",
+    label: "Graphite",
+    preview: { light: ["#fafafa", "#171717"], dark: ["#0a0a0a", "#ededed"] },
+  },
+  {
+    value: "nord",
+    label: "Nord",
+    preview: { light: ["#e5e9f0", "#5e81ac"], dark: ["#2e3440", "#88c0d0"] },
+  },
+  {
+    value: "catppuccin",
+    label: "Catppuccin",
+    preview: { light: ["#e6e9ef", "#8839ef"], dark: ["#181825", "#cba6f7"] },
+  },
+  {
+    value: "rose-pine",
+    label: "Rosé Pine",
+    preview: { light: ["#faf4ed", "#b4637a"], dark: ["#191724", "#ebbcba"] },
+  },
+  {
+    value: "tokyo-night",
+    label: "Tokyo Night",
+    preview: { light: ["#e1e2e7", "#2e7de9"], dark: ["#16161e", "#7aa2f7"] },
+  },
+  {
+    value: "gruvbox",
+    label: "Gruvbox",
+    preview: { light: ["#fbf1c7", "#af3a03"], dark: ["#1d2021", "#fe8019"] },
+  },
+  {
+    value: "solarized",
+    label: "Solarized",
+    preview: { light: ["#eee8d5", "#268bd2"], dark: ["#00212b", "#268bd2"] },
   },
 ] as const satisfies readonly {
   value: BuiltInThemeId;
@@ -160,19 +208,19 @@ export const createCustomTheme = (
 
 export const paletteCssVariables = (palette: ThemePalette): Record<string, string> => ({
   "--theme-page-bg": palette.background,
-  "--theme-page-bg-accent": `color-mix(in srgb, ${palette.accent} 10%, transparent)`,
+  "--theme-page-bg-accent": `color-mix(in oklch, ${palette.accent} 10%, transparent)`,
   "--theme-surface-primary": palette.surface,
-  "--theme-surface-secondary": `color-mix(in srgb, ${palette.surface}, ${palette.background} 45%)`,
+  "--theme-surface-secondary": `color-mix(in oklch, ${palette.surface}, ${palette.background} 45%)`,
   "--theme-surface-muted": palette.muted,
   "--theme-surface-inverse": palette.text,
   "--theme-text-primary": palette.text,
   "--theme-text-secondary": palette.textMuted,
-  "--theme-text-muted": `color-mix(in srgb, ${palette.textMuted}, ${palette.background} 28%)`,
+  "--theme-text-muted": `color-mix(in oklch, ${palette.textMuted}, ${palette.background} 28%)`,
   "--theme-text-inverse": palette.background,
-  "--theme-border-soft": `color-mix(in srgb, ${palette.muted}, ${palette.text} 12%)`,
-  "--theme-border-strong": `color-mix(in srgb, ${palette.muted}, ${palette.text} 24%)`,
+  "--theme-border-soft": `color-mix(in oklch, ${palette.muted}, ${palette.text} 12%)`,
+  "--theme-border-strong": `color-mix(in oklch, ${palette.muted}, ${palette.text} 24%)`,
   "--theme-accent-primary": palette.accent,
-  "--theme-accent-primary-strong": `color-mix(in srgb, ${palette.accent}, ${palette.text} 18%)`,
-  "--theme-accent-quiet": `color-mix(in srgb, ${palette.accent} 14%, transparent)`,
-  "--theme-sidebar-bg": `color-mix(in srgb, ${palette.surface} 94%, transparent)`,
+  "--theme-accent-primary-strong": `color-mix(in oklch, ${palette.accent}, ${palette.text} 18%)`,
+  "--theme-accent-quiet": `color-mix(in oklch, ${palette.accent} 14%, transparent)`,
+  "--theme-sidebar-bg": `color-mix(in oklch, ${palette.surface} 94%, transparent)`,
 });

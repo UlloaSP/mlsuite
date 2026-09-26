@@ -48,20 +48,15 @@ export function SchemaChangeNameDialog({
   return (
     <Dialog.Root open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[900] bg-black/25 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-[901] w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-card)]">
-          <Dialog.Title className="text-lg font-semibold text-[var(--text-primary)]">
-            {title}
-          </Dialog.Title>
+        <Dialog.Overlay className="fixed inset-0 z-(--z-overlay) bg-overlay backdrop-blur-sm" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-(--z-modal) w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded border border-line bg-surface p-5 shadow-card">
+          <Dialog.Title className="text-lg font-semibold text-fg">{title}</Dialog.Title>
           <Dialog.Description asChild>
             <AppCopy className="mt-1">{description}</AppCopy>
           </Dialog.Description>
           <form className="mt-4 space-y-5" onSubmit={submit}>
             <div className="space-y-2">
-              <label
-                htmlFor="change-name"
-                className="text-sm font-semibold text-[var(--text-primary)]"
-              >
+              <label htmlFor="change-name" className="text-sm font-semibold text-fg">
                 {fieldLabel}
               </label>
               <AppTextField

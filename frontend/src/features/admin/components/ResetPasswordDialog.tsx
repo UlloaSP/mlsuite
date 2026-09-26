@@ -23,9 +23,9 @@ export function ResetPasswordDialog({
   const canSubmit = password.length >= 10 && !isPending;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/35 p-4">
-      <AppPanel className="w-full max-w-[460px] rounded-[24px] bg-[var(--surface-primary)] p-0">
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--border-soft)] px-5 py-4">
+    <div className="fixed inset-0 z-(--z-overlay) grid place-items-center overflow-y-auto bg-overlay p-4">
+      <AppPanel className="w-full max-w-[460px] rounded-3xl bg-surface p-0">
+        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
           <div className="min-w-0">
             <AppSectionTitle>Reset Password</AppSectionTitle>
             <AppCopy className="mt-1 leading-6">{fullName}</AppCopy>
@@ -36,7 +36,7 @@ export function ResetPasswordDialog({
         </div>
         <div className="grid gap-4 p-5">
           <div className="grid gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-secondary">
               New password
             </span>
             <div className="flex items-center gap-2">
@@ -54,7 +54,7 @@ export function ResetPasswordDialog({
                 type="button"
                 aria-label={visible ? "Hide password" : "Show password"}
                 onClick={() => setVisible((current) => !current)}
-                className="shrink-0 border-[var(--border-soft)] bg-[var(--surface-primary)]"
+                className="shrink-0 border-line bg-surface"
               >
                 {visible ? <EyeOff size={18} /> : <Eye size={18} />}
               </AppIconButton>

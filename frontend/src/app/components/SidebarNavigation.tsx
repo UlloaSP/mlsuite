@@ -281,7 +281,7 @@ export function SidebarNavigation() {
                                   <AppKbd
                                     aria-hidden={!showShortcutHints}
                                     className={cx(
-                                      "ml-auto h-4 min-w-4 shrink-0 text-[0.62rem]",
+                                      "ml-auto h-4 min-w-4 shrink-0 text-3xs",
                                       !showShortcutHints && "invisible",
                                     )}
                                   >

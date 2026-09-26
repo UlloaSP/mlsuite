@@ -23,19 +23,15 @@ export function InferenceReviewTile({ assignment, disabled, onDelete, onReopen }
   const canReopen = assignment.reviewState === "COMPLETED" && !assignment.expired;
 
   return (
-    <article className="flex min-w-0 flex-col rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4">
+    <article className="flex min-w-0 flex-col rounded border border-line bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--surface-secondary)] text-sm font-semibold text-[var(--text-primary)]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-subtle text-sm font-semibold text-fg">
             {assignment.reviewer.fullName.trim().charAt(0).toUpperCase() || "?"}
           </span>
           <div className="min-w-0">
-            <h3 className="truncate font-semibold text-[var(--text-primary)]">
-              {assignment.reviewer.fullName}
-            </h3>
-            <p className="truncate text-xs text-[var(--text-secondary)]">
-              {assignment.reviewer.email}
-            </p>
+            <h3 className="truncate font-semibold text-fg">{assignment.reviewer.fullName}</h3>
+            <p className="truncate text-xs text-fg-secondary">{assignment.reviewer.email}</p>
           </div>
         </div>
         {canReopen || hasResponse ? (
@@ -49,12 +45,12 @@ export function InferenceReviewTile({ assignment, disabled, onDelete, onReopen }
               <DropdownMenu.Content
                 align="end"
                 sideOffset={8}
-                className="z-50 min-w-48 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]"
+                className="z-(--z-popover) min-w-48 rounded border border-line bg-surface p-2 shadow-hover"
               >
                 {canReopen ? (
                   <DropdownMenu.Item
                     onSelect={onReopen}
-                    className="flex cursor-pointer items-center gap-3 rounded px-3 py-2.5 text-sm font-medium outline-none hover:bg-[var(--surface-muted)] focus:bg-[var(--surface-muted)]"
+                    className="flex cursor-pointer items-center gap-3 rounded px-3 py-2.5 text-sm font-medium outline-none hover:bg-surface-muted focus:bg-surface-muted"
                   >
                     <RotateCcw size={15} />
                     Reopen
@@ -63,7 +59,7 @@ export function InferenceReviewTile({ assignment, disabled, onDelete, onReopen }
                 {hasResponse ? (
                   <DropdownMenu.Item
                     onSelect={onDelete}
-                    className="flex cursor-pointer items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-[var(--danger-text)] outline-none hover:bg-[var(--danger-quiet)] focus:bg-[var(--danger-quiet)]"
+                    className="flex cursor-pointer items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-danger-fg outline-none hover:bg-danger-subtle focus:bg-danger-subtle"
                   >
                     <Trash2 size={15} />
                     Delete response
@@ -80,17 +76,17 @@ export function InferenceReviewTile({ assignment, disabled, onDelete, onReopen }
       </div>
       <dl className="mt-5 grid gap-3 text-xs">
         <div>
-          <dt className="text-[var(--text-muted)]">Submitted</dt>
-          <dd className="mt-1 text-[var(--text-primary)]">
+          <dt className="text-fg-muted">Submitted</dt>
+          <dd className="mt-1 text-fg">
             {assignment.submittedAt ? formatTimestamp(assignment.submittedAt) : "Not submitted"}
           </dd>
         </div>
         <div>
-          <dt className="text-[var(--text-muted)]">Review request</dt>
-          <dd className="mt-1 text-[var(--text-primary)]">
+          <dt className="text-fg-muted">Review request</dt>
+          <dd className="mt-1 text-fg">
             Created by {assignment.createdBy.fullName} · {formatTimestamp(assignment.createdAt)}
           </dd>
-          <dd className="mt-1 text-[var(--text-secondary)]">
+          <dd className="mt-1 text-fg-secondary">
             Expires {formatTimestamp(assignment.expiresAt)}
           </dd>
         </div>

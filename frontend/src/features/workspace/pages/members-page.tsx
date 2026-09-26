@@ -95,10 +95,10 @@ export function MembersPage() {
             className="min-w-[min(100%,260px)] flex-1"
             aria-label="Search members"
             placeholder="Search members by name or email..."
-            prefix={<Search className="size-4 text-[var(--text-muted)]" />}
+            prefix={<Search className="size-4 text-fg-muted" />}
             suffix={
               membersQuery.isSuccess ? (
-                <span className="shrink-0 whitespace-nowrap border-l border-[var(--border-soft)] pl-3 text-sm font-semibold text-[var(--text-secondary)]">
+                <span className="shrink-0 whitespace-nowrap border-l border-line pl-3 text-sm font-semibold text-fg-secondary">
                   {query || role !== "ALL"
                     ? `${filtered.length} of ${members.length}`
                     : members.length}{" "}

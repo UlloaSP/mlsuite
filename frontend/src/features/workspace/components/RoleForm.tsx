@@ -68,23 +68,21 @@ export function RoleForm({
         event.preventDefault();
         onClose();
       }}
-      className="m-auto h-[min(86vh,760px)] w-[calc(100%-2rem)] max-w-[840px] overflow-hidden rounded-xl border-0 bg-[var(--surface-primary)] p-0 text-[var(--text-primary)] shadow-[var(--shadow-card)] backdrop:bg-black/35"
+      className="m-auto h-[min(86vh,760px)] w-[calc(100%-2rem)] max-w-[840px] overflow-hidden rounded-xl border-0 bg-surface p-0 text-fg shadow-card backdrop:bg-overlay"
     >
       <div className="flex h-full flex-col">
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-soft)] px-6 py-5">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div>
             <h2 id="role-form-title" className="text-xl font-semibold">
               {roleDefinition ? "Edit Role" : "Create New Role"}
             </h2>
-            <p className="text-sm text-[var(--text-secondary)]">
-              {selected.length} permissions selected
-            </p>
+            <p className="text-sm text-fg-secondary">{selected.length} permissions selected</p>
           </div>
           <button
             type="button"
             aria-label="Close role form"
             onClick={onClose}
-            className="inline-flex size-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+            className="inline-flex size-9 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-muted hover:text-fg"
           >
             <X size={18} />
           </button>
@@ -123,10 +121,8 @@ export function RoleForm({
               {permissionGroups.map((group) => (
                 <section key={group.name}>
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                      {group.name}
-                    </h3>
-                    <span className="text-xs text-[var(--text-secondary)]">
+                    <h3 className="text-sm font-semibold text-fg">{group.name}</h3>
+                    <span className="text-xs text-fg-secondary">
                       {
                         group.permissions.filter((permission) => selectedSet.has(permission.key))
                           .length
@@ -134,11 +130,11 @@ export function RoleForm({
                       /{group.permissions.length}
                     </span>
                   </div>
-                  <div className="divide-y divide-[var(--border-soft)] border-y border-[var(--border-soft)]">
+                  <div className="divide-y divide-line border-y border-line">
                     {group.permissions.map((permission) => (
                       <label
                         key={permission.key}
-                        className="flex cursor-pointer gap-3 py-3 text-sm hover:bg-[var(--surface-muted)]"
+                        className="flex cursor-pointer gap-3 py-3 text-sm hover:bg-surface-muted"
                       >
                         <input
                           type="checkbox"
@@ -148,13 +144,9 @@ export function RoleForm({
                           className="mt-1"
                         />
                         <span>
-                          <span className="font-semibold text-[var(--text-primary)]">
-                            {permission.label}
-                          </span>
+                          <span className="font-semibold text-fg">{permission.label}</span>
                           <br />
-                          <span className="text-[var(--text-secondary)]">
-                            {permission.description}
-                          </span>
+                          <span className="text-fg-secondary">{permission.description}</span>
                         </span>
                       </label>
                     ))}
@@ -164,7 +156,7 @@ export function RoleForm({
             </div>
           </div>
         </div>
-        <footer className="flex shrink-0 justify-end gap-3 border-t border-[var(--border-soft)] px-6 py-4">
+        <footer className="flex shrink-0 justify-end gap-3 border-t border-line px-6 py-4">
           <AppButton variant="secondary" className="rounded-xl" onClick={onClose}>
             Cancel
           </AppButton>

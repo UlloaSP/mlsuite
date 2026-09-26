@@ -284,7 +284,7 @@ export function EditorBody() {
   }, [theme]);
 
   return (
-    <Suspense fallback={<div className="h-full w-full bg-[var(--surface-primary)]" />}>
+    <Suspense fallback={<div className="h-full w-full bg-surface" />}>
       <MonacoEditor
         className="w-full"
         defaultLanguage="json"

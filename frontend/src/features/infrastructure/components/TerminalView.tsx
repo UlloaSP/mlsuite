@@ -8,7 +8,9 @@ import { useEffect, useRef, useState } from "react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
-import { MONOSPACE_STACKS, typographyAtom } from "@/shared/ui/typography-state";
+import { resolveCssColor } from "@/shared/ui/resolve-css-color";
+import { MONOSPACE_STACKS } from "@/shared/ui/font-catalog";
+import { typographyAtom } from "@/shared/ui/typography-state";
 import { closeTerminalSession } from "@/features/infrastructure/api/infrastructure.api";
 import { useTerminalSession } from "@/features/infrastructure/api/infrastructure.mutations";
 import {
@@ -47,9 +49,9 @@ export function TerminalView({
     const terminal = new Terminal({
       cursorBlink: true,
       theme: {
-        background: "#0c0c0f",
-        foreground: "#e8e4e6",
-        cursor: "#6366f1",
+        background: resolveCssColor("--color-code"),
+        foreground: resolveCssColor("--color-code-fg"),
+        cursor: resolveCssColor("--color-accent"),
       },
       fontFamily: MONOSPACE_STACKS["dm-mono"],
       fontSize: 13,
@@ -191,13 +193,11 @@ export function TerminalView({
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+          <p className="text-3xs font-semibold uppercase tracking-[0.14em] text-fg-secondary">
             Shell session
           </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Embedded terminal
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Embedded terminal</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
             Interactive shell in enabled services. Commands can modify files and interrupt services.
           </p>
         </div>
@@ -232,45 +232,45 @@ export function TerminalView({
       {/* Terminal + sidebar */}
       <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
         {/* Terminal card */}
-        <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
-          <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-3">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">
+        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="flex items-center justify-between border-b border-line px-5 py-3">
+            <p className="text-sm font-semibold text-fg">
               {selectedService ?? "terminal"} &middot; /
             </p>
             <div className="flex items-center gap-2">
-              <AppBadge tone={toneForStatus(status)} className="px-2 py-0.5 text-[0.6rem]">
+              <AppBadge tone={toneForStatus(status)} className="px-2 py-0.5 text-3xs">
                 {status}
               </AppBadge>
             </div>
           </div>
-          <div className="h-[480px] bg-[#0c0c0f] p-2">
+          <div className="h-[480px] bg-code p-2">
             <div
               ref={mountRef}
-              className="size-full overflow-hidden rounded-lg border border-white/5 bg-black/20 p-1"
+              className="size-full overflow-hidden rounded-lg border border-code-fg/10 p-1"
             />
           </div>
         </div>
 
         {/* Quick commands sidebar */}
-        <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
-          <div className="border-b border-[var(--border-soft)] px-4 py-3">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Quick commands</p>
+        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="border-b border-line px-4 py-3">
+            <p className="text-sm font-semibold text-fg">Quick commands</p>
           </div>
           <div className="flex flex-col gap-1 p-3">
             {["help", "ls", "ps", "env", "uname", "df -h", "top", "whoami"].map((cmd) => (
               <button
                 type="button"
                 key={cmd}
-                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-[var(--text-secondary)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+                className="flex items-center gap-2 rounded-md px-3 py-1.5 text-left text-xs text-fg-secondary transition hover:bg-surface-muted hover:text-fg"
                 disabled={status !== "live"}
                 onClick={() => sendQuickCommand(cmd)}
               >
-                <span className="font-mono text-[var(--text-muted)]">$</span>
+                <span className="font-mono text-fg-muted">$</span>
                 <span className="font-mono">{cmd}</span>
               </button>
             ))}
           </div>
-          <div className="flex items-center justify-between border-t border-[var(--border-soft)] px-4 py-2.5 text-[0.65rem] text-[var(--text-muted)]">
+          <div className="flex items-center justify-between border-t border-line px-4 py-2.5 text-3xs text-fg-muted">
             <span>session access</span>
             <span>container shell permissions</span>
           </div>

@@ -17,11 +17,9 @@ export function SettingsLayoutSection() {
   const [position, setPosition] = useAtom(sidebarPositionAtom);
 
   return (
-    <fieldset className="border-t border-[var(--border-soft)] pt-8">
-      <legend className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-        Layout
-      </legend>
-      <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+    <fieldset className="border-t border-line pt-8">
+      <legend className="text-xl font-semibold tracking-[-0.02em] text-fg">Layout</legend>
+      <p className="mt-1 text-sm leading-6 text-fg-secondary">
         Choose which edge owns navigation on desktop and mobile.
       </p>
       <div className="mt-5 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">

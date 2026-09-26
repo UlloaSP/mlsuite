@@ -52,12 +52,12 @@ export function OrganizationAdminPage() {
         </div>
         <div>
           <AdminDataPanel title="Recent Invitations" description="Pending and latest invites">
-            <div className="divide-y divide-[var(--border-soft)]">
+            <div className="divide-y divide-line">
               {data?.recentInvitations.map((invite) => (
                 <div key={invite.id} className="flex items-center justify-between p-4">
                   <div>
                     <p className="font-semibold">{invite.email}</p>
-                    <p className="text-xs text-[var(--text-secondary)]">{invite.role}</p>
+                    <p className="text-xs text-fg-secondary">{invite.role}</p>
                   </div>
                   <StatusBadge value={invite.status} />
                 </div>

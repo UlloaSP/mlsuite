@@ -7,7 +7,6 @@ import { cx } from "@/shared/ui/cx";
 import { formatBytes, formatPercent } from "@/features/infrastructure/lib/formatters";
 import { labelForServiceHealth, toneForServiceStatus } from "@/features/infrastructure/lib/status";
 import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
-import { SegmentedControl } from "./ServicesSegmentedControl";
 import { SortTh } from "./ServicesSortTh";
 import { ActionBtn } from "./ServicesViewSupport";
 import {
@@ -16,6 +15,7 @@ import {
   type ServiceSort,
   type SortKey,
 } from "./services-view-model";
+import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 type Props = {
   services: ServiceStatusDto[];
   selectedService: string | null;
@@ -59,13 +59,11 @@ export function ServicesView({
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+          <p className="text-3xs font-semibold uppercase tracking-[0.14em] text-fg-secondary">
             Service control
           </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Managed services
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Managed services</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
             {filtered.length} of {services.length} services &middot; click a row for details, logs,
             and shell.
           </p>
@@ -76,25 +74,26 @@ export function ServicesView({
           </AppButton>
         </div>
       </div>
-      <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
-        <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-soft)] px-4 py-3">
-          <label className="flex items-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5">
-            <Search size={14} className="text-[var(--text-muted)]" />
+      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
+          <label className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
+            <Search size={14} className="text-fg-muted" />
             <input
               aria-label="Filter services"
               type="text"
               placeholder="Filter by name or container…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-56 bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+              className="w-56 bg-transparent text-xs text-fg outline-none placeholder:text-fg-muted"
             />
           </label>
-          <SegmentedControl
+          <AppSegmentedControl
+            label="Service status"
             options={[
-              { key: "all", label: `All ${counts.all}` },
-              { key: "running", label: `Running ${counts.running}` },
-              { key: "stopped", label: `Stopped ${counts.stopped}` },
-              { key: "restarting", label: `Restarting ${counts.restarting}` },
+              { value: "all", label: `All ${counts.all}` },
+              { value: "running", label: `Running ${counts.running}` },
+              { value: "stopped", label: `Stopped ${counts.stopped}` },
+              { value: "restarting", label: `Restarting ${counts.restarting}` },
             ]}
             value={statusFilter}
             onChange={setStatusFilter}
@@ -112,14 +111,14 @@ export function ServicesView({
             ]}
           />
           <div className="flex-1" />
-          <span className="flex items-center gap-1.5 text-[0.68rem] text-[var(--text-secondary)]">
+          <span className="flex items-center gap-1.5 text-2xs text-fg-secondary">
             <Filter size={11} />
             {activeFilters} active filter(s)
           </span>
           {activeFilters > 0 && (
             <button
               type="button"
-              className="text-[0.68rem] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="text-2xs text-fg-secondary hover:text-fg"
               onClick={clearFilters}
             >
               Clear
@@ -129,21 +128,21 @@ export function ServicesView({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[960px] text-left text-xs">
             <thead>
-              <tr className="border-b border-[var(--border-soft)] bg-[var(--surface-primary)]">
+              <tr className="border-b border-line bg-surface">
                 <SortTh label="Service" sortKey="name" sort={sort} onSort={toggleSort} />
-                <th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+                <th className="px-4 py-2.5 text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary">
                   State
                 </th>
-                <th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+                <th className="px-4 py-2.5 text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary">
                   Health
                 </th>
                 <SortTh label="Uptime" sortKey="uptime" sort={sort} onSort={toggleSort} />
                 <SortTh label="CPU" sortKey="cpuPercent" sort={sort} onSort={toggleSort} />
                 <SortTh label="Memory" sortKey="memoryBytes" sort={sort} onSort={toggleSort} />
-                <th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+                <th className="px-4 py-2.5 text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary">
                   Ports
                 </th>
-                <th className="px-4 py-2.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-secondary)]">
+                <th className="px-4 py-2.5 text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary">
                   Actions
                 </th>
               </tr>
@@ -157,8 +156,8 @@ export function ServicesView({
                     key={s.name}
                     tabIndex={0}
                     className={cx(
-                      "cursor-pointer border-b border-[var(--border-soft)] transition",
-                      active ? "bg-[var(--accent-quiet)]" : "hover:bg-[var(--surface-muted)]",
+                      "cursor-pointer border-b border-line transition",
+                      active ? "bg-accent-subtle" : "hover:bg-surface-muted",
                     )}
                     onClick={() => onSelect(s.name)}
                     onKeyDown={(event) => {
@@ -174,15 +173,15 @@ export function ServicesView({
                           className={cx(
                             "size-2 rounded-full",
                             s.status === "running"
-                              ? "bg-emerald-500"
+                              ? "bg-success"
                               : s.status === "exited" || s.status === "dead"
-                                ? "bg-rose-500"
-                                : "bg-amber-500",
+                                ? "bg-danger"
+                                : "bg-warning",
                           )}
                         />
                         <div>
-                          <p className="font-medium text-[var(--text-primary)]">{s.name}</p>
-                          <p className="mt-0.5 text-[0.65rem] text-[var(--text-muted)]">
+                          <p className="font-medium text-fg">{s.name}</p>
+                          <p className="mt-0.5 text-3xs text-fg-muted">
                             {s.containerName ?? "container missing"}
                           </p>
                         </div>
@@ -191,54 +190,50 @@ export function ServicesView({
                     <td className="px-4 py-3">
                       <AppBadge
                         tone={toneForServiceStatus(s.status)}
-                        className="px-2 py-0.5 text-[0.6rem]"
+                        className="px-2 py-0.5 text-3xs"
                       >
                         {s.status}
                       </AppBadge>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-[var(--text-secondary)]">
-                        {labelForServiceHealth(s.health)}
-                      </span>
+                      <span className="text-fg-secondary">{labelForServiceHealth(s.health)}</span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-[var(--text-secondary)]">
-                      {s.uptime ?? "n/a"}
-                    </td>
+                    <td className="px-4 py-3 font-mono text-fg-secondary">{s.uptime ?? "n/a"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-1 w-12 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+                        <div className="h-1 w-12 overflow-hidden rounded-full bg-surface-muted">
                           <div
                             className="h-full rounded-full"
                             style={{
                               width: `${Math.min(100, (s.cpuPercent ?? 0) * 4)}%`,
                               background:
                                 (s.cpuPercent ?? 0) > 10
-                                  ? "var(--warning-text)"
-                                  : "var(--accent-primary)",
+                                  ? "var(--color-warning-fg)"
+                                  : "var(--color-accent)",
                             }}
                           />
                         </div>
-                        <span className="font-mono text-[var(--text-secondary)]">
+                        <span className="font-mono text-fg-secondary">
                           {formatPercent(s.cpuPercent)}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-1 w-12 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+                        <div className="h-1 w-12 overflow-hidden rounded-full bg-surface-muted">
                           <div
-                            className="h-full rounded-full bg-[var(--accent-primary)]"
+                            className="h-full rounded-full bg-accent"
                             style={{
                               width: `${Math.min(100, ((s.memoryBytes ?? 0) / (512 * 1024 * 1024)) * 100)}%`,
                             }}
                           />
                         </div>
-                        <span className="font-mono text-[var(--text-secondary)]">
+                        <span className="font-mono text-fg-secondary">
                           {formatBytes(s.memoryBytes)}
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-[0.65rem] text-[var(--text-muted)]">
+                    <td className="px-4 py-3 font-mono text-3xs text-fg-muted">
                       {s.ports.length > 0 ? s.ports.join(", ") : "—"}
                     </td>
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -272,10 +267,7 @@ export function ServicesView({
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-10 text-center text-sm text-[var(--text-muted)]"
-                  >
+                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-fg-muted">
                     No services match your filters.
                   </td>
                 </tr>

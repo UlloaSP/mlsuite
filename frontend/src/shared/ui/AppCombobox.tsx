@@ -49,7 +49,7 @@ export function AppCombobox({
     <div className="relative">
       <label
         className={cx(
-          "inline-flex w-full items-center gap-3 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)]",
+          "inline-flex w-full items-center gap-3 rounded border border-line bg-surface px-4 py-3 text-sm text-fg-secondary",
           disabled && "cursor-not-allowed opacity-50",
         )}
       >
@@ -89,14 +89,14 @@ export function AppCombobox({
               setOpen(false);
             }
           }}
-          className="w-full bg-transparent text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+          className="w-full bg-transparent text-fg outline-none placeholder:text-fg-muted"
         />
-        <ChevronDown size={16} className="shrink-0 text-[var(--text-muted)]" />
+        <ChevronDown size={16} className="shrink-0 text-fg-muted" />
       </label>
       {open && !disabled ? (
         <div
           id={listboxId}
-          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-card)]"
+          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded border border-line bg-surface p-2 shadow-card"
         >
           {filtered.length ? (
             filtered.map((item, index) => (
@@ -110,9 +110,7 @@ export function AppCombobox({
                 }}
                 className={cx(
                   "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left transition",
-                  index === activeIndex
-                    ? "rounded bg-[var(--surface-muted)]"
-                    : "hover:bg-[var(--surface-muted)]",
+                  index === activeIndex ? "rounded bg-surface-muted" : "hover:bg-surface-muted",
                 )}
               >
                 {item.avatarUrl ? (
@@ -122,16 +120,14 @@ export function AppCombobox({
                     className="size-9 shrink-0 rounded object-cover"
                   />
                 ) : (
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded bg-[var(--accent-quiet)] text-xs font-semibold text-[var(--accent-primary-strong)]">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded bg-accent-subtle text-xs font-semibold text-accent-strong">
                     {item.label.slice(0, 1).toUpperCase()}
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
-                    {item.label}
-                  </span>
+                  <span className="block truncate text-sm font-semibold text-fg">{item.label}</span>
                   {item.description ? (
-                    <span className="block truncate text-xs text-[var(--text-secondary)]">
+                    <span className="block truncate text-xs text-fg-secondary">
                       {item.description}
                     </span>
                   ) : null}
@@ -140,7 +136,7 @@ export function AppCombobox({
               </button>
             ))
           ) : (
-            <div className="px-3 py-4 text-sm text-[var(--text-secondary)]">{emptyLabel}</div>
+            <div className="px-3 py-4 text-sm text-fg-secondary">{emptyLabel}</div>
           )}
         </div>
       ) : null}

@@ -42,23 +42,21 @@ export function SchemaSnapshotCatalogItem({
   return (
     <article
       className={cx(
-        "relative grid rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] transition hover:border-[var(--text-primary)] lg:grid-cols-[minmax(0,1fr)_auto]",
+        "relative grid rounded border border-line bg-surface transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_auto]",
         menuOpen ? "z-30" : "z-0",
       )}
     >
       <Link
         to={`/schemas/${schemaId}/versions/${versionId}`}
         aria-label={`Open ${version.name} v${version.version}`}
-        className="absolute inset-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+        className="absolute inset-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-focus"
       />
       <div className="pointer-events-none relative min-w-0 p-4">
         <div className="flex items-center gap-2">
-          <GitCommitHorizontal size={16} className="shrink-0 text-[var(--text-secondary)]" />
-          <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">
-            {version.name}
-          </h2>
+          <GitCommitHorizontal size={16} className="shrink-0 text-fg-secondary" />
+          <h2 className="truncate text-base font-semibold text-fg">{version.name}</h2>
         </div>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+        <p className="mt-2 text-sm text-fg-secondary">
           v{version.version} · published <LiveRelativeTime value={version.createdAt} /> ago
         </p>
       </div>
@@ -71,7 +69,7 @@ export function SchemaSnapshotCatalogItem({
           <MoreHorizontal size={18} />
         </AppIconButton>
         {menuOpen ? (
-          <div className="absolute right-4 top-[calc(100%-0.25rem)] z-20 min-w-[170px] rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
+          <div className="absolute right-4 top-[calc(100%-0.25rem)] z-20 min-w-[170px] rounded border border-line bg-surface p-2 shadow-hover">
             <button
               type="button"
               onClick={() => {
@@ -115,4 +113,4 @@ export function SchemaSnapshotCatalogItem({
 }
 
 const menuItemClass =
-  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]";
+  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-fg transition hover:bg-surface-muted";

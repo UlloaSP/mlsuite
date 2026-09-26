@@ -46,16 +46,16 @@ export function SchemaActionDialog({ action, disabled, item, onCancel, onConfirm
   const meta = copy[action];
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
+    <div className="fixed inset-0 z-(--z-overlay) grid place-items-center bg-overlay p-4">
       <form
-        className="w-full max-w-sm rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-hover)]"
+        className="w-full max-w-sm rounded border border-line bg-surface p-5 shadow-hover"
         onSubmit={(event) => {
           event.preventDefault();
           void onConfirm(needsName ? name.trim() : undefined);
         }}
       >
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">{meta.title}</h2>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">{meta.description}</p>
+        <h2 className="text-lg font-semibold text-fg">{meta.title}</h2>
+        <p className="mt-2 text-sm text-fg-secondary">{meta.description}</p>
         {needsName ? (
           <AppTextField
             value={name}
@@ -66,7 +66,7 @@ export function SchemaActionDialog({ action, disabled, item, onCancel, onConfirm
             onChange={(event) => setName(event.target.value)}
           />
         ) : (
-          <p className="mt-4 rounded bg-[var(--surface-muted)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)]">
+          <p className="mt-4 rounded bg-surface-muted px-3 py-2 text-sm font-semibold text-fg">
             {item.name}
           </p>
         )}

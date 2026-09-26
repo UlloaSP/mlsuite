@@ -10,7 +10,7 @@ export function AppEyebrow({ children, className }: HTMLAttributes<HTMLParagraph
   return (
     <p
       className={cx(
-        "text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[var(--text-secondary)]",
+        "text-2xs font-semibold uppercase tracking-[0.28em] text-fg-secondary",
         className,
       )}
     >

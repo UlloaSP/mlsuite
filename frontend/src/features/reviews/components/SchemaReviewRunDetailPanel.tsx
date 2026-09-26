@@ -50,12 +50,10 @@ export function SchemaReviewRunDetailPanel({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
           Selected inference
         </p>
-        <h2 className="mt-1 text-2xl font-semibold text-[var(--text-primary)]">
-          {detail.data.run.name}
-        </h2>
+        <h2 className="mt-1 text-2xl font-semibold text-fg">{detail.data.run.name}</h2>
       </div>
       <SchemaReviewCombinedFeedbackForm
         key={reviewRunId}

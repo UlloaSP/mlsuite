@@ -33,8 +33,8 @@ export function SearchResultItem({
 }) {
   const Icon = icons[result.type];
   const stateClass = active
-    ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
-    : "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]";
+    ? "bg-accent-subtle text-accent-strong"
+    : "text-fg hover:bg-surface-muted";
 
   return (
     <Link
@@ -42,13 +42,13 @@ export function SearchResultItem({
       onMouseEnter={onHover}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onSelect}
-      className={`flex items-center justify-between gap-3 border-t border-[var(--border-soft)] px-6 py-3 transition first:border-t-0 ${stateClass}`}
+      className={`flex items-center justify-between gap-3 border-t border-line px-6 py-3 transition first:border-t-0 ${stateClass}`}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <Icon size={16} className="shrink-0 text-[var(--text-muted)]" />
+        <Icon size={16} className="shrink-0 text-fg-muted" />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{result.title}</p>
-          <p className="truncate text-xs text-[var(--text-secondary)]">{result.subtitle}</p>
+          <p className="truncate text-xs text-fg-secondary">{result.subtitle}</p>
         </div>
       </div>
     </Link>

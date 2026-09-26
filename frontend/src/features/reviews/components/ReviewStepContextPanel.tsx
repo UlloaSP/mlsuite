@@ -37,14 +37,10 @@ export function ReviewStepContextPanel() {
   const content = lines(activeStep.description.replace(/^Prediction (result|report):\s*/i, ""));
   return (
     <aside className="lg:sticky lg:top-28">
-      <div className="border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 shadow-[var(--shadow-card)]">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-primary)]">
-          {title}
-        </p>
-        <h3 className="mt-2 text-base font-semibold leading-5 text-[var(--text-primary)]">
-          {activeStep.title}
-        </h3>
-        <div className="mt-4 space-y-2 text-sm leading-6 text-[var(--text-secondary)]">
+      <div className="border border-line bg-surface p-4 shadow-card">
+        <p className="text-3xs font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+        <h3 className="mt-2 text-base font-semibold leading-5 text-fg">{activeStep.title}</h3>
+        <div className="mt-4 space-y-2 text-sm leading-6 text-fg-secondary">
           {content.length > 0 ? (
             content.map((item) => (
               <p key={`${activeStep.id}-${item.key}`} className="break-words">

@@ -62,13 +62,10 @@ export function SettingsKeybindingsSection() {
     <section aria-labelledby="keybindings-heading">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2
-            id="keybindings-heading"
-            className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]"
-          >
+          <h2 id="keybindings-heading" className="text-xl font-semibold tracking-[-0.02em] text-fg">
             Keybindings
           </h2>
-          <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+          <p className="mt-1 text-sm leading-6 text-fg-secondary">
             Select a binding, then press its replacement. Escape cancels recording.
           </p>
         </div>
@@ -81,16 +78,16 @@ export function SettingsKeybindingsSection() {
         </AppButton>
       </div>
 
-      <div className="mt-6 divide-y divide-[var(--border-soft)] border-y border-[var(--border-soft)]">
+      <div className="mt-6 divide-y divide-line border-y border-line">
         {SHORTCUT_ACTIONS.map((action) => (
           <div key={action.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">{action.label}</h3>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">{action.description}</p>
+              <h3 className="text-sm font-semibold text-fg">{action.label}</h3>
+              <p className="mt-1 text-sm text-fg-secondary">{action.description}</p>
             </div>
             <button
               type="button"
-              className="min-w-36 rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] px-3 py-2 text-sm text-[var(--text-primary)] transition hover:border-[var(--border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+              className="min-w-36 rounded border border-line bg-surface-subtle px-3 py-2 text-sm text-fg transition hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               aria-label={`Change ${action.label} shortcut`}
               onClick={() => {
                 setRecording(action.id);
@@ -113,7 +110,7 @@ export function SettingsKeybindingsSection() {
           </div>
         ))}
       </div>
-      <p className="mt-3 min-h-5 text-sm text-[var(--danger-text)]" aria-live="polite">
+      <p className="mt-3 min-h-5 text-sm text-danger-fg" aria-live="polite">
         {error}
       </p>
     </section>

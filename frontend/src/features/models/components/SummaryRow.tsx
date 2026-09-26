@@ -17,11 +17,11 @@ export function SummaryRow({ label, value, valueClass, first }: SummaryRowProps)
     <div
       className={cx(
         "flex items-center justify-between gap-4 py-[7px]",
-        !first && "border-t border-[var(--border-soft)]",
+        !first && "border-t border-line",
       )}
     >
-      <span className="text-[12px] text-[var(--text-muted)]">{label}</span>
-      <span className={cx("font-mono text-[12px]", valueClass)}>{value}</span>
+      <span className="text-xs text-fg-muted">{label}</span>
+      <span className={cx("font-mono text-xs", valueClass)}>{value}</span>
     </div>
   );
 }

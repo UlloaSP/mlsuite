@@ -49,29 +49,25 @@ export function BundleFilePill({ name, size, kind, badge }: Props) {
   const isModel = kind === "model";
 
   return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-secondary)] px-3 py-2">
+    <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-subtle px-3 py-2">
       <div
         className={cx(
-          "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-[7px]",
-          isModel
-            ? "bg-[var(--accent-quiet)] text-[var(--accent-primary)]"
-            : "bg-blue-500/10 text-blue-500",
+          "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md",
+          isModel ? "bg-accent-subtle text-accent" : "bg-info-subtle text-info-fg",
         )}
       >
         {isModel ? <ModelIcon /> : <DfIcon />}
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[12px] font-bold text-[var(--text-primary)]">{name}</p>
-        <p className="mt-px font-mono text-[10px] text-[var(--text-muted)]">{formatBytes(size)}</p>
+        <p className="truncate text-xs font-bold text-fg">{name}</p>
+        <p className="mt-px font-mono text-3xs text-fg-muted">{formatBytes(size)}</p>
       </div>
 
       <span
         className={cx(
-          "flex-shrink-0 rounded-full px-[7px] py-0.5 font-mono text-[10px] font-medium tracking-[0.03em]",
-          isModel
-            ? "bg-[var(--accent-quiet)] text-[var(--accent-primary)]"
-            : "bg-blue-500/[0.08] text-blue-500",
+          "flex-shrink-0 rounded-full px-[7px] py-0.5 font-mono text-3xs font-medium tracking-[0.03em]",
+          isModel ? "bg-accent-subtle text-accent" : "bg-info-subtle text-info-fg",
         )}
       >
         {badge}

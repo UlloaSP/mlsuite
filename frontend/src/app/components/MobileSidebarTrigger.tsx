@@ -12,7 +12,7 @@ export function MobileSidebarTrigger({ side }: { side: SidebarPosition }) {
     >
       <SidebarTrigger
         side={side}
-        className="size-10 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] shadow-[var(--shadow-card)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+        className="size-10 rounded-full border border-line bg-surface text-fg-secondary shadow-card hover:bg-surface-muted hover:text-fg"
       />
     </div>
   );

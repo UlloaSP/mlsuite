@@ -56,13 +56,13 @@ export function OverviewChartPanel({
   const toggleLayer = (key: ChartLayer) => setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-soft)] px-5 py-3.5">
+    <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5">
         <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">
+          <p className="text-sm font-semibold text-fg">
             Service aggregate load &middot; last {chartRange}
           </p>
-          <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+          <p className="mt-0.5 text-xs text-fg-secondary">
             Toggle layers to compare Docker CPU, memory, disk, and network metrics.
           </p>
         </div>
@@ -80,37 +80,34 @@ export function OverviewChartPanel({
               })),
             ]}
           />
-          <AppBadge
-            tone={streamConnected ? "success" : "warning"}
-            className="px-2 py-0.5 text-[0.6rem]"
-          >
+          <AppBadge tone={streamConnected ? "success" : "warning"} className="px-2 py-0.5 text-3xs">
             {streamConnected ? "live" : "snapshot"}
           </AppBadge>
-          <AppBadge className="px-2 py-0.5 text-[0.6rem]">
+          <AppBadge className="px-2 py-0.5 text-3xs">
             {overview.history.sampleIntervalSeconds}s sample
           </AppBadge>
         </div>
       </div>
-      <div className="flex flex-wrap gap-4 border-b border-[var(--border-soft)] px-5 py-2.5">
+      <div className="flex flex-wrap gap-4 border-b border-line px-5 py-2.5">
         {(Object.entries(LAYER_CONFIG) as [ChartLayer, typeof LAYER_CONFIG.cpu][]).map(
           ([key, cfg]) => (
             <label
               key={key}
-              className="flex cursor-pointer select-none items-center gap-2 text-xs text-[var(--text-secondary)]"
+              className="flex cursor-pointer select-none items-center gap-2 text-xs text-fg-secondary"
             >
               <input
                 aria-label={`Toggle ${cfg.label} layer`}
                 type="checkbox"
                 checked={layers[key]}
                 onChange={() => toggleLayer(key)}
-                className="accent-[var(--accent-primary)]"
+                className="accent-accent"
               />
               <span
                 className="inline-block size-2.5 rounded-sm"
                 style={{ background: cfg.color }}
               />
               {cfg.label}
-              <span className="font-mono text-[var(--text-muted)]">
+              <span className="font-mono text-fg-muted">
                 {formatChartValue(cfg.unit, curValue(cfg.dataKey) as number | null)}
               </span>
             </label>
@@ -121,19 +118,19 @@ export function OverviewChartPanel({
         <div className="h-[240px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartPoints} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-              <CartesianGrid stroke="var(--border-soft)" strokeDasharray="2 4" vertical={false} />
+              <CartesianGrid stroke="var(--color-line)" strokeDasharray="2 4" vertical={false} />
               <XAxis
                 dataKey="timestamp"
                 tickFormatter={formatTimestamp}
                 minTickGap={50}
-                tick={{ fill: "var(--text-muted)", fontSize: 10 }}
-                stroke="var(--border-soft)"
+                tick={{ fill: "var(--color-fg-muted)", fontSize: 10 }}
+                stroke="var(--color-line)"
               />
               <YAxis
                 domain={axisMode === "bytes" ? [0, "auto"] : [0, 100]}
                 tickFormatter={(v: number) => formatChartValue(axisMode, v)}
-                tick={{ fill: "var(--text-muted)", fontSize: 10 }}
-                stroke="var(--border-soft)"
+                tick={{ fill: "var(--color-fg-muted)", fontSize: 10 }}
+                stroke="var(--color-line)"
                 width={46}
               />
               <Tooltip content={<ChartTooltip />} />
@@ -167,15 +164,12 @@ export function OverviewChartPanel({
           </ResponsiveContainer>
         </div>
       </div>
-      <div className="flex items-center justify-between border-t border-[var(--border-soft)] px-5 py-2.5 text-xs text-[var(--text-secondary)]">
+      <div className="flex items-center justify-between border-t border-line px-5 py-2.5 text-xs text-fg-secondary">
         <span>
           {Object.values(layers).filter(Boolean).length} layers &middot;{" "}
           {overview.history.points.length} samples
         </span>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-        >
+        <button type="button" className="flex items-center gap-1.5 text-fg-secondary hover:text-fg">
           <Download size={12} /> CSV
         </button>
       </div>

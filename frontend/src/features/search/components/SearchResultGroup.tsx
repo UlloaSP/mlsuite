@@ -16,7 +16,7 @@ export function SearchResultGroup({
 }) {
   return (
     <section className="space-y-2">
-      <p className="px-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+      <p className="px-2 text-2xs font-semibold uppercase tracking-[0.22em] text-fg-secondary">
         {group.label}
       </p>
       <div className="space-y-1">

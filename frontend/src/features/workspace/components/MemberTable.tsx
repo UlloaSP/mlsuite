@@ -41,8 +41,8 @@ export function MemberTable({
         <AppPanel key={row.id} variant="catalog">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0 space-y-2 break-words">
-              <p className="text-base font-semibold text-[var(--text-primary)]">{row.fullName}</p>
-              <p className="text-sm text-[var(--text-secondary)]">{row.email}</p>
+              <p className="text-base font-semibold text-fg">{row.fullName}</p>
+              <p className="text-sm text-fg-secondary">{row.email}</p>
               <div className="flex flex-wrap gap-2">
                 <RoleBadge value={row.role.name} />
                 <RoleBadge value={row.status} />
@@ -61,7 +61,7 @@ export function MemberTable({
                   }))}
                 />
               ) : (
-                <p className="text-sm text-[var(--text-secondary)]">Read only</p>
+                <p className="text-sm text-fg-secondary">Read only</p>
               )}
               {row.actions.canRemove ? (
                 <AppButton type="button" variant="danger" onClick={() => onRemove(row.id)}>

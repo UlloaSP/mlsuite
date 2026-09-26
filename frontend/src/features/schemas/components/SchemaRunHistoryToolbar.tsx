@@ -50,11 +50,11 @@ export function SchemaRunHistoryToolbar({
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search by inference name..."
-          prefix={<Search size={16} className="text-[var(--text-muted)]" />}
+          prefix={<Search size={16} className="text-fg-muted" />}
           className="min-w-[260px] flex-1"
         />
-        <div className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <SlidersHorizontal size={15} className="text-[var(--text-muted)]" />
+        <div className="inline-flex items-center gap-2 text-sm text-fg-secondary">
+          <SlidersHorizontal size={15} className="text-fg-muted" />
           <AppSelect
             aria-label="Inference status"
             value={status}
@@ -68,8 +68,8 @@ export function SchemaRunHistoryToolbar({
             ]}
           />
         </div>
-        <div className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <SlidersHorizontal size={15} className="text-[var(--text-muted)]" />
+        <div className="inline-flex items-center gap-2 text-sm text-fg-secondary">
+          <SlidersHorizontal size={15} className="text-fg-muted" />
           <AppSelect
             aria-label="Feedback status"
             value={feedbackStatus}
@@ -85,8 +85,8 @@ export function SchemaRunHistoryToolbar({
             ]}
           />
         </div>
-        <div className="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <CalendarDays size={15} className="text-[var(--text-muted)]" />
+        <div className="inline-flex items-center gap-2 text-sm text-fg-secondary">
+          <CalendarDays size={15} className="text-fg-muted" />
           <AppSelect
             aria-label="Inference date range"
             value={dateRange}

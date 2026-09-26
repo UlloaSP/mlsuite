@@ -10,16 +10,11 @@ export function MemoryBar({
   const percent = Math.min(100, (bytes / limit) * 100);
   return (
     <div className="grid grid-cols-[110px_1fr_70px] items-center gap-3 py-1.5">
-      <p className="truncate text-xs text-[var(--text-primary)]">{service.name}</p>
-      <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
-        <div
-          className="h-full rounded-full bg-[var(--accent-primary)]"
-          style={{ width: `${percent}%` }}
-        />
+      <p className="truncate text-xs text-fg">{service.name}</p>
+      <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
+        <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
       </div>
-      <p className="text-right font-mono text-[0.68rem] text-[var(--text-secondary)]">
-        {formatBytes(bytes)}
-      </p>
+      <p className="text-right font-mono text-2xs text-fg-secondary">{formatBytes(bytes)}</p>
     </div>
   );
 }

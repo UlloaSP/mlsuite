@@ -129,7 +129,7 @@ export function SchemaFormPreview({ schema }: Props) {
   }
 
   return (
-    <div className="size-full min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]">
+    <div className="size-full min-h-0 overflow-hidden rounded border border-line bg-surface">
       {resolvedSchema.status === "error" || mountError ? (
         <AppPanel className="m-4">
           {resolvedSchema.status === "error" ? resolvedSchema.message : mountError}

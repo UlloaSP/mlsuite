@@ -15,9 +15,9 @@ const ACTION_POSITIONS = [
   "col-start-1 row-start-2",
 ];
 const PRIMARY_ACTION_TONE =
-  "[&_button]:border-transparent [&_button]:bg-[var(--accent-primary)] [&_button]:text-[var(--text-inverse)] [&_button:hover]:bg-[var(--accent-primary-strong)]";
+  "[&_button]:border-transparent [&_button]:bg-accent [&_button]:text-fg-inverse [&_button:hover]:bg-accent-strong";
 const SECONDARY_ACTION_TONE =
-  "[&_button]:border-[var(--border-soft)] [&_button]:bg-[var(--surface-primary)] [&_button]:text-[var(--text-primary)] [&_button:hover]:border-[var(--text-primary)] [&_button:hover]:bg-[var(--surface-muted)]";
+  "[&_button]:border-line [&_button]:bg-surface [&_button]:text-fg [&_button:hover]:border-fg [&_button:hover]:bg-surface-muted";
 const CHECKERBOARD_TONES = [
   PRIMARY_ACTION_TONE,
   SECONDARY_ACTION_TONE,
@@ -68,17 +68,15 @@ export function AppPageHeader({
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             {eyebrow ? (
-              <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-primary)]">
+              <p className="mb-1 font-mono text-3xs font-semibold uppercase tracking-[0.14em] text-accent">
                 {eyebrow}
               </p>
             ) : null}
-            <h1 className="text-[27px] font-semibold leading-[1.05] tracking-[-0.8px] text-[var(--text-primary)]">
+            <h1 className="text-3xl font-semibold leading-[1.05] tracking-[-0.8px] text-fg">
               {title}
             </h1>
             {description ? (
-              <p className="mt-1.5 max-w-2xl text-[13px] leading-5 text-[var(--text-muted)]">
-                {description}
-              </p>
+              <p className="mt-1.5 max-w-2xl text-sm leading-5 text-fg-muted">{description}</p>
             ) : null}
           </div>
           {actionNodes.length > 0 ? (

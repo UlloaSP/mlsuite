@@ -54,10 +54,10 @@ export function SchemaModelSelector({ models, value, onChange }: Props) {
               <div
                 key={model.id}
                 className={cx(
-                  "grid min-h-24 w-full gap-3 rounded border p-4 shadow-[var(--shadow-card)] transition",
+                  "grid min-h-24 w-full gap-3 rounded border p-4 shadow-card transition",
                   selected
-                    ? "border-[var(--accent-primary)] bg-[var(--accent-quiet)]"
-                    : "border-[var(--border-soft)] bg-[var(--surface-primary)] hover:border-[var(--text-primary)]",
+                    ? "border-accent bg-accent-subtle"
+                    : "border-line bg-surface hover:border-fg",
                   !available && "cursor-not-allowed opacity-45",
                 )}
               >
@@ -67,14 +67,12 @@ export function SchemaModelSelector({ models, value, onChange }: Props) {
                   onClick={() => toggle(model)}
                   className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 text-left"
                 >
-                  <div className="flex size-11 items-center justify-center rounded-2xl bg-[var(--surface-muted)] text-[var(--accent-primary)]">
+                  <div className="flex size-11 items-center justify-center rounded-2xl bg-surface-muted text-accent">
                     <Database size={17} />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
-                      {model.name}
-                    </p>
-                    <p className="truncate text-xs text-[var(--text-secondary)]">
+                    <p className="truncate text-sm font-semibold text-fg">{model.name}</p>
+                    <p className="truncate text-xs text-fg-secondary">
                       {available ? "Schema available" : "No schema available"} ·{" "}
                       {getModelAlgorithmLabel(model)}
                     </p>
@@ -83,8 +81,8 @@ export function SchemaModelSelector({ models, value, onChange }: Props) {
                     className={cx(
                       "grid size-8 place-items-center rounded border",
                       selected
-                        ? "border-transparent bg-[var(--accent-primary)] text-[var(--text-inverse)]"
-                        : "border-[var(--border-soft)] text-transparent",
+                        ? "border-transparent bg-accent text-fg-inverse"
+                        : "border-line text-transparent",
                     )}
                   >
                     <Check size={15} />

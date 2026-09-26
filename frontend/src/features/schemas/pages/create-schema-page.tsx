@@ -113,21 +113,21 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
                   aria-label="Schema description"
                   placeholder="Schema description"
                   onChange={(event) => setDescription(event.target.value)}
-                  className="min-h-24 w-full resize-y rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+                  className="min-h-24 w-full resize-y rounded border border-line bg-surface px-4 py-3 text-sm text-fg outline-none placeholder:text-fg-muted"
                 />
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="min-w-20 rounded bg-[var(--surface-muted)] p-3">
+                <div className="min-w-20 rounded bg-surface-muted p-3">
                   <p className="text-2xl font-semibold">{activeModelCount}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">Models</p>
+                  <p className="text-xs text-fg-secondary">Models</p>
                 </div>
-                <div className="min-w-20 rounded bg-[var(--surface-muted)] p-3">
+                <div className="min-w-20 rounded bg-surface-muted p-3">
                   <p className="text-2xl font-semibold">{fieldCount}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">Fields</p>
+                  <p className="text-xs text-fg-secondary">Fields</p>
                 </div>
-                <div className="min-w-20 rounded bg-[var(--surface-muted)] p-3">
+                <div className="min-w-20 rounded bg-surface-muted p-3">
                   <p className="text-2xl font-semibold">{reportCount}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">Reports</p>
+                  <p className="text-xs text-fg-secondary">Reports</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 xl:justify-end">

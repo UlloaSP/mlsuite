@@ -72,7 +72,7 @@ export function SettingsPage() {
             {section === "keybindings" ? <SettingsKeybindingsSection /> : null}
             {section === "layout" ? <SettingsLayoutSection /> : null}
           </div>
-          <p className="mt-10 border-t border-[var(--border-soft)] pt-5 text-xs text-[var(--text-muted)]">
+          <p className="mt-10 border-t border-line pt-5 text-xs text-fg-muted">
             Preferences are saved in this browser and apply immediately.
           </p>
         </main>

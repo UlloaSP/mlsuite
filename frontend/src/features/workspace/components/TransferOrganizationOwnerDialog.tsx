@@ -22,10 +22,10 @@ export function TransferOrganizationOwnerDialog({
   const [selected, setSelected] = useState("");
   const showLoading = useStableLoading(loading);
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
-      <div className="w-full max-w-sm rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-hover)]">
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Transfer owner</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+    <div className="fixed inset-0 z-(--z-overlay) grid place-items-center bg-overlay p-4">
+      <div className="w-full max-w-sm rounded border border-line bg-surface p-5 shadow-hover">
+        <h2 className="text-lg font-semibold text-fg">Transfer owner</h2>
+        <p className="mt-2 text-sm leading-6 text-fg-secondary">
           The selected member receives full control immediately. You will lose owner-only
           permissions after confirming.
         </p>
@@ -43,7 +43,7 @@ export function TransferOrganizationOwnerDialog({
         ) : (
           <>
             {error ? (
-              <p role="alert" className="mt-4 text-sm text-[var(--danger-text)]">
+              <p role="alert" className="mt-4 text-sm text-danger-fg">
                 {error.message}
               </p>
             ) : null}
@@ -51,7 +51,7 @@ export function TransferOrganizationOwnerDialog({
               aria-label="New organization owner"
               value={selected}
               onChange={(event) => setSelected(event.target.value)}
-              className="mt-4 w-full rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-2 text-sm text-[var(--text-primary)]"
+              className="mt-4 w-full rounded border border-line bg-surface px-3 py-2 text-sm text-fg"
             >
               <option value="">Select member</option>
               {members.map((member) => (

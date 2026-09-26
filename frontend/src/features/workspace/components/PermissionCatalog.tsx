@@ -39,7 +39,7 @@ export function PermissionCatalog({
           className="w-full"
           aria-label="Search permissions"
           placeholder="Search permissions..."
-          prefix={<Search className="size-4 text-[var(--text-muted)]" />}
+          prefix={<Search className="size-4 text-fg-muted" />}
           value={search}
           onChange={(event) =>
             setParams(

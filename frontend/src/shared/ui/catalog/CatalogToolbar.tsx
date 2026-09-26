@@ -58,9 +58,9 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
         <AppTextField
           className="w-full"
           placeholder={placeholder}
-          prefix={<Search className="size-4 text-[var(--text-muted)]" />}
+          prefix={<Search className="size-4 text-fg-muted" />}
           suffix={
-            <span className="shrink-0 whitespace-nowrap border-l border-[var(--border-soft)] pl-3 text-sm font-semibold text-[var(--text-secondary)]">
+            <span className="shrink-0 whitespace-nowrap border-l border-line pl-3 text-sm font-semibold text-fg-secondary">
               {resultCount} results
             </span>
           }
@@ -75,7 +75,7 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
             aria-label={filterLabel}
             className={cx(
               segmented
-                ? "inline-flex w-fit rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-1"
+                ? "inline-flex w-fit rounded border border-line bg-surface p-1"
                 : "flex w-fit gap-1",
             )}
           >
@@ -108,16 +108,14 @@ function getFilterClassName(segmented: boolean, active: boolean) {
   if (segmented) {
     return cx(
       "cursor-pointer rounded px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
-      active
-        ? "bg-[var(--surface-secondary)] text-[var(--text-primary)] shadow-[var(--shadow-card)]"
-        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+      active ? "bg-surface-subtle text-fg shadow-card" : "text-fg-secondary hover:text-fg",
     );
   }
 
   return cx(
     "cursor-pointer rounded border px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
     active
-      ? "border-[var(--accent-primary)] bg-[var(--accent-soft)] text-[var(--accent-strong)]"
-      : "border-[var(--border-soft)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]",
+      ? "border-accent bg-accent-subtle text-accent-strong"
+      : "border-line text-fg-secondary hover:border-line-strong hover:text-fg",
   );
 }

@@ -52,7 +52,7 @@ export function OrganizationSettingsContent({
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         {permissions.canEditOrganization ? (
           <form
-            className="grid max-w-3xl gap-5 border-t border-[var(--border-soft)] pt-6"
+            className="grid max-w-3xl gap-5 border-t border-line pt-6"
             onSubmit={(event) => {
               event.preventDefault();
               update.mutate(
@@ -62,7 +62,7 @@ export function OrganizationSettingsContent({
             }}
           >
             <div>
-              <h2 className="text-xl font-semibold text-[var(--text-primary)]">Identity</h2>
+              <h2 className="text-xl font-semibold text-fg">Identity</h2>
               <AppCopy className="mt-1">Shown across this organization's workspace.</AppCopy>
             </div>
             <div className="grid gap-2">
@@ -108,12 +108,12 @@ export function OrganizationSettingsContent({
               />
             </div>
             {update.isError ? (
-              <p role="alert" className="text-sm text-[var(--danger-text)]">
+              <p role="alert" className="text-sm text-danger-fg">
                 {errorMessage(update.error)}
               </p>
             ) : null}
             {update.isSuccess ? (
-              <p role="status" className="text-sm text-[var(--success-text)]">
+              <p role="status" className="text-sm text-success-fg">
                 Organization saved.
               </p>
             ) : null}
@@ -128,19 +128,19 @@ export function OrganizationSettingsContent({
         ) : null}
 
         {permissions.canTransferOwnership ? (
-          <section className="max-w-3xl border-t border-[var(--border-soft)] py-6">
-            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Ownership</h2>
+          <section className="max-w-3xl border-t border-line py-6">
+            <h2 className="text-xl font-semibold text-fg">Ownership</h2>
             <AppCopy className="mt-1 max-w-2xl">
               Transfer full control to another active member. Your account will lose owner-only
               permissions as soon as the transfer completes.
             </AppCopy>
             {transfer.isError || members.isError ? (
-              <p role="alert" className="mt-3 text-sm text-[var(--danger-text)]">
+              <p role="alert" className="mt-3 text-sm text-danger-fg">
                 {errorMessage(transfer.error ?? members.error)}
               </p>
             ) : null}
             {transfer.isSuccess ? (
-              <p role="status" className="mt-3 text-sm text-[var(--success-text)]">
+              <p role="status" className="mt-3 text-sm text-success-fg">
                 Ownership transferred.
               </p>
             ) : null}
@@ -157,14 +157,14 @@ export function OrganizationSettingsContent({
         ) : null}
 
         {permissions.canDeleteOrganization ? (
-          <section className="max-w-3xl border-t border-[var(--border-soft)] py-6">
-            <h2 className="text-xl font-semibold text-[var(--danger-text)]">Danger zone</h2>
+          <section className="max-w-3xl border-t border-line py-6">
+            <h2 className="text-xl font-semibold text-danger-fg">Danger zone</h2>
             <AppCopy className="mt-1 max-w-2xl">
               Delete this organization permanently. The API refuses deletion while organization
               resources still exist.
             </AppCopy>
             {remove.isError ? (
-              <p role="alert" className="mt-3 text-sm text-[var(--danger-text)]">
+              <p role="alert" className="mt-3 text-sm text-danger-fg">
                 {errorMessage(remove.error)}
               </p>
             ) : null}

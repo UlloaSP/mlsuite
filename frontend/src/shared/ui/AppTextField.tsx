@@ -18,14 +18,14 @@ export function AppTextField({
   return (
     <label
       className={cx(
-        "inline-flex items-center gap-3 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)]",
+        "inline-flex items-center gap-3 rounded border border-line bg-surface px-4 py-3 text-sm text-fg-secondary",
         className,
       )}
     >
       {prefix}
       <input
         {...props}
-        className="w-full bg-transparent text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+        className="w-full bg-transparent text-fg outline-none placeholder:text-fg-muted"
       />
       {suffix}
     </label>

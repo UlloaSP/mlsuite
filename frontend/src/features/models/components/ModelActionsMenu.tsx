@@ -64,7 +64,7 @@ export function ModelActionsMenu({
       </AppIconButton>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded border border-line bg-surface p-2 shadow-hover">
           {ACTIONS.reduce<React.JSX.Element[]>((items, action) => {
             if (archived && action.value === "archive") return items;
             if (!(action.value === "delete" ? canDelete : canEdit)) {
@@ -83,8 +83,8 @@ export function ModelActionsMenu({
                 className={cx(
                   "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium transition",
                   action.value === "delete"
-                    ? "text-[var(--danger-text)] hover:bg-[var(--danger-quiet)]"
-                    : "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
+                    ? "text-danger-fg hover:bg-danger-subtle"
+                    : "text-fg hover:bg-surface-muted",
                 )}
               >
                 <Icon size={15} />

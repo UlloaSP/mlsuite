@@ -104,16 +104,16 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
 
   return (
     <AppPanel id="reviews" className="overflow-hidden p-0">
-      <header className="border-b border-[var(--border-soft)] px-5 py-5 sm:px-6">
+      <header className="border-b border-line px-5 py-5 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <AppSectionTitle>Reviews</AppSectionTitle>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-fg-secondary">
               One tile per reviewer assignment. Reopen keeps answers; delete clears them.
             </p>
           </div>
           {assignments.data?.length ? (
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="text-sm text-fg-secondary">
               {filtered.length} of {assignments.data.length}
             </p>
           ) : null}
@@ -153,7 +153,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
           <AppLoadingState compact label="Loading reviews…" />
         ) : assignments.error ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-[var(--danger-text)]">Review status unavailable.</p>
+            <p className="text-sm text-danger-fg">Review status unavailable.</p>
             <AppButton
               variant="secondary"
               className="px-3 py-2"
@@ -186,11 +186,11 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
             ) : null}
           </>
         ) : assignments.data?.length ? (
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="text-sm text-fg-secondary">
             No reviews match the current search and status.
           </p>
         ) : (
-          <p className="text-sm text-[var(--text-secondary)]">No reviews include this inference.</p>
+          <p className="text-sm text-fg-secondary">No reviews include this inference.</p>
         )}
       </div>
     </AppPanel>

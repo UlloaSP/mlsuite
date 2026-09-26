@@ -15,7 +15,7 @@ export function EditorErrorPanel() {
     <AnimatePresence mode="wait">
       <motion.div
         key="errors"
-        className="flex-1 overflow-y-auto rounded-b-[20px] border border-t-0 border-[var(--border-soft)] bg-[var(--surface-primary)]"
+        className="flex-1 overflow-y-auto rounded-b-[20px] border border-t-0 border-line bg-surface"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

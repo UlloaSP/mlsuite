@@ -49,7 +49,9 @@ export const createModel = ({
 };
 
 export const archiveModel = ({ id, version }: ModelVersionRequest): Promise<ModelDto> =>
-  appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}/archive?version=${version}`, { method: "POST" });
+  appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}/archive?version=${version}`, {
+    method: "POST",
+  });
 
 export const deleteModel = async ({ id, version }: ModelVersionRequest): Promise<void> => {
   await appFetch(`/api/models/${encodeURIComponent(id)}?version=${version}`, { method: "DELETE" });

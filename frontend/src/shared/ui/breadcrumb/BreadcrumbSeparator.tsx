@@ -11,7 +11,7 @@ export function BreadcrumbSeparator({ children, className, ...props }: Component
   return (
     <li
       aria-hidden="true"
-      className={cx("shrink-0 text-[var(--text-muted)]", className)}
+      className={cx("shrink-0 text-fg-muted", className)}
       role="presentation"
       {...props}
     >

@@ -5,15 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { AppSelect } from "@/shared/ui/AppSelect";
-import {
-  INTERFACE_FONTS,
-  INTERFACE_SIZES,
-  MONOSPACE_FONTS,
-  MONOSPACE_SIZES,
-  typographyAtom,
-  type InterfaceFont,
-  type MonospaceFont,
-} from "@/shared/ui/typography-state";
+import { INTERFACE_FONTS, MONOSPACE_FONTS } from "@/shared/ui/font-catalog";
+import { INTERFACE_SIZES, MONOSPACE_SIZES, typographyAtom } from "@/shared/ui/typography-state";
+import { FontChoiceGrid } from "./FontChoiceGrid";
 
 const sizeOptions = (values: readonly number[]) =>
   values.map((value) => ({ label: `${value} px`, value: String(value) }));
@@ -27,13 +21,10 @@ export function SettingsTypographySection() {
 
   return (
     <section aria-labelledby="typography-heading">
-      <h2
-        id="typography-heading"
-        className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]"
-      >
+      <h2 id="typography-heading" className="text-xl font-semibold tracking-[-0.02em] text-fg">
         Typography
       </h2>
-      <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+      <p className="mt-1 text-sm leading-6 text-fg-secondary">
         Tune interface and code text without changing content density rules.
       </p>
 
@@ -41,28 +32,27 @@ export function SettingsTypographySection() {
         <div className="min-w-0">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold text-[var(--text-primary)]">Interface font</h3>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                Navigation, forms, labels, and copy.
-              </p>
+              <h3 className="text-base font-semibold text-fg">Interface font</h3>
+              <p className="mt-1 text-sm text-fg-secondary">Navigation, forms, labels, and copy.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <AppSelect
-                aria-label="Interface font"
-                value={typography.interfaceFont}
-                options={[...INTERFACE_FONTS]}
-                onValueChange={(value) => update("interfaceFont", value as InterfaceFont)}
-              />
-              <AppSelect
-                aria-label="Interface font size"
-                value={String(typography.interfaceSize)}
-                options={sizeOptions(INTERFACE_SIZES)}
-                onValueChange={(value) => update("interfaceSize", Number(value))}
-              />
-            </div>
+            <AppSelect
+              aria-label="Interface font size"
+              value={String(typography.interfaceSize)}
+              options={sizeOptions(INTERFACE_SIZES)}
+              onValueChange={(value) => update("interfaceSize", Number(value))}
+            />
           </div>
-          <div className="mt-3 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-5">
-            <p className="max-w-[68ch] leading-7 text-[var(--text-primary)]">
+          <div className="mt-4">
+            <FontChoiceGrid
+              fonts={INTERFACE_FONTS}
+              name="interface-font"
+              sample="Review model outputs"
+              value={typography.interfaceFont}
+              onChange={(value) => update("interfaceFont", value)}
+            />
+          </div>
+          <div className="mt-3 rounded-xl border border-line bg-surface-subtle p-5">
+            <p className="max-w-[68ch] leading-7 text-fg">
               Use a schema to validate inputs, run inference, and review model outputs before
               saving.
             </p>
@@ -72,40 +62,37 @@ export function SettingsTypographySection() {
         <div className="min-w-0">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold text-[var(--text-primary)]">Monospace font</h3>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                Code, diffs, editors, and terminals.
-              </p>
+              <h3 className="text-base font-semibold text-fg">Monospace font</h3>
+              <p className="mt-1 text-sm text-fg-secondary">Code, diffs, editors, and terminals.</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <AppSelect
-                aria-label="Monospace font"
-                value={typography.monospaceFont}
-                options={[...MONOSPACE_FONTS]}
-                onValueChange={(value) => update("monospaceFont", value as MonospaceFont)}
-              />
-              <AppSelect
-                aria-label="Monospace font size"
-                value={String(typography.monospaceSize)}
-                options={sizeOptions(MONOSPACE_SIZES)}
-                onValueChange={(value) => update("monospaceSize", Number(value))}
-              />
-            </div>
+            <AppSelect
+              aria-label="Monospace font size"
+              value={String(typography.monospaceSize)}
+              options={sizeOptions(MONOSPACE_SIZES)}
+              onValueChange={(value) => update("monospaceSize", Number(value))}
+            />
+          </div>
+          <div className="mt-4">
+            <FontChoiceGrid
+              fonts={MONOSPACE_FONTS}
+              name="monospace-font"
+              sample="run(schema, input) => 0.98"
+              value={typography.monospaceFont}
+              onChange={(value) => update("monospaceFont", value)}
+            />
           </div>
           <pre
             data-code-block
-            className="app-scroll mt-3 overflow-auto rounded-xl border border-[var(--border-soft)] bg-[var(--surface-inverse)] p-5 text-[length:var(--code-font-size)] leading-6 text-[var(--text-inverse)] [font-family:var(--font-mono)]"
+            className="app-scroll mt-3 overflow-auto rounded-xl border border-line bg-surface-inverse p-5 font-mono text-code text-fg-inverse"
           >
             <code>{`const prediction = await run(schema, input);\nreturn prediction.results;`}</code>
           </pre>
         </div>
 
-        <label className="flex items-center justify-between gap-5 border-t border-[var(--border-soft)] pt-5">
+        <label className="flex items-center justify-between gap-5 border-t border-line pt-5">
           <span>
-            <span className="block text-sm font-semibold text-[var(--text-primary)]">
-              Word wrap
-            </span>
-            <span className="mt-1 block text-sm text-[var(--text-secondary)]">
+            <span className="block text-sm font-semibold text-fg">Word wrap</span>
+            <span className="mt-1 block text-sm text-fg-secondary">
               Wrap long lines in code editors and previews.
             </span>
           </span>
@@ -115,7 +102,7 @@ export function SettingsTypographySection() {
             checked={typography.wordWrap}
             onChange={(event) => update("wordWrap", event.target.checked)}
           />
-          <span className="relative h-6 w-11 shrink-0 rounded-full bg-[var(--border-strong)] transition peer-checked:bg-[var(--accent-primary)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent-primary)] peer-focus-visible:ring-offset-2 after:absolute after:left-1 after:top-1 after:size-4 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
+          <span className="relative h-6 w-11 shrink-0 rounded-full bg-line-strong transition peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 after:absolute after:left-1 after:top-1 after:size-4 after:rounded-full after:bg-surface after:transition-transform peer-checked:after:translate-x-5" />
         </label>
       </div>
     </section>

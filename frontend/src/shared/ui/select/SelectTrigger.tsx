@@ -15,7 +15,7 @@ export function SelectTrigger({ children, className, ...props }: SelectTriggerPr
   return (
     <SelectPrimitive.Trigger
       className={cx(
-        "inline-flex h-10 min-w-0 items-center justify-between gap-2 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-0 text-sm text-[var(--text-primary)] shadow-none transition hover:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-45",
+        "inline-flex h-10 min-w-0 items-center justify-between gap-2 rounded border border-line bg-surface px-3 py-0 text-sm text-fg shadow-none transition hover:border-fg disabled:cursor-not-allowed disabled:opacity-45",
         FOCUS_RING,
         className,
       )}
@@ -23,7 +23,7 @@ export function SelectTrigger({ children, className, ...props }: SelectTriggerPr
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDown size={16} className="shrink-0 text-[var(--text-muted)]" />
+        <ChevronDown size={16} className="shrink-0 text-fg-muted" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );

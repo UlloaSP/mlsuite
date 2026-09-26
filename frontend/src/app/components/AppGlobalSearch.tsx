@@ -74,12 +74,12 @@ export function AppGlobalSearch() {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[900] bg-black/25 backdrop-blur-sm transition-opacity duration-150 data-[state=closed]:opacity-0 data-[state=open]:opacity-100" />
+        <Dialog.Overlay className="fixed inset-0 z-(--z-overlay) bg-overlay backdrop-blur-sm transition-opacity duration-150 data-[state=closed]:opacity-0 data-[state=open]:opacity-100" />
         <Dialog.Content
           aria-label="Global search"
           className={cx(
             FOCUS_RING,
-            "fixed left-1/2 top-[14vh] z-[901] w-[min(47rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-hover)] outline-none transition duration-150",
+            "fixed left-1/2 top-[14vh] z-(--z-modal) w-[min(47rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded border border-line bg-surface shadow-hover outline-none transition duration-150",
             "data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100",
           )}
         >
@@ -87,8 +87,8 @@ export function AppGlobalSearch() {
             Global search
           </label>
           <div>
-            <div className="flex items-center gap-3 border-b border-[var(--border-soft)] bg-[var(--surface-primary)] px-5 py-4">
-              <Search size={17} className="shrink-0 text-[var(--text-muted)]" />
+            <div className="flex items-center gap-3 border-b border-line bg-surface px-5 py-4">
+              <Search size={17} className="shrink-0 text-fg-muted" />
               <input
                 aria-label="Global search"
                 ref={inputRef}
@@ -118,13 +118,13 @@ export function AppGlobalSearch() {
                   }
                 }}
                 placeholder="Search snapshots, bookmarks, models, schemas"
-                className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+                className="w-full bg-transparent text-sm text-fg outline-none placeholder:text-fg-muted"
               />
-              <kbd className="hidden rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] px-2 py-1 text-[0.68rem] font-medium lowercase text-[var(--text-muted)] md:block">
+              <kbd className="hidden rounded border border-line bg-surface-subtle px-2 py-1 text-2xs font-medium lowercase text-fg-muted md:block">
                 esc
               </kbd>
             </div>
-            <div className="max-h-[26rem] overflow-y-auto bg-[var(--surface-secondary)]">
+            <div className="max-h-[26rem] overflow-y-auto bg-surface-subtle">
               {showPanel ? (
                 isFetching ? (
                   <AppCopy className="px-6 py-5">Searching workspace...</AppCopy>
@@ -150,7 +150,7 @@ export function AppGlobalSearch() {
                 )
               ) : (
                 <div className="px-6 py-5">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Search ML Suite</p>
+                  <p className="text-sm font-semibold text-fg">Search ML Suite</p>
                   <AppCopy className="mt-1">Type at least two characters.</AppCopy>
                 </div>
               )}

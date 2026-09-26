@@ -39,25 +39,23 @@ export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, sch
   return (
     <article
       className={cx(
-        "relative grid rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] transition hover:border-[var(--text-primary)] lg:grid-cols-[minmax(0,1fr)_auto]",
+        "relative grid rounded border border-line bg-surface transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_auto]",
         menuOpen ? "z-30" : "z-0",
       )}
     >
       <Link
         to={`/schemas/${schemaId}/drafts/${draft.id}`}
         aria-label={`Edit ${draft.name}`}
-        className="absolute inset-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+        className="absolute inset-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-focus"
       />
       <div className="pointer-events-none relative min-w-0 p-4">
         <div className="flex items-center gap-2">
-          <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">
-            {draft.name}
-          </h2>
+          <h2 className="truncate text-base font-semibold text-fg">{draft.name}</h2>
           {draft.status === "CONFLICT" ? (
-            <AlertTriangle size={16} className="shrink-0 text-[var(--danger-text)]" />
+            <AlertTriangle size={16} className="shrink-0 text-danger-fg" />
           ) : null}
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--text-secondary)]">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg-secondary">
           <span className="inline-flex items-center gap-1">
             <GitCommitHorizontal size={15} />
             {baseSnapshotName ?? "Snapshot"} · v{draft.baseVersion}
@@ -77,7 +75,7 @@ export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, sch
           <MoreHorizontal size={18} />
         </AppIconButton>
         {menuOpen ? (
-          <div className="absolute right-4 top-[calc(100%-0.25rem)] z-20 min-w-[170px] rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
+          <div className="absolute right-4 top-[calc(100%-0.25rem)] z-20 min-w-[170px] rounded border border-line bg-surface p-2 shadow-hover">
             <button
               type="button"
               className={menuItemClass}
@@ -105,4 +103,4 @@ export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, sch
 }
 
 const menuItemClass =
-  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]";
+  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-fg transition hover:bg-surface-muted";

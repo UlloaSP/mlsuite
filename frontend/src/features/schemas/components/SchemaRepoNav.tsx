@@ -43,7 +43,7 @@ export function SchemaRepoNav({ active, schemaId, changes, bookmarks, snapshots 
   ] as const;
 
   return (
-    <nav className="flex flex-wrap gap-2 border-b border-[var(--border-soft)] pb-3">
+    <nav className="flex flex-wrap gap-2 border-b border-line pb-3">
       {items.map((item) => {
         const Icon = item.icon;
         const selected = item.id === active;
@@ -54,8 +54,8 @@ export function SchemaRepoNav({ active, schemaId, changes, bookmarks, snapshots 
             className={cx(
               "inline-flex items-center gap-2 rounded px-3 py-2 text-sm font-medium transition",
               selected
-                ? "bg-[var(--text-primary)] text-[var(--text-inverse)]"
-                : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
+                ? "bg-fg text-fg-inverse"
+                : "text-fg-secondary hover:bg-surface-muted hover:text-fg",
             )}
           >
             {Icon ? <Icon size={15} /> : null}

@@ -223,7 +223,7 @@ export function SchemaDraftConflictPage() {
         {showLoading ? (
           <AppLoadingState label="Loading diff." />
         ) : loadError || missingConflictData ? (
-          <AppPanel className="flex flex-col items-start gap-3 border-[var(--status-danger-border)] text-sm text-[var(--status-danger-text)]">
+          <AppPanel className="flex flex-col items-start gap-3 border-danger-border text-sm text-danger-fg">
             <p>Could not load the comparison.</p>
             <AppButton variant="secondary" onClick={retryLoad}>
               Retry

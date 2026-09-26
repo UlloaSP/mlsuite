@@ -36,17 +36,17 @@ export function AppChoiceCard({
         value={value}
         onChange={onChange}
       />
-      <span className="flex h-full min-h-32 flex-col rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-3 transition duration-200 group-hover:border-[var(--border-strong)] group-hover:bg-[var(--surface-primary)] peer-checked:border-[var(--accent-primary)] peer-checked:ring-1 peer-checked:ring-[var(--accent-primary)] peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent-primary)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--surface-primary)]">
+      <span className="flex h-full min-h-32 flex-col rounded-2xl border border-line bg-surface-subtle p-3 transition duration-200 group-hover:border-line-strong group-hover:bg-surface peer-checked:border-accent peer-checked:ring-1 peer-checked:ring-accent peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface">
         <span className="flex min-h-0 flex-1 items-center justify-center">{children}</span>
         <span className="mt-3 flex items-center justify-between gap-3 px-1">
-          <span className="text-sm font-semibold text-[var(--text-primary)]">{label}</span>
+          <span className="text-sm font-semibold text-fg">{label}</span>
           <span
             aria-hidden="true"
             className={cx(
               "flex size-5 items-center justify-center rounded-full border transition",
               checked
-                ? "border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white"
-                : "border-[var(--border-strong)] text-transparent",
+                ? "border-accent bg-accent text-on-accent"
+                : "border-line-strong text-transparent",
             )}
           >
             <Check size={12} strokeWidth={3} />

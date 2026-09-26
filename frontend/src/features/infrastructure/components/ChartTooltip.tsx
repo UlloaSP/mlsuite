@@ -12,8 +12,8 @@ export function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-2 text-xs shadow-lg">
-      <p className="mb-1.5 font-mono text-[0.6rem] text-[var(--text-muted)]">
+    <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-overlay">
+      <p className="mb-1.5 font-mono text-3xs text-fg-muted">
         {formatTimestamp(String(label ?? ""))}
       </p>
       {payload.map((entry) => (

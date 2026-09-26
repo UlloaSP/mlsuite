@@ -16,8 +16,8 @@ export function AppToolbar({ children, className, variant = "panel" }: AppToolba
       className={cx(
         "flex shrink-0 flex-wrap items-center justify-between gap-3",
         variant === "flat"
-          ? "border-b border-[var(--border-soft)] py-3"
-          : "rounded-[24px] border border-[var(--border-soft)] bg-[var(--surface-secondary)] p-4 shadow-[var(--shadow-card)]",
+          ? "border-b border-line py-3"
+          : "rounded-3xl border border-line bg-surface-subtle p-4 shadow-card",
         className,
       )}
     >

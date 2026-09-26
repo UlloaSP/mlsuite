@@ -128,7 +128,7 @@ export function SchemaReviewCombinedFeedbackForm({
     return (
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
+          <h2 className="text-xl font-semibold text-fg">Review questionnaire</h2>
           <AppButton
             variant="secondary"
             className="rounded-none px-4 py-2"
@@ -138,15 +138,13 @@ export function SchemaReviewCombinedFeedbackForm({
           </AppButton>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="divide-y divide-[var(--border-soft)] border border-[var(--border-strong)] bg-[var(--surface-primary)] md:col-span-2">
+          <div className="divide-y divide-line border border-line-strong bg-surface md:col-span-2">
             {steps.map((step) => (
               <div key={step.id} className="p-4">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">{step.title}</p>
+                <p className="text-sm font-semibold text-fg">{step.title}</p>
                 {buildQuestionnaireFormSchema(step.schema).fields.map((field: FieldConfig) => (
-                  <p key={String(field.id)} className="mt-2 text-sm text-[var(--text-secondary)]">
-                    <span className="font-medium text-[var(--text-primary)]">
-                      {String(field.label ?? field.id)}:
-                    </span>{" "}
+                  <p key={String(field.id)} className="mt-2 text-sm text-fg-secondary">
+                    <span className="font-medium text-fg">{String(field.label ?? field.id)}:</span>{" "}
                     {displayValue(
                       (savedValues ? valuesForCombinedStep(savedValues, step) : step.initialValues)[
                         String(field.id)
@@ -164,7 +162,7 @@ export function SchemaReviewCombinedFeedbackForm({
   }
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
+      <h2 className="text-xl font-semibold text-fg">Review questionnaire</h2>
       <ReportQuestionnaireMount
         title="Schema Review"
         schema={combined.schema}

@@ -28,18 +28,18 @@ describe("typography preferences", () => {
     const store = createStore();
     const unsubscribe = store.sub(typographyAtom, () => undefined);
 
-    expect(store.get(typographyAtom).interfaceFont).toBe("cereal");
+    expect(store.get(typographyAtom).interfaceFont).toBe("manrope");
     store.set(typographyAtom, {
-      interfaceFont: "segoe",
+      interfaceFont: "ibm-plex-sans",
       interfaceSize: 17,
-      monospaceFont: "consolas",
+      monospaceFont: "jetbrains-mono",
       monospaceSize: 15,
       wordWrap: false,
     });
 
     expect(documentElement.dataset).toEqual({
-      interfaceFont: "segoe",
-      monospaceFont: "consolas",
+      interfaceFont: "ibm-plex-sans",
+      monospaceFont: "jetbrains-mono",
       wordWrap: "false",
     });
     expect(style.setProperty).toHaveBeenCalledWith("--ui-font-size", "17px");
@@ -49,10 +49,44 @@ describe("typography preferences", () => {
       "'IBM Plex Sans', Arial, sans-serif",
     );
     expect(style.setProperty).toHaveBeenCalledWith(
-      "--font-display",
-      "'IBM Plex Sans', Arial, sans-serif",
+      "--font-mono",
+      "'JetBrains Mono', Consolas, ui-monospace, monospace",
     );
-    expect(localStorage.getItem("ui/typography")).toContain('"interfaceFont":"segoe"');
+    expect(localStorage.getItem("ui/typography")).toContain('"interfaceFont":"ibm-plex-sans"');
+    unsubscribe();
+  });
+
+  it("maps font ids stored by earlier releases to their current presets", async () => {
+    const localStorage = storage();
+    localStorage.setItem(
+      "ui/typography",
+      JSON.stringify({
+        interfaceFont: "avenir",
+        interfaceSize: 16,
+        monospaceFont: "consolas",
+        monospaceSize: 13,
+        wordWrap: true,
+      }),
+    );
+    const documentElement = {
+      dataset: {} as Record<string, string>,
+      style: { setProperty: vi.fn() },
+    };
+    vi.stubGlobal("localStorage", localStorage);
+    vi.stubGlobal("window", { localStorage });
+    vi.stubGlobal("document", { documentElement });
+    const { typographyAtom } = await import("@/shared/ui/typography-state");
+    const store = createStore();
+    const unsubscribe = store.sub(typographyAtom, () => undefined);
+
+    expect(store.get(typographyAtom)).toMatchObject({
+      interfaceFont: "source-sans-3",
+      monospaceFont: "system-mono",
+    });
+    expect(documentElement.dataset).toMatchObject({
+      interfaceFont: "source-sans-3",
+      monospaceFont: "system-mono",
+    });
     unsubscribe();
   });
 });

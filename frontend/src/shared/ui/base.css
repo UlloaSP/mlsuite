@@ -1,0 +1,147 @@
+/* Document-level styles: page chrome, scrollbars and transitions. */
+
+/* Interface and code sizes come from the typography preference; font families from tokens.css. */
+:root {
+  color-scheme: light;
+  --ui-font-size: 16px;
+  --code-font-size: 13px;
+  background: var(--color-page);
+  font-size: var(--ui-font-size);
+  font-family: var(--font-sans);
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top, var(--color-page-accent), transparent 34%), var(--color-page);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+.theme-corner-transition::view-transition-new(root) {
+  animation: theme-corner-reveal var(--duration-slow) var(--ease-emphasized) both;
+  clip-path: circle(150vmax at 0 0);
+  mix-blend-mode: normal;
+}
+
+.theme-corner-transition::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:root.theme-corner-transition::view-transition-group(root) {
+  animation: none !important;
+}
+
+::view-transition-old(app-content),
+::view-transition-new(app-content) {
+  animation-duration: var(--duration-base);
+  animation-timing-function: ease-out;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(app-content) {
+  animation-name: app-route-fade-out;
+}
+
+::view-transition-new(app-content) {
+  animation-name: app-route-fade-in;
+}
+
+@keyframes app-route-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes app-route-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes theme-corner-reveal {
+  from {
+    clip-path: circle(0 at 0 0);
+  }
+
+  to {
+    clip-path: circle(150vmax at 0 0);
+  }
+}
+
+.app-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+.app-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.app-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-line-strong) 82%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(app-content),
+  ::view-transition-new(app-content) {
+    animation: none !important;
+  }
+}

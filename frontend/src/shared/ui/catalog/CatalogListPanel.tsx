@@ -69,7 +69,7 @@ export function CatalogListPanel({
         <div className={bodyClassName}>
           {showLoading ? <AppLoadingState label={loadingLabel} /> : null}
           {!hasItems && !showLoading && errorMessage ? (
-            <AppPanel className="flex flex-col gap-3 border-[var(--status-danger-border)] text-sm text-[var(--status-danger-text)]">
+            <AppPanel className="flex flex-col gap-3 border-danger-border text-sm text-danger-fg">
               <p>{errorMessage}</p>
               {onRetry ? (
                 <AppButton className="w-fit" variant="secondary" onClick={onRetry}>

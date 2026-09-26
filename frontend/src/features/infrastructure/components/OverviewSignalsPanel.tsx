@@ -17,23 +17,21 @@ export function OverviewSignalsPanel({
 }) {
   const alerts = buildDashboardAlerts(overview, streamConnected, null);
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
-      <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-3.5">
+    <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
         <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Operational signals</p>
-          <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-            {alerts.length} active in last 60m
-          </p>
+          <p className="text-sm font-semibold text-fg">Operational signals</p>
+          <p className="mt-0.5 text-xs text-fg-secondary">{alerts.length} active in last 60m</p>
         </div>
         <button
           type="button"
-          className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          className="text-xs font-medium text-fg-secondary hover:text-fg"
           onClick={() => onNavigateTab("alerts")}
         >
           View all
         </button>
       </div>
-      <div className="divide-y divide-[var(--border-soft)]">
+      <div className="divide-y divide-line">
         {alerts.slice(0, 4).map((alert) => (
           <div key={alert.id} className="flex gap-3 px-4 py-3">
             <div
@@ -45,8 +43,8 @@ export function OverviewSignalsPanel({
               {alert.tone === "success" ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-medium text-[var(--text-primary)]">{alert.title}</p>
-              <p className="mt-0.5 text-[0.68rem] text-[var(--text-secondary)]">{alert.detail}</p>
+              <p className="text-xs font-medium text-fg">{alert.title}</p>
+              <p className="mt-0.5 text-2xs text-fg-secondary">{alert.detail}</p>
             </div>
           </div>
         ))}

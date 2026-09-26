@@ -15,16 +15,16 @@ export function ReviewAccordionSection({
   children,
 }: ReviewAccordionSectionProps) {
   return (
-    <section className="border border-[var(--border-strong)] bg-[var(--surface-primary)]">
+    <section className="border border-line-strong bg-surface">
       <button
         type="button"
         onClick={onToggle}
         className="flex w-full items-center justify-between p-4 text-left"
       >
-        <h3 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h3>
+        <h3 className="text-lg font-semibold text-fg">{title}</h3>
         {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
       </button>
-      {open ? <div className="border-t border-[var(--border-soft)] p-4">{children}</div> : null}
+      {open ? <div className="border-t border-line p-4">{children}</div> : null}
     </section>
   );
 }

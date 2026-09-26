@@ -107,7 +107,7 @@ export function SchemaDetailPage() {
             ) : (
               <AppPanel className="flex flex-col gap-3">
                 <AppSectionTitle>No published snapshots</AppSectionTitle>
-                <p className="text-sm text-[var(--text-secondary)]">
+                <p className="text-sm text-fg-secondary">
                   Create a change and publish it to establish the schema document.
                 </p>
               </AppPanel>

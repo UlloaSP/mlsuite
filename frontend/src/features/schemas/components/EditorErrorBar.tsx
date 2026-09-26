@@ -25,8 +25,8 @@ export function EditorErrorBar({ expanded, setExpanded }: EditorErrorBarProps) {
       onClick={() => hasErrors && setExpanded(!expanded)}
       className={`flex h-10 w-full items-center justify-between px-4 text-sm font-semibold ${
         hasErrors
-          ? "cursor-pointer bg-[var(--danger-text)] text-[var(--text-inverse)]"
-          : "cursor-default bg-[var(--success-text)] text-[var(--text-inverse)]"
+          ? "cursor-pointer bg-danger-fg text-fg-inverse"
+          : "cursor-default bg-success-fg text-fg-inverse"
       }`}
     >
       {hasErrors ? (

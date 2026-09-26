@@ -55,15 +55,15 @@ export function InferenceExportSelectionDialog({
       ref={dialogRef}
       aria-labelledby="inference-export-title"
       onCancel={onClose}
-      className="m-auto max-h-none max-w-none overflow-visible bg-transparent p-4 text-inherit backdrop:bg-black/45"
+      className="m-auto max-h-none max-w-none overflow-visible bg-transparent p-4 text-inherit backdrop:bg-overlay"
     >
-      <div className="flex max-h-[min(860px,calc(100dvh-2rem))] w-[min(1024px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-hover)]">
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-soft)] px-6 py-5">
+      <div className="flex max-h-[min(860px,calc(100dvh-2rem))] w-[min(1024px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-line bg-surface text-fg shadow-hover">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div>
             <h2 id="inference-export-title" className="text-xl font-semibold">
               Export to CSV
             </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-fg-secondary">
               Choose inferences, then review the feedback to include before downloading.
             </p>
           </div>
@@ -72,7 +72,7 @@ export function InferenceExportSelectionDialog({
           </AppIconButton>
         </header>
         <fieldset disabled={busy} className="flex min-h-0 flex-1 flex-col">
-          <div className="grid shrink-0 gap-4 border-b border-[var(--border-soft)] px-6 py-4 sm:grid-cols-2">
+          <div className="grid shrink-0 gap-4 border-b border-line px-6 py-4 sm:grid-cols-2">
             <AppFieldLabel label="Schema snapshot">
               <AppSelect
                 aria-label="Schema snapshot"
@@ -123,7 +123,7 @@ export function InferenceExportSelectionDialog({
             />
           </div>
         </fieldset>
-        <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--border-soft)] px-6 py-4">
+        <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-line px-6 py-4">
           <div>
             {error ? (
               <div className="flex items-center gap-3">

@@ -19,7 +19,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
 
   return (
     <SidebarProvider open={!collapsed} onOpenChange={(open: boolean) => setCollapsed(!open)}>
-      <div className="flex h-screen w-screen overflow-hidden bg-[var(--page-bg)] text-[var(--text-primary)]">
+      <div className="flex h-screen w-screen overflow-hidden bg-page text-fg">
         {sidebarPosition === "left" ? <Sidebar side={sidebarPosition} /> : null}
         <SidebarInset>
           <MobileSidebarTrigger side={sidebarPosition} />

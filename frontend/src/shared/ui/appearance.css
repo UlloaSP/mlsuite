@@ -1,73 +1,14 @@
-@import "./theme-presets.css";
-
+/* Contrast preference: tokens.css mixes neutrals toward this anchor by these amounts. */
 :root {
   --contrast-anchor: #000000;
   --contrast-text-mix: 0%;
   --contrast-border-mix: 0%;
   --contrast-page-mix: 0%;
   --contrast-surface-mix: 0%;
-  --page-bg: color-mix(in srgb, var(--theme-page-bg), #000000 var(--contrast-page-mix));
-  --page-bg-accent: var(--theme-page-bg-accent);
-  --surface-primary: var(--theme-surface-primary);
-  --surface-secondary: color-mix(
-    in srgb,
-    var(--theme-surface-secondary),
-    var(--contrast-anchor) var(--contrast-surface-mix)
-  );
-  --surface-muted: color-mix(
-    in srgb,
-    var(--theme-surface-muted),
-    var(--contrast-anchor) var(--contrast-surface-mix)
-  );
-  --surface-inverse: var(--theme-surface-inverse);
-  --text-primary: color-mix(
-    in srgb,
-    var(--theme-text-primary),
-    var(--contrast-anchor) var(--contrast-text-mix)
-  );
-  --text-secondary: color-mix(
-    in srgb,
-    var(--theme-text-secondary),
-    var(--contrast-anchor) var(--contrast-text-mix)
-  );
-  --text-muted: color-mix(
-    in srgb,
-    var(--theme-text-muted),
-    var(--contrast-anchor) var(--contrast-text-mix)
-  );
-  --text-inverse: var(--theme-text-inverse);
-  --border-soft: color-mix(
-    in srgb,
-    var(--theme-border-soft),
-    var(--contrast-anchor) var(--contrast-border-mix)
-  );
-  --border-strong: color-mix(
-    in srgb,
-    var(--theme-border-strong),
-    var(--contrast-anchor) var(--contrast-border-mix)
-  );
-  --accent-primary: var(--theme-accent-primary);
-  --accent-primary-strong: var(--theme-accent-primary-strong);
-  --accent-quiet: var(--theme-accent-quiet);
-  --shadow-card: var(--theme-shadow-card);
-  --shadow-hover: var(--theme-shadow-hover);
-  --sidebar-bg: var(--theme-sidebar-bg);
-  --success-quiet: #edfdf5;
-  --success-text: #047857;
-  --warning-quiet: #fff7ed;
-  --warning-text: #c2410c;
-  --danger-quiet: #fff1f3;
-  --danger-text: #c13515;
 }
 
 html.dark {
   --contrast-anchor: #ffffff;
-  --success-quiet: rgba(4, 120, 87, 0.16);
-  --success-text: #6ee7b7;
-  --warning-quiet: rgba(194, 65, 12, 0.16);
-  --warning-text: #fdba74;
-  --danger-quiet: rgba(193, 53, 21, 0.2);
-  --danger-text: #fda4af;
 }
 
 @keyframes app-loading-reveal {
@@ -81,7 +22,7 @@ html.dark {
 
 .app-loading-reveal {
   opacity: 0;
-  animation: app-loading-reveal 120ms ease-out 180ms both;
+  animation: app-loading-reveal var(--duration-fast) ease-out 180ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -38,13 +38,13 @@ export function ProfilePage() {
             <AppPanel className="mb-6 mt-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+                  <p className="text-2xs font-semibold uppercase tracking-[0.24em] text-fg-secondary">
                     Current Workspace
                   </p>
-                  <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">
+                  <p className="mt-2 text-2xl font-semibold text-fg">
                     {workspace.currentOrganization.name}
                   </p>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                  <p className="mt-1 text-sm text-fg-secondary">
                     {workspace.memberships.length} organization memberships
                   </p>
                 </div>

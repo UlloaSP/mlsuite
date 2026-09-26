@@ -36,10 +36,10 @@ export function InferenceCatalogToolbar({ filters, inferences, onChange }: Props
           value={filters.query}
           onChange={(event) => onChange("query", event.target.value)}
           placeholder="Search inferences..."
-          prefix={<Search size={16} className="text-[var(--text-muted)]" />}
+          prefix={<Search size={16} className="text-fg-muted" />}
           className="min-w-[260px] flex-1"
         />
-        <SlidersHorizontal size={15} className="text-[var(--text-muted)]" />
+        <SlidersHorizontal size={15} className="text-fg-muted" />
         <AppSelect
           aria-label="Schema"
           value={filters.schemaId}

@@ -27,23 +27,23 @@ export function ProfileHeader({ imageUrl, name, provider }: ProfileHeaderProps) 
           <motion.img
             src={imageUrl}
             alt="Profile"
-            className="mx-auto mb-4 size-32 rounded-full border-4 border-[var(--surface-primary)] object-cover shadow-[var(--shadow-card)]"
+            className="mx-auto mb-4 size-32 rounded-full border-4 border-surface object-cover shadow-card"
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="mx-auto mb-4 grid size-32 place-items-center rounded-full border-4 border-[var(--surface-primary)] bg-[var(--accent-quiet)] text-3xl font-semibold text-[var(--accent-primary-strong)] shadow-[var(--shadow-card)]">
+          <div className="mx-auto mb-4 grid size-32 place-items-center rounded-full border-4 border-surface bg-accent-subtle text-3xl font-semibold text-accent-strong shadow-card">
             {name.slice(0, 2).toUpperCase()}
           </div>
         )}
         <motion.div
-          className="absolute -bottom-2 -right-2 size-8 rounded-full border-4 border-[var(--surface-primary)] bg-[var(--accent-primary)]"
+          className="absolute -bottom-2 -right-2 size-8 rounded-full border-4 border-surface bg-accent"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.5, type: "spring" }}
         />
       </motion.div>
       <AppEyebrow className="mb-3">Profile</AppEyebrow>
-      <motion.h1 className="mb-2 text-3xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+      <motion.h1 className="mb-2 text-3xl font-semibold tracking-[-0.03em] text-fg">
         {name}
       </motion.h1>
       <AppCopy className="mb-3">{provider}</AppCopy>

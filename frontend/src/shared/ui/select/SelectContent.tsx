@@ -22,7 +22,7 @@ export function SelectContent({
     <SelectPrimitive.Portal container={container}>
       <SelectPrimitive.Content
         className={cx(
-          "z-[1000] max-h-72 w-[var(--radix-select-trigger-width)] overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 text-[var(--text-primary)] shadow-[var(--shadow-hover)]",
+          "z-(--z-popover) max-h-72 w-[var(--radix-select-trigger-width)] overflow-hidden rounded border border-line bg-surface p-2 text-fg shadow-hover",
           className,
         )}
         position={position ?? "item-aligned"}

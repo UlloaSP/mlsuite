@@ -183,9 +183,7 @@ export function SchemaRunForm({
     <AppLoadingState compact label="Loading plugin catalog" />
   ) : needsPlugins && status !== "ready" ? (
     <AppPanel className="space-y-4">
-      <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-        Plugin catalog unavailable
-      </h2>
+      <h2 className="text-lg font-semibold text-fg">Plugin catalog unavailable</h2>
       <AppCopy>{catalog.error}</AppCopy>
       <AppButton type="button" onClick={() => void catalog.retry()}>
         Retry

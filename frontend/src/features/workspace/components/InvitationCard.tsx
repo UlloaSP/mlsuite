@@ -37,7 +37,7 @@ export function InvitationCard({
             ) : null}
             <p className="text-base font-semibold">{invite.email}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-fg-secondary">
             <RoleBadge value={invite.roleDefinition?.name ?? invite.role} />
             <span>Expires {dateFormatter.format(Date.parse(invite.expiresAt))}</span>
           </div>

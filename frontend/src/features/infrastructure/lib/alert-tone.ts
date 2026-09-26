@@ -13,8 +13,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
  * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
  */
 export function alertTone(tone: "danger" | "warning" | "accent" | "success") {
-  if (tone === "danger") return "bg-[var(--danger-quiet)] text-[var(--danger-text)]";
-  if (tone === "warning") return "bg-[var(--warning-quiet)] text-[var(--warning-text)]";
-  if (tone === "accent") return "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]";
-  return "bg-[var(--success-quiet)] text-[var(--success-text)]";
+  if (tone === "danger") return "bg-danger-subtle text-danger-fg";
+  if (tone === "warning") return "bg-warning-subtle text-warning-fg";
+  if (tone === "accent") return "bg-accent-subtle text-accent-strong";
+  return "bg-success-subtle text-success-fg";
 }

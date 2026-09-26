@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { SidebarPosition } from "@/shared/ui/sidebar-position";
 import { SidebarActions } from "./SidebarActions";
+import { SidebarBrand } from "./SidebarBrand";
 import { SidebarNavigation } from "./SidebarNavigation";
 import { SidebarOrganizationHeader } from "./SidebarOrganizationHeader";
 import { SidebarUserFooter } from "./SidebarUserFooter";
@@ -18,15 +19,16 @@ export function Sidebar({ side }: { side: SidebarPosition }) {
     <SidebarRoot data-user-guide="sidebar" side={side}>
       <div className="flex size-full flex-col overflow-hidden">
         <SidebarHeader>
+          <SidebarBrand />
           <SidebarOrganizationHeader />
         </SidebarHeader>
         <SidebarContent>
           <SidebarNavigation />
         </SidebarContent>
-        <div className="shrink-0 border-t border-[var(--border-soft)] px-3 py-2">
+        <div className="shrink-0 border-t border-line px-3 py-2">
           <SidebarActions />
         </div>
-        <SidebarFooter className="border-t border-[var(--border-soft)]">
+        <SidebarFooter className="border-t border-line">
           <SidebarUserFooter />
         </SidebarFooter>
       </div>

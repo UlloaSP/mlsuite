@@ -46,13 +46,9 @@ export function SchemaRunInputsPanel({ schema, inputData }: Props) {
       {filteredInputs.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">
           {filteredInputs.map((input) => (
-            <div key={input.key} className="rounded bg-[var(--surface-muted)] px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                {input.label}
-              </p>
-              <p className="mt-1 font-mono text-sm text-[var(--text-primary)]">
-                {formatDisplayValue(input.value)}
-              </p>
+            <div key={input.key} className="rounded bg-surface-muted px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.16em] text-fg-muted">{input.label}</p>
+              <p className="mt-1 font-mono text-sm text-fg">{formatDisplayValue(input.value)}</p>
             </div>
           ))}
         </div>

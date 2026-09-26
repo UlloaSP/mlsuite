@@ -15,10 +15,7 @@ export function SidebarGroupLabel({ children, className, ...props }: ComponentPr
   }
 
   return (
-    <div
-      className={cx("px-2 py-1 text-xs font-medium text-[var(--text-secondary)]", className)}
-      {...props}
-    >
+    <div className={cx("px-2 py-1 text-xs font-medium text-fg-secondary", className)} {...props}>
       {children}
     </div>
   );

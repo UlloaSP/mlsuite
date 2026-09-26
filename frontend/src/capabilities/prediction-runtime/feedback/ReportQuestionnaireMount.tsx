@@ -76,12 +76,12 @@ const getMountedView = (mounted: MountedForm): FormViewController | undefined =>
 
 const renderMountError = (container: HTMLDivElement, error: unknown) => {
   const panel = document.createElement("div");
-  panel.className = "space-y-3 border border-[var(--border-soft)] p-4";
+  panel.className = "space-y-3 border border-line p-4";
   const title = document.createElement("h3");
-  title.className = "text-base font-semibold text-[var(--text-primary)]";
+  title.className = "text-base font-semibold text-fg";
   title.textContent = "Questionnaire unavailable";
   const message = document.createElement("p");
-  message.className = "text-sm text-[var(--text-secondary)]";
+  message.className = "text-sm text-fg-secondary";
   message.textContent = error instanceof Error ? error.message : String(error);
   panel.replaceChildren(title, message);
   container.replaceChildren(panel);

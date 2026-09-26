@@ -25,8 +25,8 @@ describe("application loading screen", () => {
 
     expect(markup).toContain('data-loading-scope="viewport"');
     expect(markup).toContain("h-svh");
-    expect(markup).toContain("var(--accent-primary)");
-    expect(markup).toContain("var(--page-bg)");
+    expect(markup).toContain("bg-accent");
+    expect(markup).toContain("bg-page");
     expect(markup).toContain("app-loading-reveal");
     expect(markup).not.toContain("#FF385C");
     expect(markup).not.toContain("#F7F7F7");

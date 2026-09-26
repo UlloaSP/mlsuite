@@ -65,8 +65,8 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
               relative flex h-12 w-44 items-center overflow-hidden rounded border p-1 transition-all duration-200
               ${
                 disabled
-                  ? "cursor-not-allowed border-[var(--border-soft)] bg-[var(--surface-muted)]"
-                  : "border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)] hover:bg-[var(--surface-muted)]"
+                  ? "cursor-not-allowed border-line bg-surface-muted"
+                  : "border-line bg-surface shadow-card hover:bg-surface-muted"
               }
             `}
         >
@@ -80,14 +80,14 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
               ease: isTransitioning ? "easeInOut" : "easeOut",
             }}
             className={`absolute z-20 h-10 w-20 rounded ${
-              disabled ? "bg-[var(--text-muted)]" : "bg-[var(--accent-primary)]"
-            } shadow-[var(--shadow-card)]`}
+              disabled ? "bg-fg-muted" : "bg-accent"
+            } shadow-card`}
             style={{
               top: 4,
               width: progressProps.width,
             }}
           >
-            <div className="flex h-full w-full items-center justify-center text-white">
+            <div className="flex h-full w-full items-center justify-center text-on-accent">
               <motion.div
                 key={isTransitioning ? "spinning" : isJsonActive ? "json" : "html"}
                 transition={{ duration: 0.2 }}
@@ -109,7 +109,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
                 opacity: isTransitioning || isJsonActive ? 0 : 1,
               }}
               transition={{ duration: 0.2 }}
-              className="flex h-10 w-20 items-center justify-center text-[var(--text-secondary)]"
+              className="flex h-10 w-20 items-center justify-center text-fg-secondary"
             >
               <Braces className="size-5" />
             </motion.div>
@@ -119,7 +119,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
                 opacity: isTransitioning || !isJsonActive ? 0 : 1,
               }}
               transition={{ duration: 0.2 }}
-              className="flex h-10 w-20 items-center justify-center text-[var(--text-secondary)]"
+              className="flex h-10 w-20 items-center justify-center text-fg-secondary"
             >
               <Code className="size-5" />
             </motion.div>
@@ -132,7 +132,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
         initial={{ opacity: 0, y: 5 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="text-sm font-medium text-[var(--text-secondary)]"
+        className="text-sm font-medium text-fg-secondary"
       >
         {isTransitioning ? (
           <span className="flex items-center gap-2">

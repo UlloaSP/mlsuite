@@ -35,9 +35,7 @@ export function AppBreadcrumbs({
                 ) : isLast ? (
                   <BreadcrumbPage>{item.label}</BreadcrumbPage>
                 ) : (
-                  <span className="min-w-0 break-words text-[var(--text-secondary)]">
-                    {item.label}
-                  </span>
+                  <span className="min-w-0 break-words text-fg-secondary">{item.label}</span>
                 )}
               </BreadcrumbItem>
               {!isLast ? <BreadcrumbSeparator /> : null}

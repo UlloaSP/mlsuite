@@ -191,7 +191,7 @@ describe("theme persistence", () => {
       (appearanceAtom) => store.sub(appearanceAtom, () => undefined),
     );
 
-    expect(THEME_PRESETS).toHaveLength(6);
+    expect(THEME_PRESETS).toHaveLength(13);
     expect(THEME_PRESETS.every(({ preview }) => preview.light.length && preview.dark.length)).toBe(
       true,
     );
@@ -226,12 +226,13 @@ describe("theme persistence", () => {
   });
 
   it("applies contrast levels to text, borders, page, and surfaces", () => {
+    const tokens = readFileSync(new URL("../src/shared/ui/tokens.css", import.meta.url), "utf8");
     const css = readFileSync(new URL("../src/shared/ui/appearance.css", import.meta.url), "utf8");
 
-    expect(css).toContain("var(--contrast-text-mix)");
-    expect(css).toContain("var(--contrast-border-mix)");
-    expect(css).toContain("var(--contrast-page-mix)");
-    expect(css).toContain("var(--contrast-surface-mix)");
+    expect(tokens).toContain("var(--contrast-text-mix)");
+    expect(tokens).toContain("var(--contrast-border-mix)");
+    expect(tokens).toContain("var(--contrast-page-mix)");
+    expect(tokens).toContain("var(--contrast-surface-mix)");
     expect(css).toContain('html[data-contrast="125"]');
     expect(css).toContain("--contrast-page-mix: 5%");
     expect(css).toContain("--contrast-surface-mix: 10%");

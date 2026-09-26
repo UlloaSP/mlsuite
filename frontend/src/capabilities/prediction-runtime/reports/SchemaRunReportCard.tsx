@@ -33,20 +33,20 @@ export function SchemaRunReportCard({ label, kind, payload, labels = [] }: Props
   return (
     <AppPanel className="space-y-3">
       <div>
-        <p className="text-sm font-semibold text-[var(--text-primary)]">{label}</p>
-        <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">{kind}</p>
+        <p className="text-sm font-semibold text-fg">{label}</p>
+        <p className="text-xs uppercase tracking-[0.16em] text-fg-muted">{kind}</p>
       </div>
       {payload ? (
         <>
           {mainValue !== undefined ? (
-            <p className="text-2xl font-semibold text-[var(--text-primary)]">
+            <p className="text-2xl font-semibold text-fg">
               {Array.isArray(mainValue)
                 ? mainValue.map(formatDisplayValue).join(", ")
                 : formatDisplayValue(mainValue)}
             </p>
           ) : null}
           {text.map((item) => (
-            <p key={item} className="text-sm leading-7 text-[var(--text-primary)]">
+            <p key={item} className="text-sm leading-7 text-fg">
               {item}
             </p>
           ))}
@@ -54,13 +54,13 @@ export function SchemaRunReportCard({ label, kind, payload, labels = [] }: Props
             <div className="space-y-2">
               {probs.map((probability, index) => (
                 <div key={probabilityLabel(payload, labels, index)} className="space-y-1">
-                  <div className="flex justify-between text-xs text-[var(--text-secondary)]">
+                  <div className="flex justify-between text-xs text-fg-secondary">
                     <span>{probabilityLabel(payload, labels, index)}</span>
                     <span>{(probability * 100).toFixed(1)}%</span>
                   </div>
-                  <div className="h-2 rounded bg-[var(--surface-muted)]">
+                  <div className="h-2 rounded bg-surface-muted">
                     <div
-                      className="h-2 rounded bg-[var(--accent-primary)]"
+                      className="h-2 rounded bg-accent"
                       style={{ width: `${Math.max(0, Math.min(100, probability * 100))}%` }}
                     />
                   </div>

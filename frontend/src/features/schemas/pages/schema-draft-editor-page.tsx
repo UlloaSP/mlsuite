@@ -172,7 +172,7 @@ export function SchemaDraftEditorPage() {
                   <MoreHorizontal size={18} />
                 </AppIconButton>
                 {actionsOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[170px] rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
+                  <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[170px] rounded border border-line bg-surface p-2 shadow-hover">
                     <button
                       type="button"
                       className={menuItemClass}
@@ -192,7 +192,7 @@ export function SchemaDraftEditorPage() {
         />
         {draft?.status === "CONFLICT" || conflictCount > 0 ? (
           <AppPanel className="flex items-center justify-between gap-3 p-4">
-            <div className="flex items-center gap-3 text-sm text-[var(--danger-text)]">
+            <div className="flex items-center gap-3 text-sm text-danger-fg">
               <AlertTriangle size={18} />
               Publishing is blocked until conflicting changes are reviewed and resolved.
             </div>
@@ -203,7 +203,7 @@ export function SchemaDraftEditorPage() {
           </AppPanel>
         ) : null}
         <div className="min-h-0 flex-1">
-          <div className="relative flex size-full min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]">
+          <div className="relative flex size-full min-h-0 overflow-hidden rounded border border-line bg-surface">
             <div className="absolute right-4 top-4 z-20">
               <ToggleButton
                 isProcessing={false}
@@ -236,4 +236,4 @@ export function SchemaDraftEditorPage() {
 }
 
 const menuItemClass =
-  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]";
+  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-fg transition hover:bg-surface-muted";

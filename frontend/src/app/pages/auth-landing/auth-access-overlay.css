@@ -11,8 +11,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: var(--text-inverse);
+  background: var(--color-accent);
+  color: var(--color-fg-inverse);
   font-family: var(--font-sans);
   clip-path: circle(0 at var(--auth-reveal-x) var(--auth-reveal-y));
   transition: clip-path 1s cubic-bezier(0.7, 0, 0.2, 1);
@@ -47,14 +47,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
   height: 2px;
   border-radius: 2px;
   overflow: hidden;
-  background: color-mix(in oklch, var(--text-inverse) 25%, transparent);
+  background: color-mix(in oklch, var(--color-fg-inverse) 25%, transparent);
 }
 
 .auth-overlay-bar > span {
   display: block;
   height: 100%;
   width: 0;
-  background: var(--text-inverse);
+  background: var(--color-fg-inverse);
 }
 
 .auth-overlay[data-open="true"] .auth-overlay-bar > span {

@@ -98,15 +98,15 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
       ref={dialogRef}
       aria-labelledby="create-review-title"
       onCancel={onClose}
-      className="m-auto max-h-none max-w-none overflow-visible bg-transparent p-4 text-inherit backdrop:bg-black/45 sm:p-6"
+      className="m-auto max-h-none max-w-none overflow-visible bg-transparent p-4 text-inherit backdrop:bg-overlay sm:p-6"
     >
-      <div className="flex max-h-[min(860px,calc(100dvh-2rem))] w-[min(1024px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-primary)] shadow-[var(--shadow-hover)]">
-        <header className="flex items-start justify-between gap-4 border-b border-[var(--border-soft)] px-6 py-5">
+      <div className="flex max-h-[min(860px,calc(100dvh-2rem))] w-[min(1024px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-line bg-surface text-fg shadow-hover">
+        <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div>
             <h2 id="create-review-title" className="text-xl font-semibold">
               Create review
             </h2>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-fg-secondary">
               Choose the inferences and organization members responsible for reviewing them.
             </p>
           </div>
@@ -116,7 +116,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
         </header>
 
         {groups.length > 1 || bookmarkOptions.length > 0 ? (
-          <div className="grid gap-4 border-b border-[var(--border-soft)] px-6 py-4 sm:grid-cols-2">
+          <div className="grid gap-4 border-b border-line px-6 py-4 sm:grid-cols-2">
             <AppFieldLabel label="Schema snapshot">
               <AppSelect
                 aria-label="Schema snapshot"
@@ -142,7 +142,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
           </div>
         ) : null}
 
-        <div className="grid min-h-0 flex-1 divide-y divide-[var(--border-soft)] overflow-auto lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+        <div className="grid min-h-0 flex-1 divide-y divide-line overflow-auto lg:grid-cols-2 lg:divide-x lg:divide-y-0">
           <ReviewSelectionCatalog
             key={`inferences:${group?.key ?? "none"}:${bookmark}`}
             title="Inferences"
@@ -177,7 +177,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
           />
         </div>
 
-        <footer className="flex flex-col gap-4 border-t border-[var(--border-soft)] bg-[var(--surface-muted)] px-6 py-4 sm:flex-row sm:items-end sm:justify-between">
+        <footer className="flex flex-col gap-4 border-t border-line bg-surface-muted px-6 py-4 sm:flex-row sm:items-end sm:justify-between">
           <AppFieldLabel label="Review expires">
             <AppTextField
               type="date"

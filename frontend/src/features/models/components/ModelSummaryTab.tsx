@@ -9,7 +9,10 @@ import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import type { ModelDto } from "@/features/models/api/model.types";
-import { formatTimestamp, getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
+import {
+  formatTimestamp,
+  getModelAlgorithmLabel,
+} from "@/capabilities/prediction-runtime/data/model-utils";
 
 type ModelSummaryTabProps = {
   model: ModelDto;
@@ -23,26 +26,20 @@ export function ModelSummaryTab({ model, onCreateSchema }: ModelSummaryTabProps)
         <AppSectionTitle>Model Metadata</AppSectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Type</p>
-            <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
-              {getModelAlgorithmLabel(model)}
-            </p>
+            <p className="text-xs uppercase tracking-[0.18em] text-fg-muted">Type</p>
+            <p className="mt-1 text-sm font-medium text-fg">{getModelAlgorithmLabel(model)}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">File</p>
-            <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">{model.fileName}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-fg-muted">File</p>
+            <p className="mt-1 text-sm font-medium text-fg">{model.fileName}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Created</p>
-            <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
-              {formatTimestamp(model.createdAt)}
-            </p>
+            <p className="text-xs uppercase tracking-[0.18em] text-fg-muted">Created</p>
+            <p className="mt-1 text-sm font-medium text-fg">{formatTimestamp(model.createdAt)}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Schema fields
-            </p>
-            <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
+            <p className="text-xs uppercase tracking-[0.18em] text-fg-muted">Schema fields</p>
+            <p className="mt-1 text-sm font-medium text-fg">
               {Array.isArray(model.inputSchema.fields) ? model.inputSchema.fields.length : 0}
             </p>
           </div>

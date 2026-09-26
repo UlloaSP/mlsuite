@@ -75,7 +75,7 @@ export function InferenceDetailPage() {
         <AppPanel>
           <dl className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
                 Status
               </dt>
               <dd className="mt-2">
@@ -83,27 +83,25 @@ export function InferenceDetailPage() {
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
                 Schema
               </dt>
-              <dd className="mt-2 font-medium text-[var(--text-primary)]">{item.schemaName}</dd>
-              <dd className="mt-1 text-sm text-[var(--text-secondary)]">
+              <dd className="mt-2 font-medium text-fg">{item.schemaName}</dd>
+              <dd className="mt-1 text-sm text-fg-secondary">
                 {item.schemaVersionName} · v{item.schemaVersion}
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
                 Bookmark
               </dt>
-              <dd className="mt-2 text-[var(--text-primary)]">{item.bookmarkName ?? "None"}</dd>
+              <dd className="mt-2 text-fg">{item.bookmarkName ?? "None"}</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-fg-muted">
                 Updated
               </dt>
-              <dd className="mt-2 text-[var(--text-primary)]">
-                {formatTimestamp(item.updatedAt ?? item.createdAt)}
-              </dd>
+              <dd className="mt-2 text-fg">{formatTimestamp(item.updatedAt ?? item.createdAt)}</dd>
             </div>
           </dl>
         </AppPanel>

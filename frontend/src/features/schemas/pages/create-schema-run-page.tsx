@@ -152,13 +152,9 @@ export function CreateSchemaRunPage() {
                     nameEditedRef.current = true;
                     setName(event.target.value);
                   }}
-                  className="min-w-0 max-w-full bg-transparent font-inherit text-inherit outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] disabled:cursor-default"
+                  className="min-w-0 max-w-full bg-transparent font-inherit text-inherit outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default"
                 />
-                <PencilLine
-                  aria-hidden="true"
-                  className="shrink-0 text-[var(--text-muted)]"
-                  size={17}
-                />
+                <PencilLine aria-hidden="true" className="shrink-0 text-fg-muted" size={17} />
               </span>
             }
             breadcrumbs={[

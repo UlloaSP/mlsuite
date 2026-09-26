@@ -36,17 +36,17 @@ export function RoleDetailsDialog({
         event.preventDefault();
         onClose();
       }}
-      className="m-auto max-h-[86vh] w-[calc(100%-2rem)] max-w-2xl overflow-hidden rounded-xl border-0 bg-[var(--surface-primary)] p-0 text-[var(--text-primary)] shadow-[var(--shadow-card)] backdrop:bg-black/35"
+      className="m-auto max-h-[86vh] w-[calc(100%-2rem)] max-w-2xl overflow-hidden rounded-xl border-0 bg-surface p-0 text-fg shadow-card backdrop:bg-overlay"
     >
       <div className="flex max-h-[86vh] flex-col">
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-soft)] px-6 py-5">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div className="flex min-w-0 items-start gap-3">
             <Shield className="mt-0.5 shrink-0" size={24} />
             <div className="min-w-0">
               <h2 id="role-details-title" className="text-xl font-semibold">
                 {role.name}
               </h2>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">{role.description}</p>
+              <p className="mt-1 text-sm text-fg-secondary">{role.description}</p>
             </div>
           </div>
           <button
@@ -54,22 +54,22 @@ export function RoleDetailsDialog({
             autoFocus
             aria-label="Close role details"
             onClick={onClose}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-fg-secondary hover:text-fg"
           >
             <X size={18} />
           </button>
         </header>
 
         <div className="min-h-0 overflow-y-auto px-6 py-5">
-          <dl className="grid gap-4 border-y border-[var(--border-soft)] py-4 sm:grid-cols-2">
+          <dl className="grid gap-4 border-y border-line py-4 sm:grid-cols-2">
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-fg-secondary">
                 Assigned users
               </dt>
               <dd className="mt-1 text-sm font-semibold">{role.userCount}</dd>
             </div>
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-fg-secondary">
                 Scope
               </dt>
               <dd className="mt-1 text-sm font-semibold">{role.scope}</dd>
@@ -78,20 +78,20 @@ export function RoleDetailsDialog({
 
           <div className="mt-6">
             <h3 className="font-semibold">Permissions ({role.permissions.length})</h3>
-            <div className="mt-3 divide-y divide-[var(--border-soft)] border-y border-[var(--border-soft)]">
+            <div className="mt-3 divide-y divide-line border-y border-line">
               {role.permissions.map((permission) => (
                 <div key={permission.key} className="py-3 text-sm">
                   <p className="font-semibold">{permission.label}</p>
-                  <p className="mt-0.5 text-[var(--text-secondary)]">{permission.description}</p>
+                  <p className="mt-0.5 text-fg-secondary">{permission.description}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <footer className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-[var(--border-soft)] px-6 py-4">
+        <footer className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-line px-6 py-4">
           {role.actions.canDelete && role.userCount > 0 ? (
-            <p id="role-delete-help" className="w-full text-sm text-[var(--text-secondary)]">
+            <p id="role-delete-help" className="w-full text-sm text-fg-secondary">
               Assign these users to another role before deleting this role.
             </p>
           ) : null}

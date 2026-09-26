@@ -14,7 +14,7 @@ export function AppTextArea({
   return (
     <label
       className={cx(
-        "inline-flex rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-card)]",
+        "inline-flex rounded border border-line bg-surface px-4 py-3 text-sm text-fg-secondary shadow-card",
         className,
       )}
     >
@@ -22,7 +22,7 @@ export function AppTextArea({
         {...props}
         rows={rows}
         className={cx(
-          "w-full resize-y bg-transparent font-mono text-sm leading-6 text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]",
+          "w-full resize-y bg-transparent font-mono text-sm leading-6 text-fg outline-none placeholder:text-fg-muted",
           rows === undefined ? "min-h-40" : "min-h-0",
         )}
       />

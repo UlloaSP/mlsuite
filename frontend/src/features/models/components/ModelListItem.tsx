@@ -39,11 +39,11 @@ export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: Mo
   return (
     <article
       className={cx(
-        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 text-left transition lg:grid-cols-[auto_minmax(0,1fr)_minmax(220px,auto)_auto]",
-        "hover:border-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
+        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded border border-line bg-surface p-4 text-left transition lg:grid-cols-[auto_minmax(0,1fr)_minmax(220px,auto)_auto]",
+        "hover:border-fg hover:bg-surface-muted",
       )}
     >
-      <div className="col-start-1 row-start-1 flex size-11 items-center justify-center rounded bg-[var(--surface-muted)] text-[var(--accent-primary)]">
+      <div className="col-start-1 row-start-1 flex size-11 items-center justify-center rounded bg-surface-muted text-accent">
         <Icon size={18} />
       </div>
 
@@ -52,13 +52,13 @@ export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: Mo
         onClick={onOpen}
         className="col-start-2 row-start-1 min-w-0 cursor-pointer space-y-3 text-left"
       >
-        <h3 className="truncate text-base font-semibold text-[var(--text-primary)]">{item.name}</h3>
+        <h3 className="truncate text-base font-semibold text-fg">{item.name}</h3>
 
-        <p className="break-words text-sm font-medium text-[var(--text-secondary)]">
+        <p className="break-words text-sm font-medium text-fg-secondary">
           {getModelAlgorithmLabel(item)}
         </p>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-muted)]">
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-muted">
           <span>By {modifier}</span>
           <span className="inline-flex items-center gap-1">
             <CalendarDays size={14} />

@@ -51,13 +51,13 @@ export function RolesCatalog({
               type="button"
               disabled={!canManage}
               onClick={() => onTemplate(template)}
-              className="h-full w-full rounded border border-[var(--border-soft)] p-4 text-left transition-colors enabled:hover:border-[var(--text-secondary)] disabled:cursor-default"
+              className="h-full w-full rounded border border-line p-4 text-left transition-colors enabled:hover:border-fg-secondary disabled:cursor-default"
             >
               <p className="font-semibold">{template.name}</p>
               {template.description && template.description !== template.name ? (
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">{template.description}</p>
+                <p className="mt-1 text-sm text-fg-secondary">{template.description}</p>
               ) : null}
-              <p className="mt-3 text-sm text-[var(--text-secondary)]">
+              <p className="mt-3 text-sm text-fg-secondary">
                 {template.permissionKeys.length}{" "}
                 {template.permissionKeys.length === 1 ? "permission" : "permissions"}
               </p>
@@ -79,7 +79,7 @@ export function RolesCatalog({
           className="w-full"
           aria-label={`Search ${tab}`}
           placeholder={`Search ${tab}...`}
-          prefix={<Search className="size-4 text-[var(--text-muted)]" />}
+          prefix={<Search className="size-4 text-fg-muted" />}
           value={search}
           onChange={(event) =>
             setParams(

@@ -28,8 +28,8 @@ export function SidebarMenuSubButton({
       className={cx(
         "flex min-h-8 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-xs font-medium transition",
         isActive
-          ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
-          : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
+          ? "bg-accent-subtle text-accent-strong"
+          : "text-fg-secondary hover:bg-surface-muted hover:text-fg",
         FOCUS_RING,
         className,
       )}

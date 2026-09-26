@@ -81,14 +81,12 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
           setPage(0);
         }}
       />
-      <div className="app-scroll mt-3 min-h-[252px] flex-auto overflow-y-auto rounded border border-[var(--border-soft)]">
+      <div className="app-scroll mt-3 min-h-[252px] flex-auto overflow-y-auto rounded border border-line">
         {showLoading ? (
           <AppLoadingState compact label={`Loading ${title.toLowerCase()}…`} />
         ) : error ? (
           <div className="grid justify-items-start gap-3 p-4">
-            <p className="text-sm text-[var(--danger-text)]">
-              Could not load {title.toLowerCase()}.
-            </p>
+            <p className="text-sm text-danger-fg">Could not load {title.toLowerCase()}.</p>
             {onRetry ? (
               <AppButton type="button" variant="secondary" onClick={onRetry}>
                 Try again
@@ -106,7 +104,7 @@ export function ReviewSelectionCatalog<TId extends SelectionId>({
             />
           ))
         ) : (
-          <p className="p-6 text-center text-sm text-[var(--text-secondary)]">
+          <p className="p-6 text-center text-sm text-fg-secondary">
             {query ? `No ${title.toLowerCase()} match your search.` : emptyDescription}
           </p>
         )}

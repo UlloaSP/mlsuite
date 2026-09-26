@@ -10,7 +10,7 @@ export function Breadcrumb({ className, ...props }: ComponentProps<"nav">) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className={cx("relative z-20 flex min-w-0 overflow-visible text-[13px]", className)}
+      className={cx("relative z-20 flex min-w-0 overflow-visible text-sm", className)}
       {...props}
     />
   );

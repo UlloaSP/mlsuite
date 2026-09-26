@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { EditorProps } from "@monaco-editor/react";
-import { MONOSPACE_STACKS, type TypographyPreferences } from "@/shared/ui/typography-state";
+import { MONOSPACE_STACKS } from "@/shared/ui/font-catalog";
+import type { TypographyPreferences } from "@/shared/ui/typography-state";
 
 export const editorOptions: NonNullable<EditorProps["options"]> = {
   minimap: { enabled: false },

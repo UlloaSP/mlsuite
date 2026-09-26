@@ -17,7 +17,7 @@ export function SidebarMenuSub({ children, className, ...props }: ComponentProps
   return (
     <ul
       className={cx(
-        "ml-5 mt-1 grid gap-1 border-l border-[var(--border-soft)] pl-2 transition-[opacity,transform] duration-150 ease-out",
+        "ml-5 mt-1 grid gap-1 border-l border-line pl-2 transition-[opacity,transform] duration-150 ease-out",
         className,
       )}
       {...props}

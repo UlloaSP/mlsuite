@@ -42,12 +42,10 @@ export function ReportFeedbackSummary({
           {fields.map((field) => (
             <div
               key={field.id}
-              className="flex items-center justify-between rounded-[18px] bg-[var(--surface-muted)] px-4 py-3"
+              className="flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-3"
             >
-              <span className="text-sm font-medium text-[var(--text-secondary)]">
-                {field.label}
-              </span>
-              <span className="font-mono text-sm text-[var(--text-primary)]">
+              <span className="text-sm font-medium text-fg-secondary">{field.label}</span>
+              <span className="font-mono text-sm text-fg">
                 {formatFeedbackValue(values[field.id], field)}
               </span>
             </div>

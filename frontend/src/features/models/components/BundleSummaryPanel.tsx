@@ -29,37 +29,33 @@ export function BundleSummaryPanel({
   const canSave = unsavedReady > 0 && !anySaving;
 
   const bundleVal = total ? String(total) : "—";
-  const bundleCls = total
-    ? "font-bold text-[var(--text-primary)]"
-    : "font-normal text-[var(--text-muted)]";
+  const bundleCls = total ? "font-bold text-fg" : "font-normal text-fg-muted";
 
   const dfVal = total ? `${withDf} / ${total}` : "—";
   const dfCls = !total
-    ? "font-normal text-[var(--text-muted)]"
+    ? "font-normal text-fg-muted"
     : withDf === total
-      ? "font-bold text-green-500"
-      : "font-bold text-amber-500";
+      ? "font-bold text-success-fg"
+      : "font-bold text-warning-fg";
 
   const savedVal = total ? `${saved} / ${total}` : "—";
   const savedCls = !total
-    ? "font-normal text-[var(--text-muted)]"
+    ? "font-normal text-fg-muted"
     : saved === total
-      ? "font-bold text-green-500"
+      ? "font-bold text-success-fg"
       : saved > 0
-        ? "font-bold text-amber-500"
-        : "font-normal text-[var(--text-muted)]";
+        ? "font-bold text-warning-fg"
+        : "font-normal text-fg-muted";
 
   return (
     <aside
       aria-label="Summary"
-      className="flex w-full flex-shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)] lg:w-[288px]"
+      className="flex w-full flex-shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-card lg:w-[288px]"
     >
       {/* Header */}
-      <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--border-soft)] px-[18px] py-[15px]">
-        <span className="text-[13px] font-bold text-[var(--text-primary)]">Summary</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-muted)]">
-          Session
-        </span>
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-line px-[18px] py-[15px]">
+        <span className="text-sm font-bold text-fg">Summary</span>
+        <span className="font-mono text-3xs uppercase tracking-[0.1em] text-fg-muted">Session</span>
       </div>
 
       {/* Stats */}
@@ -70,16 +66,16 @@ export function BundleSummaryPanel({
       </div>
 
       {/* Actions */}
-      <div className="mt-auto flex flex-shrink-0 flex-col gap-2 border-t border-[var(--border-soft)] px-[18px] py-[14px]">
+      <div className="mt-auto flex flex-shrink-0 flex-col gap-2 border-t border-line px-[18px] py-[14px]">
         <button
           type="button"
           disabled={!canSave}
           onClick={onSaveAll}
           className={cx(
-            "flex w-full items-center justify-center gap-[7px] rounded-[9px] border-none px-3 py-[11px] text-[13px] font-bold text-white transition-all duration-150",
+            "flex w-full items-center justify-center gap-[7px] rounded-lg border-none px-3 py-[11px] text-sm font-bold text-on-accent transition-all duration-150",
             canSave
-              ? "cursor-pointer bg-[var(--accent-primary)] hover:-translate-y-px hover:bg-[var(--accent-primary-strong)]"
-              : "cursor-not-allowed bg-[var(--accent-primary)] opacity-40",
+              ? "cursor-pointer bg-accent hover:-translate-y-px hover:bg-accent-hover"
+              : "cursor-not-allowed bg-accent opacity-40",
           )}
         >
           {anySaving ? <RefreshCcw size={13} className="animate-spin" /> : <Save size={13} />}
@@ -89,7 +85,7 @@ export function BundleSummaryPanel({
         <button
           type="button"
           onClick={onClear}
-          className="flex w-full cursor-pointer items-center justify-center rounded-[9px] border border-[var(--border-soft)] bg-transparent px-3 py-[11px] text-[13px] font-bold text-[var(--text-secondary)] transition-all duration-150 hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+          className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-line bg-transparent px-3 py-[11px] text-sm font-bold text-fg-secondary transition-all duration-150 hover:bg-surface-muted hover:text-fg"
         >
           Clear
         </button>

@@ -56,12 +56,10 @@ export function WorkspaceHomePage() {
         <section className="grid gap-4 md:grid-cols-3">
           {stats.map((stat) => (
             <AppPanel key={stat.label}>
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[var(--text-secondary)]">
+              <p className="text-2xs font-semibold uppercase tracking-[0.24em] text-fg-secondary">
                 {stat.label}
               </p>
-              <p className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                {stat.value}
-              </p>
+              <p className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-fg">{stat.value}</p>
             </AppPanel>
           ))}
         </section>
@@ -70,8 +68,8 @@ export function WorkspaceHomePage() {
             const href = card.href.startsWith("/") ? card.href : `${basePath}/${card.href}`;
             return (
               <Link key={card.title} to={href} className="block">
-                <AppPanel className="h-full transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-hover)]">
-                  <card.icon size={18} className="text-[var(--accent-primary-strong)]" />
+                <AppPanel className="h-full transition hover:-translate-y-0.5 hover:shadow-hover">
+                  <card.icon size={18} className="text-accent-strong" />
                   <AppSectionTitle className="mt-4">{card.title}</AppSectionTitle>
                   <AppCopy className="mt-2">
                     {card.title === "Plugins"

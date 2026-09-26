@@ -116,7 +116,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
               value={slug}
               onChange={(event) => updateSlug(event.target.value)}
               placeholder="northwind-ai"
-              prefix={<Hash size={15} className="text-[var(--text-muted)]" />}
+              prefix={<Hash size={15} className="text-fg-muted" />}
             />
           </AppFieldLabel>
           <AppFieldLabel label="Owner">

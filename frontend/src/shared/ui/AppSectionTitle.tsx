@@ -8,12 +8,7 @@ import { cx } from "./cx";
 
 export function AppSectionTitle({ children, className }: HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2
-      className={cx(
-        "text-lg font-semibold tracking-[-0.02em] text-[var(--text-primary)]",
-        className,
-      )}
-    >
+    <h2 className={cx("text-lg font-semibold tracking-[-0.02em] text-fg", className)}>
       {children}
     </h2>
   );

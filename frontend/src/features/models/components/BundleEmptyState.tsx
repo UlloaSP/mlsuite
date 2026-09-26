@@ -44,10 +44,10 @@ export function BundleEmptyState({ onFiles }: Props) {
       }}
       className={cx(
         "flex min-h-[180px] flex-1 cursor-pointer flex-col items-center justify-center px-6 py-9 text-center transition-all duration-150",
-        dragOver && "bg-[var(--accent-quiet)]",
+        dragOver && "bg-accent-subtle",
       )}
     >
-      <div className="mb-3 flex size-[42px] items-center justify-center rounded-[11px] border border-[var(--border-soft)] bg-[var(--surface-muted)] text-[var(--text-muted)]">
+      <div className="mb-3 flex size-[42px] items-center justify-center rounded-xl border border-line bg-surface-muted text-fg-muted">
         <svg
           width="20"
           height="20"
@@ -63,8 +63,8 @@ export function BundleEmptyState({ onFiles }: Props) {
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
       </div>
-      <p className="mb-1 text-[13px] font-bold text-[var(--text-muted)]">No bundles yet</p>
-      <p className="max-w-[270px] text-[12px] leading-relaxed text-[var(--text-muted)]">
+      <p className="mb-1 text-sm font-bold text-fg-muted">No bundles yet</p>
+      <p className="max-w-[270px] text-xs leading-relaxed text-fg-muted">
         Drop a model or dataframe here. Dataframes can wait for a model.
       </p>
       <input

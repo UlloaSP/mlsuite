@@ -40,10 +40,7 @@ export function AppTabs<TValue extends string>({
     <div
       {...props}
       id={id}
-      className={cx(
-        "flex w-full flex-wrap items-center gap-6 border-b border-[var(--border-soft)]",
-        className,
-      )}
+      className={cx("flex w-full flex-wrap items-center gap-6 border-b border-line", className)}
       role="tablist"
     >
       {items.map((item, index) => {
@@ -66,8 +63,8 @@ export function AppTabs<TValue extends string>({
             className={cx(
               "cursor-pointer border-b-2 px-1 py-3 text-sm font-semibold transition-colors",
               active
-                ? "border-[var(--accent-primary)] text-[var(--text-primary)]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                ? "border-accent text-fg"
+                : "border-transparent text-fg-secondary hover:text-fg",
             )}
           >
             <span className="flex items-center gap-2">
@@ -77,8 +74,8 @@ export function AppTabs<TValue extends string>({
                   className={cx(
                     "min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-medium",
                     active
-                      ? "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
-                      : "bg-[var(--surface-muted)] text-[var(--text-secondary)]",
+                      ? "bg-accent-subtle text-accent-strong"
+                      : "bg-surface-muted text-fg-secondary",
                   )}
                 >
                   {item.count}

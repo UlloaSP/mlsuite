@@ -7,14 +7,5 @@ import type { HTMLAttributes } from "react";
 import { cx } from "./cx";
 
 export function AppSurface({ children, className }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cx(
-        "min-h-0 bg-[var(--surface-primary)] p-6 text-[var(--text-primary)]",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cx("min-h-0 bg-surface p-6 text-fg", className)}>{children}</div>;
 }

@@ -45,10 +45,10 @@ export function SchemaCodeViewer({ value, className }: Props) {
     <div
       className={cx(
         className ?? "h-[480px]",
-        "overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]",
+        "overflow-hidden rounded border border-line bg-surface",
       )}
     >
-      <Suspense fallback={<div className="h-full bg-[var(--surface-primary)]" />}>
+      <Suspense fallback={<div className="h-full bg-surface" />}>
         <MonacoEditor
           className="h-full"
           defaultLanguage="json"

@@ -27,7 +27,7 @@ export function CatalogPaginationFooter({
   totalPages,
 }: CatalogPaginationFooterProps) {
   return (
-    <footer className="flex shrink-0 items-center justify-center gap-2 border-t border-[var(--border-soft)] pt-4">
+    <footer className="flex shrink-0 items-center justify-center gap-2 border-t border-line pt-4">
       <AppButton
         disabled={page === 0 || disabled}
         variant="ghost"
@@ -38,20 +38,14 @@ export function CatalogPaginationFooter({
       </AppButton>
       {getPaginationPages(page, totalPages).map((item) =>
         typeof item !== "number" ? (
-          <span
-            key={`ellipsis-before-${item.before}`}
-            className="px-2 text-sm text-[var(--text-muted)]"
-          >
+          <span key={`ellipsis-before-${item.before}`} className="px-2 text-sm text-fg-muted">
             ...
           </span>
         ) : (
           <AppButton
             key={item}
             aria-current={page === item ? "page" : undefined}
-            className={cx(
-              page === item &&
-                "border-[var(--border-strong)] bg-[var(--surface-primary)] text-[var(--text-primary)]",
-            )}
+            className={cx(page === item && "border-line-strong bg-surface text-fg")}
             disabled={disabled}
             variant="secondary"
             onClick={() => setPage(item)}

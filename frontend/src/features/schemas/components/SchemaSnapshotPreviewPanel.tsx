@@ -27,8 +27,8 @@ export function SchemaSnapshotPreviewPanel({ version }: Props) {
     <section className="flex min-h-[640px] shrink-0 flex-col gap-4 overflow-hidden lg:min-h-0 lg:flex-1">
       <div className="grid shrink-0 items-center gap-3 lg:grid-cols-[minmax(220px,1fr)_minmax(280px,0.9fr)_auto]">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">{version.name}</h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+          <h2 className="text-lg font-semibold text-fg">{version.name}</h2>
+          <p className="mt-1 text-sm text-fg-secondary">
             v{version.version} · Published <LiveRelativeTime value={version.createdAt} /> ago
           </p>
         </div>
@@ -38,16 +38,14 @@ export function SchemaSnapshotPreviewPanel({ version }: Props) {
             ["Reports", reportCount],
             ["Bindings", version.bindings.length],
           ].map(([label, value]) => (
-            <div key={label} className="rounded bg-[var(--surface-muted)] px-3 py-2">
-              <p className="text-lg font-semibold leading-5 text-[var(--text-primary)]">{value}</p>
-              <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-                {label}
-              </p>
+            <div key={label} className="rounded bg-surface-muted px-3 py-2">
+              <p className="text-lg font-semibold leading-5 text-fg">{value}</p>
+              <p className="text-3xs uppercase tracking-[0.14em] text-fg-secondary">{label}</p>
             </div>
           ))}
         </div>
         <div
-          className="inline-flex overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-1 shadow-sm lg:justify-self-end"
+          className="inline-flex overflow-hidden rounded border border-line bg-surface p-1 shadow-card lg:justify-self-end"
           role="group"
           aria-label="Snapshot preview mode"
         >
@@ -61,8 +59,8 @@ export function SchemaSnapshotPreviewPanel({ version }: Props) {
                 className={[
                   "rounded px-4 py-2 text-sm font-semibold transition",
                   selected
-                    ? "bg-[#FF385C] text-white shadow-sm"
-                    : "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
+                    ? "bg-accent text-on-accent shadow-card"
+                    : "text-fg hover:bg-surface-muted",
                 ].join(" ")}
                 onClick={() => setMode(item)}
               >
@@ -91,22 +89,15 @@ export function SchemaSnapshotPreviewPanel({ version }: Props) {
         {mode === "bindings" ? (
           <div className="size-full space-y-2 overflow-auto">
             {version.bindings.map((binding) => (
-              <div
-                key={binding.id ?? binding.modelId}
-                className="rounded border border-[var(--border-soft)] p-3"
-              >
-                <p className="font-semibold text-[var(--text-primary)]">
-                  {binding.modelName ?? binding.modelId}
-                </p>
-                <p className="mt-1 font-mono text-xs text-[var(--text-secondary)]">
+              <div key={binding.id ?? binding.modelId} className="rounded border border-line p-3">
+                <p className="font-semibold text-fg">{binding.modelName ?? binding.modelId}</p>
+                <p className="mt-1 font-mono text-xs text-fg-secondary">
                   {binding.pluginPolicy ? JSON.stringify(binding.pluginPolicy) : binding.modelId}
                 </p>
               </div>
             ))}
             {!version.bindings.length ? (
-              <p className="text-sm text-[var(--text-secondary)]">
-                No model bindings in this snapshot.
-              </p>
+              <p className="text-sm text-fg-secondary">No model bindings in this snapshot.</p>
             ) : null}
           </div>
         ) : null}

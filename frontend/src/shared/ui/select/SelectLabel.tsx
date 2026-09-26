@@ -12,7 +12,7 @@ type SelectLabelProps = ComponentPropsWithoutRef<typeof SelectPrimitive.Label>;
 export function SelectLabel({ className, ...props }: SelectLabelProps) {
   return (
     <SelectPrimitive.Label
-      className={cx("px-3 pb-1.5 pt-1 text-sm text-[var(--text-secondary)]", className)}
+      className={cx("px-3 pb-1.5 pt-1 text-sm text-fg-secondary", className)}
       {...props}
     />
   );

@@ -12,16 +12,14 @@ export function NotificationInvitationItem({ invitation }: { invitation: Invitat
   const busy = accept.isPending || decline.isPending;
 
   return (
-    <article className="flex items-start justify-between gap-4 border-t border-[var(--border-soft)] px-5 py-4 first:border-t-0">
+    <article className="flex items-start justify-between gap-4 border-t border-line px-5 py-4 first:border-t-0">
       <div className="flex min-w-0 items-start gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]">
+        <div className="grid size-9 shrink-0 place-items-center rounded bg-accent-subtle text-accent-strong">
           <Building2 size={16} />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
-            {invitation.organizationName}
-          </p>
-          <p className="mt-1 text-xs text-[var(--text-secondary)]">
+          <p className="truncate text-sm font-semibold text-fg">{invitation.organizationName}</p>
+          <p className="mt-1 text-xs text-fg-secondary">
             Invited as {invitation.role.toLowerCase()}
           </p>
         </div>
