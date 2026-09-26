@@ -107,7 +107,7 @@ describe("sidebar position", () => {
 
     const trigger = container.querySelector("button");
     expect(trigger?.parentElement?.classList.contains("justify-start")).toBe(true);
-    expect(trigger?.getAttribute("aria-label")).toBe("Expand");
+    expect(trigger?.getAttribute("aria-label")).toBe("Expand sidebar");
     expect(trigger?.getAttribute("aria-expanded")).toBe("false");
     expect(trigger?.querySelector(".lucide-panel-left-open")).not.toBeNull();
 
@@ -118,6 +118,6 @@ describe("sidebar position", () => {
     expect(drawer?.classList.contains("left-0")).toBe(true);
     expect(drawer?.classList.contains("border-r")).toBe(true);
     expect(trigger?.getAttribute("aria-expanded")).toBe("true");
-    expect(trigger?.getAttribute("aria-label")).toBe("Collapse");
+    expect(trigger?.getAttribute("aria-label")).toBe("Collapse sidebar");
   });
 });

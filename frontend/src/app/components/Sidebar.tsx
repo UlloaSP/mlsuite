@@ -19,7 +19,7 @@ export function Sidebar({ side }: { side: SidebarPosition }) {
     <SidebarRoot data-user-guide="sidebar" side={side}>
       <div className="flex size-full flex-col overflow-hidden">
         <SidebarHeader>
-          <SidebarBrand />
+          <SidebarBrand side={side} />
           <SidebarOrganizationHeader />
         </SidebarHeader>
         <SidebarContent>

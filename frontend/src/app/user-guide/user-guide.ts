@@ -1,158 +1,64 @@
 import type { Driver, DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
 import "./user-guide.css";
+import {
+  CLOSING_STEP,
+  GUIDE_CONTENT,
+  SIDEBAR_INTRO,
+  type GuideContent,
+} from "./user-guide-content";
 
 type StartUserGuideOptions = {
   onDestroyed?: () => void;
   trigger: HTMLElement;
 };
 
-const GUIDE_CONTENT: Record<string, { description: string; title: string }> = {
-  "nav:Organizations": {
-    title: "Organizations",
-    description: "Create, select, and administer organizations across MLSuite.",
-  },
-  "nav:Workspace": {
-    title: "Workspace",
-    description: "Manage the active workspace, its members, invitations, roles, and settings.",
-  },
-  "nav:Models": {
-    title: "Models",
-    description: "Browse registered models, inspect their metadata, and open model workflows.",
-  },
-  "nav:Schemas": {
-    title: "Schemas",
-    description: "Create and manage schemas that connect models to forms and prediction flows.",
-  },
-  "nav:Inferences": {
-    title: "Inferences",
-    description: "Review prediction runs, their inputs, outputs, reports, and feedback status.",
-  },
-  "nav:Plugins": {
-    title: "Plugins",
-    description: "Discover and configure plugins that extend model and report workflows.",
-  },
-  "nav:Review": {
-    title: "Review",
-    description: "Open assigned reviews and manage human feedback on inference results.",
-  },
-  "nav:Users": {
-    title: "Users",
-    description: "Administer platform users and their system-level access.",
-  },
-  "nav:Infra": {
-    title: "Infrastructure",
-    description: "Inspect services, logs, terminals, and alerts for the MLSuite environment.",
-  },
-  "subnav:Overview": {
-    title: "Section overview",
-    description: "Return to the summary for the currently expanded sidebar section.",
-  },
-  "subnav:Members": {
-    title: "Members",
-    description: "View people in the active workspace and manage their access when permitted.",
-  },
-  "subnav:Invitations": {
-    title: "Invitations",
-    description: "Track pending invitations and invite new workspace members when permitted.",
-  },
-  "subnav:Roles & Templates": {
-    title: "Roles & templates",
-    description: "Define reusable permission templates and assign workspace roles.",
-  },
-  "subnav:Settings": {
-    title: "Workspace settings",
-    description: "Edit settings that belong to the active organization, not your personal UI.",
-  },
-  "subnav:Changes": {
-    title: "Schema changes",
-    description: "Open draft and published change workflows for the active schema.",
-  },
-  "subnav:Bookmarks": {
-    title: "Schema bookmarks",
-    description: "Open named pointers to published snapshots of the active schema.",
-  },
-  "subnav:Snapshots": {
-    title: "Schema snapshots",
-    description: "Inspect immutable published versions of the active schema.",
-  },
-  "subnav:All schemas": {
-    title: "All schemas",
-    description: "Return to the complete schema catalog.",
-  },
-  "subnav:Services": {
-    title: "Services",
-    description: "Check the health and runtime state of infrastructure services.",
-  },
-  "subnav:Logs": {
-    title: "Logs",
-    description: "Inspect service logs when diagnosing runtime behavior.",
-  },
-  "subnav:Terminal": {
-    title: "Terminal",
-    description: "Open the administrative infrastructure terminal.",
-  },
-  "subnav:Alerts": {
-    title: "Alerts",
-    description: "Review infrastructure warnings and active alerts.",
-  },
-  "workspace-switcher": {
-    title: "Active workspace",
-    description: "Switch organizations here. Data and permissions follow the active workspace.",
-  },
-  "user-guide": {
-    title: "User guide",
-    description: "Restart this sidebar walkthrough whenever you need a navigation refresher.",
-  },
-  settings: {
-    title: "Personal settings",
-    description: "Adjust themes, typography, shortcuts, and sidebar placement for your account.",
-  },
-  "global-search": {
-    title: "Global search",
-    description: "Find resources without leaving the page you are working on.",
-  },
-  "toggle-theme": {
-    title: "Color scheme",
-    description: "Cycle through System, Light, and Dark. The displayed shortcut does the same.",
-  },
-  "toggle-fullscreen": {
-    title: "Fullscreen",
-    description: "Enter or leave fullscreen mode to change how much workspace is visible.",
-  },
-  "toggle-sidebar": {
-    title: "Sidebar size",
-    description: "Collapse the sidebar to icons or expand it to show labels and shortcuts.",
-  },
-  "user-menu": {
-    title: "Your account",
-    description: "Open your profile, notifications, workspace, or sign out from this menu.",
-  },
-};
-
 let activeGuide: Driver | null = null;
 let startVersion = 0;
 
+const isMac = () => typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
+const KEY_LABELS: Record<string, string> = {
+  Control: "Ctrl",
+  Meta: "⌘",
+  Alt: "Alt",
+  Shift: "Shift",
+};
+
+/** Renders an element's own aria-keyshortcuts, so customized bindings show up in the tour. */
+export function shortcutMarkup(ariaShortcuts: string | null, mac = isMac()): string {
+  if (!ariaShortcuts) return "";
+  const alternatives = ariaShortcuts.split(" ");
+  const chosen =
+    alternatives.find((shortcut) => shortcut.startsWith(mac ? "Meta+" : "Control+")) ??
+    alternatives[0];
+  const keys = chosen
+    .split("+")
+    .map((key) => (mac && key === "Alt" ? "⌥" : (KEY_LABELS[key] ?? key)));
+  return `<span class="mlsuite-guide-shortcut">${keys.map((key) => `<kbd>${key}</kbd>`).join("")}</span>`;
+}
+
+const popover = ({ title, description }: GuideContent, element?: HTMLElement) => ({
+  title,
+  description: `<p>${description}</p>${shortcutMarkup(element?.getAttribute("aria-keyshortcuts") ?? null)}`,
+});
+
 export function availableUserGuideSteps(root: ParentNode = document): DriveStep[] {
   const steps: DriveStep[] = [];
+  let closing: DriveStep | null = null;
   const sidebar = root.querySelector<HTMLElement>('[data-user-guide="sidebar"]');
-  if (sidebar) {
-    steps.push({
-      element: sidebar,
-      popover: {
-        title: "Your workspace",
-        description: "The sidebar keeps navigation and workspace tools available from every page.",
-      },
-    });
-  }
+  // A centered welcome: highlighting the whole sidebar would bleed past the viewport edge.
+  if (sidebar) steps.push({ popover: popover(SIDEBAR_INTRO) });
 
   root.querySelectorAll<HTMLElement>("[data-user-guide-item]").forEach((element) => {
     if (element.closest('[aria-hidden="true"]')) return;
     const key = element.dataset.userGuideItem;
-    if (!key) return;
-    const content = GUIDE_CONTENT[key];
-    if (content) steps.push({ element, popover: content });
+    const content = key ? GUIDE_CONTENT[key] : undefined;
+    if (!content) return;
+    const step = { element, popover: popover(content, element) };
+    if (key === CLOSING_STEP) closing = step;
+    else steps.push(step);
   });
+  if (closing) steps.push(closing);
   return steps;
 }
 
@@ -205,8 +111,13 @@ export async function startUserGuide({
         element?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
       },
       overlayClickBehavior: "close",
+      overlayColor: "var(--color-overlay)",
+      overlayOpacity: 1,
       popoverClass: "mlsuite-user-guide",
       prevBtnText: "Previous",
+      progressText: "{{current}} of {{total}}",
+      stagePadding: 4,
+      stageRadius: 12,
       showProgress: true,
       skipMissingElement: true,
       smoothScroll: false,

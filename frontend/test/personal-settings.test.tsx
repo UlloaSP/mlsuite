@@ -12,9 +12,15 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/tes
 import { protectedPages } from "@/app/router/protected-routes";
 import { SidebarActions } from "@/app/components/SidebarActions";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
+import { useDisplayShortcuts } from "@/app/layouts/use-display-shortcuts";
 import { SettingsPage } from "@/features/user/pages/SettingsPage";
 
 let root: Root | null = null;
+
+function DisplayShortcuts() {
+  useDisplayShortcuts();
+  return null;
+}
 
 function LocationProbe() {
   const location = useLocation();
@@ -50,7 +56,7 @@ afterEach(() => {
 });
 
 describe("personal settings", () => {
-  test("cycles the system, light, and dark schemes with Ctrl+Shift+L", () => {
+  test("keeps sidebar tooling to guide and search", () => {
     const container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
@@ -63,6 +69,18 @@ describe("personal settings", () => {
         </MemoryRouter>,
       );
     });
+
+    const labels = Array.from(container.querySelectorAll("li")).map((item) =>
+      item.textContent?.replace(/Ctrl.*$/, "").trim(),
+    );
+    expect(labels).toEqual(["User Guide", "Global Search"]);
+  });
+
+  test("cycles the system, light, and dark schemes with Ctrl+Shift+L", () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root?.render(<DisplayShortcuts />));
 
     const pressThemeShortcut = () =>
       act(() => {
@@ -147,6 +165,11 @@ describe("personal settings", () => {
     expect(airbnbDark.getAttribute("aria-pressed")).toBe("true");
     expect(airbnbCard.textContent).not.toContain("Apply both");
     expect(left.checked).toBe(true);
+    const fullscreen = container.querySelector<HTMLInputElement>('input[role="switch"]')!;
+    expect(fullscreen.disabled).toBe(true);
+    expect(container.textContent).toContain(
+      "This browser does not allow pages to enter fullscreen.",
+    );
     expect(document.documentElement.dataset.themePreset).toBe("airbnb");
     expect(document.documentElement.dataset.contrast).toBe("120");
     expect(localStorage.getItem("ui/theme-selection")).toBe(

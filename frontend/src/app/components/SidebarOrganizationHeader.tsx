@@ -6,20 +6,32 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Building2, Check, ChevronsUpDown } from "lucide-react";
 import { useAtomValue } from "jotai";
 import { DropdownMenu } from "radix-ui";
-import { Link, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useSelectOrganization } from "@/features/workspace/api/workspace.mutations";
 import { cx } from "@/shared/ui/cx";
-import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { sidebarPositionAtom } from "@/shared/ui/sidebar-position";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarMenu } from "./app-sidebar/SidebarMenu";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
 import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
 import { useSidebar } from "./app-sidebar/SidebarContext";
+import { SidebarMenuLink } from "./SidebarMenuLink";
+import {
+  SIDEBAR_MENU_ITEM,
+  SIDEBAR_MENU_LABEL,
+  SIDEBAR_MENU_SEPARATOR,
+  SIDEBAR_MENU_TILE,
+  sidebarMenuChevron,
+  sidebarMenuContent,
+  sidebarMenuTrigger,
+} from "./sidebar-menu-styles";
+import { isChildActive } from "./sidebar-navigation-support";
+import { getWorkspaceLinks, isWorkspacePath } from "./workspace-navigation";
 
 export function SidebarOrganizationHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { state } = useSidebar();
   const sidebarPosition = useAtomValue(sidebarPositionAtom);
   const { data: context } = useWorkspaceContext();
@@ -30,6 +42,9 @@ export function SidebarOrganizationHeader() {
   }
 
   const collapsed = state === "collapsed";
+  const organizationId = context.currentOrganization.id;
+  const workspaceLinks = getWorkspaceLinks(context.permissions, organizationId);
+  const currentPath = `${location.pathname}${location.search}`;
 
   return (
     <SidebarMenu>
@@ -38,13 +53,11 @@ export function SidebarOrganizationHeader() {
           <DropdownMenu.Trigger asChild>
             <SidebarMenuButton
               data-user-guide-item="workspace-switcher"
-              className={cx(
-                "rounded-xl text-fg",
-                collapsed ? "mx-auto size-9 min-h-9 p-0" : "min-h-13 px-2.5 py-2",
-              )}
+              isActive={isWorkspacePath(location.pathname, organizationId)}
+              className={sidebarMenuTrigger(collapsed)}
               title={context.currentOrganization.name}
             >
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-fg text-fg-inverse">
+              <span className={cx(SIDEBAR_MENU_TILE, "bg-fg text-fg-inverse")}>
                 <Building2 size={16} />
               </span>
               <SidebarLabel className={collapsed ? "w-0 flex-none text-left" : "flex-1 text-left"}>
@@ -55,13 +68,7 @@ export function SidebarOrganizationHeader() {
                   {context.currentOrganization.slug}
                 </span>
               </SidebarLabel>
-              <ChevronsUpDown
-                size={16}
-                className={cx(
-                  "shrink-0 text-fg-muted transition-[opacity,transform] duration-200",
-                  collapsed ? "w-0 scale-90 opacity-0" : "opacity-100",
-                )}
-              />
+              <ChevronsUpDown size={16} className={sidebarMenuChevron(collapsed)} />
             </SidebarMenuButton>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
@@ -70,19 +77,33 @@ export function SidebarOrganizationHeader() {
               side="bottom"
               sideOffset={8}
               collisionPadding={8}
-              className={cx(
-                "z-(--z-popover) flex max-h-[var(--radix-dropdown-menu-content-available-height)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-line bg-surface p-2 text-fg shadow-hover",
-                collapsed ? "w-64" : "w-[var(--radix-dropdown-menu-trigger-width)]",
-              )}
+              className={sidebarMenuContent(collapsed)}
             >
+              {workspaceLinks.length > 0 ? (
+                <>
+                  <DropdownMenu.Label className={SIDEBAR_MENU_LABEL}>Workspace</DropdownMenu.Label>
+                  <DropdownMenu.Group>
+                    {workspaceLinks.map((link) => (
+                      <SidebarMenuLink
+                        key={link.to}
+                        active={isChildActive(link, currentPath, location.pathname)}
+                        icon={link.icon}
+                        label={link.label}
+                        to={link.to}
+                      />
+                    ))}
+                  </DropdownMenu.Group>
+                  <DropdownMenu.Separator className={SIDEBAR_MENU_SEPARATOR} />
+                  <DropdownMenu.Label className={SIDEBAR_MENU_LABEL}>
+                    Switch organization
+                  </DropdownMenu.Label>
+                </>
+              ) : null}
               <DropdownMenu.Group className="app-scroll max-h-42 min-h-0 overflow-y-auto overscroll-contain">
                 {context.organizations.map((organization) => (
                   <DropdownMenu.Item
                     key={organization.id}
-                    className={cx(
-                      "flex h-14 cursor-pointer items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm outline-none hover:bg-surface-muted focus:bg-surface-muted focus-visible:ring-inset",
-                      FOCUS_RING,
-                    )}
+                    className={cx(SIDEBAR_MENU_ITEM, "h-14 justify-between py-2.5")}
                     onSelect={() => {
                       void selectOrganization.mutateAsync(organization.id).then(() => {
                         void navigate("/home");
@@ -101,15 +122,6 @@ export function SidebarOrganizationHeader() {
                   </DropdownMenu.Item>
                 ))}
               </DropdownMenu.Group>
-              <DropdownMenu.Separator className="my-2 h-px shrink-0 bg-line" />
-              <DropdownMenu.Item asChild>
-                <Link
-                  to="/workspace/organizations"
-                  className="block shrink-0 rounded-lg px-3 py-2.5 text-sm font-medium text-accent-strong outline-none hover:bg-surface-muted focus:bg-surface-muted"
-                >
-                  Manage organizations
-                </Link>
-              </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>

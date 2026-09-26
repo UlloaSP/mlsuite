@@ -1,27 +1,106 @@
 .driver-popover.mlsuite-user-guide {
   --driver-popover-font-family: var(--font-sans);
+  min-width: 17rem;
+  max-width: 21rem;
+  padding: 1.1rem 1.1rem 0.9rem;
   border: 1px solid var(--color-line);
-  border-radius: 14px;
-  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-raised);
   color: var(--color-fg);
-  box-shadow: var(--shadow-hover);
+  box-shadow: var(--shadow-overlay);
 }
 
-.driver-popover.mlsuite-user-guide .driver-popover-description,
-.driver-popover.mlsuite-user-guide .driver-popover-progress-text {
+.driver-popover.mlsuite-user-guide .driver-popover-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-description {
   color: var(--color-fg-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-description p {
+  margin: 0;
+}
+
+.driver-popover.mlsuite-user-guide .mlsuite-guide-shortcut {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+}
+
+.driver-popover.mlsuite-user-guide kbd {
+  min-width: 1.4rem;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  color: var(--color-fg);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-align: center;
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-progress-text {
+  color: var(--color-fg-muted);
+  font-size: var(--text-xs);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-close-btn {
+  color: var(--color-fg-muted);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-close-btn:hover,
+.driver-popover.mlsuite-user-guide .driver-popover-close-btn:focus-visible {
+  color: var(--color-fg);
 }
 
 .driver-popover.mlsuite-user-guide .driver-popover-footer-btn {
-  border-color: var(--color-line-strong);
-  border-radius: 8px;
-  background: var(--color-surface-muted);
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
   color: var(--color-fg);
+  font-size: var(--text-xs);
+  font-weight: 500;
   text-shadow: none;
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-footer-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-footer-btn:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--color-focus) 50%, transparent);
+  outline-offset: 1px;
 }
 
 .driver-popover.mlsuite-user-guide .driver-popover-next-btn {
   border-color: var(--color-accent);
   background: var(--color-accent);
-  color: white;
+  color: var(--color-on-accent);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-next-btn:hover {
+  background: var(--color-accent-hover);
+}
+
+/* driver.js paints the arrow with one opaque border side per placement. */
+.driver-popover.mlsuite-user-guide .driver-popover-arrow-side-left {
+  border-left-color: var(--color-surface-raised);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-arrow-side-right {
+  border-right-color: var(--color-surface-raised);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-arrow-side-top {
+  border-top-color: var(--color-surface-raised);
+}
+
+.driver-popover.mlsuite-user-guide .driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--color-surface-raised);
 }

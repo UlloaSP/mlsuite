@@ -14,7 +14,16 @@ type SidebarTriggerProps = ComponentProps<"button"> & {
   side?: SidebarPosition;
 };
 
-export function SidebarTrigger({ className, side = "right", ...props }: SidebarTriggerProps) {
+/**
+ * Toggles the sidebar. With children, they are the resting face and the panel
+ * icon replaces them on hover or keyboard focus.
+ */
+export function SidebarTrigger({
+  children,
+  className,
+  side = "right",
+  ...props
+}: SidebarTriggerProps) {
   const { state, isMobile, openMobile, toggleSidebar } = useSidebar();
   const expanded = isMobile ? openMobile : state === "expanded";
   const Icon =
@@ -25,18 +34,27 @@ export function SidebarTrigger({ className, side = "right", ...props }: SidebarT
       : !expanded
         ? PanelRightOpen
         : PanelRightClose;
-  const label = expanded ? "Collapse" : "Expand";
+  const label = expanded ? "Collapse sidebar" : "Expand sidebar";
 
   return (
     <button
       type="button"
       aria-label={label}
       aria-expanded={expanded}
+      title={label}
       onClick={toggleSidebar}
-      className={cx("inline-flex items-center justify-center", FOCUS_RING, className)}
+      className={cx("group inline-flex items-center justify-center", FOCUS_RING, className)}
       {...props}
     >
-      <Icon size={18} />
+      {children ? (
+        <span aria-hidden="true" className="contents group-hover:hidden group-focus-visible:hidden">
+          {children}
+        </span>
+      ) : null}
+      <Icon
+        size={18}
+        className={children ? "hidden group-hover:block group-focus-visible:block" : undefined}
+      />
       <span className="sr-only">{label}</span>
     </button>
   );

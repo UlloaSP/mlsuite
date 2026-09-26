@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { AppSelect } from "@/shared/ui/AppSelect";
+import { AppSwitch } from "@/shared/ui/AppSwitch";
 import { INTERFACE_FONTS, MONOSPACE_FONTS } from "@/shared/ui/font-catalog";
 import { INTERFACE_SIZES, MONOSPACE_SIZES, typographyAtom } from "@/shared/ui/typography-state";
 import { FontChoiceGrid } from "./FontChoiceGrid";
@@ -89,21 +90,13 @@ export function SettingsTypographySection() {
           </pre>
         </div>
 
-        <label className="flex items-center justify-between gap-5 border-t border-line pt-5">
-          <span>
-            <span className="block text-sm font-semibold text-fg">Word wrap</span>
-            <span className="mt-1 block text-sm text-fg-secondary">
-              Wrap long lines in code editors and previews.
-            </span>
-          </span>
-          <input
-            type="checkbox"
-            className="peer sr-only"
-            checked={typography.wordWrap}
-            onChange={(event) => update("wordWrap", event.target.checked)}
-          />
-          <span className="relative h-6 w-11 shrink-0 rounded-full bg-line-strong transition peer-checked:bg-accent peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 after:absolute after:left-1 after:top-1 after:size-4 after:rounded-full after:bg-surface after:transition-transform peer-checked:after:translate-x-5" />
-        </label>
+        <AppSwitch
+          className="border-t border-line pt-5"
+          label="Word wrap"
+          description="Wrap long lines in code editors and previews."
+          checked={typography.wordWrap}
+          onChange={(checked) => update("wordWrap", checked)}
+        />
       </div>
     </section>
   );

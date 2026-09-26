@@ -4,10 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Paintbrush } from "lucide-react";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useState } from "react";
 import { AppChoiceCard } from "@/shared/ui/AppChoiceCard";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppShortcut } from "@/shared/ui/AppShortcut";
+import { shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
 import {
   customThemesAtom,
   themeModeAtom,
@@ -31,6 +33,7 @@ export function SettingsAppearanceSection() {
   const [selection, setSelection] = useAtom(themeSelectionAtom);
   const [customThemes, setCustomThemes] = useAtom(customThemesAtom);
   const [createOpen, setCreateOpen] = useState(false);
+  const bindings = useAtomValue(shortcutBindingsAtom);
   const themes: Array<{
     value: ThemeId;
     label: string;
@@ -72,7 +75,13 @@ export function SettingsAppearanceSection() {
       </div>
 
       <fieldset className="mt-7">
-        <legend className="text-base font-semibold text-fg">Color scheme</legend>
+        <legend className="flex w-full items-center justify-between gap-3 text-base font-semibold text-fg">
+          Color scheme
+          <span className="flex items-center gap-2 text-xs font-normal text-fg-secondary">
+            Cycle
+            <AppShortcut binding={bindings["toggle-theme"]} />
+          </span>
+        </legend>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
           {MODES.map((option) => (
             <AppChoiceCard

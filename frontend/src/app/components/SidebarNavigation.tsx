@@ -9,14 +9,9 @@ import {
   Building2,
   ChevronRight,
   ClipboardList,
-  KeyRound,
-  LayoutGrid,
-  Mail,
   MessageSquareText,
   ServerCog,
   ShieldCheck,
-  Settings,
-  Users,
 } from "lucide-react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -53,25 +48,6 @@ export function SidebarNavigation() {
   const currentOrganizationPath = workspace
     ? `/workspace/organizations/${workspace.currentOrganization.id}`
     : undefined;
-  const workspaceChildren: NavigationItem["children"] = [
-    { to: "/workspace", icon: LayoutGrid, label: "Overview", exact: true },
-    ...(permissions?.canViewMembers && currentOrganizationPath
-      ? [{ to: `${currentOrganizationPath}/members`, icon: Users, label: "Members" }]
-      : []),
-    ...((permissions?.canViewInvitations || permissions?.canInviteMembers) &&
-    currentOrganizationPath
-      ? [{ to: `${currentOrganizationPath}/invitations`, icon: Mail, label: "Invitations" }]
-      : []),
-    ...((permissions?.canViewMembers ||
-      permissions?.canInviteMembers ||
-      permissions?.canManageMemberRoles) &&
-    currentOrganizationPath
-      ? [{ to: `${currentOrganizationPath}/roles`, icon: KeyRound, label: "Roles & Templates" }]
-      : []),
-    ...(permissions?.canViewOrganization && currentOrganizationPath
-      ? [{ to: `${currentOrganizationPath}/settings`, icon: Settings, label: "Settings" }]
-      : []),
-  ];
   const navigation: NavigationItem[] = [
     ...(user?.systemRole === "SUPERADMIN"
       ? [
@@ -86,21 +62,6 @@ export function SidebarNavigation() {
                 currentOrganizationPath &&
                 pathname.startsWith("/workspace/organizations/") &&
                 !pathname.startsWith(currentOrganizationPath),
-              ),
-          },
-        ]
-      : []),
-    ...(permissions?.canViewWorkspace
-      ? [
-          {
-            to: "/workspace",
-            icon: Building2,
-            label: "Workspace",
-            children: workspaceChildren,
-            activeWhen: (pathname: string) =>
-              pathname === "/workspace" ||
-              Boolean(
-                currentOrganizationPath && pathname.startsWith(`${currentOrganizationPath}/`),
               ),
           },
         ]

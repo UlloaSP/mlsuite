@@ -28,8 +28,6 @@ export function Sidebar({ children, className, side = "left", ...props }: Sideba
             className={cx(
               "fixed bottom-0 top-0 z-(--z-drawer) w-[min(20rem,calc(100vw-2rem))] border-line bg-sidebar shadow-hover backdrop-blur-xl",
               sideClass,
-              side === "left" &&
-                "[&_.lucide-panel-right-close]:-scale-x-100 [&_.lucide-panel-right-open]:-scale-x-100",
               className,
             )}
           >
@@ -48,8 +46,6 @@ export function Sidebar({ children, className, side = "left", ...props }: Sideba
         "hidden h-screen shrink-0 overflow-hidden border-line bg-sidebar text-fg backdrop-blur-xl transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] xl:block",
         state === "collapsed" ? "w-[4.25rem]" : "w-[17rem]",
         side === "left" ? "border-r" : "border-l",
-        side === "left" &&
-          "[&_.lucide-panel-right-close]:-scale-x-100 [&_.lucide-panel-right-open]:-scale-x-100",
         className,
       )}
       {...props}

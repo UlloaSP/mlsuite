@@ -12,10 +12,12 @@ import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/Sidebar";
 import { SidebarInset } from "@/app/components/app-sidebar/SidebarInset";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
+import { useDisplayShortcuts } from "./use-display-shortcuts";
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
   const [sidebarPosition] = useAtom(sidebarPositionAtom);
+  useDisplayShortcuts();
 
   return (
     <SidebarProvider open={!collapsed} onOpenChange={(open: boolean) => setCollapsed(!open)}>
