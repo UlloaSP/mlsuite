@@ -3,11 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Dialog } from "radix-ui";
 import { RefreshCcw, Tag } from "lucide-react";
 import type { FormEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
-import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextField } from "@/shared/ui/AppTextField";
 
 type Props = {
@@ -36,39 +35,37 @@ export function SchemaBookmarkDialog({
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-(--z-overlay) bg-overlay backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-(--z-modal) w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded border border-line bg-surface p-5 shadow-card">
-          <Dialog.Title className="text-lg font-semibold text-fg">Bookmark snapshot</Dialog.Title>
-          <Dialog.Description asChild>
-            <AppCopy className="mt-1">{snapshotLabel}</AppCopy>
-          </Dialog.Description>
-          <form className="mt-4 space-y-5" onSubmit={submit}>
-            <div className="space-y-2">
-              <label htmlFor="bookmark-name" className="text-sm font-semibold text-fg">
-                Bookmark name
-              </label>
-              <AppTextField
-                id="bookmark-name"
-                name="name"
-                defaultValue={defaultName}
-                placeholder="production"
-                required
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Dialog.Close asChild>
-                <AppButton variant="secondary">Cancel</AppButton>
-              </Dialog.Close>
-              <AppButton disabled={pending} type="submit">
-                {pending ? <RefreshCcw className="animate-spin" size={16} /> : <Tag size={16} />}
-                Save bookmark
-              </AppButton>
-            </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <AppDialog
+      open={open}
+      busy={pending}
+      onClose={onClose}
+      title={"Bookmark snapshot"}
+      description={snapshotLabel}
+      onSubmit={submit}
+      footer={
+        <>
+          <AppButton type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </AppButton>
+          <AppButton disabled={pending} type="submit">
+            {pending ? <RefreshCcw className="animate-spin" size={16} /> : <Tag size={16} />}
+            Save bookmark
+          </AppButton>
+        </>
+      }
+    >
+      <div className="space-y-2">
+        <label htmlFor="bookmark-name" className="text-sm font-semibold text-fg">
+          Bookmark name
+        </label>
+        <AppTextField
+          id="bookmark-name"
+          name="name"
+          defaultValue={defaultName}
+          placeholder="production"
+          required
+        />
+      </div>
+    </AppDialog>
   );
 }

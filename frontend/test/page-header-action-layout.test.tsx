@@ -12,7 +12,7 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 
 describe("page header checkerboard actions", () => {
-  test("fills four equal slots right-first with alternating tones", () => {
+  test("fills four equal slots right-first and keeps each action's own variant", () => {
     const container = document.createElement("div");
     const root = createRoot(container);
 
@@ -23,10 +23,10 @@ describe("page header checkerboard actions", () => {
           actionLayout="checkerboard"
           actions={
             <>
-              <AppButton>First</AppButton>
+              <AppButton variant="secondary">First</AppButton>
               <AppButton>Second</AppButton>
-              <AppButton>Third</AppButton>
-              <AppButton>Fourth</AppButton>
+              <AppButton variant="secondary">Third</AppButton>
+              <AppButton variant="danger">Fourth</AppButton>
             </>
           }
         />,
@@ -40,12 +40,13 @@ describe("page header checkerboard actions", () => {
       "bottom-right",
       "bottom-left",
     ]);
-    expect(slots.map((slot) => slot.dataset.tone)).toEqual([
-      "primary",
-      "secondary",
-      "secondary",
-      "primary",
-    ]);
+    // Position never restyles an action: a secondary action placed first stays secondary.
+    const [first, second, , fourth] = slots.map((slot) => slot.querySelector("button")!);
+    expect(first.className).toContain("border-line");
+    expect(first.className).not.toContain("bg-accent");
+    expect(second.className).toContain("bg-accent");
+    expect(fourth.className).toContain("text-danger-fg");
+    expect(slots.some((slot) => /[&_button]:bg-/.test(slot.className))).toBe(false);
     expect(slots.every((slot) => slot.classList.contains("h-12"))).toBe(true);
     act(() => root.unmount());
   });

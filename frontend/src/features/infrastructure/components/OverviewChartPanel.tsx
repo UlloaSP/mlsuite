@@ -15,7 +15,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Download } from "lucide-react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { formatTimestamp } from "@/features/infrastructure/lib/formatters";
@@ -80,12 +79,10 @@ export function OverviewChartPanel({
               })),
             ]}
           />
-          <AppBadge tone={streamConnected ? "success" : "warning"} className="px-2 py-0.5 text-3xs">
+          <AppBadge tone={streamConnected ? "success" : "warning"}>
             {streamConnected ? "live" : "snapshot"}
           </AppBadge>
-          <AppBadge className="px-2 py-0.5 text-3xs">
-            {overview.history.sampleIntervalSeconds}s sample
-          </AppBadge>
+          <AppBadge>{overview.history.sampleIntervalSeconds}s sample</AppBadge>
         </div>
       </div>
       <div className="flex flex-wrap gap-4 border-b border-line px-5 py-2.5">
@@ -169,9 +166,6 @@ export function OverviewChartPanel({
           {Object.values(layers).filter(Boolean).length} layers &middot;{" "}
           {overview.history.points.length} samples
         </span>
-        <button type="button" className="flex items-center gap-1.5 text-fg-secondary hover:text-fg">
-          <Download size={12} /> CSV
-        </button>
       </div>
     </div>
   );

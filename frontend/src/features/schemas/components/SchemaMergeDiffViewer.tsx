@@ -67,7 +67,12 @@ export function SchemaMergeDiffViewer({
   }, [selectableChanges, currentLabel, currentDocument, incomingLabel, incomingDocument]);
 
   return (
-    <div className={cx("min-h-0 overflow-hidden rounded border border-line bg-surface", className)}>
+    <div
+      className={cx(
+        "min-h-0 overflow-hidden rounded-card border border-line bg-surface",
+        className,
+      )}
+    >
       {selectableChanges.length > 0 ? (
         <div className="size-full min-h-0 overflow-auto">
           <UnresolvedFile

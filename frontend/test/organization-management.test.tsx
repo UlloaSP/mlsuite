@@ -248,7 +248,8 @@ describe("organization management", () => {
       (button) => button.textContent === "Delete organization",
     );
     await act(async () => action?.click());
-    const confirm = [...container.querySelectorAll("button")].find(
+    // Dialogs render in a portal on document.body.
+    const confirm = [...document.body.querySelectorAll("button")].find(
       (button) => button.textContent === "Delete permanently",
     );
     await act(async () => confirm?.click());
@@ -313,11 +314,13 @@ describe("organization management", () => {
     );
     await act(async () => role?.click());
 
-    const dialog = container.querySelector("dialog");
+    const dialog = document.querySelector('[role="dialog"]');
     expect(dialog?.textContent).toContain("Reviewer");
-    expect(document.activeElement?.getAttribute("aria-label")).toBe("Close role details");
-    await act(async () => dialog?.dispatchEvent(new Event("cancel", { cancelable: true })));
-    expect(container.querySelector("dialog")).toBeNull();
+    expect(document.activeElement?.getAttribute("aria-label")).toBe("Close");
+    await act(async () =>
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
+    );
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
   });
 
   test("shows loading and rejects a failed target organization query", async () => {

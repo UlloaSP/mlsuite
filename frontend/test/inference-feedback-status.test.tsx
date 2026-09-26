@@ -99,8 +99,8 @@ async function render() {
 test("loads only supplied runs, deduplicates versions, batches feedback and shares mutation invalidation", async () => {
   api.feedback.mockResolvedValue([saved("1")]);
   await render();
-  expect(host.querySelector('[data-run="1"]')?.textContent).toContain("COMPLETED");
-  expect(host.querySelector('[data-run="2"]')?.textContent).toContain("PENDING");
+  expect(host.querySelector('[data-run="1"]')?.textContent).toContain("Completed");
+  expect(host.querySelector('[data-run="2"]')?.textContent).toContain("Pending");
   expect(api.run.mock.calls.map(([id]) => id)).toEqual(["1", "2"]);
   expect(api.version).toHaveBeenCalledTimes(1);
   expect(api.feedback.mock.calls[0]?.[0]).toEqual(["1", "2"]);
@@ -111,7 +111,7 @@ test("loads only supplied runs, deduplicates versions, batches feedback and shar
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
-  expect(host.querySelector('[data-run="2"]')?.textContent).toContain("COMPLETED");
+  expect(host.querySelector('[data-run="2"]')?.textContent).toContain("Completed");
 });
 test("shows loading while data is unresolved, never a fabricated status", async () => {
   api.feedback.mockImplementation(() => new Promise(() => {}));

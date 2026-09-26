@@ -14,7 +14,7 @@ export function AppTextArea({
   return (
     <label
       className={cx(
-        "inline-flex rounded border border-line bg-surface px-4 py-3 text-sm text-fg-secondary shadow-card",
+        "inline-flex rounded-control border border-line bg-surface px-4 py-3 text-sm text-fg-secondary shadow-card",
         className,
       )}
     >

@@ -54,7 +54,7 @@ export function CatalogPage<TFilter extends string, TSort extends string>({
       <AppSurface className="flex flex-1 flex-col overflow-hidden">
         <AppPageHeader {...header} />
         {navigation}
-        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded">
+        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card">
           <CatalogToolbar {...toolbar} />
           <CatalogListPanel
             {...list}

@@ -127,7 +127,7 @@ export function LogsView({
             ))}
           </div>
           <div className="flex-1" />
-          <AppBadge tone={follow ? "success" : "neutral"} className="px-2 py-0.5 text-3xs">
+          <AppBadge tone={follow ? "success" : "neutral"}>
             <span
               className={cx(
                 "inline-block size-1.5 rounded-full",

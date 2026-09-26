@@ -23,7 +23,7 @@ export function InferenceReviewTile({ assignment, disabled, onDelete, onReopen }
   const canReopen = assignment.reviewState === "COMPLETED" && !assignment.expired;
 
   return (
-    <article className="flex min-w-0 flex-col rounded border border-line bg-surface p-4">
+    <article className="flex min-w-0 flex-col rounded-card border border-line bg-surface p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-subtle text-sm font-semibold text-fg">
@@ -45,12 +45,12 @@ export function InferenceReviewTile({ assignment, disabled, onDelete, onReopen }
               <DropdownMenu.Content
                 align="end"
                 sideOffset={8}
-                className="z-(--z-popover) min-w-48 rounded border border-line bg-surface p-2 shadow-hover"
+                className="z-(--z-popover) min-w-48 rounded-menu border border-line bg-surface p-2 shadow-hover"
               >
                 {canReopen ? (
                   <DropdownMenu.Item
                     onSelect={onReopen}
-                    className="flex cursor-pointer items-center gap-3 rounded px-3 py-2.5 text-sm font-medium outline-none hover:bg-surface-muted focus:bg-surface-muted"
+                    className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium outline-none hover:bg-surface-muted focus:bg-surface-muted"
                   >
                     <RotateCcw size={15} />
                     Reopen
@@ -59,7 +59,7 @@ export function InferenceReviewTile({ assignment, disabled, onDelete, onReopen }
                 {hasResponse ? (
                   <DropdownMenu.Item
                     onSelect={onDelete}
-                    className="flex cursor-pointer items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-danger-fg outline-none hover:bg-danger-subtle focus:bg-danger-subtle"
+                    className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium text-danger-fg outline-none hover:bg-danger-subtle focus:bg-danger-subtle"
                   >
                     <Trash2 size={15} />
                     Delete response

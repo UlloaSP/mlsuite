@@ -29,7 +29,7 @@ export function AppEmptyState({
       )}
     >
       {icon ? (
-        <div className="flex size-12 items-center justify-center rounded bg-surface-muted text-fg">
+        <div className="flex size-12 items-center justify-center rounded-control bg-surface-muted text-fg">
           {icon}
         </div>
       ) : null}

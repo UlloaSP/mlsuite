@@ -1,11 +1,11 @@
 import { useReviewRunSelection } from "./useReviewRunSelection";
-import { ClipboardPlus, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ClipboardPlus } from "lucide-react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { formatTimestamp } from "@/shared/lib/date-time";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
-import { AppIconButton } from "@/shared/ui/AppIconButton";
+import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import {
@@ -28,7 +28,6 @@ const defaultExpiryDate = () => {
 };
 
 export function ReviewCreationDialog({ candidates, organizationId, onClose }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const {
     groups,
     group,
@@ -40,19 +39,10 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
     selectGroup,
     selectBookmark,
   } = useReviewRunSelection(candidates);
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
   const [expiresAt, setExpiresAt] = useState(defaultExpiryDate);
   const [selectedReviewerIds, setSelectedReviewerIds] = useState<Set<number>>(new Set());
   const reviewers = useEligibleReviewers(organizationId);
   const createReview = useCreateReviewMutation(organizationId);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    setPortalContainer(dialog);
-    dialog.showModal();
-    return () => dialog.close();
-  }, []);
 
   const create = async () => {
     if (!group || !selectedRunIds.size || !selectedReviewerIds.size) {
@@ -94,99 +84,26 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
   }, []);
 
   return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby="create-review-title"
-      onCancel={onClose}
-      className="m-auto max-h-none max-w-none overflow-visible bg-transparent p-4 text-inherit backdrop:bg-overlay sm:p-6"
-    >
-      <div className="flex max-h-[min(860px,calc(100dvh-2rem))] w-[min(1024px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-line bg-surface text-fg shadow-hover">
-        <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
-          <div>
-            <h2 id="create-review-title" className="text-xl font-semibold">
-              Create review
-            </h2>
-            <p className="mt-1 text-sm text-fg-secondary">
-              Choose the inferences and organization members responsible for reviewing them.
-            </p>
-          </div>
-          <AppIconButton type="button" aria-label="Close" onClick={onClose}>
-            <X size={18} />
-          </AppIconButton>
-        </header>
-
-        {groups.length > 1 || bookmarkOptions.length > 0 ? (
-          <div className="grid gap-4 border-b border-line px-6 py-4 sm:grid-cols-2">
-            <AppFieldLabel label="Schema snapshot">
-              <AppSelect
-                aria-label="Schema snapshot"
-                portalContainer={portalContainer}
-                value={group?.key}
-                onValueChange={selectGroup}
-                className="w-full min-w-0"
-                options={groups.map((item) => ({ value: item.key, label: item.label }))}
+    <AppDialog
+      open
+      size="xl"
+      flush
+      onClose={onClose}
+      title="Create review"
+      description="Choose the inferences and organization members responsible for reviewing them."
+      footer={
+        <>
+          <div className="mr-auto">
+            <AppFieldLabel label="Review expires">
+              <AppTextField
+                type="date"
+                value={expiresAt}
+                onChange={(event) => setExpiresAt(event.currentTarget.value)}
+                className="w-48"
               />
             </AppFieldLabel>
-            {bookmarkOptions.length > 0 ? (
-              <AppFieldLabel label="Bookmark">
-                <AppSelect
-                  aria-label="Bookmark"
-                  portalContainer={portalContainer}
-                  value={bookmark}
-                  onValueChange={selectBookmark}
-                  className="w-full min-w-0"
-                  options={[{ value: "all", label: "All bookmarks" }, ...bookmarkOptions]}
-                />
-              </AppFieldLabel>
-            ) : null}
           </div>
-        ) : null}
-
-        <div className="grid min-h-0 flex-1 divide-y divide-line overflow-auto lg:grid-cols-2 lg:divide-x lg:divide-y-0">
-          <ReviewSelectionCatalog
-            key={`inferences:${group?.key ?? "none"}:${bookmark}`}
-            title="Inferences"
-            emptyDescription="No inferences are available for this schema snapshot."
-            items={runCandidates.map((candidate) => ({
-              id: candidate.runId,
-              title: candidate.name,
-              detail: formatTimestamp(candidate.createdAt),
-            }))}
-            selectedIds={selectedRunIds}
-            onClear={() => setSelectedRunIds(new Set())}
-            onSelectAll={(ids) => setSelectedRunIds((current) => new Set([...current, ...ids]))}
-            onToggle={toggleRun}
-          />
-          <ReviewSelectionCatalog
-            title="Reviewers"
-            emptyDescription="Assign Review permission to an active organization member first."
-            loading={reviewers.isLoading}
-            error={Boolean(reviewers.error)}
-            items={(reviewers.data ?? []).map((reviewer) => ({
-              id: reviewer.id,
-              title: reviewer.fullName,
-              detail: reviewer.email,
-            }))}
-            selectedIds={selectedReviewerIds}
-            onClear={() => setSelectedReviewerIds(new Set())}
-            onSelectAll={(ids) =>
-              setSelectedReviewerIds((current) => new Set([...current, ...ids]))
-            }
-            onRetry={() => void reviewers.refetch()}
-            onToggle={toggleReviewer}
-          />
-        </div>
-
-        <footer className="flex flex-col gap-4 border-t border-line bg-surface-muted px-6 py-4 sm:flex-row sm:items-end sm:justify-between">
-          <AppFieldLabel label="Review expires">
-            <AppTextField
-              type="date"
-              value={expiresAt}
-              onChange={(event) => setExpiresAt(event.currentTarget.value)}
-              className="w-48"
-            />
-          </AppFieldLabel>
-          <div className="flex justify-end gap-3">
+          <div className="flex items-end gap-3">
             <AppButton type="button" variant="secondary" onClick={onClose}>
               Cancel
             </AppButton>
@@ -198,9 +115,67 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
               <ClipboardPlus size={16} /> Assign review
             </AppButton>
           </div>
-        </footer>
+        </>
+      }
+    >
+      {groups.length > 1 || bookmarkOptions.length > 0 ? (
+        <div className="grid gap-4 border-b border-line px-6 py-4 sm:grid-cols-2">
+          <AppFieldLabel label="Schema snapshot">
+            <AppSelect
+              aria-label="Schema snapshot"
+              value={group?.key}
+              onValueChange={selectGroup}
+              className="w-full min-w-0"
+              options={groups.map((item) => ({ value: item.key, label: item.label }))}
+            />
+          </AppFieldLabel>
+          {bookmarkOptions.length > 0 ? (
+            <AppFieldLabel label="Bookmark">
+              <AppSelect
+                aria-label="Bookmark"
+                value={bookmark}
+                onValueChange={selectBookmark}
+                className="w-full min-w-0"
+                options={[{ value: "all", label: "All bookmarks" }, ...bookmarkOptions]}
+              />
+            </AppFieldLabel>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="grid divide-y divide-line lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+        <ReviewSelectionCatalog
+          key={`inferences:${group?.key ?? "none"}:${bookmark}`}
+          title="Inferences"
+          emptyDescription="No inferences are available for this schema snapshot."
+          items={runCandidates.map((candidate) => ({
+            id: candidate.runId,
+            title: candidate.name,
+            detail: formatTimestamp(candidate.createdAt),
+          }))}
+          selectedIds={selectedRunIds}
+          onClear={() => setSelectedRunIds(new Set())}
+          onSelectAll={(ids) => setSelectedRunIds((current) => new Set([...current, ...ids]))}
+          onToggle={toggleRun}
+        />
+        <ReviewSelectionCatalog
+          title="Reviewers"
+          emptyDescription="Assign Review permission to an active organization member first."
+          loading={reviewers.isLoading}
+          error={Boolean(reviewers.error)}
+          items={(reviewers.data ?? []).map((reviewer) => ({
+            id: reviewer.id,
+            title: reviewer.fullName,
+            detail: reviewer.email,
+          }))}
+          selectedIds={selectedReviewerIds}
+          onClear={() => setSelectedReviewerIds(new Set())}
+          onSelectAll={(ids) => setSelectedReviewerIds((current) => new Set([...current, ...ids]))}
+          onRetry={() => void reviewers.refetch()}
+          onToggle={toggleReviewer}
+        />
       </div>
-    </dialog>
+    </AppDialog>
   );
 }
 

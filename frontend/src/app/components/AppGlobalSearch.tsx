@@ -79,7 +79,7 @@ export function AppGlobalSearch() {
           aria-label="Global search"
           className={cx(
             FOCUS_RING,
-            "fixed left-1/2 top-[14vh] z-(--z-modal) w-[min(47rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded border border-line bg-surface shadow-hover outline-none transition duration-150",
+            "fixed left-1/2 top-[14vh] z-(--z-modal) w-[min(47rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-dialog border border-line bg-surface shadow-hover outline-none transition duration-150",
             "data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100",
           )}
         >

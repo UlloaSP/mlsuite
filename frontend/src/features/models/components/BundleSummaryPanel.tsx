@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { RefreshCcw, Save } from "lucide-react";
-import { cx } from "@/shared/ui/cx";
 import { SummaryRow } from "./SummaryRow";
+import { AppButton } from "@/shared/ui/AppButton";
 
 type Props = {
   total: number;
@@ -67,28 +67,13 @@ export function BundleSummaryPanel({
 
       {/* Actions */}
       <div className="mt-auto flex flex-shrink-0 flex-col gap-2 border-t border-line px-[18px] py-[14px]">
-        <button
-          type="button"
-          disabled={!canSave}
-          onClick={onSaveAll}
-          className={cx(
-            "flex w-full items-center justify-center gap-[7px] rounded-lg border-none px-3 py-[11px] text-sm font-bold text-on-accent transition-all duration-150",
-            canSave
-              ? "cursor-pointer bg-accent hover:-translate-y-px hover:bg-accent-hover"
-              : "cursor-not-allowed bg-accent opacity-40",
-          )}
-        >
-          {anySaving ? <RefreshCcw size={13} className="animate-spin" /> : <Save size={13} />}
-          {anySaving ? "Saving…" : "Save All"}
-        </button>
-
-        <button
-          type="button"
-          onClick={onClear}
-          className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-line bg-transparent px-3 py-[11px] text-sm font-bold text-fg-secondary transition-all duration-150 hover:bg-surface-muted hover:text-fg"
-        >
+        <AppButton className="w-full" disabled={!canSave} onClick={onSaveAll}>
+          {anySaving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
+          {anySaving ? "Saving…" : "Save all"}
+        </AppButton>
+        <AppButton variant="secondary" className="w-full" onClick={onClear}>
           Clear
-        </button>
+        </AppButton>
       </div>
     </aside>
   );

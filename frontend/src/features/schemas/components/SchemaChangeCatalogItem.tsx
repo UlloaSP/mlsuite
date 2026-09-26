@@ -39,7 +39,7 @@ export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, sch
   return (
     <article
       className={cx(
-        "relative grid rounded border border-line bg-surface transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_auto]",
+        "relative grid rounded-card border border-line bg-surface transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_auto]",
         menuOpen ? "z-30" : "z-0",
       )}
     >
@@ -75,7 +75,7 @@ export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, sch
           <MoreHorizontal size={18} />
         </AppIconButton>
         {menuOpen ? (
-          <div className="absolute right-4 top-[calc(100%-0.25rem)] z-20 min-w-[170px] rounded border border-line bg-surface p-2 shadow-hover">
+          <div className="absolute right-4 top-[calc(100%-0.25rem)] z-20 min-w-[170px] rounded-menu border border-line bg-surface p-2 shadow-hover">
             <button
               type="button"
               className={menuItemClass}
@@ -103,4 +103,4 @@ export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, sch
 }
 
 const menuItemClass =
-  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-fg transition hover:bg-surface-muted";
+  "flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left text-sm font-medium text-fg transition hover:bg-surface-muted";

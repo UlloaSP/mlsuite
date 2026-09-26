@@ -4,6 +4,7 @@ import { formatTimestamp } from "@/capabilities/prediction-runtime/data/model-ut
 import { useReviewTrayLayout } from "@/features/reviews/lib/use-review-tray-layout";
 import { ReviewPredictionTrayGroup } from "@/features/reviews/components/ReviewPredictionTrayGroup";
 import type { SchemaReviewRunListItemDto } from "@/features/reviews/api/review-types";
+import { AppButton } from "@/shared/ui/AppButton";
 
 export type ReviewRailItem = SchemaReviewRunListItemDto & {
   reviewId: string;
@@ -80,15 +81,14 @@ export function SchemaReviewRunRail({
             <Send size={17} />
           </span>
         </div>
-        <button
-          type="button"
+        <AppButton
+          className="mt-5 w-full"
           disabled={revision.length === 0 || submitting}
           onClick={() => onSubmitRevision(revision)}
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Send size={15} />
           Complete review ({revision.length})
-        </button>
+        </AppButton>
       </div>
       <div ref={bodyRef} className="mt-5 flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
         <ReviewPredictionTrayGroup

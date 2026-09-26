@@ -39,7 +39,7 @@ export function ModelListItem({ canDelete, canEdit, item, onOpen, onAction }: Mo
   return (
     <article
       className={cx(
-        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded border border-line bg-surface p-4 text-left transition lg:grid-cols-[auto_minmax(0,1fr)_minmax(220px,auto)_auto]",
+        "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 rounded-card border border-line bg-surface p-4 text-left transition lg:grid-cols-[auto_minmax(0,1fr)_minmax(220px,auto)_auto]",
         "hover:border-fg hover:bg-surface-muted",
       )}
     >

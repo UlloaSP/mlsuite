@@ -14,17 +14,6 @@ const ACTION_POSITIONS = [
   "col-start-2 row-start-2",
   "col-start-1 row-start-2",
 ];
-const PRIMARY_ACTION_TONE =
-  "[&_button]:border-transparent [&_button]:bg-accent [&_button]:text-on-accent [&_button:hover]:bg-accent-hover";
-const SECONDARY_ACTION_TONE =
-  "[&_button]:border-line [&_button]:bg-surface [&_button]:text-fg [&_button:hover]:border-line-strong [&_button:hover]:bg-surface-hover";
-const CHECKERBOARD_TONES = [
-  PRIMARY_ACTION_TONE,
-  SECONDARY_ACTION_TONE,
-  SECONDARY_ACTION_TONE,
-  PRIMARY_ACTION_TONE,
-];
-const CHECKERBOARD_TONE_NAMES = ["primary", "secondary", "secondary", "primary"];
 const ACTION_SLOT_NAMES = ["top-right", "top-left", "bottom-right", "bottom-left"];
 
 function flattenActionNodes(nodes: ReactNode): ReactNode[] {
@@ -57,8 +46,6 @@ export function AppPageHeader({
     node,
     position: ACTION_POSITIONS[index],
     slot: ACTION_SLOT_NAMES[index],
-    tone: CHECKERBOARD_TONE_NAMES[index],
-    toneClass: CHECKERBOARD_TONES[index],
   }));
 
   return (
@@ -86,15 +73,15 @@ export function AppPageHeader({
                 actionLayout === "checkerboard" && "w-full sm:w-96",
               )}
             >
-              {positionedActions.map(({ node, position, slot, tone, toneClass }) => (
+              {positionedActions.map(({ node, position, slot }) => (
                 <div
                   key={isValidElement(node) ? (node.key ?? slot) : slot}
                   data-page-header-action={slot}
-                  data-tone={actionLayout === "checkerboard" ? tone : undefined}
                   className={cx(
                     position,
                     actionLayout === "checkerboard" &&
-                      `h-12 min-w-0 [&_a]:block [&_a]:h-full [&_button]:h-full [&_button]:w-full ${toneClass}`,
+                      // Equal slots only; each action keeps the variant it declares.
+                      "h-12 min-w-0 [&_a]:block [&_a]:h-full [&_button]:h-full [&_button]:w-full",
                   )}
                 >
                   {node}

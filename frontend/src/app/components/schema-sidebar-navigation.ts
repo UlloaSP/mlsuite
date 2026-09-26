@@ -3,13 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import {
-  ClipboardList,
-  GitCommitHorizontal,
-  GitCompareArrows,
-  LayoutGrid,
-  Tags,
-} from "lucide-react";
+import { LayoutGrid } from "lucide-react";
+import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import type { NavigationItem } from "./sidebar-navigation-support";
 
 export function getActiveSchemaPath(pathname: string) {
@@ -22,9 +17,9 @@ export function getSchemaNavigationChildren(activeSchemaPath?: string): Navigati
   if (!activeSchemaPath) return undefined;
   return [
     { to: activeSchemaPath, icon: LayoutGrid, label: "Overview", exact: true },
-    { to: `${activeSchemaPath}/changes`, icon: GitCompareArrows, label: "Changes" },
-    { to: `${activeSchemaPath}/bookmarks`, icon: Tags, label: "Bookmarks" },
-    { to: `${activeSchemaPath}/snapshots`, icon: GitCommitHorizontal, label: "Snapshots" },
-    { to: "/schemas", icon: ClipboardList, label: "All schemas", exact: true },
+    { to: `${activeSchemaPath}/changes`, icon: SECTION_ICONS.changes, label: "Changes" },
+    { to: `${activeSchemaPath}/bookmarks`, icon: SECTION_ICONS.bookmarks, label: "Bookmarks" },
+    { to: `${activeSchemaPath}/snapshots`, icon: SECTION_ICONS.snapshots, label: "Snapshots" },
+    { to: "/schemas", icon: SECTION_ICONS.schemas, label: "All schemas", exact: true },
   ];
 }

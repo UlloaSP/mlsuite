@@ -66,7 +66,7 @@ const upload = async (...names: string[]) => {
 };
 const saveAll = async () => {
   const button = [...container.querySelectorAll("button")].find(
-    (button) => button.textContent === "Save All",
+    (button) => button.textContent === "Save all",
   )!;
   await act(async () => button.click());
 };

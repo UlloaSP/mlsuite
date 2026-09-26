@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { ArrowLeft, Home, RefreshCw } from "lucide-react";
 import { m as motion } from "motion/react";
 import { useNavigate } from "react-router";
+import { AppButton } from "./AppButton";
 import { MLSuiteMark } from "./MLSuiteMark";
 import { AppPage } from "./AppPage";
 
@@ -105,31 +106,19 @@ export function RouteStatusPage({
             </p>
             <div className="flex flex-col gap-[9px]">
               {status === "module-load" ? (
-                <button
-                  type="button"
-                  onClick={onReload}
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-[11px] text-sm font-semibold text-on-accent transition hover:bg-accent-hover"
-                >
+                <AppButton className="w-full" onClick={onReload}>
                   <RefreshCw className="size-4" />
                   Reload application
-                </button>
+                </AppButton>
               ) : null}
-              <button
-                type="button"
-                onClick={() => navigate(homePath)}
-                className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-[11px] text-sm font-semibold text-on-accent transition hover:bg-accent-hover"
-              >
+              <AppButton className="w-full" onClick={() => navigate(homePath)}>
                 <Home className="size-4" />
                 {homeLabel}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="flex w-full items-center justify-center gap-2 rounded-md border-[1.5px] border-line-strong bg-surface px-4 py-[11px] text-sm font-semibold text-fg transition hover:bg-surface-hover"
-              >
+              </AppButton>
+              <AppButton variant="secondary" className="w-full" onClick={() => navigate(-1)}>
                 <ArrowLeft className="size-4" />
                 Go Back
-              </button>
+              </AppButton>
             </div>
 
             <p className="mt-6 font-mono text-2xs text-fg-muted">

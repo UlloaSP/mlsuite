@@ -1,7 +1,7 @@
-import { FileDown, X } from "lucide-react";
+import { FileDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
-import { AppIconButton } from "@/shared/ui/AppIconButton";
+import { AppDialog } from "@/shared/ui/AppDialog";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
@@ -38,7 +38,6 @@ export function SchemaRunExportReviewModal({
     [feedbackByRun, runs],
   );
   const reviewers = useMemo(() => collectSchemaRunExportReviewers(summaries), [summaries]);
-  if (!open) return null;
 
   const update = (recipe: (draft: SchemaRunExportSelection) => void) => {
     setSelection((current) => {
@@ -69,104 +68,99 @@ export function SchemaRunExportReviewModal({
     });
 
   return (
-    <div className="fixed inset-0 z-(--z-overlay) flex items-center justify-center bg-overlay p-4">
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-surface text-fg shadow-hover">
-        <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
-          <div>
-            <h2 className="text-2xl font-semibold">Export reviews</h2>
-            <p className="mt-1 text-sm text-fg-secondary">
-              {runs.length - selection.excludedRunIds.size}/{runs.length} inferences ·{" "}
-              {reviewers.length - selection.excludedReviewers.size}/{reviewers.length} reviewers
-            </p>
-          </div>
-          <AppIconButton type="button" aria-label="Close" onClick={onClose} className="rounded-md">
-            <X size={18} />
-          </AppIconButton>
-        </header>
-        <div className="grid min-h-0 flex-1 lg:grid-cols-[240px_minmax(0,1fr)]">
-          <aside className="border-r border-line px-5 py-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">
-              Reviewers
-            </p>
-            <div className="max-h-[48vh] overflow-auto border-y border-line">
-              {reviewers.map((reviewer) => {
-                const selected = !selection.excludedReviewers.has(reviewer);
-                return (
-                  <button
-                    key={reviewer}
-                    type="button"
-                    onClick={() => toggleReviewer(reviewer)}
-                    className="flex w-full items-center gap-3 border-b border-line px-2 py-3 text-left text-sm last:border-b-0 hover:bg-surface-muted"
-                  >
-                    <span
-                      className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${selected ? "border-accent bg-accent text-on-accent" : "border-line-strong text-transparent"}`}
-                    >
-                      ✓
-                    </span>
-                    <span className="min-w-0 truncate">{reviewer}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
-          <main className="min-h-0 overflow-auto px-6 py-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">
-                Inferences
-              </p>
-              <div className="flex gap-2">
-                <AppButton
-                  type="button"
-                  variant="secondary"
-                  className="rounded-md px-3 py-2"
-                  onClick={() => setSelection(emptySchemaRunExportSelection())}
-                >
-                  Select all
-                </AppButton>
-                <AppButton
-                  type="button"
-                  variant="ghost"
-                  className="rounded-md px-3 py-2"
-                  onClick={() =>
-                    update((draft) => runs.forEach((item) => draft.excludedRunIds.add(item.id)))
-                  }
-                >
-                  Deselect all
-                </AppButton>
-              </div>
-            </div>
-            <div className="border-y border-line">
-              {summaries.map((summary) => (
-                <SchemaRunExportRunRow
-                  key={summary.run.id}
-                  summary={summary}
-                  open={openRunIds.has(summary.run.id)}
-                  selection={selection}
-                  onToggleOpen={() =>
-                    setOpenRunIds((current) => {
-                      const next = new Set(current);
-                      if (next.has(summary.run.id)) next.delete(summary.run.id);
-                      else next.add(summary.run.id);
-                      return next;
-                    })
-                  }
-                  onToggleRun={toggleRun}
-                  onToggleRunReviewer={toggleRunReviewer}
-                />
-              ))}
-            </div>
-          </main>
-        </div>
-        <footer className="flex justify-end gap-3 border-t border-line px-6 py-4">
-          <AppButton type="button" variant="ghost" className="rounded-md" onClick={onClose}>
+    <AppDialog
+      open={open}
+      size="xl"
+      flush
+      onClose={onClose}
+      title="Export reviews"
+      description={`${runs.length - selection.excludedRunIds.size}/${runs.length} inferences · ${reviewers.length - selection.excludedReviewers.size}/${reviewers.length} reviewers`}
+      footer={
+        <>
+          <AppButton type="button" variant="ghost" onClick={onClose}>
             Cancel
           </AppButton>
-          <AppButton type="button" className="rounded-md" onClick={() => onExport(selection)}>
+          <AppButton type="button" onClick={() => onExport(selection)}>
             <FileDown size={16} />
             Export CSV
           </AppButton>
-        </footer>
+        </>
+      }
+    >
+      <div className="grid lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="border-line px-5 py-4 lg:border-r">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">
+            Reviewers
+          </p>
+          <div className="max-h-[48vh] overflow-auto border-y border-line">
+            {reviewers.map((reviewer) => {
+              const selected = !selection.excludedReviewers.has(reviewer);
+              return (
+                <button
+                  key={reviewer}
+                  type="button"
+                  onClick={() => toggleReviewer(reviewer)}
+                  className="flex w-full items-center gap-3 border-b border-line px-2 py-3 text-left text-sm last:border-b-0 hover:bg-surface-muted"
+                >
+                  <span
+                    className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${selected ? "border-accent bg-accent text-on-accent" : "border-line-strong text-transparent"}`}
+                  >
+                    ✓
+                  </span>
+                  <span className="min-w-0 truncate">{reviewer}</span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+        <section aria-label="Inferences" className="min-w-0 px-6 py-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">
+              Inferences
+            </p>
+            <div className="flex gap-2">
+              <AppButton
+                type="button"
+                variant="secondary"
+                className="rounded-md px-3 py-2"
+                onClick={() => setSelection(emptySchemaRunExportSelection())}
+              >
+                Select all
+              </AppButton>
+              <AppButton
+                type="button"
+                variant="ghost"
+                className="rounded-md px-3 py-2"
+                onClick={() =>
+                  update((draft) => runs.forEach((item) => draft.excludedRunIds.add(item.id)))
+                }
+              >
+                Deselect all
+              </AppButton>
+            </div>
+          </div>
+          <div className="border-y border-line">
+            {summaries.map((summary) => (
+              <SchemaRunExportRunRow
+                key={summary.run.id}
+                summary={summary}
+                open={openRunIds.has(summary.run.id)}
+                selection={selection}
+                onToggleOpen={() =>
+                  setOpenRunIds((current) => {
+                    const next = new Set(current);
+                    if (next.has(summary.run.id)) next.delete(summary.run.id);
+                    else next.add(summary.run.id);
+                    return next;
+                  })
+                }
+                onToggleRun={toggleRun}
+                onToggleRunReviewer={toggleRunReviewer}
+              />
+            ))}
+          </div>
+        </section>
       </div>
-    </div>
+    </AppDialog>
   );
 }

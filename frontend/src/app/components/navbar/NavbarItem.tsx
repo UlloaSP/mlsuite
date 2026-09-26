@@ -7,6 +7,8 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { Link } from "react-router";
 import { AppKbd } from "@/shared/ui/AppKbd";
+import { AppTooltip } from "@/shared/ui/AppTooltip";
+import { useMediaQuery } from "@/shared/ui/use-media-query";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { SidebarMenuLink } from "@/app/components/SidebarMenuLink";
@@ -44,6 +46,9 @@ export function NavbarItem({
   showShortcut: boolean;
 }) {
   const Icon = item.icon;
+  // Labels show from lg up unless compact; otherwise a tooltip names the icon.
+  const labelShown = useMediaQuery("(min-width: 1024px)") && !compact;
+  const tooltipSide = menuSide === "top" ? "top" : "bottom";
   // The chevron points the way the menu opens.
   const Chevron = menuSide === "top" ? ChevronUp : ChevronDown;
   const face = (
@@ -59,11 +64,20 @@ export function NavbarItem({
   const common = {
     "aria-keyshortcuts": `Alt+${String(shortcut)}`,
     "data-user-guide-item": `nav:${item.label}`,
-    title: item.label,
   };
+  const withTooltip = (control: React.ReactElement) => (
+    <AppTooltip
+      disabled={labelShown}
+      label={item.label}
+      shortcut={common["aria-keyshortcuts"]}
+      side={tooltipSide}
+    >
+      {control}
+    </AppTooltip>
+  );
 
   if (!item.children?.length) {
-    return (
+    return withTooltip(
       <Link
         {...common}
         to={item.to}
@@ -72,18 +86,20 @@ export function NavbarItem({
         className={itemClass(active)}
       >
         {face}
-      </Link>
+      </Link>,
     );
   }
 
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger {...common} className={itemClass(active)}>
-        {face}
-        <NavbarLabel compact={compact} className="flex">
-          <Chevron size={14} className="shrink-0 opacity-70" />
-        </NavbarLabel>
-      </DropdownMenu.Trigger>
+      {withTooltip(
+        <DropdownMenu.Trigger {...common} className={itemClass(active)}>
+          {face}
+          <NavbarLabel compact={compact} className="flex">
+            <Chevron size={14} className="shrink-0 opacity-70" />
+          </NavbarLabel>
+        </DropdownMenu.Trigger>,
+      )}
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="start"

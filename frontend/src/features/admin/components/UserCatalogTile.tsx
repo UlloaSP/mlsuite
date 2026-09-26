@@ -32,7 +32,7 @@ export function UserCatalogTile({
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <article className="grid gap-5 rounded border border-line bg-surface p-4 md:grid-cols-[minmax(0,1fr)_auto]">
+    <article className="grid gap-5 rounded-card border border-line bg-surface p-4 md:grid-cols-[minmax(0,1fr)_auto]">
       <div className="flex min-w-0 items-start gap-3">
         {item.avatarUrl ? (
           <img

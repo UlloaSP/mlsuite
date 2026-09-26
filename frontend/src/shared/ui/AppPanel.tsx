@@ -17,9 +17,9 @@ export function AppPanel({
       className={cx(
         "text-fg",
         variant === "panel"
-          ? "rounded border border-line bg-surface-subtle p-5 shadow-card"
+          ? "rounded-card border border-line bg-surface-subtle p-5 shadow-card"
           : variant === "catalog"
-            ? "rounded border border-line bg-surface p-4"
+            ? "rounded-card border border-line bg-surface p-4"
             : "bg-transparent",
         className,
       )}

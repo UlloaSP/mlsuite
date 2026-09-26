@@ -38,14 +38,14 @@ export function SchemaSnapshotPreviewPanel({ version }: Props) {
             ["Reports", reportCount],
             ["Bindings", version.bindings.length],
           ].map(([label, value]) => (
-            <div key={label} className="rounded bg-surface-muted px-3 py-2">
+            <div key={label} className="rounded-control bg-surface-muted px-3 py-2">
               <p className="text-lg font-semibold leading-5 text-fg">{value}</p>
               <p className="text-3xs uppercase tracking-[0.14em] text-fg-secondary">{label}</p>
             </div>
           ))}
         </div>
         <div
-          className="inline-flex overflow-hidden rounded border border-line bg-surface p-1 shadow-card lg:justify-self-end"
+          className="inline-flex overflow-hidden rounded-control border border-line bg-surface p-1 shadow-card lg:justify-self-end"
           role="group"
           aria-label="Snapshot preview mode"
         >

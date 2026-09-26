@@ -50,13 +50,13 @@ test.each([0, 2])(
         />,
       ),
     );
-    const button = [...container.querySelectorAll("button")].find(
+    const button = [...document.body.querySelectorAll("button")].find(
       (button) => button.textContent === "Delete",
     )!;
     expect(button.disabled).toBe(userCount > 0);
     await act(async () => button.click());
     expect(onDelete).toHaveBeenCalledTimes(userCount > 0 ? 0 : 1);
-    expect(container.textContent?.includes("Assign these users to another role")).toBe(
+    expect(document.body.textContent?.includes("Assign these users to another role")).toBe(
       userCount > 0,
     );
   },

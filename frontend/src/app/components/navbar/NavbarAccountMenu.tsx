@@ -8,6 +8,7 @@ import { useLocation } from "react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { usePendingInvitations } from "@/features/workspace/api/workspace.queries";
 import { cx } from "@/shared/ui/cx";
+import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { AccountAvatar } from "@/app/components/AccountAvatar";
 import { AccountMenuContent } from "@/app/components/AccountMenuContent";
@@ -27,22 +28,23 @@ export function NavbarAccountMenu({ menuSide }: { menuSide: "top" | "bottom" }) 
 
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger
-        data-user-guide-item="user-menu"
-        title={displayName}
-        aria-label={`Account: ${displayName}`}
-        className={cx(
-          "grid size-10 shrink-0 place-items-center rounded-xl transition",
-          isAccountPath(location.pathname) ? "bg-accent-subtle" : "hover:bg-surface-hover",
-          FOCUS_RING,
-        )}
-      >
-        <AccountAvatar
-          displayName={displayName}
-          notificationCount={notifications.length}
-          user={user}
-        />
-      </DropdownMenu.Trigger>
+      <AppTooltip label={displayName} side={menuSide}>
+        <DropdownMenu.Trigger
+          data-user-guide-item="user-menu"
+          aria-label={`Account: ${displayName}`}
+          className={cx(
+            "grid size-10 shrink-0 place-items-center rounded-xl transition",
+            isAccountPath(location.pathname) ? "bg-accent-subtle" : "hover:bg-surface-hover",
+            FOCUS_RING,
+          )}
+        >
+          <AccountAvatar
+            displayName={displayName}
+            notificationCount={notifications.length}
+            user={user}
+          />
+        </DropdownMenu.Trigger>
+      </AppTooltip>
       <AccountMenuContent
         align="end"
         side={menuSide}

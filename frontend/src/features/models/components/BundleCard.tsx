@@ -10,6 +10,7 @@ import { cx } from "@/shared/ui/cx";
 import type { Bundle } from "@/features/models/lib/bundle-types";
 import { MODEL_EXT_LABEL } from "@/features/models/lib/bundle-utils";
 import { BundleFilePill } from "./BundleFilePill";
+import { AppButton } from "@/shared/ui/AppButton";
 
 type Props = {
   bundle: Bundle;
@@ -147,34 +148,19 @@ export function BundleCard({
                 Saved
               </span>
             ) : (
-              <button
-                type="button"
-                disabled={!isSaveable}
-                onClick={onSave}
-                className={cx(
-                  "inline-flex items-center gap-1.5 rounded-lg border-none px-3.5 py-[7px] text-xs font-bold text-on-accent transition-all duration-150",
-                  isSaveable
-                    ? "cursor-pointer bg-accent hover:-translate-y-px hover:bg-accent-hover"
-                    : "cursor-not-allowed bg-accent opacity-40",
-                )}
-              >
+              <AppButton size="sm" disabled={!isSaveable} onClick={onSave}>
                 {bundle.saving ? (
                   <RefreshCcw size={11} className="animate-spin" />
                 ) : (
                   <Save size={11} />
                 )}
-                {bundle.saving ? "…" : "Save"}
-              </button>
+                {bundle.saving ? "Saving…" : "Save"}
+              </AppButton>
             )}
 
-            <button
-              type="button"
-              onClick={onRemove}
-              aria-label="Remove bundle"
-              className="inline-flex flex-shrink-0 cursor-pointer items-center justify-center rounded-md border border-line bg-surface px-2.5 py-[7px] text-xs font-bold text-fg-muted transition-all duration-150 hover:border-accent hover:bg-accent-subtle hover:text-accent"
-            >
-              Clear
-            </button>
+            <AppButton size="sm" variant="secondary" className="shrink-0" onClick={onRemove}>
+              Remove
+            </AppButton>
           </div>
         </div>
       </div>

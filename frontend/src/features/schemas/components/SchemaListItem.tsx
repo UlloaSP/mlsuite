@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { BrainCircuit, CalendarDays, FileJson, Rows3, ScrollText } from "lucide-react";
+import { CalendarDays, FileJson, Rows3, ScrollText } from "lucide-react";
+import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import { modifierName } from "@/shared/lib/relative-time";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
@@ -18,7 +19,7 @@ type SchemaListItemProps = {
 };
 
 const metrics = [
-  { key: "modelCount", label: "Models", icon: BrainCircuit },
+  { key: "modelCount", label: "Models", icon: SECTION_ICONS.models },
   { key: "fieldCount", label: "Fields", icon: Rows3 },
   { key: "reportCount", label: "Reports", icon: ScrollText },
 ] as const;
@@ -32,7 +33,7 @@ export function SchemaListItem({
 }: SchemaListItemProps) {
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
   return (
-    <article className="group grid gap-4 rounded border border-line bg-surface p-4 transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_minmax(300px,auto)_auto]">
+    <article className="group grid gap-4 rounded-card border border-line bg-surface p-4 transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_minmax(300px,auto)_auto]">
       <button
         type="button"
         onClick={onOpen}
@@ -73,7 +74,7 @@ export function SchemaListItem({
           {metrics.map((metric) => {
             const Icon = metric.icon;
             return (
-              <div key={metric.key} className="rounded bg-surface-subtle px-3 py-2">
+              <div key={metric.key} className="rounded-control bg-surface-subtle px-3 py-2">
                 <div className="flex items-center gap-2 text-xs font-semibold text-fg-secondary">
                   <Icon size={14} />
                   {metric.label}

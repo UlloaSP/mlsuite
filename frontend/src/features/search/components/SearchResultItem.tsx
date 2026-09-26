@@ -1,23 +1,16 @@
-import {
-  Bookmark,
-  Building2,
-  Boxes,
-  BrainCircuit,
-  FileJson2,
-  History,
-  PlayCircle,
-} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { Link } from "react-router";
 import type { SearchResult, SearchResultType } from "@/features/search/api/search.types";
 
-const icons: Record<SearchResultType, typeof Building2> = {
-  organization: Building2,
-  model: BrainCircuit,
-  schema: FileJson2,
-  snapshot: History,
-  bookmark: Bookmark,
-  predictionRun: PlayCircle,
-  plugin: Boxes,
+const icons: Record<SearchResultType, LucideIcon> = {
+  organization: SECTION_ICONS.organizations,
+  model: SECTION_ICONS.models,
+  schema: SECTION_ICONS.schemas,
+  snapshot: SECTION_ICONS.snapshots,
+  bookmark: SECTION_ICONS.bookmarks,
+  predictionRun: SECTION_ICONS.inferences,
+  plugin: SECTION_ICONS.plugins,
 };
 
 export function SearchResultItem({

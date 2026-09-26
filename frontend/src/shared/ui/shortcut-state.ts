@@ -157,3 +157,28 @@ export const shortcutToAria = (binding: ShortcutBinding) => {
     .join("+");
   return binding.mod ? `Control+${suffix} Meta+${suffix}` : suffix;
 };
+
+const ARIA_KEY_LABELS: Record<string, string> = {
+  Control: "Ctrl",
+  Meta: "⌘",
+  Alt: "Alt",
+  Shift: "Shift",
+};
+
+/**
+ * Display keys for an `aria-keyshortcuts` value ("Control+K Meta+K", "Alt+2"),
+ * picking the platform's alternative so custom bindings read naturally.
+ */
+export const ariaShortcutLabels = (
+  ariaShortcuts: string | null | undefined,
+  isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.platform),
+): string[] => {
+  if (!ariaShortcuts) return [];
+  const alternatives = ariaShortcuts.split(" ");
+  const chosen =
+    alternatives.find((shortcut) => shortcut.startsWith(isMac ? "Meta+" : "Control+")) ??
+    alternatives[0];
+  return chosen
+    .split("+")
+    .map((key) => (isMac && key === "Alt" ? "⌥" : (ARIA_KEY_LABELS[key] ?? key)));
+};

@@ -18,7 +18,7 @@ export function AppTextField({
   return (
     <label
       className={cx(
-        "inline-flex items-center gap-3 rounded border border-line bg-surface px-4 py-3 text-sm text-fg-secondary",
+        "inline-flex items-center gap-3 rounded-control border border-line bg-surface px-4 py-3 text-sm text-fg-secondary",
         className,
       )}
     >

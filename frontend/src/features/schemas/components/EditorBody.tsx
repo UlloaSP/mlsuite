@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom, useAtomValue } from "jotai";
 import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
-import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { typographyAtom } from "@/shared/ui/typography-state";
 import {
   getCustomFieldDefinitions,
@@ -31,7 +30,10 @@ import {
 } from "@/features/schemas/lib/schema-diagnostics";
 import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/features/schemas/lib/editor-atoms";
-import { defineEditorThemes, setEditorTheme } from "@/capabilities/editor/configure-editor-theme";
+import {
+  applyEditorTheme,
+  useEditorAppearance,
+} from "@/capabilities/editor/configure-editor-theme";
 import { editorOptionsFor } from "@/capabilities/editor/editor-options";
 import type {
   MonacoEditorInstance,
@@ -47,7 +49,7 @@ export function EditorBody() {
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [, setSchema] = useAtom(schemaAtom);
   const [, setSchemaErrors] = useAtom(schemaErrorsAtom);
-  const [theme] = useAtom(themeWithHtmlAtom);
+  const appearance = useEditorAppearance();
   const typography = useAtomValue(typographyAtom);
   const pluginSourcesQuery = usePluginRuntimeSourcesQuery(organizationId);
 
@@ -178,8 +180,7 @@ export function EditorBody() {
     editorRef.current = editor;
     monacoRef.current = monacoNs;
 
-    defineEditorThemes(monacoNs);
-    setEditorTheme(monacoNs, theme === "dark");
+    applyEditorTheme(monacoNs, appearance.dark);
 
     applyCompatValidation(
       editor.getValue(),
@@ -277,11 +278,10 @@ export function EditorBody() {
     };
   }, [applyCompatValidation, organizationId, pluginSourcesQuery.data, pluginSourcesQuery.error]);
 
+  // Tokens change with mode, palette, and contrast; rebuild the theme from them.
   useEffect(() => {
-    if (monacoRef.current) {
-      setEditorTheme(monacoRef.current, theme === "dark");
-    }
-  }, [theme]);
+    if (monacoRef.current) applyEditorTheme(monacoRef.current, appearance.dark);
+  }, [appearance.key, appearance.dark]);
 
   return (
     <Suspense fallback={<div className="h-full w-full bg-surface" />}>

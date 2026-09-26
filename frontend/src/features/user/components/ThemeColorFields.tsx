@@ -35,7 +35,7 @@ export function ThemeColorFields({
               type="color"
               value={/^#[0-9a-f]{6}$/i.test(palette[key]) ? palette[key] : "#000000"}
               onChange={(event) => onChange({ ...palette, [key]: event.target.value })}
-              className="size-10 shrink-0 rounded border border-line bg-surface p-1"
+              className="size-10 shrink-0 rounded-control border border-line bg-surface p-1"
             />
             <AppTextField
               aria-label={`${mode} ${label}`}

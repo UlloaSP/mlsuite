@@ -36,12 +36,12 @@ export function InferenceActionsMenu({
           align="end"
           sideOffset={8}
           onClick={(event) => event.stopPropagation()}
-          className="z-(--z-popover) min-w-44 rounded border border-line bg-surface p-2 shadow-hover"
+          className="z-(--z-popover) min-w-44 rounded-menu border border-line bg-surface p-2 shadow-hover"
         >
           {canManageReviews ? (
             <DropdownMenu.Item
               onSelect={onReviewStatus}
-              className="flex cursor-pointer items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-fg outline-none hover:bg-surface-muted focus:bg-surface-muted"
+              className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium text-fg outline-none hover:bg-surface-muted focus:bg-surface-muted"
             >
               <ClipboardCheck size={15} />
               Review status
@@ -50,7 +50,7 @@ export function InferenceActionsMenu({
           {canDelete ? (
             <DropdownMenu.Item
               onSelect={onDelete}
-              className="flex cursor-pointer items-center gap-3 rounded px-3 py-2.5 text-sm font-medium text-danger-fg outline-none hover:bg-danger-subtle focus:bg-danger-subtle"
+              className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium text-danger-fg outline-none hover:bg-danger-subtle focus:bg-danger-subtle"
             >
               <Trash2 size={15} />
               Delete

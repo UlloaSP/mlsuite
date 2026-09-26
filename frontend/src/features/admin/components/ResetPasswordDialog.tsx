@@ -1,11 +1,9 @@
-import { Eye, EyeOff, KeyRound, X } from "lucide-react";
+import { Eye, EyeOff, KeyRound } from "lucide-react";
 import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppIconButton } from "@/shared/ui/AppIconButton";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import { AppCopy } from "@/shared/ui/AppCopy";
-import { AppPanel } from "@/shared/ui/AppPanel";
-import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 
 export function ResetPasswordDialog({
   fullName,
@@ -23,53 +21,55 @@ export function ResetPasswordDialog({
   const canSubmit = password.length >= 10 && !isPending;
 
   return (
-    <div className="fixed inset-0 z-(--z-overlay) grid place-items-center overflow-y-auto bg-overlay p-4">
-      <AppPanel className="w-full max-w-[460px] rounded-3xl bg-surface p-0">
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-          <div className="min-w-0">
-            <AppSectionTitle>Reset Password</AppSectionTitle>
-            <AppCopy className="mt-1 leading-6">{fullName}</AppCopy>
-          </div>
-          <AppIconButton type="button" aria-label="Close reset password dialog" onClick={onClose}>
-            <X size={18} />
+    <AppDialog
+      open
+      size="md"
+      busy={isPending}
+      onClose={onClose}
+      title="Reset password"
+      description={fullName}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (canSubmit) onSubmit(password);
+      }}
+      footer={
+        <>
+          <AppButton type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </AppButton>
+          <AppButton type="submit" disabled={!canSubmit}>
+            <KeyRound size={16} /> Reset
+          </AppButton>
+        </>
+      }
+    >
+      <div className="grid gap-2">
+        <label htmlFor="reset-password" className="text-sm font-semibold text-fg-secondary">
+          New password
+        </label>
+        <div className="flex items-center gap-2">
+          <AppTextField
+            id="reset-password"
+            required
+            autoFocus
+            type={visible ? "text" : "password"}
+            minLength={10}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Minimum 10 characters"
+            className="min-w-0 flex-1"
+            aria-label="New password"
+          />
+          <AppIconButton
+            type="button"
+            aria-label={visible ? "Hide password" : "Show password"}
+            onClick={() => setVisible((current) => !current)}
+            className="shrink-0 border-line bg-surface"
+          >
+            {visible ? <EyeOff size={18} /> : <Eye size={18} />}
           </AppIconButton>
         </div>
-        <div className="grid gap-4 p-5">
-          <div className="grid gap-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-secondary">
-              New password
-            </span>
-            <div className="flex items-center gap-2">
-              <AppTextField
-                required
-                type={visible ? "text" : "password"}
-                minLength={10}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Minimum 10 characters"
-                className="min-w-0 flex-1"
-                aria-label="New password"
-              />
-              <AppIconButton
-                type="button"
-                aria-label={visible ? "Hide password" : "Show password"}
-                onClick={() => setVisible((current) => !current)}
-                className="shrink-0 border-line bg-surface"
-              >
-                {visible ? <EyeOff size={18} /> : <Eye size={18} />}
-              </AppIconButton>
-            </div>
-          </div>
-          <div className="flex flex-wrap justify-end gap-3">
-            <AppButton type="button" variant="secondary" onClick={onClose}>
-              Cancel
-            </AppButton>
-            <AppButton type="button" disabled={!canSubmit} onClick={() => onSubmit(password)}>
-              <KeyRound size={16} /> Reset
-            </AppButton>
-          </div>
-        </div>
-      </AppPanel>
-    </div>
+      </div>
+    </AppDialog>
   );
 }

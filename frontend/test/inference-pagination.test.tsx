@@ -218,7 +218,7 @@ test("renders inference and history as individual keyboard-focusable catalog ent
   );
   expect(host.querySelectorAll("article")).toHaveLength(2);
   expect(host.querySelector("table")).toBeNull();
-  expect(host.textContent).toContain("PARTIAL SUCCESS");
+  expect(host.textContent).toContain("Partial success");
   expect(host.textContent).toContain("By Ada Lovelace");
   expect(host.textContent).toContain("By Unknown author");
   expect(host.textContent).toContain("Not configured");

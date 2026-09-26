@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "./cx";
 
 const TONES = {
@@ -12,6 +12,17 @@ const TONES = {
   success: "border-transparent bg-success-subtle text-success-fg",
   warning: "border-transparent bg-warning-subtle text-warning-fg",
   danger: "border-transparent bg-danger-subtle text-danger-fg",
+  info: "border-transparent bg-info-subtle text-info-fg",
+};
+
+// Enum values from the API ("PARTIAL_SUCCESS", "OWNER") read as sentence case.
+// Short all-caps words (CPU, API) are left alone as likely acronyms.
+const ENUM_VALUE = /^[A-Z][A-Z0-9]*(?:[_ ][A-Z0-9]+)*$/;
+
+export const badgeLabel = (value: ReactNode): ReactNode => {
+  if (typeof value !== "string" || !ENUM_VALUE.test(value) || value.length < 4) return value;
+  const words = value.toLowerCase().replaceAll("_", " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
 export function AppBadge({
@@ -19,17 +30,17 @@ export function AppBadge({
   tone = "neutral",
   className,
 }: HTMLAttributes<HTMLSpanElement> & {
-  tone?: "neutral" | "accent" | "success" | "warning" | "danger";
+  tone?: keyof typeof TONES;
 }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em]",
+        "inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium",
         TONES[tone],
         className,
       )}
     >
-      {children}
+      {badgeLabel(children)}
     </span>
   );
 }

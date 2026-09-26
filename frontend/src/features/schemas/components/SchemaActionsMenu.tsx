@@ -56,7 +56,7 @@ export function SchemaActionsMenu({
         <Ellipsis size={18} />
       </AppIconButton>
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded border border-line bg-surface p-2 shadow-hover">
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded-menu border border-line bg-surface p-2 shadow-hover">
           {ACTIONS.reduce<React.JSX.Element[]>((items, action) => {
             if (action.value === "archive" && archived) return items;
             if (!(action.value === "delete" ? canDelete : canEdit)) return items;
@@ -71,7 +71,7 @@ export function SchemaActionsMenu({
                   setOpen(false);
                 }}
                 className={cx(
-                  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium transition",
+                  "flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left text-sm font-medium transition",
                   action.value === "delete"
                     ? "text-danger-fg hover:bg-danger-subtle"
                     : "text-fg hover:bg-surface-muted",

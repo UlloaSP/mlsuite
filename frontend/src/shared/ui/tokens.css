@@ -134,6 +134,13 @@ needs a hand-picked value per theme and mode.
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
 
+  /* Radius by role. Pick the role, not a size: controls (buttons, fields, menu
+     items), menus and popovers, cards and panels, dialogs and sheets. */
+  --radius-control: 0.5rem;
+  --radius-menu: 0.75rem;
+  --radius-card: 0.75rem;
+  --radius-dialog: 1rem;
+
   --shadow-card: var(--theme-shadow-card);
   --shadow-hover: var(--theme-shadow-hover);
   --shadow-overlay: 0 16px 40px color-mix(in oklch, var(--theme-text-primary) 18%, transparent);

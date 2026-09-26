@@ -87,7 +87,7 @@ export function SettingsKeybindingsSection() {
             </div>
             <button
               type="button"
-              className="min-w-36 rounded border border-line bg-surface-subtle px-3 py-2 text-sm text-fg transition hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="min-w-36 rounded-control border border-line bg-surface-subtle px-3 py-2 text-sm text-fg transition hover:border-line-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               aria-label={`Change ${action.label} shortcut`}
               onClick={() => {
                 setRecording(action.id);

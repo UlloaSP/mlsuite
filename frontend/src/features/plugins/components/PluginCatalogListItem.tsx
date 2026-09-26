@@ -35,14 +35,12 @@ export function PluginCatalogListItem({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.28 }}
-      className="grid gap-3 rounded border border-line bg-surface px-4 py-3 transition lg:grid-cols-[minmax(260px,1fr)_auto]"
+      className="grid gap-3 rounded-card border border-line bg-surface px-4 py-3 transition lg:grid-cols-[minmax(260px,1fr)_auto]"
     >
       <div className="min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-base font-semibold text-fg">{displayName}</p>
-          <AppBadge tone={meta.tone} className="px-2.5 py-1 text-2xs">
-            {meta.label}
-          </AppBadge>
+          <AppBadge tone={meta.tone}>{meta.label}</AppBadge>
         </div>
 
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-5 text-fg-secondary">

@@ -11,7 +11,5 @@ const tone = {
 } as const;
 
 export function StatusBadge({ value }: { value: keyof typeof tone | string }) {
-  return (
-    <AppBadge tone={tone[value as keyof typeof tone] ?? "neutral"}>{value.toLowerCase()}</AppBadge>
-  );
+  return <AppBadge tone={tone[value as keyof typeof tone] ?? "neutral"}>{value}</AppBadge>;
 }

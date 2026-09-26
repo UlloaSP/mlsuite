@@ -36,7 +36,7 @@ export function AppChoiceCard({
         value={value}
         onChange={onChange}
       />
-      <span className="flex h-full min-h-32 flex-col rounded-2xl border border-line bg-surface-subtle p-3 transition duration-200 group-hover:border-line-strong group-hover:bg-surface peer-checked:border-accent peer-checked:ring-1 peer-checked:ring-accent peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface">
+      <span className="flex h-full min-h-32 flex-col rounded-card border border-line bg-surface-subtle p-3 transition duration-200 group-hover:border-line-strong group-hover:bg-surface peer-checked:border-accent peer-checked:ring-1 peer-checked:ring-accent peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface">
         <span className="flex min-h-0 flex-1 items-center justify-center">{children}</span>
         <span className="mt-3 flex items-center justify-between gap-3 px-1">
           <span className="text-sm font-semibold text-fg">{label}</span>

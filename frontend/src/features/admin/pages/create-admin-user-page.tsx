@@ -96,7 +96,7 @@ export function CreateAdminUserPage() {
                 type="button"
                 aria-label={visible ? "Hide password" : "Show password"}
                 onClick={() => setVisible((current) => !current)}
-                className="shrink-0 rounded border border-line bg-surface"
+                className="shrink-0 rounded-card border border-line bg-surface"
               >
                 {visible ? <EyeOff size={18} /> : <Eye size={18} />}
               </AppIconButton>

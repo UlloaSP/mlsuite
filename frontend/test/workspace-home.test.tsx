@@ -8,8 +8,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { WorkspaceHomePage } from "@/features/workspace/pages/workspace-home-page";
+import { OrganizationAdminPage } from "@/features/workspace/pages/organization-admin-page";
 
 const hooks = vi.hoisted(() => ({
   useWorkspaceContext: vi.fn(),
@@ -174,5 +175,44 @@ describe("workspace overview", () => {
     expect(container.textContent).not.toContain("Latest invitations");
     expect(container.querySelector('a[href="/plugins"]')).toBeNull();
     expect(container.textContent).not.toContain("Settings");
+  });
+  test("shows another organization's counts without linking to the active one's pages", async () => {
+    hooks.useWorkspaceContext.mockReturnValue({ data: context() });
+    hooks.useOrganizationAdminDashboardQuery.mockReturnValue({
+      data: {
+        ...dashboard,
+        organization: { id: 9, name: "Globex", slug: "globex", description: null },
+        permissions: fullAccess,
+      },
+      isError: false,
+    });
+
+    const container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    await act(async () => {
+      root?.render(
+        <MemoryRouter initialEntries={["/workspace/organizations/9"]}>
+          <Routes>
+            <Route
+              path="/workspace/organizations/:organizationId"
+              element={<OrganizationAdminPage />}
+            />
+          </Routes>
+        </MemoryRouter>,
+      );
+    });
+
+    expect(hooks.useOrganizationAdminDashboardQuery).toHaveBeenCalledWith(9);
+    expect(container.querySelector("h1")?.textContent).toBe("Globex");
+    expect(stageCards(container).map(({ label, value, href }) => [label, value, href])).toEqual([
+      ["Models", "4", undefined],
+      ["Schemas", "0", undefined],
+      ["Inferences", (1500).toLocaleString(), undefined],
+      ["Reviews", "6", undefined],
+    ]);
+    expect(container.querySelector('a[href="/schemas/create"]')).toBeNull();
+    expect(container.querySelector('a[href="/plugins"]')).toBeNull();
+    expect(container.querySelector('a[href="/workspace/organizations/9/members"]')).not.toBeNull();
   });
 });

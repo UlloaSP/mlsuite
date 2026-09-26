@@ -107,6 +107,48 @@ button:not(:disabled),
   object-position: top left;
 }
 
+/* AppDialog: overlay fades, the panel rises slightly (a sheet slides in). */
+.app-dialog-overlay[data-state="open"] {
+  animation: app-dialog-fade var(--duration-fast) ease-out;
+}
+
+.app-dialog-overlay[data-state="closed"] {
+  animation: app-dialog-fade var(--duration-fast) ease-in reverse;
+}
+
+.app-dialog[data-state="open"] {
+  animation: app-dialog-in var(--duration-base) var(--ease-emphasized);
+}
+
+.app-dialog[data-state="closed"] {
+  animation: app-dialog-fade var(--duration-fast) ease-in reverse;
+}
+
+.app-dialog[data-variant="sheet"][data-state="open"] {
+  animation-name: app-sheet-in;
+}
+
+@keyframes app-dialog-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* transform, not translate: Tailwind centers the dialog with the translate property. */
+@keyframes app-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+@keyframes app-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
 @keyframes app-route-fade-out {
   from {
     opacity: 1;

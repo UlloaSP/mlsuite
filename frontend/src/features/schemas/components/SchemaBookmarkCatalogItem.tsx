@@ -16,7 +16,7 @@ type Props = {
 
 export function SchemaBookmarkCatalogItem({ bookmark, schemaId }: Props) {
   return (
-    <article className="grid gap-4 rounded border border-line bg-surface p-4 transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_auto]">
+    <article className="grid gap-4 rounded-card border border-line bg-surface p-4 transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_auto]">
       <Link
         to={`/schemas/${schemaId}/bookmarks/${bookmark.id}/runs/create`}
         className="min-w-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-focus"

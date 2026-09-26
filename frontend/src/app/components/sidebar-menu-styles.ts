@@ -22,7 +22,7 @@ export const sidebarMenuChevron = (collapsed: boolean) =>
 
 export const sidebarMenuContent = (collapsed: boolean) =>
   cx(
-    "z-(--z-popover) flex max-h-[var(--radix-dropdown-menu-content-available-height)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-xl border border-line bg-surface p-2 text-fg shadow-hover",
+    "z-(--z-popover) flex max-h-[var(--radix-dropdown-menu-content-available-height)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-menu border border-line bg-surface p-2 text-fg shadow-hover",
     collapsed ? "w-64" : "w-[var(--radix-dropdown-menu-trigger-width)]",
   );
 
@@ -32,6 +32,6 @@ export const SIDEBAR_MENU_LABEL =
 export const SIDEBAR_MENU_SEPARATOR = "my-2 h-px shrink-0 bg-line";
 
 export const SIDEBAR_MENU_ITEM = cx(
-  "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm outline-none hover:bg-surface-hover focus:bg-surface-hover focus-visible:ring-inset",
+  "flex cursor-pointer items-center gap-2.5 rounded-control px-3 text-sm outline-none hover:bg-surface-hover focus:bg-surface-hover focus-visible:ring-inset",
   FOCUS_RING,
 );

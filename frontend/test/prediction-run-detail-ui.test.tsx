@@ -155,7 +155,7 @@ describe("prediction run detail", () => {
       );
     });
 
-    expect(container.textContent).toContain("SUCCESS");
+    expect(container.textContent).toContain("Success");
     expect(container.textContent).toContain("Feedback pending");
     expect(container.textContent).toContain("Ward bookmark");
     expect(container.textContent).toContain("2 models");

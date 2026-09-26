@@ -11,7 +11,7 @@ type Props = {
 
 export function CatalogEntry({ title, description, metadata, details, actions, onOpen }: Props) {
   return (
-    <article className="flex shrink-0 items-center gap-3 rounded border border-line bg-surface p-4 transition hover:border-fg">
+    <article className="flex shrink-0 items-center gap-3 rounded-card border border-line bg-surface p-4 transition hover:border-fg">
       <button
         type="button"
         onClick={onOpen}

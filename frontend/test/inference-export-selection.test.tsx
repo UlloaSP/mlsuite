@@ -23,12 +23,6 @@ const items: InferenceExportCandidate[] = Array.from({ length: 15 }, (_, i) => (
 }));
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  HTMLDialogElement.prototype.showModal = function () {
-    this.open = true;
-  };
-  HTMLDialogElement.prototype.close = function () {
-    this.open = false;
-  };
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
@@ -53,7 +47,9 @@ async function render(busy = false, error = false, data = items) {
   );
 }
 function button(text: string) {
-  const found = [...host.querySelectorAll("button")].find((x) => x.textContent?.trim() === text);
+  const found = [...document.body.querySelectorAll("button")].find(
+    (x) => x.textContent?.trim() === text,
+  );
   expect(found).toBeDefined();
   return found!;
 }
@@ -62,12 +58,12 @@ async function click(text: string) {
 }
 test("opens selection dialog with snapshot/bookmark and paginates before preparing", async () => {
   await render();
-  expect(host.querySelector("dialog")?.open).toBe(true);
-  expect(host.querySelector('[aria-label="Bookmark"]')).not.toBeNull();
-  expect(host.textContent).toContain("14 of 14 selected");
+  expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+  expect(document.body.querySelector('[aria-label="Bookmark"]')).not.toBeNull();
+  expect(document.body.textContent).toContain("14 of 14 selected");
   expect(proceed).not.toHaveBeenCalled();
   await click("Next");
-  expect(host.textContent).toContain("Run 7");
+  expect(document.body.textContent).toContain("Run 7");
   await click("Continue");
   expect(proceed).toHaveBeenCalledWith({
     versionId: "7",
@@ -78,21 +74,23 @@ test("exports only explicitly selected inferences and disables empty selection",
   await render();
   await click("Clear");
   expect(button("Continue").disabled).toBe(true);
-  const row = [...host.querySelectorAll("button")].find((x) => x.textContent?.includes("Run 1"))!;
+  const row = [...document.body.querySelectorAll("button")].find((x) =>
+    x.textContent?.includes("Run 1"),
+  )!;
   await act(async () => row.click());
   await click("Continue");
   expect(proceed).toHaveBeenCalledWith({ versionId: "7", runIds: ["1"] });
 });
 test("busy preparation locks selection but allows cancellation", async () => {
   await render(true);
-  expect(host.querySelector("fieldset")?.disabled).toBe(true);
+  expect(document.body.querySelector("fieldset")?.disabled).toBe(true);
   expect(button("Preparing export...").disabled).toBe(true);
   await click("Cancel");
   expect(close).toHaveBeenCalledOnce();
 });
 test("preparation failure is visible and retryable", async () => {
   await render(false, true);
-  expect(host.querySelector('[role="alert"]')?.textContent).toBe(
+  expect(document.body.querySelector('[role="alert"]')?.textContent).toBe(
     "Could not prepare inference export.",
   );
   await click("Retry");

@@ -54,7 +54,7 @@ export function UserActionsMenu({
         <Ellipsis size={16} />
       </AppIconButton>
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[190px] rounded border border-line bg-surface p-2 shadow-hover">
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[190px] rounded-menu border border-line bg-surface p-2 shadow-hover">
           {items.map((item) => {
             const Icon = item.icon;
             return (
@@ -62,7 +62,7 @@ export function UserActionsMenu({
                 key={item.label}
                 type="button"
                 className={cx(
-                  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium hover:bg-surface-muted",
+                  "flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left text-sm font-medium hover:bg-surface-muted",
                   item.danger && "text-danger-fg hover:bg-danger-subtle",
                 )}
                 onClick={() => {

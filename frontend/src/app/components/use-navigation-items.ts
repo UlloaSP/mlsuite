@@ -3,18 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import {
-  Blocks,
-  BrainCircuit,
-  Building2,
-  ClipboardList,
-  MessageSquareText,
-  ServerCog,
-  ShieldCheck,
-} from "lucide-react";
 import { useLocation } from "react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
 import { INFRA_CHILDREN, type NavigationItem } from "./sidebar-navigation-support";
 
@@ -34,7 +26,7 @@ export function useNavigationItems() {
       ? [
           {
             to: "/workspace/organizations",
-            icon: Building2,
+            icon: SECTION_ICONS.organizations,
             label: "Organizations",
             activeWhen: (pathname: string) =>
               pathname === "/workspace/organizations" ||
@@ -47,30 +39,34 @@ export function useNavigationItems() {
           },
         ]
       : []),
-    ...(permissions?.canViewModels ? [{ to: "/models", icon: BrainCircuit, label: "Models" }] : []),
+    ...(permissions?.canViewModels
+      ? [{ to: "/models", icon: SECTION_ICONS.models, label: "Models" }]
+      : []),
     ...(permissions?.canViewModels
       ? [
           {
             to: activeSchemaPath ?? "/schemas",
-            icon: ClipboardList,
+            icon: SECTION_ICONS.schemas,
             label: "Schemas",
             children: getSchemaNavigationChildren(activeSchemaPath),
           },
         ]
       : []),
     ...(permissions?.canViewModels
-      ? [{ to: "/inferences", icon: BrainCircuit, label: "Inferences" }]
+      ? [{ to: "/inferences", icon: SECTION_ICONS.inferences, label: "Inferences" }]
       : []),
-    ...(permissions?.canViewPlugins ? [{ to: "/plugins", icon: Blocks, label: "Plugins" }] : []),
+    ...(permissions?.canViewPlugins
+      ? [{ to: "/plugins", icon: SECTION_ICONS.plugins, label: "Plugins" }]
+      : []),
     ...(permissions?.canReview || permissions?.canManageReviews
-      ? [{ to: "/review", icon: MessageSquareText, label: "Review" }]
+      ? [{ to: "/review", icon: SECTION_ICONS.reviews, label: "Review" }]
       : []),
     ...(user?.systemRole === "SUPERADMIN"
       ? [
-          { to: "/admin/users", icon: ShieldCheck, label: "Users" },
+          { to: "/admin/users", icon: SECTION_ICONS.users, label: "Users" },
           {
             to: "/admin/infrastructure",
-            icon: ServerCog,
+            icon: SECTION_ICONS.infrastructure,
             label: "Infra",
             children: INFRA_CHILDREN,
           },

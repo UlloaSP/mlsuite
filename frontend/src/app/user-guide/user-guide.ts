@@ -1,5 +1,6 @@
 import type { Driver, DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
+import { ariaShortcutLabels } from "@/shared/ui/shortcut-state";
 import "./user-guide.css";
 import {
   CLOSING_STEP,
@@ -16,24 +17,10 @@ type StartUserGuideOptions = {
 let activeGuide: Driver | null = null;
 let startVersion = 0;
 
-const isMac = () => typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
-const KEY_LABELS: Record<string, string> = {
-  Control: "Ctrl",
-  Meta: "⌘",
-  Alt: "Alt",
-  Shift: "Shift",
-};
-
 /** Renders an element's own aria-keyshortcuts, so customized bindings show up in the tour. */
-export function shortcutMarkup(ariaShortcuts: string | null, mac = isMac()): string {
-  if (!ariaShortcuts) return "";
-  const alternatives = ariaShortcuts.split(" ");
-  const chosen =
-    alternatives.find((shortcut) => shortcut.startsWith(mac ? "Meta+" : "Control+")) ??
-    alternatives[0];
-  const keys = chosen
-    .split("+")
-    .map((key) => (mac && key === "Alt" ? "⌥" : (KEY_LABELS[key] ?? key)));
+export function shortcutMarkup(ariaShortcuts: string | null, mac?: boolean): string {
+  const keys = ariaShortcutLabels(ariaShortcuts, mac);
+  if (keys.length === 0) return "";
   return `<span class="mlsuite-guide-shortcut">${keys.map((key) => `<kbd>${key}</kbd>`).join("")}</span>`;
 }
 

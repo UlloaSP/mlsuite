@@ -238,9 +238,7 @@ export function TerminalView({
               {selectedService ?? "terminal"} &middot; /
             </p>
             <div className="flex items-center gap-2">
-              <AppBadge tone={toneForStatus(status)} className="px-2 py-0.5 text-3xs">
-                {status}
-              </AppBadge>
+              <AppBadge tone={toneForStatus(status)}>{status}</AppBadge>
             </div>
           </div>
           <div className="h-[480px] bg-code p-2">

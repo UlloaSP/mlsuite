@@ -17,7 +17,12 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
   const empty = stage.count === 0;
 
   return (
-    <article className="group relative flex min-h-44 flex-col rounded-xl border border-line bg-surface p-5 transition hover:border-line-strong hover:bg-surface-hover">
+    <article
+      className={cx(
+        "group relative flex min-h-44 flex-col rounded-card border border-line bg-surface p-5 transition",
+        stage.to && "hover:border-line-strong hover:bg-surface-hover",
+      )}
+    >
       <div className="flex items-center justify-between text-fg-muted">
         <span className="grid size-9 place-items-center rounded-lg bg-accent-subtle text-accent-strong">
           <Icon size={17} />
@@ -27,13 +32,17 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
 
       <h3 className="mt-4 text-sm font-semibold text-fg">
         {/* The title link covers the card; the empty-state action sits above it. */}
-        <Link
-          to={stage.to}
-          viewTransition
-          className={cx("rounded after:absolute after:inset-0 after:rounded-xl", FOCUS_RING)}
-        >
-          {stage.label}
-        </Link>
+        {stage.to ? (
+          <Link
+            to={stage.to}
+            viewTransition
+            className={cx("rounded after:absolute after:inset-0 after:rounded-card", FOCUS_RING)}
+          >
+            {stage.label}
+          </Link>
+        ) : (
+          stage.label
+        )}
       </h3>
       <p
         className="mt-1 text-3xl font-semibold tracking-[-0.03em] text-fg tabular-nums"
@@ -65,12 +74,12 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
             {stage.emptyAction.label}
             <ArrowRight size={13} />
           </Link>
-        ) : (
+        ) : stage.to ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-muted transition group-hover:text-fg">
             Open {stage.label.toLowerCase()}
             <ArrowRight size={13} className="transition group-hover:translate-x-0.5" />
           </span>
-        )}
+        ) : null}
       </div>
     </article>
   );

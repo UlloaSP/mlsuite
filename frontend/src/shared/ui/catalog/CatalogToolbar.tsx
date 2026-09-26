@@ -75,7 +75,7 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
             aria-label={filterLabel}
             className={cx(
               segmented
-                ? "inline-flex w-fit rounded border border-line bg-surface p-1"
+                ? "inline-flex w-fit rounded-control border border-line bg-surface p-1"
                 : "flex w-fit gap-1",
             )}
           >
@@ -107,13 +107,13 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
 function getFilterClassName(segmented: boolean, active: boolean) {
   if (segmented) {
     return cx(
-      "cursor-pointer rounded px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
+      "cursor-pointer rounded-md px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
       active ? "bg-surface-subtle text-fg shadow-card" : "text-fg-secondary hover:text-fg",
     );
   }
 
   return cx(
-    "cursor-pointer rounded border px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
+    "cursor-pointer rounded-control border px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
     active
       ? "border-accent bg-accent-subtle text-accent-strong"
       : "border-line text-fg-secondary hover:border-line-strong hover:text-fg",

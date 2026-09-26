@@ -5,14 +5,13 @@ import { describe, expect, it } from "vite-plus/test";
 const root = new URL("../src", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const tokens = readFileSync(join(root, "shared/ui/tokens.css"), "utf8");
 
-// Theme editors and previews render arbitrary palette values; Monaco only accepts hex themes.
+// Theme editors and previews render arbitrary palette values.
 const COLOR_DATA_FILES = new Set([
   "shared/ui/theme-catalog.ts",
   "shared/ui/appearance-state.ts",
   "shared/ui/AppThemeSwatch.tsx",
   "features/user/components/ColorSchemePreview.tsx",
   "features/user/components/ThemeColorFields.tsx",
-  "capabilities/editor/editor-options.ts",
 ]);
 
 const sourceFiles = (directory: string): string[] =>

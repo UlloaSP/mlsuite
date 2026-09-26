@@ -181,9 +181,10 @@ test("permission search preserves the group and total", async () => {
 test("role fields have visible associated labels in vertical document order", async () => {
   await render();
   await click("Create Role");
-  expect(host.querySelector('label[for="role-name"]')?.textContent).toBe("Name");
-  expect(host.querySelector('label[for="role-description"]')?.textContent).toBe("Description");
-  const name = host.querySelector("#role-name")!;
-  const description = host.querySelector("#role-description")!;
+  // The form is a dialog, rendered in a portal on document.body.
+  expect(document.querySelector('label[for="role-name"]')?.textContent).toBe("Name");
+  expect(document.querySelector('label[for="role-description"]')?.textContent).toBe("Description");
+  const name = document.querySelector("#role-name")!;
+  const description = document.querySelector("#role-description")!;
   expect(name.compareDocumentPosition(description) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });

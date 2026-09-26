@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import type { SchemaAction } from "./SchemaActionsMenu";
@@ -46,31 +47,18 @@ export function SchemaActionDialog({ action, disabled, item, onCancel, onConfirm
   const meta = copy[action];
 
   return (
-    <div className="fixed inset-0 z-(--z-overlay) grid place-items-center bg-overlay p-4">
-      <form
-        className="w-full max-w-sm rounded border border-line bg-surface p-5 shadow-hover"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void onConfirm(needsName ? name.trim() : undefined);
-        }}
-      >
-        <h2 className="text-lg font-semibold text-fg">{meta.title}</h2>
-        <p className="mt-2 text-sm text-fg-secondary">{meta.description}</p>
-        {needsName ? (
-          <AppTextField
-            value={name}
-            autoFocus
-            required
-            placeholder="Schema name"
-            className="mt-4 w-full"
-            onChange={(event) => setName(event.target.value)}
-          />
-        ) : (
-          <p className="mt-4 rounded bg-surface-muted px-3 py-2 text-sm font-semibold text-fg">
-            {item.name}
-          </p>
-        )}
-        <div className="mt-5 flex justify-end gap-2">
+    <AppDialog
+      open
+      busy={disabled}
+      onClose={onCancel}
+      title={meta.title}
+      description={meta.description}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void onConfirm(needsName ? name.trim() : undefined);
+      }}
+      footer={
+        <>
           <AppButton type="button" variant="secondary" onClick={onCancel} disabled={disabled}>
             Cancel
           </AppButton>
@@ -81,8 +69,24 @@ export function SchemaActionDialog({ action, disabled, item, onCancel, onConfirm
           >
             {meta.submit}
           </AppButton>
-        </div>
-      </form>
-    </div>
+        </>
+      }
+    >
+      {needsName ? (
+        <AppTextField
+          value={name}
+          autoFocus
+          required
+          aria-label="Schema name"
+          placeholder="Schema name"
+          className="w-full"
+          onChange={(event) => setName(event.target.value)}
+        />
+      ) : (
+        <p className="rounded-control bg-surface-muted px-3 py-2 text-sm font-semibold text-fg">
+          {item.name}
+        </p>
+      )}
+    </AppDialog>
   );
 }

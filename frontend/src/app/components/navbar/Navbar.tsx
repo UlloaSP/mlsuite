@@ -8,9 +8,10 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { Link } from "react-router";
 import { useUserGuideLauncher } from "@/app/user-guide/use-user-guide-launcher";
 import { cx } from "@/shared/ui/cx";
+import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
-import { shortcutBindingsAtom, shortcutLabels, shortcutToAria } from "@/shared/ui/shortcut-state";
+import { shortcutBindingsAtom, shortcutToAria } from "@/shared/ui/shortcut-state";
 import { sidebarStyleAtom } from "@/shared/ui/sidebar-preferences";
 import { globalSearchOpenAtom } from "@/shared/ui/ui-state";
 import { useSidebar } from "@/app/components/app-sidebar/SidebarContext";
@@ -117,27 +118,29 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
       </nav>
 
       <div className="flex shrink-0 items-center gap-1">
-        <button
-          type="button"
-          data-user-guide-item="global-search"
-          aria-keyshortcuts={shortcutToAria(searchShortcut)}
-          aria-label="Global search"
-          title={`Global search (${shortcutLabels(searchShortcut).join(" ")})`}
-          className={TOOL_BUTTON}
-          onClick={() => setSearchOpen(true)}
-        >
-          <Search size={17} />
-        </button>
-        <button
-          type="button"
-          data-user-guide-item="user-guide"
-          aria-label="User guide"
-          title="User guide"
-          className={TOOL_BUTTON}
-          onClick={(event) => startGuide(event.currentTarget)}
-        >
-          <BookOpenText size={17} />
-        </button>
+        <AppTooltip label="Global search" shortcut={shortcutToAria(searchShortcut)} side={menuSide}>
+          <button
+            type="button"
+            data-user-guide-item="global-search"
+            aria-keyshortcuts={shortcutToAria(searchShortcut)}
+            aria-label="Global search"
+            className={TOOL_BUTTON}
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search size={17} />
+          </button>
+        </AppTooltip>
+        <AppTooltip label="User guide" side={menuSide}>
+          <button
+            type="button"
+            data-user-guide-item="user-guide"
+            aria-label="User guide"
+            className={TOOL_BUTTON}
+            onClick={(event) => startGuide(event.currentTarget)}
+          >
+            <BookOpenText size={17} />
+          </button>
+        </AppTooltip>
         <NavbarAccountMenu menuSide={menuSide} />
       </div>
     </header>
