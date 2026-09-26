@@ -184,7 +184,7 @@ describe("organization inference catalog", () => {
       "utf8",
     );
     const sidebar = readFileSync(
-      new URL("../src/app/components/SidebarNavigation.tsx", import.meta.url),
+      new URL("../src/app/components/use-navigation-items.ts", import.meta.url),
       "utf8",
     );
 

@@ -80,14 +80,28 @@ button:not(:disabled),
 }
 
 /* Sidebar side and style changes morph the shell (see layout-transition.ts). */
-::view-transition-group(app-layout-sidebar),
-::view-transition-group(app-layout-main) {
+::view-transition-group(app-layout-sidebar) {
   animation-duration: var(--duration-slow);
   animation-timing-function: var(--ease-emphasized);
 }
 
+/* Content cross-fades in place: sliding it along with the navigation reads as the
+   whole page moving. */
+::view-transition-group(app-layout-main) {
+  animation: none;
+}
+
 ::view-transition-old(app-layout-main),
 ::view-transition-new(app-layout-main) {
+  animation-duration: var(--duration-base);
+}
+
+/* Snapshots keep their real size: scaling them would stretch the text inside. */
+::view-transition-old(app-layout-sidebar),
+::view-transition-new(app-layout-sidebar),
+::view-transition-old(app-layout-main),
+::view-transition-new(app-layout-main) {
+  width: 100%;
   height: 100%;
   object-fit: none;
   object-position: top left;
@@ -123,6 +137,28 @@ button:not(:disabled),
   to {
     clip-path: circle(150vmax at 0 0);
   }
+}
+
+/* A floating navigation panel sits on the page itself, so a permanent scrollbar
+   beside it would draw the very edge floating removes. Content scrollbars stay
+   invisible until use-quiet-scrollbars.ts marks one as hovered or scrolling. */
+[data-navigation-style="floating"] .app-content-transition,
+[data-navigation-style="floating"] .app-content-transition * {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+[data-navigation-style="floating"] .app-content-transition[data-scrollbar-visible],
+[data-navigation-style="floating"] .app-content-transition [data-scrollbar-visible] {
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+/* Every page scrolls inside its own container. The document and the shell
+   wrappers use overflow: clip, not hidden: hidden boxes can still be scrolled by
+   the browser (keeping a focused control in view), which left page headers cut
+   off after a layout change. */
+html:has([data-navigation-position]) {
+  overflow: clip;
 }
 
 .app-scroll {

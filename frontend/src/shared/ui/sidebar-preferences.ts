@@ -5,8 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { atomWithStorage } from "jotai/utils";
 
+/** The edge a vertical sidebar occupies. */
 export type SidebarPosition = "left" | "right";
-/** Fixed spans the viewport edge; floating is an inset panel on the page background. */
+/** Where navigation lives: a vertical sidebar on either side, or a horizontal bar. */
+export type NavigationPosition = SidebarPosition | "top" | "bottom";
+/** Fixed spans the viewport edge; floating is an inset panel on the page background. Applies to every position. */
 export type SidebarStyle = "fixed" | "floating";
 
 /** Stores one of a fixed set of string choices, ignoring anything else found in storage. */
@@ -33,10 +36,14 @@ const choiceStorage = <T extends string>(choices: readonly T[]) => {
   };
 };
 
-export const sidebarPositionAtom = atomWithStorage<SidebarPosition>(
+export const isSidebarPosition = (position: NavigationPosition): position is SidebarPosition =>
+  position === "left" || position === "right";
+
+// Stored under the original key: saved left/right choices stay valid.
+export const navigationPositionAtom = atomWithStorage<NavigationPosition>(
   "ui/sidebar-position",
   "right",
-  choiceStorage<SidebarPosition>(["left", "right"]),
+  choiceStorage<NavigationPosition>(["left", "right", "top", "bottom"]),
   { getOnInit: true },
 );
 

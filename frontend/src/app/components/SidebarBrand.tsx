@@ -10,6 +10,7 @@ import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
 import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { shortcutBindingsAtom, shortcutToAria } from "@/shared/ui/shortcut-state";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarTrigger } from "./app-sidebar/SidebarTrigger";
 import { useSidebar } from "./app-sidebar/SidebarContext";
 
@@ -61,9 +62,9 @@ export function SidebarBrand({ side }: { side: SidebarPosition }) {
         )}
       >
         {logo}
-        <span aria-hidden="true" className="truncate">
+        <SidebarLabel aria-hidden="true" className="whitespace-nowrap">
           <MLSuiteWordmark />
-        </span>
+        </SidebarLabel>
       </Link>
       <SidebarTrigger
         {...toggleProps}

@@ -171,7 +171,14 @@ describe("personal settings", () => {
     act(() => floating.click());
     expect(floating.checked).toBe(true);
     expect(localStorage.getItem("ui/sidebar-style")).toBe('"floating"');
-    const fullscreen = container.querySelector<HTMLInputElement>('input[role="switch"]')!;
+    const collapse = [...container.querySelectorAll<HTMLInputElement>('input[role="switch"]')].find(
+      (input) => input.closest("label")?.textContent?.includes("Collapsed navigation"),
+    )!;
+    act(() => collapse.click());
+    expect(localStorage.getItem("ui/sidebar-collapsed")).toBe("true");
+    const fullscreen = [
+      ...container.querySelectorAll<HTMLInputElement>('input[role="switch"]'),
+    ].find((input) => input.closest("label")?.textContent?.includes("Fullscreen"))!;
     expect(fullscreen.disabled).toBe(true);
     expect(container.textContent).toContain(
       "This browser does not allow pages to enter fullscreen.",

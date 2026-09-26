@@ -23,7 +23,7 @@ export function Sidebar({ side }: { side: SidebarPosition }) {
       <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
         <SidebarHeader>
           <SidebarBrand side={side} />
-          <SidebarOrganizationHeader />
+          <SidebarOrganizationHeader side={side} />
         </SidebarHeader>
         <SidebarContent>
           <SidebarNavigation />
@@ -32,7 +32,7 @@ export function Sidebar({ side }: { side: SidebarPosition }) {
           <SidebarActions />
         </div>
         <SidebarFooter className="border-t border-line">
-          <SidebarUserFooter />
+          <SidebarUserFooter side={side} />
         </SidebarFooter>
       </div>
     </SidebarRoot>

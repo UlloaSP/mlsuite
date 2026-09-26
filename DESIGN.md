@@ -41,6 +41,7 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 ## Layout
 
 - Persistent navigation owns global and section navigation. Do not repeat it as local tabs.
+- Users choose where navigation lives (left or right sidebar, top or bottom bar) and whether it is fixed or floating. Pages must not assume a sidebar: size against their container, and when a viewport-based height is unavoidable subtract `--app-nav-block`, the space a bar takes.
 - Keep page headers separate from centered or width-constrained content.
 - Catalogs use consistent toolbar, list, empty, loading, error, pagination, and overflow-action placement.
 - Dense resources use full-width rows or cards. Tiles are for genuinely scannable, low-density content.

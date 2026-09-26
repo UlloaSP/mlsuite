@@ -22,6 +22,7 @@ export function animateLayoutChange(update: () => void) {
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   if (!transitionDocument.startViewTransition || reduceMotion) {
     update();
+    document.scrollingElement?.scrollTo(0, 0);
     return;
   }
 
@@ -32,10 +33,13 @@ export function animateLayoutChange(update: () => void) {
     element.style.viewTransitionName = name;
     return [{ element, previous }];
   });
-  const restore = () =>
+  const restore = () => {
     named.forEach(({ element, previous }) => {
       element.style.viewTransitionName = previous;
     });
+    // Reflowing the shell can nudge the document; it never scrolls on purpose.
+    document.scrollingElement?.scrollTo(0, 0);
+  };
 
   // The new snapshot is taken when the callback returns, so React must commit synchronously.
   const transition = transitionDocument.startViewTransition(() => flushSync(update));

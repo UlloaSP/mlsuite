@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/tes
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/app-sidebar/Sidebar";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
-import { sidebarPositionAtom, sidebarStyleAtom } from "@/shared/ui/sidebar-preferences";
+import { navigationPositionAtom, sidebarStyleAtom } from "@/shared/ui/sidebar-preferences";
 
 const matchMedia = (matches: boolean) =>
   vi.fn(() => ({
@@ -41,12 +41,16 @@ afterEach(() => {
 describe("sidebar preferences", () => {
   test("defaults to right and persists left", () => {
     const store = createStore();
-    const unsubscribe = store.sub(sidebarPositionAtom, () => undefined);
+    const unsubscribe = store.sub(navigationPositionAtom, () => undefined);
 
-    expect(store.get(sidebarPositionAtom)).toBe("right");
-    store.set(sidebarPositionAtom, "left");
-    expect(store.get(sidebarPositionAtom)).toBe("left");
+    expect(store.get(navigationPositionAtom)).toBe("right");
+    store.set(navigationPositionAtom, "left");
+    expect(store.get(navigationPositionAtom)).toBe("left");
     expect(localStorage.getItem("ui/sidebar-position")).toBe(JSON.stringify("left"));
+    store.set(navigationPositionAtom, "top");
+    expect(localStorage.getItem("ui/sidebar-position")).toBe(JSON.stringify("top"));
+    store.set(navigationPositionAtom, "bottom");
+    expect(store.get(navigationPositionAtom)).toBe("bottom");
 
     unsubscribe();
   });
@@ -54,9 +58,9 @@ describe("sidebar preferences", () => {
   test("falls back to right for an invalid stored value", () => {
     localStorage.setItem("ui/sidebar-position", JSON.stringify("center"));
     const store = createStore();
-    const unsubscribe = store.sub(sidebarPositionAtom, () => undefined);
+    const unsubscribe = store.sub(navigationPositionAtom, () => undefined);
 
-    expect(store.get(sidebarPositionAtom)).toBe("right");
+    expect(store.get(navigationPositionAtom)).toBe("right");
 
     unsubscribe();
   });

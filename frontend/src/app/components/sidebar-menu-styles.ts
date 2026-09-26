@@ -17,7 +17,7 @@ export const SIDEBAR_MENU_TILE = "grid size-9 shrink-0 place-items-center rounde
 export const sidebarMenuChevron = (collapsed: boolean) =>
   cx(
     "shrink-0 text-fg-muted transition-[opacity,transform] duration-200",
-    collapsed ? "w-0 scale-90 opacity-0" : "opacity-100",
+    collapsed ? "w-0 scale-90 opacity-0" : "opacity-100 delay-150",
   );
 
 export const sidebarMenuContent = (collapsed: boolean) =>

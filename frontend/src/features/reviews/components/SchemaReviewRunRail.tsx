@@ -67,7 +67,7 @@ export function SchemaReviewRunRail({
   });
 
   return (
-    <aside className="flex flex-col rounded-lg border border-line-strong bg-surface p-5 lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)] lg:overflow-hidden">
+    <aside className="flex flex-col rounded-lg border border-line-strong bg-surface p-5 lg:sticky lg:top-28 lg:h-[calc(100dvh-9rem-var(--app-nav-block,0rem))] lg:overflow-hidden">
       <div className="shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div>

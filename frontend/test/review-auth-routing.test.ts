@@ -45,7 +45,7 @@ describe("integrated review authentication and routes", () => {
 
   test("recomputes the authorized landing page after switching organizations", () => {
     const organizationHeader = readFileSync(
-      new URL("../src/app/components/SidebarOrganizationHeader.tsx", import.meta.url),
+      new URL("../src/app/components/OrganizationMenuContent.tsx", import.meta.url),
       "utf8",
     );
     const authenticatedHome = readFileSync(

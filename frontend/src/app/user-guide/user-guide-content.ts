@@ -10,7 +10,7 @@ export type GuideContent = { title: string; description: string };
 export const SIDEBAR_INTRO: GuideContent = {
   title: "Welcome to MLsuite",
   description:
-    "This short tour covers the sidebar. The menu follows the ML loop from top to bottom: models, schemas, inferences, then review. Hold Alt at any time to reveal a number shortcut on each entry.",
+    "This short tour covers the navigation. The menu follows the ML loop in order: models, schemas, inferences, then review. Hold Alt at any time to reveal a number shortcut on each entry.",
 };
 
 export const GUIDE_CONTENT: Record<string, GuideContent> = {
