@@ -16,6 +16,7 @@ import {
   type SortKey,
 } from "./services-view-model";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 type Props = {
   services: ServiceStatusDto[];
   selectedService: string | null;
@@ -59,7 +60,7 @@ export function ServicesView({
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-3xs font-semibold uppercase tracking-[0.14em] text-fg-secondary">
+          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
             Service control
           </p>
           <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Managed services</h1>
@@ -130,19 +131,19 @@ export function ServicesView({
             <thead>
               <tr className="border-b border-line bg-surface">
                 <SortTh label="Service" sortKey="name" sort={sort} onSort={toggleSort} />
-                <th className="px-4 py-2.5 text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary">
+                <th className="px-4 py-2.5 text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
                   State
                 </th>
-                <th className="px-4 py-2.5 text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary">
+                <th className="px-4 py-2.5 text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
                   Health
                 </th>
                 <SortTh label="Uptime" sortKey="uptime" sort={sort} onSort={toggleSort} />
                 <SortTh label="CPU" sortKey="cpuPercent" sort={sort} onSort={toggleSort} />
                 <SortTh label="Memory" sortKey="memoryBytes" sort={sort} onSort={toggleSort} />
-                <th className="px-4 py-2.5 text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary">
+                <th className="px-4 py-2.5 text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
                   Ports
                 </th>
-                <th className="px-4 py-2.5 text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary">
+                <th className="px-4 py-2.5 text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
                   Actions
                 </th>
               </tr>
@@ -267,8 +268,12 @@ export function ServicesView({
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-fg-muted">
-                    No services match your filters.
+                  <td colSpan={8}>
+                    <AppEmptyState
+                      compact
+                      title="No matching services"
+                      description="Change the search or the filters."
+                    />
                   </td>
                 </tr>
               )}

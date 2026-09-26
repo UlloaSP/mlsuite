@@ -117,7 +117,7 @@ export function PluginCatalogPage() {
       accessFallback={<NotFoundError />}
       controls={controls}
       header={{
-        eyebrow: "Workspace Extensions",
+        eyebrow: "Workspace extensions",
         title: "Plugins",
         description:
           "View and manage workspace plugins that extend MLForm with custom field and report renderers.",

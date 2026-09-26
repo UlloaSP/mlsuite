@@ -38,10 +38,10 @@ export function ProfileBody({ user }: ProfileBodyProps) {
         />
         <InfoCard
           icon={Plane}
-          title="Time Zone"
+          title="Time zone"
           value={Intl.DateTimeFormat().resolvedOptions().timeZone || "Not provided"}
         />
-        <InfoCard icon={SunMoon} title="Theme" value={theme || "Not Provided"} />
+        <InfoCard icon={SunMoon} title="Theme" value={theme || "Not provided"} />
         <InfoCard icon={Fullscreen} title="Screen" value={screen ? "Fullscreen" : "Windowed"} />
       </motion.div>
     </motion.div>

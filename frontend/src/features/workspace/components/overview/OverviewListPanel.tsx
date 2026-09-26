@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 /** A titled list of recent records with a link to the full page. */
 export function OverviewListPanel({
@@ -34,7 +35,7 @@ export function OverviewListPanel({
         {summary ? <p className="text-xs text-fg-secondary">{summary}</p> : null}
       </header>
       {isEmpty ? (
-        <p className="px-5 py-8 text-center text-sm text-fg-secondary">{emptyText}</p>
+        <AppEmptyState compact title={emptyText} />
       ) : (
         <ul className="divide-y divide-line">{children}</ul>
       )}

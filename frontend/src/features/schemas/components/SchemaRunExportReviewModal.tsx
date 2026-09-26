@@ -13,6 +13,7 @@ import {
   emptySchemaRunExportSelection,
   type SchemaRunExportSelection,
 } from "./schema-run-export-selection";
+import { AppCheckMark } from "@/shared/ui/AppCheckMark";
 
 type Props = {
   open: boolean;
@@ -89,7 +90,7 @@ export function SchemaRunExportReviewModal({
     >
       <div className="grid lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="border-line px-5 py-4 lg:border-r">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">
+          <p className="mb-3 text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
             Reviewers
           </p>
           <div className="max-h-[48vh] overflow-auto border-y border-line">
@@ -99,14 +100,11 @@ export function SchemaRunExportReviewModal({
                 <button
                   key={reviewer}
                   type="button"
+                  aria-pressed={selected}
                   onClick={() => toggleReviewer(reviewer)}
                   className="flex w-full items-center gap-3 border-b border-line px-2 py-3 text-left text-sm last:border-b-0 hover:bg-surface-muted"
                 >
-                  <span
-                    className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${selected ? "border-accent bg-accent text-on-accent" : "border-line-strong text-transparent"}`}
-                  >
-                    ✓
-                  </span>
+                  <AppCheckMark checked={selected} />
                   <span className="min-w-0 truncate">{reviewer}</span>
                 </button>
               );
@@ -115,7 +113,7 @@ export function SchemaRunExportReviewModal({
         </aside>
         <section aria-label="Inferences" className="min-w-0 px-6 py-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fg-muted">
+            <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
               Inferences
             </p>
             <div className="flex gap-2">

@@ -33,7 +33,7 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
         ? `Bulk ${bulk.processed}/${bulk.total}`
         : bulk.status === "done"
           ? summary.message
-          : "Bulk Upload";
+          : "Bulk upload";
   const icon =
     bulk.status === "parsing" ? (
       <LoaderCircle size={16} className="animate-spin" />
@@ -86,11 +86,11 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
           {label}
         </span>
         {processing ? (
-          <span className="text-2xs font-semibold uppercase tracking-[0.18em] text-danger-fg">
+          <span className="text-2xs font-semibold uppercase tracking-eyebrow text-danger-fg">
             Stop
           </span>
         ) : bulk.status === "done" ? (
-          <span className="text-2xs font-semibold uppercase tracking-[0.18em] text-fg-muted">
+          <span className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
             Again
           </span>
         ) : null}

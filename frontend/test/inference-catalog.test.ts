@@ -174,7 +174,7 @@ describe("organization inference catalog", () => {
     expect(tile).toContain('assignment.reviewState === "COMPLETED"');
     expect(section).toContain("Their saved answers will be kept.");
     expect(section).toContain("Review status unavailable.");
-    expect(section).toContain("No reviews include this inference.");
+    expect(section).toContain("No review includes this inference.");
     expect(mutations).toContain("/reviewers/${reviewerId}/reopen");
   });
 

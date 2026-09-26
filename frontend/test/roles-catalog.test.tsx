@@ -100,7 +100,7 @@ test.each([
   expect([...host.querySelectorAll('[role="tab"]')].map((node) => node.textContent)).toEqual([
     "Roles (21)",
     "Templates (21)",
-    "All Permissions (21)",
+    "All permissions (21)",
   ]);
   expect(hasLabel(`${label} 10`)).toBe(true);
   expect(hasLabel(`${label} 11`)).toBe(false);
@@ -167,7 +167,7 @@ test("keeps all permissions grouped without pagination", async () => {
   );
   expect(host.querySelectorAll('section[aria-label="Permission groups"] li')).toHaveLength(21);
   expect(host.querySelector("footer")).toBeNull();
-  expect(host.textContent).toContain("All Permissions (21)");
+  expect(host.textContent).toContain("All permissions (21)");
 });
 test("permission search preserves the group and total", async () => {
   await render("?tab=permissions&q=21");
@@ -175,7 +175,7 @@ test("permission search preserves the group and total", async () => {
   expect(host.querySelector('section[aria-label="Permission groups"] h2')?.textContent).toBe(
     "Organization",
   );
-  expect(host.textContent).toContain("All Permissions (21)");
+  expect(host.textContent).toContain("All permissions (21)");
   expect(host.querySelector("footer")).toBeNull();
 });
 test("role fields have visible associated labels in vertical document order", async () => {

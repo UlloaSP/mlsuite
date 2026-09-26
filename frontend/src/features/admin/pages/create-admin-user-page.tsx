@@ -58,9 +58,9 @@ export function CreateAdminUserPage() {
       <AppSurface className="flex flex-1 flex-col overflow-auto">
         <AppPageHeader
           eyebrow="Superadmin"
-          title="Create User"
+          title="Create user"
           description="Create platform access and assign global role."
-          breadcrumbs={[{ label: "Users", to: "/admin/users" }, { label: "Create User" }]}
+          breadcrumbs={[{ label: "Users", to: "/admin/users" }, { label: "Create user" }]}
         />
         <form onSubmit={submit} className="mx-auto grid w-full max-w-2xl gap-4">
           <AdminUserFormField label="Email">
@@ -115,7 +115,7 @@ export function CreateAdminUserPage() {
             </AppButton>
             <AppButton type="submit" disabled={createUser.isPending}>
               <UserPlus size={16} />
-              {createUser.isPending ? "Creating..." : "Create User"}
+              {createUser.isPending ? "Creating..." : "Create user"}
             </AppButton>
           </div>
         </form>

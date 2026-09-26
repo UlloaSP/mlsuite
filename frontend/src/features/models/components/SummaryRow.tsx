@@ -16,7 +16,7 @@ export function SummaryRow({ label, value, valueClass, first }: SummaryRowProps)
   return (
     <div
       className={cx(
-        "flex items-center justify-between gap-4 py-[7px]",
+        "flex items-center justify-between gap-4 py-2",
         !first && "border-t border-line",
       )}
     >

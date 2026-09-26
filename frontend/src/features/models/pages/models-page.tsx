@@ -23,6 +23,7 @@ import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import type { ModelAction } from "@/features/models/components/ModelActionsMenu";
 import { ModelListItem } from "@/features/models/components/ModelListItem";
+import { useActionDialog } from "@/shared/ui/use-action-dialog";
 
 type ModelSortMode = "updated" | "name" | "algorithm";
 type ModelStatusFilter = "active" | "archived" | "all";
@@ -67,23 +68,48 @@ export function ModelsPage() {
   const canDeleteModels = workspace?.permissions.canDeleteModels ?? false;
   const canEditModels = workspace?.permissions.canEditModels ?? false;
 
+  const actionDialog = useActionDialog();
   const handleAction = async (action: ModelAction, model: ModelDto) => {
     try {
       if (action === "edit") {
-        const name = window.prompt("Model name", model.name)?.trim();
+        const name = await actionDialog.prompt({
+          title: "Rename model",
+          confirmLabel: "Save name",
+          input: { label: "Model name", defaultValue: model.name },
+        });
         if (name) await renameMutation.mutateAsync({ id: model.id, name, version: model.version });
         if (name) toast.success("Model renamed.");
       }
       if (action === "duplicate") {
-        const name = window.prompt("Copy name", `${model.name} Copy`)?.trim();
+        const name = await actionDialog.prompt({
+          title: "Duplicate model",
+          description: "The copy gets its own name and version history.",
+          confirmLabel: "Create copy",
+          input: { label: "Copy name", defaultValue: `${model.name} Copy` },
+        });
         if (name) await duplicateMutation.mutateAsync({ id: model.id, name });
         if (name) toast.success("Model duplicated.");
       }
-      if (action === "archive" && window.confirm(`Archive ${model.name}?`)) {
+      if (
+        action === "archive" &&
+        (await actionDialog.confirm({
+          title: `Archive ${model.name}?`,
+          description: "Archived models stay readable and can be filtered from the catalog.",
+          confirmLabel: "Archive",
+        }))
+      ) {
         await archiveMutation.mutateAsync({ id: model.id, version: model.version });
         toast.success("Model archived.");
       }
-      if (action === "delete" && window.confirm(`Delete ${model.name}? This cannot be undone.`)) {
+      if (
+        action === "delete" &&
+        (await actionDialog.confirm({
+          title: `Delete ${model.name}?`,
+          description: "This cannot be undone.",
+          confirmLabel: "Delete",
+          danger: true,
+        }))
+      ) {
         await deleteMutation.mutateAsync({ id: model.id, version: model.version });
         toast.success("Model deleted.");
       }
@@ -99,60 +125,63 @@ export function ModelsPage() {
     duplicateMutation.isPending;
 
   return (
-    <CatalogResourcePage
-      accessDenied={
-        !user || Boolean(error) || Boolean(workspace && !workspace.permissions.canViewModels)
-      }
-      accessFallback={<NotFoundError />}
-      controls={controls}
-      header={{
-        eyebrow: "Models",
-        title: "Models",
-        breadcrumbs: [{ label: "Workspace", to: "/workspace" }, { label: "Models" }],
-        description: `Navigate models and inspect generated schema snapshots for ${
-          workspace?.currentOrganization.name ?? "the current workspace"
-        }.`,
-        actions: canCreateModels ? (
-          <AppButton type="button" onClick={() => navigate("/models/create")}>
-            + New Model
-          </AppButton>
-        ) : null,
-      }}
-      isActionPending={isActionPending}
-      loadingLabel="Loading models..."
-      pageSize={MODEL_CATALOG_PAGE_SIZE}
-      filterLabel="Filter by model status"
-      filters={STATUS_FILTERS}
-      placeholder="Search by name, file, or algorithm"
-      query={pageQuery}
-      sortLabel="Sort models"
-      sortOptions={SORT_OPTIONS}
-      emptyIcon={<Search size={22} />}
-      emptyTitle="No models yet"
-      filteredEmptyTitle="No matching models"
-      emptyDescription="Create your first model to start building schemas."
-      filteredEmptyDescription="Try another search term or status."
-      emptyAction={
-        canCreateModels ? (
-          <AppButton type="button" onClick={() => navigate("/models/create")}>
-            + New Model
-          </AppButton>
-        ) : undefined
-      }
-      renderItem={(model) => (
-        <ModelListItem
-          key={model.id}
-          canDelete={canDeleteModels}
-          canEdit={canEditModels}
-          item={model}
-          schemaCount={hasSchema(model) ? 1 : 0}
-          onOpen={() => navigate(`/models/${model.id}`)}
-          onAction={(action) => {
-            void handleAction(action, model);
-          }}
-        />
-      )}
-    />
+    <>
+      <CatalogResourcePage
+        accessDenied={
+          !user || Boolean(error) || Boolean(workspace && !workspace.permissions.canViewModels)
+        }
+        accessFallback={<NotFoundError />}
+        controls={controls}
+        header={{
+          eyebrow: "Models",
+          title: "Models",
+          breadcrumbs: [{ label: "Workspace", to: "/workspace" }, { label: "Models" }],
+          description: `Navigate models and inspect generated schema snapshots for ${
+            workspace?.currentOrganization.name ?? "the current workspace"
+          }.`,
+          actions: canCreateModels ? (
+            <AppButton type="button" onClick={() => navigate("/models/create")}>
+              + New Model
+            </AppButton>
+          ) : null,
+        }}
+        isActionPending={isActionPending}
+        loadingLabel="Loading models..."
+        pageSize={MODEL_CATALOG_PAGE_SIZE}
+        filterLabel="Filter by model status"
+        filters={STATUS_FILTERS}
+        placeholder="Search by name, file, or algorithm"
+        query={pageQuery}
+        sortLabel="Sort models"
+        sortOptions={SORT_OPTIONS}
+        emptyIcon={<Search size={22} />}
+        emptyTitle="No models yet"
+        filteredEmptyTitle="No matching models"
+        emptyDescription="Create your first model to start building schemas."
+        filteredEmptyDescription="Try another search term or status."
+        emptyAction={
+          canCreateModels ? (
+            <AppButton type="button" onClick={() => navigate("/models/create")}>
+              + New Model
+            </AppButton>
+          ) : undefined
+        }
+        renderItem={(model) => (
+          <ModelListItem
+            key={model.id}
+            canDelete={canDeleteModels}
+            canEdit={canEditModels}
+            item={model}
+            schemaCount={hasSchema(model) ? 1 : 0}
+            onOpen={() => navigate(`/models/${model.id}`)}
+            onAction={(action) => {
+              void handleAction(action, model);
+            }}
+          />
+        )}
+      />
+      {actionDialog.dialog}
+    </>
   );
 }
 

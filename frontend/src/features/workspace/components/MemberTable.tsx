@@ -1,5 +1,4 @@
 import { AppButton } from "@/shared/ui/AppButton";
-import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { RoleBadge } from "./RoleBadge";
@@ -8,6 +7,7 @@ import type {
   RoleSummaryDto,
 } from "@/capabilities/workspace-context/workspace-context.types";
 import type { MembershipRowActionsDto } from "@/features/workspace/api/workspace.types";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 type MemberTableRow = {
   id: number;
@@ -28,11 +28,7 @@ export function MemberTable({
   onRemove: (membershipId: number) => void;
 }) {
   if (rows.length === 0) {
-    return (
-      <AppPanel className="border-dashed">
-        <AppCopy>No members yet.</AppCopy>
-      </AppPanel>
-    );
+    return <AppEmptyState compact title="No members yet" />;
   }
 
   return (

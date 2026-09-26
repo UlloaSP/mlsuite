@@ -8,7 +8,7 @@ import {
 } from "@/features/infrastructure/lib/dashboard-summary";
 import {
   appendLogLine,
-  confirmServiceAction,
+  serviceActionConfirmation,
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
@@ -86,20 +86,13 @@ const jsonResponse = (body: unknown, status = 200) =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe("infra helpers", () => {
-  it.each(["STOP", "RESTART"] as const)(
-    "requires confirmation for %s and respects cancellation",
-    (action) => {
-      const confirm = vi.fn().mockReturnValue(false);
-      vi.stubGlobal("window", { confirm });
-      expect(confirmServiceAction("frontend", action)).toBe(false);
-      expect(confirm).toHaveBeenCalledWith(expect.stringContaining("frontend"));
-      confirm.mockReturnValue(true);
-      expect(confirmServiceAction("frontend", action)).toBe(true);
-      confirm.mockClear();
-      expect(confirmServiceAction("frontend", "START")).toBe(true);
-      expect(confirm).not.toHaveBeenCalled();
-    },
-  );
+  it.each(["STOP", "RESTART"] as const)("asks before %s but never before START", (action) => {
+    const confirmation = serviceActionConfirmation("frontend", action);
+    expect(confirmation?.title).toContain("frontend");
+    expect(confirmation?.description).toContain("interrupts the service");
+    expect(confirmation?.danger).toBe(action === "STOP");
+    expect(serviceActionConfirmation("frontend", "START")).toBeNull();
+  });
   it("keeps health categories exclusive and never claims unknown services healthy", () => {
     const services = [
       overview.services[0],

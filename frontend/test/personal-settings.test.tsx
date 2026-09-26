@@ -73,7 +73,7 @@ describe("personal settings", () => {
     const labels = Array.from(container.querySelectorAll("li")).map((item) =>
       item.textContent?.replace(/Ctrl.*$/, "").trim(),
     );
-    expect(labels).toEqual(["User Guide", "Global Search"]);
+    expect(labels).toEqual(["User guide", "Global search"]);
   });
 
   test("cycles the system, light, and dark schemes with Ctrl+Shift+L", () => {
@@ -239,7 +239,7 @@ describe("personal settings", () => {
     )!;
     act(() => keybindingsTab.click());
     const globalSearch = container.querySelector<HTMLButtonElement>(
-      'button[aria-label="Change Global Search shortcut"]',
+      'button[aria-label="Change Global search shortcut"]',
     )!;
     act(() => globalSearch.click());
     act(() => {
@@ -252,7 +252,7 @@ describe("personal settings", () => {
         }),
       );
     });
-    expect(container.textContent).toContain("Already assigned to Toggle Color Scheme");
+    expect(container.textContent).toContain("Already assigned to Toggle color scheme");
 
     act(() => {
       globalSearch.dispatchEvent(

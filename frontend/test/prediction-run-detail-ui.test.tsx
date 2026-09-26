@@ -173,7 +173,7 @@ describe("prediction run detail", () => {
     expect(inputsPanel.textContent).toContain("Sex");
     expect(inputsPanel.textContent).not.toContain("Age");
     setInput(inputSearch, "missing");
-    expect(inputsPanel.textContent).toContain('No inputs match "missing".');
+    expect(inputsPanel.textContent).toContain('No inputs match "missing"');
 
     const tabs = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
     act(() => tabs.find((tab) => tab.textContent?.startsWith("Outputs"))?.click());

@@ -122,7 +122,7 @@ export function SchemasPage() {
           }.`,
           actions: canCreateSchemas ? (
             <AppButton type="button" onClick={() => navigate("/schemas/create")}>
-              + New Schema
+              + New schema
             </AppButton>
           ) : null,
         }}
@@ -143,7 +143,7 @@ export function SchemasPage() {
         emptyAction={
           canCreateSchemas ? (
             <AppButton type="button" onClick={() => navigate("/schemas/create")}>
-              + New Schema
+              + New schema
             </AppButton>
           ) : undefined
         }

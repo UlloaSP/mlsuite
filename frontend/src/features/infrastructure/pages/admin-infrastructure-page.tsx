@@ -18,7 +18,7 @@ import {
 import { useServiceAction } from "@/features/infrastructure/api/infrastructure.mutations";
 import {
   appendLogLine,
-  confirmServiceAction,
+  serviceActionConfirmation,
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
@@ -32,6 +32,7 @@ import {
   openInfrastructureSocket,
   subscribeToServiceLogs,
 } from "@/features/infrastructure/lib/infrastructure-socket";
+import { useActionDialog } from "@/shared/ui/use-action-dialog";
 
 type InfraTab = "overview" | "services" | "logs" | "terminal" | "alerts";
 
@@ -42,6 +43,7 @@ export function AdminInfrastructurePage() {
   const { data, isLoading } = useInfrastructureOverview();
   const showLoading = useStableLoading(isLoading);
   const action = useServiceAction();
+  const actionDialog = useActionDialog();
   const [overview, setOverview] = useState<InfrastructureOverviewDto | null>(null);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
@@ -121,6 +123,7 @@ export function AdminInfrastructurePage() {
 
   return (
     <AppPage>
+      {actionDialog.dialog}
       <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll bg-page">
         <div className="flex-1 px-6 py-5">
           {currentOverview && !showLoading ? (
@@ -141,8 +144,11 @@ export function AdminInfrastructurePage() {
                     handleSelectService(name);
                   }}
                   onAction={(name, a) => {
-                    if (confirmServiceAction(name, a))
+                    const confirmation = serviceActionConfirmation(name, a);
+                    void (async () => {
+                      if (confirmation && !(await actionDialog.confirm(confirmation))) return;
                       action.mutate({ serviceName: name, action: a });
+                    })();
                   }}
                 />
               )}

@@ -5,13 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import {
   formatDisplayValue,
   getVisibleSchemaInputs,
 } from "@/capabilities/prediction-runtime/data/input-display";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 type Props = {
   schema: unknown;
@@ -47,13 +47,13 @@ export function SchemaRunInputsPanel({ schema, inputData }: Props) {
         <div className="grid gap-3 md:grid-cols-2">
           {filteredInputs.map((input) => (
             <div key={input.key} className="rounded-control bg-surface-muted px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-fg-muted">{input.label}</p>
+              <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">{input.label}</p>
               <p className="mt-1 font-mono text-sm text-fg">{formatDisplayValue(input.value)}</p>
             </div>
           ))}
         </div>
       ) : (
-        <AppCopy>{`No inputs match "${query.trim()}".`}</AppCopy>
+        <AppEmptyState compact title={`No inputs match "${query.trim()}"`} />
       )}
     </div>
   );

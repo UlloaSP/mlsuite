@@ -23,22 +23,22 @@ export function ModelSummaryTab({ model, onCreateSchema }: ModelSummaryTabProps)
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <AppPanel className="space-y-4">
-        <AppSectionTitle>Model Metadata</AppSectionTitle>
+        <AppSectionTitle>Model metadata</AppSectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-fg-muted">Type</p>
+            <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">Type</p>
             <p className="mt-1 text-sm font-medium text-fg">{getModelAlgorithmLabel(model)}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-fg-muted">File</p>
+            <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">File</p>
             <p className="mt-1 text-sm font-medium text-fg">{model.fileName}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-fg-muted">Created</p>
+            <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">Created</p>
             <p className="mt-1 text-sm font-medium text-fg">{formatTimestamp(model.createdAt)}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-fg-muted">Schema fields</p>
+            <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">Schema fields</p>
             <p className="mt-1 text-sm font-medium text-fg">
               {Array.isArray(model.inputSchema.fields) ? model.inputSchema.fields.length : 0}
             </p>
@@ -47,7 +47,7 @@ export function ModelSummaryTab({ model, onCreateSchema }: ModelSummaryTabProps)
       </AppPanel>
 
       <AppPanel className="space-y-4">
-        <AppSectionTitle>Operational Status</AppSectionTitle>
+        <AppSectionTitle>Operational status</AppSectionTitle>
         <AppBadge tone="success">active</AppBadge>
         <AppCopy>Model is available for schema creation and prediction workflows.</AppCopy>
       </AppPanel>

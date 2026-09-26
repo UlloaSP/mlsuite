@@ -27,6 +27,7 @@ import {
   yAxisMode,
 } from "@/features/infrastructure/lib/overview-metrics";
 import { ChartTooltip } from "./ChartTooltip";
+import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 
 export function OverviewChartPanel({
   overview,
@@ -92,12 +93,10 @@ export function OverviewChartPanel({
               key={key}
               className="flex cursor-pointer select-none items-center gap-2 text-xs text-fg-secondary"
             >
-              <input
-                aria-label={`Toggle ${cfg.label} layer`}
-                type="checkbox"
+              <AppCheckbox
+                aria-label={`Show ${cfg.label} layer`}
                 checked={layers[key]}
                 onChange={() => toggleLayer(key)}
-                className="accent-accent"
               />
               <span
                 className="inline-block size-2.5 rounded-sm"

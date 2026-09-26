@@ -8,7 +8,6 @@ import { Dialog } from "radix-ui";
 import type { FormEventHandler, ReactNode } from "react";
 import { AppIconButton } from "./AppIconButton";
 import { cx } from "./cx";
-import { FOCUS_RING } from "./focus-ring";
 
 const WIDTHS = {
   sm: "w-[min(calc(100vw-2rem),26rem)]",
@@ -104,7 +103,7 @@ export function AppDialog({
               ) : null}
             </div>
             <Dialog.Close asChild disabled={busy}>
-              <AppIconButton aria-label="Close" className={cx("-mr-2 -mt-1 size-9", FOCUS_RING)}>
+              <AppIconButton aria-label="Close" className="-mr-2 -mt-1 size-9">
                 <X size={17} />
               </AppIconButton>
             </Dialog.Close>

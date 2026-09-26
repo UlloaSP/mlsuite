@@ -51,7 +51,7 @@ export function ModelDetailPage() {
           <>
             <AppPageHeader
               breadcrumbs={[{ label: "Models", to: "/models" }, { label: model.name }]}
-              eyebrow="Model Detail"
+              eyebrow="Model detail"
               title={model.name}
               description={`${getModelAlgorithmLabel(model)} · Created ${formatTimestamp(model.createdAt)}`}
               actions={
@@ -60,7 +60,7 @@ export function ModelDetailPage() {
                     type="button"
                     onClick={() => navigate(`/schemas/create?modelId=${model.id}`)}
                   >
-                    + New Schema
+                    + New schema
                   </AppButton>
                 ) : null
               }

@@ -15,12 +15,31 @@ export function AppEmptyState({
   action,
   icon,
   className,
+  compact = false,
 }: HTMLAttributes<HTMLDivElement> & {
   title: ReactNode;
-  description: ReactNode;
+  description?: ReactNode;
   action?: ReactNode;
   icon?: ReactNode;
+  /** For an empty list or panel inside a page, rather than an empty page. */
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <div
+        className={cx(
+          "flex flex-col items-center justify-center gap-1 px-5 py-8 text-center",
+          className,
+        )}
+      >
+        {icon ? <div className="mb-2 text-fg-muted">{icon}</div> : null}
+        <p className="text-sm font-semibold text-fg">{title}</p>
+        {description ? <p className="max-w-md text-sm text-fg-secondary">{description}</p> : null}
+        {action ? <div className="pt-3">{action}</div> : null}
+      </div>
+    );
+  }
+
   return (
     <AppPanel
       className={cx(
@@ -34,7 +53,7 @@ export function AppEmptyState({
         </div>
       ) : null}
       <AppSectionTitle className="text-2xl">{title}</AppSectionTitle>
-      <AppCopy className="max-w-xl">{description}</AppCopy>
+      {description ? <AppCopy className="max-w-xl">{description}</AppCopy> : null}
       {action ? <div className="pt-2">{action}</div> : null}
     </AppPanel>
   );

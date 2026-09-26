@@ -34,7 +34,7 @@ export function SchemaRunReportCard({ label, kind, payload, labels = [] }: Props
     <AppPanel className="space-y-3">
       <div>
         <p className="text-sm font-semibold text-fg">{label}</p>
-        <p className="text-xs uppercase tracking-[0.16em] text-fg-muted">{kind}</p>
+        <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">{kind}</p>
       </div>
       {payload ? (
         <>

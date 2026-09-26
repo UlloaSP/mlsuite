@@ -18,6 +18,8 @@ import { AppTextField } from "@/shared/ui/AppTextField";
 import { CatalogPaginationFooter } from "@/shared/ui/catalog/CatalogPaginationFooter";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { InferenceReviewTile } from "./InferenceReviewTile";
+import { useActionDialog } from "@/shared/ui/use-action-dialog";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 type Props = {
   inferenceId: number;
@@ -52,14 +54,14 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
   const visible = filtered.slice(visiblePage * PAGE_SIZE, (visiblePage + 1) * PAGE_SIZE);
   const actionPending = reopen.isPending || deleteResponse.isPending;
 
+  const actionDialog = useActionDialog();
   const handleReopen = async (assignment: InferenceReviewAssignmentDto) => {
-    if (
-      !window.confirm(
-        `Reopen ${inferenceName} for ${assignment.reviewer.fullName}? Their saved answers will be kept.`,
-      )
-    ) {
-      return;
-    }
+    const confirmed = await actionDialog.confirm({
+      title: "Reopen review?",
+      description: `Reopen ${inferenceName} for ${assignment.reviewer.fullName}. Their saved answers will be kept.`,
+      confirmLabel: "Reopen",
+    });
+    if (!confirmed) return;
     try {
       await reopen.mutateAsync({
         inferenceId,
@@ -78,13 +80,13 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
   };
 
   const handleDelete = async (assignment: InferenceReviewAssignmentDto) => {
-    if (
-      !window.confirm(
-        `Delete ${assignment.reviewer.fullName}'s saved response for ${inferenceName}? Their assignment will remain and return to Pending.`,
-      )
-    ) {
-      return;
-    }
+    const confirmed = await actionDialog.confirm({
+      title: "Delete saved response?",
+      description: `Delete ${assignment.reviewer.fullName}'s saved response for ${inferenceName}. Their assignment will remain and return to Pending.`,
+      confirmLabel: "Delete response",
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteResponse.mutateAsync({
         inferenceId,
@@ -104,6 +106,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
 
   return (
     <AppPanel id="reviews" className="overflow-hidden p-0">
+      {actionDialog.dialog}
       <header className="border-b border-line px-5 py-5 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -186,11 +189,17 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
             ) : null}
           </>
         ) : assignments.data?.length ? (
-          <p className="text-sm text-fg-secondary">
-            No reviews match the current search and status.
-          </p>
+          <AppEmptyState
+            compact
+            title="No matching reviews"
+            description="Change the search or the status filter."
+          />
         ) : (
-          <p className="text-sm text-fg-secondary">No reviews include this inference.</p>
+          <AppEmptyState
+            compact
+            title="No reviews yet"
+            description="No review includes this inference."
+          />
         )}
       </div>
     </AppPanel>

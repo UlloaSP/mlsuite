@@ -98,13 +98,17 @@ export function resolveSelectedService(
   return overview.services[0]?.name ?? null;
 }
 
-export function confirmServiceAction(
+/** Stopping or restarting interrupts a service, so it asks first; starting does not. */
+export function serviceActionConfirmation(
   serviceName: string,
   action: "START" | "STOP" | "RESTART",
-): boolean {
-  if (action === "START") return true;
+) {
+  if (action === "START") return null;
   const verb = action === "STOP" ? "Stop" : "Restart";
-  return window.confirm(
-    `${verb} ${serviceName}? This interrupts the service and may disconnect users, including this dashboard.`,
-  );
+  return {
+    title: `${verb} ${serviceName}?`,
+    description: "This interrupts the service and may disconnect users, including this dashboard.",
+    confirmLabel: verb,
+    danger: action === "STOP",
+  };
 }

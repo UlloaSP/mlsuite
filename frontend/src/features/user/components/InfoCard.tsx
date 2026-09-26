@@ -23,7 +23,7 @@ export function InfoCard({ icon: Icon, title, value }: InfoCardProps) {
             <Icon className="text-accent" size={20} />
           </div>
           <motion.div>
-            <AppCopy className="text-xs uppercase tracking-[0.16em]">{title}</AppCopy>
+            <AppCopy className="text-2xs uppercase tracking-eyebrow">{title}</AppCopy>
             <motion.p className="font-medium text-fg">{value}</motion.p>
           </motion.div>
         </motion.div>

@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { CalendarDays, Mail, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
+import { formatDate } from "@/shared/lib/date-time";
 import { useState } from "react";
 import type { AdminUser } from "@/features/admin/api/admin-user.types";
 import { UserActionsMenu } from "./UserActionsMenu";
@@ -57,10 +58,7 @@ export function UserCatalogTile({
               icon={item.enabled ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
               label={item.enabled ? "Enabled" : "Disabled"}
             />
-            <UserInfoBadge
-              icon={<CalendarDays size={14} />}
-              label={formatCreatedAt(item.createdAt)}
-            />
+            <UserInfoBadge icon={<CalendarDays size={14} />} label={formatDate(item.createdAt)} />
             <UserInfoBadge icon={<Mail size={14} />} label={item.username} />
           </div>
         </div>
@@ -97,9 +95,4 @@ export function UserCatalogTile({
       ) : null}
     </article>
   );
-}
-
-function formatCreatedAt(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 }

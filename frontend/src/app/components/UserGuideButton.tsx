@@ -11,11 +11,11 @@ export function UserGuideButton() {
     <SidebarMenuItem>
       <SidebarMenuButton
         data-user-guide-item="user-guide"
-        title="User Guide"
+        title="User guide"
         onClick={(event) => start(event.currentTarget)}
       >
         <BookOpenText size={18} />
-        <SidebarLabel className="truncate">User Guide</SidebarLabel>
+        <SidebarLabel className="truncate">User guide</SidebarLabel>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );

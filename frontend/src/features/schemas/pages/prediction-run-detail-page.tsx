@@ -129,7 +129,7 @@ export function PredictionRunDetailPage() {
             { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
             { label: "Bookmarks", to: `/schemas/${schemaId}/bookmarks` },
             { label: bookmark ? `${bookmark.name} · v${bookmark.version}` : "Bookmark" },
-            { label: "Inference History", to: historyHref },
+            { label: "Inference history", to: historyHref },
             { label: run?.name ?? "Prediction run" },
           ]}
           actions={

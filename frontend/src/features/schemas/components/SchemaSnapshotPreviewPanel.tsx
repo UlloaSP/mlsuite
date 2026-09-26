@@ -40,7 +40,7 @@ export function SchemaSnapshotPreviewPanel({ version }: Props) {
           ].map(([label, value]) => (
             <div key={label} className="rounded-control bg-surface-muted px-3 py-2">
               <p className="text-lg font-semibold leading-5 text-fg">{value}</p>
-              <p className="text-3xs uppercase tracking-[0.14em] text-fg-secondary">{label}</p>
+              <p className="text-2xs uppercase tracking-eyebrow text-fg-secondary">{label}</p>
             </div>
           ))}
         </div>

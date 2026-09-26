@@ -95,7 +95,7 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
         <AppPageHeader
           title="New schema"
           description="Select one or more models to create the generated schema."
-          breadcrumbs={[{ label: "Schemas", to: "/schemas" }, { label: "New Schema" }]}
+          breadcrumbs={[{ label: "Schemas", to: "/schemas" }, { label: "New schema" }]}
         />
         <form className="flex min-h-0 flex-1 flex-col gap-6" onSubmit={submit}>
           <AppPanel className="shrink-0 space-y-4">

@@ -21,7 +21,7 @@ export function InvitationAcceptPage() {
         <AppPanel className="w-full max-w-2xl">
           <AppPageHeader
             eyebrow="Invitation"
-            title="Join Workspace"
+            title="Join workspace"
             description="Accept this invitation to enter the shared MLSuite workspace, or decline it and keep your current setup untouched."
           />
           <div className="mt-6 flex flex-wrap gap-3">

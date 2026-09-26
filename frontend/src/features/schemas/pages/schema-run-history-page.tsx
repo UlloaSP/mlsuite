@@ -176,7 +176,7 @@ export function SchemaRunHistoryPage() {
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
-          title="Inference History"
+          title="Inference history"
           breadcrumbs={[
             { label: "Schemas", to: "/schemas" },
             { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
@@ -186,7 +186,7 @@ export function SchemaRunHistoryPage() {
                 ? `${bookmark?.name ?? executableVersion.name} · v${executableVersion.version}`
                 : "Bookmark",
             },
-            { label: "Inference History" },
+            { label: "Inference history" },
           ]}
           description={
             executableVersion

@@ -9,7 +9,7 @@ export function RouteStatusPage({ status = 404 }: { status?: RouteStatus }) {
     <SharedRouteStatusPage
       status={status}
       homePath={user ? "/workspace" : "/"}
-      homeLabel={user ? "Go to Workspace" : "Go to Sign in"}
+      homeLabel={user ? "Go to workspace" : "Go to Sign in"}
     />
   );
 }

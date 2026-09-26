@@ -47,7 +47,7 @@ export function ProfileHeader({ imageUrl, name, provider }: ProfileHeaderProps) 
         {name}
       </motion.h1>
       <AppCopy className="mb-3">{provider}</AppCopy>
-      <AppBadge tone="accent">Workspace Identity</AppBadge>
+      <AppBadge tone="accent">Workspace identity</AppBadge>
     </motion.div>
   );
 }

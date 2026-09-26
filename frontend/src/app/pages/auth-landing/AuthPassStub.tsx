@@ -12,7 +12,7 @@ export function AuthPassStub({ mode }: { mode: AuthMode }) {
   const now = useMinuteClock();
   const greeting = greetingFor(mode, now);
   const date = now
-    .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    .toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
     .toUpperCase();
 
   return (

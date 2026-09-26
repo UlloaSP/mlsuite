@@ -8,12 +8,7 @@ import { cx } from "./cx";
 
 export function AppEyebrow({ children, className }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p
-      className={cx(
-        "text-2xs font-semibold uppercase tracking-[0.28em] text-fg-secondary",
-        className,
-      )}
-    >
+    <p className={cx("text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted", className)}>
       {children}
     </p>
   );

@@ -38,7 +38,7 @@ export function ProfilePage() {
             <AppPanel className="mb-6 mt-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-2xs font-semibold uppercase tracking-[0.24em] text-fg-secondary">
+                  <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
                     Current Workspace
                   </p>
                   <p className="mt-2 text-2xl font-semibold text-fg">

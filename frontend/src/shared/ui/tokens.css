@@ -123,6 +123,8 @@ needs a hand-picked value per theme and mode.
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1rem;
   --text-3xl: 1.6875rem;
+  /* Small uppercase labels (eyebrows, section labels) share one letter spacing. */
+  --tracking-eyebrow: 0.12em;
   --text-3xl--line-height: 1.15;
 
   /* Bare `rounded` reads `--radius`. */

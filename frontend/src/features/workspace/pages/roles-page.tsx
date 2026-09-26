@@ -112,8 +112,8 @@ export function RolesPage() {
             },
             {
               label: data
-                ? `All Permissions (${data.permissionCatalog.reduce((total, group) => total + group.permissions.length, 0)})`
-                : "All Permissions",
+                ? `All permissions (${data.permissionCatalog.reduce((total, group) => total + group.permissions.length, 0)})`
+                : "All permissions",
               value: "permissions",
             },
           ]}

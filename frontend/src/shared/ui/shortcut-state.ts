@@ -23,14 +23,14 @@ export type ShortcutEvent = {
 };
 
 export const SHORTCUT_ACTIONS = [
-  { id: "global-search", label: "Global Search", description: "Open workspace search." },
+  { id: "global-search", label: "Global search", description: "Open workspace search." },
   {
     id: "toggle-theme",
-    label: "Toggle Color Scheme",
+    label: "Toggle color scheme",
     description: "Cycle System, Light, and Dark.",
   },
-  { id: "toggle-fullscreen", label: "Toggle Fullscreen", description: "Enter or exit fullscreen." },
-  { id: "toggle-sidebar", label: "Toggle Sidebar", description: "Collapse or expand navigation." },
+  { id: "toggle-fullscreen", label: "Toggle fullscreen", description: "Enter or exit fullscreen." },
+  { id: "toggle-sidebar", label: "Toggle sidebar", description: "Collapse or expand navigation." },
 ] as const satisfies readonly { id: ShortcutId; label: string; description: string }[];
 
 export const DEFAULT_SHORTCUTS: ShortcutBindings = {

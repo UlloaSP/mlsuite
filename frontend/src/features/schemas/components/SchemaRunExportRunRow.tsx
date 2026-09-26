@@ -6,6 +6,7 @@ import {
   type SchemaRunExportRunSummary,
   type SchemaRunExportSelection,
 } from "./schema-run-export-selection";
+import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 
 type Props = {
   summary: SchemaRunExportRunSummary;
@@ -35,14 +36,11 @@ export function SchemaRunExportRunRow({
   return (
     <section className="border-b border-line last:border-b-0">
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-3">
-        <button
-          type="button"
-          onClick={() => onToggleRun(runId)}
-          className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${runSelected ? "border-accent bg-accent text-on-accent" : "border-line-strong text-transparent"}`}
-          aria-label={`Toggle export for ${summary.run.name}`}
-        >
-          ✓
-        </button>
+        <AppCheckbox
+          checked={runSelected}
+          onChange={() => onToggleRun(runId)}
+          aria-label={`Include ${summary.run.name} in the export`}
+        />
         <button type="button" onClick={onToggleOpen} className="min-w-0 text-left">
           <p className="truncate text-sm font-semibold text-fg">{summary.run.name}</p>
           <p className="text-xs text-fg-secondary">{formatTimestamp(summary.run.createdAt)}</p>
@@ -72,14 +70,11 @@ export function SchemaRunExportRunRow({
                   className="border-b border-line py-3 last:border-b-0"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <button
-                      type="button"
-                      onClick={() => onToggleRunReviewer(runId, reviewer.reviewer)}
-                      className={`grid size-5 place-items-center rounded-md border text-xs font-semibold ${selected ? "border-accent bg-accent text-on-accent" : "border-line-strong text-transparent"}`}
-                      aria-label={`Toggle ${reviewer.reviewer} for ${summary.run.name}`}
-                    >
-                      ✓
-                    </button>
+                    <AppCheckbox
+                      checked={selected}
+                      onChange={() => onToggleRunReviewer(runId, reviewer.reviewer)}
+                      aria-label={`Include ${reviewer.reviewer} for ${summary.run.name}`}
+                    />
                     <p className="min-w-0 flex-1 truncate text-sm font-semibold">
                       {reviewer.reviewer}
                     </p>

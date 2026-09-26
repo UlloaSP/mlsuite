@@ -64,7 +64,7 @@ export function ModelActionsMenu({
       </AppIconButton>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded-menu border border-line bg-surface p-2 shadow-hover">
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-45 rounded-menu border border-line bg-surface p-2 shadow-hover">
           {ACTIONS.reduce<React.JSX.Element[]>((items, action) => {
             if (archived && action.value === "archive") return items;
             if (!(action.value === "delete" ? canDelete : canEdit)) {

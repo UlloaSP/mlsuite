@@ -93,9 +93,9 @@ export const mountSchemaRunForm = ({
     reportPane: "always",
     reportFetchMode: "all",
     labels: {
-      form: "Schema Inputs",
-      reports: "Model Results",
-      submit: "Run Schema",
+      form: "Schema inputs",
+      reports: "Model results",
+      submit: "Run schema",
       validating: "Checking schema...",
       submitting: "Running models...",
     },

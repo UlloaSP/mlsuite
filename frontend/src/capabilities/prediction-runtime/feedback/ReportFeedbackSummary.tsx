@@ -12,6 +12,7 @@ import {
   type QuestionnaireFieldDescriptor,
 } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 type ReportFeedbackSummaryProps = {
   schema?: QuestionnaireSchema;
@@ -23,7 +24,7 @@ const EMPTY_VALUES: Record<string, unknown> = {};
 
 export function ReportFeedbackSummary({
   schema,
-  title = "Saved Feedback",
+  title = "Saved feedback",
   values = EMPTY_VALUES,
 }: ReportFeedbackSummaryProps) {
   if (!schema) {
@@ -52,7 +53,7 @@ export function ReportFeedbackSummary({
           ))}
         </div>
       ) : (
-        <AppCopy>No feedback saved yet.</AppCopy>
+        <AppEmptyState compact title="No feedback yet" description="Saved answers appear here." />
       )}
     </AppPanel>
   );

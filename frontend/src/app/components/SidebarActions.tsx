@@ -34,12 +34,12 @@ export function SidebarActions() {
             <SidebarMenuButton
               data-user-guide-item="global-search"
               aria-keyshortcuts={shortcutToAria(bindings["global-search"])}
-              title="Global Search"
+              title="Global search"
               isActive={searchOpen}
               onClick={() => setSearchOpen(true)}
             >
               <Search size={18} />
-              <SidebarLabel className="truncate">Global Search</SidebarLabel>
+              <SidebarLabel className="truncate">Global search</SidebarLabel>
               {!collapsed ? (
                 <AppShortcut binding={bindings["global-search"]} className="ml-auto" />
               ) : null}

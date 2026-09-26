@@ -114,6 +114,6 @@ test.each([
     expect(
       [...container.querySelectorAll("button")].some((button) => button.textContent === "Edit"),
     ).toBe(false);
-    expect(container.textContent).toContain(state.saved ? "Assessment1" : "No feedback saved yet.");
+    expect(container.textContent).toContain(state.saved ? "Assessment1" : "No feedback yet");
   }
 });

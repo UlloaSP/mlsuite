@@ -4,6 +4,7 @@ import { AppPanel } from "@/shared/ui/AppPanel";
 import { RoleBadge } from "./RoleBadge";
 import { StatusBadge } from "./admin/StatusBadge";
 import type { OrganizationInvitationDto } from "@/features/workspace/api/workspace.types";
+import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "short" });
 
@@ -28,8 +29,7 @@ export function InvitationCard({
         <div className="min-w-0 space-y-2 break-words">
           <div className="flex items-center gap-3">
             {canManage ? (
-              <input
-                type="checkbox"
+              <AppCheckbox
                 aria-label={`Select invitation ${invite.email}`}
                 checked={selected}
                 onChange={(event) => onSelect(event.target.checked)}

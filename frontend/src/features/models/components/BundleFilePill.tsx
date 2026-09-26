@@ -60,13 +60,13 @@ export function BundleFilePill({ name, size, kind, badge }: Props) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-bold text-fg">{name}</p>
+        <p className="truncate text-xs font-semibold text-fg">{name}</p>
         <p className="mt-px font-mono text-3xs text-fg-muted">{formatBytes(size)}</p>
       </div>
 
       <span
         className={cx(
-          "flex-shrink-0 rounded-full px-[7px] py-0.5 font-mono text-3xs font-medium tracking-[0.03em]",
+          "flex-shrink-0 rounded-full px-2 py-0.5 font-mono text-3xs font-medium",
           isModel ? "bg-accent-subtle text-accent" : "bg-info-subtle text-info-fg",
         )}
       >

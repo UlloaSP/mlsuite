@@ -4,6 +4,7 @@ import { cx } from "@/shared/ui/cx";
 import { buildDashboardAlerts } from "@/features/infrastructure/lib/dashboard-summary";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 type Props = {
   overview: InfrastructureOverviewDto;
@@ -38,7 +39,7 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-3xs font-semibold uppercase tracking-[0.14em] text-fg-secondary">
+          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
             Operational signals
           </p>
           <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Alerts</h1>
@@ -87,9 +88,7 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
           </div>
         ))}
         {filtered.length === 0 && (
-          <div className="px-5 py-10 text-center text-sm text-fg-muted">
-            No alerts match this filter.
-          </div>
+          <AppEmptyState compact title="No matching alerts" description="Try another level." />
         )}
       </div>
     </div>

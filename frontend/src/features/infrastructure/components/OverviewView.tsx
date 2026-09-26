@@ -35,7 +35,7 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-3xs font-semibold uppercase tracking-[0.14em] text-fg-secondary">
+          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
             Infrastructure overview
           </p>
           <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Control dashboard</h1>

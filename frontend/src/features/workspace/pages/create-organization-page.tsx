@@ -95,11 +95,11 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
       <AppSurface className="flex flex-1 flex-col overflow-auto">
         <AppPageHeader
           eyebrow="Superadmin"
-          title="Create Organization"
+          title="Create organization"
           description="Create an organization and assign its first owner."
           breadcrumbs={[
             { label: "Organizations", to: "/workspace/organizations" },
-            { label: "Create Organization" },
+            { label: "Create organization" },
           ]}
         />
         <section className="mx-auto w-full max-w-3xl space-y-4">
@@ -151,7 +151,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
               onClick={() => void submit()}
               disabled={!name.trim() || !owner || createOrganization.isPending}
             >
-              {createOrganization.isPending ? "Creating..." : "Create Organization"}
+              {createOrganization.isPending ? "Creating..." : "Create organization"}
             </AppButton>
           </div>
         </section>

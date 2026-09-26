@@ -21,7 +21,7 @@ export function SortTh({
     <th className="px-4 py-2.5 text-left">
       <button
         type="button"
-        className="select-none text-3xs font-semibold uppercase tracking-[0.1em] text-fg-secondary hover:text-fg"
+        className="select-none text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary hover:text-fg"
         onClick={() => onSort(sortKey)}
       >
         {label}

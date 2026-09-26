@@ -164,7 +164,7 @@ export function SchemaReviewCombinedFeedbackForm({
     <section className="space-y-4">
       <h2 className="text-xl font-semibold text-fg">Review questionnaire</h2>
       <ReportQuestionnaireMount
-        title="Schema Review"
+        title="Schema review"
         schema={combined.schema}
         initialValues={savedValues ?? combined.initialValues}
         editable

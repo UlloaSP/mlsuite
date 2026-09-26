@@ -92,9 +92,9 @@ export function SchemaFormPreview({ schema }: Props) {
         reportPane: "always",
         reportFetchMode: "none",
         labels: {
-          form: "Schema Inputs",
-          reports: "Preview Results",
-          submit: "Run Preview",
+          form: "Schema inputs",
+          reports: "Preview results",
+          submit: "Run preview",
           validating: "Checking schema...",
           submitting: "Rendering preview...",
         },

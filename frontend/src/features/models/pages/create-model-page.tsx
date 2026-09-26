@@ -218,9 +218,9 @@ export function CreateModelPage() {
     <AppPage>
       <div className="app-scroll flex min-h-0 flex-1 flex-col overflow-auto px-4 py-7 sm:px-8 lg:overflow-hidden">
         <AppPageHeader
-          breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create Model" }]}
-          eyebrow="Model Studio"
-          title="Create New Model"
+          breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create model" }]}
+          eyebrow="Model studio"
+          title="Create model"
           description="Drop model artifacts and dataframes. Files are grouped by name when possible."
         />
 

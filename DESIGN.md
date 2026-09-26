@@ -58,7 +58,13 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 - Show labels users recognize; internal ids may support them but should not replace them.
 - Actions use `AppButton` (variants primary, secondary, ghost, danger; sizes md, sm). A link that looks like a button uses `appButtonClass`; never nest a button in a link. A header action's importance comes from its variant, never its position.
 - Every modal or side sheet is an `AppDialog`: it owns focus, Escape, overlay, and the title/close header. Pass `busy` to block dismissal during an action.
-- Icon-only controls get an `AppTooltip` with their name and shortcut instead of a native `title`.
+- Icon-only controls get an `AppTooltip` with their name and shortcut instead of a native `title`. `AppIconButton` shares the control radius.
+- Confirm or ask for a value with `useActionDialog` (`confirm`, `prompt`); never `window.confirm` or `window.prompt`.
+- Empty lists and panels use `AppEmptyState compact`; the full `AppEmptyState` is for an empty page.
+- Checkboxes are `AppCheckbox`; a row that is itself a toggle button shows `AppCheckMark` and sets `aria-pressed`.
+- Small uppercase labels use `AppEyebrow` or `text-2xs font-semibold uppercase tracking-eyebrow`.
+- Copy uses sentence case for titles, buttons, labels, and breadcrumbs ("Create organization", not "Create Organization"); proper names keep their casing.
+- Dates go through `formatTimestamp`, `formatDate`, or `LiveRelativeTime`, all in the user's locale.
 - Badges are `AppBadge` in sentence case; API enum values ("PARTIAL_SUCCESS") are formatted for you.
 - Each product section has one icon in `section-icons.ts`, used everywhere the section appears.
 - Radius follows the element's role: `rounded-control` (buttons, fields, menu items), `rounded-menu` (menus, popovers), `rounded-card` (cards, rows, panels), `rounded-dialog` (dialogs, sheets), `rounded-full` (badges, avatars, switches).

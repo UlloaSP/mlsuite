@@ -4,6 +4,7 @@ import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import type { PermissionKey, RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
+import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 
 type RolePermission = {
   key: PermissionKey;
@@ -115,12 +116,11 @@ export function RoleForm({
                     key={permission.key}
                     className="flex cursor-pointer gap-3 py-3 text-sm hover:bg-surface-muted"
                   >
-                    <input
-                      type="checkbox"
+                    <AppCheckbox
                       aria-label={permission.label}
                       checked={selectedSet.has(permission.key)}
                       onChange={(e) => toggle(permission.key, e.target.checked)}
-                      className="mt-1"
+                      className="mt-0.5"
                     />
                     <span>
                       <span className="font-semibold text-fg">{permission.label}</span>

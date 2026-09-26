@@ -20,6 +20,7 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
+import { useActionDialog } from "@/shared/ui/use-action-dialog";
 
 const validStatus = (value: string | null): InferenceFilters["status"] =>
   value === "SUCCESS" || value === "PARTIAL_SUCCESS" || value === "FAILED" ? value : "all";
@@ -54,8 +55,15 @@ export function InferencesPage({
   );
   const canDelete = workspace?.permissions.canRunPredictions ?? false;
   const canManageReviews = workspace?.permissions.canManageReviews ?? false;
+  const actionDialog = useActionDialog();
   const handleDelete = async (item: (typeof items)[number]) => {
-    if (!window.confirm(`Delete ${item.name}? This cannot be undone.`)) return;
+    const confirmed = await actionDialog.confirm({
+      title: `Delete ${item.name}?`,
+      description: "This cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteInference.mutateAsync(item.id);
       toast.success("Inference deleted.");
@@ -91,6 +99,7 @@ export function InferencesPage({
 
   return (
     <AppPage>
+      {actionDialog.dialog}
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           eyebrow="Organization"

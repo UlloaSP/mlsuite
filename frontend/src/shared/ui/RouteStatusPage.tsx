@@ -46,7 +46,7 @@ type RouteStatusPageProps = {
 export function RouteStatusPage({
   status = 404,
   homePath = "/workspace",
-  homeLabel = "Go to Workspace",
+  homeLabel = "Go to workspace",
   onReload = () => window.location.reload(),
 }: RouteStatusPageProps) {
   const navigate = useNavigate();
@@ -70,7 +70,7 @@ export function RouteStatusPage({
         ))}
 
         <header className="relative z-10 shrink-0 px-6 pt-5 sm:px-11">
-          <div className="mb-2.5 flex items-center justify-between font-mono text-3xs uppercase tracking-[0.08em] text-fg-muted">
+          <div className="mb-2.5 flex items-center justify-between font-mono text-2xs uppercase tracking-eyebrow text-fg-muted">
             <span>Vol. 2 - Issue 4</span>
             <span>{currentDate}</span>
           </div>
@@ -87,7 +87,7 @@ export function RouteStatusPage({
 
         <main className="relative z-10 flex flex-1 flex-col justify-between px-6 pb-10 sm:px-11 lg:flex-row lg:items-end lg:justify-start">
           <section className="border-line pt-6 lg:flex-[0_0_58%] lg:border-r lg:pr-10">
-            <p className="mb-2.5 font-mono text-3xs uppercase tracking-[0.12em] text-accent">
+            <p className="mb-2.5 font-mono text-2xs uppercase tracking-eyebrow text-accent">
               {status === "module-load"
                 ? "Page loading error"
                 : status === 0
@@ -101,7 +101,7 @@ export function RouteStatusPage({
           </section>
 
           <section className="mt-10 lg:mt-0 lg:flex-1 lg:pl-10">
-            <p className="mb-4 font-mono text-3xs uppercase tracking-[0.1em] text-fg-muted">
+            <p className="mb-4 font-mono text-2xs uppercase tracking-eyebrow text-fg-muted">
               Navigation
             </p>
             <div className="flex flex-col gap-[9px]">
@@ -117,7 +117,7 @@ export function RouteStatusPage({
               </AppButton>
               <AppButton variant="secondary" className="w-full" onClick={() => navigate(-1)}>
                 <ArrowLeft className="size-4" />
-                Go Back
+                Go back
               </AppButton>
             </div>
 

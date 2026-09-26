@@ -56,7 +56,7 @@ export function BundleCard({
         "flex-shrink-0 overflow-hidden rounded-lg border transition-all duration-150",
         bundle.saved
           ? "border-success-border bg-success-subtle"
-          : "border-line bg-surface-muted hover:-translate-y-px hover:border-line-strong hover:shadow-hover",
+          : "border-line bg-surface-muted hover:border-line-strong hover:shadow-hover",
       )}
     >
       <div className="flex items-stretch">
@@ -75,7 +75,7 @@ export function BundleCard({
               onClick={onAttachModel}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => dropFile(event, onDropModel)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-accent bg-accent-subtle px-3 py-[7px] text-xs font-bold text-accent transition-all duration-150 hover:bg-surface-subtle"
+              className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-accent bg-accent-subtle px-3 py-2 text-xs font-semibold text-accent transition-all duration-150 hover:bg-surface-subtle"
             >
               <Plus size={12} />
               Select model{" "}
@@ -98,7 +98,7 @@ export function BundleCard({
               onClick={onAttachDf}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => dropFile(event, onDropDf)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-line bg-surface-subtle px-3 py-[7px] text-xs text-fg-muted transition-all duration-150 hover:border-accent-border hover:bg-accent-subtle hover:text-accent"
+              className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-line bg-surface-subtle px-3 py-2 text-xs text-fg-muted transition-all duration-150 hover:border-accent-border hover:bg-accent-subtle hover:text-accent"
             >
               <Plus size={12} />
               Attach dataframe{" "}
@@ -118,14 +118,16 @@ export function BundleCard({
             disabled={bundle.saved}
             className={cx(
               "w-full rounded-lg border border-line bg-surface-subtle",
-              "px-3 py-2 text-xs font-bold text-fg outline-none",
+              "px-3 py-2 text-xs font-semibold text-fg outline-none",
               "transition-all duration-150 focus:border-accent focus:bg-surface",
               bundle.saved && "cursor-not-allowed opacity-70",
             )}
           />
 
           <label className="flex flex-col gap-1">
-            <span className="text-3xs font-bold uppercase text-fg-muted">One-hot separator</span>
+            <span className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
+              One-hot separator
+            </span>
             <input
               aria-label={`One-hot separator for ${bundle.name}`}
               type="text"
@@ -143,7 +145,7 @@ export function BundleCard({
 
           <div className="flex items-center justify-between gap-2">
             {bundle.saved ? (
-              <span className="flex items-center gap-1.5 text-xs font-bold text-success-fg">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-success-fg">
                 <Check size={13} />
                 Saved
               </span>
