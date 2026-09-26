@@ -69,7 +69,7 @@ export function InvitationCatalog({
         <AppTextField
           className="min-w-[min(100%,260px)] flex-1"
           aria-label="Search invitations"
-          placeholder="Search invitations by email..."
+          placeholder="Search invitations by email…"
           prefix={<Search className="size-4 text-fg-muted" />}
           suffix={
             request.isSuccess ? (
@@ -114,7 +114,7 @@ export function InvitationCatalog({
         itemCount={filtered.length}
         isLoading={request.isPending}
         isBusy={request.isFetching}
-        loadingLabel="Loading invitations..."
+        loadingLabel="Loading invitations…"
         errorMessage={request.isError ? "Could not load invitations." : null}
         onRetry={() => {
           void request.refetch();

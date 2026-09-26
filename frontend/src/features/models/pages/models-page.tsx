@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -141,12 +141,12 @@ export function ModelsPage() {
           }.`,
           actions: canCreateModels ? (
             <AppButton type="button" onClick={() => navigate("/models/create")}>
-              + New Model
+              <Plus size={16} /> New model
             </AppButton>
           ) : null,
         }}
         isActionPending={isActionPending}
-        loadingLabel="Loading models..."
+        loadingLabel="Loading models…"
         pageSize={MODEL_CATALOG_PAGE_SIZE}
         filterLabel="Filter by model status"
         filters={STATUS_FILTERS}
@@ -162,7 +162,7 @@ export function ModelsPage() {
         emptyAction={
           canCreateModels ? (
             <AppButton type="button" onClick={() => navigate("/models/create")}>
-              + New Model
+              <Plus size={16} /> New model
             </AppButton>
           ) : undefined
         }

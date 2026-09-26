@@ -8,6 +8,7 @@ import { m as motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { AppButton } from "./AppButton";
 import { MLSuiteMark } from "./MLSuiteMark";
+import { MLSuiteWordmark } from "./MLSuiteWordmark";
 import { AppPage } from "./AppPage";
 
 const errorDateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -70,15 +71,16 @@ export function RouteStatusPage({
         ))}
 
         <header className="relative z-10 shrink-0 px-6 pt-5 sm:px-11">
-          <div className="mb-2.5 flex items-center justify-between font-mono text-2xs uppercase tracking-eyebrow text-fg-muted">
-            <span>Vol. 2 - Issue 4</span>
+          <div className="mb-2.5 flex items-center justify-end font-mono text-2xs uppercase tracking-eyebrow text-fg-muted">
             <span>{currentDate}</span>
           </div>
           <div className="mb-1.5 h-0.5 bg-fg" />
           <div className="flex items-center justify-center py-2.5">
             <div className="flex items-center gap-2.5">
               <MLSuiteMark />
-              <span className="text-3xl font-bold leading-none tracking-[-0.04em]">ML Suite</span>
+              <span className="text-3xl leading-none">
+                <MLSuiteWordmark />
+              </span>
             </div>
           </div>
           <div className="h-px bg-fg" />

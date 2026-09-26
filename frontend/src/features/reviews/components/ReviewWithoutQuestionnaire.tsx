@@ -35,7 +35,7 @@ export function ReviewWithoutQuestionnaire({
         review.
       </AppCopy>
       <AppButton disabled={submitting} onClick={() => void complete()}>
-        {submitting ? "Completing review..." : "Complete this review"}
+        {submitting ? "Completing review…" : "Complete this review"}
       </AppButton>
     </section>
   );

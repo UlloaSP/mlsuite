@@ -98,7 +98,7 @@ test("reports request errors and retries", async () => {
 test("preserves page while loading instead of showing zero", async () => {
   hooks.query.mockReturnValue({ isPending: true });
   await render("?page=2");
-  expect(host.textContent).toContain("Loading invitations...");
+  expect(host.textContent).toContain("Loading invitations…");
   expect(host.textContent).not.toContain("0 invitations");
 });
 test("offers authorized actions, clears selection on page change, and disables accepted resend", async () => {

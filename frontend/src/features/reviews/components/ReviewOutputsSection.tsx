@@ -28,7 +28,7 @@ export function ReviewOutputsSection({
       ),
     [results, version],
   );
-  if (showLoading) return <AppLoadingState compact label="Loading report renderers..." />;
+  if (showLoading) return <AppLoadingState compact label="Loading report renderers…" />;
   if (catalog.status === "error")
     return (
       <div role="alert">

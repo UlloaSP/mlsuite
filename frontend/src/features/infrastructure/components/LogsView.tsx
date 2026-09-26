@@ -5,6 +5,7 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { cx } from "@/shared/ui/cx";
 import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
+import { FIELD_FOCUS_RING } from "@/shared/ui/focus-ring";
 
 type Props = {
   services: ServiceStatusDto[];
@@ -88,7 +89,12 @@ export function LogsView({
       <div className="overflow-hidden rounded-xl border border-line bg-surface">
         {/* Filter toolbar */}
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
-          <label className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
+          <label
+            className={cx(
+              "flex items-center gap-2 rounded-control border border-line bg-surface px-3 py-1.5 transition",
+              FIELD_FOCUS_RING,
+            )}
+          >
             <Search size={14} className="text-fg-muted" />
             <input
               aria-label="Search log message"

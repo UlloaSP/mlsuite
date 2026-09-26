@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import { Dialog } from "radix-ui";
 import type { FormEventHandler, ReactNode } from "react";
 import { AppIconButton } from "./AppIconButton";
+import { AppInlineAlert } from "./AppInlineAlert";
 import { cx } from "./cx";
 
 const WIDTHS = {
@@ -26,6 +27,7 @@ export function AppDialog({
   busy = false,
   children,
   description,
+  error,
   flush = false,
   footer,
   onClose,
@@ -40,6 +42,8 @@ export function AppDialog({
   busy?: boolean;
   children?: ReactNode;
   description?: ReactNode;
+  /** A failed action, shown beside the footer so the dialog stays open for a retry. */
+  error?: ReactNode;
   /** Body without inner padding, for content that runs edge to edge (split panes). */
   flush?: boolean;
   footer?: ReactNode;
@@ -65,6 +69,7 @@ export function AppDialog({
           {children}
         </div>
       ) : null}
+      {error ? <AppInlineAlert className="mx-6 mb-4 shrink-0">{error}</AppInlineAlert> : null}
       {footer ? (
         <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-line px-6 py-4">
           {footer}

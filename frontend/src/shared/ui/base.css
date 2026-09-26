@@ -203,6 +203,13 @@ html:has([data-navigation-position]) {
   overflow: clip;
 }
 
+/* Baseline focus indicator in the theme's focus color. :where() keeps it at zero
+   specificity, so a component's own ring (FOCUS_RING) or outline-none wins. */
+:where(a, button, input, select, textarea, summary, [tabindex], [role="button"]):focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--color-focus) 60%, transparent);
+  outline-offset: 2px;
+}
+
 .app-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--color-line-strong) transparent;

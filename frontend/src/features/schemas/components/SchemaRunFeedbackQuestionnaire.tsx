@@ -66,7 +66,7 @@ export function SchemaRunFeedbackQuestionnaire({
   const savedValuesComplete =
     savedValues !== null && isCombinedSchemaFeedbackComplete(steps, savedValues);
   const displayComplete = complete || savedValuesComplete;
-  const labels = useMemo(() => ({ submit: "Save feedback", submitting: "Saving feedback..." }), []);
+  const labels = useMemo(() => ({ submit: "Save feedback", submitting: "Saving feedback…" }), []);
   const transport = useMemo(
     () =>
       createCombinedQuestionnaireTransport(async (values) => {

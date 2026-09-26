@@ -326,7 +326,7 @@ describe("organization management", () => {
   test("shows loading and rejects a failed target organization query", async () => {
     mockSettings();
     hooks.dashboard.mockReturnValueOnce({ data: undefined, isError: false, isLoading: true });
-    expect((await renderSettings()).textContent).toContain("Loading organization settings...");
+    expect((await renderSettings()).textContent).toContain("Loading organization settings…");
 
     act(() => root?.unmount());
     root = null;

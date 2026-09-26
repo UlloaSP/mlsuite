@@ -12,11 +12,13 @@ const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
 
 export function ChangeRoleDialog({
   disabled,
+  error,
   user,
   onCancel,
   onConfirm,
 }: {
   disabled: boolean;
+  error?: string;
   user: AdminUser;
   onCancel: () => void;
   onConfirm: (role: Role) => Promise<void>;
@@ -26,6 +28,7 @@ export function ChangeRoleDialog({
     <AppDialog
       open
       busy={disabled}
+      error={error}
       onClose={onCancel}
       title="Change role"
       description={user.fullName}

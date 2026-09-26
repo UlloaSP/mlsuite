@@ -4,11 +4,13 @@ import { AppDialog } from "@/shared/ui/AppDialog";
 
 export function DeleteUserDialog({
   disabled,
+  error,
   user,
   onCancel,
   onConfirm,
 }: {
   disabled: boolean;
+  error?: string;
   user: AdminUser;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
@@ -17,6 +19,7 @@ export function DeleteUserDialog({
     <AppDialog
       open
       busy={disabled}
+      error={error}
       onClose={onCancel}
       title="Delete user?"
       description={`${user.fullName} will be removed if no protected records still reference this account.`}

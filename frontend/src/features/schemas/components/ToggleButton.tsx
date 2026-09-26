@@ -3,10 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { Braces, Code } from "lucide-react";
 import { useAtom } from "jotai";
-import { Braces, Code, RefreshCw } from "lucide-react";
 import { m as motion } from "motion/react";
 import { schemaErrorsAtom } from "@/features/schemas/lib/editor-atoms";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 interface ToggleButtonProps {
   isProcessing: boolean;
@@ -93,7 +94,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
                 transition={{ duration: 0.2 }}
               >
                 {isTransitioning ? (
-                  <RefreshCw className="size-5 animate-spin" />
+                  <AppSpinner size={20} />
                 ) : isJsonActive ? (
                   <Braces className="size-5" />
                 ) : (
@@ -136,7 +137,7 @@ export function ToggleButton({ isProcessing, isJsonActive, onToggleMode }: Toggl
       >
         {isTransitioning ? (
           <span className="flex items-center gap-2">
-            <RefreshCw className="size-3 animate-spin" />
+            <AppSpinner size={12} />
             Processing…
           </span>
         ) : (

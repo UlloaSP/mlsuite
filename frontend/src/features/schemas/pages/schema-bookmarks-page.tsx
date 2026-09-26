@@ -84,7 +84,7 @@ export function SchemaBookmarksPage() {
           { label: "Bookmarks" },
         ],
       }}
-      loadingLabel="Loading bookmarks..."
+      loadingLabel="Loading bookmarks…"
       pageSize={PAGE_SIZE}
       filterLabel="Filter bookmarks"
       filters={FILTERS}

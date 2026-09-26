@@ -95,8 +95,8 @@ export function SchemaFormPreview({ schema }: Props) {
           form: "Schema inputs",
           reports: "Preview results",
           submit: "Run preview",
-          validating: "Checking schema...",
-          submitting: "Rendering preview...",
+          validating: "Checking schema…",
+          submitting: "Rendering preview…",
         },
         designSystem: getPredictionDesignSystem(initialTheme),
       });

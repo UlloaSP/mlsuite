@@ -13,6 +13,7 @@ import type { SchemaAction } from "./SchemaActionsMenu";
 type Props = {
   action: SchemaAction;
   disabled: boolean;
+  error?: string;
   item: SchemaCatalogItemDto;
   onCancel: () => void;
   onConfirm: (value?: string) => Promise<void>;
@@ -41,7 +42,7 @@ const copy = {
   },
 } satisfies Record<SchemaAction, { title: string; submit: string; description: string }>;
 
-export function SchemaActionDialog({ action, disabled, item, onCancel, onConfirm }: Props) {
+export function SchemaActionDialog({ action, disabled, error, item, onCancel, onConfirm }: Props) {
   const needsName = action === "edit" || action === "duplicate";
   const [name, setName] = useState(action === "duplicate" ? `${item.name} Copy` : item.name);
   const meta = copy[action];
@@ -50,6 +51,7 @@ export function SchemaActionDialog({ action, disabled, item, onCancel, onConfirm
     <AppDialog
       open
       busy={disabled}
+      error={error}
       onClose={onCancel}
       title={meta.title}
       description={meta.description}

@@ -13,7 +13,7 @@ export function NotificationsPage() {
   const { data: invitations = [], isLoading } = usePendingInvitations();
   const showLoader = useStableLoading(isLoading);
 
-  if (showLoader) return <AppPageLoader label="Loading notifications..." />;
+  if (showLoader) return <AppPageLoader label="Loading notifications…" />;
 
   return (
     <AppPage>

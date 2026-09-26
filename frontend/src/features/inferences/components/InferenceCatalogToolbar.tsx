@@ -35,7 +35,7 @@ export function InferenceCatalogToolbar({ filters, inferences, onChange }: Props
         <AppTextField
           value={filters.query}
           onChange={(event) => onChange("query", event.target.value)}
-          placeholder="Search inferences..."
+          placeholder="Search inferences…"
           prefix={<Search size={16} className="text-fg-muted" />}
           className="min-w-[260px] flex-1"
         />

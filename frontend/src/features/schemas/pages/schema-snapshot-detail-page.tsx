@@ -38,10 +38,8 @@ export function SchemaSnapshotDetailPage() {
       await mutation.mutateAsync({ name, versionId: version.id });
       setDialogOpen(false);
       toast.success("Bookmark saved");
-    } catch (error) {
-      toast.error("Bookmark save failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // The dialog shows the mutation error and stays open for a retry.
     }
   };
 
@@ -56,10 +54,8 @@ export function SchemaSnapshotDetailPage() {
       setCloneDialogOpen(false);
       toast.success("Schema created from snapshot");
       void navigate(`/schemas/${copy.id}`);
-    } catch (error) {
-      toast.error("Schema creation failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // The dialog shows the mutation error and stays open for a retry.
     }
   };
 
@@ -97,8 +93,12 @@ export function SchemaSnapshotDetailPage() {
         open={dialogOpen}
         defaultName={version ? version.name.toLowerCase().replace(/\s+/g, "-") : "production"}
         snapshotLabel={version ? `${version.name} · v${version.version}` : "Snapshot"}
+        error={mutation.error?.message}
         pending={mutation.isPending}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          mutation.reset();
+          setDialogOpen(false);
+        }}
         onConfirm={(name) => void createBookmark(name)}
       />
       <SchemaChangeNameDialog
@@ -110,12 +110,16 @@ export function SchemaSnapshotDetailPage() {
         }
         fieldLabel="Schema name"
         open={cloneDialogOpen}
+        error={duplicateMutation.error?.message}
         pending={duplicateMutation.isPending}
         placeholder="New schema"
         submitIcon="copy"
         submitLabel="Create schema"
         title="Create schema from snapshot"
-        onClose={() => setCloneDialogOpen(false)}
+        onClose={() => {
+          duplicateMutation.reset();
+          setCloneDialogOpen(false);
+        }}
         onConfirm={(name) => void cloneSchema(name)}
       />
     </AppPage>

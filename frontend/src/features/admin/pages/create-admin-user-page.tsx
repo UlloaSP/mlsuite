@@ -18,6 +18,7 @@ import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { AdminUserFormField } from "@/features/admin/components/AdminUserFormField";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 
 type Role = "USER" | "SUPERADMIN";
 
@@ -48,7 +49,6 @@ export function CreateAdminUserPage() {
           toast.success("User created.");
           void navigate("/admin/users");
         },
-        onError: (actionError) => toast.error(actionError.message),
       },
     );
   };
@@ -109,13 +109,14 @@ export function CreateAdminUserPage() {
               options={ROLE_OPTIONS}
             />
           </AdminUserFormField>
+          {createUser.error ? <AppInlineAlert>{createUser.error.message}</AppInlineAlert> : null}
           <div className="flex justify-end gap-2 pt-2">
             <AppButton type="button" variant="secondary" onClick={() => navigate("/admin/users")}>
               Cancel
             </AppButton>
             <AppButton type="submit" disabled={createUser.isPending}>
               <UserPlus size={16} />
-              {createUser.isPending ? "Creating..." : "Create user"}
+              {createUser.isPending ? "Creating…" : "Create user"}
             </AppButton>
           </div>
         </form>

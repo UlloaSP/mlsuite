@@ -81,10 +81,8 @@ export function SchemaChangesPage() {
       });
       setChangeDialogOpen(false);
       void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
-    } catch (error) {
-      toast.error("Schema change creation failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // The dialog shows the mutation error and stays open for a retry.
     }
   };
 
@@ -99,10 +97,8 @@ export function SchemaChangesPage() {
       });
       setRenameTarget(null);
       toast.success("Change renamed");
-    } catch (error) {
-      toast.error("Change rename failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // The dialog shows the mutation error and stays open for a retry.
     }
   };
 
@@ -140,7 +136,7 @@ export function SchemaChangesPage() {
             </AppButton>
           ) : null,
         }}
-        loadingLabel="Loading changes..."
+        loadingLabel="Loading changes…"
         pageSize={PAGE_SIZE}
         filterLabel="Filter changes"
         filters={FILTERS}
@@ -183,10 +179,14 @@ export function SchemaChangesPage() {
           latestVersion ? `${latestVersion.name} · v${latestVersion.version}` : "Latest snapshot"
         }
         open={changeDialogOpen}
+        error={draftMutation.error?.message}
         pending={draftMutation.isPending}
         submitLabel="Create change"
         title="New change"
-        onClose={() => setChangeDialogOpen(false)}
+        onClose={() => {
+          draftMutation.reset();
+          setChangeDialogOpen(false);
+        }}
         onConfirm={(name) => void createChange(name)}
       />
       <SchemaChangeNameDialog
@@ -197,10 +197,14 @@ export function SchemaChangesPage() {
             : "Rename change"
         }
         open={Boolean(renameTarget)}
+        error={renameMutation.error?.message}
         pending={renameMutation.isPending}
         submitLabel="Rename"
         title="Rename change"
-        onClose={() => setRenameTarget(null)}
+        onClose={() => {
+          renameMutation.reset();
+          setRenameTarget(null);
+        }}
         onConfirm={(name) => void renameChange(name)}
       />
     </>

@@ -58,7 +58,7 @@ export function EditableText({
         autoFocus
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => void submit()}
-        className="max-h-32 min-h-20 w-full resize-y rounded border border-line bg-transparent px-2 py-1 text-sm text-fg outline-none"
+        className="max-h-32 min-h-20 w-full resize-y rounded-control border border-line bg-transparent px-2 py-1 text-sm text-fg outline-none focus:border-accent-border focus:ring-2 focus:ring-focus/30"
       />
     ) : (
       <input
@@ -75,7 +75,7 @@ export function EditableText({
           }
         }}
         className={cx(
-          "min-w-0 rounded border border-line bg-transparent px-2 py-1 text-fg outline-none",
+          "min-w-0 rounded-control border border-line bg-transparent px-2 py-1 text-fg outline-none focus:border-accent-border focus:ring-2 focus:ring-focus/30",
           as === "title" ? "text-lg font-semibold" : "text-sm font-semibold",
         )}
       />

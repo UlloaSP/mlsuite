@@ -39,7 +39,7 @@ export type CustomTheme = {
 export const THEME_PRESETS = [
   {
     value: "mlsuite",
-    label: "MLSuite",
+    label: "MLsuite",
     preview: { light: ["#f7f7fb", "#4f46e5"], dark: ["#0b0d14", "#a9a4ff"] },
   },
   {

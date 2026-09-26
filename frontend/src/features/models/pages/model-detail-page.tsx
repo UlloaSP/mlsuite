@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { Plus } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
@@ -60,7 +61,7 @@ export function ModelDetailPage() {
                     type="button"
                     onClick={() => navigate(`/schemas/create?modelId=${model.id}`)}
                   >
-                    + New schema
+                    <Plus size={16} /> New schema
                   </AppButton>
                 ) : null
               }

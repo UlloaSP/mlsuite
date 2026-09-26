@@ -24,7 +24,7 @@ export function NavbarAccountMenu({ menuSide }: { menuSide: "top" | "bottom" }) 
     return null;
   }
 
-  const displayName = user.userName || user.fullName || "Guest";
+  const displayName = user.fullName || user.userName || "Guest";
 
   return (
     <DropdownMenu.Root>

@@ -68,25 +68,17 @@ export function AdminUsersPage() {
     row: AdminUser,
     payload: { enabled?: boolean; systemRole?: AdminUser["systemRole"] },
   ) => {
-    try {
-      await updateUser.mutateAsync({ id: row.id, payload });
-      toast.success("User updated.");
-    } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
-      throw actionError;
-    }
+    // Failures propagate: the tile shows them inline in a dialog, or as a toast for the switch.
+    await updateUser.mutateAsync({ id: row.id, payload });
+    toast.success("User updated.");
   };
   const remove = async (row: AdminUser) => {
-    try {
-      await deleteUser.mutateAsync(row.id);
-      if (pageItems.length === 1 && controls.page > 0) {
-        controls.setPage((current) => current - 1);
-      }
-      toast.success("User deleted.");
-    } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
-      throw actionError;
+    // Failures propagate to the delete dialog, which stays open and shows them.
+    await deleteUser.mutateAsync(row.id);
+    if (pageItems.length === 1 && controls.page > 0) {
+      controls.setPage((current) => current - 1);
     }
+    toast.success("User deleted.");
   };
   const submitResetPassword = (nextPassword: string) => {
     if (!resetTarget) return;
@@ -97,7 +89,6 @@ export function AdminUsersPage() {
           toast.success("Password changed.");
           setResetTarget(null);
         },
-        onError: (actionError) => toast.error(actionError.message),
       },
     );
   };
@@ -116,12 +107,12 @@ export function AdminUsersPage() {
           actions: (
             <AppButton type="button" onClick={() => navigate("/admin/users/create")}>
               <Plus size={16} />
-              New User
+              New user
             </AppButton>
           ),
         }}
         isActionPending={isActionPending || pageQuery.isFetching}
-        loadingLabel="Loading users..."
+        loadingLabel="Loading users…"
         pageSize={PAGE_SIZE}
         filterLabel="Filter users by role"
         filters={FILTERS}
@@ -149,7 +140,11 @@ export function AdminUsersPage() {
         <ResetPasswordDialog
           fullName={resetTarget.fullName}
           isPending={resetPassword.isPending}
-          onClose={() => setResetTarget(null)}
+          error={resetPassword.error?.message}
+          onClose={() => {
+            resetPassword.reset();
+            setResetTarget(null);
+          }}
           onSubmit={submitResetPassword}
         />
       ) : null}

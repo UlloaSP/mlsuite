@@ -127,7 +127,7 @@ export function AppGlobalSearch() {
             <div className="max-h-[26rem] overflow-y-auto bg-surface-subtle">
               {showPanel ? (
                 isFetching ? (
-                  <AppCopy className="px-6 py-5">Searching workspace...</AppCopy>
+                  <AppCopy className="px-6 py-5">Searching workspace…</AppCopy>
                 ) : (data?.groups ?? []).length === 0 ? (
                   <AppCopy className="px-6 py-5">No results.</AppCopy>
                 ) : (
@@ -150,7 +150,7 @@ export function AppGlobalSearch() {
                 )
               ) : (
                 <div className="px-6 py-5">
-                  <p className="text-sm font-semibold text-fg">Search ML Suite</p>
+                  <p className="text-sm font-semibold text-fg">Search MLsuite</p>
                   <AppCopy className="mt-1">Type at least two characters.</AppCopy>
                 </div>
               )}

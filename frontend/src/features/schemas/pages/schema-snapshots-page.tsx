@@ -89,10 +89,8 @@ export function SchemaSnapshotsPage() {
       await bookmarkMutation.mutateAsync({ name, versionId: schemaVersionId(bookmarkTarget) });
       setBookmarkTarget(null);
       toast.success("Bookmark saved");
-    } catch (error) {
-      toast.error("Bookmark save failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // The dialog shows the mutation error and stays open for a retry.
     }
   };
 
@@ -105,10 +103,8 @@ export function SchemaSnapshotsPage() {
       });
       setChangeTarget(null);
       void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
-    } catch (error) {
-      toast.error("Schema change creation failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // The dialog shows the mutation error and stays open for a retry.
     }
   };
 
@@ -123,10 +119,8 @@ export function SchemaSnapshotsPage() {
       setCloneTarget(null);
       toast.success("Schema created from snapshot");
       void navigate(`/schemas/${copy.id}`);
-    } catch (error) {
-      toast.error("Schema creation failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // The dialog shows the mutation error and stays open for a retry.
     }
   };
 
@@ -155,7 +149,7 @@ export function SchemaSnapshotsPage() {
             { label: "Snapshots" },
           ],
         }}
-        loadingLabel="Loading snapshots..."
+        loadingLabel="Loading snapshots…"
         pageSize={PAGE_SIZE}
         filterLabel="Filter snapshots"
         filters={FILTERS}
@@ -197,8 +191,12 @@ export function SchemaSnapshotsPage() {
         snapshotLabel={
           bookmarkTarget ? `${bookmarkTarget.name} · v${bookmarkTarget.version}` : "Snapshot"
         }
+        error={bookmarkMutation.error?.message}
         pending={bookmarkMutation.isPending}
-        onClose={() => setBookmarkTarget(null)}
+        onClose={() => {
+          bookmarkMutation.reset();
+          setBookmarkTarget(null);
+        }}
         onConfirm={(name) => void createBookmark(name)}
       />
       <SchemaChangeNameDialog
@@ -207,10 +205,14 @@ export function SchemaSnapshotsPage() {
           changeTarget ? `${changeTarget.name} · v${changeTarget.version}` : "Selected snapshot"
         }
         open={Boolean(changeTarget)}
+        error={draftMutation.error?.message}
         pending={draftMutation.isPending}
         submitLabel="Create change"
         title="New change"
-        onClose={() => setChangeTarget(null)}
+        onClose={() => {
+          draftMutation.reset();
+          setChangeTarget(null);
+        }}
         onConfirm={(name) => void createChange(name)}
       />
       <SchemaChangeNameDialog
@@ -222,12 +224,16 @@ export function SchemaSnapshotsPage() {
         }
         fieldLabel="Schema name"
         open={Boolean(cloneTarget)}
+        error={duplicateMutation.error?.message}
         pending={duplicateMutation.isPending}
         placeholder="New schema"
         submitIcon="copy"
         submitLabel="Create schema"
         title="Create schema from snapshot"
-        onClose={() => setCloneTarget(null)}
+        onClose={() => {
+          duplicateMutation.reset();
+          setCloneTarget(null);
+        }}
         onConfirm={(name) => void cloneSchema(name)}
       />
     </>

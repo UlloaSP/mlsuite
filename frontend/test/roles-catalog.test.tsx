@@ -143,7 +143,7 @@ test.each(["roles", "templates", "permissions"])(
 test("loading is not an empty catalog", async () => {
   hooks.roles.mockReturnValue({ isPending: true });
   await render("?page=2");
-  expect(host.textContent).toContain("Loading roles...");
+  expect(host.textContent).toContain("Loading roles…");
   expect(host.textContent).not.toContain("No roles yet");
 });
 test("shows an empty search result", async () => {

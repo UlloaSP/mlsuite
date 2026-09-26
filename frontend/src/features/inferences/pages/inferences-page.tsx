@@ -134,7 +134,7 @@ export function InferencesPage({
           itemCount={filteredItems.length}
           isLoading={catalog.isLoading}
           isBusy={catalog.isFetching || deleteInference.isPending}
-          loadingLabel="Loading inferences..."
+          loadingLabel="Loading inferences…"
           errorMessage={catalog.error ? "Could not load inferences." : null}
           onRetry={() => void catalog.refetch()}
           emptyState={{

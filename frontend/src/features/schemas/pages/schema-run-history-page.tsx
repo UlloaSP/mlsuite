@@ -231,7 +231,7 @@ export function SchemaRunHistoryPage() {
           itemCount={awaitingResults ? 0 : filteredRuns.length}
           isLoading={isLoading}
           isBusy={isLoading || bookmarkRuns.isFetching}
-          loadingLabel="Loading inference history..."
+          loadingLabel="Loading inference history…"
           errorMessage={loadError ? "Could not load inference history." : null}
           onRetry={() => {
             void bookmarkRuns.refetch();

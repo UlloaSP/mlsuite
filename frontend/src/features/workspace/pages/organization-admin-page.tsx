@@ -17,7 +17,7 @@ export function OrganizationAdminPage() {
   if (dashboard.isError) {
     return <RouteStatusPage status={organizationRouteErrorStatus(dashboard.error)} />;
   }
-  if (!dashboard.data) return <AppPageLoader label="Loading organization..." />;
+  if (!dashboard.data) return <AppPageLoader label="Loading organization…" />;
   if (!dashboard.data.permissions.canViewOrganization) return <RouteStatusPage status={403} />;
 
   const isCurrent = context?.currentOrganization.id === id;

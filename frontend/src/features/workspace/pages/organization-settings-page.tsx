@@ -22,7 +22,7 @@ export function OrganizationSettingsPage() {
     return <RouteStatusPage status={organizationRouteErrorStatus(dashboard.error)} />;
   }
   if (showLoader || !organization || !permissions) {
-    return <AppPageLoader label="Loading organization settings..." />;
+    return <AppPageLoader label="Loading organization settings…" />;
   }
   if (!permissions.canViewOrganization) return <RouteStatusPage status={403} />;
 

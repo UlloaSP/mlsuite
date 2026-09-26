@@ -16,6 +16,7 @@ import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
 import { useCreateOrganizationMutation } from "@/features/workspace/api/workspace.mutations";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 
 type OrganizationOwnerCandidate = {
   avatarUrl?: string | null;
@@ -37,6 +38,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [owner, setOwner] = useState<OrganizationOwnerCandidate | null>(null);
+  const [submitError, setSubmitError] = useState<string>();
   const ownerInitializedRef = useRef(false);
   const slugEditedRef = useRef(false);
   const ownerItems = useMemo(
@@ -64,6 +66,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
   }, [currentUserId, users]);
 
   async function submit() {
+    setSubmitError(undefined);
     const trimmedName = name.trim();
     if (!trimmedName || !owner || createOrganization.isPending) return;
     try {
@@ -75,8 +78,8 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
       });
       toast.success("Organization created.");
       void navigate("/workspace/organizations");
-    } catch (submitError: unknown) {
-      toast.error(submitError instanceof Error ? submitError.message : String(submitError));
+    } catch (error: unknown) {
+      setSubmitError(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -138,6 +141,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
               className="rounded shadow-none [&_textarea]:max-h-64 [&_textarea]:min-h-28 [&_textarea]:resize-y"
             />
           </AppFieldLabel>
+          {submitError ? <AppInlineAlert>{submitError}</AppInlineAlert> : null}
           <div className="flex justify-end gap-2">
             <AppButton
               type="button"
@@ -151,7 +155,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
               onClick={() => void submit()}
               disabled={!name.trim() || !owner || createOrganization.isPending}
             >
-              {createOrganization.isPending ? "Creating..." : "Create organization"}
+              {createOrganization.isPending ? "Creating…" : "Create organization"}
             </AppButton>
           </div>
         </section>

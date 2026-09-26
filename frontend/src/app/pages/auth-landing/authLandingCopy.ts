@@ -10,7 +10,7 @@ export type AuthMode = "login" | "register";
 export const AUTH_COPY = {
   login: {
     submit: "Sign in",
-    switchPrompt: "New to ML Suite?",
+    switchPrompt: "New to MLsuite?",
     switchAction: "Create an account",
     error: "We couldn't sign you in. Check your details and try again.",
     passwordAutoComplete: "current-password",

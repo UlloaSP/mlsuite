@@ -129,12 +129,12 @@ export function PluginCatalogPage() {
             onClick={() => inputRef.current?.click()}
           >
             <Upload size={16} />
-            Upload Plugin
+            Upload plugin
           </AppButton>
         ) : null,
       }}
       isActionPending={deleteMutation.isPending || uploadMutation.isPending}
-      loadingLabel="Loading plugins..."
+      loadingLabel="Loading plugins…"
       pageSize={PLUGIN_CATALOG_PAGE_SIZE}
       filterLabel="Filter by plugin type"
       filterVariant="segmented"

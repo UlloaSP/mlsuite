@@ -94,7 +94,7 @@ export function MembersPage() {
           <AppTextField
             className="min-w-[min(100%,260px)] flex-1"
             aria-label="Search members"
-            placeholder="Search members by name or email..."
+            placeholder="Search members by name or email…"
             prefix={<Search className="size-4 text-fg-muted" />}
             suffix={
               membersQuery.isSuccess ? (
@@ -122,7 +122,7 @@ export function MembersPage() {
           itemCount={filtered.length}
           isLoading={loading}
           isBusy={loading || membersQuery.isFetching}
-          loadingLabel="Loading members..."
+          loadingLabel="Loading members…"
           errorMessage={membersQuery.isError ? "Could not load members." : null}
           onRetry={() => {
             void membersQuery.refetch();

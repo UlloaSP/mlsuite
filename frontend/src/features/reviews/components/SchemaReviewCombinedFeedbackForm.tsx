@@ -83,7 +83,7 @@ export function SchemaReviewCombinedFeedbackForm({
     savedValues !== null && isCombinedSchemaFeedbackComplete(steps, savedValues);
   const displayComplete = complete || savedValuesComplete;
   const activeStepIdRef = useRef<string | undefined>(undefined);
-  const labels = useMemo(() => ({ submit: "Save review", submitting: "Saving review..." }), []);
+  const labels = useMemo(() => ({ submit: "Save review", submitting: "Saving review…" }), []);
 
   useEffect(() => {
     const firstStep = displayComplete && !editing ? undefined : steps[0];
@@ -129,16 +129,12 @@ export function SchemaReviewCombinedFeedbackForm({
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-fg">Review questionnaire</h2>
-          <AppButton
-            variant="secondary"
-            className="rounded-none px-4 py-2"
-            onClick={() => setEditing(true)}
-          >
+          <AppButton variant="secondary" size="sm" onClick={() => setEditing(true)}>
             Edit
           </AppButton>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="divide-y divide-line border border-line-strong bg-surface md:col-span-2">
+          <div className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface md:col-span-2">
             {steps.map((step) => (
               <div key={step.id} className="p-4">
                 <p className="text-sm font-semibold text-fg">{step.title}</p>
@@ -179,7 +175,6 @@ export function SchemaReviewCombinedFeedbackForm({
           toast.success("Review feedback saved");
         }}
         labels={labels}
-        square
         onStepChange={(stepId) => {
           const nextId = stepId ?? steps[0]?.id;
           if (activeStepIdRef.current === nextId) return;

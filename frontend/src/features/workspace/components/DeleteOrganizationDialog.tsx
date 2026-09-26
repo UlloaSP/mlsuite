@@ -18,6 +18,7 @@ export function DeleteOrganizationDialog({
     <AppDialog
       open
       busy={disabled}
+      error={error?.message}
       onClose={onCancel}
       title="Delete organization?"
       description={`This permanently deletes ${name}. It cannot be undone. Deletion succeeds only after all organization resources are removed.`}
@@ -36,12 +37,6 @@ export function DeleteOrganizationDialog({
           </AppButton>
         </>
       }
-    >
-      {error ? (
-        <p role="alert" className="text-sm text-danger-fg">
-          {error.message}
-        </p>
-      ) : null}
-    </AppDialog>
+    />
   );
 }

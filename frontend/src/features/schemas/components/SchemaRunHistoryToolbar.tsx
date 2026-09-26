@@ -49,7 +49,7 @@ export function SchemaRunHistoryToolbar({
         <AppTextField
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search by inference name..."
+          placeholder="Search by inference name…"
           prefix={<Search size={16} className="text-fg-muted" />}
           className="min-w-[260px] flex-1"
         />

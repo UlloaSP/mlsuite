@@ -71,4 +71,20 @@ describe("AppDialog", () => {
     act(() => document.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
     expect(onSubmit).toHaveBeenCalledOnce();
   });
+  it("shows a failed action inside the dialog, next to the footer", () => {
+    act(() =>
+      root.render(
+        <AppDialog
+          open
+          onClose={vi.fn()}
+          title="Delete user?"
+          error="User still owns an organization."
+          footer={<button type="button">Delete</button>}
+        />,
+      ),
+    );
+
+    const alert = document.querySelector('[role="dialog"] [role="alert"]');
+    expect(alert?.textContent).toBe("User still owns an organization.");
+  });
 });

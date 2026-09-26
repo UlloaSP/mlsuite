@@ -78,7 +78,7 @@ export function RolesCatalog({
         <AppTextField
           className="w-full"
           aria-label={`Search ${tab}`}
-          placeholder={`Search ${tab}...`}
+          placeholder={`Search ${tab}…`}
           prefix={<Search className="size-4 text-fg-muted" />}
           value={search}
           onChange={(event) =>
@@ -101,7 +101,7 @@ export function RolesCatalog({
         isLoading={loading}
         isBusy={loading}
         layout={tab === "roles" ? "list" : "grid"}
-        loadingLabel={`Loading ${tab}...`}
+        loadingLabel={`Loading ${tab}…`}
         errorMessage={error ? `Could not load ${tab}.` : null}
         onRetry={onRetry}
         emptyState={{

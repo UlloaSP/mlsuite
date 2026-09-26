@@ -30,7 +30,7 @@ export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
   }
 
   const collapsed = state === "collapsed";
-  const displayName = user.userName || user.fullName || "Guest";
+  const displayName = user.fullName || user.userName || "Guest";
 
   return (
     <SidebarMenu>

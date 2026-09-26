@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import type { OrganizationCatalogItemDto } from "@/features/workspace/api/workspace.types";
@@ -109,12 +109,12 @@ export function OrganizationsPage() {
         description: "Search, review, and maintain organization workspaces.",
         actions: (
           <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
-            + New Organization
+            <Plus size={16} /> New organization
           </AppButton>
         ),
       }}
       isActionPending={isActionPending}
-      loadingLabel="Loading organizations..."
+      loadingLabel="Loading organizations…"
       pageSize={ORGANIZATION_CATALOG_PAGE_SIZE}
       filterLabel="Filter organizations"
       filters={FILTERS}
@@ -129,7 +129,7 @@ export function OrganizationsPage() {
       filteredEmptyDescription="Try another search term."
       emptyAction={
         <AppButton type="button" onClick={() => navigate("/workspace/organizations/create")}>
-          + New Organization
+          <Plus size={16} /> New organization
         </AppButton>
       }
       renderItem={(item) => (

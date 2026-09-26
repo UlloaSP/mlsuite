@@ -17,6 +17,7 @@ import {
 } from "./services-view-model";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { FIELD_FOCUS_RING } from "@/shared/ui/focus-ring";
 type Props = {
   services: ServiceStatusDto[];
   selectedService: string | null;
@@ -77,7 +78,12 @@ export function ServicesView({
       </div>
       <div className="overflow-hidden rounded-xl border border-line bg-surface">
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
-          <label className="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5">
+          <label
+            className={cx(
+              "flex items-center gap-2 rounded-control border border-line bg-surface px-3 py-1.5 transition",
+              FIELD_FOCUS_RING,
+            )}
+          >
             <Search size={14} className="text-fg-muted" />
             <input
               aria-label="Filter services"

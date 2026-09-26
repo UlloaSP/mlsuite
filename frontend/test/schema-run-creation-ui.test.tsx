@@ -150,16 +150,12 @@ describe("schema run creation UI", () => {
 
   test("explains every disabled save state", () => {
     expect(getSchemaRunSaveAction("idle", false, false, true).label).toBe("Run inference first");
-    expect(getSchemaRunSaveAction("running", false, false, true).label).toBe(
-      "Running inference...",
-    );
-    expect(getSchemaRunSaveAction("unsaved", true, false, true).label).toBe(
-      "Waiting for reports...",
-    );
+    expect(getSchemaRunSaveAction("running", false, false, true).label).toBe("Running inference…");
+    expect(getSchemaRunSaveAction("unsaved", true, false, true).label).toBe("Waiting for reports…");
     expect(getSchemaRunSaveAction("unsaved", false, false, false).label).toBe(
       "Name inference first",
     );
-    expect(getSchemaRunSaveAction("unsaved", false, true, true).label).toBe("Saving inference...");
+    expect(getSchemaRunSaveAction("unsaved", false, true, true).label).toBe("Saving inference…");
     expect(getSchemaRunSaveAction("saved", false, false, true).label).toBe("Inference saved");
     expect(getSchemaRunSaveAction("unsaved", false, false, true)).toEqual({
       disabled: false,
@@ -259,13 +255,13 @@ describe("schema run creation UI", () => {
     vi.setSystemTime(new Date("2026-08-24T14:49:00.000Z"));
     await act(async () => mountOptions.onRunningChange(true));
     expect(name.value).toBe("run-2026-08-24T14:49:00.000Z");
-    expect(save.textContent).toContain("Running inference...");
+    expect(save.textContent).toContain("Running inference…");
 
     await act(async () => {
       mountOptions.onSubmit({ age: 42 }, completedRaw, true);
       await vi.runAllTimersAsync();
     });
-    expect(save.textContent).toContain("Waiting for reports...");
+    expect(save.textContent).toContain("Waiting for reports…");
     expect(save.disabled).toBe(true);
 
     await act(async () => {
@@ -304,7 +300,7 @@ describe("schema run creation UI", () => {
       await Promise.resolve();
     });
     expect(pageState.mutateAsync).toHaveBeenCalledTimes(1);
-    expect(save.textContent).toContain("Saving inference...");
+    expect(save.textContent).toContain("Saving inference…");
     expect(save.disabled).toBe(true);
 
     vi.setSystemTime(new Date("2026-08-24T14:50:00.000Z"));

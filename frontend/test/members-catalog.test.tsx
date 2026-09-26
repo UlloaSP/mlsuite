@@ -100,7 +100,7 @@ test("does not mistake a failed request for an empty membership", async () => {
 test("shows loading while awaiting data instead of a zero total", async () => {
   hooks.members.mockReturnValue({ isPending: true });
   await render("?page=2");
-  expect(host.textContent).toContain("Loading members...");
+  expect(host.textContent).toContain("Loading members…");
   expect(host.textContent).not.toContain("0 members");
 });
 test("shows no matches for unmatched search", async () => {

@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Save } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -31,6 +30,7 @@ type Props = {
 };
 
 import { initialSchemaModels } from "@/features/schemas/lib/schema-model-selection";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 
 export function CreateSchemaPage({ isLoading, models }: Props) {
   const navigate = useNavigate();
@@ -39,6 +39,7 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selection, setSelected] = useState<SelectedModel[] | null>(null);
+  const [submitError, setSubmitError] = useState<string>();
   const modelId = searchParams.get("modelId");
   const selected = useMemo(
     () => selection ?? initialSchemaModels(models, modelId),
@@ -63,6 +64,7 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setSubmitError(undefined);
     if (!canSubmit || busy) return;
     try {
       const preparedVersion = prepareSchemaVersionForSave(
@@ -83,9 +85,9 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
       ).id;
       void navigate(`/schemas/${schemaId}`);
     } catch (error) {
-      toast.error("Schema create failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+      setSubmitError(
+        `Schema create failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   };
 
@@ -113,7 +115,7 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
                   aria-label="Schema description"
                   placeholder="Schema description"
                   onChange={(event) => setDescription(event.target.value)}
-                  className="min-h-24 w-full resize-y rounded-control border border-line bg-surface px-4 py-3 text-sm text-fg outline-none placeholder:text-fg-muted"
+                  className="min-h-24 w-full resize-y rounded-control border border-line bg-surface px-4 py-3 text-sm text-fg outline-none transition placeholder:text-fg-muted focus:border-accent-border focus:ring-2 focus:ring-focus/30"
                 />
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
@@ -130,7 +132,8 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
                   <p className="text-xs text-fg-secondary">Reports</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 xl:justify-end">
+              <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                {submitError ? <AppInlineAlert>{submitError}</AppInlineAlert> : null}
                 <AppButton
                   type="submit"
                   disabled={!canSubmit || busy || isLoading}

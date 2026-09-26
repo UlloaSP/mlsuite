@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { TextareaHTMLAttributes } from "react";
 import { cx } from "./cx";
+import { FIELD_FOCUS_RING } from "./focus-ring";
 
 export function AppTextArea({
   className,
@@ -14,7 +15,8 @@ export function AppTextArea({
   return (
     <label
       className={cx(
-        "inline-flex rounded-control border border-line bg-surface px-4 py-3 text-sm text-fg-secondary shadow-card",
+        "inline-flex rounded-control border border-line bg-surface px-4 py-3 text-sm text-fg-secondary shadow-card transition",
+        FIELD_FOCUS_RING,
         className,
       )}
     >

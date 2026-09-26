@@ -3,9 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { RefreshCcw, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { SummaryRow } from "./SummaryRow";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   total: number;
@@ -68,7 +69,7 @@ export function BundleSummaryPanel({
       {/* Actions */}
       <div className="mt-auto flex flex-shrink-0 flex-col gap-2 border-t border-line px-5 py-3.5">
         <AppButton className="w-full" disabled={!canSave} onClick={onSaveAll}>
-          {anySaving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />}
+          {anySaving ? <AppSpinner size={14} /> : <Save size={14} />}
           {anySaving ? "Saving…" : "Save all"}
         </AppButton>
         <AppButton variant="secondary" className="w-full" onClick={onClear}>

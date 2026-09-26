@@ -6,9 +6,9 @@ export type FeedbackStatusDisplay = SchemaFeedbackStatus | "LOADING" | "ERROR";
 export function FeedbackStatusBadge({ status = "LOADING" }: { status?: FeedbackStatusDisplay }) {
   return (
     <span className="grid w-60 max-w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-      <span>Feedback:</span>
+      <span className="text-fg-secondary">Feedback</span>
       <AppBadge
-        className="min-w-0 justify-center text-center"
+        className="min-w-0 justify-self-start"
         tone={
           status === "COMPLETED"
             ? "success"

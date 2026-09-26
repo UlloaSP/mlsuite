@@ -22,7 +22,7 @@ export function InvitationAcceptPage() {
           <AppPageHeader
             eyebrow="Invitation"
             title="Join workspace"
-            description="Accept this invitation to enter the shared MLSuite workspace, or decline it and keep your current setup untouched."
+            description="Accept this invitation to enter the shared MLsuite workspace, or decline it and keep your current setup untouched."
           />
           <div className="mt-6 flex flex-wrap gap-3">
             <AppButton

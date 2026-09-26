@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { CheckCircle2, GitMerge, PencilLine, RefreshCcw } from "lucide-react";
+import { CheckCircle2, GitMerge, PencilLine } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ import {
   useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
 import { SchemaMergeDiffViewer } from "@/features/schemas/components/SchemaMergeDiffViewer";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 export function SchemaDraftConflictPage() {
   const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
@@ -200,17 +201,13 @@ export function SchemaDraftConflictPage() {
                   disabled={!draft || !diff || mergeMutation.isPending || unresolved > 0}
                   onClick={applyMerge}
                 >
-                  {mergeMutation.isPending ? (
-                    <RefreshCcw className="animate-spin" size={16} />
-                  ) : (
-                    <GitMerge size={16} />
-                  )}
+                  {mergeMutation.isPending ? <AppSpinner size={16} /> : <GitMerge size={16} />}
                   {unresolved > 0 ? `Resolve ${unresolved} paths` : "Apply merge"}
                 </AppButton>
               ) : (
                 <AppButton disabled={!draft || publishMutation.isPending} onClick={publish}>
                   {publishMutation.isPending ? (
-                    <RefreshCcw className="animate-spin" size={16} />
+                    <AppSpinner size={16} />
                   ) : (
                     <CheckCircle2 size={16} />
                   )}

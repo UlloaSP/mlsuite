@@ -4,8 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { LucideIcon } from "lucide-react";
-import { m as motion } from "motion/react";
-import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppEyebrow } from "@/shared/ui/AppEyebrow";
 import { AppPanel } from "@/shared/ui/AppPanel";
 
 export type InfoCardProps = {
@@ -16,18 +15,16 @@ export type InfoCardProps = {
 
 export function InfoCard({ icon: Icon, title, value }: InfoCardProps) {
   return (
-    <motion.div whileHover={{ scale: 1.01, y: -2 }}>
-      <AppPanel className="h-full">
-        <motion.div className="flex items-center gap-x-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-accent-subtle">
-            <Icon className="text-accent" size={20} />
-          </div>
-          <motion.div>
-            <AppCopy className="text-2xs uppercase tracking-eyebrow">{title}</AppCopy>
-            <motion.p className="font-medium text-fg">{value}</motion.p>
-          </motion.div>
-        </motion.div>
-      </AppPanel>
-    </motion.div>
+    <AppPanel className="h-full">
+      <div className="flex items-center gap-x-3">
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-accent-subtle">
+          <Icon className="text-accent" size={20} />
+        </div>
+        <div>
+          <AppEyebrow>{title}</AppEyebrow>
+          <p className="mt-0.5 font-medium text-fg">{value}</p>
+        </div>
+      </div>
+    </AppPanel>
   );
 }

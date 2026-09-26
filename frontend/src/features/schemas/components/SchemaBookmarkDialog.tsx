@@ -3,17 +3,19 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { RefreshCcw, Tag } from "lucide-react";
+import { Tag } from "lucide-react";
 import type { FormEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextField } from "@/shared/ui/AppTextField";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   open: boolean;
   defaultName: string;
   snapshotLabel: string;
   pending: boolean;
+  error?: string;
   onClose: () => void;
   onConfirm: (name: string) => void;
 };
@@ -23,6 +25,7 @@ export function SchemaBookmarkDialog({
   defaultName,
   snapshotLabel,
   pending,
+  error,
   onClose,
   onConfirm,
 }: Props) {
@@ -38,6 +41,7 @@ export function SchemaBookmarkDialog({
     <AppDialog
       open={open}
       busy={pending}
+      error={error}
       onClose={onClose}
       title={"Bookmark snapshot"}
       description={snapshotLabel}
@@ -48,7 +52,7 @@ export function SchemaBookmarkDialog({
             Cancel
           </AppButton>
           <AppButton disabled={pending} type="submit">
-            {pending ? <RefreshCcw className="animate-spin" size={16} /> : <Tag size={16} />}
+            {pending ? <AppSpinner size={16} /> : <Tag size={16} />}
             Save bookmark
           </AppButton>
         </>

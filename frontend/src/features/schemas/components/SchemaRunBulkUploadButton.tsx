@@ -3,13 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { LoaderCircle, Square, Upload } from "lucide-react";
+import { Square, Upload } from "lucide-react";
 import { useRef, type ChangeEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { useSchemaRunBulkUpload } from "@/features/schemas/lib/use-schema-run-bulk-upload";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 import { bulkUploadSummary } from "@/features/schemas/lib/bulk-upload";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   version: SchemaVersionDto;
@@ -28,7 +29,7 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
   const processing = bulk.status === "processing" || bulk.status === "parsing";
   const label =
     bulk.status === "parsing"
-      ? "Parsing..."
+      ? "Parsing…"
       : bulk.status === "processing"
         ? `Bulk ${bulk.processed}/${bulk.total}`
         : bulk.status === "done"
@@ -36,7 +37,7 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
           : "Bulk upload";
   const icon =
     bulk.status === "parsing" ? (
-      <LoaderCircle size={16} className="animate-spin" />
+      <AppSpinner size={16} />
     ) : bulk.status === "processing" ? (
       <Square size={14} className="fill-current" />
     ) : (

@@ -37,7 +37,7 @@ export function ReviewStepContextPanel() {
   const content = lines(activeStep.description.replace(/^Prediction (result|report):\s*/i, ""));
   return (
     <aside className="lg:sticky lg:top-28">
-      <div className="border border-line bg-surface p-4 shadow-card">
+      <div className="rounded-card border border-line bg-surface p-4">
         <p className="text-2xs font-semibold uppercase tracking-eyebrow text-accent">{title}</p>
         <h3 className="mt-2 text-base font-semibold leading-5 text-fg">{activeStep.title}</h3>
         <div className="mt-4 space-y-2 text-sm leading-6 text-fg-secondary">

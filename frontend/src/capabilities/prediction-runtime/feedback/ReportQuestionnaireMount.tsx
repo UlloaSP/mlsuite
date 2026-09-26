@@ -54,7 +54,6 @@ type ReportQuestionnaireMountProps = {
     submit?: string;
     submitting?: string;
   };
-  square?: boolean;
 };
 
 const buildEmbeddedStyles = (singleStep: boolean): string => `
@@ -97,7 +96,6 @@ type MountQuestionnaireHostOptions = {
   onMounted: (mounted: MountedForm | null) => void;
   onStepChange: (stepId: string | null) => void;
   onValuesChange: (values: Record<string, unknown>) => void;
-  square: boolean;
   theme: "light" | "dark";
   transport?: Transport;
   onSubmitted?: (values: Record<string, unknown>) => unknown;
@@ -114,7 +112,6 @@ const mountQuestionnaireHost = ({
   onMounted,
   onStepChange,
   onValuesChange,
-  square,
   theme,
   transport,
   onSubmitted,
@@ -148,7 +145,7 @@ const mountQuestionnaireHost = ({
       designSystem: getPredictionDesignSystem(theme),
       labels: {
         submit: labels?.submit ?? (editable ? "Check answers" : "Reviewed"),
-        submitting: labels?.submitting ?? "Checking answers...",
+        submitting: labels?.submitting ?? "Checking answers…",
       },
       reportPane: "hidden",
     });
@@ -161,11 +158,6 @@ const mountQuestionnaireHost = ({
     if (mode === "navigation") {
       const style = document.createElement("style");
       style.textContent = NAVIGATION_ONLY_STYLES;
-      mounted.host.shadowRoot?.append(style);
-    }
-    if (square) {
-      const style = document.createElement("style");
-      style.textContent = "* { border-radius: 0 !important; }";
       mounted.host.shadowRoot?.append(style);
     }
 
@@ -215,7 +207,6 @@ export function ReportQuestionnaireMount({
   onSubmitted,
   onSubmittingChange,
   labels,
-  square = false,
 }: ReportQuestionnaireMountProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedForm | null>(null);
@@ -277,13 +268,12 @@ export function ReportQuestionnaireMount({
         onStepChangeRef.current?.(stepId);
       },
       onValuesChange: (values) => onValuesChangeRef.current?.(values),
-      square,
       theme: initialTheme,
       transport: stableTransport,
       onSubmitted: (values) => submissionRef.current.onSubmitted?.(values),
       onSubmittingChange: (submitting) => submissionRef.current.onSubmittingChange?.(submitting),
     });
-  }, [effectiveSchema, editable, initialTheme, labels, mode, square, stableTransport]);
+  }, [effectiveSchema, editable, initialTheme, labels, mode, stableTransport]);
 
   useEffect(() => {
     mountedRef.current?.replaceDesignSystem(getPredictionDesignSystem(theme));

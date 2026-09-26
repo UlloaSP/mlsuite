@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { CalendarDays, Mail, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
 import { formatDate } from "@/shared/lib/date-time";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { AdminUser } from "@/features/admin/api/admin-user.types";
 import { UserActionsMenu } from "./UserActionsMenu";
 import { ChangeRoleDialog } from "./ChangeRoleDialog";
@@ -29,6 +30,21 @@ export function UserCatalogTile({
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
+  const [dialogError, setDialogError] = useState<string>();
+  const closeDialogs = () => {
+    setDialogError(undefined);
+    setDeleteOpen(false);
+    setRoleOpen(false);
+  };
+  // Dialog actions keep the dialog open and show the failure inside it.
+  const runInDialog = async (action: () => Promise<void>) => {
+    try {
+      await action();
+      closeDialogs();
+    } catch (error) {
+      setDialogError(error instanceof Error ? error.message : String(error));
+    }
+  };
   const displayName = item.fullName || item.username || item.email;
   const initials = displayName.slice(0, 2).toUpperCase();
 
@@ -69,28 +85,28 @@ export function UserCatalogTile({
         onChangeRole={() => setRoleOpen(true)}
         onDelete={() => setDeleteOpen(true)}
         onResetPassword={onResetPassword}
-        onToggleEnabled={() => void onUpdate({ enabled: !item.enabled })}
+        onToggleEnabled={() =>
+          void onUpdate({ enabled: !item.enabled }).catch((error: unknown) =>
+            toast.error(error instanceof Error ? error.message : String(error)),
+          )
+        }
       />
       {deleteOpen ? (
         <DeleteUserDialog
           disabled={disabled}
+          error={dialogError}
           user={item}
-          onCancel={() => setDeleteOpen(false)}
-          onConfirm={async () => {
-            await onDelete();
-            setDeleteOpen(false);
-          }}
+          onCancel={closeDialogs}
+          onConfirm={() => runInDialog(onDelete)}
         />
       ) : null}
       {roleOpen ? (
         <ChangeRoleDialog
           disabled={disabled}
+          error={dialogError}
           user={item}
-          onCancel={() => setRoleOpen(false)}
-          onConfirm={async (systemRole) => {
-            await onUpdate({ systemRole });
-            setRoleOpen(false);
-          }}
+          onCancel={closeDialogs}
+          onConfirm={(systemRole) => runInDialog(() => onUpdate({ systemRole }))}
         />
       ) : null}
     </article>

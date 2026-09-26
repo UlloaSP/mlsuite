@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Check, Plus, RefreshCcw, Save } from "lucide-react";
+import { Check, Plus, Save } from "lucide-react";
 import { m as motion } from "motion/react";
 import type { DragEvent } from "react";
 import { cx } from "@/shared/ui/cx";
@@ -11,6 +11,7 @@ import type { Bundle } from "@/features/models/lib/bundle-types";
 import { MODEL_EXT_LABEL } from "@/features/models/lib/bundle-utils";
 import { BundleFilePill } from "./BundleFilePill";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   bundle: Bundle;
@@ -151,11 +152,7 @@ export function BundleCard({
               </span>
             ) : (
               <AppButton size="sm" disabled={!isSaveable} onClick={onSave}>
-                {bundle.saving ? (
-                  <RefreshCcw size={11} className="animate-spin" />
-                ) : (
-                  <Save size={11} />
-                )}
+                {bundle.saving ? <AppSpinner size={11} /> : <Save size={11} />}
                 {bundle.saving ? "Saving…" : "Save"}
               </AppButton>
             )}

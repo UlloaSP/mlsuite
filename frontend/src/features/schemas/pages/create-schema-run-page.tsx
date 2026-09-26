@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Check, LoaderCircle, PencilLine, Save } from "lucide-react";
+import { Check, PencilLine, Save } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ import {
 } from "@/features/schemas/lib/schema-run-save-action";
 import type { CreatePredictionRunRequest } from "@/features/schemas/api/prediction-types";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 const createRunName = () => `run-${new Date().toISOString()}`;
 
@@ -128,7 +129,7 @@ export function CreateSchemaRunPage() {
   );
 
   const saveIcon = saveAction.loading ? (
-    <LoaderCircle className="animate-spin" size={18} />
+    <AppSpinner size={18} />
   ) : phase === "saved" ? (
     <Check size={18} />
   ) : (
@@ -176,7 +177,7 @@ export function CreateSchemaRunPage() {
             }
           />
         </div>
-        {showLoading ? <AppLoadingState label="Loading schema version..." /> : null}
+        {showLoading ? <AppLoadingState label="Loading schema version…" /> : null}
         {!showLoading && executableVersion && isRecord(executableVersion.formSchema) ? (
           <div className="min-h-0 flex-1 overflow-hidden">
             <SchemaRunForm

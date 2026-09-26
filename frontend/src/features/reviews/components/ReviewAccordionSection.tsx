@@ -15,7 +15,7 @@ export function ReviewAccordionSection({
   children,
 }: ReviewAccordionSectionProps) {
   return (
-    <section className="border border-line-strong bg-surface">
+    <section className="overflow-hidden rounded-card border border-line bg-surface">
       <button
         type="button"
         onClick={onToggle}

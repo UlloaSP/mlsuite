@@ -38,7 +38,7 @@ export function PermissionCatalog({
         <AppTextField
           className="w-full"
           aria-label="Search permissions"
-          placeholder="Search permissions..."
+          placeholder="Search permissions…"
           prefix={<Search className="size-4 text-fg-muted" />}
           value={search}
           onChange={(event) =>
@@ -60,7 +60,7 @@ export function PermissionCatalog({
         className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4"
       >
         {showLoading ? (
-          <AppLoadingState compact label="Loading permissions..." />
+          <AppLoadingState compact label="Loading permissions…" />
         ) : error ? (
           <div className="space-y-3">
             <p role="alert">Could not load permissions.</p>

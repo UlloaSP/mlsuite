@@ -41,7 +41,7 @@ export function InferenceDetailPage() {
   }, [item, reviewRequested]);
 
   if (showLoader) {
-    return <AppPageLoader label="Loading inference..." />;
+    return <AppPageLoader label="Loading inference…" />;
   }
 
   if (catalog.error || !item) {

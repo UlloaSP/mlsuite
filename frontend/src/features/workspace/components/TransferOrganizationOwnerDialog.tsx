@@ -48,7 +48,7 @@ export function TransferOrganizationOwnerDialog({
       }
     >
       {showLoading ? (
-        <AppLoadingState compact label="Loading members..." />
+        <AppLoadingState compact label="Loading members…" />
       ) : (
         <>
           {error ? (

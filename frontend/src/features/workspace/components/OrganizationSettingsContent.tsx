@@ -122,7 +122,7 @@ export function OrganizationSettingsContent({
               className="w-fit"
               disabled={update.isPending || !name.trim() || !slug.trim()}
             >
-              {update.isPending ? "Saving..." : "Save changes"}
+              {update.isPending ? "Saving…" : "Save changes"}
             </AppButton>
           </form>
         ) : null}

@@ -7,7 +7,6 @@ import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
-import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
@@ -50,15 +49,13 @@ export function SchemaDetailPage() {
       });
       setChangeDialogOpen(false);
       void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
-    } catch (error) {
-      toast.error("Schema change creation failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      // The dialog shows the mutation error and stays open for a retry.
     }
   };
 
   if (showLoader || isError || !schema) {
-    if (showLoader) return <AppPageLoader label="Loading schema..." />;
+    if (showLoader) return <AppPageLoader label="Loading schema…" />;
     return (
       <AppPage>
         <AppEmptyState
@@ -123,10 +120,14 @@ export function SchemaDetailPage() {
             : "Latest published snapshot"
         }
         open={changeDialogOpen}
+        error={draftMutation.error?.message}
         pending={draftMutation.isPending}
         submitLabel="Create change"
         title="New change"
-        onClose={() => setChangeDialogOpen(false)}
+        onClose={() => {
+          draftMutation.reset();
+          setChangeDialogOpen(false);
+        }}
         onConfirm={(name) => void createChange(name)}
       />
     </AppPage>

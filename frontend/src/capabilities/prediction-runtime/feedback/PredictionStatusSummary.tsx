@@ -10,7 +10,7 @@ export function PredictionStatusSummary({ status, feedback }: Props) {
   return (
     <div className="grid min-w-0 max-w-full items-center gap-3 sm:grid-cols-[12rem_15rem]">
       <AppBadge
-        className="w-full max-w-48 justify-center text-center"
+        className="justify-self-start"
         tone={
           status === "SUCCESS" ? "success" : status === "PARTIAL_SUCCESS" ? "warning" : "danger"
         }

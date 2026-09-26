@@ -209,7 +209,7 @@ describe("organization inference catalog", () => {
     expect(detail).toContain('searchParams.get("section") === "reviews"');
     expect(detail).toContain('getElementById("reviews")?.scrollIntoView()');
     expect(detail).toContain("<InferenceReviewStatusSection");
-    expect(detail).toContain("Loading inference...");
+    expect(detail).toContain("Loading inference…");
     expect(detail).toContain("Inference unavailable");
     expect(detail).toContain("Review management unavailable");
     expect(detail).not.toContain("AppTabs");

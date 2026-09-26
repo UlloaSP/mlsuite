@@ -74,7 +74,7 @@ export function InferenceExportSelectionDialog({
                 });
             }}
           >
-            {busy ? "Preparing export..." : "Continue"}
+            {busy ? "Preparing export…" : "Continue"}
           </AppButton>
         </>
       }

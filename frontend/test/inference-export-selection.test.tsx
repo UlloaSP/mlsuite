@@ -84,7 +84,7 @@ test("exports only explicitly selected inferences and disables empty selection",
 test("busy preparation locks selection but allows cancellation", async () => {
   await render(true);
   expect(document.body.querySelector("fieldset")?.disabled).toBe(true);
-  expect(button("Preparing export...").disabled).toBe(true);
+  expect(button("Preparing export…").disabled).toBe(true);
   await click("Cancel");
   expect(close).toHaveBeenCalledOnce();
 });

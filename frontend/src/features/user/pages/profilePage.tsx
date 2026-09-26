@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { m as motion } from "motion/react";
-import { AppBadge } from "@/shared/ui/AppBadge";
+import { AppBadge, enumLabel } from "@/shared/ui/AppBadge";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -31,21 +31,22 @@ export function ProfilePage() {
         <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll">
           <ProfileHeader
             imageUrl={user?.avatarUrl}
-            name={user?.userName || user?.fullName || "Guest"}
-            provider={user.systemRole}
+            name={user?.fullName || user?.userName || "Guest"}
+            provider={enumLabel(user.systemRole)}
           />
           {workspace ? (
             <AppPanel className="mb-6 mt-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
-                    Current Workspace
+                    Current workspace
                   </p>
                   <p className="mt-2 text-2xl font-semibold text-fg">
                     {workspace.currentOrganization.name}
                   </p>
                   <p className="mt-1 text-sm text-fg-secondary">
-                    {workspace.memberships.length} organization memberships
+                    {workspace.memberships.length} organization{" "}
+                    {workspace.memberships.length === 1 ? "membership" : "memberships"}
                   </p>
                 </div>
                 <AppBadge tone="accent">{workspace.currentMembership.role}</AppBadge>

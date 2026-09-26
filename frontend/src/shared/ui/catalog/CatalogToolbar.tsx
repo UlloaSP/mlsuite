@@ -61,7 +61,7 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
           prefix={<Search className="size-4 text-fg-muted" />}
           suffix={
             <span className="shrink-0 whitespace-nowrap border-l border-line pl-3 text-sm font-semibold text-fg-secondary">
-              {resultCount} results
+              {resultCount} {resultCount === 1 ? "result" : "results"}
             </span>
           }
           value={query}

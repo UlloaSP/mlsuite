@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { cx } from "./cx";
+import { FIELD_FOCUS_RING } from "./focus-ring";
 
 export function AppTextField({
   className,
@@ -18,7 +19,8 @@ export function AppTextField({
   return (
     <label
       className={cx(
-        "inline-flex items-center gap-3 rounded-control border border-line bg-surface px-4 py-3 text-sm text-fg-secondary",
+        "inline-flex items-center gap-3 rounded-control border border-line bg-surface px-4 py-3 text-sm text-fg-secondary transition",
+        FIELD_FOCUS_RING,
         className,
       )}
     >

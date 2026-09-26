@@ -44,16 +44,18 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
   const reviewers = useEligibleReviewers(organizationId);
   const createReview = useCreateReviewMutation(organizationId);
 
+  const [error, setError] = useState<string>();
   const create = async () => {
+    setError(undefined);
     if (!group || !selectedRunIds.size || !selectedReviewerIds.size) {
-      toast.error("Select at least one inference and one reviewer");
+      setError("Select at least one inference and one reviewer.");
       return;
     }
     const schemaId = Number(group.schemaId);
     const versionId = Number(group.versionId);
     const runIds = [...selectedRunIds].map(Number);
     if (![schemaId, versionId, ...runIds].every(Number.isSafeInteger)) {
-      toast.error("Review selection contains an invalid identifier");
+      setError("The selection contains an invalid identifier.");
       return;
     }
     try {
@@ -66,10 +68,10 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
       });
       toast.success("Review created");
       onClose();
-    } catch (error) {
-      toast.error("Review creation failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+    } catch (creationError) {
+      setError(
+        `Review creation failed: ${creationError instanceof Error ? creationError.message : String(creationError)}`,
+      );
     }
   };
 
@@ -88,6 +90,7 @@ export function ReviewCreationDialog({ candidates, organizationId, onClose }: Pr
       open
       size="xl"
       flush
+      error={error}
       onClose={onClose}
       title="Create review"
       description="Choose the inferences and organization members responsible for reviewing them."

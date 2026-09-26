@@ -96,8 +96,8 @@ export const mountSchemaRunForm = ({
       form: "Schema inputs",
       reports: "Model results",
       submit: "Run schema",
-      validating: "Checking schema...",
-      submitting: "Running models...",
+      validating: "Checking schema…",
+      submitting: "Running models…",
     },
     designSystem: getPredictionDesignSystem(theme),
   });

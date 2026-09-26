@@ -3,11 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Copy, PencilLine, RefreshCcw } from "lucide-react";
+import { Copy, PencilLine } from "lucide-react";
 import type { FormEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextField } from "@/shared/ui/AppTextField";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   defaultName: string;
@@ -19,6 +20,7 @@ type Props = {
   fieldLabel?: string;
   placeholder?: string;
   submitIcon?: "copy" | "edit";
+  error?: string;
   onClose: () => void;
   onConfirm: (name: string) => void;
 };
@@ -33,6 +35,7 @@ export function SchemaChangeNameDialog({
   fieldLabel = "Change name",
   placeholder = "Update schema",
   submitIcon = "edit",
+  error,
   onClose,
   onConfirm,
 }: Props) {
@@ -48,6 +51,7 @@ export function SchemaChangeNameDialog({
     <AppDialog
       open={open}
       busy={pending}
+      error={error}
       onClose={onClose}
       title={title}
       description={description}
@@ -59,7 +63,7 @@ export function SchemaChangeNameDialog({
           </AppButton>
           <AppButton disabled={pending} type="submit">
             {pending ? (
-              <RefreshCcw className="animate-spin" size={16} />
+              <AppSpinner size={16} />
             ) : submitIcon === "copy" ? (
               <Copy size={16} />
             ) : (

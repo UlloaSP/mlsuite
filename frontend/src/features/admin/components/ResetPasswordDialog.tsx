@@ -8,11 +8,13 @@ import { AppTextField } from "@/shared/ui/AppTextField";
 export function ResetPasswordDialog({
   fullName,
   isPending,
+  error,
   onClose,
   onSubmit,
 }: {
   fullName: string;
   isPending: boolean;
+  error?: string;
   onClose: () => void;
   onSubmit: (password: string) => void;
 }) {
@@ -25,6 +27,7 @@ export function ResetPasswordDialog({
       open
       size="md"
       busy={isPending}
+      error={error}
       onClose={onClose}
       title="Reset password"
       description={fullName}

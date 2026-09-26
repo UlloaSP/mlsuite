@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -68,6 +68,7 @@ export function SchemasPage() {
     action: SchemaAction;
     schema: SchemaCatalogItemDto;
   } | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
 
   const canCreateSchemas = workspace?.permissions.canEditModels ?? false;
   const canDeleteSchemas = workspace?.permissions.canDeleteModels ?? false;
@@ -95,7 +96,8 @@ export function SchemasPage() {
       }
       setDialog(null);
     } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      // Shown inside the dialog, which stays open for a retry.
+      setDialogError(actionError instanceof Error ? actionError.message : String(actionError));
     }
   };
 
@@ -122,12 +124,12 @@ export function SchemasPage() {
           }.`,
           actions: canCreateSchemas ? (
             <AppButton type="button" onClick={() => navigate("/schemas/create")}>
-              + New schema
+              <Plus size={16} /> New schema
             </AppButton>
           ) : null,
         }}
         isActionPending={isActionPending}
-        loadingLabel="Loading schemas..."
+        loadingLabel="Loading schemas…"
         pageSize={SCHEMA_CATALOG_PAGE_SIZE}
         filterLabel="Filter by schema status"
         filters={STATUS_FILTERS}
@@ -143,7 +145,7 @@ export function SchemasPage() {
         emptyAction={
           canCreateSchemas ? (
             <AppButton type="button" onClick={() => navigate("/schemas/create")}>
-              + New schema
+              <Plus size={16} /> New schema
             </AppButton>
           ) : undefined
         }
@@ -163,8 +165,12 @@ export function SchemasPage() {
           key={`${dialog.action}-${dialog.schema.id}`}
           action={dialog.action}
           disabled={isActionPending}
+          error={dialogError ?? undefined}
           item={dialog.schema}
-          onCancel={() => setDialog(null)}
+          onCancel={() => {
+            setDialogError(null);
+            setDialog(null);
+          }}
           onConfirm={handleDialogConfirm}
         />
       ) : null}

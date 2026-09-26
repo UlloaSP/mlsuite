@@ -103,7 +103,7 @@ export function PredictionRunDetailPage() {
     );
 
   if (showLoader || isError || !run) {
-    if (showLoader) return <AppPageLoader label="Loading run..." />;
+    if (showLoader) return <AppPageLoader label="Loading run…" />;
     return (
       <AppPage>
         <AppEmptyState
