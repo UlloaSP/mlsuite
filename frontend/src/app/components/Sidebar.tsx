@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { SidebarPosition } from "@/shared/ui/sidebar-position";
+import { useAtomValue } from "jotai";
+import { sidebarStyleAtom, type SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { SidebarActions } from "./SidebarActions";
 import { SidebarBrand } from "./SidebarBrand";
 import { SidebarNavigation } from "./SidebarNavigation";
@@ -15,9 +16,11 @@ import { SidebarFooter } from "./app-sidebar/SidebarFooter";
 import { SidebarHeader } from "./app-sidebar/SidebarHeader";
 
 export function Sidebar({ side }: { side: SidebarPosition }) {
+  const variant = useAtomValue(sidebarStyleAtom);
+
   return (
-    <SidebarRoot data-user-guide="sidebar" side={side}>
-      <div className="flex size-full flex-col overflow-hidden">
+    <SidebarRoot data-user-guide="sidebar" side={side} variant={variant}>
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
         <SidebarHeader>
           <SidebarBrand side={side} />
           <SidebarOrganizationHeader />

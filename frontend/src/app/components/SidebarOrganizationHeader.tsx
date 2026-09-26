@@ -10,7 +10,7 @@ import { useLocation, useNavigate } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { useSelectOrganization } from "@/features/workspace/api/workspace.mutations";
 import { cx } from "@/shared/ui/cx";
-import { sidebarPositionAtom } from "@/shared/ui/sidebar-position";
+import { sidebarPositionAtom } from "@/shared/ui/sidebar-preferences";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarMenu } from "./app-sidebar/SidebarMenu";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";

@@ -8,7 +8,7 @@ import { Link } from "react-router";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
-import type { SidebarPosition } from "@/shared/ui/sidebar-position";
+import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { shortcutBindingsAtom, shortcutToAria } from "@/shared/ui/shortcut-state";
 import { SidebarTrigger } from "./app-sidebar/SidebarTrigger";
 import { useSidebar } from "./app-sidebar/SidebarContext";

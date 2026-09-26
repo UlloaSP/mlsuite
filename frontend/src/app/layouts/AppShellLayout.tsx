@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import type { PropsWithChildren } from "react";
-import { sidebarPositionAtom } from "@/shared/ui/sidebar-position";
+import { sidebarPositionAtom } from "@/shared/ui/sidebar-preferences";
 import { sidebarCollapsedAtom } from "@/shared/ui/ui-state";
 import { AppGlobalSearch } from "@/app/components/AppGlobalSearch";
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
@@ -21,7 +21,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
 
   return (
     <SidebarProvider open={!collapsed} onOpenChange={(open: boolean) => setCollapsed(!open)}>
-      <div className="flex h-screen w-screen overflow-hidden bg-page text-fg">
+      <div className="flex h-screen w-screen overflow-hidden bg-surface text-fg">
         {sidebarPosition === "left" ? <Sidebar side={sidebarPosition} /> : null}
         <SidebarInset>
           <MobileSidebarTrigger side={sidebarPosition} />

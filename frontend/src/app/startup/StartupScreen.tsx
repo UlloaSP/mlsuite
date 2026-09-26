@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useEffect, useState } from "react";
+import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
 import type { StartupServiceState } from "./startupServices";
 import { StartupRing } from "./StartupRing";
 import { startupPhase } from "./startupStatus";
@@ -28,7 +29,7 @@ export function StartupScreen({
       <StartupRing states={states} />
       <h1 className="startup-title" role="status">
         <span className="font-extralight">{TITLE[phase]} </span>
-        <span className="font-extrabold">MLsuite.</span>
+        <MLSuiteWordmark suffix="." />
       </h1>
       {stuck ? (
         <p className="startup-hint">

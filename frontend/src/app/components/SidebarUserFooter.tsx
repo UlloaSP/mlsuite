@@ -10,7 +10,7 @@ import { useLocation } from "react-router";
 import { useLogout, useUser } from "@/capabilities/workspace-context/session";
 import { usePendingInvitations } from "@/features/workspace/api/workspace.queries";
 import { cx } from "@/shared/ui/cx";
-import { sidebarPositionAtom } from "@/shared/ui/sidebar-position";
+import { sidebarPositionAtom } from "@/shared/ui/sidebar-preferences";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
 import { SidebarMenu } from "./app-sidebar/SidebarMenu";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";

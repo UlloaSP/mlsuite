@@ -1,4 +1,4 @@
-import type { SidebarPosition } from "@/shared/ui/sidebar-position";
+import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { cx } from "@/shared/ui/cx";
 import { SidebarTrigger } from "./app-sidebar/SidebarTrigger";
 

@@ -165,6 +165,12 @@ describe("personal settings", () => {
     expect(airbnbDark.getAttribute("aria-pressed")).toBe("true");
     expect(airbnbCard.textContent).not.toContain("Apply both");
     expect(left.checked).toBe(true);
+    const floating = container.querySelector<HTMLInputElement>(
+      'input[name="sidebar-style"][value="floating"]',
+    )!;
+    act(() => floating.click());
+    expect(floating.checked).toBe(true);
+    expect(localStorage.getItem("ui/sidebar-style")).toBe('"floating"');
     const fullscreen = container.querySelector<HTMLInputElement>('input[role="switch"]')!;
     expect(fullscreen.disabled).toBe(true);
     expect(container.textContent).toContain(

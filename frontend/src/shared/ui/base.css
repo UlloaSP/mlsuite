@@ -79,6 +79,20 @@ button:not(:disabled),
   animation-name: app-route-fade-in;
 }
 
+/* Sidebar side and style changes morph the shell (see layout-transition.ts). */
+::view-transition-group(app-layout-sidebar),
+::view-transition-group(app-layout-main) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease-emphasized);
+}
+
+::view-transition-old(app-layout-main),
+::view-transition-new(app-layout-main) {
+  height: 100%;
+  object-fit: none;
+  object-position: top left;
+}
+
 @keyframes app-route-fade-out {
   from {
     opacity: 1;

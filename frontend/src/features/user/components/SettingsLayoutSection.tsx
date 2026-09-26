@@ -7,18 +7,32 @@ import { useAtom, useAtomValue } from "jotai";
 import { AppChoiceCard } from "@/shared/ui/AppChoiceCard";
 import { AppShortcut } from "@/shared/ui/AppShortcut";
 import { AppSwitch } from "@/shared/ui/AppSwitch";
+import { animateLayoutChange } from "@/shared/ui/layout-transition";
 import { useFullscreen } from "@/shared/ui/display-controls";
 import { shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
-import { sidebarPositionAtom, type SidebarPosition } from "@/shared/ui/sidebar-position";
-import { SidebarPositionPreview } from "./SidebarPositionPreview";
+import {
+  sidebarPositionAtom,
+  sidebarStyleAtom,
+  type SidebarPosition,
+  type SidebarStyle,
+} from "@/shared/ui/sidebar-preferences";
+import { SidebarLayoutPreview } from "./SidebarLayoutPreview";
 
 const POSITIONS: { label: string; value: SidebarPosition }[] = [
   { label: "Left", value: "left" },
   { label: "Right", value: "right" },
 ];
 
+const STYLES: { label: string; value: SidebarStyle }[] = [
+  { label: "Fixed", value: "fixed" },
+  { label: "Floating", value: "floating" },
+];
+
+const OPTION_HEADING = "text-sm font-semibold text-fg";
+
 export function SettingsLayoutSection() {
   const [position, setPosition] = useAtom(sidebarPositionAtom);
+  const [variant, setVariant] = useAtom(sidebarStyleAtom);
   const bindings = useAtomValue(shortcutBindingsAtom);
   const { isFullscreen, supported, toggleFullscreen } = useFullscreen();
 
@@ -26,9 +40,11 @@ export function SettingsLayoutSection() {
     <fieldset className="border-t border-line pt-8">
       <legend className="text-xl font-semibold tracking-[-0.02em] text-fg">Layout</legend>
       <p className="mt-1 text-sm leading-6 text-fg-secondary">
-        Choose which edge owns navigation and how much of the screen the workspace uses.
+        Choose where navigation lives, how it meets the page, and how much of the screen the
+        workspace uses.
       </p>
-      <div className="mt-5 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
+      <h3 className={`mt-6 ${OPTION_HEADING}`}>Sidebar position</h3>
+      <div className="mt-3 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
         {POSITIONS.map((option) => (
           <AppChoiceCard
             key={option.value}
@@ -36,9 +52,27 @@ export function SettingsLayoutSection() {
             label={option.label}
             name="sidebar-position"
             value={option.value}
-            onChange={() => setPosition(option.value)}
+            onChange={() => animateLayoutChange(() => setPosition(option.value))}
           >
-            <SidebarPositionPreview position={option.value} />
+            <SidebarLayoutPreview position={option.value} variant={variant} />
+          </AppChoiceCard>
+        ))}
+      </div>
+      <h3 className={`mt-6 ${OPTION_HEADING}`}>Sidebar style</h3>
+      <p className="mt-1 text-sm text-fg-secondary">
+        Fixed runs along the screen edge; floating sits inset as a panel on the page background.
+      </p>
+      <div className="mt-3 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
+        {STYLES.map((option) => (
+          <AppChoiceCard
+            key={option.value}
+            checked={variant === option.value}
+            label={option.label}
+            name="sidebar-style"
+            value={option.value}
+            onChange={() => animateLayoutChange(() => setVariant(option.value))}
+          >
+            <SidebarLayoutPreview position={position} variant={option.value} />
           </AppChoiceCard>
         ))}
       </div>

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { type ComponentProps } from "react";
-import type { SidebarPosition } from "@/shared/ui/sidebar-position";
+import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { useSidebar } from "./SidebarContext";
