@@ -6,12 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
-import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
-import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationAdminDashboardDto;
-import dev.ulloasp.mlsuite.organization.application.dto.OrganizationAdminStatsDto;
 import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipDto;
@@ -42,31 +39,31 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
-    private final ModelRepository modelRepository;
     private final InvitationRepository invitationRepository;
     private final RoleSeedService roleSeedService;
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final OrganizationDeletionService organizationDeletionService;
+    private final OrganizationStatsService organizationStatsService;
 
     public OrganizationManagementService(
             WorkspaceAccessService workspaceAccessService,
             WorkspaceAuthorizationService workspaceAuthorizationService,
             OrganizationRepository organizationRepository,
             OrganizationMembershipRepository membershipRepository,
-            ModelRepository modelRepository,
             InvitationRepository invitationRepository,
             RoleSeedService roleSeedService,
             RoleDefinitionRepository roleDefinitionRepository,
-            OrganizationDeletionService organizationDeletionService) {
+            OrganizationDeletionService organizationDeletionService,
+            OrganizationStatsService organizationStatsService) {
         this.workspaceAccessService = workspaceAccessService;
         this.workspaceAuthorizationService = workspaceAuthorizationService;
         this.organizationRepository = organizationRepository;
         this.membershipRepository = membershipRepository;
-        this.modelRepository = modelRepository;
         this.invitationRepository = invitationRepository;
         this.roleSeedService = roleSeedService;
         this.roleDefinitionRepository = roleDefinitionRepository;
         this.organizationDeletionService = organizationDeletionService;
+        this.organizationStatsService = organizationStatsService;
     }
 
     @Override
@@ -117,15 +114,16 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         var permissions = workspaceAuthorizationService.workspacePermissions(userId, organizationId);
         var org = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        var stats = new OrganizationAdminStatsDto(
-                permissions.canViewMembers() ? membershipRepository.countActiveByOrganizationId(organizationId) : 0,
-                permissions.canViewModels() ? modelRepository.countByOrganizationId(organizationId) : 0,
-                permissions.canViewInvitations() ? invitationRepository.countByOrganizationIdAndStatus(organizationId, InvitationStatus.PENDING) : 0);
+        var stats = organizationStatsService.stats(organizationId, permissions);
         return new OrganizationAdminDashboardDto(
                 OrganizationDto.from(org),
                 permissions,
                 stats,
-                permissions.canViewMembers() ? listMembers(userId, organizationId).stream().limit(5).toList() : List.of(),
+                permissions.canViewMembers()
+                        ? listMembers(userId, organizationId).reversed().stream() // listed oldest first
+                                .limit(5)
+                                .toList()
+                        : List.of(),
                 permissions.canViewInvitations() ? invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
                         .limit(5)
                         .map(invitation -> dev.ulloasp.mlsuite.invitation.application.dto.InvitationDto.from(

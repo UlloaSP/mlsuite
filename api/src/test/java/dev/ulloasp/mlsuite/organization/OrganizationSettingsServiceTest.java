@@ -25,6 +25,7 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationRequest;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationDeletionService;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationManagementService;
+import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationStatsService;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExistsException;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
@@ -48,6 +49,7 @@ class OrganizationSettingsServiceTest {
     @Mock private OrganizationRepository organizationRepository;
     @Mock private OrganizationMembershipRepository membershipRepository;
     @Mock private ModelRepository modelRepository;
+    @Mock private OrganizationStatsService statsService;
     @Mock private InvitationRepository invitationRepository;
     @Mock private RoleSeedService roleSeedService;
     @Mock private RoleDefinitionRepository roleRepository;
@@ -78,11 +80,11 @@ class OrganizationSettingsServiceTest {
                 workspaceAuthorizationService,
                 organizationRepository,
                 membershipRepository,
-                modelRepository,
                 invitationRepository,
                 roleSeedService,
                 roleRepository,
-                deletionService);
+                deletionService,
+                statsService);
     }
 
     @Test

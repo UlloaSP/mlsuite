@@ -15,9 +15,9 @@ const ACTION_POSITIONS = [
   "col-start-1 row-start-2",
 ];
 const PRIMARY_ACTION_TONE =
-  "[&_button]:border-transparent [&_button]:bg-accent [&_button]:text-fg-inverse [&_button:hover]:bg-accent-strong";
+  "[&_button]:border-transparent [&_button]:bg-accent [&_button]:text-on-accent [&_button:hover]:bg-accent-hover";
 const SECONDARY_ACTION_TONE =
-  "[&_button]:border-line [&_button]:bg-surface [&_button]:text-fg [&_button:hover]:border-fg [&_button:hover]:bg-surface-muted";
+  "[&_button]:border-line [&_button]:bg-surface [&_button]:text-fg [&_button:hover]:border-line-strong [&_button:hover]:bg-surface-hover";
 const CHECKERBOARD_TONES = [
   PRIMARY_ACTION_TONE,
   SECONDARY_ACTION_TONE,

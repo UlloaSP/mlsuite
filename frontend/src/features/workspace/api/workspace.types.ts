@@ -63,10 +63,15 @@ export type OrganizationInvitationDto = Omit<InvitationDto, "token"> & {
   token?: string | null;
 };
 
+/** Counts are zero when the caller lacks the permission to see that resource. */
 export interface OrganizationAdminStatsDto {
   totalMembers: number;
   totalModels: number;
   pendingInvitations: number;
+  totalSchemas: number;
+  totalInferences: number;
+  totalPlugins: number;
+  totalReviews: number;
 }
 
 export interface OrganizationCatalogItemDto {

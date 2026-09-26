@@ -21,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
-import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.application.dto.TransferOrganizationOwnershipRequest;
@@ -29,6 +28,8 @@ import dev.ulloasp.mlsuite.organization.application.dto.CreateOrganizationReques
 import dev.ulloasp.mlsuite.organization.application.dto.UpdateOrganizationMembershipRoleRequest;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationDeletionService;
 import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationManagementService;
+import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationStatsService;
+import dev.ulloasp.mlsuite.organization.application.dto.OrganizationAdminStatsDto;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -63,7 +64,7 @@ class OrganizationManagementServiceTest {
     private OrganizationMembershipRepository membershipRepository;
 
     @Mock
-    private ModelRepository modelRepository;
+    private OrganizationStatsService organizationStatsService;
 
     @Mock
     private InvitationRepository invitationRepository;
@@ -89,11 +90,11 @@ class OrganizationManagementServiceTest {
                 workspaceAuthorizationService,
                 organizationRepository,
                 membershipRepository,
-                modelRepository,
                 invitationRepository,
                 roleSeedService,
                 roleDefinitionRepository,
-                organizationDeletionService);
+                organizationDeletionService,
+                organizationStatsService);
     }
 
     @Test
@@ -132,6 +133,8 @@ class OrganizationManagementServiceTest {
     void getAdminDashboard_OmitsCollectionsWithoutTheirPermissions() {
         when(organizationRepository.findById(41L)).thenReturn(Optional.of(organization()));
         when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(workspacePermissions);
+        when(organizationStatsService.stats(41L, workspacePermissions))
+                .thenReturn(new OrganizationAdminStatsDto(0, 0, 0, 0, 0, 0, 0));
 
         var result = service.getAdminDashboard(7L, 41L);
 
@@ -154,10 +157,14 @@ class OrganizationManagementServiceTest {
         when(workspacePermissions.canViewMembers()).thenReturn(true);
         when(workspacePermissions.canViewInvitations()).thenReturn(true);
 
-        service.getAdminDashboard(7L, 41L);
+        OrganizationMembership oldest = membership(1L, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
+        OrganizationMembership newest = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
+        when(membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
+                .thenReturn(List.of(oldest, newest));
 
-        verify(membershipRepository)
-                .findActiveByOrganizationIdOrderByCreatedAtAsc(41L);
+        var result = service.getAdminDashboard(7L, 41L);
+
+        assertEquals(List.of(2L, 1L), result.recentMembers().stream().map(row -> row.id()).toList());
         verify(invitationRepository).findByOrganizationIdOrderByCreatedAtDesc(41L);
     }
 
