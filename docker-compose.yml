@@ -235,8 +235,9 @@ services:
   frontend:
     ports:
       - ${WEB_PORT}:5173
+    # Starts before spring-app so the boot screen can report startup progress.
     depends_on:
-      spring-app:
-        condition: service_healthy
+      ops-agent:
+        condition: service_started
     networks: [ appnet ]
     restart: unless-stopped

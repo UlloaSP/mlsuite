@@ -1,0 +1,81 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+.startup-screen {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  padding: 24px;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  text-align: center;
+}
+
+.startup-ring {
+  position: relative;
+  width: min(340px, 80vw);
+  aspect-ratio: 1;
+}
+
+.startup-ring-arc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  -webkit-mask-image: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 16px),
+    #000 calc(100% - 15px)
+  );
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - 16px), #000 calc(100% - 15px));
+}
+
+.startup-ring-arc[data-pulse] {
+  animation: startup-seg-pulse ease-in-out infinite;
+}
+
+/* 140px mark inside the 340px ring. */
+.startup-ring-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 41.2%;
+  height: auto;
+  transform: translate(-50%, -50%);
+}
+
+.startup-title {
+  font-size: 36px;
+  letter-spacing: -0.035em;
+}
+
+.startup-hint {
+  margin-top: -28px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.startup-hint code {
+  font-family: var(--font-mono);
+}
+
+@keyframes startup-seg-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startup-ring-arc[data-pulse] {
+    animation: none;
+  }
+}

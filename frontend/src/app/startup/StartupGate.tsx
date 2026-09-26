@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
-import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
-import { useStableLoading } from "@/shared/ui/useStableLoading";
-import { useStartupReadinessQuery } from "./startup-query";
+import { useEffect, useState, type ReactNode } from "react";
+import { LOADING_REVEAL_DELAY_MS } from "@/shared/ui/useStableLoading";
+import { useStartupReadinessQuery, useStartupServicesQuery } from "./startup-query";
+import { StartupScreen } from "./StartupScreen";
+
+export const STARTUP_OPENING_MS = 600;
 
 type StartupGateProps = {
   children: ReactNode;
@@ -9,9 +11,28 @@ type StartupGateProps = {
 
 export function StartupGate({ children }: StartupGateProps) {
   const { data } = useStartupReadinessQuery();
-  const showLoader = useStableLoading(!data?.ready);
+  const ready = data?.ready === true;
+  const services = useStartupServicesQuery(!ready);
+  const [revealed, setRevealed] = useState(false);
+  const [opened, setOpened] = useState(false);
 
-  if (showLoader) return <EditorAssemblyLoader scope="viewport" />;
+  // Fast startups never reveal the screen, so there is no flash.
+  useEffect(() => {
+    if (ready) return;
+    const timeout = window.setTimeout(() => setRevealed(true), LOADING_REVEAL_DELAY_MS);
+    return () => window.clearTimeout(timeout);
+  }, [ready]);
+
+  // Once revealed, hold "Opening MLsuite." briefly before handing over to the app.
+  useEffect(() => {
+    if (!ready || !revealed) return;
+    const timeout = window.setTimeout(() => setOpened(true), STARTUP_OPENING_MS);
+    return () => window.clearTimeout(timeout);
+  }, [ready, revealed]);
+
+  if (!ready || (revealed && !opened)) {
+    return <StartupScreen ready={ready} states={services.data ?? []} />;
+  }
 
   return <>{children}</>;
 }

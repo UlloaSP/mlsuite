@@ -10,6 +10,7 @@ import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 
 vi.mock("@/app/startup/startup-query", () => ({
   useStartupReadinessQuery: () => ({ data: undefined }),
+  useStartupServicesQuery: () => ({ data: undefined }),
 }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
   useUser: () => ({ data: undefined, error: null, isLoading: true }),
@@ -49,7 +50,7 @@ describe("application loading screen", () => {
       </MemoryRouter>,
     );
 
-    expect(startup).toContain('data-loading-scope="viewport"');
+    expect(startup).toContain('class="startup-screen app-loading-reveal"');
     expect(protectedRoute).toContain('data-loading-scope="viewport"');
   });
 

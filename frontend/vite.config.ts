@@ -19,6 +19,10 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      "/startup/services": {
+        target: "http://ops-agent:8091",
+        changeOrigin: true,
+      },
     },
   },
   plugins: [react(), tailwindcss()],
