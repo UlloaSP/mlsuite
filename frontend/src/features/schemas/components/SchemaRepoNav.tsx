@@ -6,17 +6,28 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { GitCommitHorizontal, GitPullRequestArrow, Tags } from "lucide-react";
 import { Link } from "react-router";
 import { AppBadge } from "@/shared/ui/AppBadge";
+import { AppSkeleton } from "@/shared/ui/AppSkeleton";
 import { cx } from "@/shared/ui/cx";
+import {
+  useSchemaBookmarks,
+  useSchemaDrafts,
+  useSchemaVersions,
+} from "@/features/schemas/api/schema-queries";
 
 type Props = {
   active: "overview" | "changes" | "bookmarks" | "snapshots";
   schemaId: string;
-  changes: number;
-  bookmarks: number;
-  snapshots: number;
 };
 
-export function SchemaRepoNav({ active, schemaId, changes, bookmarks, snapshots }: Props) {
+/** Loading is undefined (skeleton badge); a failed count is null (no badge) rather than a false 0. */
+const countOf = (query: { data?: readonly unknown[]; isError: boolean }) =>
+  query.isError ? null : query.data?.length;
+
+/** Counts come from the same cached queries the tab pages read. */
+export function SchemaRepoNav({ active, schemaId }: Props) {
+  const changes = countOf(useSchemaDrafts(schemaId));
+  const bookmarks = countOf(useSchemaBookmarks(schemaId));
+  const snapshots = countOf(useSchemaVersions(schemaId));
   const items = [
     { id: "overview", label: "Overview", to: `/schemas/${schemaId}`, count: null, icon: null },
     {
@@ -60,7 +71,11 @@ export function SchemaRepoNav({ active, schemaId, changes, bookmarks, snapshots 
           >
             {Icon ? <Icon size={15} /> : null}
             {item.label}
-            {item.count !== null ? <AppBadge tone="neutral">{item.count}</AppBadge> : null}
+            {item.count === undefined ? (
+              <AppSkeleton className="h-5 w-6" />
+            ) : item.count !== null ? (
+              <AppBadge tone="neutral">{item.count}</AppBadge>
+            ) : null}
           </Link>
         );
       })}

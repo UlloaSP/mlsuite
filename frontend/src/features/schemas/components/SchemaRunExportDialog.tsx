@@ -42,6 +42,12 @@ export function SchemaRunExportDialog({ open, runs, version, onClose }: Props) {
       open={open}
       runs={runs}
       feedbackByRun={feedbackByRun}
+      feedbackError={
+        feedback.isError
+          ? "Reviews could not be loaded, so the export would be incomplete."
+          : undefined
+      }
+      feedbackLoading={feedback.isLoading}
       onClose={onClose}
       onExport={exportSelection}
     />

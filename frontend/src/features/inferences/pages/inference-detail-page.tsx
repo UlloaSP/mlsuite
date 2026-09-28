@@ -4,7 +4,7 @@ import { Link, useParams, useSearchParams } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import {
   type InferenceCatalogItemDto,
-  useInferenceCatalog,
+  useInference,
 } from "@/features/inferences/api/inference-api";
 import { InferenceReviewStatusSection } from "@/features/inferences/components/InferenceReviewStatusSection";
 import { formatTimestamp } from "@/shared/lib/date-time";
@@ -29,10 +29,10 @@ const dataHref = (item: InferenceCatalogItemDto) =>
 export function InferenceDetailPage() {
   const { inferenceId = "" } = useParams<{ inferenceId: string }>();
   const [searchParams] = useSearchParams();
-  const catalog = useInferenceCatalog();
-  const showLoader = useStableLoading(catalog.isLoading);
+  const inference = useInference(inferenceId);
+  const showLoader = useStableLoading(inference.isLoading);
   const { data: workspace } = useWorkspaceContext();
-  const item = catalog.data?.find((candidate) => String(candidate.id) === inferenceId);
+  const item = inference.data;
   const canManageReviews = workspace?.permissions.canManageReviews ?? false;
   const reviewRequested = searchParams.get("section") === "reviews";
 
@@ -44,7 +44,7 @@ export function InferenceDetailPage() {
     return <AppPageLoader label="Loading inference…" />;
   }
 
-  if (catalog.error || !item) {
+  if (!item) {
     return (
       <AppPage>
         <AppSurface className="flex-1">

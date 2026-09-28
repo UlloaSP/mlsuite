@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
+import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 
 export function ProtectedRoute() {
@@ -16,7 +16,7 @@ export function ProtectedRoute() {
   const showLoader = useStableLoading(isLoading || workspace.isLoading);
 
   if (showLoader) {
-    return <EditorAssemblyLoader scope="viewport" />;
+    return <AppPageLoader viewport label="Loading workspace…" />;
   }
 
   if (!user || error || workspace.error) {

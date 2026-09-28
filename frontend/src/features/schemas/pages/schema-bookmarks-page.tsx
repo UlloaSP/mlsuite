@@ -12,7 +12,6 @@ import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import {
   useSchema,
   useSchemaBookmarks,
-  useSchemaDrafts,
   useSchemaVersions,
 } from "@/features/schemas/api/schema-queries";
 import { sortSchemaVersions } from "@/features/schemas/lib/version-selection";
@@ -20,7 +19,6 @@ import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaB
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 
 const EMPTY_BOOKMARKS: never[] = [];
-const EMPTY_DRAFTS: never[] = [];
 const EMPTY_VERSIONS: never[] = [];
 type BookmarkFilter = "all" | "latest" | "older";
 type BookmarkSort = "updated" | "name" | "version";
@@ -40,9 +38,9 @@ const SORTS: Array<{ value: BookmarkSort; label: string }> = [
 export function SchemaBookmarksPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const { data: schema } = useSchema(schemaId);
-  const { data: drafts = EMPTY_DRAFTS } = useSchemaDrafts(schemaId);
   const bookmarksQuery = useSchemaBookmarks(schemaId);
-  const { data: versions = EMPTY_VERSIONS } = useSchemaVersions(schemaId);
+  const versionsQuery = useSchemaVersions(schemaId);
+  const versions = versionsQuery.data ?? EMPTY_VERSIONS;
   const controls = useCatalogControls<BookmarkFilter, BookmarkSort>({
     filters: FILTERS.map(({ value }) => value),
     initialFilter: "all",
@@ -64,17 +62,7 @@ export function SchemaBookmarksPage() {
     <CatalogResourcePage
       accessFallback={null}
       controls={controls}
-      navigation={
-        schemaId ? (
-          <SchemaRepoNav
-            active="bookmarks"
-            schemaId={schemaId}
-            changes={drafts.length}
-            bookmarks={bookmarks.length}
-            snapshots={sortedVersions.length}
-          />
-        ) : null
-      }
+      navigation={schemaId ? <SchemaRepoNav active="bookmarks" schemaId={schemaId} /> : null}
       header={{
         title: "Bookmarks",
         description: "Operational tags that point to exact published snapshots.",
@@ -97,7 +85,8 @@ export function SchemaBookmarksPage() {
         },
         error: bookmarksQuery.error,
         isFetching: bookmarksQuery.isFetching,
-        isLoading: bookmarksQuery.isLoading,
+        // The latest/older filter compares against the newest snapshot.
+        isLoading: bookmarksQuery.isLoading || versionsQuery.isLoading,
         refetch: bookmarksQuery.refetch,
       }}
       sortLabel="Sort bookmarks"

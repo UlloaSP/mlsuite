@@ -10,6 +10,7 @@ import { SearchResultGroup } from "@/features/search/components/SearchResultGrou
 import { useDebouncedValue } from "@/features/search/lib/use-debounced-value";
 import { globalSearchOpenAtom } from "@/shared/ui/ui-state";
 import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { matchesShortcut, shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
@@ -44,7 +45,9 @@ export function AppGlobalSearch() {
   });
   const debouncedQuery = useDebouncedValue(query);
   const organizationId = useCurrentOrganizationId();
-  const { data, isFetching } = useQuery(searchQueryOptions(organizationId, debouncedQuery));
+  const { data, isError, isFetching } = useQuery(
+    searchQueryOptions(organizationId, debouncedQuery),
+  );
 
   const flatResults = useMemo(
     () => (data?.groups ?? []).flatMap((group) => group.results),
@@ -126,13 +129,19 @@ export function AppGlobalSearch() {
             </div>
             <div className="max-h-[26rem] overflow-y-auto bg-surface-subtle">
               {showPanel ? (
-                isFetching ? (
-                  <AppCopy className="px-6 py-5">Searching workspace…</AppCopy>
-                ) : (data?.groups ?? []).length === 0 ? (
+                isError ? (
+                  <AppCopy className="px-6 py-5">
+                    Search is unavailable. Try again in a moment.
+                  </AppCopy>
+                ) : !data ? (
+                  <div className="px-6 py-5">
+                    <AppLoadingState compact label="Searching workspace…" rows={3} />
+                  </div>
+                ) : data.groups.length === 0 ? (
                   <AppCopy className="px-6 py-5">No results.</AppCopy>
                 ) : (
                   <div className="py-4">
-                    {(data?.groups ?? []).map((group) => {
+                    {data.groups.map((group) => {
                       const groupOffset = offset;
                       offset += group.results.length;
                       return (

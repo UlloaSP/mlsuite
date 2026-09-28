@@ -31,6 +31,45 @@ html.dark {
   }
 }
 
+/*
+AppSkeletonScope: children keep their layout while text and controls turn into placeholders.
+CSS cannot target text nodes, so leaf elements (no element children) carry the block;
+block-level leaves shrink to their text so a heading does not become a full-width bar.
+*/
+@keyframes app-skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+[data-skeleton] * {
+  color: transparent !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+[data-skeleton] ::placeholder {
+  color: transparent !important;
+}
+
+[data-skeleton] :is(:not(:has(*)):not(:empty), svg, button, input, select, textarea) {
+  border-color: transparent !important;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted) !important;
+  animation: app-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+[data-skeleton] :is(h1, h2, h3, h4, h5, h6, p, dt, dd, label):not(:has(*)) {
+  width: fit-content;
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-skeleton] * {
+    animation: none !important;
+  }
+}
+
 html[data-contrast="105"] {
   --contrast-text-mix: 5%;
   --contrast-border-mix: 3%;

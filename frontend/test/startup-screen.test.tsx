@@ -10,9 +10,11 @@ import { getStartupServices } from "@/app/startup/startupServices";
 import { startupPhase } from "@/app/startup/startupStatus";
 import { LOADING_REVEAL_DELAY_MS } from "@/shared/ui/useStableLoading";
 
-const startup = vi.hoisted(() => ({ ready: false }));
+const startup = vi.hoisted(() => ({ ready: false as boolean | undefined }));
 vi.mock("@/app/startup/startup-query", () => ({
-  useStartupReadinessQuery: () => ({ data: { ready: startup.ready, dependencies: [] } }),
+  useStartupReadinessQuery: () => ({
+    data: startup.ready === undefined ? undefined : { ready: startup.ready, dependencies: [] },
+  }),
   useStartupServicesQuery: () => ({ data: ["healthy", "waiting"] }),
 }));
 
@@ -103,6 +105,18 @@ describe("startup gate", () => {
     startup.ready = true;
     render(<StartupGate>App</StartupGate>);
 
+    expect(text()).toBe("App");
+  });
+
+  test("a slow first check on a reload shows the app skeleton, never the startup screen", () => {
+    startup.ready = undefined;
+    render(<StartupGate>App</StartupGate>);
+    act(() => vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS * 10));
+    expect(text()).toBe("Loading MLsuite…");
+    expect(container.querySelector(".startup-screen")).toBeNull();
+
+    startup.ready = true;
+    render(<StartupGate>App</StartupGate>);
     expect(text()).toBe("App");
   });
 

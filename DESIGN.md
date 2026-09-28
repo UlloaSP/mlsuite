@@ -59,7 +59,8 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 - Actions use `AppButton` (variants primary, secondary, ghost, danger; sizes md, sm). A link that looks like a button uses `appButtonClass`; never nest a button in a link. A header action's importance comes from its variant, never its position.
 - Every modal or side sheet is an `AppDialog`: it owns focus, Escape, overlay, and the title/close header. Pass `busy` to block dismissal during an action and `error` to show a failed action inside it.
 - Errors from a form or dialog appear inline with `AppInlineAlert` (or `AppDialog error`) and keep the input for a retry; toasts are for background actions and confirmations.
-- Loading uses `AppSpinner` and copy ending in "…" ("Saving…").
+- Actions in progress use `AppSpinner` and copy ending in "…" ("Saving…").
+- Loading data uses skeletons built from `AppSkeleton`, scoped to the region that waits: render static headers and chrome, and skeleton only the fetched part. `AppLoadingState` covers lists and panels; `AppPageLoader` is for pages whose header comes from the request. When the region already has something to draw (the previous record while switching, a partial record), wrap it in `AppSkeletonScope` so the skeleton takes the real layout. A loading list is never shown as an empty one.
 - Fields show focus with `FIELD_FOCUS_RING`; other controls use the shared focus ring.
 - Icon-only controls get an `AppTooltip` with their name and shortcut instead of a native `title`. `AppIconButton` shares the control radius.
 - Confirm or ask for a value with `useActionDialog` (`confirm`, `prompt`); never `window.confirm` or `window.prompt`.

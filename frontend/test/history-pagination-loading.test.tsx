@@ -22,12 +22,11 @@ vi.mock("@/features/schemas/api/schema-queries", async () => {
       }),
     useSchemaVersion: () => useQuery({ queryKey: ["version"], queryFn: () => requests.version! }),
     usePredictionRunsForBookmark: () =>
-      useQuery({ queryKey: ["runs"], queryFn: () => requests.runs!, placeholderData: [] }),
+      useQuery({ queryKey: ["runs"], queryFn: () => requests.runs! }),
     usePredictionRunsFeedback: (runs: unknown[]) => {
       const query = useQuery({
         queryKey: ["feedback", runs.length],
         queryFn: () => requests.feedback!,
-        placeholderData: [],
         enabled: runs.length > 0,
       });
       return { ...query, data: query.data ?? [] };
@@ -105,7 +104,7 @@ afterEach(async () => {
   host?.remove();
 });
 
-test("cold history page preserves URL while real query exposes empty placeholder data", async () => {
+test("cold history page preserves URL while runs are still loading", async () => {
   const pendingRuns = deferred();
   requests.runs = pendingRuns.promise;
   requests.version = Promise.resolve(version);

@@ -20,6 +20,9 @@ import type {
 export const getModels = (signal?: AbortSignal): Promise<ModelDto[]> =>
   appFetch<ModelDto[]>("/api/models/all", { signal });
 
+export const getModel = (modelId: string, signal?: AbortSignal): Promise<ModelDto> =>
+  appFetch<ModelDto>(`/api/models/${encodeURIComponent(modelId)}`, { signal });
+
 export const getModelPage = (
   { page, search = "", size, sort = "updated", status = "active" }: ModelPageRequest,
   signal?: AbortSignal,

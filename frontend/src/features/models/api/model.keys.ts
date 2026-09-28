@@ -7,6 +7,10 @@ import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
 export const GET_MODELS_QUERY_KEY = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "getModels"] as const;
+export const MODEL_QUERY_KEY = (organizationId: number | string) =>
+  [...organizationQueryKey(organizationId), "model"] as const;
+export const modelQueryKey = (organizationId: number | string, modelId: string) =>
+  [...MODEL_QUERY_KEY(organizationId), modelId] as const;
 export const MODEL_CATALOG_PAGE_SIZE = 24;
 export const MODEL_CATALOG_PAGE_QUERY_KEY = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "modelCatalogPages"] as const;

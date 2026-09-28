@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
+import { AppSkeleton } from "@/shared/ui/AppSkeleton";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import type { LifecycleStage } from "@/features/workspace/lib/workspace-overview";
@@ -49,9 +50,10 @@ export function LifecycleStageCard({ stage, step }: { stage: LifecycleStage; ste
         aria-busy={loading}
       >
         {loading ? (
-          <span className="inline-block h-8 w-12 animate-pulse rounded-md bg-surface-muted align-middle motion-reduce:animate-none">
+          <>
+            <AppSkeleton className="h-8 w-12" />
             <span className="sr-only">Loading</span>
-          </span>
+          </>
         ) : (
           numberFormat.format(stage.count ?? 0)
         )}

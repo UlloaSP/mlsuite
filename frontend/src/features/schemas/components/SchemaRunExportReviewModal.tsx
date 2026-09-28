@@ -2,6 +2,7 @@ import { FileDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
+import { AppSkeletonScope } from "@/shared/ui/AppSkeletonScope";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
@@ -19,6 +20,9 @@ type Props = {
   open: boolean;
   runs: PredictionRunDto[];
   feedbackByRun: readonly PredictionResultFeedbackDto[][];
+  /** Reviewer answers are part of the export, so it waits for them and refuses without them. */
+  feedbackError?: string;
+  feedbackLoading: boolean;
   onClose: () => void;
   onExport: (selection: SchemaRunExportSelection) => void;
 };
@@ -27,6 +31,8 @@ export function SchemaRunExportReviewModal({
   open,
   runs,
   feedbackByRun,
+  feedbackError,
+  feedbackLoading,
   onClose,
   onExport,
 }: Props) {
@@ -74,6 +80,7 @@ export function SchemaRunExportReviewModal({
       size="xl"
       flush
       onClose={onClose}
+      error={feedbackError}
       title="Export reviews"
       description={`${runs.length - selection.excludedRunIds.size}/${runs.length} inferences · ${reviewers.length - selection.excludedReviewers.size}/${reviewers.length} reviewers`}
       footer={
@@ -81,14 +88,22 @@ export function SchemaRunExportReviewModal({
           <AppButton type="button" variant="ghost" onClick={onClose}>
             Cancel
           </AppButton>
-          <AppButton type="button" onClick={() => onExport(selection)}>
+          <AppButton
+            type="button"
+            disabled={feedbackLoading || Boolean(feedbackError)}
+            onClick={() => onExport(selection)}
+          >
             <FileDown size={16} />
             Export CSV
           </AppButton>
         </>
       }
     >
-      <div className="grid lg:grid-cols-[240px_minmax(0,1fr)]">
+      <AppSkeletonScope
+        className="grid lg:grid-cols-[240px_minmax(0,1fr)]"
+        label="Loading reviews…"
+        loading={feedbackLoading}
+      >
         <aside className="border-line px-5 py-4 lg:border-r">
           <p className="mb-3 text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
             Reviewers
@@ -158,7 +173,7 @@ export function SchemaRunExportReviewModal({
             ))}
           </div>
         </section>
-      </div>
+      </AppSkeletonScope>
     </AppDialog>
   );
 }

@@ -9,18 +9,14 @@ import { Link, useNavigate, useParams } from "react-router";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import {
-  useSchema,
-  useSchemaBookmarks,
-  useSchemaDrafts,
-  useSchemaVersions,
-} from "@/features/schemas/api/schema-queries";
+import { useSchema, useSchemaVersions } from "@/features/schemas/api/schema-queries";
 import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import { schemaVersionId, sortSchemaVersions } from "@/features/schemas/lib/version-selection";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
@@ -32,12 +28,13 @@ export function SchemaDetailPage() {
   const navigate = useNavigate();
   const { data: schema, isLoading, isError } = useSchema(schemaId);
   const showLoader = useStableLoading(isLoading);
-  const { data: versions = [] } = useSchemaVersions(schemaId);
-  const { data: bookmarks = [] } = useSchemaBookmarks(schemaId);
-  const { data: drafts = [] } = useSchemaDrafts(schemaId);
+  const versionsQuery = useSchemaVersions(schemaId);
   const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
   const [changeDialogOpen, setChangeDialogOpen] = useState(false);
-  const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
+  const sortedVersions = useMemo(
+    () => sortSchemaVersions(versionsQuery.data ?? []),
+    [versionsQuery.data],
+  );
   const latestVersion = sortedVersions[0];
 
   const createChange = async (name: string) => {
@@ -92,14 +89,10 @@ export function SchemaDetailPage() {
         />
         {schemaId ? (
           <div className="flex shrink-0 flex-col gap-6 lg:min-h-0 lg:flex-1">
-            <SchemaRepoNav
-              active="overview"
-              schemaId={schemaId}
-              changes={drafts.length}
-              bookmarks={bookmarks.length}
-              snapshots={versions.length}
-            />
-            {latestVersion ? (
+            <SchemaRepoNav active="overview" schemaId={schemaId} />
+            {versionsQuery.isLoading ? (
+              <AppLoadingState label="Loading latest snapshot…" rows={2} />
+            ) : latestVersion ? (
               <SchemaSnapshotPreviewPanel version={latestVersion} />
             ) : (
               <AppPanel className="flex flex-col gap-3">

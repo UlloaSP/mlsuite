@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
+import { AppSkeletonScope } from "@/shared/ui/AppSkeletonScope";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { ReviewAccordionSection } from "@/features/reviews/components/ReviewAccordionSection";
 import { ReviewInputsSection } from "@/features/reviews/components/ReviewInputsSection";
@@ -26,6 +27,9 @@ export function SchemaReviewRunDetailPanel({
 }: Props) {
   const detail = useSchemaReviewRun(reviewId, reviewRunId);
   const showLoading = useStableLoading(detail.isLoading);
+  // The previous inference stays as the skeleton's shape; its form and sections never mix
+  // with the newly selected review run, so only the shell is drawn while switching.
+  const switching = detail.isPlaceholderData;
   const [outputsOpen, setOutputsOpen] = useState(false);
   const [inputsOpen, setInputsOpen] = useState(false);
   const visibleInputs = useMemo(
@@ -33,7 +37,7 @@ export function SchemaReviewRunDetailPanel({
       detail.data ? getVisibleSchemaInputRecord(version.formSchema, detail.data.run.inputData) : {},
     [detail.data, version.formSchema],
   );
-  if (showLoading) return <AppLoadingState compact label="Loading inference" />;
+  if (showLoading) return <AppLoadingState compact label="Loading inference…" />;
   if (detail.error || !detail.data) {
     return (
       <AppEmptyState
@@ -48,39 +52,45 @@ export function SchemaReviewRunDetailPanel({
       <AppEmptyState title="Invalid feedback questionnaire" description={configurationError} />
     );
   return (
-    <div className="space-y-6">
+    <AppSkeletonScope className="space-y-6" label="Loading inference…" loading={switching}>
       <div>
         <p className="text-2xs font-semibold uppercase tracking-eyebrow text-accent">
           Selected inference
         </p>
         <h2 className="mt-1 text-2xl font-semibold text-fg">{detail.data.run.name}</h2>
       </div>
-      <SchemaReviewCombinedFeedbackForm
-        key={reviewRunId}
-        reviewId={reviewId}
-        reviewRunId={reviewRunId}
-        run={detail.data.run}
-        version={version}
-        feedback={detail.data.feedback}
-        onSaved={async () => {
-          await detail.refetch();
-          await onReviewChanged();
-        }}
-      />
+      {switching ? (
+        <AppLoadingState label="Loading review form…" rows={1} />
+      ) : (
+        <SchemaReviewCombinedFeedbackForm
+          key={reviewRunId}
+          reviewId={reviewId}
+          reviewRunId={reviewRunId}
+          run={detail.data.run}
+          version={version}
+          feedback={detail.data.feedback}
+          onSaved={async () => {
+            await detail.refetch();
+            await onReviewChanged();
+          }}
+        />
+      )}
       <ReviewAccordionSection
         title="Outputs"
         open={outputsOpen}
         onToggle={() => setOutputsOpen((current) => !current)}
       >
-        <ReviewOutputsSection version={version} results={detail.data.run.results} />
+        {switching ? null : (
+          <ReviewOutputsSection version={version} results={detail.data.run.results} />
+        )}
       </ReviewAccordionSection>
       <ReviewAccordionSection
         title="Inputs"
         open={inputsOpen}
         onToggle={() => setInputsOpen((current) => !current)}
       >
-        <ReviewInputsSection inputs={visibleInputs} />
+        {switching ? null : <ReviewInputsSection inputs={visibleInputs} />}
       </ReviewAccordionSection>
-    </div>
+    </AppSkeletonScope>
   );
 }

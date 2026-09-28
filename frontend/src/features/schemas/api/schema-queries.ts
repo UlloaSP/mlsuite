@@ -142,10 +142,7 @@ export const useSchema = (schemaId?: string) => {
 
 export const useSchemaVersions = (schemaId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
-    ...schemaVersionsQueryOptions(organizationId, schemaId),
-    placeholderData: [],
-  });
+  return useQuery(schemaVersionsQueryOptions(organizationId, schemaId));
 };
 
 export const useSchemaVersion = (versionId?: string) => {
@@ -155,10 +152,7 @@ export const useSchemaVersion = (versionId?: string) => {
 
 export const useSchemaBookmarks = (schemaId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
-    ...schemaBookmarksQueryOptions(organizationId, schemaId),
-    placeholderData: [],
-  });
+  return useQuery(schemaBookmarksQueryOptions(organizationId, schemaId));
 };
 
 export const useSchemaBookmark = (bookmarkId?: string) => {
@@ -188,19 +182,15 @@ export const usePredictionRun = (runId?: string) => {
 
 export const usePredictionRunsForBookmark = (bookmarkId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
-    ...bookmarkPredictionRunsQueryOptions(organizationId, bookmarkId),
-    placeholderData: [],
-  });
+  return useQuery(bookmarkPredictionRunsQueryOptions(organizationId, bookmarkId));
 };
 
 export const usePredictionRunFeedback = (run?: PredictionRunDto) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const queries = useQueries({
-    queries: (run?.results ?? []).map((result) => ({
-      ...predictionResultFeedbackQueryOptions(organizationId, result.id),
-      placeholderData: [],
-    })),
+    queries: (run?.results ?? []).map((result) =>
+      predictionResultFeedbackQueryOptions(organizationId, result.id),
+    ),
   });
   return {
     data: queries.flatMap((query) => query.data ?? []),
@@ -216,7 +206,6 @@ export const usePredictionRunsFeedback = (runs: readonly PredictionRunDto[]) => 
       organizationId,
       runs.map((run) => run.id),
     ),
-    placeholderData: [],
   });
   return { ...query, data: query.data ?? [] };
 };

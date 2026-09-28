@@ -19,18 +19,6 @@ const isRecord = (value: unknown): value is JsonRecord =>
 /** toIdString: internal normalization helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const toIdString = (value: unknown): string =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";
-/**
- * findModelById: performs the exported transformation for this algorithm.
- *
- * Purpose: normalizes model and prediction metadata for display and lookup.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
-export const findModelById = <T extends { id: unknown }>(
-  models: T[],
-  modelId?: string,
-): T | undefined => models.find((model) => toIdString(model.id) === toIdString(modelId));
 
 /** getModelTypeLabel: internal lookup helper for model prediction, feedback, upload, and export data shaping. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getModelTypeLabel = (type: string): string => {

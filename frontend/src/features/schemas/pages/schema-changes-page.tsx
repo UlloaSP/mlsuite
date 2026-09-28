@@ -17,7 +17,6 @@ import {
 } from "@/features/schemas/api/schema-draft-mutations";
 import {
   useSchema,
-  useSchemaBookmarks,
   useSchemaDrafts,
   useSchemaVersions,
 } from "@/features/schemas/api/schema-queries";
@@ -26,7 +25,6 @@ import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChan
 import { SchemaChangeCatalogItem } from "@/features/schemas/components/SchemaChangeCatalogItem";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 
-const EMPTY_BOOKMARKS: never[] = [];
 const EMPTY_DRAFTS: never[] = [];
 const EMPTY_VERSIONS: never[] = [];
 type ChangeFilter = "open" | "draft" | "conflict" | "all";
@@ -50,8 +48,8 @@ export function SchemaChangesPage() {
   const navigate = useNavigate();
   const { data: schema } = useSchema(schemaId);
   const draftsQuery = useSchemaDrafts(schemaId);
-  const { data: bookmarks = EMPTY_BOOKMARKS } = useSchemaBookmarks(schemaId);
-  const { data: versions = EMPTY_VERSIONS } = useSchemaVersions(schemaId);
+  const versionsQuery = useSchemaVersions(schemaId);
+  const versions = versionsQuery.data ?? EMPTY_VERSIONS;
   const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
   const [changeDialogOpen, setChangeDialogOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<SchemaDraftDto | null>(null);
@@ -107,17 +105,7 @@ export function SchemaChangesPage() {
       <CatalogResourcePage
         accessFallback={null}
         controls={controls}
-        navigation={
-          schemaId ? (
-            <SchemaRepoNav
-              active="changes"
-              schemaId={schemaId}
-              changes={drafts.length}
-              bookmarks={bookmarks.length}
-              snapshots={sortedVersions.length}
-            />
-          ) : null
-        }
+        navigation={schemaId ? <SchemaRepoNav active="changes" schemaId={schemaId} /> : null}
         header={{
           title: "Changes",
           description: "Mutable unpublished work based on a published snapshot.",
@@ -149,7 +137,8 @@ export function SchemaChangesPage() {
           },
           error: draftsQuery.error,
           isFetching: draftsQuery.isFetching,
-          isLoading: draftsQuery.isLoading,
+          // Items show their base snapshot name, so they wait for versions too.
+          isLoading: draftsQuery.isLoading || versionsQuery.isLoading,
           refetch: draftsQuery.refetch,
         }}
         sortLabel="Sort changes"

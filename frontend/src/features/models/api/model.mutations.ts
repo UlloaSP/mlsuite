@@ -18,6 +18,7 @@ import {
   CREATE_MODEL_QUERY_KEY,
   GET_MODELS_QUERY_KEY,
   MODEL_CATALOG_PAGE_QUERY_KEY,
+  MODEL_QUERY_KEY,
 } from "./model.keys";
 import type { CreateModelRequest, ModelDto } from "./model.types";
 
@@ -28,6 +29,7 @@ export const useInvalidateModelQueries = () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: GET_MODELS_QUERY_KEY(organizationId) }),
       queryClient.invalidateQueries({ queryKey: MODEL_CATALOG_PAGE_QUERY_KEY(organizationId) }),
+      queryClient.invalidateQueries({ queryKey: MODEL_QUERY_KEY(organizationId) }),
     ]);
   };
 };

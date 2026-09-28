@@ -14,7 +14,7 @@ import {
 import { HttpError } from "@/shared/api/http";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
-import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -70,9 +70,6 @@ export function ReviewsPage() {
     });
   }, [inbox.isLoading, navigate, reviewId, reviewRunId, selected]);
 
-  if (showLoader) {
-    return <AppPageLoader label="Loading review inbox" />;
-  }
   if (inbox.error instanceof HttpError && inbox.error.status === 403) {
     return <ReviewUnavailable title="Access denied" description="Your role cannot review." />;
   }
@@ -86,7 +83,9 @@ export function ReviewsPage() {
           title="Review inbox"
           description="Review the inferences assigned to you across every schema."
         />
-        {!selected || !selectedReview ? (
+        {showLoader ? (
+          <AppLoadingState label="Loading review inbox…" rows={3} />
+        ) : !selected || !selectedReview ? (
           <AppEmptyState
             title="Inbox clear"
             description="There are no pending inferences assigned to you."

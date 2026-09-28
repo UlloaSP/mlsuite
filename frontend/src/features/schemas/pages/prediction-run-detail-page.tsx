@@ -4,12 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { RotateCcw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
+import { AppSkeleton } from "@/shared/ui/AppSkeleton";
+import { AppSkeletonScope } from "@/shared/ui/AppSkeletonScope";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -55,7 +58,7 @@ export function PredictionRunDetailPage() {
   const effectiveVersionId = versionId ?? run?.schemaVersionId;
   const historyHref = `/schemas/${schemaId}/bookmarks/${runBookmarkId}/runs`;
   const rerunHref = `/schemas/${schemaId}/bookmarks/${runBookmarkId}/runs/create?fromRunId=${runId}`;
-  const { data: version } = useSchemaVersion(effectiveVersionId);
+  const { data: version, isError: versionError } = useSchemaVersion(effectiveVersionId);
   const executableVersion = useMemo(
     () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
     [version],
@@ -77,13 +80,17 @@ export function PredictionRunDetailPage() {
     run && executableVersion
       ? run.results.flatMap((result) => getSchemaResultReports(executableVersion, result)).length
       : 0;
-  const detailTabs: Array<{ label: string; value: DetailTab; count: number | string }> = [
+  const detailTabs: Array<{ label: string; value: DetailTab; count: ReactNode }> = [
     { label: "Inputs", value: "inputs", count: inputCount },
     { label: "Outputs", value: "outputs", count: outputCount },
     {
       label: "Feedback",
       value: "feedback",
-      count: `${countCompletedSchemaFeedbackSteps(feedbackSteps)}/${feedbackSteps.length}`,
+      count: runFeedback.isLoading ? (
+        <AppSkeleton className="h-4 w-8" />
+      ) : (
+        `${countCompletedSchemaFeedbackSteps(feedbackSteps)}/${feedbackSteps.length}`
+      ),
     },
   ];
 
@@ -145,11 +152,13 @@ export function PredictionRunDetailPage() {
         />
         {run && executableVersion ? (
           <>
-            <SchemaRunMetadataRow
-              run={run}
-              feedbackStatus={feedbackStatus}
-              bookmarkName={bookmark?.name ?? String(runBookmarkId ?? "Unknown")}
-            />
+            <AppSkeletonScope loading={runFeedback.isLoading} label="Loading feedback status…">
+              <SchemaRunMetadataRow
+                run={run}
+                feedbackStatus={feedbackStatus}
+                bookmarkName={bookmark?.name ?? String(runBookmarkId ?? "Unknown")}
+              />
+            </AppSkeletonScope>
             <AppTabs items={detailTabs} value={tab} onChange={setTab} />
             <div role="tabpanel" aria-label={`${tab} details`}>
               {tab === "inputs" ? (
@@ -165,7 +174,9 @@ export function PredictionRunDetailPage() {
                   customReportDefinitions={catalog.data.reportDefinitions}
                 />
               ) : null}
-              {tab === "feedback" ? (
+              {tab === "feedback" && runFeedback.isLoading ? (
+                <AppLoadingState compact label="Loading feedback…" />
+              ) : tab === "feedback" ? (
                 <SchemaRunFeedbackQuestionnaire
                   canEdit={Boolean(workspace?.permissions.canViewOrganization)}
                   key={run.id}
@@ -177,7 +188,15 @@ export function PredictionRunDetailPage() {
               ) : null}
             </div>
           </>
-        ) : null}
+        ) : versionError ? (
+          <AppEmptyState
+            compact
+            title="Schema version unavailable"
+            description="The snapshot this inference ran against could not be loaded."
+          />
+        ) : (
+          <AppLoadingState label="Loading schema version…" rows={2} />
+        )}
       </AppSurface>
     </AppPage>
   );

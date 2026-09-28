@@ -95,12 +95,8 @@ export function SchemaRunHistoryPage() {
     (needsFeedback && (bookmarkQuery.error || versionQuery.error || runFeedback.error));
   const awaitingResults =
     !bookmarkRuns.isSuccess ||
-    bookmarkRuns.isPlaceholderData ||
     (needsFeedback &&
-      (!bookmarkQuery.isSuccess ||
-        !versionQuery.isSuccess ||
-        !runFeedback.isSuccess ||
-        runFeedback.isPlaceholderData));
+      (!bookmarkQuery.isSuccess || !versionQuery.isSuccess || !runFeedback.isSuccess));
   const isLoading = awaitingResults && !loadError;
   const updateFilter = (key: string, value: string) => {
     const next = new URLSearchParams(params);
@@ -116,8 +112,7 @@ export function SchemaRunHistoryPage() {
       questionnaireError ||
       versionQuery.error ||
       runFeedback.error ||
-      !runFeedback.isSuccess ||
-      runFeedback.isPlaceholderData
+      !runFeedback.isSuccess
     ) {
       const status: FeedbackStatusDisplay =
         questionnaireError || versionQuery.error || runFeedback.error ? "ERROR" : "LOADING";
@@ -137,7 +132,6 @@ export function SchemaRunHistoryPage() {
     runFeedback.data,
     runFeedback.error,
     runFeedback.isSuccess,
-    runFeedback.isPlaceholderData,
     versionQuery.error,
     runs,
     questionnaireError,

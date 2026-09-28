@@ -15,12 +15,7 @@ import {
   useDuplicateSchemaMutation,
 } from "@/features/schemas/api/schema-mutations";
 import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
-import {
-  useSchema,
-  useSchemaBookmarks,
-  useSchemaDrafts,
-  useSchemaVersions,
-} from "@/features/schemas/api/schema-queries";
+import { useSchema, useSchemaVersions } from "@/features/schemas/api/schema-queries";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
 import { schemaVersionId, sortSchemaVersions } from "@/features/schemas/lib/version-selection";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
@@ -49,8 +44,6 @@ export function SchemaSnapshotsPage() {
   const navigate = useNavigate();
   const { data: schema } = useSchema(schemaId);
   const { data: workspace } = useWorkspaceContext();
-  const { data: drafts = [] } = useSchemaDrafts(schemaId);
-  const { data: bookmarks = [] } = useSchemaBookmarks(schemaId);
   const versionsQuery = useSchemaVersions(schemaId);
   const bookmarkMutation = useCreateSchemaBookmarkMutation(schemaId ?? "");
   const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
@@ -129,17 +122,7 @@ export function SchemaSnapshotsPage() {
       <CatalogResourcePage
         accessFallback={null}
         controls={controls}
-        navigation={
-          schemaId ? (
-            <SchemaRepoNav
-              active="snapshots"
-              schemaId={schemaId}
-              changes={drafts.length}
-              bookmarks={bookmarks.length}
-              snapshots={sortedVersions.length}
-            />
-          ) : null
-        }
+        navigation={schemaId ? <SchemaRepoNav active="snapshots" schemaId={schemaId} /> : null}
         header={{
           title: "Snapshots",
           description: "Immutable published schema documents.",

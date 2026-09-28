@@ -5,10 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { getModelPage, getModels } from "./model.api";
+import { getModel, getModelPage, getModels } from "./model.api";
 import {
   GET_MODELS_QUERY_KEY,
   MODEL_CATALOG_PAGE_SIZE,
+  modelQueryKey,
   modelCatalogPageQueryKey,
 } from "./model.keys";
 
@@ -17,6 +18,13 @@ export const modelsQueryOptions = (organizationId: number | string) =>
     queryKey: GET_MODELS_QUERY_KEY(organizationId),
     queryFn: ({ signal }) => getModels(signal),
     gcTime: 10 * 60_000,
+  });
+
+export const modelQueryOptions = (organizationId: number | string, modelId: string) =>
+  queryOptions({
+    queryKey: modelQueryKey(organizationId, modelId),
+    queryFn: ({ signal }) => getModel(modelId, signal),
+    enabled: organizationId !== "none" && Boolean(modelId),
   });
 
 export const modelCatalogPageQueryOptions = (
@@ -45,6 +53,11 @@ export const useGetModels = () => {
       return status !== 401 && status !== 403 && count < 2;
     },
   });
+};
+
+export const useModel = (modelId?: string) => {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  return useQuery(modelQueryOptions(organizationId, modelId ?? ""));
 };
 
 export const useModelCatalogPageQuery = (

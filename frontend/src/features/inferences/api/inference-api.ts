@@ -55,6 +55,21 @@ export const inferenceCatalogQueryOptions = (organizationId: number | string) =>
     enabled: organizationId !== "none",
   });
 
+/** Nested under the catalog key, so every catalog invalidation also refreshes the detail. */
+export const inferenceQueryKey = (organizationId: number | string, inferenceId: string) =>
+  [...INFERENCES_QUERY_KEY(organizationId), inferenceId] as const;
+
+export const inferenceQueryOptions = (organizationId: number | string, inferenceId: string) =>
+  queryOptions({
+    queryKey: inferenceQueryKey(organizationId, inferenceId),
+    queryFn: ({ signal }) =>
+      appFetch<InferenceCatalogItemDto>(
+        `/api/prediction-runs/${encodeURIComponent(inferenceId)}/summary`,
+        { signal },
+      ),
+    enabled: organizationId !== "none" && Boolean(inferenceId),
+  });
+
 export const inferenceReviewAssignmentsQueryOptions = (
   organizationId: number | string,
   inferenceId: number,
@@ -72,6 +87,11 @@ export const inferenceReviewAssignmentsQueryOptions = (
 export const useInferenceCatalog = () => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery(inferenceCatalogQueryOptions(organizationId));
+};
+
+export const useInference = (inferenceId: string) => {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  return useQuery(inferenceQueryOptions(organizationId, inferenceId));
 };
 
 export const useInferenceReviewAssignments = (inferenceId: number) => {
