@@ -3,16 +3,17 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { cx } from "@/shared/ui/cx";
+import { cx } from "./cx";
 
-type SummaryRowProps = {
+type AppSummaryRowProps = {
   label: string;
   value: string;
   valueClass: string;
   first?: boolean;
 };
 
-export function SummaryRow({ label, value, valueClass, first }: SummaryRowProps) {
+/** One label/value line of a side summary panel. */
+export function AppSummaryRow({ label, value, valueClass, first }: AppSummaryRowProps) {
   return (
     <div
       className={cx(

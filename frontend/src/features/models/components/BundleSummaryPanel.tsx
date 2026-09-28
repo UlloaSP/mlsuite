@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Save } from "lucide-react";
-import { SummaryRow } from "./SummaryRow";
+import { AppSummaryRow } from "@/shared/ui/AppSummaryRow";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
 
@@ -61,9 +61,9 @@ export function BundleSummaryPanel({
 
       {/* Stats */}
       <div className="flex-shrink-0 px-5 py-3.5">
-        <SummaryRow first label="Bundles" value={bundleVal} valueClass={bundleCls} />
-        <SummaryRow label="With dataframe" value={dfVal} valueClass={dfCls} />
-        <SummaryRow label="Saved" value={savedVal} valueClass={savedCls} />
+        <AppSummaryRow first label="Bundles" value={bundleVal} valueClass={bundleCls} />
+        <AppSummaryRow label="With dataframe" value={dfVal} valueClass={dfCls} />
+        <AppSummaryRow label="Saved" value={savedVal} valueClass={savedCls} />
       </div>
 
       {/* Actions */}

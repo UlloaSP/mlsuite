@@ -4,12 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search, Upload } from "lucide-react";
-import { useRef, type ChangeEvent } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
-import {
-  useDeletePluginMutation,
-  useUploadPluginMutation,
-} from "@/features/plugins/api/plugin.mutations";
+import { useDeletePluginMutation } from "@/features/plugins/api/plugin.mutations";
 import { PLUGIN_CATALOG_PAGE_SIZE } from "@/features/plugins/api/plugin.keys";
 import {
   usePluginCatalogPageQuery,
@@ -22,10 +19,8 @@ import {
   TYPE_META,
   type SortMode,
   type TypeFilter,
-  readFileText,
 } from "@/features/plugins/lib/catalog-page-model";
-import { detectPluginType } from "@/capabilities/prediction-runtime/plugins/plugin-catalog-loader";
-import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
@@ -44,7 +39,6 @@ const SORT_OPTIONS = (Object.entries(SORT_LABELS) as Array<[SortMode, string]>).
 export function PluginCatalogPage() {
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const organizationId = workspace?.currentOrganization.id;
   const canManagePlugins = workspace?.permissions.canManagePlugins ?? false;
   const controls = useCatalogControls<TypeFilter, SortMode>({
@@ -54,7 +48,6 @@ export function PluginCatalogPage() {
     resetKey: organizationId,
     sorts: SORT_OPTIONS.map(({ value }) => value),
   });
-  const uploadMutation = useUploadPluginMutation();
   const deleteMutation = useDeletePluginMutation();
   const statsQuery = usePluginCatalogStatsQuery(organizationId);
   const pageQuery = usePluginCatalogPageQuery(
@@ -66,23 +59,6 @@ export function PluginCatalogPage() {
   );
   const items = pageQuery.data?.items ?? [];
 
-  const handleFileSelection = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    try {
-      const source = await readFileText(file);
-      const detected = await detectPluginType(organizationId ?? "none", source);
-      await uploadMutation.mutateAsync(file);
-      controls.setPage(0);
-      toast.success(
-        `${file.name} uploaded as ${TYPE_META[detected.pluginType].shortLabel} "${detected.kind}".`,
-      );
-    } catch (uploadError: unknown) {
-      toast.error(uploadError instanceof Error ? uploadError.message : String(uploadError));
-    } finally {
-      event.target.value = "";
-    }
-  };
   const handleDelete = async (item: (typeof items)[number]) => {
     try {
       await deleteMutation.mutateAsync(item.id);
@@ -103,11 +79,7 @@ export function PluginCatalogPage() {
     value: filter.value,
     label: `${filter.label} (${filterCount(filter.value, fieldPlugins, reportPlugins)})`,
   }));
-  const isBusy =
-    pageQuery.isLoading ||
-    pageQuery.isFetching ||
-    deleteMutation.isPending ||
-    uploadMutation.isPending;
+  const isBusy = pageQuery.isLoading || pageQuery.isFetching || deleteMutation.isPending;
 
   return (
     <CatalogResourcePage
@@ -123,17 +95,13 @@ export function PluginCatalogPage() {
           "View and manage workspace plugins that extend MLForm with custom field and report renderers.",
         breadcrumbs: [{ label: "Workspace", to: "/workspace" }, { label: "Plugins" }],
         actions: canManagePlugins ? (
-          <AppButton
-            disabled={uploadMutation.isPending}
-            type="button"
-            onClick={() => inputRef.current?.click()}
-          >
+          <Link className={appButtonClass()} to="/plugins/upload">
             <Upload size={16} />
-            Upload plugin
-          </AppButton>
+            Upload plugins
+          </Link>
         ) : null,
       }}
-      isActionPending={deleteMutation.isPending || uploadMutation.isPending}
+      isActionPending={deleteMutation.isPending}
       loadingLabel="Loading plugins…"
       pageSize={PLUGIN_CATALOG_PAGE_SIZE}
       filterLabel="Filter by plugin type"
@@ -143,18 +111,6 @@ export function PluginCatalogPage() {
       query={pageQuery}
       sortLabel="Sort plugins"
       sortOptions={SORT_OPTIONS}
-      toolbarChildren={
-        <input
-          ref={inputRef}
-          accept=".ts,text/typescript,application/typescript,text/plain"
-          aria-label="Upload plugin file"
-          className="hidden"
-          type="file"
-          onChange={(event) => {
-            void handleFileSelection(event);
-          }}
-        />
-      }
       emptyIcon={<Search size={22} />}
       emptyTitle="No plugins yet"
       filteredEmptyTitle="No matching plugins"

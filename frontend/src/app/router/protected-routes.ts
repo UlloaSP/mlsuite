@@ -157,6 +157,15 @@ export const protectedPages: RouteObject[] = [
       ),
   },
   {
+    path: "plugins/upload",
+    lazy: () =>
+      lazyPage(
+        () => import("@/features/plugins/pages/UploadPluginPage"),
+        "UploadPluginPage",
+        workspacePage("canManagePlugins"),
+      ),
+  },
+  {
     path: "schemas",
     lazy: () =>
       lazyPage(
