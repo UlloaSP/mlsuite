@@ -15,6 +15,8 @@ export type ProfileHeaderProps = {
 export function ProfileHeader({ imageUrl, name, provider }: ProfileHeaderProps) {
   return (
     <AppPageHeader
+      breadcrumbScope="account"
+      breadcrumbs={[{ label: "Profile" }]}
       eyebrow="Profile"
       title={
         <span className="flex min-w-0 items-center gap-4">

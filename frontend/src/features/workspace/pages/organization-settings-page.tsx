@@ -1,4 +1,5 @@
 import { useParams } from "react-router";
+import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
@@ -17,6 +18,9 @@ export function OrganizationSettingsPage() {
   const showLoader = useStableLoading(dashboard.isLoading);
   const permissions = dashboard.data?.permissions;
   const organization = dashboard.data?.organization;
+  const { data: context } = useWorkspaceContext();
+  // Your own organization's settings hang off it; any other one is platform administration.
+  const isCurrent = context?.currentOrganization.id === id;
 
   if (!Number.isFinite(id)) return <RouteStatusPage status={404} />;
   if (dashboard.isError) {
@@ -31,15 +35,20 @@ export function OrganizationSettingsPage() {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
+          breadcrumbScope={isCurrent ? "organization" : "platform"}
           className={FORM_MAX_WIDTH}
           eyebrow="Organization settings"
           title={organization.name}
           description="Manage this organization's identity, ownership, and lifecycle."
-          breadcrumbs={[
-            { label: "Workspace", to: "/workspace" },
-            { label: organization.name, to: `/workspace/organizations/${id}` },
-            { label: "Settings" },
-          ]}
+          breadcrumbs={
+            isCurrent
+              ? [{ label: "Settings" }]
+              : [
+                  { label: "Organizations", to: "/workspace/organizations" },
+                  { label: organization.name, to: `/workspace/organizations/${id}` },
+                  { label: "Settings" },
+                ]
+          }
         />
         <OrganizationSettingsContent
           key={id}

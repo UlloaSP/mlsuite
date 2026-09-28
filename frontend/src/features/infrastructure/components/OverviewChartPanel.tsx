@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { useState } from "react";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Overview chart is first-viewport dashboard content.
 import {
@@ -38,7 +39,7 @@ export function OverviewChartPanel({
   streamConnected: boolean;
   chartRange: string;
 }) {
-  const [chartService, setChartService] = useState("all");
+  const [chartService, setChartService] = useSearchParamState<string>("service", "all");
   const [layers, setLayers] = useState<Record<ChartLayer, boolean>>({
     cpu: true,
     ram: true,

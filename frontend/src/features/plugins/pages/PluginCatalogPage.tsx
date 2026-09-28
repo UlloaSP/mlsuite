@@ -104,7 +104,7 @@ export function PluginCatalogPage() {
           title: "Plugins",
           description:
             "View and manage workspace plugins that extend MLForm with custom field and report renderers.",
-          breadcrumbs: [{ label: "Workspace", to: "/workspace" }, { label: "Plugins" }],
+          breadcrumbs: [{ label: "Plugins" }],
           actions: canManagePlugins ? (
             <Link className={appButtonClass()} to="/plugins/upload">
               <Upload size={16} />

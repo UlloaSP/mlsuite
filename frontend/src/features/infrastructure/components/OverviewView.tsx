@@ -35,6 +35,11 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
   return (
     <>
       <AppPageHeader
+        breadcrumbScope="platform"
+        breadcrumbs={[
+          { label: "Infrastructure", to: "/admin/infrastructure" },
+          { label: "Overview" },
+        ]}
         eyebrow="Infrastructure overview"
         title="Control dashboard"
         description="Managed services, live logs, shell access, and aggregate resource use."

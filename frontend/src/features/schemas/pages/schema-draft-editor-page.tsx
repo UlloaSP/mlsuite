@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { useAtom } from "jotai";
 import { GitCompareArrows, PencilLine, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -30,7 +31,8 @@ import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChan
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
 import { SchemaCodeViewer } from "@/features/schemas/components/SchemaCodeViewer";
 
-type EditorView = "code" | "preview";
+const EDITOR_VIEWS = ["code", "preview"] as const;
+type EditorView = (typeof EDITOR_VIEWS)[number];
 
 export function SchemaDraftEditorPage() {
   const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
@@ -42,7 +44,7 @@ export function SchemaDraftEditorPage() {
   const [schema, setSchema] = useAtom(schemaAtom);
   const [schemaText, setSchemaText] = useAtom(schemaTextAtom);
   const [schemaErrors] = useAtom(schemaErrorsAtom);
-  const [editorView, setEditorView] = useState<EditorView>("code");
+  const [editorView, setEditorView] = useSearchParamState<EditorView>("view", "code", EDITOR_VIEWS);
   const [renameOpen, setRenameOpen] = useState(false);
 
   const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { Filter, RefreshCw, Search } from "lucide-react";
 import { AppBadge } from "@/shared/ui/AppBadge";
@@ -34,8 +35,8 @@ export function ServicesView({
   onAction,
 }: Props) {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [healthFilter, setHealthFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useSearchParamState<string>("status", "all");
+  const [healthFilter, setHealthFilter] = useSearchParamState<string>("health", "all");
   const [sort, setSort] = useState<ServiceSort>({
     key: "name",
     dir: "asc",
@@ -61,6 +62,11 @@ export function ServicesView({
   return (
     <>
       <AppPageHeader
+        breadcrumbScope="platform"
+        breadcrumbs={[
+          { label: "Infrastructure", to: "/admin/infrastructure" },
+          { label: "Services" },
+        ]}
         eyebrow="Service control"
         title="Managed services"
         description={`${filtered.length} of ${services.length} services · click a row for details, logs, and shell.`}

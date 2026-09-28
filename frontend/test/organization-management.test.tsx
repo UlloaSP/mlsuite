@@ -25,6 +25,11 @@ const hooks = vi.hoisted(() => ({
   update: vi.fn(),
 }));
 
+// The organization under test is not the member's current one: its pages are administration.
+vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useWorkspaceContext: () => ({ data: undefined }),
+  useCurrentOrganizationId: () => undefined,
+}));
 vi.mock("@/features/workspace/api/workspace.queries", () => ({
   useOrganizationAdminDashboardQuery: hooks.dashboard,
   useOrganizationInvitationCandidatesQuery: hooks.invitationCandidates,

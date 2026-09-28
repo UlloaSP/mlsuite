@@ -88,7 +88,7 @@ export function MembersPage() {
         <AppPageHeader
           title="Members"
           description="Organization users, roles, and row-level permissions."
-          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Members" }]}
+          breadcrumbs={[{ label: "Members" }]}
         />
         <section className="flex min-h-0 flex-1 flex-col">
           <AppToolbar variant="flat">

@@ -28,10 +28,15 @@ export function OrganizationAdminPage() {
       permissions={dashboard.data.permissions}
       role={isCurrent ? context?.currentMembership.role : undefined}
       dashboard={dashboard}
-      breadcrumbs={[
-        { label: "Organizations", to: "/workspace/organizations" },
-        { label: dashboard.data.organization.name },
-      ]}
+      // Your own organization is its root, like the workspace home; others are administration.
+      breadcrumbs={
+        isCurrent
+          ? undefined
+          : [
+              { label: "Organizations", to: "/workspace/organizations" },
+              { label: dashboard.data.organization.name },
+            ]
+      }
     />
   );
 }

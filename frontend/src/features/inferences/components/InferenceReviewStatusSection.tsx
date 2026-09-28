@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -35,7 +36,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
   const reopen = useReopenInferenceReviewMutation();
   const deleteResponse = useDeleteInferenceReviewResponseMutation();
   const [query, setQuery] = useState("");
-  const [state, setState] = useState<StateFilter>("ALL");
+  const [state, setState] = useSearchParamState<StateFilter>("reviewStatus", "ALL");
   const [page, setPage] = useState(0);
   const showLoading = useStableLoading(assignments.isLoading);
   const filtered = useMemo(() => {

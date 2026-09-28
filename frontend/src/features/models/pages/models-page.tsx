@@ -134,7 +134,7 @@ export function ModelsPage() {
         header={{
           eyebrow: "Models",
           title: "Models",
-          breadcrumbs: [{ label: "Workspace", to: "/workspace" }, { label: "Models" }],
+          breadcrumbs: [{ label: "Models" }],
           description: `Navigate models and inspect generated schema snapshots for ${
             workspace?.currentOrganization.name ?? "the current workspace"
           }.`,

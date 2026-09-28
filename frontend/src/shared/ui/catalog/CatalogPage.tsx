@@ -9,6 +9,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
+import type { BreadcrumbScope } from "@/shared/ui/breadcrumb/breadcrumb-context";
 import {
   CatalogListPanel,
   type CatalogEmptyState,
@@ -19,6 +20,7 @@ import { CatalogToolbar, type CatalogToolbarProps } from "./CatalogToolbar";
 type CatalogHeader = {
   actions?: ReactNode;
   breadcrumbs?: AppBreadcrumbItem[];
+  breadcrumbScope?: BreadcrumbScope;
   description?: ReactNode;
   eyebrow?: ReactNode;
   title: ReactNode;

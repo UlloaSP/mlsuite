@@ -3,8 +3,9 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { RotateCcw } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo } from "react";
 import { Link, useParams } from "react-router";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
@@ -40,7 +41,8 @@ import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 
-type DetailTab = "inputs" | "outputs" | "feedback";
+const DETAIL_TABS = ["inputs", "outputs", "feedback"] as const;
+type DetailTab = (typeof DETAIL_TABS)[number];
 
 export function PredictionRunDetailPage() {
   const { data: workspace } = useWorkspaceContext();
@@ -64,7 +66,7 @@ export function PredictionRunDetailPage() {
     [version],
   );
   const runFeedback = usePredictionRunFeedback(run);
-  const [tab, setTab] = useState<DetailTab>("inputs");
+  const [tab, setTab] = useSearchParamState<DetailTab>("tab", "inputs", DETAIL_TABS);
   const catalog = useSchemaPluginCatalog(executableVersion?.formSchema);
   const questionnaireError = questionnaireConfigError(executableVersion?.formSchema);
   const feedbackSteps = useMemo(() => {

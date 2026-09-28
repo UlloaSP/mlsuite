@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useState } from "react";
+import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { cx } from "@/shared/ui/cx";
@@ -12,7 +12,8 @@ import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-categor
 import { SchemaCodeViewer } from "./SchemaCodeViewer";
 import { SchemaFormPreview } from "./SchemaFormPreview";
 
-type PreviewMode = "form" | "json" | "bindings";
+const PREVIEW_MODE_VALUES = ["form", "json", "bindings"] as const;
+type PreviewMode = (typeof PREVIEW_MODE_VALUES)[number];
 
 const PREVIEW_MODES = [
   { value: "form", label: "Form" },
@@ -25,7 +26,7 @@ type Props = {
 };
 
 export function SchemaSnapshotPreviewPanel({ version }: Props) {
-  const [mode, setMode] = useState<PreviewMode>("form");
+  const [mode, setMode] = useSearchParamState<PreviewMode>("view", "form", PREVIEW_MODE_VALUES);
   const fieldCount = countVisibleSchemaFields(version.formSchema);
   const reportCount = Array.isArray(version.formSchema.reports)
     ? version.formSchema.reports.length

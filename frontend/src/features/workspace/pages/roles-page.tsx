@@ -67,7 +67,7 @@ export function RolesPage() {
         <AppPageHeader
           title="Roles & templates"
           description="Manage role definitions, templates, and permission coverage."
-          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Roles & templates" }]}
+          breadcrumbs={[{ label: "Roles & templates" }]}
           actions={
             canManage ? (
               <>

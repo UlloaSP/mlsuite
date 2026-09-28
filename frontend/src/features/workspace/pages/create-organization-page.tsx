@@ -99,6 +99,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
+          breadcrumbScope="platform"
           className={FORM_MAX_WIDTH}
           eyebrow="Superadmin"
           title="Create organization"

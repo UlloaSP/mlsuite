@@ -10,6 +10,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { AppShellFrame } from "@/app/layouts/AppShellLayout";
+import { SidebarNavigation } from "@/app/components/SidebarNavigation";
 import { Navbar } from "@/app/components/navbar/Navbar";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 
@@ -94,21 +95,24 @@ describe("navigation bar", () => {
 
     const nav = container.querySelector('nav[aria-label="Main navigation"]')!;
     const entries = [...nav.querySelectorAll<HTMLElement>("[data-user-guide-item]")];
+    // The organization's work first, then platform administration after a divider.
     expect(entries.map((entry) => entry.dataset.userGuideItem)).toEqual([
-      "nav:Organizations",
       "nav:Models",
       "nav:Schemas",
       "nav:Inferences",
       "nav:Plugins",
       "nav:Review",
+      "nav:Organizations",
       "nav:Users",
       "nav:Infra",
     ]);
-    expect(entries[2].getAttribute("href")).toBe("/schemas");
+    expect(entries[5].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    expect(entries[1].getAttribute("href")).toBe("/schemas");
     expect(entries[7].tagName).toBe("BUTTON");
     expect(entries[7].getAttribute("aria-haspopup")).toBe("menu");
-    expect(entries[1].getAttribute("href")).toBe("/models");
-    expect(entries[1].getAttribute("aria-keyshortcuts")).toBe("Alt+2");
+    expect(entries[0].getAttribute("href")).toBe("/models");
+    expect(entries[0].getAttribute("aria-keyshortcuts")).toBe("Alt+1");
+    expect(entries[5].getAttribute("aria-keyshortcuts")).toBe("Alt+6");
     for (const item of [
       "brand",
       "workspace-switcher",
@@ -141,6 +145,34 @@ describe("navigation bar", () => {
     expect(infra.querySelector(".lucide-chevron-down")).toBeNull();
   });
 
+  test("the sidebar splits the organization's work from platform administration", async () => {
+    const container = await render(
+      <SidebarProvider open onOpenChange={() => undefined}>
+        <SidebarNavigation />
+      </SidebarProvider>,
+    );
+
+    const group = (label: string) =>
+      [
+        ...container
+          .querySelector(`ul[aria-label="${label}"]`)!
+          .querySelectorAll("[data-user-guide-item^='nav:']"),
+      ].map((item) => item.getAttribute("data-user-guide-item"));
+    expect(group("Workspace")).toEqual([
+      "nav:Models",
+      "nav:Schemas",
+      "nav:Inferences",
+      "nav:Plugins",
+      "nav:Review",
+    ]);
+    expect(group("Administration")).toEqual(["nav:Organizations", "nav:Users", "nav:Infra"]);
+    expect(
+      container
+        .querySelector('[data-user-guide-item="nav:Organizations"]')
+        ?.getAttribute("aria-keyshortcuts"),
+    ).toBe("Alt+6");
+  });
+
   test("opens entries with Alt+number", async () => {
     const container = await render(
       <SidebarProvider open onOpenChange={() => undefined}>
@@ -150,7 +182,7 @@ describe("navigation bar", () => {
 
     act(() => {
       window.dispatchEvent(
-        new KeyboardEvent("keydown", { altKey: true, code: "Digit2", key: "2" }),
+        new KeyboardEvent("keydown", { altKey: true, code: "Digit1", key: "1" }),
       );
     });
 

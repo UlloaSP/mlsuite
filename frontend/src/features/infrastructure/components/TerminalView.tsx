@@ -192,6 +192,11 @@ export function TerminalView({
   return (
     <>
       <AppPageHeader
+        breadcrumbScope="platform"
+        breadcrumbs={[
+          { label: "Infrastructure", to: "/admin/infrastructure" },
+          { label: "Terminal" },
+        ]}
         eyebrow="Shell session"
         title="Embedded terminal"
         description="Interactive shell in enabled services. Commands can modify files and interrupt services."

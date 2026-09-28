@@ -29,12 +29,14 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
   const bindings = useAtomValue(shortcutBindingsAtom);
   const setSearchOpen = useSetAtom(globalSearchOpenAtom);
   const startGuide = useUserGuideLauncher(false);
-  const { navigation, isParentActive, currentPath, pathname } = useNavigationItems();
+  const { navigation, administration, isParentActive, currentPath, pathname } =
+    useNavigationItems();
+  const allItems = [...navigation, ...administration];
   const showShortcuts = useNavigationShortcuts({
-    navigation,
+    navigation: allItems,
     showHints: true,
     shortcutChildren: () =>
-      navigation.find((item) => item.children?.length && isParentActive(item))?.children ?? [],
+      allItems.find((item) => item.children?.length && isParentActive(item))?.children ?? [],
   });
   // Menus open away from the screen edge the bar sits on.
   const menuSide = position === "top" ? "bottom" : "top";
@@ -101,7 +103,15 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
           !(floating && compact) && "flex-1",
         )}
       >
-        {navigation.map((item, index) => (
+        {allItems.map((item, index) => [
+          // Administration starts after a divider, like its own sidebar group.
+          index === navigation.length && index > 0 ? (
+            <span
+              key="administration-divider"
+              aria-hidden="true"
+              className="mx-1 h-6 w-px shrink-0 bg-line"
+            />
+          ) : null,
           <NavbarItem
             key={item.to}
             item={item}
@@ -112,8 +122,8 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
             shortcut={index + 1}
             showShortcut={showShortcuts}
             compact={compact}
-          />
-        ))}
+          />,
+        ])}
       </nav>
 
       <div className="flex shrink-0 items-center gap-1">

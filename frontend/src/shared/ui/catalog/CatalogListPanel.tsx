@@ -62,7 +62,10 @@ export function CatalogListPanel({
 
   return (
     <>
-      <section className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4">
+      <section
+        data-scroll-memory="list"
+        className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4"
+      >
         <div className={bodyClassName}>
           {showLoading ? <AppLoadingState label={loadingLabel} layout={layout} /> : null}
           {!hasItems && !showLoading && errorMessage ? (

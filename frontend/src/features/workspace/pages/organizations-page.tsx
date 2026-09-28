@@ -105,6 +105,7 @@ export function OrganizationsPage() {
       header={{
         eyebrow: "Superadmin",
         title: "Organizations",
+        breadcrumbScope: "platform",
         breadcrumbs: [{ label: "Organizations" }],
         description: "Search, review, and maintain organization workspaces.",
         actions: (

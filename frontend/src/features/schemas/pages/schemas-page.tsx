@@ -118,7 +118,7 @@ export function SchemasPage() {
         header={{
           eyebrow: "Schemas",
           title: "Schemas",
-          breadcrumbs: [{ label: "Workspace", to: "/workspace" }, { label: "Schemas" }],
+          breadcrumbs: [{ label: "Schemas" }],
           description: `Navigate schema snapshots for ${
             workspace?.currentOrganization.name ?? "the current workspace"
           }.`,

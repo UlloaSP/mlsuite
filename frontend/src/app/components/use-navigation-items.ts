@@ -10,7 +10,11 @@ import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { getActiveSchemaPath, getSchemaNavigationChildren } from "./schema-sidebar-navigation";
 import { INFRA_CHILDREN, type NavigationItem } from "./sidebar-navigation-support";
 
-/** Main navigation entries the member may open, shared by the sidebar and the bar. */
+/**
+ * Navigation the member may open, shared by the sidebar and the bar: the
+ * organization's work, and (for superadmins) platform administration.
+ * Alt+N shortcuts number both in order, workspace first.
+ */
 export function useNavigationItems() {
   const location = useLocation();
   const { data: user } = useUser();
@@ -22,23 +26,6 @@ export function useNavigationItems() {
     : undefined;
 
   const navigation: NavigationItem[] = [
-    ...(user?.systemRole === "SUPERADMIN"
-      ? [
-          {
-            to: "/workspace/organizations",
-            icon: SECTION_ICONS.organizations,
-            label: "Organizations",
-            activeWhen: (pathname: string) =>
-              pathname === "/workspace/organizations" ||
-              pathname === "/workspace/organizations/create" ||
-              Boolean(
-                currentOrganizationPath &&
-                pathname.startsWith("/workspace/organizations/") &&
-                !pathname.startsWith(currentOrganizationPath),
-              ),
-          },
-        ]
-      : []),
     ...(permissions?.canViewModels
       ? [{ to: "/models", icon: SECTION_ICONS.models, label: "Models" }]
       : []),
@@ -61,8 +48,25 @@ export function useNavigationItems() {
     ...(permissions?.canReview || permissions?.canManageReviews
       ? [{ to: "/review", icon: SECTION_ICONS.reviews, label: "Review" }]
       : []),
-    ...(user?.systemRole === "SUPERADMIN"
+  ];
+
+  /** Platform administration, kept apart from the organization's own work. */
+  const administration: NavigationItem[] =
+    user?.systemRole === "SUPERADMIN"
       ? [
+          {
+            to: "/workspace/organizations",
+            icon: SECTION_ICONS.organizations,
+            label: "Organizations",
+            activeWhen: (pathname: string) =>
+              pathname === "/workspace/organizations" ||
+              pathname === "/workspace/organizations/create" ||
+              Boolean(
+                currentOrganizationPath &&
+                pathname.startsWith("/workspace/organizations/") &&
+                !pathname.startsWith(currentOrganizationPath),
+              ),
+          },
           { to: "/admin/users", icon: SECTION_ICONS.users, label: "Users" },
           {
             to: "/admin/infrastructure",
@@ -71,8 +75,7 @@ export function useNavigationItems() {
             children: INFRA_CHILDREN,
           },
         ]
-      : []),
-  ];
+      : [];
 
   const isParentActive = (item: NavigationItem) =>
     item.activeWhen?.(location.pathname) ??
@@ -80,6 +83,7 @@ export function useNavigationItems() {
 
   return {
     navigation,
+    administration,
     isParentActive,
     currentPath: `${location.pathname}${location.search}`,
     pathname: location.pathname,

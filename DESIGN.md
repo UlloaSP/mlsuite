@@ -41,8 +41,11 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 ## Layout
 
 - Persistent navigation owns global and section navigation. Do not repeat it as local tabs.
+- Navigation has two groups: the organization's work (Models, Schemas, Inferences, Plugins, Review) and, for superadmins, platform administration (Organizations, Users, Infra). The sidebar labels them; the bar separates them with a divider. Administration pages use the `platform` breadcrumb scope.
 - Users choose where navigation lives (left or right sidebar, top or bottom bar) and whether it is fixed or floating. Pages must not assume a sidebar: size against their container, and when a viewport-based height is unavoidable subtract `--app-nav-block`, the space a bar takes.
 - Keep page headers separate from centered or width-constrained content.
+- Breadcrumbs start at who the page belongs to: pass levels below the root and set `breadcrumbScope` (`organization` by default, `account`, or `platform`); the root crumb and the organization switcher come from the app shell. Long trails fold their middle into a "…" menu. With a sidebar, the trail also appears as a "You are here" tree; there is no separate breadcrumb position setting.
+- View choices (tabs, modes, filters, sort, page) live in the URL through `useSearchParamState` or `useCatalogControls`, so back/forward and links restore them. Scroll containers carry `data-scroll-memory` and are restored on back/forward.
 - A page body is `AppSurface` (`p-6`) laid out as a column with `gap-6`; `AppPageHeader` has no outer margin, so that gap is the only space between the header, tabs, and content. Pages do not add their own outer padding.
 - Form pages (settings, create forms) are one centered column: the header and the form both use `FORM_MAX_WIDTH` from `page-layout.ts`.
 - Catalogs use consistent toolbar, list, empty, loading, error, pagination, and overflow-action placement. Every catalog row is `CatalogEntry`, with its overflow actions in `AppActionsMenu` at the top-right.
