@@ -6,14 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
@@ -22,8 +21,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookm
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
-import dev.ulloasp.mlsuite.schema.application.dto.SchemaDto;
-import dev.ulloasp.mlsuite.schema.application.dto.SchemaPageDto;
+import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
@@ -31,12 +29,13 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class SchemaServiceImpl implements SchemaCatalogUseCase {
 
     private final UserLookupService userLookupService;
@@ -45,33 +44,14 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
     private final SchemaReviewRepository reviewRepository;
+    private final WorkspaceAuthorizationService authorizationService;
     private final SchemaDraftRepository draftRepository;
     private final SchemaBookmarkRepository bookmarkRepository;
-    private final WorkspaceAccessService workspaceAccessService;
-    private final WorkspaceAuthorizationService authorizationService;
-
-    public SchemaServiceImpl(UserLookupService userLookupService, SchemaRepository schemaRepository,
-            SchemaVersionRepository versionRepository, SchemaModelBindingRepository bindingRepository,
-            PredictionRunRepository runRepository, SchemaReviewRepository reviewRepository,
-            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService,
-            SchemaDraftRepository draftRepository, SchemaBookmarkRepository bookmarkRepository) {
-        this.userLookupService = userLookupService;
-        this.schemaRepository = schemaRepository;
-        this.versionRepository = versionRepository;
-        this.bindingRepository = bindingRepository;
-        this.runRepository = runRepository;
-        this.reviewRepository = reviewRepository;
-        this.workspaceAccessService = workspaceAccessService;
-        this.authorizationService = authorizationService;
-        this.draftRepository = draftRepository;
-        this.bookmarkRepository = bookmarkRepository;
-    }
 
     @Override
     public Schema createSchema(Long userId, CreateSchemaRequest request) {
         User user = userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        authorizationService.requireOrganizationOperate(userId, organization.getId());
+        Organization organization = authorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
         String name = normalizeName(request.name());
         if (schemaRepository.existsByNameAndOrganizationId(name, organization.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Schema name already exists");
@@ -84,44 +64,32 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
 
     @Override
     public List<Schema> listSchemas(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, organizationId);
+        Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
         return schemaRepository.findByOrganizationIdAndArchivedAtIsNullOrderByCreatedAtDesc(organizationId);
     }
 
     @Override
-    public SchemaPageDto getSchemaPage(Long userId, int page, int size, String search, String sort, String status) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, organizationId);
+    public PageDto<SchemaCatalogItemDto> getSchemaPage(Long userId, int page, int size, String search, String sort, String status) {
+        Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
         Page<Schema> schemas = schemaRepository.findCatalogPage(
                 organizationId,
                 normalizeSearch(search),
                 "all".equals(status) || "archived".equals(status),
                 "archived".equals(status),
-                PageRequest.of(Math.max(page, 0), normalizePageSize(size), sort(sort)));
-        return new SchemaPageDto(
-                schemas.getContent().stream().map(this::catalogItem).toList(),
-                schemas.getNumber(),
-                schemas.getSize(),
-                schemas.getTotalElements(),
-                schemas.hasNext());
+                PageDto.request(page, size, sort(sort)));
+        return PageDto.of(schemas, schemas.getContent().stream().map(this::catalogItem).toList());
     }
 
     @Override
     public Schema getSchema(Long userId, Long schemaId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, organizationId);
+        Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
         return requireSchema(schemaId, organizationId);
     }
 
     @Override
     public Schema renameSchema(Long userId, Long schemaId, String name) {
         User user = userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        requireEdit(userId, organization.getId());
+        Organization organization = authorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
         Schema schema = requireSchema(schemaId, organization.getId());
         String nextName = normalizeName(name);
         if (schemaRepository.existsByNameAndOrganizationIdAndIdNot(nextName, organization.getId(), schemaId)) {
@@ -135,8 +103,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     @Override
     public Schema archiveSchema(Long userId, Long schemaId) {
         User user = userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        requireEdit(userId, organization.getId());
+        Organization organization = authorizationService.requireCurrent(userId, PermissionKey.EDIT_MODELS);
         Schema schema = requireSchema(schemaId, organization.getId());
         if (schema.getArchivedAt() == null) {
             schema.setArchivedAt(OffsetDateTime.now(ZoneOffset.UTC));
@@ -148,8 +115,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
     @Override
     public Schema duplicateSchema(Long userId, Long schemaId, Long sourceVersionId, String name) {
         User user = userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        requireCreate(userId, organization.getId());
+        Organization organization = authorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS);
         Schema source = requireSchema(schemaId, organization.getId());
         String nextName = normalizeName(name);
         if (schemaRepository.existsByNameAndOrganizationId(nextName, organization.getId())) {
@@ -166,9 +132,7 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
 
     @Override
     public void deleteSchema(Long userId, Long schemaId) {
-        userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        requireDelete(userId, organization.getId());
+        Organization organization = authorizationService.requireCurrent(userId, PermissionKey.DELETE_MODELS);
         Schema schema = requireSchema(schemaId, organization.getId());
         if (runRepository.existsBySchemaId(schemaId) || reviewRepository.existsBySchemaId(schemaId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -218,24 +182,6 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema not found"));
     }
 
-    private void requireCreate(Long userId, Long organizationId) {
-        if (!authorizationService.workspacePermissions(userId, organizationId).canEditModels()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    private void requireEdit(Long userId, Long organizationId) {
-        if (!authorizationService.workspacePermissions(userId, organizationId).canEditModels()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    private void requireDelete(Long userId, Long organizationId) {
-        if (!authorizationService.workspacePermissions(userId, organizationId).canDeleteModels()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
     private String normalizeName(String name) {
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Schema name is required");
@@ -252,13 +198,6 @@ public class SchemaServiceImpl implements SchemaCatalogUseCase {
 
     private String normalizeSearch(String search) {
         return search == null ? "" : search.strip();
-    }
-
-    private int normalizePageSize(int size) {
-        if (size <= 0) {
-            return 24;
-        }
-        return Math.min(size, 100);
     }
 
     private Sort sort(String mode) {

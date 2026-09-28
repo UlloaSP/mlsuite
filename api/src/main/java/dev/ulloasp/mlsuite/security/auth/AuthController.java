@@ -12,21 +12,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.user.application.dto.UserDto;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final AuthService authService;
-
-    public AuthController(AuthenticationManager authenticationManager, AuthService authService) {
-        this.authenticationManager = authenticationManager;
-        this.authService = authService;
-    }
 
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(
@@ -42,7 +40,7 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest servletRequest) {
         Authentication authentication = authenticate(request.email(), request.password(), servletRequest);
-        return ResponseEntity.ok(authService.profile(authentication));
+        return ResponseEntity.ok(authService.profile(CurrentUser.from(authentication).userId()));
     }
 
     private Authentication authenticate(String email, String password, HttpServletRequest servletRequest) {

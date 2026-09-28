@@ -17,22 +17,17 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewAssignee;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class SchemaReviewAssignmentService {
     private final OrganizationMembershipRepository memberships;
     private final SchemaReviewAssigneeRepository assignees;
     private final WorkspaceAuthorizationService authorization;
 
-    public SchemaReviewAssignmentService(OrganizationMembershipRepository memberships,
-            SchemaReviewAssigneeRepository assignees, WorkspaceAuthorizationService authorization) {
-        this.memberships = memberships;
-        this.assignees = assignees;
-        this.authorization = authorization;
-    }
-
     public List<SchemaReviewReviewerDto> eligibleReviewers(Long actorUserId, Long organizationId) {
-        authorization.requireReviewManagement(actorUserId, organizationId);
+        authorization.require(actorUserId, organizationId, PermissionKey.MANAGE_REVIEWS);
         return eligibleMembers(organizationId).stream()
                 .map(OrganizationMembership::getUser)
                 .map(SchemaReviewReviewerDto::from)

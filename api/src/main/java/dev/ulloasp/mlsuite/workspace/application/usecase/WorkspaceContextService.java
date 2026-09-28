@@ -10,6 +10,7 @@ import dev.ulloasp.mlsuite.organization.application.dto.OrganizationDto;
 import dev.ulloasp.mlsuite.organization.application.dto.OrganizationMembershipDto;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
+import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.workspace.application.dto.SelectOrganizationRequest;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspaceContextDto;
@@ -17,9 +18,11 @@ import dev.ulloasp.mlsuite.workspace.application.dto.WorkspaceUserDto;
 import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class WorkspaceContextService implements WorkspaceContextUseCase {
 
     private final WorkspaceAccessService workspaceAccessService;
@@ -27,19 +30,8 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
     private final OrganizationRepository organizationRepository;
     private final OrganizationMembershipRepository membershipRepository;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
+    private final RoleSeedService roleSeedService;
 
-    public WorkspaceContextService(
-            WorkspaceAccessService workspaceAccessService,
-            UserRepository userRepository,
-            OrganizationRepository organizationRepository,
-            OrganizationMembershipRepository membershipRepository,
-            WorkspaceAuthorizationService workspaceAuthorizationService) {
-        this.workspaceAccessService = workspaceAccessService;
-        this.userRepository = userRepository;
-        this.organizationRepository = organizationRepository;
-        this.membershipRepository = membershipRepository;
-        this.workspaceAuthorizationService = workspaceAuthorizationService;
-    }
 
     @Override
     public WorkspaceContextDto getContext(Long userId) {
@@ -49,7 +41,7 @@ public class WorkspaceContextService implements WorkspaceContextUseCase {
             OrganizationMembership currentMembership = new OrganizationMembership(
                     currentOrganization,
                     user,
-                    OrganizationRole.OWNER,
+                    roleSeedService.orgRole(currentOrganization, OrganizationRole.OWNER),
                     dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE);
             return new WorkspaceContextDto(
                     WorkspaceUserDto.from(user),

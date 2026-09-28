@@ -50,20 +50,19 @@ class SchemaReadPermissionTest {
     void setUp() {
         organization.setId(41L);
         when(access.requireCurrentOrganization(3L)).thenReturn(organization);
-        var auth = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class),
-                mock(RoleSeedService.class), new LegacyRolePermissionMapper());
+        var auth = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
         schemaService = new SchemaServiceImpl(users, schemas, versions, bindings, runs,
-                mock(SchemaReviewRepository.class), access, auth, drafts, bookmarks);
+                mock(SchemaReviewRepository.class), auth, drafts, bookmarks);
         versionService = new SchemaVersionServiceImpl(users, schemas, versions, bindings,
-                mock(ModelRepository.class), drafts, access, auth);
+                mock(ModelRepository.class), drafts, auth);
         draftService = new SchemaDraftServiceImpl(users, schemas, versions, drafts,
                 mock(SchemaVersionUseCase.class), mock(SchemaDraftDiffService.class),
-                mock(SchemaDraftPublishedVersionResolver.class), access, auth);
-        bookmarkService = new SchemaBookmarkServiceImpl(users, schemas, versions, bookmarks, access, auth);
-        predictCatalog = new PredictBookmarkCatalogService(users, access, auth, bookmarks, versions, bindings, runs);
+                mock(SchemaDraftPublishedVersionResolver.class), auth);
+        bookmarkService = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks, auth);
+        predictCatalog = new PredictBookmarkCatalogService(auth, bookmarks, versions, bindings, runs);
         runService = new PredictionRunServiceImpl(users, bookmarks, bindings, runs, results, feedback,
-                mock(ModelRepository.class), access, auth);
-        feedbackService = new PredictionResultFeedbackService(users, access, auth, results, feedback, runs);
+                mock(ModelRepository.class), auth);
+        feedbackService = new PredictionResultFeedbackService(users, auth, results, feedback, runs);
     }
 
     @ParameterizedTest

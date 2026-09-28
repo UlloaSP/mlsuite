@@ -17,6 +17,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.mockito.Mock;
@@ -26,7 +27,6 @@ import org.springframework.web.server.ResponseStatusException;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
-import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
@@ -107,7 +107,7 @@ class SchemaReviewServiceTest {
         assertEquals(1, persistedRuns.size());
         assertFalse(persistedRuns.getFirst().getReview().getPublicId().isBlank());
         assertEquals(7L, persistedRuns.getFirst().getReview().getCreatedBy().getId());
-        verify(authorization).requireReviewManagement(7L, 41L);
+        verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
         verify(assignments).assign(any(SchemaReview.class), org.mockito.ArgumentMatchers.eq(List.of(12L)));
         verify(reviewRunRepository).save(any(SchemaReviewRun.class));
     }
@@ -155,7 +155,7 @@ class SchemaReviewServiceTest {
     void assignments_ListsOnlyEnabledMembersWithReviewPermission() {
         User reviewer = reviewer(12L, "Reviewer");
         OrganizationMembership membership = new OrganizationMembership(
-                organization(), reviewer, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
+                organization(), reviewer, TestFixtures.role(organization(), "MEMBER"), MembershipStatus.ACTIVE);
         when(memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(membership));
         when(authorization.effectiveOrganizationPermissions(12L, 41L)).thenReturn(Set.of(PermissionKey.REVIEW));
@@ -163,7 +163,7 @@ class SchemaReviewServiceTest {
         var candidates = assignmentService().eligibleReviewers(7L, 41L);
 
         assertEquals(List.of(12L), candidates.stream().map(candidate -> candidate.id()).toList());
-        verify(authorization).requireReviewManagement(7L, 41L);
+        verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }
 
     @Test
@@ -171,7 +171,7 @@ class SchemaReviewServiceTest {
         User reviewer = reviewer(12L, "Member");
         Organization organization = organization();
         OrganizationMembership membership = new OrganizationMembership(
-                organization, reviewer, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
+                organization, reviewer, TestFixtures.role(organization, "MEMBER"), MembershipStatus.ACTIVE);
         when(memberships.findActiveByOrganizationIdOrderByCreatedAtAsc(41L))
                 .thenReturn(List.of(membership));
         when(authorization.effectiveOrganizationPermissions(12L, 41L)).thenReturn(Set.of(PermissionKey.VIEW_WORKSPACE));
@@ -219,7 +219,7 @@ class SchemaReviewServiceTest {
         var inbox = service.inbox(7L);
 
         assertEquals(List.of(assigned.getPublicId()), inbox.stream().map(item -> item.publicId()).toList());
-        verify(authorization).requireReviewAccess(7L, 41L);
+        verify(authorization).require(7L, 41L, PermissionKey.REVIEW, PermissionKey.MANAGE_REVIEWS);
     }
 
     private PredictionRun run(SchemaVersion version, Long id) {

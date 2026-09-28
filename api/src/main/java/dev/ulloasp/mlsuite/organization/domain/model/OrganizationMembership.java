@@ -32,10 +32,10 @@ import lombok.Setter;
 })
 public class OrganizationMembership {
 
-    public OrganizationMembership(Organization organization, User user, OrganizationRole role, MembershipStatus status) {
+    public OrganizationMembership(Organization organization, User user, RoleDefinition roleDefinition, MembershipStatus status) {
         this.organization = organization;
         this.user = user;
-        this.role = role;
+        this.roleDefinition = roleDefinition;
         this.status = status;
     }
 
@@ -51,13 +51,13 @@ public class OrganizationMembership {
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_org_membership_user"))
     private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 32)
-    private OrganizationRole role;
-
-    @ManyToOne
-    @JoinColumn(name = "role_definition_id", foreignKey = @ForeignKey(name = "fk_org_membership_role_definition"))
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "role_definition_id", nullable = false, foreignKey = @ForeignKey(name = "fk_org_membership_role_definition"))
     private RoleDefinition roleDefinition;
+
+    public boolean isOwner() {
+        return roleDefinition != null && OrganizationRole.OWNER.name().equals(roleDefinition.getSystemKey());
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)

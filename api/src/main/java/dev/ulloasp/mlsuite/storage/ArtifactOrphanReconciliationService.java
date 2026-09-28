@@ -7,19 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class ArtifactOrphanReconciliationService {
 
     private static final Logger log = LoggerFactory.getLogger(ArtifactOrphanReconciliationService.class);
     private final ObjectStorageService storage;
     private final ModelRepository models;
-
-    public ArtifactOrphanReconciliationService(
-            ObjectStorageService storage,
-            ModelRepository models) {
-        this.storage = storage;
-        this.models = models;
-    }
 
     public ArtifactOrphanReport prune(long graceSeconds) {
         OffsetDateTime cutoff = OffsetDateTime.now(ZoneOffset.UTC).minusSeconds(graceSeconds);
@@ -35,7 +30,7 @@ public class ArtifactOrphanReconciliationService {
                 if (isReferenced(item.bucket(), item.objectKey())) {
                     continue;
                 }
-                var current = storage.inspectOptional(item.bucket(), item.objectKey());
+                var current = storage.inspectOptional(item.bucket(), item.objectKey(), null);
                 if (current.isEmpty() || isReferenced(item.bucket(), item.objectKey())) {
                     continue;
                 }

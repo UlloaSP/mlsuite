@@ -13,16 +13,14 @@ import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentClient;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class OpsAgentBridgeFactory {
 
     private final OpsAgentClient opsAgentClient;
     private final Map<String, WebSocket> bridges = new ConcurrentHashMap<>();
-
-    public OpsAgentBridgeFactory(OpsAgentClient opsAgentClient) {
-        this.opsAgentClient = opsAgentClient;
-    }
 
     public void open(WebSocketSession downstream, String path) {
         WebSocket upstream = opsAgentClient.connectWebSocket(path, new ForwardingListener(downstream));

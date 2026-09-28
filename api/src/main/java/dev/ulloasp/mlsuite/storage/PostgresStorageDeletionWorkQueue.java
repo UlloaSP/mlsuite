@@ -5,15 +5,13 @@ import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Repository
+@RequiredArgsConstructor
 public class PostgresStorageDeletionWorkQueue implements StorageDeletionWorkQueue {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public PostgresStorageDeletionWorkQueue(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     @Override
     @Transactional

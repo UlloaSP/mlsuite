@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
@@ -29,12 +30,13 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PredictionRunServiceImpl implements PredictionRunUseCase {
 
     private final UserLookupService userLookupService;
@@ -44,25 +46,7 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private final PredictionResultRepository resultRepository;
     private final PredictionResultFeedbackRepository feedbackRepository;
     private final ModelRepository modelRepository;
-    private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
-
-    public PredictionRunServiceImpl(UserLookupService userLookupService, SchemaBookmarkRepository bookmarkRepository,
-            SchemaModelBindingRepository bindingRepository,
-            PredictionRunRepository runRepository, PredictionResultRepository resultRepository,
-            PredictionResultFeedbackRepository feedbackRepository, ModelRepository modelRepository,
-            WorkspaceAccessService workspaceAccessService,
-            WorkspaceAuthorizationService authorizationService) {
-        this.userLookupService = userLookupService;
-        this.bookmarkRepository = bookmarkRepository;
-        this.bindingRepository = bindingRepository;
-        this.runRepository = runRepository;
-        this.resultRepository = resultRepository;
-        this.feedbackRepository = feedbackRepository;
-        this.modelRepository = modelRepository;
-        this.workspaceAccessService = workspaceAccessService;
-        this.authorizationService = authorizationService;
-    }
 
     @Override
     public PredictionRun createRunForBookmark(Long userId, Long schemaBookmarkId, CreatePredictionRunRequest request) {
@@ -116,17 +100,11 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     }
 
     private Long requireRead(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, organizationId);
-        return organizationId;
+        return authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
     }
 
     private Long requireRunPredictions(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireRunPredictions(userId, organizationId);
-        return organizationId;
+        return authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
     }
 
     private SchemaBookmark requireBookmark(Long schemaBookmarkId, Long organizationId) {

@@ -42,7 +42,7 @@ public class StorageDeletionProcessor {
         try {
             // Delete the current key, not a concrete version. On a versioned bucket this
             // creates a delete marker and preserves rollback data until lifecycle expiry.
-            objectStorage.delete(item.bucket(), item.objectKey());
+            objectStorage.delete(item.bucket(), item.objectKey(), null);
             queue.complete(item.id(), leaseToken);
         } catch (RuntimeException ex) {
             queue.fail(item.id(), leaseToken, truncate(ex.getMessage()), maxAttempts);

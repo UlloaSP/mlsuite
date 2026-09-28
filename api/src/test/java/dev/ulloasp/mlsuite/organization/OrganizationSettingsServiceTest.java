@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.organization;
 
+import static dev.ulloasp.mlsuite.support.TestFixtures.user;
+import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
@@ -12,6 +14,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -97,7 +100,7 @@ class OrganizationSettingsServiceTest {
 
         managementService.deleteOrganization(7L, 41L);
 
-        verify(workspaceAuthorizationService).requireOrganizationDelete(7L, 41L);
+        verify(workspaceAuthorizationService).require(7L, 41L, PermissionKey.DELETE_ORGANIZATION);
         verify(membershipRepository).deleteAll(List.of(owner));
         verify(roleRepository).deleteAll(List.of());
         verify(userRepository).clearCurrentOrganization(41L);
@@ -111,7 +114,7 @@ class OrganizationSettingsServiceTest {
 
         managementService.deleteOrganization(1L, 41L);
 
-        verify(workspaceAuthorizationService).requireOrganizationDelete(1L, 41L);
+        verify(workspaceAuthorizationService).require(1L, 41L, PermissionKey.DELETE_ORGANIZATION);
         verify(workspaceAccessService, never()).requireMembership(1L, 41L);
         verify(organizationRepository).delete(organization);
     }
@@ -119,7 +122,7 @@ class OrganizationSettingsServiceTest {
     @Test
     void deleteDenialStopsBeforeLookup() {
         doThrow(new OrganizationAccessDeniedException(41L))
-                .when(workspaceAuthorizationService).requireOrganizationDelete(9L, 41L);
+                .when(workspaceAuthorizationService).require(9L, 41L, PermissionKey.DELETE_ORGANIZATION);
 
         assertThrows(OrganizationAccessDeniedException.class,
                 () -> managementService.deleteOrganization(9L, 41L));
@@ -158,7 +161,7 @@ class OrganizationSettingsServiceTest {
                 7L, 41L, new UpdateOrganizationRequest("Acme Lab", "acme-lab", "Description"));
 
         assertEquals("acme-lab", result.slug());
-        verify(workspaceAuthorizationService).requireOrganizationEdit(7L, 41L);
+        verify(workspaceAuthorizationService).require(7L, 41L, PermissionKey.EDIT_ORGANIZATION);
     }
 
     @Test
@@ -192,19 +195,5 @@ class OrganizationSettingsServiceTest {
         assertThrows(OrganizationNotFoundException.class,
                 () -> managementService.updateOrganization(
                         1L, 41L, new UpdateOrganizationRequest("Acme", null, null)));
-    }
-
-    private Organization organization() {
-        Organization organization = new Organization();
-        organization.setId(41L);
-        organization.setName("Org");
-        organization.setSlug("org");
-        return organization;
-    }
-
-    private User user(Long id) {
-        User user = new User();
-        user.setId(id);
-        return user;
     }
 }

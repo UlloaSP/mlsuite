@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.review.application.service;
 
+import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -13,6 +14,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -78,7 +80,7 @@ class SchemaReviewManagementServiceTest {
         assertEquals(12L, status.reviewer().id());
         assertEquals(12L, status.createdBy().id());
         assertEquals(submission.getSubmittedAt(), status.submittedAt());
-        verify(authorization).requireReviewManagement(7L, 41L);
+        verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }
 
     @Test
@@ -106,7 +108,7 @@ class SchemaReviewManagementServiceTest {
 
         verify(submissions).delete(submission);
         verifyNoInteractions(feedback);
-        verify(authorization).requireReviewManagement(7L, 41L);
+        verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }
 
     @Test
@@ -172,7 +174,7 @@ class SchemaReviewManagementServiceTest {
 
         verify(submissions).delete(submission);
         verify(feedback).deleteByResultRunIdAndUserId(50L, 12L);
-        verify(authorization).requireReviewManagement(7L, 41L);
+        verify(authorization).require(7L, 41L, PermissionKey.MANAGE_REVIEWS);
     }
 
     @Test
@@ -255,13 +257,5 @@ class SchemaReviewManagementServiceTest {
         user.setFullName("Reviewer");
         user.setEmail("reviewer@example.com");
         return user;
-    }
-
-    private Organization organization() {
-        Organization organization = new Organization();
-        organization.setId(41L);
-        organization.setName("Org");
-        organization.setSlug("org");
-        return organization;
     }
 }

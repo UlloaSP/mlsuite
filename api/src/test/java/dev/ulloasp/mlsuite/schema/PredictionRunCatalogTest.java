@@ -1,17 +1,19 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -32,11 +34,9 @@ import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
-import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,31 +48,28 @@ class PredictionRunCatalogTest {
     @Mock private PredictionResultRepository results;
     @Mock private PredictionResultFeedbackRepository feedback;
     @Mock private ModelRepository models;
-    @Mock private WorkspaceAccessService workspace;
     @Mock private WorkspaceAuthorizationService authorization;
-    @Mock private CurrentUserResolver currentUserResolver;
     @InjectMocks private PredictionRunServiceImpl service;
-    private final Authentication authentication = mock(Authentication.class);
+    private CurrentUser user;
 
     @Test
     void listsOnlyCurrentOrganizationRunsNewestFirst() {
         Organization organization = organization();
         PredictionRun run = new PredictionRun();
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(runs.findByOrganizationIdOrderByCreatedAtDesc(41L)).thenReturn(List.of(run));
 
         assertEquals(List.of(run), service.listOrganizationRuns(7L));
-        verify(authorization).requireModelView(7L, 41L);
+        verify(authorization).requireCurrent(7L, PermissionKey.VIEW_MODELS);
     }
 
     @Test
     void rejectsCatalogWithoutModelViewPermission() {
         Organization organization = organization();
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
-        org.mockito.Mockito.doThrow(new OrganizationAccessDeniedException(41L))
-                .when(authorization).requireModelView(7L, 41L);
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
+        when(authorization.requireCurrent(7L, PermissionKey.VIEW_MODELS)).thenThrow(new OrganizationAccessDeniedException(41L));
 
         assertThrows(OrganizationAccessDeniedException.class, () -> service.listOrganizationRuns(7L));
     }
@@ -81,13 +78,13 @@ class PredictionRunCatalogTest {
     void deletesOrganizationInferenceAndItsDependentResults() {
         Organization organization = organization();
         PredictionRun run = new PredictionRun();
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
 
         service.deleteRun(7L, 12L);
 
-        verify(authorization).requireRunPredictions(7L, 41L);
+        verify(authorization).requireCurrent(7L, PermissionKey.RUN_PREDICTIONS);
         verify(feedback).deleteByResult_Run_Id(12L);
         verify(results).deleteByRun_Id(12L);
         verify(runs).delete(run);
@@ -97,8 +94,8 @@ class PredictionRunCatalogTest {
     void rejectsDeletingInferenceIncludedInReview() {
         Organization organization = organization();
         PredictionRun run = new PredictionRun();
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
         when(runs.isIncludedInReview(12L)).thenReturn(true);
 
@@ -116,12 +113,12 @@ class PredictionRunCatalogTest {
         run.setId(12L);
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
 
-        var response = controller().summary(authentication, 12L);
+        var response = controller().summary(user, 12L);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(PredictionRunCatalogItemDto.from(run), response.getBody());
         assertEquals(70L, response.getBody().bookmarkId());
-        verify(authorization).requireModelView(7L, 41L);
+        verify(authorization).requireCurrent(7L, PermissionKey.VIEW_MODELS);
     }
 
     @Test
@@ -130,7 +127,7 @@ class PredictionRunCatalogTest {
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.empty());
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
-                () -> controller().summary(authentication, 12L));
+                () -> controller().summary(user, 12L));
 
         assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
     }
@@ -138,21 +135,20 @@ class PredictionRunCatalogTest {
     @Test
     void summaryRejectsUserWithoutModelViewPermission() {
         allowRead();
-        org.mockito.Mockito.doThrow(new OrganizationAccessDeniedException(41L))
-                .when(authorization).requireModelView(7L, 41L);
+        when(authorization.requireCurrent(7L, PermissionKey.VIEW_MODELS)).thenThrow(new OrganizationAccessDeniedException(41L));
 
-        assertThrows(OrganizationAccessDeniedException.class, () -> controller().summary(authentication, 12L));
+        assertThrows(OrganizationAccessDeniedException.class, () -> controller().summary(user, 12L));
         verify(runs, never()).findByIdAndOrganizationId(12L, 41L);
     }
 
     private PredictionRunController controller() {
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", SystemRole.USER));
-        return new PredictionRunController(currentUserResolver, service, results);
+        user = new CurrentUser(7L, "alice", SystemRole.USER);
+        return new PredictionRunController(service, results);
     }
 
     private void allowRead() {
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization());
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
 
     private Organization organization() {

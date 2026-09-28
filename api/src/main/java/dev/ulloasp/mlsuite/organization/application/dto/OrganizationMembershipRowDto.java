@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 
 public record OrganizationMembershipRowDto(
@@ -15,7 +14,6 @@ public record OrganizationMembershipRowDto(
         String email,
         String avatarUrl,
         RoleSummaryDto role,
-        String legacyRole,
         String status,
         OffsetDateTime createdAt,
         MembershipActionsDto actions) {
@@ -28,10 +26,7 @@ public record OrganizationMembershipRowDto(
                 membership.getUser().getFullName(),
                 membership.getUser().getEmail(),
                 membership.getUser().getAvatarUrl(),
-                membership.getRoleDefinition() == null
-                        ? RoleSummaryDto.legacy(membership.getRole().name(), RoleScope.ORGANIZATION)
-                        : RoleSummaryDto.from(membership.getRoleDefinition()),
-                membership.getRole().name(),
+                RoleSummaryDto.from(membership.getRoleDefinition()),
                 membership.getStatus().name(),
                 membership.getCreatedAt(),
                 actions);

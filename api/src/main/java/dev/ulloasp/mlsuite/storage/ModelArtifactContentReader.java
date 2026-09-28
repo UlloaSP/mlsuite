@@ -5,16 +5,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ModelArtifactContentReader {
 
     private static final Logger log = LoggerFactory.getLogger(ModelArtifactContentReader.class);
     private final ObjectStorageService objectStorageService;
-
-    public ModelArtifactContentReader(ObjectStorageService objectStorageService) {
-        this.objectStorageService = objectStorageService;
-    }
 
     public byte[] loadVerified(Model model) {
         if (model.hasStoredObject()) {

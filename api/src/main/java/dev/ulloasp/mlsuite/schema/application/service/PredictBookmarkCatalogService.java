@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository.BookmarkRunStats;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
@@ -19,42 +20,25 @@ import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseC
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 /** The organization's bookmarks, ready to run, with what they run and how much they are used. */
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PredictBookmarkCatalogService implements PredictBookmarkCatalogUseCase {
 
-    private final UserLookupService userLookupService;
-    private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
     private final SchemaBookmarkRepository bookmarkRepository;
     private final SchemaVersionRepository versionRepository;
     private final SchemaModelBindingRepository bindingRepository;
     private final PredictionRunRepository runRepository;
 
-    public PredictBookmarkCatalogService(UserLookupService userLookupService,
-            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService,
-            SchemaBookmarkRepository bookmarkRepository, SchemaVersionRepository versionRepository,
-            SchemaModelBindingRepository bindingRepository, PredictionRunRepository runRepository) {
-        this.userLookupService = userLookupService;
-        this.workspaceAccessService = workspaceAccessService;
-        this.authorizationService = authorizationService;
-        this.bookmarkRepository = bookmarkRepository;
-        this.versionRepository = versionRepository;
-        this.bindingRepository = bindingRepository;
-        this.runRepository = runRepository;
-    }
-
     @Override
     public List<PredictBookmarkDto> listBookmarks(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, organizationId);
+        Long organizationId = authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
 
         List<SchemaBookmark> bookmarks = bookmarkRepository.findActiveByOrganizationId(organizationId);
         if (bookmarks.isEmpty()) return List.of();

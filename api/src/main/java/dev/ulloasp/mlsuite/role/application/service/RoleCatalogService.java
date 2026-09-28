@@ -24,9 +24,11 @@ import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.role.domain.model.RoleTemplate;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class RoleCatalogService implements RoleCatalogUseCase {
 
     private final WorkspaceAuthorizationService authorizationService;
@@ -36,24 +38,9 @@ public class RoleCatalogService implements RoleCatalogUseCase {
     private final RoleTemplateRepository templateRepository;
     private final OrganizationMembershipRepository membershipRepository;
 
-    public RoleCatalogService(
-            WorkspaceAuthorizationService authorizationService,
-            OrganizationRepository organizationRepository,
-            RoleSeedService roleSeedService,
-            RoleDefinitionRepository roleRepository,
-            RoleTemplateRepository templateRepository,
-            OrganizationMembershipRepository membershipRepository) {
-        this.authorizationService = authorizationService;
-        this.organizationRepository = organizationRepository;
-        this.roleSeedService = roleSeedService;
-        this.roleRepository = roleRepository;
-        this.templateRepository = templateRepository;
-        this.membershipRepository = membershipRepository;
-    }
-
     @Override
     public RolesResponseDto list(Long userId, Long organizationId) {
-        authorizationService.requireOrganizationRoleView(userId, organizationId);
+        authorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS, PermissionKey.INVITE_MEMBERS, PermissionKey.MANAGE_MEMBER_ROLES);
         roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId)));
         var roles = roleRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)

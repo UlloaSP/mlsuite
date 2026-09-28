@@ -8,9 +8,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,17 +17,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
-import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
+import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginStatsDto;
-import dev.ulloasp.mlsuite.plugin.application.port.in.DeletePluginUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.GetPluginStatsUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
 import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.UploadPluginUseCase;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginStoragePaths;
 import dev.ulloasp.mlsuite.plugin.domain.model.StoredPlugin;
@@ -39,63 +34,32 @@ import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import lombok.RequiredArgsConstructor;
 
 @Service
-public class PluginServiceImpl implements
-        UploadPluginUseCase,
-        ListPluginsUseCase,
-        GetPluginStatsUseCase,
-        DeletePluginUseCase,
-        PluginCatalogUseCase {
+@RequiredArgsConstructor
+public class PluginServiceImpl implements PluginCatalogUseCase {
 
     private static final String ROOT_PREFIX = "plugins";
-    private static final int DEFAULT_PAGE_SIZE = 24;
-    private static final int MAX_PAGE_SIZE = 100;
-    private final PluginObjectReader pluginObjects;
     private final ObjectStorageService objectStorageService;
     private final StorageProperties storageProperties;
     private final ObjectMapper objectMapper;
     private final UserLookupService userLookupService;
-    private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final PluginMetadataRepository pluginMetadataRepository;
     private final StorageDeletionQueue deletionQueue;
+    private final PluginObjectReader pluginObjects;
     private final OrganizationRepository organizations;
-
-    public PluginServiceImpl(
-            ObjectStorageService objectStorageService,
-            StorageProperties storageProperties,
-            ObjectMapper objectMapper,
-            UserLookupService userLookupService,
-            WorkspaceAccessService workspaceAccessService,
-            WorkspaceAuthorizationService workspaceAuthorizationService,
-            PluginMetadataRepository pluginMetadataRepository,
-            StorageDeletionQueue deletionQueue,
-            PluginObjectReader pluginObjects,
-            OrganizationRepository organizations) {
-        this.pluginObjects = pluginObjects;
-        this.objectStorageService = objectStorageService;
-        this.storageProperties = storageProperties;
-        this.objectMapper = objectMapper;
-        this.userLookupService = userLookupService;
-        this.workspaceAccessService = workspaceAccessService;
-        this.workspaceAuthorizationService = workspaceAuthorizationService;
-        this.pluginMetadataRepository = pluginMetadataRepository;
-        this.deletionQueue = deletionQueue;
-        this.organizations = organizations;
-    }
 
     @Override
     @Transactional
     public PluginDto upload(Long userId, MultipartFile file) {
         User user = userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
+        Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.MANAGE_PLUGINS);
         organizations.lockById(organization.getId()).orElseThrow();
         try {
             String id = UUID.randomUUID().toString();
@@ -133,7 +97,7 @@ public class PluginServiceImpl implements
 
     @Override
     @Transactional
-    public PluginPageDto list(Long userId, int page, int size, String type, String search, String sort) {
+    public PageDto<PluginDto> list(Long userId, int page, int size, String type, String search, String sort) {
         List<PluginDto> allItems = listAll(userId);
         List<PluginDto> visibleItems = allItems.stream()
                 .filter(item -> matchesType(item, type))
@@ -141,10 +105,10 @@ public class PluginServiceImpl implements
                 .sorted(sortComparator(sort))
                 .toList();
         int safePage = Math.max(page, 0);
-        int safeSize = normalizePageSize(size);
+        int safeSize = PageDto.clampSize(size);
         int fromIndex = Math.min(safePage * safeSize, visibleItems.size());
         int toIndex = Math.min(fromIndex + safeSize, visibleItems.size());
-        return new PluginPageDto(
+        return new PageDto<>(
                 visibleItems.subList(fromIndex, toIndex),
                 safePage,
                 safeSize,
@@ -161,19 +125,12 @@ public class PluginServiceImpl implements
                 allItems.stream().filter(item -> "report".equals(item.pluginType())).count());
     }
 
-    @Override
-    @Transactional
-    public List<PluginDto> listAll(Long userId) {
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        workspaceAuthorizationService.requirePluginView(userId, organization.getId());
+    private List<PluginDto> listAll(Long userId) {
+        Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.VIEW_PLUGINS);
         // Catalog backfill and deletion must agree on one visible plugin state.
         organizations.lockById(organization.getId()).orElseThrow();
-        Map<String, PluginObjectReader.ReadPlugin> storedItems = new LinkedHashMap<>();
-        Map<String, String> origins = new LinkedHashMap<>();
-        pluginObjects.listWithIdentity(organization.getId())
-                .forEach(item -> putStored(storedItems, origins, item, ROOT_PREFIX, true));
         List<PluginDto> catalog = new ArrayList<>();
-        storedItems.values().forEach(item -> {
+        pluginObjects.listWithIdentity(organization.getId()).forEach(item -> {
             persistMetadata(organization, item.plugin(), null, null, item);
             catalog.add(toDto(item.plugin()));
         });
@@ -186,11 +143,10 @@ public class PluginServiceImpl implements
     @Override
     @Transactional
     public void delete(Long userId, String id) {
-        User user = userLookupService.requireById(userId);
-        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
-        workspaceAuthorizationService.requirePluginManage(userId, organization.getId());
+        Organization organization = workspaceAuthorizationService.requireCurrent(userId, PermissionKey.MANAGE_PLUGINS);
         organizations.lockById(organization.getId()).orElseThrow();
-        readStored(user, id);
+        // Loading proves the plugin exists and is intact before deletion is queued.
+        pluginObjects.load(organization.getId(), id);
         Optional<PluginMetadata> metadata = pluginMetadataRepository.findByIdAndOrganizationId(id, organization.getId());
         deletionQueue.enqueue(
                 storageProperties.getBucket(),
@@ -237,38 +193,8 @@ public class PluginServiceImpl implements
         pluginMetadataRepository.save(metadata);
     }
 
-    private StoredPlugin readStored(User user, String id) {
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(user.getId()).getId();
-        return pluginObjects.load(organizationId, id);
-    }
-
-    private void putStored(
-            Map<String, PluginObjectReader.ReadPlugin> storedItems,
-            Map<String, String> origins,
-            PluginObjectReader.ReadPlugin item,
-            String origin,
-            boolean replaceExisting) {
-        String id = item.plugin().id();
-        String existingOrigin = origins.get(id);
-        if (existingOrigin == null || replaceExisting) {
-            storedItems.put(id, item);
-            origins.put(id, origin);
-            return;
-        }
-        if (!ROOT_PREFIX.equals(existingOrigin) && !existingOrigin.equals(origin)) {
-            throw new IllegalStateException("Duplicate legacy plugin id '" + id + "' detected across storage roots.");
-        }
-    }
-
     private String itemObjectKey(Long organizationId, String id) {
         return PluginStoragePaths.organizationItemObjectKey(ROOT_PREFIX, organizationId, id);
-    }
-
-    private int normalizePageSize(int size) {
-        if (size <= 0) {
-            return DEFAULT_PAGE_SIZE;
-        }
-        return Math.min(size, MAX_PAGE_SIZE);
     }
 
     private String sanitizeFileName(String value) {

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -25,14 +26,15 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
-import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class OrganizationManagementService implements OrganizationManagementUseCase {
 
     private final WorkspaceAccessService workspaceAccessService;
@@ -44,27 +46,6 @@ public class OrganizationManagementService implements OrganizationManagementUseC
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final OrganizationDeletionService organizationDeletionService;
     private final OrganizationStatsService organizationStatsService;
-
-    public OrganizationManagementService(
-            WorkspaceAccessService workspaceAccessService,
-            WorkspaceAuthorizationService workspaceAuthorizationService,
-            OrganizationRepository organizationRepository,
-            OrganizationMembershipRepository membershipRepository,
-            InvitationRepository invitationRepository,
-            RoleSeedService roleSeedService,
-            RoleDefinitionRepository roleDefinitionRepository,
-            OrganizationDeletionService organizationDeletionService,
-            OrganizationStatsService organizationStatsService) {
-        this.workspaceAccessService = workspaceAccessService;
-        this.workspaceAuthorizationService = workspaceAuthorizationService;
-        this.organizationRepository = organizationRepository;
-        this.membershipRepository = membershipRepository;
-        this.invitationRepository = invitationRepository;
-        this.roleSeedService = roleSeedService;
-        this.roleDefinitionRepository = roleDefinitionRepository;
-        this.organizationDeletionService = organizationDeletionService;
-        this.organizationStatsService = organizationStatsService;
-    }
 
     @Override
     public List<OrganizationDto> listOrganizations(Long userId) {
@@ -95,16 +76,15 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         organization.setUpdatedBy(actor);
         roleSeedService.ensureOrganizationRoles(organization);
         roleSeedService.reviewerRole(organization);
-        OrganizationMembership membership = new OrganizationMembership(organization, owner, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
-        membership.setRoleDefinition(roleSeedService.orgRole(organization, OrganizationRole.OWNER));
-        membershipRepository.save(membership);
+        membershipRepository.save(new OrganizationMembership(
+                organization, owner, roleSeedService.orgRole(organization, OrganizationRole.OWNER), MembershipStatus.ACTIVE));
         owner.setCurrentOrganization(organization);
         return OrganizationDto.from(organization);
     }
 
     @Override
     public OrganizationDto getOrganization(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireOrganizationRead(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_ORGANIZATION);
         return OrganizationDto.from(organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId)));
     }
@@ -133,7 +113,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
 
     @Override
     public OrganizationDto updateOrganization(Long userId, Long organizationId, UpdateOrganizationRequest request) {
-        workspaceAuthorizationService.requireOrganizationEdit(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.EDIT_ORGANIZATION);
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         String slug = request.slug() == null || request.slug().isBlank()
@@ -151,13 +131,13 @@ public class OrganizationManagementService implements OrganizationManagementUseC
 
     @Override
     public void deleteOrganization(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireOrganizationDelete(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.DELETE_ORGANIZATION);
         organizationDeletionService.delete(organizationId);
     }
 
     @Override
     public List<OrganizationMembershipRowDto> listMembers(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireOrganizationMemberView(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
         roleSeedService.ensureOrganizationRoles(organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException(organizationId)));
         return membershipRepository.findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId)
@@ -174,7 +154,7 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             Long organizationId,
             Long membershipId,
             UpdateOrganizationMembershipRoleRequest request) {
-        workspaceAuthorizationService.requireOrganizationMemberView(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
         OrganizationMembership membership = membershipRepository.findActiveByIdAndOrganizationId(membershipId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
         var actions = workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership);
@@ -186,17 +166,16 @@ public class OrganizationManagementService implements OrganizationManagementUseC
         RoleDefinition nextRole = roleDefinitionRepository.findByIdAndOrganizationId(nextRoleId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Role does not exist."));
         membership.setRoleDefinition(nextRole);
-        membership.setRole(legacyRole(nextRole));
         return OrganizationMembershipDto.from(membershipRepository.save(membership));
     }
 
     @Override
     public void removeMember(Long userId, Long organizationId, Long membershipId) {
-        workspaceAuthorizationService.requireOrganizationMemberView(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_MEMBERS);
         OrganizationMembership membership = membershipRepository.findActiveByIdAndOrganizationId(membershipId, organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
         if (!workspaceAuthorizationService.organizationMemberActions(userId, organizationId, membership).canRemove()
-                || membership.getRole() == OrganizationRole.OWNER) {
+                || membership.isOwner()) {
             throw new IllegalArgumentException("Cannot remove organization owner.");
         }
         membership.setStatus(MembershipStatus.REMOVED);
@@ -208,21 +187,19 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             Long userId,
             Long organizationId,
             TransferOrganizationOwnershipRequest request) {
-        workspaceAuthorizationService.requireOwnershipTransfer(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.TRANSFER_OWNERSHIP);
         OrganizationMembership nextOwner = membershipRepository.findActiveByIdAndOrganizationId(
                 request.nextOwnerMembershipId(), organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Membership does not exist."));
         OrganizationMembership currentOwner = membershipRepository
                 .findActiveByOrganizationIdOrderByCreatedAtAsc(organizationId)
                 .stream()
-                .filter(membership -> membership.getRole() == OrganizationRole.OWNER)
+                .filter(OrganizationMembership::isOwner)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Organization owner does not exist."));
         if (currentOwner.getId().equals(nextOwner.getId())) {
             return OrganizationMembershipDto.from(currentOwner);
         }
-        currentOwner.setRole(OrganizationRole.ADMIN);
-        nextOwner.setRole(OrganizationRole.OWNER);
         roleSeedService.ensureOrganizationRoles(nextOwner.getOrganization());
         currentOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.ADMIN));
         nextOwner.setRoleDefinition(roleSeedService.orgRole(nextOwner.getOrganization(), OrganizationRole.OWNER));
@@ -247,9 +224,5 @@ public class OrganizationManagementService implements OrganizationManagementUseC
             throw new IllegalArgumentException("Only superadmins can choose another owner.");
         }
         return workspaceAccessService.requireUser(ownerUserId);
-    }
-
-    private OrganizationRole legacyRole(RoleDefinition roleDefinition) {
-        return OrganizationSystemRole.legacyRole(roleDefinition, OrganizationRole.MEMBER);
     }
 }

@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.workspace.application.service;
 
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -7,189 +9,64 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
+import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
-import dev.ulloasp.mlsuite.role.application.service.LegacyRolePermissionMapper;
-import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
-import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class WorkspaceAuthorizationService {
 
     private final WorkspaceAccessService workspaceAccessService;
     private final RoleDefinitionRepository roleDefinitionRepository;
-    private final RoleSeedService roleSeedService;
-    private final LegacyRolePermissionMapper legacyRolePermissionMapper;
-
-    public WorkspaceAuthorizationService(
-            WorkspaceAccessService workspaceAccessService,
-            RoleDefinitionRepository roleDefinitionRepository,
-            RoleSeedService roleSeedService,
-            LegacyRolePermissionMapper legacyRolePermissionMapper) {
-        this.workspaceAccessService = workspaceAccessService;
-        this.roleDefinitionRepository = roleDefinitionRepository;
-        this.roleSeedService = roleSeedService;
-        this.legacyRolePermissionMapper = legacyRolePermissionMapper;
-    }
 
     public WorkspacePermissionsDto workspacePermissions(Long userId, Long organizationId) {
-        if (workspaceAccessService.isSuperadmin(userId)) {
-            return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true);
-        }
-        Set<PermissionKey> permissions = effectiveOrganizationPermissions(userId, organizationId);
-        return new WorkspacePermissionsDto(
-                has(permissions, PermissionKey.VIEW_WORKSPACE),
-                has(permissions, PermissionKey.VIEW_ORGANIZATION),
-                has(permissions, PermissionKey.EDIT_ORGANIZATION),
-                has(permissions, PermissionKey.DELETE_ORGANIZATION),
-                has(permissions, PermissionKey.TRANSFER_OWNERSHIP),
-                has(permissions, PermissionKey.VIEW_MEMBERS),
-                has(permissions, PermissionKey.INVITE_MEMBERS),
-                has(permissions, PermissionKey.MANAGE_MEMBER_ROLES),
-                has(permissions, PermissionKey.REMOVE_MEMBERS),
-                has(permissions, PermissionKey.VIEW_INVITATIONS),
-                has(permissions, PermissionKey.MANAGE_INVITATIONS),
-                has(permissions, PermissionKey.VIEW_MODELS),
-                has(permissions, PermissionKey.CREATE_MODELS),
-                has(permissions, PermissionKey.EDIT_MODELS),
-                has(permissions, PermissionKey.DELETE_MODELS),
-                has(permissions, PermissionKey.RUN_PREDICTIONS),
-                has(permissions, PermissionKey.EXPORT_PREDICTIONS),
-                has(permissions, PermissionKey.REVIEW),
-                has(permissions, PermissionKey.MANAGE_REVIEWS),
-                has(permissions, PermissionKey.VIEW_PLUGINS),
-                has(permissions, PermissionKey.MANAGE_PLUGINS));
+        return WorkspacePermissionsDto.from(effectiveOrganizationPermissions(userId, organizationId));
     }
 
     public Set<PermissionKey> effectiveOrganizationPermissions(Long userId, Long organizationId) {
         if (workspaceAccessService.isSuperadmin(userId)) {
-            return legacyRolePermissionMapper.all();
+            return EnumSet.allOf(PermissionKey.class);
         }
-        OrganizationMembership membership = workspaceAccessService.requireMembership(userId, organizationId);
-        roleSeedService.ensureOrganizationRoles(membership.getOrganization());
-        if (membership.getRoleDefinition() != null) {
-            return membership.getRoleDefinition().getPermissions();
-        }
-        return legacyRolePermissionMapper.organization(membership.getRole());
+        return workspaceAccessService.requireMembership(userId, organizationId).getRoleDefinition().getPermissions();
     }
 
-    public void requireOrganizationRead(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canViewOrganization()) {
+    /** Requires at least one of {@code anyOf} in the organization. */
+    public void require(Long userId, Long organizationId, PermissionKey... anyOf) {
+        Set<PermissionKey> granted = effectiveOrganizationPermissions(userId, organizationId);
+        if (Arrays.stream(anyOf).noneMatch(granted::contains)) {
             throw new OrganizationAccessDeniedException(organizationId);
         }
     }
 
-    public void requireModelView(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canViewModels()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
+    /** Resolves the user's current organization and requires at least one of {@code anyOf} in it. */
+    public Organization requireCurrent(Long userId, PermissionKey... anyOf) {
+        Organization organization = workspaceAccessService.requireCurrentOrganization(userId);
+        require(userId, organization.getId(), anyOf);
+        return organization;
     }
 
-    public void requireOrganizationOperate(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canCreateModels()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requireRunPredictions(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canRunPredictions()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requireOrganizationEdit(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canEditOrganization()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requireOrganizationDelete(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canDeleteOrganization()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requireOrganizationMemberView(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canViewMembers()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requireInvitationManagement(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canManageInvitations()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requireInvitationCreate(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canInviteMembers()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public WorkspacePermissionsDto requireInvitationView(Long userId, Long organizationId) {
-        WorkspacePermissionsDto permissions = workspacePermissions(userId, organizationId);
-        if (!permissions.canViewInvitations()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-        return permissions;
-    }
-
-    public void requireOrganizationRoleView(Long userId, Long organizationId) {
-        WorkspacePermissionsDto permissions = workspacePermissions(userId, organizationId);
-        if (!permissions.canViewMembers()
-                && !permissions.canInviteMembers()
-                && !permissions.canManageMemberRoles()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requirePluginView(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canViewPlugins()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requirePluginManage(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canManagePlugins()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public void requireReviewManagement(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canManageReviews()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    public boolean canManageReviews(Long userId, Long organizationId) {
+    /** Like {@link #require} but answers false instead of throwing, including for non-members. */
+    public boolean has(Long userId, Long organizationId, PermissionKey permission) {
         try {
-            return workspacePermissions(userId, organizationId).canManageReviews();
+            return effectiveOrganizationPermissions(userId, organizationId).contains(permission);
         } catch (OrganizationAccessDeniedException ex) {
             return false;
         }
     }
 
-    public void requireReviewAccess(Long userId, Long organizationId) {
-        WorkspacePermissionsDto permissions = workspacePermissions(userId, organizationId);
-        if (!permissions.canReview() && !permissions.canManageReviews()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
     public MembershipActionsDto organizationMemberActions(Long actorUserId, Long organizationId, OrganizationMembership target) {
         WorkspacePermissionsDto workspace = workspacePermissions(actorUserId, organizationId);
-        if (!workspace.canViewMembers() || actorUserId.equals(target.getUser().getId()) || isOwner(target)) {
-            return new MembershipActionsDto(false, false, List.of());
-        }
-        if (!workspace.canManageMemberRoles()) {
+        if (!workspace.canViewMembers() || !workspace.canManageMemberRoles()
+                || actorUserId.equals(target.getUser().getId()) || target.isOwner()) {
             return new MembershipActionsDto(false, false, List.of());
         }
         var roles = roleDefinitionRepository.findByOrganizationIdAndScopeOrderByLockedDescNameAsc(organizationId, RoleScope.ORGANIZATION)
@@ -198,24 +75,5 @@ public class WorkspaceAuthorizationService {
                 .map(RoleSummaryDto::from)
                 .toList();
         return new MembershipActionsDto(true, workspace.canRemoveMembers(), roles);
-    }
-
-    public void requireOwnershipTransfer(Long userId, Long organizationId) {
-        if (!workspacePermissions(userId, organizationId).canTransferOwnership()) {
-            throw new OrganizationAccessDeniedException(organizationId);
-        }
-    }
-
-    private boolean has(Set<PermissionKey> permissions, PermissionKey key) {
-        return permissions.contains(key);
-    }
-
-    private String systemKey(RoleDefinition role) {
-        return role == null ? null : role.getSystemKey();
-    }
-
-    private boolean isOwner(OrganizationMembership membership) {
-        return OrganizationRole.OWNER.name().equals(systemKey(membership.getRoleDefinition()))
-                || membership.getRole() == OrganizationRole.OWNER;
     }
 }

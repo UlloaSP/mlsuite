@@ -3,6 +3,7 @@ package dev.ulloasp.mlsuite.organization.application.dto;
 import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
 
 public record OrganizationMembershipDto(
         Long id,
@@ -11,7 +12,7 @@ public record OrganizationMembershipDto(
         String fullName,
         String email,
         String avatarUrl,
-        String role,
+        RoleSummaryDto roleDefinition,
         String status,
         OffsetDateTime createdAt) {
 
@@ -23,7 +24,7 @@ public record OrganizationMembershipDto(
                 membership.getUser().getFullName(),
                 membership.getUser().getEmail(),
                 membership.getUser().getAvatarUrl(),
-                membership.getRole().name(),
+                RoleSummaryDto.from(membership.getRoleDefinition()),
                 membership.getStatus().name(),
                 membership.getCreatedAt());
     }

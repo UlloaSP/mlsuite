@@ -6,15 +6,13 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Repository
+@RequiredArgsConstructor
 public class PostgresArtifactMigrationQueue implements ArtifactMigrationQueue {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public PostgresArtifactMigrationQueue(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     @Override
     @Transactional

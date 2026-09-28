@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,91 +24,81 @@ import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewReviewerDto
 import dev.ulloasp.mlsuite.schema.review.application.dto.SubmitSchemaReviewRunsRequest;
 import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewManagementUseCase;
 import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewUseCase;
-import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/schema-reviews")
+@RequiredArgsConstructor
 public class SchemaReviewController {
-    private final CurrentUserResolver currentUserResolver;
     private final SchemaReviewUseCase service;
     private final SchemaReviewManagementUseCase management;
 
-    public SchemaReviewController(CurrentUserResolver currentUserResolver, SchemaReviewUseCase service,
-            SchemaReviewManagementUseCase management) {
-        this.currentUserResolver = currentUserResolver;
-        this.service = service;
-        this.management = management;
-    }
-
     @PostMapping
-    public ResponseEntity<Void> create(Authentication authentication,
+    public ResponseEntity<Void> create(CurrentUser user,
             @Valid @RequestBody CreateSchemaReviewRequest request) {
-        service.create(userId(authentication), request);
+        service.create(user.userId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping("/inbox")
-    public ResponseEntity<List<SchemaReviewContextDto>> inbox(Authentication authentication) {
-        return ResponseEntity.ok(service.inbox(userId(authentication)));
+    public ResponseEntity<List<SchemaReviewContextDto>> inbox(CurrentUser user) {
+        return ResponseEntity.ok(service.inbox(user.userId()));
     }
 
     @GetMapping("/eligible-reviewers")
-    public ResponseEntity<List<SchemaReviewReviewerDto>> eligibleReviewers(Authentication authentication) {
-        return ResponseEntity.ok(service.eligibleReviewers(userId(authentication)));
+    public ResponseEntity<List<SchemaReviewReviewerDto>> eligibleReviewers(CurrentUser user) {
+        return ResponseEntity.ok(service.eligibleReviewers(user.userId()));
     }
 
     @GetMapping("/inferences/{predictionRunId}/assignments")
     public ResponseEntity<List<SchemaReviewAssignmentStatusDto>> assignmentStatus(
-            Authentication authentication, @PathVariable Long predictionRunId) {
-        return ResponseEntity.ok(management.assignmentStatus(userId(authentication), predictionRunId));
+            CurrentUser user, @PathVariable Long predictionRunId) {
+        return ResponseEntity.ok(management.assignmentStatus(user.userId(), predictionRunId));
     }
 
     @GetMapping("/{reviewId}/runs/{reviewRunId}")
-    public ResponseEntity<SchemaReviewRunDetailDto> detail(Authentication authentication,
+    public ResponseEntity<SchemaReviewRunDetailDto> detail(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId) {
-        return ResponseEntity.ok(service.detail(userId(authentication), reviewId, reviewRunId));
+        return ResponseEntity.ok(service.detail(user.userId(), reviewId, reviewRunId));
     }
 
     @PostMapping("/{reviewId}/runs/{reviewRunId}/feedback")
-    public ResponseEntity<PredictionResultFeedbackDto> createFeedback(Authentication authentication,
+    public ResponseEntity<PredictionResultFeedbackDto> createFeedback(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,
             @Valid @RequestBody CreatePredictionResultFeedbackRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(service.createFeedback(userId(authentication), reviewId, reviewRunId, request));
+                .body(service.createFeedback(user.userId(), reviewId, reviewRunId, request));
     }
 
     @PatchMapping("/{reviewId}/runs/{reviewRunId}/feedback")
-    public ResponseEntity<PredictionResultFeedbackDto> updateFeedback(Authentication authentication,
+    public ResponseEntity<PredictionResultFeedbackDto> updateFeedback(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,
             @Valid @RequestBody UpdatePredictionResultFeedbackRequest request) {
-        return ResponseEntity.ok(service.updateFeedback(userId(authentication), reviewId, reviewRunId, request));
+        return ResponseEntity.ok(service.updateFeedback(user.userId(), reviewId, reviewRunId, request));
     }
 
     @PostMapping("/{reviewId}/submit")
-    public ResponseEntity<Void> submit(Authentication authentication, @PathVariable String reviewId,
+    public ResponseEntity<Void> submit(CurrentUser user, @PathVariable String reviewId,
             @Valid @RequestBody SubmitSchemaReviewRunsRequest request) {
-        service.submit(userId(authentication), reviewId, request.reviewRunIds());
+        service.submit(user.userId(), reviewId, request.reviewRunIds());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{reviewId}/runs/{reviewRunId}/reviewers/{reviewerId}/reopen")
-    public ResponseEntity<Void> reopen(Authentication authentication,
+    public ResponseEntity<Void> reopen(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,
             @PathVariable Long reviewerId) {
-        management.reopen(userId(authentication), reviewId, reviewRunId, reviewerId);
+        management.reopen(user.userId(), reviewId, reviewRunId, reviewerId);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{reviewId}/runs/{reviewRunId}/reviewers/{reviewerId}/response")
-    public ResponseEntity<Void> deleteResponse(Authentication authentication,
+    public ResponseEntity<Void> deleteResponse(CurrentUser user,
             @PathVariable String reviewId, @PathVariable String reviewRunId,
             @PathVariable Long reviewerId) {
-        management.deleteResponse(userId(authentication), reviewId, reviewRunId, reviewerId);
+        management.deleteResponse(user.userId(), reviewId, reviewRunId, reviewerId);
         return ResponseEntity.noContent().build();
-    }
-
-    private Long userId(Authentication authentication) {
-        return currentUserResolver.resolve(authentication).userId();
     }
 }

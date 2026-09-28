@@ -8,10 +8,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
@@ -27,45 +27,22 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
 
     private final UserLookupService userLookupService;
     private final SchemaRepository schemaRepository;
     private final SchemaVersionRepository versionRepository;
     private final SchemaModelBindingRepository bindingRepository;
-    private final SchemaDraftRepository draftRepository;
     private final ModelRepository modelRepository;
-    private final WorkspaceAccessService workspaceAccessService;
+    private final SchemaDraftRepository draftRepository;
     private final WorkspaceAuthorizationService authorizationService;
-
-    @Autowired
-    public SchemaVersionServiceImpl(UserLookupService userLookupService, SchemaRepository schemaRepository,
-            SchemaVersionRepository versionRepository, SchemaModelBindingRepository bindingRepository,
-            ModelRepository modelRepository, SchemaDraftRepository draftRepository,
-            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService) {
-        this.userLookupService = userLookupService;
-        this.schemaRepository = schemaRepository;
-        this.versionRepository = versionRepository;
-        this.bindingRepository = bindingRepository;
-        this.draftRepository = draftRepository;
-        this.modelRepository = modelRepository;
-        this.workspaceAccessService = workspaceAccessService;
-        this.authorizationService = authorizationService;
-    }
-
-    public SchemaVersionServiceImpl(UserLookupService userLookupService, SchemaRepository schemaRepository,
-            SchemaVersionRepository versionRepository, SchemaModelBindingRepository bindingRepository,
-            ModelRepository modelRepository,
-            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService) {
-        this(userLookupService, schemaRepository, versionRepository, bindingRepository, modelRepository, null,
-                workspaceAccessService, authorizationService);
-    }
 
     @Override
     public SchemaVersion createVersion(Long userId, Long schemaId, CreateSchemaVersionRequest request) {
@@ -117,17 +94,11 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     }
 
     private Long requireRead(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, organizationId);
-        return organizationId;
+        return authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
     }
 
     private Long requireOperate(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationOperate(userId, organizationId);
-        return organizationId;
+        return authorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS).getId();
     }
 
     private Schema requireSchema(Long schemaId, Long organizationId) {
@@ -148,7 +119,6 @@ public class SchemaVersionServiceImpl implements SchemaVersionUseCase {
     }
 
     private void freezeLegacyDraftBindings(Long versionId) {
-        if (draftRepository == null) return;
         List<Map<String, Object>> snapshot =
                 SchemaModelBindingDto.toDraftBindings(bindingRepository.findBySchemaVersionId(versionId));
         draftRepository.findByBaseVersionIdAndBaseBindingsIsNull(versionId)

@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
@@ -15,32 +16,19 @@ import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
 
-    private final UserLookupService userLookupService;
     private final SchemaRepository schemaRepository;
     private final SchemaVersionRepository versionRepository;
     private final SchemaBookmarkRepository bookmarkRepository;
-    private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
-
-    public SchemaBookmarkServiceImpl(UserLookupService userLookupService, SchemaRepository schemaRepository,
-            SchemaVersionRepository versionRepository, SchemaBookmarkRepository bookmarkRepository,
-            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService) {
-        this.userLookupService = userLookupService;
-        this.schemaRepository = schemaRepository;
-        this.versionRepository = versionRepository;
-        this.bookmarkRepository = bookmarkRepository;
-        this.workspaceAccessService = workspaceAccessService;
-        this.authorizationService = authorizationService;
-    }
 
     @Override
     public List<SchemaBookmark> listBookmarks(Long userId, Long schemaId) {
@@ -81,17 +69,11 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     }
 
     private Long requireRead(Long userId) {
-        userLookupService.requireById(userId);
-        Long orgId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, orgId);
-        return orgId;
+        return authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
     }
 
     private Long requireOperate(Long userId) {
-        userLookupService.requireById(userId);
-        Long orgId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationOperate(userId, orgId);
-        return orgId;
+        return authorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS).getId();
     }
 
     private Schema requireSchema(Long schemaId, Long orgId) {

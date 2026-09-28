@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static dev.ulloasp.mlsuite.schema.SchemaFlowFixtures.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -15,6 +18,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository.BookmarkRunStats;
@@ -25,14 +29,10 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersi
 import dev.ulloasp.mlsuite.schema.application.dto.PredictBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.service.PredictBookmarkCatalogService;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
-import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 class PredictBookmarkCatalogServiceTest {
 
-    private final UserLookupService users = mock(UserLookupService.class);
-    private final WorkspaceAccessService access = mock(WorkspaceAccessService.class);
     private final WorkspaceAuthorizationService auth = mock(WorkspaceAuthorizationService.class);
     private final SchemaBookmarkRepository bookmarks = mock(SchemaBookmarkRepository.class);
     private final SchemaVersionRepository versions = mock(SchemaVersionRepository.class);
@@ -42,8 +42,8 @@ class PredictBookmarkCatalogServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(access.requireCurrentOrganization(7L)).thenReturn(organization());
-        service = new PredictBookmarkCatalogService(users, access, auth, bookmarks, versions, bindings, runs);
+        lenient().when(auth.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
+        service = new PredictBookmarkCatalogService(auth, bookmarks, versions, bindings, runs);
     }
 
     @Test
@@ -71,7 +71,7 @@ class PredictBookmarkCatalogServiceTest {
         assertEquals(lastRun, production.lastRunAt());
         assertEquals(0, catalog.get(1).runCount());
         assertNull(catalog.get(1).lastRunAt());
-        verify(auth).requireModelView(7L, 41L);
+        verify(auth).requireCurrent(7L, PermissionKey.VIEW_MODELS);
     }
 
     @Test

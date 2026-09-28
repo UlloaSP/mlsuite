@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.invitation;
 
+import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,17 +29,14 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
-import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
-import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
-import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
@@ -67,9 +65,6 @@ class InvitationManagementServiceTest {
     private AuditLogService auditLogService;
 
     @Mock
-    private RoleSeedService roleSeedService;
-
-    @Mock
     private RoleDefinitionRepository roleDefinitionRepository;
 
     @Mock
@@ -87,19 +82,17 @@ class InvitationManagementServiceTest {
                 userLookupService,
                 workspaceAuthorizationService,
                 auditLogService,
-                roleSeedService,
                 roleDefinitionRepository,
                 userRepository);
     }
 
     @Test
-    void createInvitation_AllowsReviewerAsLegacyViewer() {
+    void createInvitation_AssignsTheRequestedRoleDefinition() {
         Organization org = organization();
         User actor = user(7L);
         RoleDefinition reviewerRole = reviewerRole(org);
         when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
         when(organizationRepository.findById(41L)).thenReturn(Optional.of(org));
-        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
         when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L))
                 .thenReturn(Optional.of(reviewerRole));
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> {
@@ -111,10 +104,24 @@ class InvitationManagementServiceTest {
         var result = service.createInvitation(
                 7L,
                 41L,
-                new CreateInvitationRequest("reviewer@example.com", null, 5L));
+                new CreateInvitationRequest("reviewer@example.com", 5L));
 
-        assertEquals(OrganizationRole.VIEWER.name(), result.role());
         assertEquals(5L, result.roleDefinition().id());
+    }
+
+    @Test
+    void createInvitation_RejectsOwnerRoleWithoutTransferPermission() {
+        Organization org = organization();
+        RoleDefinition owner = TestFixtures.role(org, "OWNER");
+        when(workspaceAccessService.requireUser(7L)).thenReturn(user(7L));
+        when(organizationRepository.findById(41L)).thenReturn(Optional.of(org));
+        when(roleDefinitionRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(owner));
+        when(workspaceAuthorizationService.has(7L, 41L, PermissionKey.TRANSFER_OWNERSHIP)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> service.createInvitation(
+                7L, 41L, new CreateInvitationRequest("owner@example.com", 9L)));
+
+        verifyNoInteractions(invitationRepository);
     }
 
     @Test
@@ -127,7 +134,6 @@ class InvitationManagementServiceTest {
         RoleDefinition role = reviewerRole(org);
         when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
         when(organizationRepository.findById(41L)).thenReturn(Optional.of(org));
-        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
         when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(role));
         when(userRepository.findByEmailIgnoreCase("target@example.com")).thenReturn(Optional.of(invitee));
         when(organizationMembershipRepository.findByOrganizationIdAndUserId(41L, 8L)).thenReturn(Optional.empty());
@@ -140,7 +146,7 @@ class InvitationManagementServiceTest {
         var result = service.createInvitation(
                 7L,
                 41L,
-                new CreateInvitationRequest("target@example.com", null, 5L));
+                new CreateInvitationRequest("target@example.com", 5L));
 
         assertEquals("ACCEPTED", result.status());
         assertEquals(org, invitee.getCurrentOrganization());
@@ -157,7 +163,6 @@ class InvitationManagementServiceTest {
         RoleDefinition role = reviewerRole(org);
         when(workspaceAccessService.requireUser(7L)).thenReturn(actor);
         when(organizationRepository.findById(41L)).thenReturn(Optional.of(org));
-        when(workspaceAuthorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
         when(roleDefinitionRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(role));
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> {
             Invitation invitation = inv.getArgument(0);
@@ -168,7 +173,7 @@ class InvitationManagementServiceTest {
         var result = service.createInvitation(
                 7L,
                 41L,
-                new CreateInvitationRequest("target@example.com", null, 5L));
+                new CreateInvitationRequest("target@example.com", 5L));
 
         assertEquals("PENDING", result.status());
         verifyNoInteractions(organizationMembershipRepository);
@@ -188,14 +193,14 @@ class InvitationManagementServiceTest {
         assertEquals(8L, result.get(0).id());
         assertEquals("User Example", result.get(0).fullName());
         assertEquals("user@example.com", result.get(0).email());
-        verify(workspaceAuthorizationService).requireInvitationCreate(7L, 41L);
+        verify(workspaceAuthorizationService).require(7L, 41L, PermissionKey.INVITE_MEMBERS);
     }
 
     @Test
     void listInvitationCandidates_StopsWhenUserCannotManageInvitations() {
         doThrow(new IllegalArgumentException("Denied"))
                 .when(workspaceAuthorizationService)
-                .requireInvitationCreate(7L, 41L);
+                .require(7L, 41L, PermissionKey.INVITE_MEMBERS);
 
         assertThrows(IllegalArgumentException.class, () -> service.listInvitationCandidates(7L, 41L));
 
@@ -208,13 +213,11 @@ class InvitationManagementServiceTest {
         Invitation invitation = new Invitation(
                 org,
                 "target@example.com",
-                OrganizationRole.MEMBER,
                 reviewerRole(org),
                 "secret-token",
                 user(7L),
                 OffsetDateTime.now().plusDays(1));
-        when(workspaceAuthorizationService.requireInvitationView(7L, 41L))
-                .thenReturn(viewOnlyPermissions());
+        when(workspaceAuthorizationService.has(7L, 41L, PermissionKey.MANAGE_INVITATIONS)).thenReturn(false);
         when(invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(41L))
                 .thenReturn(List.of(invitation));
 
@@ -222,36 +225,22 @@ class InvitationManagementServiceTest {
 
         assertEquals(1, result.size());
         assertEquals(null, result.get(0).token());
-        verify(workspaceAuthorizationService).requireInvitationView(7L, 41L);
+        verify(workspaceAuthorizationService).require(7L, 41L, PermissionKey.VIEW_INVITATIONS);
     }
 
     @Test
     void listInvitations_StopsWhenUserCannotViewInvitations() {
         doThrow(new IllegalArgumentException("Denied"))
                 .when(workspaceAuthorizationService)
-                .requireInvitationView(7L, 41L);
+                .require(7L, 41L, PermissionKey.VIEW_INVITATIONS);
 
         assertThrows(IllegalArgumentException.class, () -> service.listInvitations(7L, 41L));
 
         verifyNoInteractions(invitationRepository);
     }
 
-    private Organization organization() {
-        Organization organization = new Organization();
-        organization.setId(41L);
-        organization.setName("Org");
-        organization.setSlug("org");
-        return organization;
-    }
-
     private RoleDefinition reviewerRole(Organization org) {
-        OrganizationSystemRole systemRole = OrganizationSystemRole.REVIEWER;
-        RoleDefinition role = new RoleDefinition(
-                org,
-                RoleScope.ORGANIZATION,
-                systemRole.label(),
-                systemRole.slug(),
-                systemRole.systemKey());
+        RoleDefinition role = TestFixtures.role(org, "REVIEWER", PermissionKey.REVIEW);
         role.setId(5L);
         return role;
     }
@@ -262,17 +251,5 @@ class InvitationManagementServiceTest {
         user.setEmail("admin@example.com");
         user.setFullName("Admin");
         return user;
-    }
-
-    private WorkspacePermissionsDto permissions() {
-        return new WorkspacePermissionsDto(
-                true, true, true, false, false, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true);
-    }
-
-    private WorkspacePermissionsDto viewOnlyPermissions() {
-        return new WorkspacePermissionsDto(
-                false, false, false, false, false, false, false, false, false, true, false,
-                false, false, false, false, false, false, false, false, false, false);
     }
 }

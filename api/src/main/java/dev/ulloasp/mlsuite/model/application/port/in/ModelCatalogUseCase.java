@@ -4,7 +4,8 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import dev.ulloasp.mlsuite.model.application.dto.ModelPageDto;
+import dev.ulloasp.mlsuite.model.application.dto.ModelDto;
+import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 
 public interface ModelCatalogUseCase {
@@ -15,7 +16,7 @@ public interface ModelCatalogUseCase {
 
     Model getModel(Long userId, Long modelId);
 
-    ModelPageDto getModelPage(Long userId, int page, int size, String search, String sort, String status);
+    PageDto<ModelDto> getModelPage(Long userId, int page, int size, String search, String sort, String status);
 
     Model renameModel(Long userId, Long modelId, String name, Long expectedVersion);
 

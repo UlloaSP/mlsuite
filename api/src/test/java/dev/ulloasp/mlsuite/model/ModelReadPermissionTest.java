@@ -12,6 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.service.ModelServiceImpl;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
@@ -20,8 +21,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
-import dev.ulloasp.mlsuite.role.application.service.LegacyRolePermissionMapper;
-import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
@@ -47,12 +46,11 @@ class ModelReadPermissionTest {
     void setUp() {
         organization.setId(41L);
         when(access.requireCurrentOrganization(3L)).thenReturn(organization);
-        var authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class),
-                mock(RoleSeedService.class), new LegacyRolePermissionMapper());
+        var authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
         service = new ModelServiceImpl(users, models, mock(ObjectStorageService.class),
-                mock(SchemaModelBindingRepository.class), mock(PredictionResultRepository.class), access, authorization,
+                mock(SchemaModelBindingRepository.class), mock(PredictionResultRepository.class), authorization,
                 mock(ModelArtifactWriter.class), mock(ModelArtifactContentReader.class),
-                mock(StorageDeletionQueue.class));
+                mock(StorageDeletionQueue.class), mock(AnalyzerClient.class), false);
     }
 
     @ParameterizedTest

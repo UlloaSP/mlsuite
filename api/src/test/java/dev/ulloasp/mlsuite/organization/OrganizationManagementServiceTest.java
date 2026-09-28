@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.organization;
 
+import static dev.ulloasp.mlsuite.support.TestFixtures.user;
+import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,9 +40,9 @@ import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
-import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
-import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.workspace.application.dto.MembershipActionsDto;
@@ -116,7 +118,7 @@ class OrganizationManagementServiceTest {
         ArgumentCaptor<OrganizationMembership> captor = ArgumentCaptor.forClass(OrganizationMembership.class);
         verify(membershipRepository).save(captor.capture());
         assertEquals(owner, captor.getValue().getUser());
-        assertEquals(OrganizationRole.OWNER, captor.getValue().getRole());
+        assertEquals(ownerRole, captor.getValue().getRoleDefinition());
     }
 
     @Test
@@ -177,19 +179,23 @@ class OrganizationManagementServiceTest {
                 .thenReturn(List.of(owner, target));
         when(membershipRepository.save(owner)).thenReturn(owner);
         when(membershipRepository.save(target)).thenReturn(target);
+        RoleDefinition adminRole = orgRole(OrganizationRole.ADMIN);
+        RoleDefinition ownerRole = orgRole(OrganizationRole.OWNER);
+        when(roleSeedService.orgRole(target.getOrganization(), OrganizationRole.ADMIN)).thenReturn(adminRole);
+        when(roleSeedService.orgRole(target.getOrganization(), OrganizationRole.OWNER)).thenReturn(ownerRole);
 
         var result = service.transferOwnership(7L, 41L, new TransferOrganizationOwnershipRequest(2L));
 
-        assertEquals(OrganizationRole.ADMIN, owner.getRole());
-        assertEquals(OrganizationRole.OWNER, target.getRole());
+        assertEquals(adminRole, owner.getRoleDefinition());
+        assertEquals(ownerRole, target.getRoleDefinition());
         assertEquals(2L, result.id());
-        verify(workspaceAuthorizationService).requireOwnershipTransfer(7L, 41L);
+        verify(workspaceAuthorizationService).require(7L, 41L, PermissionKey.TRANSFER_OWNERSHIP);
     }
 
     @Test
     void transferOwnership_DeniesActorWithoutTransferPermission() {
         doThrow(new OrganizationAccessDeniedException(41L))
-                .when(workspaceAuthorizationService).requireOwnershipTransfer(8L, 41L);
+                .when(workspaceAuthorizationService).require(8L, 41L, PermissionKey.TRANSFER_OWNERSHIP);
 
         assertThrows(OrganizationAccessDeniedException.class,
                 () -> service.transferOwnership(8L, 41L, new TransferOrganizationOwnershipRequest(2L)));
@@ -215,7 +221,7 @@ class OrganizationManagementServiceTest {
     }
 
     @Test
-    void updateMemberRole_AllowsReviewerAsLegacyViewer() {
+    void updateMemberRole_AssignsTheChosenRoleDefinition() {
         OrganizationMembership target = membership(2L, OrganizationRole.MEMBER, MembershipStatus.ACTIVE);
         RoleDefinition reviewerRole = reviewerRole();
         when(membershipRepository.findActiveByIdAndOrganizationId(2L, 41L)).thenReturn(Optional.of(target));
@@ -230,51 +236,23 @@ class OrganizationManagementServiceTest {
 
         var result = service.updateMemberRole(7L, 41L, 2L, new UpdateOrganizationMembershipRoleRequest(5L));
 
-        assertEquals(OrganizationRole.VIEWER, target.getRole());
         assertEquals(5L, target.getRoleDefinition().getId());
-        assertEquals("VIEWER", result.role());
+        assertEquals(5L, result.roleDefinition().id());
     }
 
     private OrganizationMembership membership(Long id, OrganizationRole role, MembershipStatus status) {
-        OrganizationMembership membership = new OrganizationMembership();
+        OrganizationMembership membership = new OrganizationMembership(organization(), user(id), orgRole(role), status);
         membership.setId(id);
-        membership.setOrganization(organization());
-        membership.setUser(user(id));
-        membership.setRole(role);
-        membership.setStatus(status);
         return membership;
     }
 
-    private Organization organization() {
-        Organization organization = new Organization();
-        organization.setId(41L);
-        organization.setName("Org");
-        organization.setSlug("org");
-        return organization;
-    }
-
     private RoleDefinition reviewerRole() {
-        OrganizationSystemRole systemRole = OrganizationSystemRole.REVIEWER;
-        RoleDefinition role = new RoleDefinition(
-                organization(),
-                RoleScope.ORGANIZATION,
-                systemRole.label(),
-                systemRole.slug(),
-                systemRole.systemKey());
+        RoleDefinition role = TestFixtures.role(organization(), "REVIEWER", PermissionKey.REVIEW);
         role.setId(5L);
         return role;
     }
 
     private RoleDefinition orgRole(OrganizationRole role) {
-        return new RoleDefinition(organization(), RoleScope.ORGANIZATION, role.name(), role.name(), role.name());
-    }
-
-    private User user(Long id) {
-        User user = new User();
-        user.setId(id);
-        user.setEmail("user" + id + "@example.com");
-        user.setFullName("User " + id);
-        user.setSystemRole(SystemRole.USER);
-        return user;
+        return TestFixtures.role(organization(), role.name());
     }
 }

@@ -6,72 +6,43 @@ Copyright (c) 2025 Pablo Ulloa Santin
 package dev.ulloasp.mlsuite.model.domain.exception;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Wraps any error coming from the external Analyzer (FastAPI) service.
- * Preserves HTTP status, endpoint, and parsed "detail" message.
+ * Wraps any error coming from the external Analyzer (FastAPI) service,
+ * preserving its HTTP status (0 when unreachable) and parsed "detail" message.
  */
 public class AnalyzerServiceException extends RuntimeException {
 
-    private final int status; // 0 for network/unavailable
-    private final String endpoint;
-    private final String detail; // best-effort parsed message (FastAPI "detail")
-    private final String rawBody; // raw response body for troubleshooting
-    private final HttpHeaders headers; // may be empty for network errors
+    private final int status;
+    private final String detail;
 
-    public AnalyzerServiceException(int status, String endpoint, String detail, String rawBody, HttpHeaders headers) {
+    public AnalyzerServiceException(int status, String detail) {
         super(detail != null && !detail.isBlank() ? detail : "Analyzer service error");
         this.status = status;
-        this.endpoint = endpoint;
         this.detail = detail;
-        this.rawBody = rawBody;
-        this.headers = headers != null ? HttpHeaders.readOnlyHttpHeaders(headers) : HttpHeaders.EMPTY;
     }
 
     public int getStatus() {
         return status;
     }
 
-    public String getEndpoint() {
-        return endpoint;
-    }
-
     public String getDetail() {
         return detail;
     }
 
-    public String getRawBody() {
-        return rawBody;
-    }
-
-    public HttpHeaders getHeaders() {
-        return headers;
-    }
-
     /** Build from HTTP 4xx/5xx returned by the analyzer. */
-    public static AnalyzerServiceException fromRestClient(RestClientResponseException ex, String endpoint) {
-        String body = safeBody(ex);
-        String parsed = parseFastApiDetail(body);
-        return new AnalyzerServiceException(ex.getStatusCode().value(), endpoint, parsed, body,
-                ex.getResponseHeaders());
+    public static AnalyzerServiceException fromRestClient(RestClientResponseException ex) {
+        return new AnalyzerServiceException(ex.getStatusCode().value(), parseFastApiDetail(safeBody(ex)));
     }
 
     /** Build from network/connectivity timeouts, DNS, connection refused, etc. */
-    public static AnalyzerServiceException fromNetwork(ResourceAccessException ex, String endpoint) {
-        String msg = "Analyzer service unreachable";
-        return new AnalyzerServiceException(0, endpoint, msg,
-                ex.getMessage() != null ? ex.getMessage() : "", HttpHeaders.EMPTY);
+    public static AnalyzerServiceException fromNetwork() {
+        return new AnalyzerServiceException(0, "Analyzer service unreachable");
     }
-
-    // ---------- helpers ----------
 
     private static String safeBody(RestClientResponseException ex) {
         try {
@@ -116,30 +87,4 @@ public class AnalyzerServiceException extends RuntimeException {
             return "";
         }
     }
-
-    @Override
-    public String toString() {
-        return "AnalyzerServiceException{" +
-                "status=" + status +
-                ", endpoint='" + endpoint + '\'' +
-                ", detail='" + detail + '\'' +
-                '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof AnalyzerServiceException that))
-            return false;
-        return status == that.status &&
-                Objects.equals(endpoint, that.endpoint) &&
-                Objects.equals(detail, that.detail);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(status, endpoint, detail);
-    }
 }
-

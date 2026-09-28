@@ -14,43 +14,35 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.core.Authentication;
 
-import dev.ulloasp.mlsuite.model.adapter.in.web.ModelControllerImpl;
+import dev.ulloasp.mlsuite.model.adapter.in.web.ModelController;
 import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
-import dev.ulloasp.mlsuite.model.application.dto.ModelPageDto;
+import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.service.ModelCreationService;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
-import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 
 @ExtendWith(MockitoExtension.class)
 class ModelControllerTest {
-
-    @Mock
-    private CurrentUserResolver currentUserResolver;
 
     @Mock
     private ModelCatalogUseCase modelCatalogUseCase;
 
     @Mock
     private ModelCreationService modelCreationService;
+    private CurrentUser user;
 
-    @Mock
-    private Authentication authentication;
-
-    private ModelControllerImpl controller;
+    private ModelController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new ModelControllerImpl(
-                currentUserResolver,
+        controller = new ModelController(
                 modelCatalogUseCase,
                 modelCreationService);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(4L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
+        user = new CurrentUser(4L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
     }
 
     @Test
@@ -64,7 +56,7 @@ class ModelControllerTest {
         CreateModelDto dto = CreateModelDto.toDto(model);
         when(modelCreationService.create(4L, "demo", modelFile, dataframeFile, "_")).thenReturn(dto);
 
-        assertEquals(HttpStatus.CREATED, controller.createModel(authentication, "demo", modelFile, dataframeFile, "_").getStatusCode());
+        assertEquals(HttpStatus.CREATED, controller.createModel(user, "demo", modelFile, dataframeFile, "_").getStatusCode());
 
         verify(modelCreationService).create(4L, "demo", modelFile, dataframeFile, "_");
     }
@@ -72,9 +64,9 @@ class ModelControllerTest {
     @Test
     void getModelPage_UsesInternalUserId() {
         when(modelCatalogUseCase.getModelPage(4L, 2, 5, "rf", "name", "archived"))
-                .thenReturn(new ModelPageDto(List.of(), 2, 5, 0, false));
+                .thenReturn(new PageDto<>(List.of(), 2, 5, 0, false));
 
-        assertEquals(2, controller.getModelPage(authentication, 2, 5, "rf", "name", "archived").getBody().page());
+        assertEquals(2, controller.getModelPage(user, 2, 5, "rf", "name", "archived").getBody().page());
         verify(modelCatalogUseCase).getModelPage(4L, 2, 5, "rf", "name", "archived");
     }
 
@@ -84,7 +76,7 @@ class ModelControllerTest {
         model.setVersion(0L);
         when(modelCatalogUseCase.getModels(4L)).thenReturn(List.of(model));
 
-        assertEquals(1, controller.getAllModels(authentication).getBody().size());
+        assertEquals(1, controller.getAllModels(user).getBody().size());
         verify(modelCatalogUseCase).getModels(4L);
     }
 
@@ -92,7 +84,7 @@ class ModelControllerTest {
     void getModel_ReturnsTheModelDtoForTheInternalUserId() {
         when(modelCatalogUseCase.getModel(4L, 9L)).thenReturn(model());
 
-        var response = controller.getModel(authentication, 9L);
+        var response = controller.getModel(user, 9L);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(9L, response.getBody().id());
@@ -103,14 +95,14 @@ class ModelControllerTest {
     void getModel_PropagatesNotFoundForTheExceptionHandler() {
         when(modelCatalogUseCase.getModel(4L, 9L)).thenThrow(new ModelDoesNotExistsException(9L, "alice"));
 
-        assertThrows(ModelDoesNotExistsException.class, () -> controller.getModel(authentication, 9L));
+        assertThrows(ModelDoesNotExistsException.class, () -> controller.getModel(user, 9L));
     }
 
     @Test
     void getModel_PropagatesForbiddenForTheExceptionHandler() {
         when(modelCatalogUseCase.getModel(4L, 9L)).thenThrow(new OrganizationAccessDeniedException(41L));
 
-        assertThrows(OrganizationAccessDeniedException.class, () -> controller.getModel(authentication, 9L));
+        assertThrows(OrganizationAccessDeniedException.class, () -> controller.getModel(user, 9L));
     }
 
     @Test
@@ -118,7 +110,7 @@ class ModelControllerTest {
         Model model = model();
         when(modelCatalogUseCase.renameModel(4L, 9L, "new", 3L)).thenReturn(model);
 
-        assertEquals("demo", controller.rename(authentication, 9L, "new", 3L).getBody().name());
+        assertEquals("demo", controller.rename(user, 9L, "new", 3L).getBody().name());
         verify(modelCatalogUseCase).renameModel(4L, 9L, "new", 3L);
     }
 
@@ -126,7 +118,7 @@ class ModelControllerTest {
     void rename_AllowsAnOlderClientWithoutVersionDuringTheCompatibilityWindow() {
         when(modelCatalogUseCase.renameModel(4L, 9L, "new", null)).thenReturn(model());
 
-        assertEquals(HttpStatus.OK, controller.rename(authentication, 9L, "new", null).getStatusCode());
+        assertEquals(HttpStatus.OK, controller.rename(user, 9L, "new", null).getStatusCode());
         verify(modelCatalogUseCase).renameModel(4L, 9L, "new", null);
     }
 
@@ -135,7 +127,7 @@ class ModelControllerTest {
         Model model = model();
         when(modelCatalogUseCase.archiveModel(4L, 9L, 3L)).thenReturn(model);
 
-        assertEquals("demo", controller.archive(authentication, 9L, 3L).getBody().name());
+        assertEquals("demo", controller.archive(user, 9L, 3L).getBody().name());
         verify(modelCatalogUseCase).archiveModel(4L, 9L, 3L);
     }
 
@@ -144,13 +136,13 @@ class ModelControllerTest {
         Model model = model();
         when(modelCatalogUseCase.duplicateModel(4L, 9L, "copy")).thenReturn(model);
 
-        assertEquals(HttpStatus.CREATED, controller.duplicate(authentication, 9L, "copy").getStatusCode());
+        assertEquals(HttpStatus.CREATED, controller.duplicate(user, 9L, "copy").getStatusCode());
         verify(modelCatalogUseCase).duplicateModel(4L, 9L, "copy");
     }
 
     @Test
     void delete_DelegatesToCatalogUseCase() {
-        assertEquals(HttpStatus.NO_CONTENT, controller.delete(authentication, 9L, 3L).getStatusCode());
+        assertEquals(HttpStatus.NO_CONTENT, controller.delete(user, 9L, 3L).getStatusCode());
         verify(modelCatalogUseCase).deleteModel(4L, 9L, 3L);
     }
 

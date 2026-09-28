@@ -48,8 +48,7 @@ class OrganizationDeletionServiceTest {
         var role = new RoleDefinition(org, RoleScope.ORGANIZATION, "Owner", "owner", "OWNER");
         role.getPermissions().add(PermissionKey.VIEW_MODELS);
         entityManager.persist(role);
-        var membership = new OrganizationMembership(org, owner, OrganizationRole.OWNER, MembershipStatus.ACTIVE);
-        membership.setRoleDefinition(role);
+        var membership = new OrganizationMembership(org, owner, role, MembershipStatus.ACTIVE);
         entityManager.persist(membership);
         entityManager.flush();
         Long orgId = org.getId();

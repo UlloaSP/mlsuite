@@ -45,9 +45,6 @@ public interface OrganizationMembershipRepository extends JpaRepository<Organiza
     @Query("SELECT COUNT(m) FROM OrganizationMembership m WHERE m.roleDefinition.id = :roleDefinitionId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
     long countActiveByRoleDefinitionId(Long roleDefinitionId);
 
-    @Query("SELECT m FROM OrganizationMembership m WHERE m.roleDefinition.id = :roleDefinitionId AND m.status = dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus.ACTIVE")
-    List<OrganizationMembership> findActiveByRoleDefinitionId(Long roleDefinitionId);
-
     List<OrganizationMembership> findByRoleDefinitionId(Long roleDefinitionId);
 
     List<OrganizationMembership> findByOrganizationId(Long organizationId);

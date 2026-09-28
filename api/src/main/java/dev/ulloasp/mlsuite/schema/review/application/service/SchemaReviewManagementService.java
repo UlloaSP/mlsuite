@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewAssigneeRepository;
@@ -25,9 +26,11 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class SchemaReviewManagementService implements SchemaReviewManagementUseCase {
     private final SchemaReviewRepository reviews;
     private final SchemaReviewRunRepository reviewRuns;
@@ -38,25 +41,10 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
     private final WorkspaceAccessService workspaceAccess;
     private final WorkspaceAuthorizationService authorization;
 
-    public SchemaReviewManagementService(SchemaReviewRepository reviews,
-            SchemaReviewRunRepository reviewRuns, SchemaReviewRunSubmissionRepository submissions,
-            SchemaReviewAssigneeRepository assignees, PredictionRunRepository runs,
-            PredictionResultFeedbackRepository feedback, WorkspaceAccessService workspaceAccess,
-            WorkspaceAuthorizationService authorization) {
-        this.reviews = reviews;
-        this.reviewRuns = reviewRuns;
-        this.submissions = submissions;
-        this.assignees = assignees;
-        this.runs = runs;
-        this.feedback = feedback;
-        this.workspaceAccess = workspaceAccess;
-        this.authorization = authorization;
-    }
-
     @Transactional(readOnly = true)
     public List<SchemaReviewAssignmentStatusDto> assignmentStatus(Long userId, Long predictionRunId) {
         Long organizationId = organizationId(userId);
-        authorization.requireReviewManagement(userId, organizationId);
+        authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
         runs.findByIdAndOrganizationId(predictionRunId, organizationId)
                 .orElseThrow(SchemaReviewUnavailableException::new);
         return reviewRuns.findByRunIdOrderByIdAsc(predictionRunId).stream()
@@ -67,7 +55,7 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
 
     public void reopen(Long userId, String reviewId, String reviewRunId, Long reviewerId) {
         Long organizationId = organizationId(userId);
-        authorization.requireReviewManagement(userId, organizationId);
+        authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
         SchemaReview review = reviews.findByPublicIdAndOrganizationId(reviewId, organizationId)
                 .orElseThrow(SchemaReviewUnavailableException::new);
         if (!review.getExpiresAt().isAfter(now())) throw conflict("Expired review cannot be reopened");
@@ -84,7 +72,7 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
 
     public void deleteResponse(Long userId, String reviewId, String reviewRunId, Long reviewerId) {
         Long organizationId = organizationId(userId);
-        authorization.requireReviewManagement(userId, organizationId);
+        authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
         SchemaReview review = reviews.findByPublicIdAndOrganizationId(reviewId, organizationId)
                 .orElseThrow(SchemaReviewUnavailableException::new);
         SchemaReviewRun reviewRun = reviewRuns.findByReviewIdAndPublicId(review.getId(), reviewRunId)
