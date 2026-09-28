@@ -54,3 +54,65 @@ test("preselects after models load, then preserves an explicit deselection", asy
   await act(async () => render([{ ...numericModel }]));
   expect(container.textContent).toContain("0 selected");
 });
+
+const manyModels = Array.from({ length: 15 }, (_, index) => ({
+  ...model,
+  id: String(index + 1),
+  name: `Model ${String(index + 1).padStart(2, "0")}`,
+}));
+
+async function mountPicker(models: SchemaSourceModel[]) {
+  const container = document.createElement("div");
+  document.body.append(container);
+  root = createRoot(container);
+  await act(async () =>
+    root?.render(
+      <MemoryRouter initialEntries={["/schemas/create"]}>
+        <CreateSchemaPage models={models} isLoading={false} />
+      </MemoryRouter>,
+    ),
+  );
+  const options = () =>
+    [...container.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].map(
+      (button) => button.textContent,
+    );
+  const click = async (label: string) => {
+    const button = [...container.querySelectorAll("button")].find(
+      (item) => item.textContent?.trim() === label || item.getAttribute("aria-label") === label,
+    )!;
+    await act(async () => button.click());
+  };
+  return { container, options, click };
+}
+
+test("pages the model list and keeps the selection across pages", async () => {
+  const { container, options, click } = await mountPicker(manyModels);
+  expect(options()).toHaveLength(10);
+  const first = [...container.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")][0];
+  await act(async () => first.click());
+  expect(first.getAttribute("aria-pressed")).toBe("true");
+
+  await click("Next");
+  expect(options()).toHaveLength(5);
+  expect(options()[0]).toContain("Model 11");
+  expect(container.textContent).toContain("1 selected");
+
+  await click("Remove Model 01");
+  expect(container.textContent).toContain("0 selected");
+});
+
+test("search narrows the model list and says when nothing matches", async () => {
+  const { container, options } = await mountPicker(manyModels);
+  const search = container.querySelector<HTMLInputElement>('input[aria-label="Search models"]')!;
+  const type = async (value: string) =>
+    act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+      setter.call(search, value);
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+  await type("model 12");
+  expect(options()).toEqual([expect.stringContaining("Model 12")]);
+  await type("nothing like this");
+  expect(container.textContent).toContain("No matching models");
+});
