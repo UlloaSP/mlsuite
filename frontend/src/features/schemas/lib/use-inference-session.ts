@@ -7,6 +7,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { mergeSchemaRunInputs } from "@/capabilities/prediction-runtime/data/input-display";
+import { useUser } from "@/capabilities/workspace-context/session";
 import { useCreatePredictionRunForBookmarkMutation } from "@/features/schemas/api/schema-prediction-mutations";
 import type {
   CreatePredictionRunRequest,
@@ -40,18 +41,20 @@ const NO_ENTRIES: SessionEntry[] = [];
  * entries live in the app-wide store, so leaving the page and coming back keeps them.
  */
 export function useInferenceSession(bookmarkId: string, schemaVersionId: string) {
-  const entries = useAtomValue(inferenceSessionsAtom)[bookmarkId] ?? NO_ENTRIES;
+  // Keyed by member too: another member signing in on this page never sees these.
+  const sessionKey = `${useUser().data?.id ?? "anonymous"}:${bookmarkId}`;
+  const entries = useAtomValue(inferenceSessionsAtom)[sessionKey] ?? NO_ENTRIES;
   const setSessions = useSetAtom(inferenceSessionsAtom);
   const setEntries = useCallback(
     (change: (current: SessionEntry[]) => SessionEntry[]) =>
       setSessions((all) => {
-        const next = change(all[bookmarkId] ?? NO_ENTRIES);
-        if (next.length > 0) return { ...all, [bookmarkId]: next };
+        const next = change(all[sessionKey] ?? NO_ENTRIES);
+        if (next.length > 0) return { ...all, [sessionKey]: next };
         const rest = { ...all };
-        delete rest[bookmarkId];
+        delete rest[sessionKey];
         return rest;
       }),
-    [bookmarkId, setSessions],
+    [sessionKey, setSessions],
   );
   // A run still going when the page closes dies with its form; drop it.
   useEffect(

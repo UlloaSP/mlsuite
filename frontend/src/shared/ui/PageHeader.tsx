@@ -51,7 +51,11 @@ export function AppPageHeader({
   // Every page has a trail, like a portal: without explicit levels the page's own
   // title is the current crumb, and a scope's home page is just its root.
   const levels = breadcrumbs ?? (typeof title === "string" ? [{ label: title }] : []);
-  const { root, trail } = usePageTrail(levels, breadcrumbScope);
+  const { root, trail } = usePageTrail(
+    levels,
+    breadcrumbScope,
+    typeof description === "string" ? description : undefined,
+  );
   // The bottom bar and the rail are drawn by the app shell instead.
   const inlineTrail = useLocationDisplay() === "breadcrumb-top";
   const actionNodes = flattenActionNodes(actions).slice(0, 4);

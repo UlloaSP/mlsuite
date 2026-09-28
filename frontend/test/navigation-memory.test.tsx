@@ -16,7 +16,7 @@ import { locationDisplayAtom, type LocationDisplay } from "@/shared/ui/sidebar-p
 
 const workspace = vi.hoisted(() => ({ organizationId: 7 }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
-  useUser: () => ({ data: { systemRole: "USER" } }),
+  useUser: () => ({ data: { id: "user-1", systemRole: "USER" } }),
 }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useWorkspaceContext: () => ({
@@ -31,7 +31,7 @@ let root: Root | undefined;
 let container: HTMLDivElement;
 afterEach(async () => {
   await act(async () => root?.unmount());
-  sessionStorage.clear();
+  localStorage.clear();
   workspace.organizationId = 7;
   vi.unstubAllGlobals();
   document.body.innerHTML = "";

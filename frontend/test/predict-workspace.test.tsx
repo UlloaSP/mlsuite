@@ -23,6 +23,9 @@ const state = vi.hoisted(() => ({
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useWorkspaceContext: () => ({ data: { permissions: { canRunPredictions: state.canRun } } }),
 }));
+vi.mock("@/capabilities/workspace-context/session", () => ({
+  useUser: () => ({ data: { id: "user-1" } }),
+}));
 vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
   useCreatePredictionRunForBookmarkMutation: () => ({ mutateAsync: vi.fn() }),
 }));

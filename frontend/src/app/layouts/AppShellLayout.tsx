@@ -26,8 +26,18 @@ import { useDisplayShortcuts } from "./use-display-shortcuts";
 import { useQuietScrollbars } from "./use-quiet-scrollbars";
 import { useScrollMemory } from "./use-scroll-memory";
 import { useRecordSectionLocation } from "@/app/components/section-memory";
-import { useWarnOnUnsavedInferences } from "@/features/schemas/lib/inference-session-store";
+import {
+  useScopeInferenceSessionsToUser,
+  useWarnOnUnsavedInferences,
+} from "@/features/schemas/lib/inference-session-store";
+import { useUser } from "@/capabilities/workspace-context/session";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
+
+/** Records where the member is, per section; inside the breadcrumb roots to read page names. */
+function SectionLocationRecorder() {
+  useRecordSectionLocation(useNavigationItems().activeRoot);
+  return null;
+}
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
@@ -37,12 +47,13 @@ export function AppShellFrame({ children }: PropsWithChildren) {
   useDisplayShortcuts();
   useQuietScrollbars(floating);
   useScrollMemory();
-  useRecordSectionLocation(useNavigationItems().activeRoot);
   useWarnOnUnsavedInferences();
+  useScopeInferenceSessionsToUser(useUser().data?.id);
   const location = useLocationDisplay();
 
   return (
     <AppBreadcrumbRoots>
+      <SectionLocationRecorder />
       <SidebarProvider open={!collapsed} onOpenChange={(open: boolean) => setCollapsed(!open)}>
         <div
           data-navigation-position={position}

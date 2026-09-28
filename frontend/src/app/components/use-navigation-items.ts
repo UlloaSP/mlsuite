@@ -100,7 +100,7 @@ export function useNavigationItems() {
   const resume = (item: NavigationItem): NavigationItem =>
     isParentActive(item) || item.children?.length
       ? item
-      : { ...item, to: recall(item.root) ?? item.to };
+      : { ...item, to: recall(item.root)?.href ?? item.to };
 
   return {
     navigation: navigation.map(resume),

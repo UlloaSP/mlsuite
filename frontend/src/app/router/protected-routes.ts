@@ -14,6 +14,10 @@ export const protectedPages: RouteObject[] = [
     lazy: () =>
       lazyPage(() => import("@/app/pages/authenticated-home-page"), "AuthenticatedHomePage"),
   },
+  {
+    path: "welcome",
+    lazy: () => lazyPage(() => import("@/app/pages/welcome-page"), "WelcomePage"),
+  },
   ...reviewRoutes,
   {
     path: "workspace",

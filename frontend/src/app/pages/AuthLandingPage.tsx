@@ -9,13 +9,14 @@ import { useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import type { LoginPayload, RegisterPayload } from "@/capabilities/workspace-context/session-api";
-import { safeReturnTo, useLogin, useRegister } from "@/capabilities/workspace-context/session";
+import { useLogin, useRegister } from "@/capabilities/workspace-context/session";
 import { AuthAccessOverlay } from "./auth-landing/AuthAccessOverlay";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
 import { AuthHorizon } from "./auth-landing/AuthHorizon";
 import { AuthPassStub } from "./auth-landing/AuthPassStub";
 import { AuthTypeBands } from "./auth-landing/AuthTypeBands";
 import type { AuthMode } from "./auth-landing/authLandingCopy";
+import { signInDestination } from "./auth-landing/sign-in-destination";
 import { useAuthAccess } from "./auth-landing/useAuthAccess";
 import { useAuthStageScale } from "./auth-landing/useAuthStageScale";
 import "./auth-landing/auth-landing.css";
@@ -30,10 +31,10 @@ function readFormValue(formData: FormData, name: string) {
 export function AuthLandingPage() {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [searchParams] = useSearchParams();
-  const access = useAuthAccess(safeReturnTo(searchParams.get("returnTo")));
+  const [mode, setMode] = useState<AuthMode>("login");
+  const access = useAuthAccess(signInDestination(mode, searchParams.get("returnTo")));
   const passRef = useRef<HTMLDivElement>(null);
   const scale = useAuthStageScale();
-  const [mode, setMode] = useState<AuthMode>("login");
   const login = useLogin();
   const register = useRegister();
   const mutation = mode === "login" ? login : register;

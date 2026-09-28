@@ -33,6 +33,10 @@ const pageState = vi.hoisted(() => ({
   version: null as SchemaVersionDto | null,
 }));
 
+const sessionUser = vi.hoisted(() => ({ id: "user-1" }));
+vi.mock("@/capabilities/workspace-context/session", () => ({
+  useUser: () => ({ data: { id: sessionUser.id } }),
+}));
 vi.mock("@/capabilities/prediction-runtime/mlform/schema-run-mount", () => ({
   mountSchemaRunForm: mountState.mount,
 }));
@@ -313,6 +317,42 @@ describe("schema run creation UI", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].textContent).toContain("Success");
     expect(container.textContent).toContain("1 unsaved");
+    await act(async () => sessionRoot.unmount());
+  });
+
+  test("another member signing in on the page never sees the previous member's runs", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.useFakeTimers();
+    const store = createStore();
+    const container = document.createElement("div");
+    document.body.append(container);
+    const sessionRoot = createRoot(container);
+    const show = () =>
+      act(async () => {
+        sessionRoot.render(
+          <Provider store={store}>
+            <SessionHarness />
+          </Provider>,
+        );
+        await vi.runAllTimersAsync();
+      });
+    sessionUser.id = "user-1";
+    await show();
+    const options = () => mountState.mount.mock.calls.at(-1)![0];
+    await act(async () => {
+      options().onRunningChange(true);
+      options().onRunningChange(false);
+      options().onSubmit({ age: 1 }, completedRaw, false);
+      await vi.runAllTimersAsync();
+    });
+    expect(container.querySelectorAll("aside li")).toHaveLength(1);
+
+    sessionUser.id = "user-2";
+    await show();
+    expect(container.querySelectorAll("aside li")).toHaveLength(0);
+    sessionUser.id = "user-1";
+    await show();
+    expect(container.querySelectorAll("aside li")).toHaveLength(1);
     await act(async () => sessionRoot.unmount());
   });
 });
