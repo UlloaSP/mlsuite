@@ -8,6 +8,7 @@ import type { InferenceCatalogItemDto } from "@/features/inferences/api/inferenc
 import { PredictionStatusSummary } from "@/capabilities/prediction-runtime/feedback/PredictionStatusSummary";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { InferenceActionsMenu } from "./InferenceActionsMenu";
+import { snapshotLabel } from "@/shared/lib/snapshot-label";
 
 const inferenceHref = (item: InferenceCatalogItemDto) => `/inferences/${item.id}`;
 
@@ -33,7 +34,7 @@ export function InferenceCatalogList({
     <CatalogEntry
       key={item.id}
       title={item.name}
-      description={`${item.schemaName} · ${item.schemaVersionName} · v${item.schemaVersion}`}
+      description={`${item.schemaName} · ${snapshotLabel(item.schemaVersionName, item.schemaVersion)}`}
       metadata={
         <>
           <span>#{getPredictionShortId(String(item.id))}</span>
@@ -57,7 +58,7 @@ export function InferenceCatalogList({
             disabled={deletePending}
             inferenceName={item.name}
             onDelete={() => onDelete(item)}
-            onReviewStatus={() => navigate(`${inferenceHref(item)}?section=reviews`)}
+            onReviewStatus={() => navigate(`${inferenceHref(item)}?tab=reviews&section=reviews`)}
           />
         ) : undefined
       }

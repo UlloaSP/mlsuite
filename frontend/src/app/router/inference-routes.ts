@@ -15,9 +15,18 @@ export const inferenceRoutes: RouteObject[] = [
     path: "inferences/:inferenceId",
     lazy: () =>
       lazyPage(
-        () => import("@/features/inferences/pages/inference-detail-page"),
-        "InferenceDetailPage",
+        () => import("@/app/pages/InferenceDetailRoutePage"),
+        "InferenceDetailRoutePage",
         workspacePage("canViewModels"),
+      ),
+  },
+  {
+    path: "inferences/:inferenceId/reviews/:reviewRunId/reviewers/:reviewerId",
+    lazy: () =>
+      lazyPage(
+        () => import("@/app/pages/InferenceReviewRoutePage"),
+        "InferenceReviewRoutePage",
+        workspacePage("canManageReviews"),
       ),
   },
 ];

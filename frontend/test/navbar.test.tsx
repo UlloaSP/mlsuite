@@ -5,6 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
+import { Provider, createStore } from "jotai";
+import { navigationPositionAtom, sidebarStyleAtom } from "@/shared/ui/sidebar-preferences";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router";
@@ -54,16 +56,18 @@ function LocationProbe() {
   return <output data-testid="location">{useLocation().pathname}</output>;
 }
 
-async function render(node: React.ReactNode) {
+async function render(node: React.ReactNode, store = createStore()) {
   const container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
   await act(async () => {
     root?.render(
-      <MemoryRouter initialEntries={["/home"]}>
-        {node}
-        <LocationProbe />
-      </MemoryRouter>,
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/home"]}>
+          {node}
+          <LocationProbe />
+        </MemoryRouter>
+      </Provider>,
     );
   });
   return container;
@@ -126,11 +130,13 @@ describe("navigation bar", () => {
   });
 
   test("follows the shared collapsed state and points menus toward the screen", async () => {
-    localStorage.setItem("ui/sidebar-style", JSON.stringify("floating"));
+    const store = createStore();
+    store.set(sidebarStyleAtom, "floating");
     const container = await render(
       <SidebarProvider open={false} onOpenChange={() => undefined}>
         <Navbar position="bottom" />
       </SidebarProvider>,
+      store,
     );
 
     const bar = container.querySelector<HTMLElement>("header")!;
@@ -192,10 +198,12 @@ describe("navigation bar", () => {
   });
 
   test("places the bar at the chosen edge instead of the sidebar", async () => {
-    localStorage.setItem("ui/sidebar-position", JSON.stringify("bottom"));
-    localStorage.setItem("ui/sidebar-style", JSON.stringify("floating"));
+    // Stored preferences are read once, when the module loads; set them on the store.
+    const store = createStore();
+    store.set(navigationPositionAtom, "bottom");
+    store.set(sidebarStyleAtom, "floating");
 
-    const container = await render(<AppShellFrame>Content</AppShellFrame>);
+    const container = await render(<AppShellFrame>Content</AppShellFrame>, store);
     const shell = container.querySelector<HTMLElement>("[data-navigation-position]")!;
     const bar = shell.querySelector("header[data-app-sidebar]")!;
 

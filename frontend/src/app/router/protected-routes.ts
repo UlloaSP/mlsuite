@@ -263,16 +263,5 @@ export const protectedPages: RouteObject[] = [
         "BookmarkWorkspacePage",
         workspacePage("canViewModels"),
       ),
-    // A saved run's page renders over its bookmark's workspace, which keeps the session alive.
-    children: [
-      {
-        path: "runs/:runId",
-        lazy: () =>
-          lazyPage(
-            () => import("@/features/schemas/pages/prediction-run-page"),
-            "PredictionRunPage",
-          ),
-      },
-    ],
   },
 ];

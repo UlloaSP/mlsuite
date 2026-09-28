@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Check, Save, X } from "lucide-react";
+import { Link } from "react-router";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppIconButton } from "@/shared/ui/AppIconButton";
@@ -85,11 +86,18 @@ export function InferenceSessionEntryRow({
           <EntryState entry={entry} />
           <span className="truncate text-xs text-fg-muted">{formatTimestamp(entry.createdAt)}</span>
         </button>
-        {entry.state === "saved" ? (
-          <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-success-fg">
+        {entry.state === "saved" && entry.savedRunId ? (
+          <Link
+            to={`/inferences/${entry.savedRunId}`}
+            title="Open the saved inference"
+            className={cx(
+              "inline-flex shrink-0 items-center gap-1 rounded-control text-xs font-medium text-success-fg hover:underline",
+              FOCUS_RING,
+            )}
+          >
             <Check size={14} />
             Saved
-          </span>
+          </Link>
         ) : (
           <AppButton
             size="sm"

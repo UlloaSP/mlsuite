@@ -1,204 +1,140 @@
-import { Search } from "lucide-react";
-import { useSearchParamState } from "@/shared/lib/use-search-param-state";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { MessageSquareText } from "lucide-react";
+import { useMemo } from "react";
 import {
   type InferenceReviewAssignmentDto,
   useInferenceReviewAssignments,
 } from "@/features/inferences/api/inference-api";
-import {
-  useDeleteInferenceReviewResponseMutation,
-  useReopenInferenceReviewMutation,
-} from "@/features/inferences/api/inference-mutations";
-import { AppButton } from "@/shared/ui/AppButton";
-import { AppLoadingState } from "@/shared/ui/AppLoadingState";
-import { AppPanel } from "@/shared/ui/AppPanel";
-import { AppSelect } from "@/shared/ui/AppSelect";
-import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
-import { AppTextField } from "@/shared/ui/AppTextField";
-import { CatalogPaginationFooter } from "@/shared/ui/catalog/CatalogPaginationFooter";
-import { useStableLoading } from "@/shared/ui/useStableLoading";
+import { useReviewAssignmentActions } from "@/features/inferences/lib/use-review-assignment-actions";
+import { reviewAssignmentHref } from "@/features/inferences/lib/review-assignment-href";
+import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
+import { CatalogToolbar } from "@/shared/ui/catalog/CatalogToolbar";
+import { getCatalogErrorMessage, getCatalogTotalPages } from "@/shared/ui/catalog/catalogPageUtils";
+import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { InferenceReviewTile } from "./InferenceReviewTile";
-import { useActionDialog } from "@/shared/ui/use-action-dialog";
-import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 type Props = {
   inferenceId: number;
   inferenceName: string;
 };
 
-type StateFilter = "ALL" | InferenceReviewAssignmentDto["reviewState"];
+type StateFilter = "all" | "completed" | "in-progress" | "pending";
+type ReviewSort = "requested" | "submitted" | "reviewer";
 
-const PAGE_SIZE = 6;
+const EMPTY: InferenceReviewAssignmentDto[] = [];
+const PAGE_SIZE = 9;
+const FILTERS: Array<{ value: StateFilter; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "completed", label: "Completed" },
+  { value: "in-progress", label: "In progress" },
+  { value: "pending", label: "Pending" },
+];
+const STATE_OF: Record<Exclude<StateFilter, "all">, InferenceReviewAssignmentDto["reviewState"]> = {
+  completed: "COMPLETED",
+  "in-progress": "IN_PROGRESS",
+  pending: "PENDING",
+};
+const SORTS: Array<{ value: ReviewSort; label: string }> = [
+  { value: "requested", label: "Latest requested" },
+  { value: "submitted", label: "Latest submitted" },
+  { value: "reviewer", label: "Reviewer" },
+];
 
+/**
+ * Every reviewer assignment that includes this inference, one tile each, with
+ * the catalog's usual search, state filter, sort, and pagination.
+ */
 export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Props) {
   const assignments = useInferenceReviewAssignments(inferenceId);
-  const reopen = useReopenInferenceReviewMutation();
-  const deleteResponse = useDeleteInferenceReviewResponseMutation();
-  const [query, setQuery] = useState("");
-  const [state, setState] = useSearchParamState<StateFilter>("reviewStatus", "ALL");
-  const [page, setPage] = useState(0);
-  const showLoading = useStableLoading(assignments.isLoading);
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return (assignments.data ?? []).filter(
-      (assignment) =>
-        (state === "ALL" || assignment.reviewState === state) &&
-        (!normalized ||
-          `${assignment.reviewer.fullName} ${assignment.reviewer.email}`
-            .toLowerCase()
-            .includes(normalized)),
-    );
-  }, [assignments.data, query, state]);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const visiblePage = Math.min(page, totalPages - 1);
-  const visible = filtered.slice(visiblePage * PAGE_SIZE, (visiblePage + 1) * PAGE_SIZE);
-  const actionPending = reopen.isPending || deleteResponse.isPending;
-
-  const actionDialog = useActionDialog();
-  const handleReopen = async (assignment: InferenceReviewAssignmentDto) => {
-    const confirmed = await actionDialog.confirm({
-      title: "Reopen review?",
-      description: `Reopen ${inferenceName} for ${assignment.reviewer.fullName}. Their saved answers will be kept.`,
-      confirmLabel: "Reopen",
-    });
-    if (!confirmed) return;
-    try {
-      await reopen.mutateAsync({
-        inferenceId,
-        reviewId: assignment.reviewId,
-        reviewRunId: assignment.reviewRunId,
-        reviewerId: assignment.reviewer.id,
-      });
-      toast.success("Review reopened", {
-        description: `${assignment.reviewer.fullName} can edit and submit it again.`,
-      });
-    } catch (error) {
-      toast.error("Could not reopen review", {
-        description: error instanceof Error ? error.message : String(error),
-      });
-    }
-  };
-
-  const handleDelete = async (assignment: InferenceReviewAssignmentDto) => {
-    const confirmed = await actionDialog.confirm({
-      title: "Delete saved response?",
-      description: `Delete ${assignment.reviewer.fullName}'s saved response for ${inferenceName}. Their assignment will remain and return to Pending.`,
-      confirmLabel: "Delete response",
-      danger: true,
-    });
-    if (!confirmed) return;
-    try {
-      await deleteResponse.mutateAsync({
-        inferenceId,
-        reviewId: assignment.reviewId,
-        reviewRunId: assignment.reviewRunId,
-        reviewerId: assignment.reviewer.id,
-      });
-      toast.success("Review response deleted", {
-        description: `${assignment.reviewer.fullName} can start this inference again.`,
-      });
-    } catch (error) {
-      toast.error("Could not delete review response", {
-        description: error instanceof Error ? error.message : String(error),
-      });
-    }
-  };
+  const actions = useReviewAssignmentActions(inferenceId, inferenceName);
+  const controls = useCatalogControls<StateFilter, ReviewSort>({
+    filters: FILTERS.map(({ value }) => value),
+    initialFilter: "all",
+    initialSort: "requested",
+    sorts: SORTS.map(({ value }) => value),
+  });
+  const all = assignments.data ?? EMPTY;
+  const filtered = useMemo(
+    () => sortAssignments(matchAssignments(all, controls.search, controls.filter), controls.sort),
+    [all, controls.filter, controls.search, controls.sort],
+  );
+  const totalPages = getCatalogTotalPages(filtered.length, PAGE_SIZE);
+  const pageItems = filtered.slice(controls.page * PAGE_SIZE, (controls.page + 1) * PAGE_SIZE);
+  const hasActiveFilters = Boolean(controls.search) || controls.filter !== "all";
 
   return (
-    <AppPanel id="reviews" className="overflow-hidden p-0">
-      {actionDialog.dialog}
-      <header className="border-b border-line px-5 py-5 sm:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <AppSectionTitle>Reviews</AppSectionTitle>
-            <p className="mt-1 text-sm text-fg-secondary">
-              One tile per reviewer assignment. Reopen keeps answers; delete clears them.
-            </p>
-          </div>
-          {assignments.data?.length ? (
-            <p className="text-sm text-fg-secondary">
-              {filtered.length} of {assignments.data.length}
-            </p>
-          ) : null}
-        </div>
-        {assignments.data?.length ? (
-          <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_200px]">
-            <AppTextField
-              aria-label="Search reviewers"
-              className="w-full"
-              placeholder="Search reviewer"
-              prefix={<Search size={15} />}
-              value={query}
-              onChange={(event) => {
-                setQuery(event.currentTarget.value);
-                setPage(0);
-              }}
-            />
-            <AppSelect
-              aria-label="Review status"
-              value={state}
-              onValueChange={(value) => {
-                setState(value as StateFilter);
-                setPage(0);
-              }}
-              options={[
-                { value: "ALL", label: "All statuses" },
-                { value: "COMPLETED", label: "Completed" },
-                { value: "IN_PROGRESS", label: "In progress" },
-                { value: "PENDING", label: "Pending" },
-              ]}
-            />
-          </div>
-        ) : null}
-      </header>
-      <div className="p-5 sm:p-6">
-        {showLoading ? (
-          <AppLoadingState compact label="Loading reviews…" />
-        ) : assignments.error ? (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-danger-fg">Review status unavailable.</p>
-            <AppButton size="sm" variant="secondary" onClick={() => void assignments.refetch()}>
-              Try again
-            </AppButton>
-          </div>
-        ) : visible.length ? (
-          <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {visible.map((assignment) => (
-                <InferenceReviewTile
-                  key={`${assignment.reviewId}:${assignment.reviewRunId}:${assignment.reviewer.id}`}
-                  assignment={assignment}
-                  disabled={actionPending}
-                  onReopen={() => void handleReopen(assignment)}
-                  onDelete={() => void handleDelete(assignment)}
-                />
-              ))}
-            </div>
-            {totalPages > 1 ? (
-              <CatalogPaginationFooter
-                disabled={actionPending || assignments.isFetching}
-                hasNext={visiblePage + 1 < totalPages}
-                page={visiblePage}
-                setPage={setPage}
-                totalPages={totalPages}
-              />
-            ) : null}
-          </>
-        ) : assignments.data?.length ? (
-          <AppEmptyState
-            compact
-            title="No matching reviews"
-            description="Change the search or the status filter."
+    <section id="reviews" aria-label="Reviews" className="flex min-h-0 flex-1 flex-col gap-4">
+      {actions.dialog}
+      <CatalogToolbar
+        filter={controls.filter}
+        filterLabel="Filter reviews"
+        filters={FILTERS}
+        onFilterChange={controls.setFilter}
+        onQueryChange={controls.setQuery}
+        onSortChange={controls.setSort}
+        placeholder="Search reviewer or requester"
+        query={controls.query}
+        resultCount={filtered.length}
+        sort={controls.sort}
+        sortLabel="Sort reviews"
+        sortOptions={SORTS}
+      />
+      <CatalogListPanel
+        layout="grid"
+        errorMessage={getCatalogErrorMessage(assignments.error)}
+        hasNext={controls.page + 1 < totalPages}
+        isBusy={assignments.isLoading || actions.pending}
+        isLoading={assignments.isLoading}
+        itemCount={pageItems.length}
+        loadingLabel="Loading reviews…"
+        onRetry={() => void assignments.refetch()}
+        page={controls.page}
+        setPage={controls.setPage}
+        totalPages={totalPages}
+        emptyState={{
+          icon: <MessageSquareText size={22} />,
+          title: hasActiveFilters ? "No matching reviews" : "No reviews yet",
+          description: hasActiveFilters
+            ? "Change the search or the status filter."
+            : "No review includes this inference.",
+        }}
+      >
+        {pageItems.map((assignment) => (
+          <InferenceReviewTile
+            key={`${assignment.reviewId}:${assignment.reviewRunId}:${assignment.reviewer.id}`}
+            assignment={assignment}
+            to={reviewAssignmentHref(inferenceId, assignment)}
+            disabled={actions.pending}
+            onReopen={() => actions.reopen(assignment)}
+            onDelete={() => actions.remove(assignment)}
           />
-        ) : (
-          <AppEmptyState
-            compact
-            title="No reviews yet"
-            description="No review includes this inference."
-          />
-        )}
-      </div>
-    </AppPanel>
+        ))}
+      </CatalogListPanel>
+    </section>
   );
+}
+
+function matchAssignments(
+  assignments: InferenceReviewAssignmentDto[],
+  search: string,
+  filter: StateFilter,
+) {
+  const query = search.toLowerCase();
+  return assignments.filter(
+    (assignment) =>
+      (filter === "all" || assignment.reviewState === STATE_OF[filter]) &&
+      [assignment.reviewer, assignment.createdBy]
+        .map((person) => `${person.fullName} ${person.email}`)
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
+  );
+}
+
+function sortAssignments(assignments: InferenceReviewAssignmentDto[], sort: ReviewSort) {
+  return [...assignments].sort((left, right) => {
+    if (sort === "reviewer") return left.reviewer.fullName.localeCompare(right.reviewer.fullName);
+    if (sort === "submitted")
+      return (right.submittedAt ?? "").localeCompare(left.submittedAt ?? "");
+    return right.createdAt.localeCompare(left.createdAt);
+  });
 }

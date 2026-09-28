@@ -1,10 +1,8 @@
 import { appFetch, json } from "@/shared/api/http";
 import type {
-  CreatePredictionResultFeedbackRequest,
   CreatePredictionRunRequest,
   PredictionResultFeedbackDto,
   PredictionRunDto,
-  UpdatePredictionResultFeedbackRequest,
 } from "./prediction-types";
 
 export const createPredictionRunForBookmark = (
@@ -23,16 +21,6 @@ export const getLastPredictionRunId = async (): Promise<number> => {
   const dto = await appFetch<{ lastId: number }>("/api/prediction-runs/last-id");
   return Number(dto.lastId ?? 0);
 };
-
-export const createPredictionResultFeedback = (
-  req: CreatePredictionResultFeedbackRequest,
-): Promise<PredictionResultFeedbackDto> =>
-  appFetch<PredictionResultFeedbackDto>("/api/prediction-result-feedback", json("POST", req));
-
-export const updatePredictionResultFeedback = (
-  req: UpdatePredictionResultFeedbackRequest,
-): Promise<PredictionResultFeedbackDto> =>
-  appFetch<PredictionResultFeedbackDto>("/api/prediction-result-feedback", json("PATCH", req));
 
 export const getPredictionResultFeedback = (
   resultId: string,

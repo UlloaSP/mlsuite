@@ -11,6 +11,7 @@ import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
+import { snapshotLabel } from "@/shared/lib/snapshot-label";
 
 const VISIBLE_MODELS = 3;
 
@@ -54,7 +55,8 @@ export function PredictBookmarkCard({ bookmark }: { bookmark: PredictBookmarkDto
       </header>
 
       <p className="line-clamp-2 min-h-10 text-sm leading-5 text-fg-secondary">
-        {bookmark.schemaDescription?.trim() || `Snapshot “${bookmark.versionName}”.`}
+        {bookmark.schemaDescription?.trim() ||
+          `Snapshot ${snapshotLabel(bookmark.versionName, bookmark.version)}.`}
       </p>
 
       <ul aria-label="Models" className="flex min-h-6 flex-wrap gap-1.5">

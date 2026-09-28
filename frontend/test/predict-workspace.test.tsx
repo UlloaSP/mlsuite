@@ -126,7 +126,6 @@ async function renderAt(path: string) {
       {
         path: "/predict/:bookmarkId",
         element: <BookmarkWorkspacePage />,
-        children: [{ path: "runs/:runId", element: <h1>Saved run page</h1> }],
       },
     ],
     { initialEntries: [path] },
@@ -172,16 +171,6 @@ test("lists the organization's bookmarks as cards that say what they run", async
   ).toEqual(["staging"]);
 });
 
-test("a saved run opens as a page while the form and session stay mounted", async () => {
-  state.bookmark = bookmark("7", "production", "Transplant");
-  const router = await renderAt("/predict/7");
-  await act(async () => router.navigate("/predict/7/runs/3"));
-
-  expect(container.textContent).toContain("Saved run page");
-  // Hidden, not unmounted.
-  expect(container.textContent).toContain("Form for snapshot 1");
-  expect(container.querySelector("h1")?.textContent).toBe("Saved run page");
-});
 test("explains where bookmarks come from when there are none", async () => {
   await renderAt("/predict");
   expect(container.textContent).toContain("Nothing to run yet");
@@ -195,8 +184,8 @@ test("pins the snapshot the page opened with and offers to switch when the bookm
   expect(container.textContent).toContain("Transplant · Snapshot 1 · v1");
 
   state.bookmark = { ...state.bookmark, versionId: "2", version: 2 };
-  await act(async () => router.navigate("/predict/7/runs/3"));
-  await act(async () => router.navigate("/predict/7"));
+  // Any re-render (here a URL change) sees the moved bookmark.
+  await act(async () => router.navigate("/predict/7?from=9"));
   expect(container.textContent).toContain("now points to v2");
   expect(state.requestedVersions.at(-1)).toBe("1");
 

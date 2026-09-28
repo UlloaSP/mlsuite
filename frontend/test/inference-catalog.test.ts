@@ -144,7 +144,7 @@ describe("organization inference catalog", () => {
     expect(table).toContain("<CatalogEntry");
     expect(table).toContain("<InferenceActionsMenu");
     expect(table).toContain("`/inferences/${item.id}`");
-    expect(table).toContain("?section=reviews");
+    expect(table).toContain("?tab=reviews&section=reviews");
     expect(table).not.toContain(">View<");
     expect(table).not.toContain("useState");
   });
@@ -161,8 +161,8 @@ describe("organization inference catalog", () => {
       ),
       "utf8",
     );
-    const tile = readFileSync(
-      new URL("../src/features/inferences/components/InferenceReviewTile.tsx", import.meta.url),
+    const actions = readFileSync(
+      new URL("../src/features/inferences/lib/use-review-assignment-actions.tsx", import.meta.url),
       "utf8",
     );
     const mutations = readFileSync(
@@ -171,9 +171,8 @@ describe("organization inference catalog", () => {
     );
 
     expect(menu).toContain("Review status");
-    expect(tile).toContain('assignment.reviewState === "COMPLETED"');
-    expect(section).toContain("Their saved answers will be kept.");
-    expect(section).toContain("Review status unavailable.");
+    expect(actions).toContain('assignment.reviewState === "COMPLETED"');
+    expect(actions).toContain("Their saved answers will be kept.");
     expect(section).toContain("No review includes this inference.");
     expect(mutations).toContain("/reviewers/${reviewerId}/reopen");
   });
@@ -191,7 +190,7 @@ describe("organization inference catalog", () => {
     expect(routes).toContain('path: "inferences"');
     expect(routes).toContain('path: "inferences/:inferenceId"');
     expect(routes).toContain('import("@/app/pages/InferencesRoutePage")');
-    expect(routes).toContain('import("@/features/inferences/pages/inference-detail-page")');
+    expect(routes).toContain('import("@/app/pages/InferenceDetailRoutePage")');
     expect(sidebar).toContain('to: "/inferences"');
     expect(sidebar).toContain('label: "Inferences"');
   });
@@ -248,8 +247,8 @@ describe("organization inference catalog", () => {
       ),
       "utf8",
     );
-    const tile = readFileSync(
-      new URL("../src/features/inferences/components/InferenceReviewTile.tsx", import.meta.url),
+    const actions = readFileSync(
+      new URL("../src/features/inferences/lib/use-review-assignment-actions.tsx", import.meta.url),
       "utf8",
     );
     const mutations = readFileSync(
@@ -258,9 +257,9 @@ describe("organization inference catalog", () => {
     );
 
     expect(section).toContain("<InferenceReviewTile");
-    expect(section).toContain("<CatalogPaginationFooter");
-    expect(tile).toContain("Reopen");
-    expect(tile).toContain("Delete response");
+    expect(section).toContain("<CatalogListPanel");
+    expect(actions).toContain("Reopen");
+    expect(actions).toContain("Delete response");
     expect(mutations).toContain("/response`");
   });
 });

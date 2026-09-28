@@ -5,13 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { JsonRecord } from "./schema-types";
 
-export type CreatePredictionResultFeedbackRequest = {
-  resultId: string;
-  type: PredictionResultFeedbackType;
-  order: number;
-  value: unknown;
-};
-
 /*
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
@@ -116,8 +109,3 @@ export type PredictionRunStatus = "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
 SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
-
-export type UpdatePredictionResultFeedbackRequest = {
-  feedbackId: string;
-  value: unknown;
-};

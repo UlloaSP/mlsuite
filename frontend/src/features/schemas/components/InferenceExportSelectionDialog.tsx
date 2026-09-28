@@ -7,6 +7,7 @@ import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import type { InferenceExportCandidate } from "./OrganizationInferenceExportButton";
+import { snapshotLabel } from "@/shared/lib/snapshot-label";
 
 export type ExportRunSelection = { versionId: string; runIds: string[] };
 
@@ -33,7 +34,7 @@ export function InferenceExportSelectionDialog({
         createdAt: item.createdAt,
         schemaId: String(item.schemaId),
         versionId: String(item.schemaVersionId),
-        groupLabel: `${item.schemaName} · ${item.schemaVersionName} · v${item.schemaVersion}`,
+        groupLabel: `${item.schemaName} · ${snapshotLabel(item.schemaVersionName, item.schemaVersion)}`,
         bookmarkId: item.bookmarkId == null ? null : String(item.bookmarkId),
         bookmarkName: item.bookmarkName,
       })),

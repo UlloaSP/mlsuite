@@ -7,6 +7,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Provider, createStore } from "jotai";
 import { act } from "react";
+import { MemoryRouter } from "react-router";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
@@ -230,6 +231,7 @@ describe("schema run creation UI", () => {
       expect.objectContaining({ name: "Reviewed case", schemaVersionId: "version-1" }),
     );
     expect(rows()[0].textContent).toContain("Saved");
+    expect(rows()[0].querySelector("a")?.getAttribute("href")).toBe("/inferences/run-1");
     expect(nameInputs()[0].disabled).toBe(true);
 
     // A run that stops without a result leaves nothing behind.
@@ -317,7 +319,11 @@ describe("schema run creation UI", () => {
 
 function SessionHarness() {
   const session = useInferenceSession("bookmark-1", version.id);
-  return <BookmarkPredictPanel version={version} session={session} />;
+  return (
+    <MemoryRouter>
+      <BookmarkPredictPanel version={version} session={session} />
+    </MemoryRouter>
+  );
 }
 
 function renderSession() {

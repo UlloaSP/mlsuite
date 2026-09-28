@@ -3,73 +3,46 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
-import { PredictionRunPage } from "@/features/schemas/pages/prediction-run-page";
+import { InferenceDetailPage } from "@/features/inferences/pages/inference-detail-page";
 
-const state = vi.hoisted(() => ({ canRun: false, canEdit: false, saved: false }));
+const state = vi.hoisted(() => ({
+  canRun: false,
+  canManageReviews: false,
+  bookmarkId: 4 as number | null,
+}));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useWorkspaceContext: () => ({
-    data: { permissions: { canRunPredictions: state.canRun, canViewOrganization: state.canEdit } },
-  }),
-}));
-vi.mock("@/features/schemas/api/schema-queries", () => ({
-  useSchemaBookmark: () => ({ data: { name: "QA bookmark" } }),
-  useSchemaVersion: () => ({
     data: {
-      id: "1",
-      schemaId: "1",
-      version: 1,
-      formSchema: { fields: [], reports: [] },
-      bindings: [],
-    },
-  }),
-  usePredictionRun: () => ({
-    data: {
-      id: "1",
-      name: "QA run",
-      results: [],
-      inputData: {},
-      status: "SUCCESS",
-      createdAt: "2026-09-09T10:00:00Z",
-    },
-  }),
-  usePredictionRunFeedback: () => ({ data: [], refetch: vi.fn() }),
-}));
-vi.mock("@/features/schemas/lib/schema-plugin-catalog", () => ({
-  useSchemaPluginCatalog: () => ({ data: { reportDefinitions: [] } }),
-}));
-vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
-  useCreatePredictionResultFeedbackMutation: () => ({ mutateAsync: vi.fn() }),
-  useUpdatePredictionResultFeedbackMutation: () => ({ mutateAsync: vi.fn() }),
-}));
-vi.mock("@/capabilities/prediction-runtime/feedback/feedback-steps", () => ({
-  buildSchemaFeedbackSteps: () => [
-    {
-      id: "output",
-      title: "Output assessment",
-      type: "OUTPUT",
-      order: 0,
-      initialValues: state.saved ? { assessment: 1 } : {},
-      targets: [
-        {
-          resultId: "1",
-          modelId: "1",
-          feedback: state.saved ? { id: "1", value: { assessment: 1 } } : undefined,
-        },
-      ],
-      schema: {
-        steps: [
-          {
-            id: "assessment-step",
-            title: "Assessment",
-            fields: [{ id: "assessment", kind: "number", label: "Assessment", required: true }],
-          },
-        ],
+      permissions: {
+        canRunPredictions: state.canRun,
+        canManageReviews: state.canManageReviews,
       },
     },
-  ],
+  }),
 }));
-vi.mock("@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount", () => ({
-  ReportQuestionnaireMount: () => <button>Save feedback</button>,
+vi.mock("@/features/inferences/api/inference-api", () => ({
+  useInferenceReviewAssignments: (_id: number, enabled: boolean) => ({
+    data: enabled ? [{ reviewState: "COMPLETED" }, { reviewState: "IN_PROGRESS" }] : undefined,
+  }),
+  useInference: () => ({
+    isLoading: false,
+    data: {
+      id: 1,
+      name: "QA run",
+      status: "SUCCESS",
+      createdAt: "2026-09-09T10:00:00Z",
+      schemaId: 2,
+      schemaName: "Risk",
+      schemaVersionId: 3,
+      schemaVersion: 1,
+      schemaVersionName: "First",
+      bookmarkId: state.bookmarkId,
+      bookmarkName: state.bookmarkId == null ? null : "production",
+    },
+  }),
+}));
+vi.mock("@/features/inferences/components/InferenceReviewStatusSection", () => ({
+  InferenceReviewStatusSection: () => <section>Review management</section>,
 }));
 
 let root: Root;
@@ -87,35 +60,42 @@ afterEach(async () => {
 });
 
 test.each([
-  { canRun: false, canEdit: false, saved: false },
-  { canRun: false, canEdit: false, saved: true },
-  { canRun: true, canEdit: true, saved: false },
-  { canRun: false, canEdit: true, saved: false },
-  { canRun: true, canEdit: false, saved: false },
-])("run=$canRun feedback-write=$canEdit saved=$saved", async (permissions) => {
+  { canRun: false, canManageReviews: false, bookmarkId: 4 },
+  { canRun: true, canManageReviews: false, bookmarkId: 4 },
+  { canRun: true, canManageReviews: true, bookmarkId: null },
+  { canRun: false, canManageReviews: true, bookmarkId: 4 },
+])("run=$canRun reviews=$canManageReviews bookmark=$bookmarkId", async (permissions) => {
   Object.assign(state, permissions);
   await act(async () =>
     root.render(
-      <MemoryRouter initialEntries={["/predict/1/runs/1"]}>
+      <MemoryRouter initialEntries={["/inferences/1"]}>
         <Routes>
-          <Route path="/predict/:bookmarkId/runs/:runId" element={<PredictionRunPage />} />
+          <Route
+            path="/inferences/:inferenceId"
+            element={
+              <InferenceDetailPage
+                renderData={(_inference, reviews) => (
+                  <div>
+                    <p>Count {reviews?.count ?? "none"}</p>
+                    {reviews?.content}
+                  </div>
+                )}
+              />
+            }
+          />
         </Routes>
       </MemoryRouter>,
     ),
   );
-  const page = container;
-  expect(page.textContent?.includes("Predict again")).toBe(state.canRun);
-  await act(async () =>
-    [...page.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
-      .find((button) => button.textContent?.startsWith("Feedback"))!
-      .click(),
+
+  const predictAgain = [...container.querySelectorAll("a")].find(
+    (link) => link.textContent === "Predict again",
   );
-  expect(page.textContent?.includes("Save feedback")).toBe(state.canEdit);
-  if (!state.canEdit) {
-    expect(page.querySelectorAll("input,textarea,select")).toHaveLength(0);
-    expect(
-      [...page.querySelectorAll("button")].some((button) => button.textContent === "Edit"),
-    ).toBe(false);
-    expect(page.textContent).toContain(state.saved ? "Assessment1" : "No feedback yet");
-  }
+  // Predicting again needs the permission and a bookmark to run.
+  expect(Boolean(predictAgain)).toBe(state.canRun && state.bookmarkId != null);
+  if (predictAgain) expect(predictAgain.getAttribute("href")).toBe("/predict/4?from=1");
+  expect(container.textContent?.includes("Review management")).toBe(state.canManageReviews);
+  // The Reviews tab counts completed reviews out of all assignments.
+  expect(container.textContent).toContain(state.canManageReviews ? "Count 1/2" : "Count none");
+  expect(container.querySelector("h1")?.textContent).toBe("QA run");
 });

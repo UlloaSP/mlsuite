@@ -45,7 +45,7 @@ const pages = {
     failed: "Model unavailable",
   },
   inference: {
-    Page: InferenceDetailPage,
+    Page: () => <InferenceDetailPage renderData={() => null} />,
     path: "/inferences/:inferenceId",
     url: "/inferences/31",
     request: "/api/prediction-runs/31/summary",

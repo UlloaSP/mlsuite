@@ -41,7 +41,7 @@ export function InferenceSessionPanel({ session, selectedKey, onSelect }: Props)
   return (
     <aside
       aria-label="Inference session"
-      className="flex max-h-96 w-full shrink-0 flex-col rounded-card border border-line bg-surface-muted lg:max-h-none lg:w-80"
+      className="flex max-h-96 w-full shrink-0 flex-col rounded-card border border-line bg-surface lg:max-h-none lg:w-80"
     >
       <header className="flex items-baseline justify-between gap-2 border-b border-line px-4 py-3">
         <h2 className="text-sm font-semibold text-fg">Session</h2>

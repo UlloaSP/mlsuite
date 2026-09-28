@@ -44,6 +44,9 @@ export type InferenceReviewAssignmentDto = {
   expired: boolean;
 };
 
+/** How often open review views check for reviewers' progress (paused in background tabs). */
+export const REVIEW_POLL_MS = 15_000;
+
 export const INFERENCES_QUERY_KEY = PREDICTION_RUN_CATALOG_QUERY_KEY;
 export { INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY };
 
@@ -82,6 +85,9 @@ export const inferenceReviewAssignmentsQueryOptions = (
         { signal },
       ),
     enabled: organizationId !== "none",
+    // Reviewers submit from elsewhere: always refetch on opening, then keep polling.
+    staleTime: 0,
+    refetchInterval: REVIEW_POLL_MS,
   });
 
 export const useInferenceCatalog = () => {
@@ -94,7 +100,9 @@ export const useInference = (inferenceId: string) => {
   return useQuery(inferenceQueryOptions(organizationId, inferenceId));
 };
 
-export const useInferenceReviewAssignments = (inferenceId: number) => {
+/** Only review managers may list assignments; others pass `enabled: false`. */
+export const useInferenceReviewAssignments = (inferenceId: number, enabled = true) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(inferenceReviewAssignmentsQueryOptions(organizationId, inferenceId));
+  const options = inferenceReviewAssignmentsQueryOptions(organizationId, inferenceId);
+  return useQuery({ ...options, enabled: options.enabled !== false && enabled });
 };

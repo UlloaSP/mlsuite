@@ -7,9 +7,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { PredictionRunPage } from "@/features/schemas/pages/prediction-run-page";
+import { PredictionRunDetails } from "@/features/schemas/components/PredictionRunDetails";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
@@ -109,10 +109,6 @@ vi.mock("@/capabilities/prediction-runtime/feedback/feedback-steps", () => ({
   ],
 }));
 
-vi.mock("@/features/schemas/components/SchemaRunFeedbackQuestionnaire", () => ({
-  SchemaRunFeedbackQuestionnaire: () => <div>Feedback questionnaire</div>,
-}));
-
 vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () => ({
   SchemaRunReportRenderer: ({
     result,
@@ -131,7 +127,7 @@ const setInput = (input: HTMLInputElement, value: string) => {
   });
 };
 
-describe("prediction run page", () => {
+describe("prediction run details", () => {
   let root: Root | null = null;
 
   beforeEach(() => {
@@ -139,16 +135,22 @@ describe("prediction run page", () => {
     queryState.runError = false;
   });
 
-  const renderPage = () => {
+  const renderPage = (withReviews = true) => {
     const container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
     act(() => {
       root?.render(
-        <MemoryRouter initialEntries={["/predict/bookmark-1/runs/run-1"]}>
-          <Routes>
-            <Route path="/predict/:bookmarkId/runs/:runId" element={<PredictionRunPage />} />
-          </Routes>
+        <MemoryRouter>
+          <PredictionRunDetails
+            runId="run-1"
+            bookmarkName="Ward bookmark"
+            reviews={
+              withReviews
+                ? { content: <section>Review management</section>, count: "1/2" }
+                : undefined
+            }
+          />
         </MemoryRouter>,
       );
     });
@@ -172,7 +174,7 @@ describe("prediction run page", () => {
     expect(initialTabs.map((item) => item.textContent)).toEqual([
       "Inputs2",
       "Outputs2",
-      "Feedback0/1",
+      "Reviews1/2",
     ]);
     expect(container.textContent).not.toContain("Overview");
 
@@ -190,29 +192,21 @@ describe("prediction run page", () => {
     expect(container.querySelector('[aria-label="Search outputs"]')).toBeNull();
     expect(container.querySelectorAll("[data-output]")).toHaveLength(2);
 
-    act(() => tabs.find((tab) => tab.textContent?.startsWith("Feedback"))?.click());
-    expect(container.textContent).toContain("Feedback questionnaire");
+    expect(container.textContent).not.toContain("Review management");
+    act(() => tabs.find((tab) => tab.textContent?.startsWith("Reviews"))?.click());
+    expect(container.textContent).toContain("Review management");
   });
 
-  test("offers to predict again with the run's inputs, inside the bookmark", () => {
-    const page = renderPage();
-    const link = [...page.querySelectorAll("a")].find(
-      (item) => item.textContent === "Predict again",
-    );
-    expect(link?.getAttribute("href")).toBe("/predict/bookmark-1?from=run-1");
-    const crumbs = [...page.querySelectorAll('nav[aria-label="Breadcrumb"] a')].map((item) =>
-      item.getAttribute("href"),
-    );
-    expect(crumbs).toEqual(["/predict", "/predict/bookmark-1"]);
+  test("offers no Reviews tab to members who cannot manage reviews", () => {
+    const container = renderPage(false);
+    const tabs = [...container.querySelectorAll('[role="tab"]')].map((item) => item.textContent);
+    expect(tabs).toEqual(["Inputs2", "Outputs2"]);
   });
 
   test("explains a run that cannot be loaded", () => {
     queryState.runError = true;
     const page = renderPage();
-    expect(page.textContent).toContain("Inference unavailable");
-    expect(page.textContent).not.toContain("Predict again");
-    expect(
-      page.querySelector('a[href="/inferences?schema=schema-1&bookmark=bookmark-1"]'),
-    ).not.toBeNull();
+    expect(page.textContent).toContain("Inference data unavailable");
+    expect(page.querySelector('[role="tab"]')).toBeNull();
   });
 });

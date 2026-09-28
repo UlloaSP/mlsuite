@@ -67,6 +67,29 @@ const tabsLayout = (fieldIds: string[], reportIds: string[]) => ({
   ],
 });
 
+/**
+ * MLForm's tabs repeat each tab's title as a heading inside the panel ("Inputs"
+ * under the "Inputs" tab). The kit exposes no option or part for it, so hide it
+ * in the tabs element's shadow root. Skipped where stylesheets can't be built (jsdom).
+ */
+const hideTabTitles = (host: HTMLElement) => {
+  const root = host.shadowRoot;
+  if (
+    !root ||
+    typeof CSSStyleSheet === "undefined" ||
+    !("replaceSync" in CSSStyleSheet.prototype)
+  ) {
+    return;
+  }
+  try {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(".tab-header { display: none; }");
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+  } catch {
+    // Cosmetic only; the duplicate heading is harmless.
+  }
+};
+
 export const mountSchemaRunForm = ({
   container,
   schema,
@@ -154,6 +177,7 @@ export const mountSchemaRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   const form = mounted;
+  hideTabTitles(form.host);
   const unsubscribe = form.form.subscribe(completeWhenSettled);
   return {
     form: form.form,

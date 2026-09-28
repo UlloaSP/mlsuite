@@ -9,6 +9,7 @@ import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
+import { snapshotLabel } from "@/shared/lib/snapshot-label";
 
 /** A bookmark in its schema's repository; opening it goes to its Predict workspace. */
 export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookmarkDto }) {
@@ -22,7 +23,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
         <>
           <span className="inline-flex items-center gap-1">
             <GitCommitHorizontal size={14} />
-            {bookmark.versionName} · v{bookmark.version}
+            {snapshotLabel(bookmark.versionName, bookmark.version)}
           </span>
           <span>
             Updated <LiveRelativeTime value={bookmark.updatedAt} /> ago

@@ -21,6 +21,7 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
+import { snapshotLabel } from "@/shared/lib/snapshot-label";
 
 const validStatus = (value: string | null): InferenceFilters["status"] =>
   value === "SUCCESS" || value === "PARTIAL_SUCCESS" || value === "FAILED" ? value : "all";
@@ -118,7 +119,7 @@ export function InferencesPage({
                     versionId: String(item.schemaVersionId),
                     bookmarkId: item.bookmarkId == null ? null : String(item.bookmarkId),
                     bookmarkName: item.bookmarkName,
-                    groupLabel: `${item.schemaName} · ${item.schemaVersionName} · v${item.schemaVersion}`,
+                    groupLabel: `${item.schemaName} · ${snapshotLabel(item.schemaVersionName, item.schemaVersion)}`,
                   }))}
                 />
               ) : null}
