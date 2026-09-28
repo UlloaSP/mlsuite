@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vite-plus/test";
 import { safeReturnTo } from "@/capabilities/workspace-context/session";
-import { reviewRoutes } from "@/app/router/review-routes";
+import type { RouteObject } from "react-router";
+import { protectedPages } from "@/app/router/protected-routes";
+
+const paths = (routes: RouteObject[]): string[] =>
+  routes.flatMap((route) => [...(route.path ? [route.path] : []), ...paths(route.children ?? [])]);
 
 describe("integrated review authentication and routes", () => {
   test("keeps one fixed login/register page without external-review injection seams", () => {
@@ -25,7 +29,7 @@ describe("integrated review authentication and routes", () => {
       "utf8",
     );
     const routes = readFileSync(
-      new URL("../src/app/router/review-routes.ts", import.meta.url),
+      new URL("../src/app/router/protected-routes.ts", import.meta.url),
       "utf8",
     );
 
@@ -36,7 +40,7 @@ describe("integrated review authentication and routes", () => {
 
   test("keeps local review destinations after authentication", () => {
     expect(safeReturnTo("/review/review-1/runs/run-1")).toBe("/review/review-1/runs/run-1");
-    expect(reviewRoutes.map((route) => route.path)).toEqual([
+    expect(paths(protectedPages).filter((path) => path.startsWith("review"))).toEqual([
       "review",
       "review/:reviewId",
       "review/:reviewId/runs/:reviewRunId",

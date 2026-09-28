@@ -7,7 +7,8 @@ import {
   countProblemServices,
   toneForMetric,
 } from "@/features/infrastructure/lib/dashboard-summary";
-import { formatBytes, formatPercent } from "@/features/infrastructure/lib/formatters";
+import { formatBytes } from "@/shared/lib/format-bytes";
+import { formatPercent } from "@/features/infrastructure/lib/formatters";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 import { KpiCard } from "./KpiCard";
 import { OverviewChartPanel } from "./OverviewChartPanel";

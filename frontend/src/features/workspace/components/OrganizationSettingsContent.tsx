@@ -37,7 +37,7 @@ export function OrganizationSettingsContent({
   const navigate = useNavigate();
   const id = organization.id;
   const members = useOrganizationMembersQuery(id, permissions.canTransferOwnership);
-  const update = useUpdateOrganizationMutation(id);
+  const update = useUpdateOrganizationMutation();
   const transfer = useTransferOrganizationOwnershipMutation();
   const remove = useDeleteOrganizationMutation();
   const [draft, setDraft] = useState<OrganizationDraft>({});
@@ -59,7 +59,7 @@ export function OrganizationSettingsContent({
             onSubmit={(event) => {
               event.preventDefault();
               update.mutate(
-                { name: name.trim(), slug: slug.trim(), description },
+                { id, name: name.trim(), slug: slug.trim(), description },
                 { onSuccess: () => setDraft({}) },
               );
             }}

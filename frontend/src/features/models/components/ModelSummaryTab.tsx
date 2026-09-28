@@ -10,10 +10,8 @@ import { AppEyebrow } from "@/shared/ui/AppEyebrow";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import type { ModelDto } from "@/features/models/api/model.types";
-import {
-  formatTimestamp,
-  getModelAlgorithmLabel,
-} from "@/capabilities/prediction-runtime/data/model-utils";
+import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
+import { formatTimestamp } from "@/shared/lib/date-time";
 
 type ModelSummaryTabProps = {
   model: ModelDto;

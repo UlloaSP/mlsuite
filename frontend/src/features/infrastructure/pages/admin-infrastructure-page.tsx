@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
@@ -13,6 +14,7 @@ import { OverviewView } from "@/features/infrastructure/components/OverviewView"
 import { ServicesView } from "@/features/infrastructure/components/ServicesView";
 import { TerminalView } from "@/features/infrastructure/components/TerminalView";
 import {
+  infrastructureOverviewQueryOptions,
   useInfrastructureOverview,
   useServiceLogsSnapshot,
 } from "@/features/infrastructure/api/infrastructure.queries";
@@ -24,10 +26,8 @@ import {
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
 import {
-  isOverviewSnapshotEvent,
   isServiceLogEvent,
   type InfrastructureEvent,
-  type InfrastructureOverviewDto,
 } from "@/features/infrastructure/api/infrastructure.types";
 import {
   openInfrastructureSocket,
@@ -41,12 +41,13 @@ const INFRA_TABS: InfraTab[] = ["overview", "services", "logs", "terminal", "ale
 
 export function AdminInfrastructurePage() {
   const { data: user } = useUser();
-  const { data, isLoading } = useInfrastructureOverview();
+  const queryClient = useQueryClient();
+  const { data: overview, isLoading, refetch } = useInfrastructureOverview();
   const showLoading = useStableLoading(isLoading);
   const action = useServiceAction();
   const actionDialog = useActionDialog();
-  const [overview, setOverview] = useState<InfrastructureOverviewDto | null>(null);
-  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [requestedService, setRequestedService] = useState<string | null>(null);
+  const selectedService = overview ? resolveSelectedService(requestedService, overview) : null;
   const [logLines, setLogLines] = useState<string[]>([]);
   const [streamConnected, setStreamConnected] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -65,12 +66,6 @@ export function AdminInfrastructurePage() {
     selectedServiceRef.current = selectedService;
   }, [selectedService]);
 
-  useEffect(() => {
-    if (!data) return;
-    setOverview(data);
-    setSelectedService((current) => resolveSelectedService(current, data));
-  }, [data]);
-
   // react-doctor-disable-next-line react-doctor/no-effect-chain, react-doctor/no-derived-state -- Log snapshot is keyed by selected service and must reset only after that query resolves.
   useEffect(() => {
     if (!selectedServiceLogs.data || selectedServiceLogs.data.serviceName !== selectedService)
@@ -86,10 +81,9 @@ export function AdminInfrastructurePage() {
       onClose: () => setStreamConnected(false),
       onError: () => setStreamConnected(false),
       onMessage: (event: InfrastructureEvent) => {
-        setOverview((current) => applyInfrastructureEvent(current, event));
-        if (isOverviewSnapshotEvent(event)) {
-          setSelectedService((current) => resolveSelectedService(current, event.payload));
-        }
+        queryClient.setQueryData(infrastructureOverviewQueryOptions().queryKey, (current) =>
+          applyInfrastructureEvent(current, event),
+        );
         if (isServiceLogEvent(event)) {
           setLogLines((current) => appendLogLine(current, event, selectedServiceRef.current));
         }
@@ -100,7 +94,7 @@ export function AdminInfrastructurePage() {
       socket.close();
       socketRef.current = null;
     };
-  }, []);
+  }, [queryClient]);
 
   // react-doctor-disable-next-line react-doctor/no-effect-chain -- Socket subscription must follow the latest selected service and connection state.
   useEffect(() => {
@@ -113,12 +107,11 @@ export function AdminInfrastructurePage() {
     return <Navigate to="/workspace" replace />;
   }
 
-  const currentOverview = overview ?? data;
   const selectedStatus =
-    currentOverview?.services.find((service) => service.name === selectedService) ?? null;
+    overview?.services.find((service) => service.name === selectedService) ?? null;
 
   const handleSelectService = (serviceName: string) => {
-    setSelectedService(serviceName);
+    setRequestedService(serviceName);
     setLogLines([]);
   };
 
@@ -127,23 +120,22 @@ export function AdminInfrastructurePage() {
       {actionDialog.dialog}
       {/* Each view renders its own page header; the loading and empty states share this one. */}
       <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto">
-        {currentOverview && !showLoading ? (
+        {overview && !showLoading ? (
           <>
             {activeTab === "overview" && (
               <OverviewView
-                overview={currentOverview}
+                overview={overview}
                 streamConnected={streamConnected}
                 onNavigateTab={setActiveTab}
               />
             )}
             {activeTab === "services" && (
               <ServicesView
-                services={currentOverview.services}
+                services={overview.services}
                 selectedService={selectedService}
                 busyService={action.isPending ? (action.variables?.serviceName ?? null) : null}
-                onSelect={(name) => {
-                  handleSelectService(name);
-                }}
+                onSelect={handleSelectService}
+                onSync={() => void refetch()}
                 onAction={(name, a) => {
                   const confirmation = serviceActionConfirmation(name, a);
                   void (async () => {
@@ -155,7 +147,7 @@ export function AdminInfrastructurePage() {
             )}
             {activeTab === "logs" && (
               <LogsView
-                services={currentOverview.services}
+                services={overview.services}
                 selectedService={selectedService}
                 logLines={logLines}
                 streamConnected={streamConnected}
@@ -164,7 +156,7 @@ export function AdminInfrastructurePage() {
             )}
             {activeTab === "terminal" && (
               <TerminalView
-                services={currentOverview.services}
+                services={overview.services}
                 selectedService={selectedService}
                 terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
                 onSelectService={handleSelectService}
@@ -172,7 +164,7 @@ export function AdminInfrastructurePage() {
             )}
             {activeTab === "alerts" && (
               <AlertsView
-                overview={currentOverview}
+                overview={overview}
                 streamConnected={streamConnected}
                 selectedService={selectedService}
               />

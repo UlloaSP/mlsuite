@@ -31,7 +31,7 @@ export function OverviewInvitationsPanel({
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium text-fg">{invitation.email}</span>
             <span className="block truncate text-xs text-fg-secondary">
-              {invitation.roleDefinition?.name ?? invitation.role} · sent{" "}
+              {invitation.roleDefinition.name} · sent{" "}
               <time dateTime={invitation.createdAt}>
                 {formatCompactRelativeTime(invitation.createdAt)} ago
               </time>

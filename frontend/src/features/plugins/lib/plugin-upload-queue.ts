@@ -7,7 +7,6 @@ import {
   detectPluginType,
   type DetectedPluginType,
 } from "@/capabilities/prediction-runtime/plugins/plugin-catalog-loader";
-import { readFileText } from "./catalog-page-model";
 
 export const PLUGIN_FILE_EXTENSION = ".ts";
 
@@ -47,7 +46,7 @@ export async function inspectPluginFile(
     };
   }
   try {
-    const detected = await detectPluginType(organizationId, await readFileText(file));
+    const detected = await detectPluginType(organizationId, await file.text());
     return { status: "ready", pluginType: detected.pluginType, kind: detected.kind };
   } catch (error: unknown) {
     return { status: "invalid", error: pluginErrorMessage(error) };

@@ -1,6 +1,5 @@
 import type { FeedbackStatusDisplay } from "@/capabilities/prediction-runtime/feedback/FeedbackStatusBadge";
 import type { ReactNode } from "react";
-import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { ReviewCreationButton } from "@/capabilities/review-creation/ReviewCreationButton";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
@@ -22,8 +21,17 @@ import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
 
-const validStatus = (value: string | null): InferenceFilters["status"] =>
+const URL_FILTER_DEFAULTS = { q: "", schema: "all", bookmark: "all", status: "all" };
+const URL_FILTER_PARAMS = {
+  query: "q",
+  schemaId: "schema",
+  bookmarkId: "bookmark",
+  status: "status",
+} as const satisfies Record<keyof InferenceFilters, keyof typeof URL_FILTER_DEFAULTS>;
+
+const validStatus = (value: string): InferenceFilters["status"] =>
   value === "SUCCESS" || value === "PARTIAL_SUCCESS" || value === "FAILED" ? value : "all";
 
 export function InferencesPage({
@@ -39,12 +47,12 @@ export function InferencesPage({
   const catalog = useInferenceCatalog();
   const { data: workspace } = useWorkspaceContext();
   const deleteInference = useDeleteInferenceMutation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const urlFilters = useUrlFilters(URL_FILTER_DEFAULTS);
   const filters: InferenceFilters = {
-    query: searchParams.get("q") ?? "",
-    schemaId: searchParams.get("schema") ?? "all",
-    bookmarkId: searchParams.get("bookmark") ?? "all",
-    status: validStatus(searchParams.get("status")),
+    query: urlFilters.values.q,
+    schemaId: urlFilters.values.schema,
+    bookmarkId: urlFilters.values.bookmark,
+    status: validStatus(urlFilters.values.status),
   };
   const items = catalog.data ?? [];
   const filteredItems = filterInferences(items, filters);
@@ -65,27 +73,14 @@ export function InferencesPage({
       danger: true,
     });
     if (!confirmed) return;
-    try {
-      await deleteInference.mutateAsync(item.id);
-      toast.success("Inference deleted.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    }
+    deleteInference.mutate(item.id, { onSuccess: () => toast.success("Inference deleted.") });
   };
-  const updateFilter = <K extends keyof InferenceFilters>(key: K, value: InferenceFilters[K]) => {
-    const keyMap: Record<keyof InferenceFilters, string> = {
-      query: "q",
-      schemaId: "schema",
-      bookmarkId: "bookmark",
-      status: "status",
-    };
-    const next = new URLSearchParams(searchParams);
-    if (value === "" || value === "all") next.delete(keyMap[key]);
-    else next.set(keyMap[key], value);
-    if (key === "schemaId") next.delete("bookmark");
-    next.delete("page");
-    setSearchParams(next, { replace: true });
-  };
+  const updateFilter = <K extends keyof InferenceFilters>(key: K, value: InferenceFilters[K]) =>
+    urlFilters.setFilters({
+      [URL_FILTER_PARAMS[key]]: value,
+      // Bookmarks belong to one schema, so a schema change clears the bookmark filter.
+      ...(key === "schemaId" ? { bookmark: "all" } : {}),
+    });
 
   const renderList = (statuses?: Map<string, FeedbackStatusDisplay>) => (
     <InferenceCatalogList

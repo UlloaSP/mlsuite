@@ -22,7 +22,5 @@ export const useWorkspaceContext = (enabled = true) =>
 export const useCurrentOrganizationId = (): number | undefined =>
   useWorkspaceContext().data?.currentOrganization.id;
 
-export const useWorkspacePermissions = () => useWorkspaceContext().data?.permissions ?? null;
-
 export const useCan = (permission: WorkspacePermissionKey): boolean =>
-  Boolean(useWorkspacePermissions()?.[permission]);
+  Boolean(useWorkspaceContext().data?.permissions[permission]);

@@ -6,7 +6,8 @@ import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { cx } from "@/shared/ui/cx";
-import { formatBytes, formatPercent } from "@/features/infrastructure/lib/formatters";
+import { formatBytes } from "@/shared/lib/format-bytes";
+import { formatPercent } from "@/features/infrastructure/lib/formatters";
 import { labelForServiceHealth, toneForServiceStatus } from "@/features/infrastructure/lib/status";
 import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
 import { SortTh } from "./ServicesSortTh";
@@ -26,6 +27,7 @@ type Props = {
   busyService: string | null;
   onSelect: (serviceName: string) => void;
   onAction: (serviceName: string, action: "START" | "STOP" | "RESTART") => void;
+  onSync: () => void;
 };
 export function ServicesView({
   services,
@@ -33,6 +35,7 @@ export function ServicesView({
   busyService,
   onSelect,
   onAction,
+  onSync,
 }: Props) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useSearchParamState<string>("status", "all");
@@ -71,7 +74,7 @@ export function ServicesView({
         title="Managed services"
         description={`${filtered.length} of ${services.length} services · click a row for details, logs, and shell.`}
         actions={
-          <AppButton variant="secondary">
+          <AppButton variant="secondary" onClick={onSync}>
             <RefreshCw size={15} /> Sync
           </AppButton>
         }

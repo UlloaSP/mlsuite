@@ -6,15 +6,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
+import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { PredictionRunDetails } from "@/features/schemas/components/PredictionRunDetails";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { changeValue, mount } from "./support/dom";
 
 const queryState = vi.hoisted(() => ({ refetch: vi.fn(), runError: false }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useCurrentOrganizationId: () => 1,
   useWorkspaceContext: () => ({
     data: { permissions: { canRunPredictions: true, canViewOrganization: true } },
   }),
@@ -88,7 +88,7 @@ vi.mock("@/features/schemas/api/schema-queries", () => ({
   usePredictionRunFeedback: () => ({ data: [], refetch: queryState.refetch }),
 }));
 
-vi.mock("@/features/schemas/lib/schema-plugin-catalog", () => ({
+vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
   useSchemaPluginCatalog: () => ({ data: { reportDefinitions: [] } }),
 }));
 
@@ -119,52 +119,28 @@ vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () 
   }) => <div data-output="">{`${result.modelId} ${JSON.stringify(report)}`}</div>,
 }));
 
-const setInput = (input: HTMLInputElement, value: string) => {
-  const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
-  act(() => {
-    descriptor?.set?.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-};
-
 describe("prediction run details", () => {
-  let root: Root | null = null;
-
   beforeEach(() => {
     queryState.refetch.mockReset();
     queryState.runError = false;
   });
 
-  const renderPage = (withReviews = true) => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    act(() => {
-      root?.render(
-        <MemoryRouter>
-          <PredictionRunDetails
-            runId="run-1"
-            bookmarkName="Ward bookmark"
-            reviews={
-              withReviews
-                ? { content: <section>Review management</section>, count: "1/2" }
-                : undefined
-            }
-          />
-        </MemoryRouter>,
-      );
-    });
-    return container;
+  const renderPage = async (withReviews = true) => {
+    const { host } = await mount(
+      <PredictionRunDetails
+        runId="run-1"
+        bookmarkName="Ward bookmark"
+        reviews={
+          withReviews ? { content: <section>Review management</section>, count: "1/2" } : undefined
+        }
+      />,
+      { route: "/" },
+    );
+    return host;
   };
 
-  afterEach(() => {
-    act(() => root?.unmount());
-    root = null;
-    document.body.innerHTML = "";
-  });
-
-  test("shows compact metadata, task tabs, and searchable inputs without overview", () => {
-    const container = renderPage();
+  test("shows compact metadata, task tabs, and searchable inputs without overview", async () => {
+    const container = await renderPage();
 
     expect(container.textContent).toContain("Success");
     expect(container.textContent).toContain("Feedback pending");
@@ -180,32 +156,40 @@ describe("prediction run details", () => {
 
     const inputsPanel = container.querySelector<HTMLElement>('[role="tabpanel"]')!;
     const inputSearch = container.querySelector<HTMLInputElement>('[aria-label="Search inputs"]')!;
-    setInput(inputSearch, "sex");
+    await changeValue(inputSearch, "sex");
     expect(inputsPanel.textContent).toContain("Sex");
     expect(inputsPanel.textContent).not.toContain("Age");
-    setInput(inputSearch, "missing");
+    await changeValue(inputSearch, "missing");
     expect(inputsPanel.textContent).toContain('No inputs match "missing"');
 
     const tabs = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
-    act(() => tabs.find((tab) => tab.textContent?.startsWith("Outputs"))?.click());
+    act(() => {
+      tabs
+        .find((tab) => tab.textContent?.startsWith("Outputs"))
+        ?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    });
     expect(container.textContent).toContain("Risk score");
     expect(container.querySelector('[aria-label="Search outputs"]')).toBeNull();
     expect(container.querySelectorAll("[data-output]")).toHaveLength(2);
 
     expect(container.textContent).not.toContain("Review management");
-    act(() => tabs.find((tab) => tab.textContent?.startsWith("Reviews"))?.click());
+    act(() => {
+      tabs
+        .find((tab) => tab.textContent?.startsWith("Reviews"))
+        ?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    });
     expect(container.textContent).toContain("Review management");
   });
 
-  test("offers no Reviews tab to members who cannot manage reviews", () => {
-    const container = renderPage(false);
+  test("offers no Reviews tab to members who cannot manage reviews", async () => {
+    const container = await renderPage(false);
     const tabs = [...container.querySelectorAll('[role="tab"]')].map((item) => item.textContent);
     expect(tabs).toEqual(["Inputs2", "Outputs2"]);
   });
 
-  test("explains a run that cannot be loaded", () => {
+  test("explains a run that cannot be loaded", async () => {
     queryState.runError = true;
-    const page = renderPage();
+    const page = await renderPage();
     expect(page.textContent).toContain("Inference data unavailable");
     expect(page.querySelector('[role="tab"]')).toBeNull();
   });

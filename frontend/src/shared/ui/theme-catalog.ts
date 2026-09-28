@@ -205,22 +205,3 @@ export const createCustomTheme = (
   light,
   dark,
 });
-
-export const paletteCssVariables = (palette: ThemePalette): Record<string, string> => ({
-  "--theme-page-bg": palette.background,
-  "--theme-page-bg-accent": `color-mix(in oklch, ${palette.accent} 10%, transparent)`,
-  "--theme-surface-primary": palette.surface,
-  "--theme-surface-secondary": `color-mix(in oklch, ${palette.surface}, ${palette.background} 45%)`,
-  "--theme-surface-muted": palette.muted,
-  "--theme-surface-inverse": palette.text,
-  "--theme-text-primary": palette.text,
-  "--theme-text-secondary": palette.textMuted,
-  "--theme-text-muted": `color-mix(in oklch, ${palette.textMuted}, ${palette.background} 28%)`,
-  "--theme-text-inverse": palette.background,
-  "--theme-border-soft": `color-mix(in oklch, ${palette.muted}, ${palette.text} 12%)`,
-  "--theme-border-strong": `color-mix(in oklch, ${palette.muted}, ${palette.text} 24%)`,
-  "--theme-accent-primary": palette.accent,
-  "--theme-accent-primary-strong": `color-mix(in oklch, ${palette.accent}, ${palette.text} 18%)`,
-  "--theme-accent-quiet": `color-mix(in oklch, ${palette.accent} 14%, transparent)`,
-  "--theme-sidebar-bg": `color-mix(in oklch, ${palette.surface} 94%, transparent)`,
-});

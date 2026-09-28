@@ -9,7 +9,7 @@ import { getOutputFeedbackFieldIds } from "@/capabilities/prediction-runtime/fee
 import { getQuestionnaireFieldIds } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
-import { formatTimestamp } from "@/capabilities/prediction-runtime/data/model-utils";
+import { formatTimestamp } from "@/shared/lib/date-time";
 import {
   getSchemaResultReports,
   type SchemaDisplayReport,
@@ -19,25 +19,22 @@ import type {
   PredictionRunDto,
 } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { downloadTextFile } from "@/shared/lib/download-text-file";
 
-/** safeFilePart: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const safeFilePart = (value: string): string =>
   value
     .replace(/[^a-z0-9\-_.]+/gi, "_")
     .replace(/_{2,}/g, "_")
     .slice(0, 80);
 
-/** reviewerLabel: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const reviewerLabel = (item: PredictionResultFeedbackDto): string =>
+export const schemaRunReviewerLabel = (item: PredictionResultFeedbackDto): string =>
   item.userEmail || item.userName || `user-${item.userId ?? "unknown"}`;
 
-/** feedbackRecord: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const feedbackRecord = (value: unknown): Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : { value };
 
-/** reportsOf: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportsOf = (schema: unknown): Record<string, unknown>[] =>
   typeof schema === "object" &&
   schema !== null &&
@@ -49,13 +46,10 @@ const reportsOf = (schema: unknown): Record<string, unknown>[] =>
       )
     : [];
 
-/** modelInputColumn: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const modelInputColumn = (modelId: string, key: string): string => `input.${modelId}.${key}`;
 
-/** reportColumnId: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportColumnId = (report: SchemaDisplayReport): string => report.id;
 
-/** predictionValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const predictionValue = (report: SchemaDisplayReport): unknown => {
   const payload = feedbackRecord(report.payload);
   const rawPrediction = payload.prediction ?? payload.value;
@@ -67,33 +61,26 @@ const predictionValue = (report: SchemaDisplayReport): unknown => {
   return rawPrediction ?? report.payload;
 };
 
-/** outputFeedbackValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const outputFeedbackValue = (record: Record<string, unknown>, kind: string): unknown => {
   const fieldIds = getOutputFeedbackFieldIds(kind);
   return record[fieldIds.assessment] ?? record.assessment ?? Object.values(record)[0];
 };
 
-/** reportContentValue: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportContentValue = (payload: unknown): string => {
   const formatted = getFormattedReportContent(payload);
   return formatted.length > 0 ? formatted.join("\n\n") : toCell(payload);
 };
 
-/** reportContentColumn: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportContentColumn = (reportId: string): string => `report.${reportId}.content`;
 
-/** reportFeedbackColumn: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportFeedbackColumn = (reportId: string, fieldId: string, reviewer: string): string =>
   `report.${reportId}.${fieldId}.${reviewer}`;
 
-/** outputPredictionColumn: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const outputPredictionColumn = (reportId: string): string => `output.${reportId}.predicted`;
 
-/** outputFeedbackColumn: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const outputFeedbackColumn = (reportId: string, reviewer: string): string =>
   `output.${reportId}.feedback.${reviewer}`;
 
-/** getSchemaRunModelInputColumns: internal lookup helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getSchemaRunModelInputColumns = (runs: readonly PredictionRunDto[]): string[] =>
   Array.from(
     new Set(
@@ -105,7 +92,6 @@ const getSchemaRunModelInputColumns = (runs: readonly PredictionRunDto[]): strin
     ),
   ).sort();
 
-/** getSchemaRunModelInputValues: internal lookup helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getSchemaRunModelInputValues = (run: PredictionRunDto): Map<string, unknown> =>
   run.results.reduce<Map<string, unknown>>((values, result) => {
     Object.entries(result.modelInput).forEach(([key, value]) => {
@@ -114,14 +100,6 @@ const getSchemaRunModelInputValues = (run: PredictionRunDto): Map<string, unknow
     return values;
   }, new Map());
 
-/**
- * buildSchemaRunExport: constructs a new derived object from source data
- *
- * Purpose: builds and downloads schema-run CSV exports.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export const buildSchemaRunExport = (
   runs: readonly PredictionRunDto[],
   version: SchemaVersionDto,
@@ -133,7 +111,7 @@ export const buildSchemaRunExport = (
     run.results.flatMap((result) => getSchemaResultReports(version, result)),
   );
   const reportIds = Array.from(new Set(displayReports.map(reportColumnId)));
-  const reviewers = Array.from(new Set(feedback.map(reviewerLabel))).sort();
+  const reviewers = Array.from(new Set(feedback.map(schemaRunReviewerLabel))).sort();
   const reportConfigs = reportsOf(version.formSchema);
   const outputHeaders = reportIds.flatMap((reportId) => {
     const report = displayReports.find((item) => item.id === reportId);
@@ -192,7 +170,7 @@ export const buildSchemaRunExport = (
             (item) =>
               item.resultId === result.id &&
               item.order === report.order &&
-              reviewerLabel(item) === reviewer,
+              schemaRunReviewerLabel(item) === reviewer,
           );
           matches.forEach((item) => {
             const record = feedbackRecord(item.value);
@@ -232,27 +210,11 @@ export const buildSchemaRunExport = (
   };
 };
 
-/**
- * downloadSchemaRunExport: creates a browser download side effect from prepared export data
- *
- * Purpose: builds and downloads schema-run CSV exports.
- * @returns void after starting browser download work.
- * @throws Propagates browser/API/runtime failures from the called platform APIs.
- * @remarks Side cases/effects: Creates Blob/object URL download state; empty rows still produce a header-only CSV when headers exist.
- */
 export const downloadSchemaRunExport = (
   runs: readonly PredictionRunDto[],
   version: SchemaVersionDto,
   feedback: readonly PredictionResultFeedbackDto[] = [],
 ): void => {
   const { content, fileName } = buildSchemaRunExport(runs, version, feedback);
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  downloadTextFile(content, fileName, "text/csv");
 };

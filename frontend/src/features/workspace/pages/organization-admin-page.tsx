@@ -26,7 +26,7 @@ export function OrganizationAdminPage() {
       isCurrent={isCurrent}
       organization={dashboard.data.organization}
       permissions={dashboard.data.permissions}
-      role={isCurrent ? context?.currentMembership.role : undefined}
+      role={isCurrent ? context?.currentMembership.roleDefinition.name : undefined}
       dashboard={dashboard}
       // Your own organization is its root, like the workspace home; others are administration.
       breadcrumbs={

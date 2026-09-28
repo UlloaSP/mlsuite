@@ -68,52 +68,59 @@ export function ModelsPage() {
   const canEditModels = workspace?.permissions.canEditModels ?? false;
 
   const actionDialog = useActionDialog();
+  // Mutation failures are reported by the global mutation error handler.
   const handleAction = async (action: ModelAction, model: ModelDto) => {
-    try {
-      if (action === "edit") {
-        const name = await actionDialog.prompt({
-          title: "Rename model",
-          confirmLabel: "Save name",
-          input: { label: "Model name", defaultValue: model.name },
-        });
-        if (name) await renameMutation.mutateAsync({ id: model.id, name, version: model.version });
-        if (name) toast.success("Model renamed.");
-      }
-      if (action === "duplicate") {
-        const name = await actionDialog.prompt({
-          title: "Duplicate model",
-          description: "The copy gets its own name and version history.",
-          confirmLabel: "Create copy",
-          input: { label: "Copy name", defaultValue: `${model.name} Copy` },
-        });
-        if (name) await duplicateMutation.mutateAsync({ id: model.id, name });
-        if (name) toast.success("Model duplicated.");
-      }
-      if (
-        action === "archive" &&
-        (await actionDialog.confirm({
-          title: `Archive ${model.name}?`,
-          description: "Archived models stay readable and can be filtered from the catalog.",
-          confirmLabel: "Archive",
-        }))
-      ) {
-        await archiveMutation.mutateAsync({ id: model.id, version: model.version });
-        toast.success("Model archived.");
-      }
-      if (
-        action === "delete" &&
-        (await actionDialog.confirm({
-          title: `Delete ${model.name}?`,
-          description: "This cannot be undone.",
-          confirmLabel: "Delete",
-          danger: true,
-        }))
-      ) {
-        await deleteMutation.mutateAsync({ id: model.id, version: model.version });
-        toast.success("Model deleted.");
-      }
-    } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+    if (action === "edit") {
+      const name = await actionDialog.prompt({
+        title: "Rename model",
+        confirmLabel: "Save name",
+        input: { label: "Model name", defaultValue: model.name },
+      });
+      if (!name) return;
+      renameMutation.mutate(
+        { id: model.id, name, version: model.version },
+        { onSuccess: () => toast.success("Model renamed.") },
+      );
+    }
+    if (action === "duplicate") {
+      const name = await actionDialog.prompt({
+        title: "Duplicate model",
+        description: "The copy gets its own name and version history.",
+        confirmLabel: "Create copy",
+        input: { label: "Copy name", defaultValue: `${model.name} Copy` },
+      });
+      if (!name) return;
+      duplicateMutation.mutate(
+        { id: model.id, name },
+        { onSuccess: () => toast.success("Model duplicated.") },
+      );
+    }
+    if (
+      action === "archive" &&
+      (await actionDialog.confirm({
+        title: `Archive ${model.name}?`,
+        description: "Archived models stay readable and can be filtered from the catalog.",
+        confirmLabel: "Archive",
+      }))
+    ) {
+      archiveMutation.mutate(
+        { id: model.id, version: model.version },
+        { onSuccess: () => toast.success("Model archived.") },
+      );
+    }
+    if (
+      action === "delete" &&
+      (await actionDialog.confirm({
+        title: `Delete ${model.name}?`,
+        description: "This cannot be undone.",
+        confirmLabel: "Delete",
+        danger: true,
+      }))
+    ) {
+      deleteMutation.mutate(
+        { id: model.id, version: model.version },
+        { onSuccess: () => toast.success("Model deleted.") },
+      );
     }
   };
 

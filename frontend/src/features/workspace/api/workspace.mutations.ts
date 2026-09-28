@@ -15,10 +15,9 @@ import {
 } from "./organizations.api";
 import { selectOrganization } from "./workspace-selection.api";
 import { removeOrganizationCache } from "./organization-cache";
+import type { UpdateOrganizationRequest } from "./workspace.types";
 import {
-  ORGANIZATIONS_QUERY_KEY,
   ORGANIZATION_CATALOG_PAGE_QUERY_KEY,
-  organizationDetailsQueryKey,
   organizationAdminDashboardQueryKey,
   organizationMembersQueryKey,
   PENDING_INVITATIONS_QUERY_KEY,
@@ -45,6 +44,16 @@ export const useDeclineInvitation = () => {
   });
 };
 
+const useInvalidateOrganizationQueries = () => {
+  const queryClient = useQueryClient();
+  return async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ORGANIZATION_CATALOG_PAGE_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
+    ]);
+  };
+};
+
 export const useDeleteOrganizationMutation = () => {
   const queryClient = useQueryClient();
   const invalidate = useInvalidateOrganizationQueries();
@@ -67,50 +76,19 @@ export const useCreateOrganizationMutation = () => {
   });
 };
 
-export const useUpdateOrganizationMutation = (organizationId: number) => {
+export const useUpdateOrganizationMutation = () => {
   const queryClient = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: (request: Parameters<typeof updateOrganization>[1]) =>
-      updateOrganization(organizationId, request),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: organizationDetailsQueryKey(organizationId) }),
-        queryClient.invalidateQueries({
-          queryKey: organizationAdminDashboardQueryKey(organizationId),
-        }),
-        queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
-        queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
-      ]);
-    },
-  });
-};
-
-export const useInvalidateOrganizationQueries = () => {
-  const queryClient = useQueryClient();
-  return async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
-      queryClient.invalidateQueries({ queryKey: ORGANIZATION_CATALOG_PAGE_QUERY_KEY }),
-      queryClient.invalidateQueries({ queryKey: WORKSPACE_CONTEXT_QUERY_KEY }),
-    ]);
-  };
-};
-
-type RenameOrganizationRequest = {
-  description?: string | null;
-  id: number;
-  name: string;
-  slug?: string;
-};
-
-export const useRenameOrganizationMutation = () => {
   const invalidate = useInvalidateOrganizationQueries();
   return useMutation({
     meta: { errorHandledLocally: true },
-    mutationFn: ({ id, name, slug, description }: RenameOrganizationRequest) =>
-      updateOrganization(id, { name, slug, description: description ?? undefined }),
-    onSuccess: () => void invalidate(),
+    mutationFn: ({ id, ...request }: UpdateOrganizationRequest & { id: number }) =>
+      updateOrganization(id, request),
+    onSuccess: async (_data, { id }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: organizationAdminDashboardQueryKey(id) }),
+        invalidate(),
+      ]);
+    },
   });
 };
 
@@ -147,12 +125,9 @@ export const useTransferOrganizationOwnershipMutation = () => {
           queryKey: organizationMembersQueryKey(request.organizationId),
         }),
         queryClient.invalidateQueries({
-          queryKey: organizationDetailsQueryKey(request.organizationId),
-        }),
-        queryClient.invalidateQueries({
           queryKey: organizationAdminDashboardQueryKey(request.organizationId),
         }),
-        queryClient.invalidateQueries({ queryKey: ORGANIZATIONS_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ORGANIZATION_CATALOG_PAGE_QUERY_KEY }),
       ]);
     },
   });

@@ -14,7 +14,6 @@ import {
   SCHEMA_BOOKMARKS_QUERY_KEY,
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_CATALOG_PAGE_QUERY_KEY,
-  SCHEMAS_QUERY_KEY,
 } from "./schema-keys";
 
 export const useInvalidateSchemaQueries = () => {
@@ -22,7 +21,6 @@ export const useInvalidateSchemaQueries = () => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: SCHEMAS_QUERY_KEY(organizationId) }),
       queryClient.invalidateQueries({ queryKey: SCHEMA_CATALOG_PAGE_QUERY_KEY(organizationId) }),
       // The Predict launcher shows schema names and hides archived schemas.
       queryClient.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) }),

@@ -265,7 +265,6 @@
   save(KEYS.contrast, appearance.contrast);
   save(KEYS.customThemes, appearance.customThemes);
   window.__MLSUITE_APPLY_APPEARANCE__ = applyAppearance;
-  window.__MLSUITE_APPLY_THEME__ = (mode) => applyAppearance({ ...readAppearance(), mode });
   applyAppearance(appearance);
   applyTypography(read(KEYS.typography));
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => {

@@ -6,24 +6,23 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useMemo } from "react";
 import type { PrimitiveSubmitResult } from "mlform/primitives";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
 import type { SchemaDisplayReport } from "@/capabilities/prediction-runtime/data/report-display";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { describeSchemaCustomReport } from "@/capabilities/prediction-runtime/reports/report-descriptor";
+import { SchemaPrimitiveReport } from "./SchemaPrimitiveReport";
+import { SchemaRunReportCard } from "./SchemaRunReportCard";
+
 type PredictionResultDto = {
   modelId: string;
   modelInput: Record<string, unknown>;
   output: Record<string, unknown>;
 };
-
-import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { describeSchemaCustomReport } from "@/capabilities/prediction-runtime/reports/report-descriptor";
-import { SchemaPrimitiveReport } from "./SchemaPrimitiveReport";
-import { SchemaRunReportCard } from "./SchemaRunReportCard";
-import { schemaRunDebug } from "@/capabilities/prediction-runtime/mlform/run-debug";
 
 type Props = {
   result: PredictionResultDto;
@@ -38,9 +37,6 @@ const customReportByKind = (
   definitions: readonly CatalogReportDefinition[] = [],
 ): CatalogReportDefinition | undefined =>
   definitions.find((definition) => definition.kind === kind);
-
-const customReportKinds = (definitions: readonly CatalogReportDefinition[] = []): string[] =>
-  definitions.map((definition) => definition.kind);
 
 const resultPayload = (
   report: SchemaDisplayReport,
@@ -97,19 +93,8 @@ export function SchemaRunReportRenderer({
 }: Props) {
   const registry = useMemo(() => createBuiltinPrimitiveRegistry(), []);
   const customReport = customReportByKind(report.kind, customReportDefinitions);
-  schemaRunDebug("renderer.start", {
-    result,
-    report,
-    reportId: report.id,
-    kind: report.kind,
-    modelId: result.modelId,
-    hasPayload: report.payload !== undefined,
-    customDefinition: Boolean(customReport),
-    availableKinds: customReportKinds(customReportDefinitions),
-  });
   if (!customReport) {
     if (!isBuiltinReportKind(report.kind)) {
-      schemaRunDebug("renderer.custom-unavailable", { reportId: report.id, kind: report.kind });
       return (
         <AppPanel>
           <AppCopy>Custom report kind unavailable.</AppCopy>
@@ -126,30 +111,13 @@ export function SchemaRunReportRenderer({
     );
   }
 
-  const config = report.config;
-  schemaRunDebug("renderer.config", {
-    reportId: report.id,
-    config,
-    payload: report.payload,
-    hasConfig: true,
-  });
-  const normalizedConfig = { ...config, id: report.id };
+  const normalizedConfig = { ...report.config, id: report.id };
   const lastResult = resultPayload(report, result);
-  const state = { payload: report.payload, error: null, status: "ready" };
-  const context = {
+  const descriptor = describeSchemaCustomReport(customReport, normalizedConfig, {
     reportId: report.id,
-    state,
+    state: { payload: report.payload, error: null, status: "ready" },
     payload: report.payload,
     result: lastResult,
-  };
-  const descriptor = describeSchemaCustomReport(customReport, normalizedConfig, context);
-  schemaRunDebug("renderer.descriptor", {
-    reportId: report.id,
-    lastResult,
-    context,
-    descriptor,
-    hasDescriptor: Boolean(descriptor),
-    descriptorType: isRecord(descriptor) ? descriptor.type : typeof descriptor,
   });
 
   return (

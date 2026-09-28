@@ -1,14 +1,13 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { createRoot, type Root } from "react-dom/client";
 import { act } from "react";
-import { MemoryRouter, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { greetingFor } from "@/app/pages/auth-landing/authLandingCopy";
 import { useAuthAccess } from "@/app/pages/auth-landing/useAuthAccess";
+import { click, mount } from "./support/dom";
 
-let root: Root | null = null;
-let container: HTMLDivElement;
+let host: HTMLDivElement;
 
 function AccessProbe() {
   const location = useLocation();
@@ -28,40 +27,24 @@ function AccessProbe() {
   );
 }
 
-const probe = () => container.querySelector<HTMLElement>("[data-phase]")!;
-const click = (label: string) =>
-  act(() => {
-    [...container.querySelectorAll("button")].find((b) => b.textContent === label)!.click();
-  });
+const probe = () => host.querySelector<HTMLElement>("[data-phase]")!;
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  act(() =>
-    root!.render(
-      <MemoryRouter initialEntries={["/"]}>
-        <AccessProbe />
-      </MemoryRouter>,
-    ),
-  );
+  ({ host } = await mount(<AccessProbe />, { route: "/" }));
 });
 
 afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  container.remove();
   vi.useRealTimers();
 });
 
 describe("auth access sequence", () => {
-  test("tears the pass, reveals the overlay after the tear, then opens the destination", () => {
-    click("start");
+  test("tears the pass, reveals the overlay after the tear, then opens the destination", async () => {
+    await click("start", host);
     expect(probe().dataset.phase).toBe("1");
 
-    click("succeed");
+    await click("succeed", host);
     advance(649);
     expect(probe().dataset.phase).toBe("1");
     advance(1);
@@ -72,9 +55,9 @@ describe("auth access sequence", () => {
     expect(probe().dataset.path).toBe("/review");
   });
 
-  test("returns the pass to idle after a failed request without navigating", () => {
-    click("start");
-    click("fail");
+  test("returns the pass to idle after a failed request without navigating", async () => {
+    await click("start", host);
+    await click("fail", host);
     advance(650);
 
     expect(probe().dataset.phase).toBe("0");

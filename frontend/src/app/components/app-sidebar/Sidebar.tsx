@@ -21,7 +21,7 @@ export function Sidebar({
   variant = "fixed",
   ...props
 }: SidebarProps) {
-  const { isMobile, openMobile, setOpenMobile, state } = useSidebar();
+  const { collapsed, isMobile, openMobile, setOpenMobile } = useSidebar();
   const floating = variant === "floating";
   // Floating insets the panel from every viewport edge so the page background frames it.
   const drawerEdge = floating
@@ -31,7 +31,7 @@ export function Sidebar({
   const panelEdge = floating
     ? cx(
         "my-2 max-h-[calc(100dvh-1rem)] self-center rounded-2xl border shadow-card",
-        state === "collapsed" ? "h-auto" : "h-[calc(100dvh-1rem)]",
+        collapsed ? "h-auto" : "h-[calc(100dvh-1rem)]",
         side === "left" ? "ml-2" : "mr-2",
       )
     : cx("h-dvh", side === "left" ? "border-r" : "border-l");
@@ -62,11 +62,11 @@ export function Sidebar({
     <aside
       data-app-sidebar
       data-side={side}
-      data-state={state}
+      data-state={collapsed ? "collapsed" : "expanded"}
       data-variant={variant}
       className={cx(
         "hidden shrink-0 overflow-hidden border-line bg-sidebar text-fg backdrop-blur-xl transition-[width,height] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] [interpolate-size:allow-keywords] xl:flex xl:flex-col",
-        state === "collapsed" ? "w-[4.25rem]" : "w-[17rem]",
+        collapsed ? "w-[4.25rem]" : "w-[17rem]",
         panelEdge,
         className,
       )}

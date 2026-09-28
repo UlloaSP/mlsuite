@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { UploadPluginPage } from "@/features/plugins/pages/UploadPluginPage";
 import { inspectPluginFile } from "@/features/plugins/lib/plugin-upload-queue";
+import { buttonByText, mount } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
   detect: vi.fn<(organizationId: number | string, source: string) => Promise<unknown>>(),
@@ -48,31 +48,20 @@ test("only a .ts file the runtime accepts becomes uploadable", async () => {
   expect(mocks.detect).toHaveBeenCalledWith(7, "export default {}");
 });
 
-let root: Root | undefined;
 let container: HTMLDivElement;
-afterEach(async () => {
-  await act(async () => root?.unmount());
+afterEach(() => {
   mocks.detect.mockReset();
   mocks.upload.mockReset();
-  vi.unstubAllGlobals();
-  document.body.innerHTML = "";
 });
 
 async function mountPage() {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  await act(async () =>
-    root?.render(
-      <MemoryRouter initialEntries={["/plugins/upload"]}>
-        <Routes>
-          <Route path="/plugins/upload" element={<UploadPluginPage />} />
-          <Route path="/plugins" element={<p>Plugin catalog</p>} />
-        </Routes>
-      </MemoryRouter>,
-    ),
-  );
+  ({ host: container } = await mount(
+    <Routes>
+      <Route path="/plugins/upload" element={<UploadPluginPage />} />
+      <Route path="/plugins" element={<p>Plugin catalog</p>} />
+    </Routes>,
+    { route: "/plugins/upload" },
+  ));
 }
 
 async function addFiles(...files: File[]) {
@@ -86,8 +75,7 @@ async function addFiles(...files: File[]) {
   });
 }
 
-const uploadAllButton = () =>
-  [...container.querySelectorAll("button")].find((button) => button.textContent === "Upload all")!;
+const uploadAllButton = () => buttonByText("Upload all", container)!;
 
 async function uploadAll() {
   await act(async () => {

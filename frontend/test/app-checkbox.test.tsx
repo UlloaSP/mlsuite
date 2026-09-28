@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 
-import { act, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { useState } from "react";
 import { describe, expect, it } from "vite-plus/test";
 import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 import { AppCheckMark } from "@/shared/ui/AppCheckMark";
+import { click, mount } from "./support/dom";
 
 function Harness() {
   const [checked, setChecked] = useState(false);
@@ -14,26 +14,19 @@ function Harness() {
 }
 
 describe("checkboxes", () => {
-  it("keeps a real, labelled checkbox that toggles", () => {
-    Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-    const container = document.createElement("div");
-    const root = createRoot(container);
-    act(() => root.render(<Harness />));
+  it("keeps a real, labelled checkbox that toggles", async () => {
+    const { host } = await mount(<Harness />);
 
-    const input = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    const input = host.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
     expect(input.getAttribute("aria-label")).toBe("Include run");
-    act(() => input.click());
+    await click(input);
     expect(input.checked).toBe(true);
-    act(() => root.unmount());
   });
 
-  it("hides the decorative mark from assistive tech", () => {
-    const container = document.createElement("div");
-    const root = createRoot(container);
-    act(() => root.render(<AppCheckMark checked />));
+  it("hides the decorative mark from assistive tech", async () => {
+    const { host } = await mount(<AppCheckMark checked />);
 
-    expect(container.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
-    expect(container.querySelector("svg")).not.toBeNull();
-    act(() => root.unmount());
+    expect(host.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
+    expect(host.querySelector("svg")).not.toBeNull();
   });
 });

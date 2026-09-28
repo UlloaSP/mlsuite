@@ -5,12 +5,17 @@ import { eligibleReviewersQueryOptions } from "@/capabilities/review-creation/re
 import { searchQueryOptions } from "@/features/search/api/search.queries";
 import { predictionRunsFeedbackQueryOptions } from "@/features/schemas/api/schema-queries";
 import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
+import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 
 const { getPredictionRunsFeedback } = vi.hoisted(() => ({
   getPredictionRunsFeedback: vi.fn(),
 }));
 
-vi.mock("@/features/schemas/api/schema-prediction-api", () => ({ getPredictionRunsFeedback }));
+vi.mock("@/features/schemas/api/schema-prediction-api", () => ({
+  getPredictionResultFeedback: vi.fn(),
+  getPredictionRun: vi.fn(),
+  getPredictionRunsFeedback,
+}));
 
 const client = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -82,6 +87,24 @@ describe("TanStack Query resource contracts", () => {
       expect.stringContaining("/api/plugins/runtime"),
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
+  });
+
+  test("compiles the plugin catalog under the tenant sources key", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("[]", { headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const queryClient = client();
+    const options = predictionCatalogQueryOptions(7);
+
+    await expect(queryClient.fetchQuery(options)).resolves.toEqual({
+      fieldDefinitions: [],
+      reportDefinitions: [],
+    });
+
+    expect(options.queryKey).toEqual(["org", 7, "pluginRuntimeSources", "definitions"]);
+    expect(queryClient.getQueryData(pluginRuntimeSourcesQueryOptions(7).queryKey)).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 
   test("preserves query failures", async () => {

@@ -12,7 +12,7 @@ import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
 

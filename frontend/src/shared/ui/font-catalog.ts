@@ -72,11 +72,3 @@ const stacks = <T extends string>(fonts: readonly { value: T; stack: string }[])
 
 export const INTERFACE_STACKS = stacks<InterfaceFont>(INTERFACE_FONTS);
 export const MONOSPACE_STACKS = stacks<MonospaceFont>(MONOSPACE_FONTS);
-
-// Ids stored by earlier releases, which named fonts after the families they replaced.
-export const LEGACY_FONT_IDS: Record<string, InterfaceFont | MonospaceFont> = {
-  cereal: "manrope",
-  segoe: "ibm-plex-sans",
-  avenir: "source-sans-3",
-  consolas: "system-mono",
-};

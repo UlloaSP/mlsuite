@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { ReviewWithoutQuestionnaire } from "@/features/reviews/components/ReviewWithoutQuestionnaire";
 import { ReviewOutputsSection } from "@/features/reviews/components/ReviewOutputsSection";
@@ -8,6 +7,7 @@ import type {
   ReviewSchemaVersionDto,
   ReviewPredictionResultDto,
 } from "@/features/reviews/api/review-types";
+import { mount } from "./support/dom";
 
 const state = vi.hoisted(() => ({
   submit: vi.fn(),
@@ -43,24 +43,14 @@ vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () 
     </div>
   ),
 }));
-let root: Root | undefined;
 afterEach(() => {
-  act(() => root?.unmount());
-  document.body.innerHTML = "";
   vi.clearAllMocks();
   state.status = "ready";
 });
-const mount = async (element: React.ReactNode) => {
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  await act(async () => root?.render(element));
-  return container;
-};
 test("completes selected zero-questionnaire run explicitly and retries failures", async () => {
   const onCompleted = vi.fn();
   state.submit.mockRejectedValueOnce(new Error("Unavailable")).mockResolvedValueOnce(undefined);
-  const container = await mount(
+  const { host: container } = await mount(
     <ReviewWithoutQuestionnaire
       reviewId="review-1"
       reviewRunId="item-2"
@@ -98,7 +88,9 @@ const result: ReviewPredictionResultDto = {
   output: { reports: [{ mappedTo: "custom", payload: { message: "Proof" } }] },
 };
 test("review outputs pass matched reports and catalog to shared renderer", async () => {
-  const container = await mount(<ReviewOutputsSection version={version} results={[result]} />);
+  const { host: container } = await mount(
+    <ReviewOutputsSection version={version} results={[result]} />,
+  );
   expect(container.querySelector('[data-rendered="model-1"]')?.textContent).toContain(
     "QA Report renderer QA Report",
   );
@@ -106,15 +98,16 @@ test("review outputs pass matched reports and catalog to shared renderer", async
 });
 test("reports loading, errors with retry, and no outputs without raw JSON fallback", async () => {
   state.status = "loading";
-  const container = await mount(<ReviewOutputsSection version={version} results={[]} />);
+  const view = await mount(<ReviewOutputsSection version={version} results={[]} />);
+  const container = view.host;
   expect(container.textContent).toContain("Loading report renderers");
   state.status = "error";
   state.error = "Catalog inaccessible";
-  await act(async () => root?.render(<ReviewOutputsSection version={version} results={[]} />));
+  await view.rerender(<ReviewOutputsSection version={version} results={[]} />);
   expect(container.textContent).toContain("Catalog inaccessible");
   await act(async () => container.querySelector("button")?.click());
   expect(state.retry).toHaveBeenCalledOnce();
   state.status = "ready";
-  await act(async () => root?.render(<ReviewOutputsSection version={version} results={[]} />));
+  await view.rerender(<ReviewOutputsSection version={version} results={[]} />);
   expect(container.textContent).toContain("No outputs returned");
 });

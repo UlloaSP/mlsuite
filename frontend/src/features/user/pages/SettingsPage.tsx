@@ -12,7 +12,7 @@ FORM: One calm settings document; route-owned, responsive, and free of duplicate
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import { AppTabs } from "@/shared/ui/AppTabs";
+import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { useSearchParams } from "react-router";
@@ -57,34 +57,30 @@ export function SettingsPage() {
           description="Customize appearance, typography, shortcuts, and navigation on this browser."
           breadcrumbs={[{ label: "Settings" }]}
         />
-        <div className={cx(FORM_MAX_WIDTH, "shrink-0")}>
-          <AppTabs
-            id="personal-settings"
-            aria-label="Personal settings sections"
-            items={SECTIONS}
-            value={section}
-            onChange={setSection}
-          />
-        </div>
-        {/* Full-width scroller keeps its scrollbar at the page edge; keyed so each section opens at the top. */}
-        <div
-          key={section}
-          id={`personal-settings-panel-${section}`}
-          role="tabpanel"
-          aria-labelledby={`personal-settings-tab-${section}`}
-          tabIndex={0}
-          className="app-scroll -mx-6 min-h-0 flex-1 overflow-y-auto px-6"
+        <AppTabs
+          aria-label="Personal settings sections"
+          className={cx(FORM_MAX_WIDTH, "shrink-0")}
+          items={SECTIONS}
+          value={section}
+          onChange={setSection}
         >
-          <main className={cx(FORM_MAX_WIDTH, "flex flex-col pb-10")}>
-            {section === "appearance" ? <SettingsAppearanceSection /> : null}
-            {section === "typography" ? <SettingsTypographySection /> : null}
-            {section === "keybindings" ? <SettingsKeybindingsSection /> : null}
-            {section === "layout" ? <SettingsLayoutSection /> : null}
-            <p className="mt-10 border-t border-line pt-5 text-xs text-fg-muted">
-              Preferences are saved in this browser and apply immediately.
-            </p>
-          </main>
-        </div>
+          {/* Full-width scroller keeps its scrollbar at the page edge; keyed so each section opens at the top. */}
+          <AppTabPanel
+            key={section}
+            value={section}
+            className="app-scroll -mx-6 min-h-0 flex-1 overflow-y-auto px-6"
+          >
+            <main className={cx(FORM_MAX_WIDTH, "flex flex-col pb-10")}>
+              {section === "appearance" ? <SettingsAppearanceSection /> : null}
+              {section === "typography" ? <SettingsTypographySection /> : null}
+              {section === "keybindings" ? <SettingsKeybindingsSection /> : null}
+              {section === "layout" ? <SettingsLayoutSection /> : null}
+              <p className="mt-10 border-t border-line pt-5 text-xs text-fg-muted">
+                Preferences are saved in this browser and apply immediately.
+              </p>
+            </main>
+          </AppTabPanel>
+        </AppTabs>
       </AppSurface>
     </AppPage>
   );

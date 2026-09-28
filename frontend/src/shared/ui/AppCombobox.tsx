@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { Check, ChevronDown } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { CONTROL_HEIGHT } from "./control-size";
@@ -41,6 +46,8 @@ export function AppCombobox({
         : items,
     [items, normalizedQuery],
   );
+  const expanded = open && !disabled;
+  const optionId = (index: number) => `${listboxId}-option-${index}`;
   const choose = (item: AppComboboxItem) => {
     onChange(item);
     setQuery(item.label);
@@ -61,8 +68,13 @@ export function AppCombobox({
           value={open ? query : (selected?.label ?? query)}
           disabled={disabled}
           placeholder={placeholder}
+          role="combobox"
           aria-label={placeholder}
           aria-controls={listboxId}
+          aria-expanded={expanded}
+          aria-activedescendant={
+            expanded && filtered[activeIndex] ? optionId(activeIndex) : undefined
+          }
           aria-autocomplete="list"
           onFocus={() => {
             setOpen(true);
@@ -97,17 +109,20 @@ export function AppCombobox({
         />
         <ChevronDown size={16} className="shrink-0 text-fg-muted" />
       </label>
-      {open && !disabled ? (
+      {expanded ? (
         <div
           id={listboxId}
+          role="listbox"
+          aria-label={placeholder}
           className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded-menu border border-line bg-surface p-2 shadow-card"
         >
           {filtered.length ? (
             filtered.map((item, index) => (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                aria-current={selected?.id === item.id}
+                id={optionId(index)}
+                role="option"
+                aria-selected={index === activeIndex}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   choose(item);
@@ -136,8 +151,8 @@ export function AppCombobox({
                     </span>
                   ) : null}
                 </span>
-                {selected?.id === item.id ? <Check size={16} /> : null}
-              </button>
+                {selected?.id === item.id ? <Check size={16} aria-label="Selected" /> : null}
+              </div>
             ))
           ) : (
             <div className="px-3 py-4 text-sm text-fg-secondary">{emptyLabel}</div>

@@ -4,10 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMemo } from "react";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
-import { schemaRunDebug } from "@/capabilities/prediction-runtime/mlform/run-debug";
 import type { PredictionResultDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { SchemaRunReportRenderer } from "@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer";
@@ -32,12 +31,6 @@ export function SchemaRunReportsPanel({
       ),
     [results, version],
   );
-  schemaRunDebug("reports-panel.render", {
-    versionId: version.id,
-    results,
-    reports,
-    customKinds: customReportDefinitions.map((definition) => definition.kind),
-  });
 
   return (
     <div>

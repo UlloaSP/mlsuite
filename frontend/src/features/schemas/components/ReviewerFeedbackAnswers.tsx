@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useQueries } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
+import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import {
@@ -30,7 +30,7 @@ export function ReviewerFeedbackAnswers({ runId, reviewerId, pollMs }: Props) {
   const { data: version } = useSchemaVersion(run?.schemaVersionId);
   // Answers are read against the snapshot the inference ran on.
   const executableVersion = useMemo(
-    () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
+    () => (version ? toExecutableSchemaVersion(version) : undefined),
     [version],
   );
   const feedbackQueries = useQueries({

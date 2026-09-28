@@ -1,12 +1,10 @@
 // @vitest-environment jsdom
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router";
-import { afterEach, expect, test, vi } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaRunExportReviewModal } from "@/features/schemas/components/SchemaRunExportReviewModal";
 import { SchemaReviewRunDetailPanel } from "@/features/reviews/components/SchemaReviewRunDetailPanel";
 import type { ReviewSchemaVersionDto } from "@/features/reviews/api/review-types";
+import { mount } from "./support/dom";
 
 type ListQuery = { data?: unknown[]; isError: boolean };
 const state = vi.hoisted(() => ({
@@ -27,27 +25,13 @@ vi.mock("@/features/reviews/components/SchemaReviewCombinedFeedbackForm", () => 
   SchemaReviewCombinedFeedbackForm: () => <form aria-label="review form" />,
 }));
 
-let root: Root | undefined;
-afterEach(() => {
-  act(() => root?.unmount());
-  vi.unstubAllGlobals();
-  document.body.innerHTML = "";
-});
+const render = (node: React.ReactNode) => mount(node, { route: "/" });
 
-function render(node: React.ReactNode) {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  act(() => root?.render(<MemoryRouter>{node}</MemoryRouter>));
-  return container;
-}
-
-test("repository tabs show a skeleton count while loading and no count when it failed", () => {
+test("repository tabs show a skeleton count while loading and no count when it failed", async () => {
   state.drafts = { data: [{}, {}], isError: false };
   state.bookmarks = { data: undefined, isError: false };
   state.versions = { data: undefined, isError: true };
-  const nav = render(<SchemaRepoNav active="overview" schemaId="4" />);
+  const { host: nav } = await render(<SchemaRepoNav active="overview" schemaId="4" />);
   const tab = (label: string) =>
     [...nav.querySelectorAll("a")].find((link) => link.textContent?.startsWith(label))!;
 
@@ -61,8 +45,8 @@ test.each([
   ["loading", { feedbackLoading: true }, true],
   ["failed", { feedbackLoading: false, feedbackError: "Reviews could not be loaded." }, true],
   ["ready", { feedbackLoading: false }, false],
-] as const)("export waits for reviewer answers when they are %s", (_, feedback, blocked) => {
-  render(
+] as const)("export waits for reviewer answers when they are %s", async (_, feedback, blocked) => {
+  await render(
     <SchemaRunExportReviewModal
       open
       runs={[]}
@@ -83,7 +67,7 @@ test.each([
   }
 });
 
-test("switching review runs keeps the previous shell as a skeleton without its form", () => {
+test("switching review runs keeps the previous shell as a skeleton without its form", async () => {
   const version = { formSchema: { fields: [], reports: [] } } as unknown as ReviewSchemaVersionDto;
   const detail = {
     run: { id: "1", name: "Previous run", inputData: {}, results: [] },
@@ -99,13 +83,13 @@ test("switching review runs keeps the previous shell as a skeleton without its f
   );
 
   state.reviewRun = { data: detail, isLoading: false, isPlaceholderData: true };
-  const container = render(panel());
+  const { host: container, rerender } = await render(panel());
   expect(container.querySelector("[data-skeleton]")?.textContent).toContain("Previous run");
   expect(container.querySelector('form[aria-label="review form"]')).toBeNull();
   expect(container.querySelector('[role="status"]')?.textContent).toBe("Loading inference…");
 
   state.reviewRun = { data: detail, isLoading: false, isPlaceholderData: false };
-  act(() => root?.render(<MemoryRouter>{panel()}</MemoryRouter>));
+  await rerender(panel());
   expect(container.querySelector("[data-skeleton]")).toBeNull();
   expect(container.querySelector('form[aria-label="review form"]')).not.toBeNull();
 });

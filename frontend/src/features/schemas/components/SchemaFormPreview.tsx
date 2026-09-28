@@ -18,13 +18,14 @@ import { AppPanel } from "@/shared/ui/AppPanel";
 import { cx } from "@/shared/ui/cx";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import {
   createSchemaPreviewTransport,
   prepareSchemaPreviewReports,
 } from "@/features/schemas/lib/preview-transport";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
-import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
+import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/features/schemas/lib/mlform-split-layout";
 
 type Props = {
@@ -46,7 +47,7 @@ export function SchemaFormPreview({ schema }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [initialTheme] = useState(theme);
   const [mountError, setMountError] = useState<string | null>(null);
-  const catalog = useSchemaPluginCatalog(schema);
+  const catalog = useSchemaPluginCatalog(schema, useCurrentOrganizationId() ?? "none");
   const showCatalogLoading = useStableLoading(catalog.needsPlugins && catalog.status === "loading");
 
   const resolvedSchema = useMemo<ResolvedSchema>(() => {

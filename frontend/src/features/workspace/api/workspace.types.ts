@@ -7,7 +7,6 @@ import type {
   InvitationDto,
   MembershipStatus,
   OrganizationDto,
-  OrganizationRole,
   RoleScope,
   RoleSummaryDto,
   WorkspacePermissionsDto,
@@ -15,8 +14,7 @@ import type {
 
 export interface CreateInvitationRequest {
   email: string;
-  role?: OrganizationRole;
-  roleDefinitionId?: number;
+  roleDefinitionId: number;
 }
 
 export interface CreateOrganizationRequest {
@@ -103,7 +101,6 @@ export interface OrganizationMembershipRowDto {
   email: string;
   avatarUrl?: string | null;
   role: RoleSummaryDto;
-  legacyRole?: OrganizationRole | null;
   status: MembershipStatus;
   createdAt: string;
   actions: MembershipRowActionsDto;

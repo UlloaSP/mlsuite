@@ -20,7 +20,7 @@ export function NotificationInvitationItem({ invitation }: { invitation: Invitat
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-fg">{invitation.organizationName}</p>
           <p className="mt-1 text-xs text-fg-secondary">
-            Invited as {invitation.role.toLowerCase()}
+            Invited as {invitation.roleDefinition.name.toLowerCase()}
           </p>
         </div>
       </div>

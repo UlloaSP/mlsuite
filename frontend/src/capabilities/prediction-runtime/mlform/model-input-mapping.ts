@@ -14,14 +14,7 @@ import type {
 } from "@/capabilities/prediction-runtime/mlform/shared";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 
-/**
- * Reads a literal model key or MLForm's nested representation of that key.
- * @param modelValues Serialized MLForm model values.
- * @param target Exact model feature name.
- * @returns One-item tuple when present; empty tuple when absent.
- * @throws Never.
- * @remarks Literal keys win when both representations exist.
- */
+/** Reads a literal model key or MLForm's nested form of it; the literal key wins. */
 const readModelValue = (modelValues: JsonRecord, target: string): [] | [unknown] => {
   if (Object.hasOwn(modelValues, target)) return [modelValues[target]];
   let value: unknown = modelValues;
@@ -35,14 +28,6 @@ const readModelValue = (modelValues: JsonRecord, target: string): [] | [unknown]
   return [value];
 };
 
-/**
- * applySchemaRunInputMapping: applies a deterministic transformation to the supplied data
- *
- * Purpose: maps schema form values into model-specific analyzer input records.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export const applySchemaRunInputMapping = (
   modelValues: JsonRecord,
   fields: readonly PredictionPayloadField[],

@@ -14,7 +14,6 @@ export const useDeleteInferenceMutation = () => {
   const queryClient = useQueryClient();
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useMutation({
-    meta: { errorHandledLocally: true },
     mutationFn: deleteInference,
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: INFERENCES_QUERY_KEY(organizationId) }),

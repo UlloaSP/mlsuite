@@ -7,9 +7,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Provider, createStore } from "jotai";
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { Route, Routes, useLocation, useNavigate } from "react-router";
+import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { useRecordSectionLocation } from "@/app/components/section-memory";
 import { useNavigationItems } from "@/app/components/use-navigation-items";
 import { signInDestination } from "@/app/pages/auth-landing/sign-in-destination";
@@ -17,6 +16,7 @@ import { WelcomePage } from "@/app/pages/welcome-page";
 import { visitViewState } from "@/app/components/welcome/visit-view-state";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
+import { click, mount, type Mounted } from "./support/dom";
 
 const state = vi.hoisted(() => ({ userId: "ada", canViewModels: true }));
 
@@ -72,20 +72,11 @@ vi.mock("@/features/inferences/api/inference-api", () => ({
   useInferenceReviewAssignments: () => ({ data: undefined }),
 }));
 
-let root: Root;
+let view: Mounted;
 let container: HTMLDivElement;
 beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   Object.assign(state, { userId: "ada", canViewModels: true });
   localStorage.clear();
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-});
-afterEach(async () => {
-  await act(async () => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
 });
 
 /** A page publishing its breadcrumb, with the shell's recorder and a way to move on. */
@@ -111,32 +102,23 @@ function Page({ title, trail }: { title: string; trail?: string }) {
 }
 
 async function renderApp(path: string, store = createStore()) {
-  await act(async () =>
-    root.render(
-      <Provider store={store}>
-        <MemoryRouter initialEntries={[path]}>
-          <BreadcrumbProvider roots={{ organization: { label: "Acme", to: "/workspace" } }}>
-            <Routes>
-              <Route path="/predict/7" element={<Page title="production" trail="Predict" />} />
-              <Route path="/models/3" element={<Page title="Risk forest" trail="Models" />} />
-              <Route path="/plugins" element={<Page title="Plugins" />} />
-              <Route path="/welcome" element={<WelcomePage />} />
-              <Route path="/home" element={<p>Usual home</p>} />
-            </Routes>
-          </BreadcrumbProvider>
-        </MemoryRouter>
-      </Provider>,
-    ),
+  view = await mount(
+    <Provider store={store}>
+      <BreadcrumbProvider roots={{ organization: { label: "Acme", to: "/workspace" } }}>
+        <Routes>
+          <Route path="/predict/7" element={<Page title="production" trail="Predict" />} />
+          <Route path="/models/3" element={<Page title="Risk forest" trail="Models" />} />
+          <Route path="/plugins" element={<Page title="Plugins" />} />
+          <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/home" element={<p>Usual home</p>} />
+        </Routes>
+      </BreadcrumbProvider>
+    </Provider>,
+    { route: path },
   );
+  container = view.host;
   return store;
 }
-
-const click = (label: string) =>
-  act(async () =>
-    [...container.querySelectorAll("button")]
-      .find((button) => button.textContent === label)!
-      .click(),
-  );
 
 test("signing in greets with where the member left off; new accounts and expired sessions don't", () => {
   expect(signInDestination("login", null)).toBe("/welcome");
@@ -156,10 +138,9 @@ test("the welcome page opens one tab per section, most recent first, with what t
   vi.setSystemTime(new Date("2026-09-28T10:00:00Z"));
   const store = await renderApp("/models/3?sort=name&page=2");
   vi.setSystemTime(new Date("2026-09-28T11:00:00Z"));
-  await act(async () => root.unmount());
-  root = createRoot(container);
+  await view.unmount();
   await renderApp("/predict/7", store);
-  await click("welcome");
+  await click("welcome", container);
   vi.useRealTimers();
 
   expect(container.querySelector("h1")?.textContent).toBe("Welcome back, Ada");
@@ -174,7 +155,9 @@ test("the welcome page opens one tab per section, most recent first, with what t
   expect(panel().textContent).toContain("Forest, Boost +1");
   expect(continueHref()).toBe("/predict/7");
 
-  await act(async () => tabs()[1].click());
+  await act(async () => {
+    tabs()[1].dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+  });
   expect(panel().querySelector("h2")?.textContent).toBe("Risk forest");
   // The model's own facts, and the view the page was left in.
   expect(panel().textContent).toContain("RandomForestClassifier");
@@ -184,11 +167,7 @@ test("the welcome page opens one tab per section, most recent first, with what t
   expect(panel().textContent).toMatch(/Page\s2/);
   expect(continueHref()).toBe("/models/3?sort=name&page=2");
 
-  await act(async () =>
-    container
-      .querySelector<HTMLButtonElement>('[aria-label="Forget where you were in Models"]')!
-      .click(),
-  );
+  await click(container.querySelector('[aria-label="Forget where you were in Models"]')!);
   expect(tabs().map((tab) => tab.textContent)).toEqual(["production"]);
 });
 
@@ -206,19 +185,17 @@ test("the saved view reads as labelled choices, leaving out ids and plumbing", (
 
 test("another member, or a section the member lost access to, has nothing to resume", async () => {
   const store = await renderApp("/models/3");
-  await click("welcome");
+  await click("welcome", container);
   expect(tabs()).toHaveLength(1);
 
   state.canViewModels = false;
-  await act(async () => root.unmount());
-  root = createRoot(container);
+  await view.unmount();
   await renderApp("/welcome", store);
   expect(container.textContent).toContain("Usual home");
 
   state.canViewModels = true;
   state.userId = "grace";
-  await act(async () => root.unmount());
-  root = createRoot(container);
+  await view.unmount();
   await renderApp("/welcome", store);
   expect(container.textContent).toContain("Usual home");
 });

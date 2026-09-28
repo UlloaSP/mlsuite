@@ -7,6 +7,7 @@ import { AppSelect } from "@/shared/ui/AppSelect";
 import { cx } from "@/shared/ui/cx";
 import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
 import { FIELD_FOCUS_RING } from "@/shared/ui/focus-ring";
+import { downloadTextFile } from "@/shared/lib/download-text-file";
 
 type Props = {
   services: ServiceStatusDto[];
@@ -22,7 +23,7 @@ export function LogsView({
   services,
   selectedService,
   logLines,
-  streamConnected: _streamConnected,
+  streamConnected,
   onSelectService,
 }: Props) {
   const [query, setQuery] = useState("");
@@ -51,6 +52,17 @@ export function LogsView({
     return true;
   });
 
+  const exportVisibleLines = () =>
+    downloadTextFile(
+      filtered.map((line) => line.text).join("\n"),
+      `${selectedService ?? "service"}-logs.txt`,
+    );
+  const tail = !streamConnected
+    ? { tone: "warning" as const, dot: "bg-warning-fg", label: "Stream disconnected" }
+    : follow
+      ? { tone: "success" as const, dot: "bg-success-fg", label: "Live tail" }
+      : { tone: "neutral" as const, dot: "bg-fg-muted", label: "Paused" };
+
   useEffect(() => {
     if (follow && termRef.current) {
       termRef.current.scrollTop = termRef.current.scrollHeight;
@@ -67,7 +79,11 @@ export function LogsView({
         description={`${filtered.length} of ${logLines.length} lines · multi-service tail with live filtering.`}
         actions={
           <>
-            <AppButton variant="secondary">
+            <AppButton
+              variant="secondary"
+              disabled={filtered.length === 0}
+              onClick={exportVisibleLines}
+            >
               <Download size={15} /> Export
             </AppButton>
             <AppButton
@@ -130,14 +146,9 @@ export function LogsView({
             ))}
           </div>
           <div className="flex-1" />
-          <AppBadge tone={follow ? "success" : "neutral"}>
-            <span
-              className={cx(
-                "inline-block size-1.5 rounded-full",
-                follow ? "bg-success-fg" : "bg-fg-muted",
-              )}
-            />
-            {follow ? "Live tail" : "Paused"}
+          <AppBadge tone={tail.tone}>
+            <span className={cx("inline-block size-1.5 rounded-full", tail.dot)} />
+            {tail.label}
           </AppBadge>
         </div>
 

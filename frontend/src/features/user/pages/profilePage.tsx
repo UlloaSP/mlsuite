@@ -42,7 +42,7 @@ export function ProfilePage() {
                   {workspace.memberships.length === 1 ? "membership" : "memberships"}
                 </p>
               </div>
-              <AppBadge tone="accent">{workspace.currentMembership.role}</AppBadge>
+              <AppBadge tone="accent">{workspace.currentMembership.roleDefinition.name}</AppBadge>
             </div>
           </AppPanel>
         ) : null}

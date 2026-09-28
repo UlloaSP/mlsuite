@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReportContext } from "mlform/schema";
 import { isRecord, type JsonRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
-import { schemaRunDebug } from "@/capabilities/prediction-runtime/mlform/run-debug";
 
 type ReportState = { status?: string; payload?: unknown; error?: unknown };
 
@@ -101,12 +100,10 @@ export const buildSchemaRunRawFromSubmitResult = (
     );
   });
 
-  const next = {
+  return {
     raw: { ...raw, reports, results },
     reportsPending: hasPendingReports(formReports, reportStates),
   };
-  schemaRunDebug("result-state.done", next);
-  return next;
 };
 
 export const reportStatesFromSnapshot = (value: unknown): Record<string, ReportState> =>

@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useAtom } from "jotai";
 import { Calendar, Fullscreen, Languages, Mail, MapPin, Plane, SunMoon, User } from "lucide-react";
-import { themeAtom } from "@/shared/ui/appearance-state";
+import { themeModeAtom } from "@/shared/ui/appearance-state";
 import { fullscreenAtom } from "@/shared/ui/ui-state";
 import type { UserDTO } from "@/capabilities/workspace-context/session-api";
 import { InfoCard } from "./InfoCard";
@@ -15,7 +15,7 @@ export type ProfileBodyProps = {
 };
 
 export function ProfileBody({ user }: ProfileBodyProps) {
-  const [theme] = useAtom(themeAtom);
+  const [theme] = useAtom(themeModeAtom);
   const [screen] = useAtom(fullscreenAtom);
 
   return (

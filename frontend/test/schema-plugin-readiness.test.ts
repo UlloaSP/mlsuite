@@ -8,7 +8,7 @@ import { defineReportKind } from "mlform/kit";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const stringMeta = (value: unknown): string =>
   typeof value === "string" || typeof value === "number" ? String(value) : "";

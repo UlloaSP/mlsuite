@@ -1,8 +1,7 @@
 import { Send } from "lucide-react";
-import { useRef, useState } from "react";
-import { formatTimestamp } from "@/capabilities/prediction-runtime/data/model-utils";
-import { useReviewTrayLayout } from "@/features/reviews/lib/use-review-tray-layout";
+import { useState } from "react";
 import { ReviewPredictionTrayGroup } from "@/features/reviews/components/ReviewPredictionTrayGroup";
+import { ReviewTrayRow } from "@/features/reviews/components/ReviewTrayRow";
 import type { SchemaReviewRunListItemDto } from "@/features/reviews/api/review-types";
 import { AppButton } from "@/shared/ui/AppButton";
 
@@ -19,18 +18,6 @@ type Props = {
   onSubmitRevision: (items: ReviewRailItem[]) => void;
 };
 
-const rowClass = (active: boolean, tone: "revision" | "pending") =>
-  `relative w-full border-b border-line px-3 py-3 text-left transition last:border-b-0 ${
-    active
-      ? tone === "revision"
-        ? "bg-success-subtle"
-        : "bg-warning-subtle"
-      : "bg-surface hover:bg-surface-muted"
-  }`;
-
-const statusDot = (tone: "revision" | "pending") =>
-  tone === "revision" ? "bg-success" : "bg-warning";
-
 export function SchemaReviewRunRail({
   items,
   selectedReviewRunId,
@@ -38,34 +25,13 @@ export function SchemaReviewRunRail({
   onSelect,
   onSubmitRevision,
 }: Props) {
-  const [revisionOpen, setRevisionOpen] = useState(true);
-  const [pendingOpen, setPendingOpen] = useState(true);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const revisionSectionRef = useRef<HTMLElement>(null);
-  const revisionHeaderRef = useRef<HTMLDivElement>(null);
-  const revisionListRef = useRef<HTMLDivElement>(null);
-  const pendingSectionRef = useRef<HTMLElement>(null);
-  const pendingHeaderRef = useRef<HTMLDivElement>(null);
-  const pendingListRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState({ revision: true, pending: true });
   const revision = items.filter((item) => item.reviewState === "IN_PROGRESS");
   const pending = items.filter((item) => item.reviewState === "PENDING");
-  const listHeights = useReviewTrayLayout({
-    bodyRef,
-    revision: {
-      open: revisionOpen,
-      count: revision.length,
-      sectionRef: revisionSectionRef,
-      headerRef: revisionHeaderRef,
-      listRef: revisionListRef,
-    },
-    pending: {
-      open: pendingOpen,
-      count: pending.length,
-      sectionRef: pendingSectionRef,
-      headerRef: pendingHeaderRef,
-      listRef: pendingListRef,
-    },
-  });
+  const groups = [
+    { tone: "revision", title: "Revision", subtitle: "Saved and ready to send", items: revision },
+    { tone: "pending", title: "Pending", subtitle: "Needs feedback", items: pending },
+  ] as const;
 
   return (
     <aside className="flex min-h-0 flex-col rounded-card border border-line bg-surface p-5 xl:overflow-hidden">
@@ -90,80 +56,31 @@ export function SchemaReviewRunRail({
           Complete review ({revision.length})
         </AppButton>
       </div>
-      <div
-        ref={bodyRef}
-        className="mt-5 flex flex-col gap-5 xl:min-h-0 xl:flex-1 xl:overflow-hidden"
-      >
-        <ReviewPredictionTrayGroup
-          title="Revision"
-          subtitle="Saved and ready to send"
-          count={revision.length}
-          tone="revision"
-          open={revisionOpen}
-          listHeight={listHeights.revision}
-          sectionRef={revisionSectionRef}
-          headerRef={revisionHeaderRef}
-          listRef={revisionListRef}
-          onToggle={() => setRevisionOpen((value) => !value)}
-        >
-          {revision.map((item) => {
-            const active = item.publicId === selectedReviewRunId;
-            const enteredAt = item.stateEnteredAt ?? item.run.createdAt;
-            return (
-              <button
+      {/* Beside the review (xl) the tray has a bounded height. Each group grows to its content;
+          when both overflow, the grid shares the free space equally and a group that needs less
+          than half keeps its natural height while the other takes the rest. */}
+      <div className="mt-5 grid content-start gap-5 xl:min-h-0 xl:flex-1 xl:grid-rows-[minmax(0,max-content)_minmax(0,max-content)] xl:overflow-hidden">
+        {groups.map((group) => (
+          <ReviewPredictionTrayGroup
+            key={group.tone}
+            title={group.title}
+            subtitle={group.subtitle}
+            count={group.items.length}
+            tone={group.tone}
+            open={open[group.tone]}
+            onToggle={() => setOpen((value) => ({ ...value, [group.tone]: !value[group.tone] }))}
+          >
+            {group.items.map((item) => (
+              <ReviewTrayRow
                 key={item.publicId}
-                type="button"
-                onClick={() => onSelect(item)}
-                className={rowClass(active, "revision")}
-              >
-                <span className="block truncate pr-5 text-sm font-semibold text-fg">
-                  {item.schemaName} · {item.run.name}
-                </span>
-                <span className="mt-1.5 block text-xs text-fg-secondary">
-                  Feedback saved · {formatTimestamp(enteredAt)}
-                </span>
-                <span
-                  className={`absolute right-3 top-1/2 size-2.5 -translate-y-1/2 rounded-full ${statusDot("revision")}`}
-                />
-              </button>
-            );
-          })}
-        </ReviewPredictionTrayGroup>
-        <ReviewPredictionTrayGroup
-          title="Pending"
-          subtitle="Needs feedback"
-          count={pending.length}
-          tone="pending"
-          open={pendingOpen}
-          listHeight={listHeights.pending}
-          sectionRef={pendingSectionRef}
-          headerRef={pendingHeaderRef}
-          listRef={pendingListRef}
-          onToggle={() => setPendingOpen((value) => !value)}
-        >
-          {pending.map((item) => {
-            const active = item.publicId === selectedReviewRunId;
-            const enteredAt = item.stateEnteredAt ?? item.run.createdAt;
-            return (
-              <button
-                key={item.publicId}
-                type="button"
-                onClick={() => onSelect(item)}
-                className={rowClass(active, "pending")}
-              >
-                <span className="block truncate pr-5 text-sm font-semibold text-fg">
-                  {item.schemaName} · {item.run.name}
-                </span>
-                <span className="mt-1.5 block text-xs text-fg-secondary">
-                  Entered pending · {formatTimestamp(enteredAt)}
-                </span>
-                <span
-                  className={`absolute right-3 top-1/2 size-2.5 -translate-y-1/2 rounded-full ${statusDot("pending")}`}
-                />
-              </button>
-            );
-          })}
-        </ReviewPredictionTrayGroup>
+                item={item}
+                tone={group.tone}
+                active={item.publicId === selectedReviewRunId}
+                onSelect={() => onSelect(item)}
+              />
+            ))}
+          </ReviewPredictionTrayGroup>
+        ))}
       </div>
     </aside>
   );

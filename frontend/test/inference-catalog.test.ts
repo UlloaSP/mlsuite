@@ -179,7 +179,7 @@ describe("organization inference catalog", () => {
 
   test("registers catalog and canonical detail as protected Inferences destinations", () => {
     const routes = readFileSync(
-      new URL("../src/app/router/inference-routes.ts", import.meta.url),
+      new URL("../src/app/router/protected-routes.ts", import.meta.url),
       "utf8",
     );
     const sidebar = readFileSync(
@@ -187,8 +187,8 @@ describe("organization inference catalog", () => {
       "utf8",
     );
 
-    expect(routes).toContain('path: "inferences"');
-    expect(routes).toContain('path: "inferences/:inferenceId"');
+    expect(routes).toContain('page("inferences", ');
+    expect(routes).toContain('page("inferences/:inferenceId", ');
     expect(routes).toContain('import("@/app/pages/InferencesRoutePage")');
     expect(routes).toContain('import("@/app/pages/InferenceDetailRoutePage")');
     expect(sidebar).toContain('to: "/inferences"');

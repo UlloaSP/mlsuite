@@ -1,17 +1,16 @@
 // @vitest-environment jsdom
 
 import { act, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { UserGuideButton } from "@/app/components/UserGuideButton";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
-import { SidebarMenu } from "@/app/components/app-sidebar/SidebarMenu";
 import {
   availableUserGuideSteps,
   destroyUserGuide,
   shortcutMarkup,
   startUserGuide,
 } from "@/app/user-guide/user-guide";
+import { mount } from "./support/dom";
 
 const driverMocks = vi.hoisted(() => ({
   configs: [] as Array<Record<string, unknown>>,
@@ -53,25 +52,18 @@ function Harness({ includeTargets = true }: { includeTargets?: boolean }) {
           </div>
         </>
       ) : null}
-      <SidebarMenu>
+      <ul className="grid gap-1">
         <UserGuideButton />
-      </SidebarMenu>
+      </ul>
     </SidebarProvider>
   );
 }
 
 describe("user guide", () => {
-  let container: HTMLDivElement;
-  let root: Root;
-
   beforeEach(() => {
     driverMocks.configs.length = 0;
     driverMocks.instances.length = 0;
     driverMocks.failDrive = false;
-    container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       callback(0);
       return 1;
@@ -86,15 +78,13 @@ describe("user guide", () => {
     );
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     destroyUserGuide();
-    await act(async () => root.unmount());
-    container.remove();
     vi.unstubAllGlobals();
   });
 
   it("expands the desktop sidebar, filters missing targets, then restores state and focus", async () => {
-    await act(async () => root.render(<Harness />));
+    const { host: container } = await mount(<Harness />);
     const button = container.querySelector<HTMLButtonElement>("button")!;
     button.focus();
 
@@ -142,7 +132,7 @@ describe("user guide", () => {
   });
 
   it("restores sidebar and focus without starting when every target is absent", async () => {
-    await act(async () => root.render(<Harness includeTargets={false} />));
+    const { host: container } = await mount(<Harness includeTargets={false} />);
     const button = container.querySelector<HTMLButtonElement>("button")!;
     button.removeAttribute("data-user-guide-item");
     button.focus();
@@ -160,7 +150,7 @@ describe("user guide", () => {
 
   it("cleans up when Driver fails to start", async () => {
     driverMocks.failDrive = true;
-    await act(async () => root.render(<Harness />));
+    const { host: container } = await mount(<Harness />);
     const button = container.querySelector<HTMLButtonElement>("button")!;
     button.focus();
 

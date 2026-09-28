@@ -25,8 +25,8 @@ export function SidebarTrigger({
   side = "right",
   ...props
 }: SidebarTriggerProps) {
-  const { state, isMobile, openMobile, toggleSidebar } = useSidebar();
-  const expanded = isMobile ? openMobile : state === "expanded";
+  const { collapsed, isMobile, openMobile, toggleSidebar } = useSidebar();
+  const expanded = isMobile ? openMobile : !collapsed;
   const Icon =
     side === "left"
       ? !expanded

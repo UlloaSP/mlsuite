@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
-import type { SchemaSourceModel, SelectedSchemaModel } from "@/features/schemas/lib/merge";
+import type { SchemaSourceModel } from "@/features/schemas/lib/merge";
 import { hasModelSchema } from "@/features/schemas/lib/schema-model-selection";
 import { SchemaModelOption } from "@/features/schemas/components/SchemaModelOption";
 import { AppBadge } from "@/shared/ui/AppBadge";
@@ -22,8 +22,8 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 type Props = {
   isLoading: boolean;
   models: SchemaSourceModel[];
-  value: SelectedSchemaModel[];
-  onChange: (value: SelectedSchemaModel[]) => void;
+  value: SchemaSourceModel[];
+  onChange: (value: SchemaSourceModel[]) => void;
 };
 
 const matches = (model: SchemaSourceModel, query: string) =>
@@ -39,15 +39,15 @@ export function SchemaModelPicker({ isLoading, models, value, onChange }: Props)
   );
   const pagination = useClientCatalogPage(filtered, normalized, isLoading);
   const showLoading = useStableLoading(isLoading);
-  const selectedIds = new Set(value.map((item) => String(item.modelId)));
+  const selectedIds = new Set(value.map((item) => String(item.id)));
 
   const toggle = (model: SchemaSourceModel) => {
     if (!hasModelSchema(model)) return;
     if (selectedIds.has(String(model.id))) {
-      onChange(value.filter((item) => String(item.modelId) !== String(model.id)));
+      onChange(value.filter((item) => String(item.id) !== String(model.id)));
       return;
     }
-    onChange([...value, { modelId: model.id, modelName: model.name, model }]);
+    onChange([...value, model]);
   };
 
   return (

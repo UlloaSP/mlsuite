@@ -1,7 +1,7 @@
 import { serviceHealthCategory } from "@/features/infrastructure/lib/status";
 import { ChevronRight } from "lucide-react";
 import { countHealthyServices } from "@/features/infrastructure/lib/dashboard-summary";
-import { formatBytes } from "@/features/infrastructure/lib/formatters";
+import { formatBytes } from "@/shared/lib/format-bytes";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
 import { CountCell } from "./CountCell";
 import { MemoryBar } from "./MemoryBar";

@@ -21,7 +21,7 @@ import {
   type InspectedBundleFile,
 } from "@/features/models/lib/bundle-planner";
 import type { Bundle } from "@/features/models/lib/bundle-types";
-import { saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
+import { isBundleSaveable, saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
 import {
   ALL_EXTS,
   DF_EXTS,
@@ -114,12 +114,14 @@ export function CreateModelPage() {
 
   const removeBundle = (id: number) => setBundles((prev) => prev.filter((b) => b.id !== id));
 
-  const setBundleName = (id: number, value: string) =>
-    setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, name: value } : b)));
-
-  const setBundleOneHotSeparator = (id: number, value: string) =>
+  const patchBundle = (
+    id: number,
+    changes: Partial<Bundle> | ((bundle: Bundle) => Partial<Bundle>),
+  ) =>
     setBundles((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, oneHotSeparator: value, saved: false } : b)),
+      prev.map((b) =>
+        b.id === id ? { ...b, ...(typeof changes === "function" ? changes(b) : changes) } : b,
+      ),
     );
 
   const attachFileToBundle = async (bundleId: number, file: File, kind: "model" | "dataframe") => {
@@ -130,52 +132,34 @@ export function CreateModelPage() {
       emitErrorFromUnknown(error);
       return;
     }
-    setBundles((prev) =>
-      prev.map((b) =>
-        b.id !== bundleId
-          ? b
-          : kind === "model"
-            ? {
-                ...b,
-                modelFile: file,
-                name: b.name.trim() ? b.name : slugToTitle(getStem(file.name)),
-                saved: false,
-              }
-            : { ...b, dfFile: file, saved: false },
-      ),
+    patchBundle(bundleId, (b) =>
+      kind === "model"
+        ? {
+            modelFile: file,
+            name: b.name.trim() ? b.name : slugToTitle(getStem(file.name)),
+            saved: false,
+          }
+        : { dfFile: file, saved: false },
     );
   };
 
-  const attachModel = (bundleId: number) => {
+  const pickFile = (bundleId: number, kind: "model" | "dataframe") => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = MODEL_EXTS.join(",");
-    input.onchange = async (e) => {
-      const files = Array.from((e.target as HTMLInputElement).files ?? []);
-      if (!files.length) return;
-      await attachFileToBundle(bundleId, files[0], "model");
-    };
-    input.click();
-  };
-
-  const attachDf = (bundleId: number) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = DF_EXTS.join(",");
-    input.onchange = async (e) => {
-      const files = Array.from((e.target as HTMLInputElement).files ?? []);
-      if (!files.length) return;
-      await attachFileToBundle(bundleId, files[0], "dataframe");
+    input.accept = (kind === "model" ? MODEL_EXTS : DF_EXTS).join(",");
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (file) void attachFileToBundle(bundleId, file, kind);
     };
     input.click();
   };
 
   const saveBundle = async (id: number, options: { navigateWhenComplete?: boolean } = {}) => {
     const bundle = bundles.find((b) => b.id === id);
-    if (!bundle?.modelFile || !bundle.name.trim() || bundle.saved || bundle.saving) return false;
+    if (!bundle?.modelFile || !isBundleSaveable(bundle)) return false;
     const hasOtherUnsaved = bundles.some((b) => b.id !== id && !b.saved);
 
-    setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, saving: true } : b)));
+    patchBundle(id, { saving: true });
     try {
       await mutation.mutateAsync({
         name: bundle.name.trim(),
@@ -183,15 +167,13 @@ export function CreateModelPage() {
         dataframeFile: bundle.dfFile ?? undefined,
         oneHotSeparator: bundle.oneHotSeparator,
       });
-      setBundles((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, saved: true, saving: false } : b)),
-      );
+      patchBundle(id, { saved: true, saving: false });
       if (options.navigateWhenComplete !== false && !hasOtherUnsaved) {
         void navigate("/models");
       }
       return true;
     } catch {
-      setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, saving: false } : b)));
+      patchBundle(id, { saving: false });
       return false;
     }
   };
@@ -210,9 +192,7 @@ export function CreateModelPage() {
   const total = bundles.length;
   const withDf = bundles.filter((b) => b.dfFile).length;
   const saved = bundles.filter((b) => b.saved).length;
-  const unsavedReady = bundles.filter(
-    (b) => b.modelFile && b.name.trim() && !b.saved && !b.saving,
-  ).length;
+  const unsavedReady = bundles.filter(isBundleSaveable).length;
   const anySaving = bundles.some((b) => b.saving);
 
   if (!user || error) return <NotFoundError />;
@@ -259,10 +239,12 @@ export function CreateModelPage() {
                     bundle={bundle}
                     onSave={() => saveBundle(bundle.id)}
                     onRemove={() => removeBundle(bundle.id)}
-                    onRename={(v) => setBundleName(bundle.id, v)}
-                    onOneHotSeparatorChange={(v) => setBundleOneHotSeparator(bundle.id, v)}
-                    onAttachModel={() => attachModel(bundle.id)}
-                    onAttachDf={() => attachDf(bundle.id)}
+                    onRename={(name) => patchBundle(bundle.id, { name })}
+                    onOneHotSeparatorChange={(oneHotSeparator) =>
+                      patchBundle(bundle.id, { oneHotSeparator, saved: false })
+                    }
+                    onAttachModel={() => pickFile(bundle.id, "model")}
+                    onAttachDf={() => pickFile(bundle.id, "dataframe")}
                     onDropModel={(file) => void attachFileToBundle(bundle.id, file, "model")}
                     onDropDf={(file) => void attachFileToBundle(bundle.id, file, "dataframe")}
                   />

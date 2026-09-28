@@ -8,7 +8,7 @@ import { type ReactNode, useMemo } from "react";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppSkeletonScope } from "@/shared/ui/AppSkeletonScope";
-import { AppTabs } from "@/shared/ui/AppTabs";
+import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import {
   usePredictionRun,
   usePredictionRunFeedback,
@@ -21,8 +21,9 @@ import { schemaFeedbackStatus } from "@/capabilities/prediction-runtime/feedback
 import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { getVisibleSchemaInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
-import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
+import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
 
 const DETAIL_TABS = ["inputs", "outputs", "reviews"] as const;
@@ -56,12 +57,15 @@ export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
   const { data: version, isError: versionError } = useSchemaVersion(run?.schemaVersionId);
   // The run is read against the snapshot it ran on, not the bookmark's current one.
   const executableVersion = useMemo(
-    () => (version ? prepareSchemaVersionDtoForUse(version) : undefined),
+    () => (version ? toExecutableSchemaVersion(version) : undefined),
     [version],
   );
   const runFeedback = usePredictionRunFeedback(run);
   const [tab, setTab] = useSearchParamState<DetailTab>("tab", "inputs", DETAIL_TABS);
-  const catalog = useSchemaPluginCatalog(executableVersion?.formSchema);
+  const catalog = useSchemaPluginCatalog(
+    executableVersion?.formSchema,
+    useCurrentOrganizationId() ?? "none",
+  );
   const questionnaireError = questionnaireConfigError(executableVersion?.formSchema);
   const feedbackSteps = useMemo(() => {
     if (!run || !executableVersion || questionnaireError) return [];
@@ -114,24 +118,28 @@ export function PredictionRunDetails({ runId, bookmarkName, reviews }: Props) {
           bookmarkName={bookmarkName ?? "None"}
         />
       </AppSkeletonScope>
-      <AppTabs items={detailTabs} value={tab} onChange={setTab} />
-      <div role="tabpanel" aria-label={`${tab} details`} className="flex min-h-0 flex-1 flex-col">
-        {tab === "inputs" ? (
-          <ScrollPanel>
-            <SchemaRunInputsPanel schema={executableVersion.formSchema} inputData={run.inputData} />
-          </ScrollPanel>
-        ) : null}
-        {tab === "outputs" ? (
-          <ScrollPanel>
-            <SchemaRunReportsPanel
-              version={executableVersion}
-              results={run.results}
-              customReportDefinitions={catalog.data.reportDefinitions}
-            />
-          </ScrollPanel>
-        ) : null}
-        {tab === "reviews" ? reviews?.content : null}
-      </div>
+      <AppTabs items={detailTabs} value={tab} onChange={setTab}>
+        <AppTabPanel value={tab} className="flex min-h-0 flex-1 flex-col">
+          {tab === "inputs" ? (
+            <ScrollPanel>
+              <SchemaRunInputsPanel
+                schema={executableVersion.formSchema}
+                inputData={run.inputData}
+              />
+            </ScrollPanel>
+          ) : null}
+          {tab === "outputs" ? (
+            <ScrollPanel>
+              <SchemaRunReportsPanel
+                version={executableVersion}
+                results={run.results}
+                customReportDefinitions={catalog.data.reportDefinitions}
+              />
+            </ScrollPanel>
+          ) : null}
+          {tab === "reviews" ? reviews?.content : null}
+        </AppTabPanel>
+      </AppTabs>
     </>
   );
 }

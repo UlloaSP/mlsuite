@@ -1,14 +1,10 @@
 import { useState } from "react";
-import type { AdminUser } from "@/features/admin/api/admin-user.types";
+import { SYSTEM_ROLE_OPTIONS, type AdminUser } from "@/features/admin/api/admin-user.types";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppSelect } from "@/shared/ui/AppSelect";
 
 type Role = AdminUser["systemRole"];
-const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
-  { value: "USER", label: "User" },
-  { value: "SUPERADMIN", label: "Superadmin" },
-];
 
 export function ChangeRoleDialog({
   disabled,
@@ -52,7 +48,7 @@ export function ChangeRoleDialog({
         value={role}
         onValueChange={(value) => setRole(value as Role)}
         className="w-full"
-        options={ROLE_OPTIONS}
+        options={SYSTEM_ROLE_OPTIONS}
       />
     </AppDialog>
   );

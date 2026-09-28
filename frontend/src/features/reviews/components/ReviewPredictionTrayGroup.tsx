@@ -1,5 +1,5 @@
 import { ChevronUp } from "lucide-react";
-import type { CSSProperties, ReactNode, RefObject } from "react";
+import type { ReactNode } from "react";
 
 type ReviewPredictionTrayGroupProps = {
   title: string;
@@ -7,10 +7,6 @@ type ReviewPredictionTrayGroupProps = {
   count: number;
   tone: "revision" | "pending";
   open: boolean;
-  listHeight: number;
-  sectionRef: RefObject<HTMLElement | null>;
-  headerRef: RefObject<HTMLDivElement | null>;
-  listRef: RefObject<HTMLDivElement | null>;
   onToggle: () => void;
   children: ReactNode;
 };
@@ -21,10 +17,6 @@ export function ReviewPredictionTrayGroup({
   count,
   tone,
   open,
-  listHeight,
-  sectionRef,
-  headerRef,
-  listRef,
   onToggle,
   children,
 }: ReviewPredictionTrayGroupProps) {
@@ -33,8 +25,8 @@ export function ReviewPredictionTrayGroup({
     tone === "revision" ? "bg-success-subtle text-success-fg" : "bg-warning-subtle text-warning-fg";
 
   return (
-    <section ref={sectionRef} className="shrink-0 border-b border-line pb-4 last:border-b-0">
-      <div ref={headerRef} className="flex shrink-0 items-center gap-3">
+    <section className="flex flex-col border-b border-line pb-4 last:border-b-0 xl:min-h-0">
+      <div className="flex shrink-0 items-center gap-3">
         <span className={`size-2.5 rounded-full ${dotColor}`} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-fg">{title}</p>
@@ -53,16 +45,7 @@ export function ReviewPredictionTrayGroup({
           <ChevronUp size={14} className={open ? "" : "rotate-180"} />
         </button>
       </div>
-      {open && count > 0 ? (
-        <div
-          ref={listRef}
-          // The tray only has a bounded height beside the review (xl); below that lists grow.
-          className="mt-3 overflow-y-auto xl:max-h-(--tray-list-height)"
-          style={{ "--tray-list-height": `${listHeight}px` } as CSSProperties}
-        >
-          {children}
-        </div>
-      ) : null}
+      {open && count > 0 ? <div className="mt-3 overflow-y-auto xl:min-h-0">{children}</div> : null}
     </section>
   );
 }

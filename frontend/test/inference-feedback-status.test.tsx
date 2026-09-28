@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { InferenceFeedbackStatuses } from "@/features/schemas/components/InferenceFeedbackStatuses";
 import { FeedbackStatusBadge } from "@/capabilities/prediction-runtime/feedback/FeedbackStatusBadge";
 import { PREDICTION_FEEDBACK_QUERY_KEY } from "@/features/schemas/api/schema-keys";
+import { mount } from "./support/dom";
 
 const api = vi.hoisted(() => ({ run: vi.fn(), version: vi.fn(), feedback: vi.fn() }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -21,7 +21,6 @@ vi.mock("@/features/schemas/api/schema-prediction-api", async (original) => ({
   getPredictionRunsFeedback: api.feedback,
 }));
 let host: HTMLDivElement;
-let root: Root;
 let client: QueryClient;
 const items = [
   { id: "1", schemaVersionId: "v1" },
@@ -61,36 +60,27 @@ const saved = (id: string) => ({
 });
 
 beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  host = document.createElement("div");
-  document.body.append(host);
-  root = createRoot(host);
   client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
   api.run.mockReset().mockImplementation(async (id) => run(id));
   api.version.mockReset().mockResolvedValue(version);
   api.feedback.mockReset().mockResolvedValue([]);
 });
-afterEach(async () => {
-  await act(async () => root.unmount());
+afterEach(() => {
   client.clear();
-  host.remove();
 });
 async function render() {
-  await act(async () =>
-    root.render(
-      <QueryClientProvider client={client}>
-        <InferenceFeedbackStatuses items={items}>
-          {(statuses) =>
-            items.map((item) => (
-              <div key={item.id} data-run={item.id}>
-                <FeedbackStatusBadge status={statuses.get(item.id)} />
-              </div>
-            ))
-          }
-        </InferenceFeedbackStatuses>
-      </QueryClientProvider>,
-    ),
-  );
+  ({ host } = await mount(
+    <InferenceFeedbackStatuses items={items}>
+      {(statuses) =>
+        items.map((item) => (
+          <div key={item.id} data-run={item.id}>
+            <FeedbackStatusBadge status={statuses.get(item.id)} />
+          </div>
+        ))
+      }
+    </InferenceFeedbackStatuses>,
+    { queryClient: client },
+  ));
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });

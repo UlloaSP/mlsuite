@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { matchPath } from "react-router";
 import { BookmarkVisitFacts } from "./BookmarkVisitFacts";
 import { InferenceVisitFacts } from "./InferenceVisitFacts";
 import { InferencesCatalogFacts } from "./facts/InferencesCatalogFacts";
@@ -23,27 +24,33 @@ import { UsersFacts } from "./facts/UsersFacts";
  * catalog holds. Paths with nothing better to say render nothing.
  */
 export function PageFacts({ path }: { path: string }) {
-  const match = (pattern: RegExp) => pattern.exec(path);
-  let found: RegExpExecArray | null;
+  const at = (pattern: string) => matchPath(pattern, path)?.params;
+  const bookmark = at("/predict/:bookmarkId");
+  const model = at("/models/:modelId");
+  const draft = at("/schemas/:schemaId/drafts/:draftId/*");
+  const version = at("/schemas/:schemaId/versions/:versionId");
+  const schema = at("/schemas/:schemaId/*");
+  const inference = at("/inferences/:inferenceId/*");
+  const review =
+    at("/review") ?? at("/review/:reviewId") ?? at("/review/:reviewId/runs/:reviewRunId");
 
   if (path === "/predict") return <PredictCatalogFacts />;
-  if ((found = match(/^\/predict\/([^/]+)$/))) return <BookmarkVisitFacts bookmarkId={found[1]} />;
+  if (bookmark?.bookmarkId) return <BookmarkVisitFacts bookmarkId={bookmark.bookmarkId} />;
   if (path === "/models") return <ModelsCatalogFacts />;
-  if ((found = match(/^\/models\/(?!create$)([^/]+)$/))) return <ModelFacts modelId={found[1]} />;
+  if (model?.modelId && model.modelId !== "create") return <ModelFacts modelId={model.modelId} />;
   if (path === "/schemas") return <SchemasCatalogFacts />;
-  if ((found = match(/^\/schemas\/(?!create$)([^/]+)\/drafts\/([^/]+)/))) {
-    return <SchemaFacts schemaId={found[1]} draftId={found[2]} />;
+  if (draft?.schemaId && draft.schemaId !== "create") {
+    return <SchemaFacts schemaId={draft.schemaId} draftId={draft.draftId} />;
   }
-  if ((found = match(/^\/schemas\/(?!create$)([^/]+)\/versions\/([^/]+)$/))) {
-    return <SchemaFacts schemaId={found[1]} versionId={found[2]} />;
+  if (version?.schemaId && version.schemaId !== "create") {
+    return <SchemaFacts schemaId={version.schemaId} versionId={version.versionId} />;
   }
-  if ((found = match(/^\/schemas\/(?!create$)([^/]+)/))) return <SchemaFacts schemaId={found[1]} />;
+  if (schema?.schemaId && schema.schemaId !== "create") {
+    return <SchemaFacts schemaId={schema.schemaId} />;
+  }
   if (path === "/inferences") return <InferencesCatalogFacts />;
-  if ((found = match(/^\/inferences\/([^/]+)/)))
-    return <InferenceVisitFacts inferenceId={found[1]} />;
-  if ((found = match(/^\/review(?:\/([^/]+))?(?:\/runs\/([^/]+))?$/))) {
-    return <ReviewFacts reviewId={found[1]} reviewRunId={found[2]} />;
-  }
+  if (inference?.inferenceId) return <InferenceVisitFacts inferenceId={inference.inferenceId} />;
+  if (review) return <ReviewFacts reviewId={review.reviewId} reviewRunId={review.reviewRunId} />;
   if (path.startsWith("/plugins")) return <PluginsFacts />;
   if (path.startsWith("/workspace/organizations")) return <OrganizationsFacts />;
   if (path.startsWith("/admin/users")) return <UsersFacts />;

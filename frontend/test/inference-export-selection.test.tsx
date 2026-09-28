@@ -1,11 +1,8 @@
 // @vitest-environment jsdom
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { afterEach, expect, test, vi } from "vite-plus/test";
 import { InferenceExportSelectionDialog } from "@/features/schemas/components/InferenceExportSelectionDialog";
 import type { InferenceExportCandidate } from "@/features/schemas/components/OrganizationInferenceExportButton";
-let root: Root;
-let host: HTMLDivElement;
+import { buttonByText, click, mount } from "./support/dom";
 const proceed = vi.fn();
 const retry = vi.fn();
 const close = vi.fn();
@@ -21,40 +18,20 @@ const items: InferenceExportCandidate[] = Array.from({ length: 15 }, (_, i) => (
   bookmarkId: 10,
   bookmarkName: "Baseline",
 }));
-beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  host = document.createElement("div");
-  document.body.append(host);
-  root = createRoot(host);
-});
 afterEach(() => {
-  act(() => root.unmount());
-  host.remove();
   vi.clearAllMocks();
 });
 async function render(busy = false, error = false, data = items) {
-  await act(async () =>
-    root.render(
-      <InferenceExportSelectionDialog
-        items={data}
-        busy={busy}
-        error={error}
-        onClose={close}
-        onContinue={proceed}
-        onRetry={retry}
-      />,
-    ),
+  await mount(
+    <InferenceExportSelectionDialog
+      items={data}
+      busy={busy}
+      error={error}
+      onClose={close}
+      onContinue={proceed}
+      onRetry={retry}
+    />,
   );
-}
-function button(text: string) {
-  const found = [...document.body.querySelectorAll("button")].find(
-    (x) => x.textContent?.trim() === text,
-  );
-  expect(found).toBeDefined();
-  return found!;
-}
-async function click(text: string) {
-  await act(async () => button(text).click());
 }
 test("opens selection dialog with snapshot/bookmark and paginates before preparing", async () => {
   await render();
@@ -73,18 +50,18 @@ test("opens selection dialog with snapshot/bookmark and paginates before prepari
 test("exports only explicitly selected inferences and disables empty selection", async () => {
   await render();
   await click("Clear");
-  expect(button("Continue").disabled).toBe(true);
+  expect(buttonByText("Continue")?.disabled).toBe(true);
   const row = [...document.body.querySelectorAll("button")].find((x) =>
     x.textContent?.includes("Run 1"),
   )!;
-  await act(async () => row.click());
+  await click(row);
   await click("Continue");
   expect(proceed).toHaveBeenCalledWith({ versionId: "7", runIds: ["1"] });
 });
 test("busy preparation locks selection but allows cancellation", async () => {
   await render(true);
   expect(document.body.querySelector("fieldset")?.disabled).toBe(true);
-  expect(button("Preparing export…").disabled).toBe(true);
+  expect(buttonByText("Preparing export…")?.disabled).toBe(true);
   await click("Cancel");
   expect(close).toHaveBeenCalledOnce();
 });
@@ -98,5 +75,5 @@ test("preparation failure is visible and retryable", async () => {
 });
 test("no candidates cannot advance", async () => {
   await render(false, false, []);
-  expect(button("Continue").disabled).toBe(true);
+  expect(buttonByText("Continue")?.disabled).toBe(true);
 });

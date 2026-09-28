@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { appFetch } from "@/shared/api/http";
+import { appFetch, json } from "@/shared/api/http";
 
 export interface UserDTO {
   id: string;
@@ -24,17 +24,9 @@ export const getProfile = (signal?: AbortSignal): Promise<UserDTO> =>
   appFetch<UserDTO>("/api/users/me", { signal });
 
 export const login = (payload: LoginPayload): Promise<UserDTO> =>
-  appFetch<UserDTO>("/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  appFetch<UserDTO>("/api/auth/login", json("POST", payload));
 
 export const register = (payload: RegisterPayload): Promise<UserDTO> =>
-  appFetch<UserDTO>("/api/auth/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  appFetch<UserDTO>("/api/auth/register", json("POST", payload));
 
 export const logout = (): Promise<void> => appFetch<void>("/api/logout", { method: "POST" });

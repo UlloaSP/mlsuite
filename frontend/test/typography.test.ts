@@ -55,38 +55,4 @@ describe("typography preferences", () => {
     expect(localStorage.getItem("ui/typography")).toContain('"interfaceFont":"ibm-plex-sans"');
     unsubscribe();
   });
-
-  it("maps font ids stored by earlier releases to their current presets", async () => {
-    const localStorage = storage();
-    localStorage.setItem(
-      "ui/typography",
-      JSON.stringify({
-        interfaceFont: "avenir",
-        interfaceSize: 16,
-        monospaceFont: "consolas",
-        monospaceSize: 13,
-        wordWrap: true,
-      }),
-    );
-    const documentElement = {
-      dataset: {} as Record<string, string>,
-      style: { setProperty: vi.fn() },
-    };
-    vi.stubGlobal("localStorage", localStorage);
-    vi.stubGlobal("window", { localStorage });
-    vi.stubGlobal("document", { documentElement });
-    const { typographyAtom } = await import("@/shared/ui/typography-state");
-    const store = createStore();
-    const unsubscribe = store.sub(typographyAtom, () => undefined);
-
-    expect(store.get(typographyAtom)).toMatchObject({
-      interfaceFont: "source-sans-3",
-      monospaceFont: "system-mono",
-    });
-    expect(documentElement.dataset).toMatchObject({
-      interfaceFont: "source-sans-3",
-      monospaceFont: "system-mono",
-    });
-    unsubscribe();
-  });
 });

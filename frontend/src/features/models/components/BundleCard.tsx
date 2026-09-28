@@ -7,6 +7,7 @@ import { Check, Plus, Save } from "lucide-react";
 import type { DragEvent } from "react";
 import { cx } from "@/shared/ui/cx";
 import type { Bundle } from "@/features/models/lib/bundle-types";
+import { isBundleSaveable } from "@/features/models/lib/bundle-save";
 import { MODEL_EXT_LABEL } from "@/features/models/lib/bundle-utils";
 import { BundleFilePill } from "./BundleFilePill";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -42,9 +43,6 @@ export function BundleCard({
   onDropModel,
   onDropDf,
 }: Props) {
-  const isSaveable =
-    bundle.modelFile && bundle.name.trim() && bundle.oneHotSeparator !== "" && !bundle.saving;
-
   return (
     <div
       className={cx(
@@ -145,7 +143,7 @@ export function BundleCard({
                 Saved
               </span>
             ) : (
-              <AppButton size="sm" disabled={!isSaveable} onClick={onSave}>
+              <AppButton size="sm" disabled={!isBundleSaveable(bundle)} onClick={onSave}>
                 {bundle.saving ? <AppSpinner size={11} /> : <Save size={11} />}
                 {bundle.saving ? "Saving…" : "Save"}
               </AppButton>

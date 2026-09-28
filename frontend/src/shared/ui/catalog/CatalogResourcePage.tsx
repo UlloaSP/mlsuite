@@ -6,8 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReactNode } from "react";
 import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
 import type { BreadcrumbScope } from "@/shared/ui/breadcrumb/breadcrumb-context";
-import { CatalogPage } from "./CatalogPage";
-import type { CatalogOption } from "./CatalogToolbar";
+import { AppPage } from "@/shared/ui/AppPage";
+import { AppSurface } from "@/shared/ui/AppSurface";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
+import { CatalogListPanel } from "./CatalogListPanel";
+import { CatalogToolbar, type CatalogOption } from "./CatalogToolbar";
 import { getCatalogErrorMessage, getCatalogTotalPages } from "./catalogPageUtils";
 import type { CatalogControls } from "./useCatalogControls";
 
@@ -66,7 +69,7 @@ type CatalogResourcePageProps<TItem, TFilter extends string, TSort extends strin
 } & CatalogEmptyCopy;
 
 export function CatalogResourcePage<TItem, TFilter extends string, TSort extends string>({
-  accessDenied,
+  accessDenied = false,
   accessFallback,
   children,
   controls,
@@ -97,52 +100,57 @@ export function CatalogResourcePage<TItem, TFilter extends string, TSort extends
   const hasActiveFilters = Boolean(controls.search) || controls.filter !== filters[0]?.value;
   const isBusy = query.isLoading || query.isFetching || isActionPending;
 
+  if (accessDenied) return accessFallback;
+
   return (
-    <CatalogPage
-      accessDenied={accessDenied}
-      accessFallback={accessFallback}
-      header={header}
-      navigation={navigation}
-      toolbar={{
-        children: toolbarChildren,
-        filter: controls.filter,
-        filterLabel,
-        filterVariant,
-        filters,
-        onFilterChange: controls.setFilter,
-        onQueryChange: controls.setQuery,
-        onSortChange: controls.setSort,
-        placeholder,
-        query: controls.query,
-        resultCount: totalItems,
-        sort: controls.sort,
-        sortLabel,
-        sortOptions,
-      }}
-      list={{
-        errorMessage: getCatalogErrorMessage(query.error),
-        hasNext: Boolean(query.data?.hasNext),
-        isBusy,
-        isLoading: query.isLoading,
-        itemCount: items.length,
-        layout,
-        loadingLabel,
-        page: controls.page,
-        setPage: controls.setPage,
-        totalPages: getCatalogTotalPages(totalItems, pageSize),
-        onRetry: () => {
-          void query.refetch();
-        },
-      }}
-      emptyState={{
-        action: hasActiveFilters ? undefined : emptyAction,
-        description: hasActiveFilters ? filteredEmptyDescription : emptyDescription,
-        icon: emptyIcon,
-        title: hasActiveFilters ? filteredEmptyTitle : emptyTitle,
-      }}
-    >
-      {items.map(renderItem)}
-      {children}
-    </CatalogPage>
+    <AppPage>
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
+        <AppPageHeader {...header} />
+        {navigation}
+        <section className="flex min-h-0 flex-1 flex-col">
+          <CatalogToolbar
+            filter={controls.filter}
+            filterLabel={filterLabel}
+            filterVariant={filterVariant}
+            filters={filters}
+            onFilterChange={controls.setFilter}
+            onQueryChange={controls.setQuery}
+            onSortChange={controls.setSort}
+            placeholder={placeholder}
+            query={controls.query}
+            resultCount={totalItems}
+            sort={controls.sort}
+            sortLabel={sortLabel}
+            sortOptions={sortOptions}
+          >
+            {toolbarChildren}
+          </CatalogToolbar>
+          <CatalogListPanel
+            errorMessage={getCatalogErrorMessage(query.error)}
+            hasNext={Boolean(query.data?.hasNext)}
+            isBusy={isBusy}
+            isLoading={query.isLoading}
+            itemCount={items.length}
+            layout={layout}
+            loadingLabel={loadingLabel}
+            page={controls.page}
+            setPage={controls.setPage}
+            totalPages={getCatalogTotalPages(totalItems, pageSize)}
+            onRetry={() => {
+              void query.refetch();
+            }}
+            emptyState={{
+              action: hasActiveFilters ? undefined : emptyAction,
+              description: hasActiveFilters ? filteredEmptyDescription : emptyDescription,
+              icon: emptyIcon,
+              title: hasActiveFilters ? filteredEmptyTitle : emptyTitle,
+            }}
+          >
+            {items.map(renderItem)}
+            {children}
+          </CatalogListPanel>
+        </section>
+      </AppSurface>
+    </AppPage>
   );
 }

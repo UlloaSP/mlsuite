@@ -11,9 +11,6 @@ import { SidebarNavigation } from "./SidebarNavigation";
 import { SidebarOrganizationHeader } from "./SidebarOrganizationHeader";
 import { SidebarUserFooter } from "./SidebarUserFooter";
 import { Sidebar as SidebarRoot } from "./app-sidebar/Sidebar";
-import { SidebarContent } from "./app-sidebar/SidebarContent";
-import { SidebarFooter } from "./app-sidebar/SidebarFooter";
-import { SidebarHeader } from "./app-sidebar/SidebarHeader";
 
 export function Sidebar({ side }: { side: SidebarPosition }) {
   const variant = useAtomValue(sidebarStyleAtom);
@@ -21,19 +18,19 @@ export function Sidebar({ side }: { side: SidebarPosition }) {
   return (
     <SidebarRoot data-user-guide="sidebar" side={side} variant={variant}>
       <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-        <SidebarHeader>
+        <div className="shrink-0 p-3">
           <SidebarBrand side={side} />
           <SidebarOrganizationHeader side={side} />
-        </SidebarHeader>
-        <SidebarContent>
+        </div>
+        <div className="app-scroll min-h-0 flex-1 overflow-y-auto px-3 py-2">
           <SidebarNavigation />
-        </SidebarContent>
+        </div>
         <div className="shrink-0 border-t border-line px-3 py-2">
           <SidebarActions />
         </div>
-        <SidebarFooter className="border-t border-line">
+        <div className="shrink-0 border-t border-line p-3">
           <SidebarUserFooter side={side} />
-        </SidebarFooter>
+        </div>
       </div>
     </SidebarRoot>
   );

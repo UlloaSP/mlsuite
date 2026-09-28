@@ -28,70 +28,82 @@ export function useNavigationItems() {
     ? `/workspace/organizations/${workspace.currentOrganization.id}`
     : undefined;
 
-  const navigation: NavigationItem[] = [
-    ...(permissions?.canViewModels
-      ? [{ root: "/predict", to: "/predict", icon: SECTION_ICONS.predict, label: "Predict" }]
-      : []),
-    ...(permissions?.canViewModels
-      ? [{ root: "/models", to: "/models", icon: SECTION_ICONS.models, label: "Models" }]
-      : []),
-    ...(permissions?.canViewModels
-      ? [
-          {
-            root: "/schemas",
-            to: activeSchemaPath ?? "/schemas",
-            icon: SECTION_ICONS.schemas,
-            label: "Schemas",
-            children: getSchemaNavigationChildren(activeSchemaPath),
-          },
-        ]
-      : []),
-    ...(permissions?.canViewModels
-      ? [
-          {
-            root: "/inferences",
-            to: "/inferences",
-            icon: SECTION_ICONS.inferences,
-            label: "Inferences",
-          },
-        ]
-      : []),
-    ...(permissions?.canViewPlugins
-      ? [{ root: "/plugins", to: "/plugins", icon: SECTION_ICONS.plugins, label: "Plugins" }]
-      : []),
-    ...(permissions?.canReview || permissions?.canManageReviews
-      ? [{ root: "/review", to: "/review", icon: SECTION_ICONS.reviews, label: "Review" }]
-      : []),
+  const canViewModels = Boolean(permissions?.canViewModels);
+  const superadmin = user?.systemRole === "SUPERADMIN";
+  const entries: Array<NavigationItem & { visible: boolean }> = [
+    {
+      visible: canViewModels,
+      root: "/predict",
+      to: "/predict",
+      icon: SECTION_ICONS.predict,
+      label: "Predict",
+    },
+    {
+      visible: canViewModels,
+      root: "/models",
+      to: "/models",
+      icon: SECTION_ICONS.models,
+      label: "Models",
+    },
+    {
+      visible: canViewModels,
+      root: "/schemas",
+      to: activeSchemaPath ?? "/schemas",
+      icon: SECTION_ICONS.schemas,
+      label: "Schemas",
+      children: getSchemaNavigationChildren(activeSchemaPath),
+    },
+    {
+      visible: canViewModels,
+      root: "/inferences",
+      to: "/inferences",
+      icon: SECTION_ICONS.inferences,
+      label: "Inferences",
+    },
+    {
+      visible: Boolean(permissions?.canViewPlugins),
+      root: "/plugins",
+      to: "/plugins",
+      icon: SECTION_ICONS.plugins,
+      label: "Plugins",
+    },
+    {
+      visible: Boolean(permissions?.canReview || permissions?.canManageReviews),
+      root: "/review",
+      to: "/review",
+      icon: SECTION_ICONS.reviews,
+      label: "Review",
+    },
   ];
+  const navigation: NavigationItem[] = entries.filter((entry) => entry.visible);
 
   /** Platform administration, kept apart from the organization's own work. */
-  const administration: NavigationItem[] =
-    user?.systemRole === "SUPERADMIN"
-      ? [
-          {
-            root: "/workspace/organizations",
-            to: "/workspace/organizations",
-            icon: SECTION_ICONS.organizations,
-            label: "Organizations",
-            activeWhen: (pathname: string) =>
-              pathname === "/workspace/organizations" ||
-              pathname === "/workspace/organizations/create" ||
-              Boolean(
-                currentOrganizationPath &&
-                pathname.startsWith("/workspace/organizations/") &&
-                !pathname.startsWith(currentOrganizationPath),
-              ),
-          },
-          { root: "/admin/users", to: "/admin/users", icon: SECTION_ICONS.users, label: "Users" },
-          {
-            root: "/admin/infrastructure",
-            to: "/admin/infrastructure",
-            icon: SECTION_ICONS.infrastructure,
-            label: "Infra",
-            children: INFRA_CHILDREN,
-          },
-        ]
-      : [];
+  const administration: NavigationItem[] = superadmin
+    ? [
+        {
+          root: "/workspace/organizations",
+          to: "/workspace/organizations",
+          icon: SECTION_ICONS.organizations,
+          label: "Organizations",
+          activeWhen: (pathname: string) =>
+            pathname === "/workspace/organizations" ||
+            pathname === "/workspace/organizations/create" ||
+            Boolean(
+              currentOrganizationPath &&
+              pathname.startsWith("/workspace/organizations/") &&
+              !pathname.startsWith(currentOrganizationPath),
+            ),
+        },
+        { root: "/admin/users", to: "/admin/users", icon: SECTION_ICONS.users, label: "Users" },
+        {
+          root: "/admin/infrastructure",
+          to: "/admin/infrastructure",
+          icon: SECTION_ICONS.infrastructure,
+          label: "Infra",
+          children: INFRA_CHILDREN,
+        },
+      ]
+    : [];
 
   const isParentActive = (item: NavigationItem) =>
     item.activeWhen?.(location.pathname) ??

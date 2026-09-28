@@ -1,23 +1,9 @@
 // @vitest-environment jsdom
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 import { RoleDetailsDialog } from "@/features/workspace/components/RoleDetailsDialog";
 import type { RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
+import { buttonByText, click, mount } from "./support/dom";
 
-let root: Root;
-let container: HTMLDivElement;
-beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-});
-afterEach(async () => {
-  await act(async () => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
-});
 test.each([0, 2])(
   "requires reassignment before deleting a role with %i users",
   async (userCount) => {
@@ -39,22 +25,18 @@ test.each([0, 2])(
       },
     };
     const onDelete = vi.fn();
-    await act(async () =>
-      root.render(
-        <RoleDetailsDialog
-          role={role}
-          onClose={vi.fn()}
-          onEdit={vi.fn()}
-          onDuplicate={vi.fn()}
-          onDelete={onDelete}
-        />,
-      ),
+    await mount(
+      <RoleDetailsDialog
+        role={role}
+        onClose={vi.fn()}
+        onEdit={vi.fn()}
+        onDuplicate={vi.fn()}
+        onDelete={onDelete}
+      />,
     );
-    const button = [...document.body.querySelectorAll("button")].find(
-      (button) => button.textContent === "Delete",
-    )!;
+    const button = buttonByText("Delete")!;
     expect(button.disabled).toBe(userCount > 0);
-    await act(async () => button.click());
+    await click(button);
     expect(onDelete).toHaveBeenCalledTimes(userCount > 0 ? 0 : 1);
     expect(document.body.textContent?.includes("Assign these users to another role")).toBe(
       userCount > 0,
@@ -81,16 +63,14 @@ test("never offers delete for a locked role", async () => {
       canAssign: true,
     },
   };
-  await act(async () =>
-    root.render(
-      <RoleDetailsDialog
-        role={role}
-        onClose={vi.fn()}
-        onEdit={vi.fn()}
-        onDuplicate={vi.fn()}
-        onDelete={vi.fn()}
-      />,
-    ),
+  await mount(
+    <RoleDetailsDialog
+      role={role}
+      onClose={vi.fn()}
+      onEdit={vi.fn()}
+      onDuplicate={vi.fn()}
+      onDelete={vi.fn()}
+    />,
   );
   const labels = [...document.body.querySelectorAll("button")].map((button) => button.textContent);
   expect(labels).toContain("Duplicate");

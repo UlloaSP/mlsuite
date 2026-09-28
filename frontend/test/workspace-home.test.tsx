@@ -6,11 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { Route, Routes } from "react-router";
 import { WorkspaceHomePage } from "@/features/workspace/pages/workspace-home-page";
 import { OrganizationAdminPage } from "@/features/workspace/pages/organization-admin-page";
+import { click, mount } from "./support/dom";
 
 const hooks = vi.hoisted(() => ({
   useWorkspaceContext: vi.fn(),
@@ -39,7 +38,7 @@ const fullAccess = {
 
 const context = (permissions: Record<string, boolean> = fullAccess) => ({
   currentOrganization: { id: 7, name: "Acme", slug: "acme", description: null },
-  currentMembership: { role: "ADMIN" },
+  currentMembership: { roleDefinition: { name: "Admin" } },
   memberships: Array.from({ length: 99 }, (_, id) => ({ id })),
   permissions,
 });
@@ -67,8 +66,7 @@ const dashboard = {
     {
       id: 5,
       email: "grace@acme.test",
-      role: "MEMBER",
-      roleDefinition: null,
+      roleDefinition: { name: "Member" },
       status: "PENDING",
       createdAt: "2026-09-20T00:00:00Z",
     },
@@ -84,28 +82,14 @@ const stageCards = (container: HTMLElement) =>
   }));
 
 describe("workspace overview", () => {
-  let root: Root | null = null;
-
   afterEach(() => {
-    act(() => root?.unmount());
-    root = null;
-    document.body.innerHTML = "";
     hooks.useWorkspaceContext.mockReset();
     hooks.useOrganizationAdminDashboardQuery.mockReset();
   });
 
   async function renderOverview() {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    await act(async () => {
-      root?.render(
-        <MemoryRouter>
-          <WorkspaceHomePage />
-        </MemoryRouter>,
-      );
-    });
-    return container;
+    const { host } = await mount(<WorkspaceHomePage />, { route: "/" });
+    return host;
   }
 
   test("follows the model lifecycle and suggests the next step for empty stages", async () => {
@@ -158,7 +142,7 @@ describe("workspace overview", () => {
     const alert = container.querySelector('[role="alert"]');
 
     expect(alert?.textContent).toContain("could not be loaded");
-    act(() => alert?.querySelector("button")?.click());
+    await click(alert!.querySelector("button")!);
     expect(refetch).toHaveBeenCalledOnce();
   });
 
@@ -187,21 +171,15 @@ describe("workspace overview", () => {
       isError: false,
     });
 
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    await act(async () => {
-      root?.render(
-        <MemoryRouter initialEntries={["/workspace/organizations/9"]}>
-          <Routes>
-            <Route
-              path="/workspace/organizations/:organizationId"
-              element={<OrganizationAdminPage />}
-            />
-          </Routes>
-        </MemoryRouter>,
-      );
-    });
+    const { host: container } = await mount(
+      <Routes>
+        <Route
+          path="/workspace/organizations/:organizationId"
+          element={<OrganizationAdminPage />}
+        />
+      </Routes>,
+      { route: "/workspace/organizations/9" },
+    );
 
     expect(hooks.useOrganizationAdminDashboardQuery).toHaveBeenCalledWith(9);
     expect(container.querySelector("h1")?.textContent).toBe("Globex");

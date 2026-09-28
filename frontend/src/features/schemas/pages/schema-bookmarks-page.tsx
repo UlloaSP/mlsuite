@@ -14,7 +14,7 @@ import {
   useSchemaBookmarks,
   useSchemaVersions,
 } from "@/features/schemas/api/schema-queries";
-import { sortSchemaVersions } from "@/features/schemas/lib/version-selection";
+import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 
@@ -49,8 +49,7 @@ export function SchemaBookmarksPage() {
     sorts: SORTS.map(({ value }) => value),
   });
   const bookmarks = bookmarksQuery.data ?? EMPTY_BOOKMARKS;
-  const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
-  const latestVersion = sortedVersions[0]?.version;
+  const latestVersion = useMemo(() => latestSchemaVersion(versions)?.version, [versions]);
   const filtered = useMemo(
     () =>
       filterBookmarks(bookmarks, controls.search, controls.filter, controls.sort, latestVersion),

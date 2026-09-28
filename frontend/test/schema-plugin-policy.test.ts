@@ -10,7 +10,7 @@ import { z } from "zod";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { buildSchemaRunRawFromSubmitResult } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const stringMeta = (value: unknown, fallback = ""): string =>
   typeof value === "string" ? value : fallback;

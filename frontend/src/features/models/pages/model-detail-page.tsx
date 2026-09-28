@@ -18,10 +18,8 @@ import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { ModelSummaryTab } from "@/features/models/components/ModelSummaryTab";
 import { useModel } from "@/features/models/api/model.queries";
-import {
-  formatTimestamp,
-  getModelAlgorithmLabel,
-} from "@/capabilities/prediction-runtime/data/model-utils";
+import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
+import { formatTimestamp } from "@/shared/lib/date-time";
 
 export function ModelDetailPage() {
   const navigate = useNavigate();

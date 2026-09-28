@@ -1,13 +1,14 @@
 import { PermissionCatalog } from "@/features/workspace/components/PermissionCatalog";
 import { Copy, Plus } from "lucide-react";
 import { useState } from "react";
-import { useParams, useSearchParams } from "react-router";
+import { useParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabs } from "@/shared/ui/AppTabs";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { useRoleMutations } from "@/features/workspace/api/role.mutations";
 import { RoleDetailsDialog } from "@/features/workspace/components/RoleDetailsDialog";
 import { RoleForm } from "@/features/workspace/components/RoleForm";
@@ -37,19 +38,12 @@ export function RolesPage() {
   );
   const rolesQuery = useOrganizationRolesQuery(id, canAccessRoles);
   const data = rolesQuery.data;
-  const [params, setParams] = useSearchParams();
-  const requestedTab = params.get("tab");
+  const tabFilter = useUrlFilters({ tab: "roles", q: "" });
+  const requestedTab = tabFilter.values.tab;
   const tab: RolesTab =
     requestedTab === "templates" || requestedTab === "permissions" ? requestedTab : "roles";
-  const setTab = (value: RolesTab) =>
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      if (value === "roles") next.delete("tab");
-      else next.set("tab", value);
-      next.delete("q");
-      next.delete("page");
-      return next;
-    });
+  // Each tab searches a different catalog, so switching tabs clears the search.
+  const setTab = (value: RolesTab) => tabFilter.setFilters({ tab: value, q: "" });
   const [selected, setSelected] = useState<RoleDefinitionDto | null>(null);
   const [editing, setEditing] = useState<RoleDefinitionDto | null>(null);
   const [template, setTemplate] = useState<RoleTemplateDto | null>(null);

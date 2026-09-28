@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { RolesPage } from "@/features/workspace/pages/roles-page";
+import { click as clickIn, mount } from "./support/dom";
 const hooks = vi.hoisted(() => ({
   dashboard: vi.fn(),
   roles: vi.fn(),
@@ -53,32 +53,22 @@ const data = {
   ],
 };
 let host: HTMLDivElement;
-let root: Root;
 beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  host = document.createElement("div");
-  document.body.append(host);
-  root = createRoot(host);
   hooks.dashboard.mockReturnValue({
     data: { permissions: { canViewMembers: true, canManageMemberRoles: true } },
   });
   hooks.roles.mockReturnValue({ data, refetch: hooks.retry });
 });
 afterEach(() => {
-  act(() => root.unmount());
-  host.remove();
   vi.clearAllMocks();
 });
 async function render(search = "") {
-  await act(async () =>
-    root.render(
-      <MemoryRouter initialEntries={[`/organizations/3/roles${search}`]}>
-        <Routes>
-          <Route path="/organizations/:organizationId/roles" element={<RolesPage />} />
-        </Routes>
-      </MemoryRouter>,
-    ),
-  );
+  ({ host } = await mount(
+    <Routes>
+      <Route path="/organizations/:organizationId/roles" element={<RolesPage />} />
+    </Routes>,
+    { route: `/organizations/3/roles${search}` },
+  ));
 }
 function hasLabel(label: string) {
   return [...host.querySelectorAll("p, h2")].some(
@@ -96,15 +86,11 @@ async function clickTab(label: string) {
     (node) => node.firstChild?.textContent === label,
   );
   expect(tab).toBeDefined();
-  await act(async () => tab!.click());
+  await act(async () => {
+    tab!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+  });
 }
-async function click(label: string) {
-  const button = [...host.querySelectorAll("button")].find(
-    (node) => node.textContent?.trim() === label,
-  );
-  expect(button).toBeDefined();
-  await act(async () => button!.click());
-}
+const click = (label: string) => clickIn(label, host);
 test.each([
   ["roles", "Role"],
   ["templates", "Template"],

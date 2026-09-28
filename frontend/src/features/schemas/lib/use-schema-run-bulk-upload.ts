@@ -16,8 +16,7 @@ import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import type { CreatePredictionRunRequest } from "@/features/schemas/api/prediction-types";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { loadPredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions";
-import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
+import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
 import { bulkUploadSummary, getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
@@ -68,10 +67,7 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
 
       const controller = new AbortController();
       abortRef.current = controller;
-      const sources = await queryClient.fetchQuery(
-        pluginRuntimeSourcesQueryOptions(organizationId),
-      );
-      const catalog = await loadPredictionCatalogDefinitions(organizationId, sources);
+      const catalog = await queryClient.fetchQuery(predictionCatalogQueryOptions(organizationId));
       const runtime = createSchemaRunRuntime({
         schema: version.formSchema,
         bindings: version.bindings,

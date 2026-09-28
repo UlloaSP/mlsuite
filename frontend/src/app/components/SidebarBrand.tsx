@@ -27,7 +27,7 @@ const logo = (
 
 /** Logo row. The sidebar toggle sits on the edge that faces the content. */
 export function SidebarBrand({ side }: { side: SidebarPosition }) {
-  const { isMobile, state } = useSidebar();
+  const { isMobile, collapsed } = useSidebar();
   const bindings = useAtomValue(shortcutBindingsAtom);
   const toggleProps = {
     "aria-keyshortcuts": shortcutToAria(bindings["toggle-sidebar"]),
@@ -35,7 +35,7 @@ export function SidebarBrand({ side }: { side: SidebarPosition }) {
     side,
   };
 
-  if (state === "collapsed" && !isMobile) {
+  if (collapsed && !isMobile) {
     return (
       <SidebarTrigger
         {...toggleProps}

@@ -21,12 +21,10 @@ export type MetricPointDto = {
 
 export type ServiceAggregateMetricValueDto = {
   percent: number | null;
-  supported: boolean;
 };
 
 export type ServiceAggregateByteValueDto = {
   bytes: number | null;
-  supported: boolean;
 };
 
 export type ServiceAggregateMetricsDto = {

@@ -20,7 +20,6 @@ import { LocationRail } from "@/app/components/LocationRail";
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/Sidebar";
 import { Navbar } from "@/app/components/navbar/Navbar";
-import { SidebarInset } from "@/app/components/app-sidebar/SidebarInset";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 import { useDisplayShortcuts } from "./use-display-shortcuts";
 import { useQuietScrollbars } from "./use-quiet-scrollbars";
@@ -68,7 +67,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
         >
           {position === "left" ? <Sidebar side="left" /> : null}
           {position === "top" ? <Navbar position="top" /> : null}
-          <SidebarInset>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             {vertical ? <MobileSidebarTrigger side={position} /> : null}
             <div className="app-content-transition relative min-h-0 min-w-0 flex-1 overflow-clip [view-transition-name:app-content]">
               {children}
@@ -76,7 +75,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
               {location === "rail-right" ? <LocationRail side="right" /> : null}
             </div>
             {location === "breadcrumb-bottom" ? <LocationBar /> : null}
-          </SidebarInset>
+          </div>
           {position === "right" ? <Sidebar side="right" /> : null}
           {position === "bottom" ? <Navbar position="bottom" /> : null}
           <AppGlobalSearch />

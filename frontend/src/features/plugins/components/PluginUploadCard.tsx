@@ -11,6 +11,7 @@ import { AppIconButton } from "@/shared/ui/AppIconButton";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
 import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { cx } from "@/shared/ui/cx";
+import { formatBytes } from "@/shared/lib/format-bytes";
 
 const STATUS = {
   checking: { label: "Checking…", tone: "neutral" },
@@ -20,9 +21,6 @@ const STATUS = {
   uploaded: { label: "Uploaded", tone: "success" },
   failed: { label: "Upload failed", tone: "danger" },
 } as const;
-
-const formatSize = (bytes: number) =>
-  bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
 
 export function PluginUploadCard({
   item,
@@ -58,7 +56,7 @@ export function PluginUploadCard({
           </AppBadge>
         </div>
         <p className="truncate font-mono text-2xs text-fg-muted">
-          {item.file.name} · {formatSize(item.file.size)}
+          {item.file.name} · {formatBytes(item.file.size)}
         </p>
         {item.error ? <p className="text-xs leading-5 text-danger-fg">{item.error}</p> : null}
       </div>

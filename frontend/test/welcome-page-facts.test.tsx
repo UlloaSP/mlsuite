@@ -5,10 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
-import { act } from "react";
-import { createRoot } from "react-dom/client";
 import { expect, test, vi } from "vite-plus/test";
 import { PageFacts } from "@/app/components/welcome/PageFacts";
+import { mount } from "./support/dom";
 
 const { stub } = vi.hoisted(() => ({
   stub: (name: string) => (props: Record<string, string | undefined>) =>
@@ -65,10 +64,6 @@ test.each([
   ["/admin/infrastructure", "infra"],
   ["/profile", ""],
 ])("%s shows its own facts", async (path, expected) => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const container = document.createElement("div");
-  const root = createRoot(container);
-  await act(async () => root.render(<PageFacts path={path} />));
-  expect(container.textContent).toBe(expected);
-  await act(async () => root.unmount());
+  const { host } = await mount(<PageFacts path={path} />);
+  expect(host.textContent).toBe(expected);
 });

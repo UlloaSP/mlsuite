@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { Provider, createStore, useAtomValue } from "jotai";
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router";
+import { Route, Routes, useLocation, useNavigate } from "react-router";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { LocationBar } from "@/app/components/LocationBar";
 import { LocationRail } from "@/app/components/LocationRail";
@@ -13,6 +12,7 @@ import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { locationDisplayAtom, type LocationDisplay } from "@/shared/ui/sidebar-preferences";
+import { click, mount, type Mounted } from "./support/dom";
 
 const workspace = vi.hoisted(() => ({ organizationId: 7 }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
@@ -27,22 +27,17 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   }),
 }));
 
-let root: Root | undefined;
+let view: Mounted | undefined;
 let container: HTMLDivElement;
-afterEach(async () => {
-  await act(async () => root?.unmount());
+afterEach(() => {
   localStorage.clear();
   workspace.organizationId = 7;
   vi.unstubAllGlobals();
-  document.body.innerHTML = "";
 });
 
-async function render(node: React.ReactNode, entries = ["/"]) {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  await act(async () => root?.render(<MemoryRouter initialEntries={entries}>{node}</MemoryRouter>));
+async function render(node: React.ReactNode, route = "/") {
+  view = await mount(node, { route });
+  container = view.host;
 }
 
 const roots = { organization: { label: "Acme", to: "/workspace" } };
@@ -92,7 +87,7 @@ test("each location display draws the trail in one place only", async () => {
   const crumbs = () => container.querySelectorAll('nav[aria-label="Breadcrumb"]');
 
   const renderWith = async (display: LocationDisplay) => {
-    await act(async () => root?.unmount());
+    await view?.unmount();
     const store = createStore();
     store.set(locationDisplayAtom, display);
     await render(<Provider store={store}>{page}</Provider>);
@@ -133,12 +128,12 @@ function TabProbe() {
 }
 
 test("view choices live in the URL, with the default left out and unknown values ignored", async () => {
-  await render(<TabProbe />, ["/run?tab=bogus"]);
+  await render(<TabProbe />, "/run?tab=bogus");
   const output = () => container.querySelector("output")!.textContent;
   expect(output()).toBe("inputs|?tab=bogus");
-  await act(async () => container.querySelectorAll("button")[0].click());
+  await click(container.querySelectorAll("button")[0]);
   expect(output()).toBe("outputs|?tab=outputs");
-  await act(async () => container.querySelectorAll("button")[1].click());
+  await click(container.querySelectorAll("button")[1]);
   expect(output()).toBe("inputs|");
 });
 
@@ -173,16 +168,16 @@ test("page scroll comes back on back navigation, not on a new visit", async () =
     return 0;
   });
   vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(2000);
-  await render(<Shell />, ["/a"]);
+  await render(<Shell />, "/a");
   const scroller = () => container.querySelector<HTMLElement>('[data-scroll-memory="page"]')!;
 
   scroller().scrollTop = 480;
   await act(async () => scroller().dispatchEvent(new Event("scroll")));
-  await act(async () => container.querySelectorAll("button")[0].click());
+  await click(container.querySelectorAll("button")[0]);
   expect(scroller().dataset.testid).toBe("b");
   expect(scroller().scrollTop).toBe(0);
 
-  await act(async () => container.querySelectorAll("button")[1].click());
+  await click(container.querySelectorAll("button")[1]);
   expect(scroller().dataset.testid).toBe("a");
   expect(scroller().scrollTop).toBe(480);
 });
@@ -215,24 +210,24 @@ test("each navigation section resumes where the member left it, per organization
     <Provider store={createStore()}>
       <SectionShell />
     </Provider>,
-    ["/predict/7?from=3"],
+    "/predict/7?from=3",
   );
   const entry = (root: string) =>
     container.querySelector<HTMLButtonElement>(`[data-root="${root}"]`)!;
 
   // Inside Predict its entry leads to the start of the section.
   expect(entry("/predict").textContent).toBe("/predict");
-  await act(async () => entry("/models").click());
+  await click(entry("/models"));
   expect(container.querySelector("output")?.textContent).toBe("/models");
   expect(entry("/predict").textContent).toBe("/predict/7?from=3");
 
-  await act(async () => entry("/predict").click());
+  await click(entry("/predict"));
   expect(container.querySelector("output")?.textContent).toBe("/predict/7?from=3");
   expect(entry("/models").textContent).toBe("/models");
 
   // Another organization's pages would not resolve: it starts fresh.
   workspace.organizationId = 8;
-  await act(async () => entry("/schemas").click());
+  await click(entry("/schemas"));
   expect(entry("/predict").textContent).toBe("/predict");
 });
 
@@ -269,27 +264,21 @@ test("returning to a section restores its scroll; a plain visit starts at the to
       </Routes>
     );
   }
-  await render(<ScrollShell />, ["/a"]);
+  await render(<ScrollShell />, "/a");
   const scroller = () => container.querySelector<HTMLElement>('[data-scroll-memory="page"]')!;
-  const click = (label: string) =>
-    act(async () =>
-      [...container.querySelectorAll("button")]
-        .find((button) => button.textContent === label)!
-        .click(),
-    );
 
   scroller().scrollTop = 320;
   await act(async () => scroller().dispatchEvent(new Event("scroll")));
-  await click("visit");
+  await click("visit", container);
   expect(scroller().dataset.testid).toBe("b");
-  await click("visit");
+  await click("visit", container);
   expect(scroller().dataset.testid).toBe("a");
   expect(scroller().scrollTop).toBe(0);
 
   scroller().scrollTop = 320;
   await act(async () => scroller().dispatchEvent(new Event("scroll")));
-  await click("visit");
-  await click("resume");
+  await click("visit", container);
+  await click("resume", container);
   expect(scroller().dataset.testid).toBe("a");
   expect(scroller().scrollTop).toBe(320);
 });

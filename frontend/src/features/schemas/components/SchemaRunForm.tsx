@@ -19,13 +19,10 @@ import {
   reportStatesFromSnapshot,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import {
-  schemaRunDebug,
-  schemaRunDebugError,
-} from "@/capabilities/prediction-runtime/mlform/run-debug";
 import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { getSchemaRunPrefillInputs } from "@/capabilities/prediction-runtime/data/input-display";
-import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
+import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 
 type Props = {
   version: SchemaVersionDto;
@@ -59,15 +56,9 @@ export function SchemaRunForm({
         : version.formSchema,
     [initialInputs, version.formSchema],
   );
-  const catalog = useSchemaPluginCatalog(formSchema);
+  const catalog = useSchemaPluginCatalog(formSchema, useCurrentOrganizationId() ?? "none");
   const { data, needsPlugins, status } = catalog;
   const showCatalogLoading = useStableLoading(needsPlugins && status === "loading");
-  schemaRunDebug("form.render", {
-    versionId: version.id,
-    needsPlugins,
-    catalogStatus: status,
-    bindings: version.bindings.length,
-  });
 
   useEffect(() => {
     onSubmitRef.current = onSubmit;
@@ -76,20 +67,8 @@ export function SchemaRunForm({
   }, [onResultUpdate, onRunningChange, onSubmit]);
 
   useEffect(() => {
-    if (showCatalogLoading || !containerRef.current || (needsPlugins && status !== "ready")) {
-      schemaRunDebug("form.mount.wait", {
-        hasContainer: Boolean(containerRef.current),
-        needsPlugins,
-        status,
-      });
-      return;
-    }
+    if (showCatalogLoading || !containerRef.current || (needsPlugins && status !== "ready")) return;
     try {
-      schemaRunDebug("form.mount.start", {
-        versionId: version.id,
-        fieldDefinitions: data.fieldDefinitions.map((definition) => definition.kind),
-        reportDefinitions: data.reportDefinitions.map((definition) => definition.kind),
-      });
       const mounted = mountSchemaRunForm({
         container: containerRef.current,
         schema: formSchema,
@@ -98,17 +77,9 @@ export function SchemaRunForm({
         customFieldDefinitions: data.fieldDefinitions,
         customReportDefinitions: data.reportDefinitions,
         onSubmit(inputData, raw, reportsPending) {
-          schemaRunDebug("form.submit.callback", {
-            inputData,
-            raw,
-            inputKeys: Object.keys(inputData),
-            rawKeys: Object.keys(raw),
-            reportsPending,
-          });
           onSubmitRef.current(inputData, raw, reportsPending);
         },
         onSubmitError(error) {
-          schemaRunDebugError("form.submit.error", error);
           toast.error("Schema run failed", {
             description: error instanceof Error ? error.message : String(error),
           });
@@ -120,11 +91,6 @@ export function SchemaRunForm({
       mountedRef.current = mounted;
       const unsubscribe = mounted.form.subscribe((state) => {
         if (!state.lastResult || !onResultUpdateRef.current) return;
-        schemaRunDebug("form.subscribe.state", {
-          lastResult: state.lastResult,
-          reportStates: state.reportStates,
-          reports: mounted.form.reports,
-        });
         const raw = isRecord(state.lastResult.raw)
           ? state.lastResult.raw
           : { raw: state.lastResult.raw };
@@ -135,12 +101,6 @@ export function SchemaRunForm({
           version.bindings,
           state.lastResult.reportContexts,
         );
-        schemaRunDebug("form.result-update", {
-          inputData: isRecord(next.raw.inputData) ? next.raw.inputData : {},
-          raw: next.raw,
-          reportCount: Array.isArray(next.raw.reports) ? next.raw.reports.length : 0,
-          reportsPending: next.reportsPending,
-        });
         onResultUpdateRef.current(
           isRecord(next.raw.inputData) ? next.raw.inputData : {},
           next.raw,
@@ -148,13 +108,11 @@ export function SchemaRunForm({
         );
       });
       return () => {
-        schemaRunDebug("form.mount.cleanup", { versionId: version.id });
         unsubscribe();
         mounted.unmount();
         if (mountedRef.current === mounted) mountedRef.current = null;
       };
     } catch (error) {
-      schemaRunDebugError("form.mount.error", error);
       toast.error("Schema incompatible", {
         description: error instanceof Error ? error.message : String(error),
       });

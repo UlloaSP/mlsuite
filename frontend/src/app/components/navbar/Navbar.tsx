@@ -42,7 +42,7 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
   const menuSide = position === "top" ? "bottom" : "top";
   const floating = variant === "floating";
   // Collapse is shared with the sidebar: icons only, and a floating bar hugs its content.
-  const compact = useSidebar().state === "collapsed";
+  const compact = useSidebar().collapsed;
   const searchShortcut = bindings["global-search"];
 
   return (

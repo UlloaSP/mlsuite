@@ -19,15 +19,9 @@ import { cx } from "@/shared/ui/cx";
 import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
-import { AdminUserFormField } from "@/features/admin/components/AdminUserFormField";
+import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
+import { SYSTEM_ROLE_OPTIONS, type SystemRole } from "@/features/admin/api/admin-user.types";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
-
-type Role = "USER" | "SUPERADMIN";
-
-const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
-  { value: "USER", label: "User" },
-  { value: "SUPERADMIN", label: "Superadmin" },
-];
 
 export function CreateAdminUserPage() {
   const navigate = useNavigate();
@@ -36,7 +30,7 @@ export function CreateAdminUserPage() {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("USER");
+  const [role, setRole] = useState<SystemRole>("USER");
   const [visible, setVisible] = useState(false);
 
   if (!user || error) return <NotFoundError />;
@@ -67,7 +61,7 @@ export function CreateAdminUserPage() {
           breadcrumbs={[{ label: "Users", to: "/admin/users" }, { label: "Create user" }]}
         />
         <form onSubmit={submit} className={cx(FORM_MAX_WIDTH, "grid gap-4")}>
-          <AdminUserFormField label="Email">
+          <AppFieldLabel label="Email">
             <AppTextField
               required
               type="email"
@@ -76,16 +70,16 @@ export function CreateAdminUserPage() {
               placeholder="user@example.com"
               autoFocus
             />
-          </AdminUserFormField>
-          <AdminUserFormField label="Full name">
+          </AppFieldLabel>
+          <AppFieldLabel label="Full name">
             <AppTextField
               required
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
               placeholder="Ada Lovelace"
             />
-          </AdminUserFormField>
-          <AdminUserFormField label="Password">
+          </AppFieldLabel>
+          <AppFieldLabel label="Password">
             <div className="flex gap-2">
               <AppTextField
                 required
@@ -105,14 +99,14 @@ export function CreateAdminUserPage() {
                 {visible ? <EyeOff size={18} /> : <Eye size={18} />}
               </AppIconButton>
             </div>
-          </AdminUserFormField>
-          <AdminUserFormField label="Role">
+          </AppFieldLabel>
+          <AppFieldLabel label="Role">
             <AppSelect
               value={role}
-              onValueChange={(nextRole) => setRole(nextRole as Role)}
-              options={ROLE_OPTIONS}
+              onValueChange={(nextRole) => setRole(nextRole as SystemRole)}
+              options={SYSTEM_ROLE_OPTIONS}
             />
-          </AdminUserFormField>
+          </AppFieldLabel>
           {createUser.error ? <AppInlineAlert>{createUser.error.message}</AppInlineAlert> : null}
           <div className="flex justify-end gap-2 pt-2">
             <AppButton type="button" variant="secondary" onClick={() => navigate("/admin/users")}>

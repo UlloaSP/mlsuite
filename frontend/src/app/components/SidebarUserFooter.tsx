@@ -10,9 +10,7 @@ import { useUser } from "@/capabilities/workspace-context/session";
 import { usePendingInvitations } from "@/features/workspace/api/workspace.queries";
 import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
-import { SidebarMenu } from "./app-sidebar/SidebarMenu";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
-import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
 import { useSidebar } from "./app-sidebar/SidebarContext";
 import { AccountAvatar } from "./AccountAvatar";
 import { AccountMenuContent } from "./AccountMenuContent";
@@ -21,7 +19,7 @@ import { sidebarMenuChevron, sidebarMenuContent, sidebarMenuTrigger } from "./si
 
 export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
   const location = useLocation();
-  const { state } = useSidebar();
+  const { collapsed } = useSidebar();
   const { data: user } = useUser();
   const { data: notifications = [] } = usePendingInvitations();
 
@@ -29,12 +27,11 @@ export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
     return null;
   }
 
-  const collapsed = state === "collapsed";
   const displayName = user.fullName || user.userName || "Guest";
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
+    <ul className="grid gap-1">
+      <li className="relative min-w-0">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <SidebarMenuButton
@@ -64,7 +61,7 @@ export function SidebarUserFooter({ side }: { side: SidebarPosition }) {
             className={sidebarMenuContent(collapsed)}
           />
         </DropdownMenu.Root>
-      </SidebarMenuItem>
-    </SidebarMenu>
+      </li>
+    </ul>
   );
 }

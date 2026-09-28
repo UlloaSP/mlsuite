@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { cx } from "@/shared/ui/cx";
-import { formatBytes } from "@/features/models/lib/bundle-utils";
+import { formatBytes } from "@/shared/lib/format-bytes";
 
 type Props = {
   name: string;

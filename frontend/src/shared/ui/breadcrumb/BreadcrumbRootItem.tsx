@@ -5,20 +5,24 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronsUpDown } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
+import { Link } from "react-router";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import type { BreadcrumbRoot } from "./breadcrumb-context";
-import { BreadcrumbLink } from "./BreadcrumbLink";
-import { BreadcrumbPage } from "./BreadcrumbPage";
+import { CRUMB_LINK_CLASS, CRUMB_PAGE_CLASS } from "./crumb-styles";
 
 /** The first crumb: who the page belongs to, a link home, and an optional switcher. */
 export function BreadcrumbRootItem({ current, root }: { current: boolean; root: BreadcrumbRoot }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-0.5">
       {current ? (
-        <BreadcrumbPage>{root.label}</BreadcrumbPage>
+        <span aria-current="page" className={CRUMB_PAGE_CLASS}>
+          {root.label}
+        </span>
       ) : (
-        <BreadcrumbLink to={root.to}>{root.label}</BreadcrumbLink>
+        <Link className={CRUMB_LINK_CLASS} to={root.to}>
+          {root.label}
+        </Link>
       )}
       {root.menu ? (
         <DropdownMenu.Root>

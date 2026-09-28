@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { CloudUpload } from "lucide-react";
 import { cx } from "./cx";
 import { useFileDrop } from "./use-file-drop";
 
@@ -42,20 +43,7 @@ export function AppFileDropZone({ accept, hints, inputLabel, onFiles }: Props) {
               : "border-line bg-surface-muted text-fg-muted group-hover:border-accent group-hover:bg-accent-subtle group-hover:text-accent",
           )}
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="16 16 12 12 8 16" />
-            <line x1="12" y1="12" x2="12" y2="21" />
-            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-          </svg>
+          <CloudUpload size={20} strokeWidth={1.8} aria-hidden="true" />
         </span>
 
         <span className="min-w-0 flex-1 text-left">

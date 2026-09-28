@@ -9,12 +9,12 @@ import { destroyUserGuide, startUserGuide } from "./user-guide";
 
 /** Starts the tour from a trigger, expanding a collapsed desktop sidebar for its duration. */
 export function useUserGuideLauncher(expandsSidebar: boolean) {
-  const { isMobile, setOpen, state } = useSidebar();
+  const { collapsed, isMobile, setOpen } = useSidebar();
 
   useEffect(() => destroyUserGuide, []);
 
   return (trigger: HTMLElement) => {
-    const restoreCollapsed = expandsSidebar && !isMobile && state === "collapsed";
+    const restoreCollapsed = expandsSidebar && !isMobile && collapsed;
     if (restoreCollapsed) setOpen(true);
 
     requestAnimationFrame(() => {

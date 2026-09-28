@@ -10,9 +10,7 @@ import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-
 import { cx } from "@/shared/ui/cx";
 import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { SidebarLabel } from "./app-sidebar/SidebarLabel";
-import { SidebarMenu } from "./app-sidebar/SidebarMenu";
 import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
-import { SidebarMenuItem } from "./app-sidebar/SidebarMenuItem";
 import { useSidebar } from "./app-sidebar/SidebarContext";
 import { OrganizationMenuContent } from "./OrganizationMenuContent";
 import {
@@ -25,19 +23,18 @@ import { isWorkspacePath } from "./workspace-navigation";
 
 export function SidebarOrganizationHeader({ side }: { side: SidebarPosition }) {
   const location = useLocation();
-  const { state } = useSidebar();
+  const { collapsed } = useSidebar();
   const { data: context } = useWorkspaceContext();
 
   if (!context) {
     return null;
   }
 
-  const collapsed = state === "collapsed";
   const organization = context.currentOrganization;
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
+    <ul className="grid gap-1">
+      <li className="relative min-w-0">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <SidebarMenuButton
@@ -65,7 +62,7 @@ export function SidebarOrganizationHeader({ side }: { side: SidebarPosition }) {
             className={sidebarMenuContent(collapsed)}
           />
         </DropdownMenu.Root>
-      </SidebarMenuItem>
-    </SidebarMenu>
+      </li>
+    </ul>
   );
 }

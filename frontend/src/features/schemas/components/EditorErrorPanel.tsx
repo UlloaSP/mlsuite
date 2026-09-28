@@ -21,11 +21,11 @@ export function EditorErrorPanel() {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <motion.div className="space-y-3 p-4">
-          {schemaErrors.map((error: any) => (
+        <div className="space-y-3 p-4">
+          {schemaErrors.map((error) => (
             <EditorErrorCard key={JSON.stringify(error)} error={error} />
           ))}
-        </motion.div>
+        </div>
       </motion.div>
     </AnimatePresence>
   );

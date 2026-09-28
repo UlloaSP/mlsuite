@@ -1,9 +1,7 @@
 import { type FeedbackStatusDisplay } from "@/capabilities/prediction-runtime/feedback/FeedbackStatusBadge";
 import { useNavigate } from "react-router";
-import {
-  formatTimestamp,
-  getPredictionShortId,
-} from "@/capabilities/prediction-runtime/data/model-utils";
+import { getPredictionShortId } from "@/capabilities/prediction-runtime/data/model-utils";
+import { formatTimestamp } from "@/shared/lib/date-time";
 import type { InferenceCatalogItemDto } from "@/features/inferences/api/inference-api";
 import { PredictionStatusSummary } from "@/capabilities/prediction-runtime/feedback/PredictionStatusSummary";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";

@@ -1,12 +1,12 @@
-import { Search } from "lucide-react";
 import { useMemo } from "react";
-import { useParams, useSearchParams } from "react-router";
+import { useParams } from "react-router";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
-import { AppTextField } from "@/shared/ui/AppTextField";
+import { AppSearchField } from "@/shared/ui/AppSearchField";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
@@ -25,9 +25,8 @@ export function MembersPage() {
   const { organizationId = "" } = useParams();
   const id = Number(organizationId);
   const dashboard = useOrganizationAdminDashboardQuery(id);
-  const [params, setParams] = useSearchParams();
-  const query = params.get("q") ?? "";
-  const role = params.get("role") ?? "ALL";
+  const filters = useUrlFilters({ q: "", role: "ALL" });
+  const { q: query, role } = filters.values;
   const membersQuery = useOrganizationMembersQuery(
     id,
     Boolean(dashboard.data?.permissions.canViewMembers),
@@ -64,17 +63,6 @@ export function MembersPage() {
     `${id}:${query}:${role}`,
     !membersQuery.isSuccess,
   );
-  const setFilter = (key: string, value: string) =>
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        if (value && value !== "ALL") next.set(key, value);
-        else next.delete(key);
-        next.delete("page");
-        return next;
-      },
-      { replace: true },
-    );
 
   if (!Number.isFinite(id)) return <RouteStatusPage status={404} />;
   if (dashboard.isError)
@@ -92,29 +80,28 @@ export function MembersPage() {
         />
         <section className="flex min-h-0 flex-1 flex-col">
           <AppToolbar variant="flat">
-            <AppTextField
+            <AppSearchField
               className="min-w-[min(100%,260px)] flex-1"
-              aria-label="Search members"
+              label="Search members"
               placeholder="Search members by name or email…"
-              prefix={<Search className="size-4 text-fg-muted" />}
-              suffix={
-                membersQuery.isSuccess ? (
-                  <span className="shrink-0 whitespace-nowrap border-l border-line pl-3 text-sm font-semibold text-fg-secondary">
-                    {query || role !== "ALL"
-                      ? `${filtered.length} of ${members.length}`
-                      : members.length}{" "}
-                    members
-                  </span>
-                ) : undefined
+              count={
+                membersQuery.isSuccess
+                  ? {
+                      shown: filtered.length,
+                      total: members.length,
+                      filtered: filters.isFiltered,
+                      noun: "members",
+                    }
+                  : undefined
               }
               value={query}
-              onChange={(event) => setFilter("q", event.target.value)}
+              onChange={(value) => filters.setFilters({ q: value })}
             />
             <AppSelect
               aria-label="Filter by role"
               className="min-w-44"
               value={role}
-              onValueChange={(value) => setFilter("role", value)}
+              onValueChange={(value) => filters.setFilters({ role: value })}
               options={[{ value: "ALL", label: "All roles" }, ...roles]}
             />
           </AppToolbar>
@@ -129,11 +116,10 @@ export function MembersPage() {
               void membersQuery.refetch();
             }}
             emptyState={{
-              title: query || role !== "ALL" ? "No matching members" : "No members yet",
-              description:
-                query || role !== "ALL"
-                  ? "Try another name, email, or role."
-                  : "Organization members will appear here.",
+              title: filters.isFiltered ? "No matching members" : "No members yet",
+              description: filters.isFiltered
+                ? "Try another name, email, or role."
+                : "Organization members will appear here.",
             }}
           >
             {pagination.visibleItems.length > 0 ? (

@@ -5,22 +5,17 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
-import { toast } from "sonner";
+import { useParams } from "react-router";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import {
-  useCreateSchemaBookmarkMutation,
-  useDuplicateSchemaMutation,
-} from "@/features/schemas/api/schema-mutations";
-import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import { useSchema, useSchemaVersions } from "@/features/schemas/api/schema-queries";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
-import { schemaVersionId, sortSchemaVersions } from "@/features/schemas/lib/version-selection";
+import { sortSchemaVersions } from "@/features/schemas/lib/version-selection";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { SchemaBookmarkDialog } from "@/features/schemas/components/SchemaBookmarkDialog";
-import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
+import { BookmarkSnapshotDialog } from "@/features/schemas/components/BookmarkSnapshotDialog";
+import { CloneSchemaDialog } from "@/features/schemas/components/CloneSchemaDialog";
+import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaSnapshotCatalogItem } from "@/features/schemas/components/SchemaSnapshotCatalogItem";
 
@@ -41,13 +36,9 @@ const SORTS: Array<{ value: SnapshotSort; label: string }> = [
 
 export function SchemaSnapshotsPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
-  const navigate = useNavigate();
   const { data: schema } = useSchema(schemaId);
   const { data: workspace } = useWorkspaceContext();
   const versionsQuery = useSchemaVersions(schemaId);
-  const bookmarkMutation = useCreateSchemaBookmarkMutation(schemaId ?? "");
-  const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
-  const duplicateMutation = useDuplicateSchemaMutation();
   const [bookmarkTarget, setBookmarkTarget] = useState<SchemaVersionDto | null>(null);
   const [changeTarget, setChangeTarget] = useState<SchemaVersionDto | null>(null);
   const [cloneTarget, setCloneTarget] = useState<SchemaVersionDto | null>(null);
@@ -75,47 +66,6 @@ export function SchemaSnapshotsPage() {
     [controls.filter, controls.search, controls.sort, latestVersion, sortedVersions],
   );
   const pageItems = filtered.slice(controls.page * PAGE_SIZE, (controls.page + 1) * PAGE_SIZE);
-
-  const createBookmark = async (name: string) => {
-    if (!bookmarkTarget) return;
-    try {
-      await bookmarkMutation.mutateAsync({ name, versionId: schemaVersionId(bookmarkTarget) });
-      setBookmarkTarget(null);
-      toast.success("Bookmark saved");
-    } catch {
-      // The dialog shows the mutation error and stays open for a retry.
-    }
-  };
-
-  const createChange = async (name: string) => {
-    if (!schemaId || !changeTarget) return;
-    try {
-      const draft = await draftMutation.mutateAsync({
-        name,
-        baseVersionId: schemaVersionId(changeTarget),
-      });
-      setChangeTarget(null);
-      void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
-    } catch {
-      // The dialog shows the mutation error and stays open for a retry.
-    }
-  };
-
-  const cloneSchema = async (name: string) => {
-    if (!schemaId || !cloneTarget) return;
-    try {
-      const copy = await duplicateMutation.mutateAsync({
-        id: schemaId,
-        name,
-        versionId: schemaVersionId(cloneTarget),
-      });
-      setCloneTarget(null);
-      toast.success("Schema created from snapshot");
-      void navigate(`/schemas/${copy.id}`);
-    } catch {
-      // The dialog shows the mutation error and stays open for a retry.
-    }
-  };
 
   return (
     <>
@@ -168,57 +118,26 @@ export function SchemaSnapshotsPage() {
           ) : null
         }
       />
-      <SchemaBookmarkDialog
-        open={Boolean(bookmarkTarget)}
-        defaultName={bookmarkTarget ? bookmarkTarget.name.toLowerCase().replace(/\s+/g, "-") : ""}
-        snapshotLabel={
-          bookmarkTarget ? `${bookmarkTarget.name} · v${bookmarkTarget.version}` : "Snapshot"
-        }
-        error={bookmarkMutation.error?.message}
-        pending={bookmarkMutation.isPending}
-        onClose={() => {
-          bookmarkMutation.reset();
-          setBookmarkTarget(null);
-        }}
-        onConfirm={(name) => void createBookmark(name)}
-      />
-      <SchemaChangeNameDialog
-        defaultName="Update schema"
-        description={
-          changeTarget ? `${changeTarget.name} · v${changeTarget.version}` : "Selected snapshot"
-        }
-        open={Boolean(changeTarget)}
-        error={draftMutation.error?.message}
-        pending={draftMutation.isPending}
-        submitLabel="Create change"
-        title="New change"
-        onClose={() => {
-          draftMutation.reset();
-          setChangeTarget(null);
-        }}
-        onConfirm={(name) => void createChange(name)}
-      />
-      <SchemaChangeNameDialog
-        defaultName={`${schema?.name ?? "Schema"} Copy`}
-        description={
-          cloneTarget
-            ? `Create an independent schema with ${cloneTarget.name} · v${cloneTarget.version} as its first snapshot.`
-            : "Selected snapshot"
-        }
-        fieldLabel="Schema name"
-        open={Boolean(cloneTarget)}
-        error={duplicateMutation.error?.message}
-        pending={duplicateMutation.isPending}
-        placeholder="New schema"
-        submitIcon="copy"
-        submitLabel="Create schema"
-        title="Create schema from snapshot"
-        onClose={() => {
-          duplicateMutation.reset();
-          setCloneTarget(null);
-        }}
-        onConfirm={(name) => void cloneSchema(name)}
-      />
+      {schemaId ? (
+        <>
+          <BookmarkSnapshotDialog
+            schemaId={schemaId}
+            version={bookmarkTarget}
+            onClose={() => setBookmarkTarget(null)}
+          />
+          <CreateSchemaChangeDialog
+            schemaId={schemaId}
+            baseVersion={changeTarget}
+            onClose={() => setChangeTarget(null)}
+          />
+          <CloneSchemaDialog
+            schemaId={schemaId}
+            schemaName={schema?.name}
+            version={cloneTarget}
+            onClose={() => setCloneTarget(null)}
+          />
+        </>
+      ) : null}
     </>
   );
 }

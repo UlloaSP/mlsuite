@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Copy, PencilLine } from "lucide-react";
+import { PencilLine, type LucideIcon } from "lucide-react";
 import type { FormEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
@@ -19,7 +19,7 @@ type Props = {
   title: string;
   fieldLabel?: string;
   placeholder?: string;
-  submitIcon?: "copy" | "edit";
+  submitIcon?: LucideIcon;
   error?: string;
   onClose: () => void;
   onConfirm: (name: string) => void;
@@ -34,7 +34,7 @@ export function SchemaChangeNameDialog({
   title,
   fieldLabel = "Change name",
   placeholder = "Update schema",
-  submitIcon = "edit",
+  submitIcon: SubmitIcon = PencilLine,
   error,
   onClose,
   onConfirm,
@@ -62,13 +62,7 @@ export function SchemaChangeNameDialog({
             Cancel
           </AppButton>
           <AppButton disabled={pending} type="submit">
-            {pending ? (
-              <AppSpinner size={16} />
-            ) : submitIcon === "copy" ? (
-              <Copy size={16} />
-            ) : (
-              <PencilLine size={16} />
-            )}
+            {pending ? <AppSpinner size={16} /> : <SubmitIcon size={16} />}
             {submitLabel}
           </AppButton>
         </>

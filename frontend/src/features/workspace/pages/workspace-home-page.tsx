@@ -15,7 +15,7 @@ export function WorkspaceHomePage() {
       isCurrent
       organization={context.currentOrganization}
       permissions={context.permissions}
-      role={context.currentMembership.role}
+      role={context.currentMembership.roleDefinition.name}
       dashboard={dashboard}
     />
   );

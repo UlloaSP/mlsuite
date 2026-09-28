@@ -6,14 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { validateCustomFieldSource } from "@/capabilities/prediction-runtime/plugins/custom-field-source-runtime";
 import { validateCustomReportSource } from "@/capabilities/prediction-runtime/plugins/custom-report-source-runtime";
 
-/**
- * DetectedPluginType: describes the public data contract consumed or returned by this algorithm.
- *
- * Purpose: loads plugin catalog rows and detects field/report plugin source type.
- * @returns Type-only export; no runtime value is emitted.
- * @throws Propagates browser/API/runtime failures from the called platform APIs.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export type DetectedPluginType = "field" | "report";
 
 type DetectionResult = {
@@ -21,7 +13,6 @@ type DetectionResult = {
   kind: string;
 };
 
-/** detectDeclaredPluginType: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const detectDeclaredPluginType = (source: string): DetectedPluginType | null => {
   if (source.includes("defineFieldKind(")) {
     return "field";
@@ -32,11 +23,9 @@ const detectDeclaredPluginType = (source: string): DetectedPluginType | null => 
   return null;
 };
 
-/** getErrorMessage: internal lookup helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-/** validateByType: internal helper for plugin catalog/runtime source handling. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const validateByType = async (
   organizationId: number | string,
   source: string,
@@ -53,15 +42,6 @@ const validateByType = async (
   throw new Error("Unsupported plugin type.");
 };
 
-/**
- * detectPluginType: performs the exported transformation for this algorithm.
- *
- * Purpose: loads plugin catalog rows and detects field/report plugin source type.
- * @param async ( - Input consumed by detectPluginType; uses the loads plugin catalog rows and detects field/report plugin source type contract.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Propagates browser/API/runtime failures from the called platform APIs.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export const detectPluginType = async (
   organizationId: number | string,
   source: string,

@@ -7,6 +7,7 @@ import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import type { InferenceExportCandidate } from "./OrganizationInferenceExportButton";
+import { toggledInSet } from "./schema-run-export-selection";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 
 export type ExportRunSelection = { versionId: string; runIds: string[] };
@@ -119,14 +120,7 @@ export function InferenceExportSelectionDialog({
             selectedIds={selection.selectedRunIds}
             onClear={() => selection.setSelectedRunIds(new Set())}
             onSelectAll={(ids) => selection.setSelectedRunIds(new Set(ids))}
-            onToggle={(id) =>
-              selection.setSelectedRunIds((current) => {
-                const next = new Set(current);
-                if (next.has(id)) next.delete(id);
-                else next.add(id);
-                return next;
-              })
-            }
+            onToggle={(id) => selection.setSelectedRunIds((current) => toggledInSet(current, id))}
           />
         </div>
       </fieldset>

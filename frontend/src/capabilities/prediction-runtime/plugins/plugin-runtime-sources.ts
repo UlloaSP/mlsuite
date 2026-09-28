@@ -1,4 +1,4 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 import { appFetch } from "@/shared/api/http";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
@@ -23,6 +23,3 @@ export const pluginRuntimeSourcesQueryOptions = (organizationId: number | string
     queryKey: PLUGIN_RUNTIME_SOURCES_QUERY_KEY(organizationId),
     queryFn: ({ signal }) => getAllPluginRuntimeSources(signal),
   });
-
-export const usePluginRuntimeSourcesQuery = (organizationId: number | string, enabled = true) =>
-  useQuery({ ...pluginRuntimeSourcesQueryOptions(organizationId), enabled });

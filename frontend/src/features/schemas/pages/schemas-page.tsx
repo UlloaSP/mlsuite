@@ -70,7 +70,7 @@ export function SchemasPage() {
   } | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
 
-  const canCreateSchemas = workspace?.permissions.canEditModels ?? false;
+  const canCreateSchemas = workspace?.permissions.canCreateModels ?? false;
   const canDeleteSchemas = workspace?.permissions.canDeleteModels ?? false;
   const canEditSchemas = workspace?.permissions.canEditModels ?? false;
 

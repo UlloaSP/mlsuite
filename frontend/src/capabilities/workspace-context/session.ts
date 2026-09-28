@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { getProfile, login, logout, register } from "./session-api";
+import { getProfile, login, logout, register, type UserDTO } from "./session-api";
 
 export const USER_QUERY_KEY = ["user"] as const;
 
@@ -33,11 +33,12 @@ export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "
 export const safeReturnTo = (value: string | null | undefined, fallback = "/home") =>
   value?.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : fallback;
 
-export const useLogin = () => {
+/** Signs in through `authenticate` and adopts the returned user as the session. */
+const useSessionMutation = <Payload>(authenticate: (payload: Payload) => Promise<UserDTO>) => {
   const queryClient = useQueryClient();
   return useMutation({
     meta: { errorHandledLocally: true },
-    mutationFn: login,
+    mutationFn: authenticate,
     onSuccess: (user) => {
       queryClient.setQueryData(USER_QUERY_KEY, user);
       void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
@@ -45,17 +46,9 @@ export const useLogin = () => {
   });
 };
 
-export const useRegister = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: register,
-    onSuccess: (user) => {
-      queryClient.setQueryData(USER_QUERY_KEY, user);
-      void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
-    },
-  });
-};
+export const useLogin = () => useSessionMutation(login);
+
+export const useRegister = () => useSessionMutation(register);
 
 export const useLogout = (redirectTo = "/") => {
   const queryClient = useQueryClient();
@@ -64,7 +57,7 @@ export const useLogout = (redirectTo = "/") => {
     mutationFn: logout,
     onSuccess: () => {
       queryClient.clear();
-      navigate(redirectTo, { replace: true });
+      void navigate(redirectTo, { replace: true });
     },
   });
 };

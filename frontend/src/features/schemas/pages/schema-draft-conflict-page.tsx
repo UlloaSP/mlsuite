@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { CheckCircle2, GitMerge, PencilLine } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -19,6 +19,7 @@ import { isHttpError } from "@/shared/api/http";
 import type {
   SchemaDraftBindingDto,
   SchemaDraftChangeDto,
+  SchemaDraftDiffDto,
   SchemaDraftMergeSide,
 } from "@/features/schemas/api/draft-types";
 import type { SchemaModelBindingDto } from "@/features/schemas/api/schema-types";
@@ -55,9 +56,12 @@ export function SchemaDraftConflictPage() {
   );
   const mergeMutation = useMergeSchemaDraftMutation(draftId ?? "", schemaId ?? "");
   const publishMutation = usePublishSchemaDraftMutation(draftId ?? "", schemaId ?? "");
-  const [resolutions, setResolutions] = useState<Record<string, SchemaDraftMergeSide | undefined>>(
-    {},
-  );
+  // Sides the user picked, valid only for the diff they were picked on.
+  const [picked, setPicked] = useState<{
+    diff?: SchemaDraftDiffDto;
+    sides: Record<string, SchemaDraftMergeSide>;
+  }>({ sides: {} });
+  const resolutions = picked.diff === diff ? picked.sides : {};
   const staleBase = Boolean(draft && diff && draft.baseVersionId !== diff.currentVersionId);
   const needsMerge = Boolean(diff?.hasConflicts || staleBase);
   const currentLabel = currentVersion
@@ -81,23 +85,10 @@ export function SchemaDraftConflictPage() {
         : undefined,
     [draft],
   );
-  const unresolved = useMemo(() => {
-    if (!diff || !needsMerge) return 0;
-    return diff.changes.filter((change) => change.conflict && !resolutions[change.path]).length;
-  }, [diff, needsMerge, resolutions]);
-
-  useEffect(() => {
-    if (!diff) return;
-    setResolutions(
-      Object.fromEntries(
-        diff.changes.flatMap((change) =>
-          change.conflict
-            ? [[change.path, needsMerge ? undefined : defaultSide(change)] as const]
-            : [],
-        ),
-      ),
-    );
-  }, [diff, needsMerge]);
+  const unresolved =
+    diff && needsMerge
+      ? diff.changes.filter((change) => change.conflict && !resolutions[change.path]).length
+      : 0;
 
   const publish = async () => {
     if (!schemaId || !draft) return;
@@ -158,9 +149,12 @@ export function SchemaDraftConflictPage() {
   };
 
   const setResolution = (paths: string[], side: SchemaDraftMergeSide) => {
-    setResolutions((current) => ({
-      ...current,
-      ...Object.fromEntries(paths.map((path) => [path, side])),
+    setPicked((current) => ({
+      diff,
+      sides: {
+        ...(current.diff === diff ? current.sides : {}),
+        ...Object.fromEntries(paths.map((path) => [path, side])),
+      },
     }));
   };
 

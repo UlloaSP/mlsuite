@@ -12,7 +12,8 @@ import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema
 import { InferenceSessionPanel } from "@/features/schemas/components/InferenceSessionPanel";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
 import { SchemaRunReportsPanel } from "@/features/schemas/components/SchemaRunReportsPanel";
-import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
+import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import type {
   SessionEntry,
   useInferenceSession,
@@ -42,7 +43,7 @@ const entryResults = (entry: SessionEntry): PredictionResultDto[] =>
  */
 export function BookmarkPredictPanel({ version, session, fromRunId }: Props) {
   const { data: sourceRun } = usePredictionRun(fromRunId);
-  const catalog = useSchemaPluginCatalog(version.formSchema);
+  const catalog = useSchemaPluginCatalog(version.formSchema, useCurrentOrganizationId() ?? "none");
   const [viewingKey, setViewingKey] = useState<string | null>(null);
   const { onResult } = session;
   const viewing = session.entries.find(

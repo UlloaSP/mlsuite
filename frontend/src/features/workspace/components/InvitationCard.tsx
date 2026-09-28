@@ -37,7 +37,7 @@ export function InvitationCard({
       }
       metadata={
         <>
-          <RoleBadge value={invite.roleDefinition?.name ?? invite.role} />
+          <RoleBadge value={invite.roleDefinition.name} />
           <span>Expires {dateFormatter.format(Date.parse(invite.expiresAt))}</span>
         </>
       }

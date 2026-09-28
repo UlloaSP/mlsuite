@@ -60,6 +60,28 @@ describe("frontend critical reliability", () => {
     expect(errors).toHaveLength(1);
   });
 
+  test("reports only query errors without local ownership", async () => {
+    const errors: unknown[] = [];
+    const client = createAppQueryClient((error) => errors.push(error));
+    const fail = (message: string) => async () => Promise.reject(new Error(message));
+
+    await expect(
+      client.fetchQuery({ queryKey: ["global"], queryFn: fail("global"), retry: false }),
+    ).rejects.toThrow("global");
+    await expect(
+      client.fetchQuery({
+        queryKey: ["local"],
+        queryFn: fail("local"),
+        retry: false,
+        meta: { errorHandledLocally: true },
+      }),
+    ).rejects.toThrow("local");
+    await expect(
+      client.fetchQuery({ queryKey: ["user"], queryFn: fail("session"), retry: false }),
+    ).rejects.toThrow("session");
+    expect(errors).toEqual([new Error("global")]);
+  });
+
   test("removes only the previous organization cache", async () => {
     const client = createAppQueryClient(() => undefined);
     client.setQueryData([...organizationQueryKey(11), "schema"], "old");

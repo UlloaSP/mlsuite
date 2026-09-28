@@ -1,7 +1,6 @@
-import { Search } from "lucide-react";
 import { Fragment } from "react";
-import { useSearchParams } from "react-router";
-import { AppTextField } from "@/shared/ui/AppTextField";
+import { AppSearchField } from "@/shared/ui/AppSearchField";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
@@ -36,8 +35,8 @@ export function RolesCatalog({
   onRole: (role: RoleDefinitionDto) => void;
   onTemplate: (template: RoleTemplateDto) => void;
 }) {
-  const [params, setParams] = useSearchParams();
-  const search = params.get("q") ?? "";
+  const filters = useUrlFilters({ q: "" });
+  const search = filters.values.q;
   const items =
     tab === "roles"
       ? (data?.roles ?? []).map((role) => ({
@@ -74,24 +73,11 @@ export function RolesCatalog({
   return (
     <section className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
-        <AppTextField
-          className="w-full"
-          aria-label={`Search ${tab}`}
+        <AppSearchField
+          label={`Search ${tab}`}
           placeholder={`Search ${tab}…`}
-          prefix={<Search className="size-4 text-fg-muted" />}
           value={search}
-          onChange={(event) =>
-            setParams(
-              (current) => {
-                const next = new URLSearchParams(current);
-                if (event.target.value) next.set("q", event.target.value);
-                else next.delete("q");
-                next.delete("page");
-                return next;
-              },
-              { replace: true },
-            )
-          }
+          onChange={(value) => filters.setFilters({ q: value })}
         />
       </AppToolbar>
       <CatalogListPanel

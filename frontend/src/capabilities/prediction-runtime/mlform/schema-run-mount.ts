@@ -15,12 +15,10 @@ import {
   type PredictionTheme,
   isRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
-import type { CatalogFieldDefinition } from "@/capabilities/prediction-runtime/plugins/custom-field-catalog";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
-import {
-  schemaRunDebug,
-  schemaRunDebugError,
-} from "@/capabilities/prediction-runtime/mlform/run-debug";
+import type {
+  CatalogFieldDefinition,
+  CatalogReportDefinition,
+} from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
@@ -101,11 +99,6 @@ export const mountSchemaRunForm = ({
   onSubmitError,
   onRunningChange,
 }: Options): MountedPredictionForm => {
-  schemaRunDebug("mount.start", {
-    bindings: bindings.length,
-    customFields: customFieldDefinitions.map((definition) => definition.kind),
-    customReports: customReportDefinitions.map((definition) => definition.kind),
-  });
   const runtime = createSchemaRunRuntime({
     schema,
     bindings,
@@ -129,10 +122,6 @@ export const mountSchemaRunForm = ({
     );
     if (next.reportsPending) return;
     submitted = null;
-    schemaRunDebug("mount.after-submit", {
-      raw: next.raw,
-      reportCount: Array.isArray(next.raw.reports) ? next.raw.reports.length : 0,
-    });
     onRunningChange?.(false);
     onSubmit?.(isRecord(next.raw.inputData) ? next.raw.inputData : {}, next.raw, false);
   };
@@ -159,7 +148,6 @@ export const mountSchemaRunForm = ({
       afterSubmit: handleSubmitted,
       onSubmitError({ error }: SubmitErrorContext) {
         submitted = null;
-        schemaRunDebugError("mount.submit-error", error);
         onRunningChange?.(false);
         onSubmitError?.(error);
       },
@@ -186,7 +174,6 @@ export const mountSchemaRunForm = ({
       form.replaceDesignSystem(getPredictionDesignSystem(nextTheme));
     },
     unmount() {
-      schemaRunDebug("mount.unmount");
       unsubscribe();
       form.unmount();
     },

@@ -26,17 +26,16 @@ export function SidebarMenuButton({
   title,
   ...props
 }: SidebarMenuButtonProps) {
-  const { state } = useSidebar();
+  const { collapsed } = useSidebar();
   const position = useAtomValue(navigationPositionAtom);
   const Comp = asChild ? Slot.Root : "button";
-  const collapsed = state === "collapsed";
 
   const button = (
     <Comp
       data-active={isActive}
       className={cx(
         "flex min-h-10 w-full min-w-0 cursor-pointer items-center rounded-control text-sm font-medium transition active:scale-[0.985]",
-        state === "collapsed" ? "justify-center px-0 py-2.5" : "gap-3 px-2.5 py-2.5",
+        collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-2.5 py-2.5",
         isActive
           ? "bg-accent-subtle text-accent-strong"
           : "text-fg-secondary hover:bg-surface-muted hover:text-fg",

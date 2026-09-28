@@ -8,7 +8,7 @@ import { useState, type FormEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import { AppTabs } from "@/shared/ui/AppTabs";
+import { AppTabPanel, AppTabs } from "@/shared/ui/AppTabs";
 import {
   createCustomTheme,
   DEFAULT_CUSTOM_PALETTES,
@@ -90,7 +90,6 @@ export function CreateThemeDialog({
         />
       </div>
       <AppTabs
-        id="theme-appearance"
         aria-label="Theme appearance"
         className="mt-6"
         items={[
@@ -99,20 +98,15 @@ export function CreateThemeDialog({
         ]}
         value={mode}
         onChange={(nextMode) => setDraft({ ...draft, mode: nextMode })}
-      />
-      <div
-        id={`theme-appearance-panel-${mode}`}
-        role="tabpanel"
-        aria-labelledby={`theme-appearance-tab-${mode}`}
-        tabIndex={0}
-        className="mt-5"
       >
-        <ThemeColorFields
-          mode={mode}
-          palette={mode === "light" ? light : dark}
-          onChange={(palette) => setDraft({ ...draft, [mode]: palette })}
-        />
-      </div>
+        <AppTabPanel value={mode} className="mt-5">
+          <ThemeColorFields
+            mode={mode}
+            palette={mode === "light" ? light : dark}
+            onChange={(palette) => setDraft({ ...draft, [mode]: palette })}
+          />
+        </AppTabPanel>
+      </AppTabs>
       <p className="mt-4 min-h-5 text-sm text-danger-fg" aria-live="polite">
         {lightError ? `Light: ${lightError}` : darkError ? `Dark: ${darkError}` : ""}
       </p>

@@ -13,7 +13,11 @@ import {
   useUpdateAdminUser,
 } from "@/features/admin/api/admin-user.mutations";
 import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
-import type { AdminUser } from "@/features/admin/api/admin-user.types";
+import {
+  SYSTEM_ROLE_OPTIONS,
+  type AdminUser,
+  type SystemRole,
+} from "@/features/admin/api/admin-user.types";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
@@ -24,13 +28,12 @@ import { UserCatalogTile } from "@/features/admin/components/UserCatalogTile";
 
 const PAGE_SIZE = 8;
 type ResetTarget = { id: number; fullName: string } | null;
-type UserRoleFilter = "all" | "USER" | "SUPERADMIN";
+type UserRoleFilter = "all" | SystemRole;
 type UserSortMode = "current" | "name" | "newest" | "oldest";
 
 const FILTERS: Array<{ value: UserRoleFilter; label: string }> = [
   { value: "all", label: "All" },
-  { value: "USER", label: "User" },
-  { value: "SUPERADMIN", label: "Superadmin" },
+  ...SYSTEM_ROLE_OPTIONS,
 ];
 
 const SORT_OPTIONS: Array<{ value: UserSortMode; label: string }> = [

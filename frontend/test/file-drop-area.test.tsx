@@ -1,37 +1,24 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, expect, test, vi } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 import { AppFileDropArea } from "@/shared/ui/AppFileDropArea";
+import { mount } from "./support/dom";
 
-let root: Root | undefined;
-afterEach(() => {
-  act(() => root?.unmount());
-  vi.unstubAllGlobals();
-  document.body.innerHTML = "";
-});
-
-function render(onFiles: (files: File[]) => void) {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  act(() =>
-    root?.render(
-      <AppFileDropArea accept=".ts" inputLabel="Upload" label="Drop plugin files" onFiles={onFiles}>
-        <p>No plugin files yet</p>
-      </AppFileDropArea>,
-    ),
+async function render(onFiles: (files: File[]) => void) {
+  const { host } = await mount(
+    <AppFileDropArea accept=".ts" inputLabel="Upload" label="Drop plugin files" onFiles={onFiles}>
+      <p>No plugin files yet</p>
+    </AppFileDropArea>,
   );
   return {
-    area: container.querySelector<HTMLElement>('[role="button"][aria-label="Drop plugin files"]')!,
-    input: container.querySelector<HTMLInputElement>('input[aria-label="Upload"]')!,
+    area: host.querySelector<HTMLElement>('[role="button"][aria-label="Drop plugin files"]')!,
+    input: host.querySelector<HTMLInputElement>('input[aria-label="Upload"]')!,
   };
 }
 
-test("an empty list accepts dropped files anywhere in its area", () => {
+test("an empty list accepts dropped files anywhere in its area", async () => {
   const onFiles = vi.fn();
-  const { area } = render(onFiles);
+  const { area } = await render(onFiles);
   const file = new File(["x"], "rating.ts");
   const drop = new Event("drop", { bubbles: true, cancelable: true });
   Object.defineProperty(drop, "dataTransfer", { value: { files: [file] } });
@@ -41,8 +28,8 @@ test("an empty list accepts dropped files anywhere in its area", () => {
   expect(onFiles).toHaveBeenCalledWith([file]);
 });
 
-test("clicking or pressing Enter on the area opens the file browser", () => {
-  const { area, input } = render(vi.fn());
+test("clicking or pressing Enter on the area opens the file browser", async () => {
+  const { area, input } = await render(vi.fn());
   const browse = vi.spyOn(input, "click");
 
   act(() => area.click());

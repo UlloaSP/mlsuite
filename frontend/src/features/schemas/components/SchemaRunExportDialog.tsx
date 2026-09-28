@@ -32,7 +32,7 @@ export function SchemaRunExportDialog({ open, runs, version, onClose }: Props) {
     [feedback.data, runs],
   );
   const exportSelection = (selection: SchemaRunExportSelection) => {
-    const selected = selectedSchemaRunExportData(selection, runs, feedbackByRun);
+    const selected = selectedSchemaRunExportData(selection, runs, feedback.data);
     downloadSchemaRunExport(selected.runs, version, selected.feedback);
     onClose();
   };

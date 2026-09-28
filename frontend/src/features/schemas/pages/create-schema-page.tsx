@@ -13,14 +13,8 @@ import { SchemaModelPicker } from "@/features/schemas/components/SchemaModelPick
 import { useCreateSchemaWithInitialVersionMutation } from "@/features/schemas/api/schema-mutations";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
 import { initialSchemaModels } from "@/features/schemas/lib/schema-model-selection";
-import { prepareSchemaVersionForSave } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
-import {
-  composeSchemaVersion,
-  type SchemaSourceModel,
-  type SelectedSchemaModel,
-} from "@/features/schemas/lib/merge";
-
-type SelectedModel = SelectedSchemaModel;
+import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
+import { composeSchemaVersion, type SchemaSourceModel } from "@/features/schemas/lib/merge";
 
 type Props = {
   isLoading: boolean;
@@ -33,7 +27,7 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
   const createSchema = useCreateSchemaWithInitialVersionMutation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [selection, setSelected] = useState<SelectedModel[] | null>(null);
+  const [selection, setSelected] = useState<SchemaSourceModel[] | null>(null);
   const [submitError, setSubmitError] = useState<string>();
   const modelId = searchParams.get("modelId");
   const selected = useMemo(
@@ -41,14 +35,7 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
     [selection, models, modelId],
   );
 
-  const composedVersion = useMemo(
-    () =>
-      composeSchemaVersion(
-        "v1",
-        selected.map(({ modelId, modelName, model }) => ({ modelId, modelName, model })),
-      ),
-    [selected],
-  );
+  const composedVersion = useMemo(() => composeSchemaVersion("v1", selected), [selected]);
   const canSubmit = name.trim().length > 0 && selected.length > 0;
   const busy = createSchema.isPending;
   const fieldCount = countVisibleSchemaFields(composedVersion.formSchema);
@@ -61,10 +48,7 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
     setSubmitError(undefined);
     if (!canSubmit || busy) return;
     try {
-      const preparedVersion = prepareSchemaVersionForSave(
-        composedVersion,
-        composedVersion.formSchema,
-      );
+      const preparedVersion = toExecutableSchemaVersion(composedVersion);
       const schemaId = (
         await createSchema.mutateAsync({
           schema: {
@@ -111,7 +95,7 @@ export function CreateSchemaPage({ isLoading, models }: Props) {
             selected={selected}
             onDescriptionChange={setDescription}
             onNameChange={setName}
-            onRemove={(id) => setSelected(selected.filter((item) => String(item.modelId) !== id))}
+            onRemove={(id) => setSelected(selected.filter((item) => String(item.id) !== id))}
           />
         </form>
       </AppSurface>

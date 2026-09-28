@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { StartupGate, STARTUP_OPENING_MS } from "@/app/startup/StartupGate";
@@ -9,6 +8,7 @@ import { StartupScreen, STARTUP_STUCK_MS } from "@/app/startup/StartupScreen";
 import { getStartupServices } from "@/app/startup/startupServices";
 import { startupPhase } from "@/app/startup/startupStatus";
 import { LOADING_REVEAL_DELAY_MS } from "@/shared/ui/useStableLoading";
+import { mount, type Mounted } from "./support/dom";
 
 const startup = vi.hoisted(() => ({ ready: false as boolean | undefined }));
 vi.mock("@/app/startup/startup-query", () => ({
@@ -82,59 +82,54 @@ describe("startup screen", () => {
 });
 
 describe("startup gate", () => {
-  let root: Root;
-  let container: HTMLDivElement;
-  const render = (element: React.ReactNode) => act(() => root.render(element));
-  const text = () => container.textContent ?? "";
+  let view: Mounted;
+  const render = (element: React.ReactNode) => view.rerender(element);
+  const text = () => view.host.textContent ?? "";
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useFakeTimers();
     startup.ready = false;
-    container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
+    view = await mount(null);
   });
 
   afterEach(() => {
-    act(() => root.unmount());
-    container.remove();
     vi.useRealTimers();
   });
 
-  test("renders the app immediately when services are already ready", () => {
+  test("renders the app immediately when services are already ready", async () => {
     startup.ready = true;
-    render(<StartupGate>App</StartupGate>);
+    await render(<StartupGate>App</StartupGate>);
 
     expect(text()).toBe("App");
   });
 
-  test("a slow first check on a reload shows the app skeleton, never the startup screen", () => {
+  test("a slow first check on a reload shows the app skeleton, never the startup screen", async () => {
     startup.ready = undefined;
-    render(<StartupGate>App</StartupGate>);
+    await render(<StartupGate>App</StartupGate>);
     act(() => vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS * 10));
     expect(text()).toBe("Loading MLsuite…");
-    expect(container.querySelector(".startup-screen")).toBeNull();
+    expect(view.host.querySelector(".startup-screen")).toBeNull();
 
     startup.ready = true;
-    render(<StartupGate>App</StartupGate>);
+    await render(<StartupGate>App</StartupGate>);
     expect(text()).toBe("App");
   });
 
-  test("holds Opening MLsuite. before handing over to the app", () => {
-    render(<StartupGate>App</StartupGate>);
+  test("holds Opening MLsuite. before handing over to the app", async () => {
+    await render(<StartupGate>App</StartupGate>);
     act(() => vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS));
     expect(text()).toContain("Starting MLsuite.");
 
     startup.ready = true;
-    render(<StartupGate>App</StartupGate>);
+    await render(<StartupGate>App</StartupGate>);
     expect(text()).toContain("Opening MLsuite.");
 
     act(() => vi.advanceTimersByTime(STARTUP_OPENING_MS));
     expect(text()).toBe("App");
   });
 
-  test("suggests checking logs after a service keeps failing", () => {
-    render(<StartupScreen ready={false} states={["exited"]} />);
+  test("suggests checking logs after a service keeps failing", async () => {
+    await render(<StartupScreen ready={false} states={["exited"]} />);
     act(() => vi.advanceTimersByTime(STARTUP_STUCK_MS - 1));
     expect(text()).not.toContain("docker compose logs");
 

@@ -1,6 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
+import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { predictionRunQueryOptions, useSchemaVersion } from "@/features/schemas/api/schema-queries";
 import {
@@ -30,7 +30,7 @@ export function OrganizationInferenceExportDialog({
     runQueries.length > 0 &&
     runQueries.every((query) => query.isSuccess);
   const preparedVersion = useMemo(
-    () => (version.data ? prepareSchemaVersionDtoForUse(version.data) : undefined),
+    () => (version.data ? toExecutableSchemaVersion(version.data) : undefined),
     [version.data],
   );
   const retry = () => {

@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { act, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { ReviewSelectionCatalog } from "@/capabilities/review-creation/ReviewSelectionCatalog";
+import { buttonByText, changeValue, click as clickIn, mount, type Mounted } from "./support/dom";
 
+let view: Mounted | undefined;
 let host: HTMLDivElement;
-let root: Root;
 let count = 13;
 let loading = false;
 let error = false;
@@ -42,37 +42,26 @@ function Harness() {
 }
 
 async function render() {
-  await act(async () => root.render(<Harness />));
+  if (view) await view.rerender(<Harness />);
+  else {
+    view = await mount(<Harness />);
+    host = view.host;
+  }
 }
 function button(label: string) {
-  const result = [...host.querySelectorAll("button")].find((item) => item.textContent === label);
+  const result = buttonByText(label, host);
   expect(result).toBeDefined();
   return result!;
 }
-async function click(label: string) {
-  await act(async () => button(label).click());
-}
-async function search(value: string) {
-  const input = host.querySelector("input")!;
-  await act(async () => {
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-}
+const click = (label: string) => clickIn(button(label));
+const search = (value: string) => changeValue(host.querySelector("input")!, value);
 beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  host = document.createElement("div");
-  document.body.append(host);
-  root = createRoot(host);
+  view = undefined;
   count = 13;
   loading = false;
   error = false;
   title = "Reviewers";
   retry.mockClear();
-});
-afterEach(async () => {
-  await act(async () => root.unmount());
-  host.remove();
 });
 
 test.each(["Reviewers", "Inferences"])(

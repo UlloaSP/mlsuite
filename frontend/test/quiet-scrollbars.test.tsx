@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { useQuietScrollbars } from "@/app/layouts/use-quiet-scrollbars";
+import { mount } from "./support/dom";
 
 function Harness({ enabled }: { enabled: boolean }) {
   useQuietScrollbars(enabled);
@@ -11,11 +10,9 @@ function Harness({ enabled }: { enabled: boolean }) {
 }
 
 describe("quiet scrollbars", () => {
-  let root: Root;
   let scroller: HTMLElement;
 
   beforeEach(() => {
-    Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
     vi.useFakeTimers();
     const content = document.createElement("div");
     content.className = "app-content-transition";
@@ -29,20 +26,17 @@ describe("quiet scrollbars", () => {
     scroller.getBoundingClientRect = () => ({ left: 0 }) as DOMRect;
     content.append(scroller);
     document.body.append(content);
-    root = createRoot(document.createElement("div"));
   });
 
   afterEach(() => {
-    act(() => root.unmount());
-    document.body.innerHTML = "";
     vi.useRealTimers();
   });
 
   const pointerAt = (clientX: number) =>
     scroller.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX }));
 
-  it("reveals a scrollbar only while the pointer is over it", () => {
-    act(() => root.render(<Harness enabled />));
+  it("reveals a scrollbar only while the pointer is over it", async () => {
+    await mount(<Harness enabled />);
 
     pointerAt(50);
     expect(scroller.hasAttribute("data-scrollbar-visible")).toBe(false);
@@ -52,8 +46,8 @@ describe("quiet scrollbars", () => {
     expect(scroller.hasAttribute("data-scrollbar-visible")).toBe(false);
   });
 
-  it("reveals a scrolling element briefly", () => {
-    act(() => root.render(<Harness enabled />));
+  it("reveals a scrolling element briefly", async () => {
+    await mount(<Harness enabled />);
 
     scroller.dispatchEvent(new Event("scroll"));
     expect(scroller.hasAttribute("data-scrollbar-visible")).toBe(true);
@@ -61,8 +55,8 @@ describe("quiet scrollbars", () => {
     expect(scroller.hasAttribute("data-scrollbar-visible")).toBe(false);
   });
 
-  it("does nothing with fixed navigation", () => {
-    act(() => root.render(<Harness enabled={false} />));
+  it("does nothing with fixed navigation", async () => {
+    await mount(<Harness enabled={false} />);
 
     pointerAt(105);
     scroller.dispatchEvent(new Event("scroll"));

@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Save, X } from "lucide-react";
-import type { SelectedSchemaModel } from "@/features/schemas/lib/merge";
+import type { SchemaSourceModel } from "@/features/schemas/lib/merge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
@@ -20,7 +20,7 @@ type Props = {
   fieldCount: number;
   name: string;
   reportCount: number;
-  selected: SelectedSchemaModel[];
+  selected: SchemaSourceModel[];
   onDescriptionChange: (value: string) => void;
   onNameChange: (value: string) => void;
   onRemove: (modelId: string) => void;
@@ -100,13 +100,13 @@ export function SchemaCreateSummary({
         ) : (
           <ul aria-label="Selected models" className="flex flex-col gap-1">
             {selected.map((item) => (
-              <li key={item.modelId} className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate text-sm text-fg">{item.modelName}</span>
+              <li key={item.id} className="flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate text-sm text-fg">{item.name}</span>
                 <AppButton
-                  aria-label={`Remove ${item.modelName}`}
+                  aria-label={`Remove ${item.name}`}
                   size="sm"
                   variant="ghost"
-                  onClick={() => onRemove(String(item.modelId))}
+                  onClick={() => onRemove(String(item.id))}
                 >
                   <X size={14} />
                 </AppButton>

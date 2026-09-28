@@ -6,8 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { createStore } from "jotai";
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/app-sidebar/Sidebar";
@@ -17,6 +15,7 @@ import {
   navigationPositionAtom,
   sidebarStyleAtom,
 } from "@/shared/ui/sidebar-preferences";
+import { click, mount } from "./support/dom";
 
 const matchMedia = (matches: boolean) =>
   vi.fn(() => ({
@@ -30,15 +29,11 @@ const matchMedia = (matches: boolean) =>
     dispatchEvent: vi.fn(),
   }));
 
-let root: Root | undefined;
-
 beforeEach(() => {
   localStorage.clear();
 });
 
 afterEach(() => {
-  act(() => root?.unmount());
-  root = undefined;
   vi.unstubAllGlobals();
 });
 
@@ -93,22 +88,17 @@ describe("sidebar preferences", () => {
     unsubscribe();
   });
 
-  test("insets a floating sidebar from the viewport on the chosen side", () => {
+  test("insets a floating sidebar from the viewport on the chosen side", async () => {
     vi.stubGlobal("matchMedia", matchMedia(false));
-    const container = document.createElement("div");
-    root = createRoot(container);
-    const render = (side: "left" | "right") =>
-      act(() => {
-        root?.render(
-          <SidebarProvider open onOpenChange={() => undefined}>
-            <Sidebar side={side} variant="floating">
-              Sidebar
-            </Sidebar>
-          </SidebarProvider>,
-        );
-      });
+    const sidebar = (side: "left" | "right") => (
+      <SidebarProvider open onOpenChange={() => undefined}>
+        <Sidebar side={side} variant="floating">
+          Sidebar
+        </Sidebar>
+      </SidebarProvider>
+    );
 
-    render("left");
+    const { host: container, rerender } = await mount(sidebar("left"));
     const left = container.querySelector("aside")!;
     expect(left.dataset.variant).toBe("floating");
     expect([...left.classList]).toEqual(
@@ -116,52 +106,42 @@ describe("sidebar preferences", () => {
     );
     expect(left.classList.contains("h-screen")).toBe(false);
 
-    render("right");
+    await rerender(sidebar("right"));
     expect(container.querySelector("aside")!.classList.contains("mr-2")).toBe(true);
   });
 
-  test("shrinks a collapsed floating sidebar to the height of its icons", () => {
+  test("shrinks a collapsed floating sidebar to the height of its icons", async () => {
     vi.stubGlobal("matchMedia", matchMedia(false));
-    const container = document.createElement("div");
-    root = createRoot(container);
-    const render = (open: boolean) =>
-      act(() => {
-        root?.render(
-          <SidebarProvider open={open} onOpenChange={() => undefined}>
-            <Sidebar side="left" variant="floating">
-              Sidebar
-            </Sidebar>
-          </SidebarProvider>,
-        );
-      });
+    const sidebar = (open: boolean) => (
+      <SidebarProvider open={open} onOpenChange={() => undefined}>
+        <Sidebar side="left" variant="floating">
+          Sidebar
+        </Sidebar>
+      </SidebarProvider>
+    );
 
-    render(false);
+    const { host: container, rerender } = await mount(sidebar(false));
     const collapsed = container.querySelector("aside")!;
     expect([...collapsed.classList]).toEqual(expect.arrayContaining(["h-auto", "self-center"]));
     expect(collapsed.classList.contains("h-[calc(100dvh-1rem)]")).toBe(false);
 
-    render(true);
+    await rerender(sidebar(true));
     expect(container.querySelector("aside")!.classList.contains("h-[calc(100dvh-1rem)]")).toBe(
       true,
     );
   });
 
-  test("floats the mobile drawer away from the screen edges", () => {
+  test("floats the mobile drawer away from the screen edges", async () => {
     vi.stubGlobal("matchMedia", matchMedia(true));
-    const container = document.createElement("div");
-    root = createRoot(container);
-
-    act(() => {
-      root?.render(
-        <SidebarProvider open onOpenChange={() => undefined}>
-          <MobileSidebarTrigger side="right" />
-          <Sidebar side="right" variant="floating">
-            Sidebar
-          </Sidebar>
-        </SidebarProvider>,
-      );
-    });
-    act(() => container.querySelector("button")?.click());
+    const { host: container } = await mount(
+      <SidebarProvider open onOpenChange={() => undefined}>
+        <MobileSidebarTrigger side="right" />
+        <Sidebar side="right" variant="floating">
+          Sidebar
+        </Sidebar>
+      </SidebarProvider>,
+    );
+    await click(container.querySelector("button")!);
 
     const drawer = document.body.querySelector<HTMLElement>('[aria-label="Application sidebar"]')!;
     expect([...drawer.classList]).toEqual(
@@ -169,49 +149,37 @@ describe("sidebar preferences", () => {
     );
   });
 
-  test("uses the selected desktop edge and border", () => {
+  test("uses the selected desktop edge and border", async () => {
     vi.stubGlobal("matchMedia", matchMedia(false));
-    const container = document.createElement("div");
-    root = createRoot(container);
-
-    act(() => {
-      root?.render(
-        <SidebarProvider open onOpenChange={() => undefined}>
-          <Sidebar side="left">Sidebar</Sidebar>
-        </SidebarProvider>,
-      );
-    });
+    const { host: container, rerender } = await mount(
+      <SidebarProvider open onOpenChange={() => undefined}>
+        <Sidebar side="left">Sidebar</Sidebar>
+      </SidebarProvider>,
+    );
 
     const left = container.querySelector("aside");
     expect(left?.dataset.side).toBe("left");
     expect(left?.classList.contains("border-r")).toBe(true);
 
-    act(() => {
-      root?.render(
-        <SidebarProvider open onOpenChange={() => undefined}>
-          <Sidebar side="right">Sidebar</Sidebar>
-        </SidebarProvider>,
-      );
-    });
+    await rerender(
+      <SidebarProvider open onOpenChange={() => undefined}>
+        <Sidebar side="right">Sidebar</Sidebar>
+      </SidebarProvider>,
+    );
 
     const right = container.querySelector("aside");
     expect(right?.dataset.side).toBe("right");
     expect(right?.classList.contains("border-l")).toBe(true);
   });
 
-  test("anchors the mobile trigger and drawer to the selected edge", () => {
+  test("anchors the mobile trigger and drawer to the selected edge", async () => {
     vi.stubGlobal("matchMedia", matchMedia(true));
-    const container = document.createElement("div");
-    root = createRoot(container);
-
-    act(() => {
-      root?.render(
-        <SidebarProvider open onOpenChange={() => undefined}>
-          <MobileSidebarTrigger side="left" />
-          <Sidebar side="left">Sidebar</Sidebar>
-        </SidebarProvider>,
-      );
-    });
+    const { host: container } = await mount(
+      <SidebarProvider open onOpenChange={() => undefined}>
+        <MobileSidebarTrigger side="left" />
+        <Sidebar side="left">Sidebar</Sidebar>
+      </SidebarProvider>,
+    );
 
     const trigger = container.querySelector("button");
     expect(trigger?.parentElement?.classList.contains("justify-start")).toBe(true);
@@ -219,7 +187,7 @@ describe("sidebar preferences", () => {
     expect(trigger?.getAttribute("aria-expanded")).toBe("false");
     expect(trigger?.querySelector(".lucide-panel-left-open")).not.toBeNull();
 
-    act(() => trigger?.click());
+    await click(trigger!);
 
     const drawer = document.body.querySelector<HTMLElement>('[aria-label="Application sidebar"]');
     expect(drawer?.dataset.side).toBe("left");

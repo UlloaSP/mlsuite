@@ -1,5 +1,8 @@
+// @vitest-environment jsdom
+
 import { createStore } from "jotai";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   DEFAULT_CUSTOM_PALETTES,
@@ -7,109 +10,46 @@ import {
   themePaletteContrastError,
 } from "@/shared/ui/theme-catalog";
 
-type MatchMediaResult = {
-  readonly matches: boolean;
-  addEventListener: (type: "change", listener: () => void) => void;
-  removeEventListener: (type: "change", listener: () => void) => void;
-};
-type TestAppearance = {
-  mode: "system" | "light" | "dark";
-  selection: { light: string; dark: string };
-  contrast: 100 | 105 | 110 | 115 | 120 | 125;
-  customThemes: unknown[];
-};
-type TestWindow = {
-  localStorage: Storage;
-  matchMedia: ReturnType<typeof vi.fn<() => MatchMediaResult>>;
-  __MLSUITE_APPLY_APPEARANCE__?: (appearance: TestAppearance) => string;
-  __MLSUITE_APPLY_THEME__?: (mode: string) => string;
-};
+// Importing the plain browser script runs it, as index.html does before the app loads.
+const BOOT_SCRIPT = resolve(import.meta.dirname, "../public/appearance-boot.js");
 
-const createStorage = () => {
-  const values = new Map<string, string>();
-  return {
-    clear: () => values.clear(),
-    getItem: (key: string) => values.get(key) ?? null,
-    removeItem: (key: string) => {
-      values.delete(key);
-    },
-    setItem: (key: string, value: string) => {
-      values.set(key, value);
-    },
-  } as unknown as Storage;
-};
-
-const createDocument = () => {
-  const classes = new Set<string>();
-  const documentElement = {
-    classList: {
-      contains: (name: string) => classes.has(name),
-      toggle: (name: string, force?: boolean) => {
-        if (force) {
-          classes.add(name);
-          return true;
-        }
-        classes.delete(name);
-        return false;
-      },
-    },
-    dataset: {} as Record<string, string>,
-    style: {
-      removeProperty: vi.fn(),
-      setProperty: vi.fn(),
-    },
-  };
-
-  return {
-    documentElement,
-    querySelector: () => null,
-  };
-};
-
-const setSystemTheme = (matches: boolean) => {
-  const storage = createStorage();
-  const document = createDocument();
+const bootWithSystemTheme = async (dark: boolean) => {
   const listeners = new Set<() => void>();
-  let systemDark = matches;
+  let systemDark = dark;
   const media = {
     get matches() {
       return systemDark;
     },
-    addEventListener: (_type: "change", listener: () => void) => {
-      listeners.add(listener);
-    },
-    removeEventListener: (_type: "change", listener: () => void) => {
-      listeners.delete(listener);
-    },
+    addEventListener: (_type: "change", listener: () => void) => listeners.add(listener),
+    removeEventListener: (_type: "change", listener: () => void) => listeners.delete(listener),
   };
-  const window: TestWindow = {
-    localStorage: storage,
-    matchMedia: vi.fn(() => media),
-  };
-
-  vi.stubGlobal("document", document);
-  vi.stubGlobal("localStorage", storage);
-  vi.stubGlobal("window", window);
-
-  return {
-    document,
-    storage,
-    window,
-    setSystemDark: (next: boolean) => {
-      systemDark = next;
-      listeners.forEach((listener) => listener());
-    },
+  vi.stubGlobal("matchMedia", () => media);
+  await import(BOOT_SCRIPT);
+  return (next: boolean) => {
+    systemDark = next;
+    listeners.forEach((listener) => listener());
   };
 };
+
+const root = document.documentElement;
+const themeData = () => ({
+  contrast: root.dataset.contrast,
+  themeDark: root.dataset.themeDark,
+  themeLight: root.dataset.themeLight,
+  themePreset: root.dataset.themePreset,
+});
 
 describe("theme persistence", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.unstubAllGlobals();
+    localStorage.clear();
+    root.className = "";
+    Object.keys(root.dataset).forEach((key) => delete root.dataset[key]);
+    delete window.__MLSUITE_APPLY_APPEARANCE__;
   });
 
   it("cycles through system, light, and dark", async () => {
-    setSystemTheme(false);
     const { nextThemeMode } = await import("@/shared/ui/appearance-state");
 
     expect(nextThemeMode("system")).toBe("light");
@@ -117,117 +57,83 @@ describe("theme persistence", () => {
     expect(nextThemeMode("dark")).toBe("system");
   });
 
-  it("keeps stored dark theme when mounted under a light system theme", async () => {
-    const environment = setSystemTheme(false);
-    environment.storage.setItem("ui/theme", JSON.stringify("dark"));
+  it("reads preferences the boot script migrated and validated", async () => {
+    localStorage.setItem("ui/theme", JSON.stringify("dark"));
+    localStorage.setItem("ui/theme-preset", JSON.stringify("invalid"));
+    localStorage.setItem("ui/contrast", JSON.stringify(103));
+    await bootWithSystemTheme(false);
 
-    const { themeAtom } = await import("@/shared/ui/appearance-state");
-    const store = createStore();
-    const unsubscribe = store.sub(themeAtom, () => undefined);
-
-    expect(store.get(themeAtom)).toBe("dark");
-    expect(environment.document.documentElement.classList.contains("dark")).toBe(true);
-    expect(environment.document.documentElement.dataset).toEqual({
-      contrast: "100",
-      themeDark: "mlsuite",
-      themeLight: "mlsuite",
-      themePreset: "mlsuite",
-    });
-
-    unsubscribe();
-  });
-
-  it("defaults to system theme and resolves from media preference", async () => {
-    const environment = setSystemTheme(true);
-
-    const { themeAtom, themeWithHtmlAtom } = await import("@/shared/ui/appearance-state");
-    const store = createStore();
-    const unsubscribe = store.sub(themeAtom, () => undefined);
-
-    expect(store.get(themeAtom)).toBe("system");
-    expect(store.get(themeWithHtmlAtom)).toBe("dark");
-    expect(environment.document.documentElement.classList.contains("dark")).toBe(true);
-    expect(environment.document.documentElement.dataset).toEqual({
-      contrast: "100",
-      themeDark: "mlsuite",
-      themeLight: "mlsuite",
-      themePreset: "mlsuite",
-    });
-
-    unsubscribe();
-  });
-
-  it("delegates html writes to the boot theme applier", async () => {
-    const environment = setSystemTheme(false);
-    const applied: string[] = [];
-    environment.window.__MLSUITE_APPLY_APPEARANCE__ = vi.fn((appearance: TestAppearance) => {
-      applied.push(appearance.mode);
-      const theme = appearance.mode === "system" ? "light" : appearance.mode;
-      environment.document.documentElement.classList.toggle("dark", theme === "dark");
-      return theme;
-    });
-
-    const { themeWithHtmlAtom } = await import("@/shared/ui/appearance-state");
-    const store = createStore();
-
-    store.set(themeWithHtmlAtom, "dark");
-
-    expect(applied).toEqual(["dark"]);
-    expect(environment.document.documentElement.classList.contains("dark")).toBe(true);
-    expect(environment.document.documentElement.dataset).toEqual({});
-  });
-
-  it("migrates, validates, persists, and follows live system theme changes", async () => {
-    const environment = setSystemTheme(false);
-    environment.storage.setItem("ui/theme", JSON.stringify("system"));
-    environment.storage.setItem("ui/theme-preset", JSON.stringify("invalid"));
-    environment.storage.setItem("ui/contrast", JSON.stringify(103));
-
-    const { contrastAtom, themeModeAtom, themeSelectionAtom, themeWithHtmlAtom } =
+    const { contrastAtom, themeModeAtom, themeSelectionAtom } =
       await import("@/shared/ui/appearance-state");
-    const { THEME_PRESETS } = await import("@/shared/ui/theme-catalog");
     const store = createStore();
-    const unsubscribers = [themeModeAtom, themeSelectionAtom, contrastAtom, themeWithHtmlAtom].map(
-      (appearanceAtom) => store.sub(appearanceAtom, () => undefined),
-    );
 
-    expect(THEME_PRESETS).toHaveLength(13);
-    expect(THEME_PRESETS.every(({ preview }) => preview.light.length && preview.dark.length)).toBe(
-      true,
-    );
-    expect(store.get(themeModeAtom)).toBe("system");
+    expect(store.get(themeModeAtom)).toBe("dark");
     expect(store.get(themeSelectionAtom)).toEqual({ light: "mlsuite", dark: "mlsuite" });
     expect(store.get(contrastAtom)).toBe(100);
-    expect(environment.storage.getItem("ui/color-scheme")).toBe(JSON.stringify("system"));
-    expect(environment.storage.getItem("ui/theme-selection")).toBe(
-      JSON.stringify({ light: "mlsuite", dark: "mlsuite" }),
-    );
-    expect(environment.storage.getItem("ui/contrast")).toBe(JSON.stringify(100));
+    expect(localStorage.getItem("ui/color-scheme")).toBe(JSON.stringify("dark"));
+    expect(localStorage.getItem("ui/contrast")).toBe(JSON.stringify(100));
+    expect(root.classList.contains("dark")).toBe(true);
+    expect(themeData()).toEqual({
+      contrast: "100",
+      themeDark: "mlsuite",
+      themeLight: "mlsuite",
+      themePreset: "mlsuite",
+    });
+  });
+
+  it("persists and applies choices, then follows live system theme changes", async () => {
+    const setSystemDark = await bootWithSystemTheme(false);
+    const { contrastAtom, themeModeAtom, themeSelectionAtom, themeWithHtmlAtom } =
+      await import("@/shared/ui/appearance-state");
+    const store = createStore();
+    const unsubscribe = store.sub(themeWithHtmlAtom, () => undefined);
+
+    expect(store.get(themeModeAtom)).toBe("system");
+    expect(store.get(themeWithHtmlAtom)).toBe("light");
 
     store.set(themeSelectionAtom, { light: "ocean", dark: "iris" });
     store.set(contrastAtom, 125);
-    expect(environment.document.documentElement.dataset).toEqual({
+    expect(themeData()).toEqual({
       contrast: "125",
       themeDark: "iris",
       themeLight: "ocean",
       themePreset: "ocean",
     });
-    expect(environment.storage.getItem("ui/theme-selection")).toBe(
+    expect(localStorage.getItem("ui/theme-selection")).toBe(
       JSON.stringify({ light: "ocean", dark: "iris" }),
     );
-    expect(environment.storage.getItem("ui/contrast")).toBe(JSON.stringify(125));
+    expect(localStorage.getItem("ui/contrast")).toBe(JSON.stringify(125));
 
-    environment.setSystemDark(true);
+    setSystemDark(true);
     expect(store.get(themeWithHtmlAtom)).toBe("dark");
-    expect(environment.document.documentElement.classList.contains("dark")).toBe(true);
-    expect(environment.document.documentElement.dataset.themePreset).toBe("iris");
+    expect(root.classList.contains("dark")).toBe(true);
+    expect(root.dataset.themePreset).toBe("iris");
 
-    unsubscribers.forEach((unsubscribe) => unsubscribe());
+    store.set(themeWithHtmlAtom, "light");
+    expect(localStorage.getItem("ui/color-scheme")).toBe(JSON.stringify("light"));
+    expect(root.classList.contains("dark")).toBe(false);
+    unsubscribe();
+  });
+
+  it("ignores stored values that are no longer valid", async () => {
+    localStorage.setItem("ui/color-scheme", JSON.stringify("sepia"));
+    localStorage.setItem("ui/theme-selection", JSON.stringify({ light: "custom-gone", dark: 1 }));
+    const { themeModeAtom, themeSelectionAtom } = await import("@/shared/ui/appearance-state");
+    const store = createStore();
+
+    expect(store.get(themeModeAtom)).toBe("system");
+    expect(store.get(themeSelectionAtom)).toEqual({ light: "mlsuite", dark: "mlsuite" });
   });
 
   it("applies contrast levels to text, borders, page, and surfaces", () => {
-    const tokens = readFileSync(new URL("../src/shared/ui/tokens.css", import.meta.url), "utf8");
-    const css = readFileSync(new URL("../src/shared/ui/appearance.css", import.meta.url), "utf8");
+    const tokens = readFileSync(
+      resolve(import.meta.dirname, "../src/shared/ui/tokens.css"),
+      "utf8",
+    );
+    const css = readFileSync(
+      resolve(import.meta.dirname, "../src/shared/ui/appearance.css"),
+      "utf8",
+    );
 
     expect(tokens).toContain("var(--contrast-text-mix)");
     expect(tokens).toContain("var(--contrast-border-mix)");

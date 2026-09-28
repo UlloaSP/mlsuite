@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import {
+  latestSchemaVersion,
   schemaVersionId,
-  selectSchemaVersion,
   sortSchemaVersions,
 } from "@/features/schemas/lib/version-selection";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
@@ -19,23 +19,19 @@ const version = (id: string | number, versionNumber: number): SchemaVersionDto =
   }) as unknown as SchemaVersionDto;
 
 describe("schema version selectors and global search shortcut", () => {
-  it("matches selected schema version when backend id is numeric and select value is string", () => {
-    const versions = [version(101, 1), version(202, 2)];
-
-    expect(selectSchemaVersion(versions, "101")?.version).toBe(1);
-    expect(schemaVersionId(versions[0])).toBe("101");
+  it("reads a numeric backend version id as a string", () => {
+    expect(schemaVersionId(version(101, 1))).toBe("101");
   });
 
-  it("falls back to latest version when selected id is empty or unknown", () => {
+  it("orders versions newest first and picks the latest", () => {
     const versions = [version(101, 1), version(202, 2)];
 
-    expect(selectSchemaVersion(versions, "")?.id).toBe(202);
-    expect(selectSchemaVersion(versions, "999")?.id).toBe(202);
     expect(sortSchemaVersions(versions).map((item) => item.version)).toEqual([2, 1]);
+    expect(latestSchemaVersion(versions)?.id).toBe(202);
   });
 
   it("returns no version when no versions exist", () => {
-    expect(selectSchemaVersion([], "")).toBeUndefined();
+    expect(latestSchemaVersion([])).toBeUndefined();
     expect(schemaVersionId(null)).toBe("");
   });
 

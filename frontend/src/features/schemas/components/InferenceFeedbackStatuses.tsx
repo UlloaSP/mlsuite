@@ -5,7 +5,7 @@ import type { FeedbackStatusDisplay } from "@/capabilities/prediction-runtime/fe
 import { schemaFeedbackStatus } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
 import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
+import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import {
   predictionRunQueryOptions,
   predictionRunsFeedbackQueryOptions,
@@ -43,7 +43,7 @@ export function InferenceFeedbackStatuses({
     if (run.isError || version.isError || feedback.isError) status = "ERROR";
     else if (run.isSuccess && version.isSuccess && feedback.isSuccess) {
       try {
-        const executable = prepareSchemaVersionDtoForUse(version.data);
+        const executable = toExecutableSchemaVersion(version.data);
         status = questionnaireConfigError(executable.formSchema)
           ? "ERROR"
           : schemaFeedbackStatus(

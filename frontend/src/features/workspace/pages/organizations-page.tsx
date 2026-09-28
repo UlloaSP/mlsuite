@@ -6,11 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Search, Plus } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
 import type { OrganizationCatalogItemDto } from "@/features/workspace/api/workspace.types";
 import {
   useDeleteOrganizationMutation,
-  useRenameOrganizationMutation,
   useTransferOrganizationOwnershipMutation,
+  useUpdateOrganizationMutation,
 } from "@/features/workspace/api/workspace.mutations";
 import { ORGANIZATION_CATALOG_PAGE_SIZE } from "@/features/workspace/api/workspace.keys";
 import { useOrganizationCatalogPageQuery } from "@/features/workspace/api/workspace.queries";
@@ -29,6 +30,20 @@ const FILTERS: Array<{ value: OrganizationFilterMode; label: string }> = [
   { value: "all", label: "All" },
 ];
 
+/**
+ * The organization mutations report errors locally because the settings page shows them inline;
+ * here they are reported as toasts and rethrown so the tile keeps its dialog or draft open.
+ */
+const withFeedback = async (action: Promise<unknown>, success: string) => {
+  try {
+    await action;
+    toast.success(success);
+  } catch (error) {
+    emitErrorFromUnknown(error);
+    throw error;
+  }
+};
+
 const SORT_OPTIONS: Array<{ value: OrganizationSortMode; label: string }> = [
   { value: "updated", label: "Latest updated" },
   { value: "created", label: "Latest created" },
@@ -44,7 +59,7 @@ export function OrganizationsPage() {
     initialSort: "updated",
     sorts: SORT_OPTIONS.map(({ value }) => value),
   });
-  const renameMutation = useRenameOrganizationMutation();
+  const updateMutation = useUpdateOrganizationMutation();
   const deleteMutation = useDeleteOrganizationMutation();
   const transferMutation = useTransferOrganizationOwnershipMutation();
   const canView = user?.systemRole === "SUPERADMIN";
@@ -54,47 +69,29 @@ export function OrganizationsPage() {
     controls.sort,
     canView,
   );
-  const deleteOrganization = async (organization: OrganizationCatalogItemDto) => {
-    try {
-      await deleteMutation.mutateAsync(organization.id);
-      toast.success("Organization deleted.");
-    } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
-      throw actionError;
-    }
-  };
-  const patchOrganization = async (
-    organization: OrganizationCatalogItemDto,
-    patch: OrganizationPatch,
-  ) => {
-    try {
-      await renameMutation.mutateAsync({
+  const deleteOrganization = (organization: OrganizationCatalogItemDto) =>
+    withFeedback(deleteMutation.mutateAsync(organization.id), "Organization deleted.");
+  const patchOrganization = (organization: OrganizationCatalogItemDto, patch: OrganizationPatch) =>
+    withFeedback(
+      updateMutation.mutateAsync({
         id: organization.id,
         name: patch.name ?? organization.name,
         slug: patch.slug ?? organization.slug,
-        description: patch.description ?? organization.description,
-      });
-      toast.success("Organization updated.");
-    } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
-      throw actionError;
-    }
-  };
-  const transferOwner = async (organization: OrganizationCatalogItemDto, membershipId: number) => {
-    try {
-      await transferMutation.mutateAsync({
+        description: patch.description ?? organization.description ?? undefined,
+      }),
+      "Organization updated.",
+    );
+  const transferOwner = (organization: OrganizationCatalogItemDto, membershipId: number) =>
+    withFeedback(
+      transferMutation.mutateAsync({
         organizationId: organization.id,
         nextOwnerMembershipId: membershipId,
-      });
-      toast.success("Owner transferred.");
-    } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
-      throw actionError;
-    }
-  };
+      }),
+      "Owner transferred.",
+    );
 
   const isActionPending =
-    renameMutation.isPending || deleteMutation.isPending || transferMutation.isPending;
+    updateMutation.isPending || deleteMutation.isPending || transferMutation.isPending;
   const isBusy = pageQuery.isLoading || pageQuery.isFetching || isActionPending;
 
   return (

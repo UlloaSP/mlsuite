@@ -8,9 +8,7 @@ import { cx } from "@/shared/ui/cx";
 import { useSidebar } from "./SidebarContext";
 
 export function SidebarGroupLabel({ children, className, ...props }: ComponentProps<"div">) {
-  const { state } = useSidebar();
-
-  const collapsed = state === "collapsed";
+  const { collapsed } = useSidebar();
 
   // Kept mounted and eased in height, so expanding does not make the menu jump.
   return (

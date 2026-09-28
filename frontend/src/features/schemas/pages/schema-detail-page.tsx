@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppButton } from "@/shared/ui/AppButton";
 import { appButtonClass } from "@/shared/ui/button-styles";
@@ -18,39 +18,22 @@ import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { useSchema, useSchemaVersions } from "@/features/schemas/api/schema-queries";
-import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
-import { schemaVersionId, sortSchemaVersions } from "@/features/schemas/lib/version-selection";
-import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
+import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/SchemaSnapshotPreviewPanel";
 
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
-  const navigate = useNavigate();
   const { data: schema, isLoading, isError } = useSchema(schemaId);
   const showLoader = useStableLoading(isLoading);
   const versionsQuery = useSchemaVersions(schemaId);
-  const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
-  const [changeDialogOpen, setChangeDialogOpen] = useState(false);
-  const sortedVersions = useMemo(
-    () => sortSchemaVersions(versionsQuery.data ?? []),
+  const [changeBase, setChangeBase] = useState<SchemaVersionDto | null>(null);
+  const latestVersion = useMemo(
+    () => latestSchemaVersion(versionsQuery.data ?? []),
     [versionsQuery.data],
   );
-  const latestVersion = sortedVersions[0];
-
-  const createChange = async (name: string) => {
-    if (!schemaId || !latestVersion) return;
-    try {
-      const draft = await draftMutation.mutateAsync({
-        name,
-        baseVersionId: schemaVersionId(latestVersion),
-      });
-      setChangeDialogOpen(false);
-      void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
-    } catch {
-      // The dialog shows the mutation error and stays open for a retry.
-    }
-  };
 
   if (showLoader || isError || !schema) {
     if (showLoader) return <AppPageLoader label="Loading schema…" />;
@@ -79,8 +62,8 @@ export function SchemaDetailPage() {
           actions={
             schemaId ? (
               <AppButton
-                disabled={!latestVersion || draftMutation.isPending}
-                onClick={() => setChangeDialogOpen(true)}
+                disabled={!latestVersion}
+                onClick={() => setChangeBase(latestVersion ?? null)}
               >
                 <Plus size={16} />
                 New change
@@ -102,24 +85,13 @@ export function SchemaDetailPage() {
           </AppPanel>
         )}
       </AppSurface>
-      <SchemaChangeNameDialog
-        defaultName="Update schema"
-        description={
-          latestVersion
-            ? `${latestVersion.name} · v${latestVersion.version}`
-            : "Latest published snapshot"
-        }
-        open={changeDialogOpen}
-        error={draftMutation.error?.message}
-        pending={draftMutation.isPending}
-        submitLabel="Create change"
-        title="New change"
-        onClose={() => {
-          draftMutation.reset();
-          setChangeDialogOpen(false);
-        }}
-        onConfirm={(name) => void createChange(name)}
-      />
+      {schemaId ? (
+        <CreateSchemaChangeDialog
+          schemaId={schemaId}
+          baseVersion={changeBase}
+          onClose={() => setChangeBase(null)}
+        />
+      ) : null}
     </AppPage>
   );
 }

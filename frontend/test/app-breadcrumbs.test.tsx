@@ -6,28 +6,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { DropdownMenu } from "radix-ui";
-import { MemoryRouter } from "react-router";
-import { afterEach, expect, test, vi } from "vite-plus/test";
+import { expect, test } from "vite-plus/test";
 import { AppBreadcrumbs, type AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-
-let root: Root | undefined;
-afterEach(async () => {
-  await act(async () => root?.unmount());
-  vi.unstubAllGlobals();
-  document.body.innerHTML = "";
-});
+import { mount } from "./support/dom";
 
 async function render(node: React.ReactNode) {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  await act(async () => root?.render(<MemoryRouter>{node}</MemoryRouter>));
-  return container.querySelector<HTMLElement>('nav[aria-label="Breadcrumb"]')!;
+  const { host } = await mount(node, { route: "/" });
+  return host.querySelector<HTMLElement>('nav[aria-label="Breadcrumb"]')!;
 }
 
 const trail: AppBreadcrumbItem[] = [

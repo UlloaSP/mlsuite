@@ -1,14 +1,13 @@
 // @vitest-environment jsdom
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, useLocation, useSearchParams } from "react-router";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { useLocation, useSearchParams } from "react-router";
+import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
 import { InferenceCatalogList } from "@/features/inferences/components/InferenceCatalogList";
+import { buttonByText, click, mount, type Mounted } from "./support/dom";
 
 let host: HTMLDivElement;
-let root: Root;
+let view: Mounted | undefined;
 const retry = vi.fn();
 let count = 21;
 let loading = false;
@@ -44,49 +43,34 @@ function CatalogHarness() {
   );
 }
 
+// Later calls re-render the same router, which keeps its current location.
 async function render(url = "/inferences") {
-  await act(async () =>
-    root.render(
-      <MemoryRouter initialEntries={[url]}>
-        <CatalogHarness />
-      </MemoryRouter>,
-    ),
-  );
-}
-async function click(text: string) {
-  const button = [...host.querySelectorAll("button")].find((item) => item.textContent === text);
-  expect(button).toBeDefined();
-  await act(async () => button!.click());
+  if (view) await view.rerender(<CatalogHarness />);
+  else {
+    view = await mount(<CatalogHarness />, { route: url });
+    host = view.host;
+  }
 }
 beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  host = document.createElement("div");
-  document.body.append(host);
-  root = createRoot(host);
+  view = undefined;
   count = 21;
   loading = false;
   error = null;
   resetKey = "org-1";
   retry.mockClear();
 });
-afterEach(async () => {
-  await act(async () => root.unmount());
-  host.remove();
-});
 
 test("paginates ten actual items, advances, returns, and disables page boundaries", async () => {
   await render();
   expect(host.querySelectorAll("article")).toHaveLength(10);
   expect(host.querySelector("article")?.textContent).toBe("Inference 1");
-  await click("Next");
+  await click("Next", host);
   expect(host.querySelector("article")?.textContent).toBe("Inference 11");
   expect(host.querySelector("output")?.textContent).toBe("?page=2");
-  await click("Next");
+  await click("Next", host);
   expect(host.querySelectorAll("article")).toHaveLength(1);
-  expect(
-    [...host.querySelectorAll("button")].find((item) => item.textContent === "Next")?.disabled,
-  ).toBe(true);
-  await click("Previous");
+  expect(buttonByText("Next", host)?.disabled).toBe(true);
+  await click("Previous", host);
   expect(host.querySelector("article")?.textContent).toBe("Inference 11");
 });
 
@@ -96,7 +80,7 @@ test("repeated navigation keeps only the current page gaps without stale ellipse
   for (let round = 0; round < 2; round++) {
     for (const direction of ["Next", "Previous"]) {
       for (let step = 0; step < 9; step++) {
-        await click(direction);
+        await click(direction, host);
         const footer = host.querySelector("footer")!;
         const gaps = [...footer.querySelectorAll("span")].filter(
           (node) => node.textContent === "...",
@@ -118,7 +102,7 @@ test("repeated navigation keeps only the current page gaps without stale ellipse
 test("loads URL pages and resets when filters or organization change", async () => {
   await render("/inferences?page=3");
   expect(host.querySelector("article")?.textContent).toBe("Inference 21");
-  await click("Filter");
+  await click("Filter", host);
   expect(host.querySelector("output")?.textContent).toBe("?q=21");
   expect(host.querySelector("article")?.textContent).toBe("Inference 21");
   resetKey = "org-2";
@@ -165,40 +149,37 @@ test("shows empty and request failure states with retry", async () => {
   await render();
   expect(host.textContent).not.toContain("No matching inferences");
   expect(host.textContent).toContain(error);
-  await click("Retry");
+  await click("Retry", host);
   expect(retry).toHaveBeenCalledOnce();
 });
 
 test("renders inferences as individual keyboard-focusable catalog entries", async () => {
-  await act(async () =>
-    root.render(
-      <MemoryRouter>
-        <InferenceCatalogList
-          canDelete={false}
-          canManageReviews={false}
-          deletePending={false}
-          onDelete={vi.fn()}
-          items={[
-            {
-              id: 1,
-              name: "Organization run",
-              createdByName: "Ada Lovelace",
-              createdByEmail: "ada@example.com",
-              schemaId: 2,
-              schemaName: "Risk",
-              schemaVersionId: 3,
-              schemaVersion: 1,
-              schemaVersionName: "First",
-              bookmarkId: null,
-              bookmarkName: null,
-              createdAt: "2026-09-09T10:00:00Z",
-              status: "PARTIAL_SUCCESS",
-            },
-          ]}
-        />
-      </MemoryRouter>,
-    ),
-  );
+  ({ host } = await mount(
+    <InferenceCatalogList
+      canDelete={false}
+      canManageReviews={false}
+      deletePending={false}
+      onDelete={vi.fn()}
+      items={[
+        {
+          id: 1,
+          name: "Organization run",
+          createdByName: "Ada Lovelace",
+          createdByEmail: "ada@example.com",
+          schemaId: 2,
+          schemaName: "Risk",
+          schemaVersionId: 3,
+          schemaVersion: 1,
+          schemaVersionName: "First",
+          bookmarkId: null,
+          bookmarkName: null,
+          createdAt: "2026-09-09T10:00:00Z",
+          status: "PARTIAL_SUCCESS",
+        },
+      ]}
+    />,
+    { route: "/" },
+  ));
   expect(host.querySelectorAll("article")).toHaveLength(1);
   expect(host.querySelector("table")).toBeNull();
   expect(host.textContent).toContain("Partial success");

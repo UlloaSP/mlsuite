@@ -7,7 +7,7 @@ import { FileJson2, History } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
+import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
@@ -48,7 +48,7 @@ function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
   if (bookmark && pinnedVersionId === undefined) setPinnedVersionId(bookmark.versionId);
   const versionQuery = useSchemaVersion(pinnedVersionId);
   const version = useMemo(
-    () => (versionQuery.data ? prepareSchemaVersionDtoForUse(versionQuery.data) : undefined),
+    () => (versionQuery.data ? toExecutableSchemaVersion(versionQuery.data) : undefined),
     [versionQuery.data],
   );
   // The History count comes from the Predict catalog, which refreshes when runs are saved.

@@ -8,13 +8,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Provider, createStore } from "jotai";
 import { act } from "react";
 import { MemoryRouter } from "react-router";
-import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
 import { BookmarkPredictPanel } from "@/features/schemas/components/BookmarkPredictPanel";
 import { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { buttonByText, changeValue, click, mount } from "./support/dom";
 
 const mountState = vi.hoisted(() => ({
   mount: vi.fn(),
@@ -41,7 +41,10 @@ vi.mock("@/capabilities/prediction-runtime/mlform/schema-run-mount", () => ({
   mountSchemaRunForm: mountState.mount,
 }));
 
-vi.mock("@/features/schemas/lib/schema-plugin-catalog", () => ({
+vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useCurrentOrganizationId: () => 1,
+}));
+vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
   useSchemaPluginCatalog: () => catalogState,
 }));
 
@@ -90,8 +93,6 @@ const completedRaw = {
 };
 
 describe("schema run creation UI", () => {
-  let root: Root | null = null;
-
   beforeEach(() => {
     mountState.mount.mockReset();
     mountState.unmount.mockReset();
@@ -114,26 +115,18 @@ describe("schema run creation UI", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
-    act(() => root?.unmount());
-    root = null;
-    document.body.innerHTML = "";
     vi.clearAllMocks();
   });
 
   test("updates mounted form theme without remounting resolved reports", async () => {
     const store = createStore();
     store.set(themeWithHtmlAtom, "light");
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    await act(async () => {
-      root?.render(
-        <Provider store={store}>
-          <SchemaRunForm version={version} onSubmit={vi.fn()} />
-        </Provider>,
-      );
-      await flush();
-    });
+    await mount(
+      <Provider store={store}>
+        <SchemaRunForm version={version} onSubmit={vi.fn()} />
+      </Provider>,
+    );
+    await act(flush);
     expect(mountState.mount).toHaveBeenCalledTimes(1);
     mountState.updateTheme.mockClear();
 
@@ -193,7 +186,7 @@ describe("schema run creation UI", () => {
   });
 
   test("keeps each run in the session until it is saved or removed", async () => {
-    const container = renderSession();
+    const container = await renderSession();
     const options = () => mountState.mount.mock.calls[0][0];
     const rows = () => [...container.querySelectorAll("aside li")];
     expect(container.textContent).toContain("Each run appears here");
@@ -220,7 +213,7 @@ describe("schema run creation UI", () => {
     expect(rows()[0].textContent).toContain("Success");
     expect(saveButton(rows()[0]).disabled).toBe(false);
 
-    await act(async () => typeInto(nameInputs()[0], "Reviewed case"));
+    await changeValue(nameInputs()[0], "Reviewed case");
     pageState.mutateAsync.mockRejectedValueOnce(new Error("Prediction run name already exists"));
     await act(async () => {
       saveButton(rows()[0]).click();
@@ -246,12 +239,12 @@ describe("schema run creation UI", () => {
     });
     expect(rows()).toHaveLength(1);
 
-    await act(async () => removeButton(rows()[0]).click());
+    await click(removeButton(rows()[0]));
     expect(rows()).toHaveLength(0);
   });
 
   test("saves every finished run in order, and asks before discarding unsaved ones", async () => {
-    const container = renderSession();
+    const container = await renderSession();
     const options = () => mountState.mount.mock.calls[0][0];
     for (const age of [1, 2]) {
       vi.setSystemTime(new Date(`2026-08-24T14:5${age}:00.000Z`));
@@ -263,7 +256,7 @@ describe("schema run creation UI", () => {
       });
     }
     await act(async () => {
-      buttonNamed(container, "Save all (2)").click();
+      buttonByText("Save all (2)", container)!.click();
       await vi.runAllTimersAsync();
     });
     expect(pageState.mutateAsync.mock.calls.map(([request]) => request.name)).toEqual([
@@ -278,21 +271,18 @@ describe("schema run creation UI", () => {
       options().onSubmit({ age: 3 }, completedRaw, false);
       await vi.runAllTimersAsync();
     });
-    await act(async () => buttonNamed(container, "Discard all").click());
+    await click("Discard all", container);
     expect(document.body.textContent).toContain("1 unsaved inference is lost");
     await act(async () => {
-      buttonNamed(document.body, "Discard all", "[role=dialog]").click();
+      buttonByText("Discard all", document.querySelector("[role=dialog]")!)!.click();
       await vi.runAllTimersAsync();
     });
     expect(container.querySelectorAll("aside li")).toHaveLength(0);
   });
   test("the session outlives the page; a run still going when it closes is dropped", async () => {
-    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     vi.useFakeTimers();
     const store = createStore();
-    const container = document.createElement("div");
-    document.body.append(container);
-    const sessionRoot = createRoot(container);
+    const { host: container, root: sessionRoot } = await mount(null);
     const show = (visible: boolean) =>
       act(async () => {
         sessionRoot.render(
@@ -317,16 +307,12 @@ describe("schema run creation UI", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].textContent).toContain("Success");
     expect(container.textContent).toContain("1 unsaved");
-    await act(async () => sessionRoot.unmount());
   });
 
   test("another member signing in on the page never sees the previous member's runs", async () => {
-    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     vi.useFakeTimers();
     const store = createStore();
-    const container = document.createElement("div");
-    document.body.append(container);
-    const sessionRoot = createRoot(container);
+    const { host: container, root: sessionRoot } = await mount(null);
     const show = () =>
       act(async () => {
         sessionRoot.render(
@@ -353,7 +339,6 @@ describe("schema run creation UI", () => {
     sessionUser.id = "user-1";
     await show();
     expect(container.querySelectorAll("aside li")).toHaveLength(1);
-    await act(async () => sessionRoot.unmount());
   });
 });
 
@@ -366,20 +351,15 @@ function SessionHarness() {
   );
 }
 
-function renderSession() {
-  const container = document.createElement("div");
-  document.body.append(container);
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+async function renderSession() {
   vi.useFakeTimers();
-  act(() => {
-    createRoot(container).render(
-      <Provider store={createStore()}>
-        <SessionHarness />
-      </Provider>,
-    );
-  });
+  const { host } = await mount(
+    <Provider store={createStore()}>
+      <SessionHarness />
+    </Provider>,
+  );
   void act(() => vi.runOnlyPendingTimers());
-  return container;
+  return host;
 }
 
 const nameInputs = () => [
@@ -391,13 +371,3 @@ const saveButton = (row: Element) =>
 
 const removeButton = (row: Element) =>
   row.querySelector<HTMLButtonElement>('button[aria-label^="Remove"]')!;
-
-const buttonNamed = (scope: ParentNode, label: string, within = "") =>
-  [...scope.querySelectorAll<HTMLButtonElement>(`${within} button`.trim())].find(
-    (button) => button.textContent?.trim() === label,
-  )!;
-
-const typeInto = (input: HTMLInputElement, value: string) => {
-  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
-  input.dispatchEvent(new Event("input", { bubbles: true }));
-};

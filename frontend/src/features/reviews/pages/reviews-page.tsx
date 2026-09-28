@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
-import { prepareSchemaVersionDtoForUse } from "@/capabilities/prediction-runtime/mlform/binding-rebase";
+import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { useSubmitSchemaReviewInboxMutation } from "@/features/reviews/api/review-mutations";
 import { useSchemaReviewInbox } from "@/features/reviews/api/review-queries";
 import type { SchemaReviewContextDto } from "@/features/reviews/api/review-types";
@@ -52,8 +52,7 @@ export function ReviewsPage() {
   );
   const selectedReview = inbox.data?.find((review) => review.publicId === selected?.reviewId);
   const selectedVersion = useMemo(
-    () =>
-      selectedReview ? prepareSchemaVersionDtoForUse(selectedReview.schemaVersion) : undefined,
+    () => (selectedReview ? toExecutableSchemaVersion(selectedReview.schemaVersion) : undefined),
     [selectedReview],
   );
 

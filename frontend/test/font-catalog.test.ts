@@ -3,7 +3,6 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   INTERFACE_FONTS,
   INTERFACE_STACKS,
-  LEGACY_FONT_IDS,
   MONOSPACE_FONTS,
   MONOSPACE_STACKS,
 } from "@/shared/ui/font-catalog";
@@ -28,7 +27,6 @@ describe("font catalog", () => {
   it("applies the same presets before first paint as the app does", () => {
     expect(bootStacks("interfaceStacks")).toEqual(INTERFACE_STACKS);
     expect(bootStacks("monospaceStacks")).toEqual(MONOSPACE_STACKS);
-    expect(bootStacks("legacyFontIds")).toEqual(LEGACY_FONT_IDS);
   });
 
   it("declares every web family in the preloaded font stylesheet", () => {
@@ -44,7 +42,9 @@ describe("font catalog", () => {
 
   it("migrates every legacy id to an existing preset", () => {
     const presets = new Set<string>([...INTERFACE_FONTS, ...MONOSPACE_FONTS].map((f) => f.value));
+    const legacyTargets = Object.values(bootStacks("legacyFontIds"));
 
-    expect(Object.values(LEGACY_FONT_IDS).every((id) => presets.has(id))).toBe(true);
+    expect(legacyTargets.length).toBeGreaterThan(0);
+    expect(legacyTargets.every((id) => presets.has(id))).toBe(true);
   });
 });

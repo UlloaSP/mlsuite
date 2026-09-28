@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import { validatedStorage } from "@/shared/lib/validated-storage";
 
 export type ShortcutId = "global-search" | "toggle-theme" | "toggle-fullscreen" | "toggle-sidebar";
 export type ShortcutBinding = {
@@ -16,6 +16,7 @@ export type ShortcutBinding = {
 export type ShortcutBindings = Record<ShortcutId, ShortcutBinding>;
 export type ShortcutEvent = {
   key: string;
+  code?: string;
   altKey?: boolean;
   ctrlKey?: boolean;
   metaKey?: boolean;
@@ -95,31 +96,19 @@ export const isShortcutBindings = (value: unknown): value is ShortcutBindings =>
   );
 };
 
-const readBindings = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_SHORTCUTS;
-    const parsed: unknown = JSON.parse(raw);
-    return isShortcutBindings(parsed) ? parsed : DEFAULT_SHORTCUTS;
-  } catch {
-    return DEFAULT_SHORTCUTS;
-  }
-};
-
-const storedBindingsAtom = atomWithStorage<unknown>(STORAGE_KEY, readBindings(), undefined, {
-  getOnInit: true,
-});
-
-export const shortcutBindingsAtom = atom(
-  (get) => {
-    const value = get(storedBindingsAtom);
-    return isShortcutBindings(value) ? value : DEFAULT_SHORTCUTS;
-  },
-  (_, set, bindings: ShortcutBindings) =>
-    set(storedBindingsAtom, isShortcutBindings(bindings) ? bindings : DEFAULT_SHORTCUTS),
+export const shortcutBindingsAtom = atomWithStorage(
+  STORAGE_KEY,
+  DEFAULT_SHORTCUTS,
+  validatedStorage(isShortcutBindings),
+  { getOnInit: true },
 );
 
-shortcutBindingsAtom.onMount = (setBindings) => setBindings(readBindings());
+export const isTypingTarget = (target: EventTarget | null) =>
+  target instanceof HTMLElement &&
+  (target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.tagName === "SELECT" ||
+    target.isContentEditable);
 
 export const matchesShortcut = (event: ShortcutEvent, binding: ShortcutBinding) =>
   event.key.toLowerCase() === binding.key &&

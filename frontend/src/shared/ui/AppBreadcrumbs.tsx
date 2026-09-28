@@ -3,16 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { ChevronRight } from "lucide-react";
 import { Fragment, type HTMLAttributes, type ReactNode } from "react";
-import { Breadcrumb } from "./breadcrumb/Breadcrumb";
+import { Link } from "react-router";
 import type { BreadcrumbRoot, BreadcrumbTrailItem } from "./breadcrumb/breadcrumb-context";
 import { BreadcrumbEllipsisMenu } from "./breadcrumb/BreadcrumbEllipsisMenu";
-import { BreadcrumbItem } from "./breadcrumb/BreadcrumbItem";
-import { BreadcrumbLink } from "./breadcrumb/BreadcrumbLink";
-import { BreadcrumbList } from "./breadcrumb/BreadcrumbList";
-import { BreadcrumbPage } from "./breadcrumb/BreadcrumbPage";
 import { BreadcrumbRootItem } from "./breadcrumb/BreadcrumbRootItem";
-import { BreadcrumbSeparator } from "./breadcrumb/BreadcrumbSeparator";
+import { CRUMB_LINK_CLASS, CRUMB_PAGE_CLASS } from "./breadcrumb/crumb-styles";
+import { cx } from "./cx";
 import { useMediaQuery } from "./use-media-query";
 
 export type AppBreadcrumbItem = {
@@ -51,27 +49,38 @@ export function AppBreadcrumbs({
   const last = items.length - 1;
 
   return (
-    <Breadcrumb className={className}>
-      <BreadcrumbList>
+    <nav
+      aria-label="Breadcrumb"
+      className={cx("relative z-20 flex min-w-0 overflow-visible text-sm", className)}
+    >
+      <ol className="flex min-w-0 flex-wrap items-center gap-2 break-words overflow-visible">
         {slots.map((slot, position) => (
           <Fragment key={slot.kind === "more" ? "more" : (slot.item.to ?? `item-${slot.index}`)}>
-            <BreadcrumbItem>
+            <li className="inline-flex min-w-0 items-center gap-2">
               {slot.kind === "more" ? (
                 <BreadcrumbEllipsisMenu items={slot.items} />
               ) : slot.index === 0 && root ? (
                 <BreadcrumbRootItem current={last === 0} root={root} />
               ) : slot.index === last ? (
-                <BreadcrumbPage>{slot.item.label}</BreadcrumbPage>
+                <span aria-current="page" className={CRUMB_PAGE_CLASS}>
+                  {slot.item.label}
+                </span>
               ) : slot.item.to ? (
-                <BreadcrumbLink to={slot.item.to}>{slot.item.label}</BreadcrumbLink>
+                <Link className={CRUMB_LINK_CLASS} to={slot.item.to}>
+                  {slot.item.label}
+                </Link>
               ) : (
                 <span className="min-w-0 break-words text-fg-secondary">{slot.item.label}</span>
               )}
-            </BreadcrumbItem>
-            {position < slots.length - 1 ? <BreadcrumbSeparator /> : null}
+            </li>
+            {position < slots.length - 1 ? (
+              <li aria-hidden="true" className="shrink-0 text-fg-muted" role="presentation">
+                <ChevronRight size={14} />
+              </li>
+            ) : null}
           </Fragment>
         ))}
-      </BreadcrumbList>
-    </Breadcrumb>
+      </ol>
+    </nav>
   );
 }

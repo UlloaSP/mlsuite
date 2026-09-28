@@ -5,22 +5,21 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCompareArrows, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import type { SchemaDraftDto } from "@/features/schemas/api/draft-types";
-import {
-  useCreateSchemaDraftMutation,
-  useUpdateSchemaDraftMutation,
-} from "@/features/schemas/api/schema-draft-mutations";
+import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { useUpdateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import {
   useSchema,
   useSchemaDrafts,
   useSchemaVersions,
 } from "@/features/schemas/api/schema-queries";
-import { schemaVersionId, sortSchemaVersions } from "@/features/schemas/lib/version-selection";
+import { latestSchemaVersion, schemaVersionId } from "@/features/schemas/lib/version-selection";
+import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
 import { SchemaChangeCatalogItem } from "@/features/schemas/components/SchemaChangeCatalogItem";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
@@ -45,13 +44,11 @@ const SORTS: Array<{ value: ChangeSort; label: string }> = [
 
 export function SchemaChangesPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
-  const navigate = useNavigate();
   const { data: schema } = useSchema(schemaId);
   const draftsQuery = useSchemaDrafts(schemaId);
   const versionsQuery = useSchemaVersions(schemaId);
   const versions = versionsQuery.data ?? EMPTY_VERSIONS;
-  const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
-  const [changeDialogOpen, setChangeDialogOpen] = useState(false);
+  const [changeBase, setChangeBase] = useState<SchemaVersionDto | null>(null);
   const [renameTarget, setRenameTarget] = useState<SchemaDraftDto | null>(null);
   const renameMutation = useUpdateSchemaDraftMutation(renameTarget?.id ?? "");
   const controls = useCatalogControls<ChangeFilter, ChangeSort>({
@@ -62,27 +59,12 @@ export function SchemaChangesPage() {
     sorts: SORTS.map(({ value }) => value),
   });
   const drafts = draftsQuery.data ?? EMPTY_DRAFTS;
-  const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
-  const latestVersion = sortedVersions[0];
+  const latestVersion = useMemo(() => latestSchemaVersion(versions), [versions]);
   const filtered = useMemo(
     () => filterChanges(drafts, controls.search, controls.filter, controls.sort),
     [controls.filter, controls.search, controls.sort, drafts],
   );
   const pageItems = filtered.slice(controls.page * PAGE_SIZE, (controls.page + 1) * PAGE_SIZE);
-
-  const createChange = async (name: string) => {
-    if (!schemaId || !latestVersion) return;
-    try {
-      const draft = await draftMutation.mutateAsync({
-        name,
-        baseVersionId: schemaVersionId(latestVersion),
-      });
-      setChangeDialogOpen(false);
-      void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
-    } catch {
-      // The dialog shows the mutation error and stays open for a retry.
-    }
-  };
 
   const renameChange = async (name: string) => {
     if (!renameTarget) return;
@@ -116,8 +98,8 @@ export function SchemaChangesPage() {
           ],
           actions: schemaId ? (
             <AppButton
-              disabled={!latestVersion || draftMutation.isPending}
-              onClick={() => setChangeDialogOpen(true)}
+              disabled={!latestVersion}
+              onClick={() => setChangeBase(latestVersion ?? null)}
             >
               <Plus size={16} />
               New change
@@ -162,22 +144,13 @@ export function SchemaChangesPage() {
           ) : null
         }
       />
-      <SchemaChangeNameDialog
-        defaultName="Update schema"
-        description={
-          latestVersion ? `${latestVersion.name} · v${latestVersion.version}` : "Latest snapshot"
-        }
-        open={changeDialogOpen}
-        error={draftMutation.error?.message}
-        pending={draftMutation.isPending}
-        submitLabel="Create change"
-        title="New change"
-        onClose={() => {
-          draftMutation.reset();
-          setChangeDialogOpen(false);
-        }}
-        onConfirm={(name) => void createChange(name)}
-      />
+      {schemaId ? (
+        <CreateSchemaChangeDialog
+          schemaId={schemaId}
+          baseVersion={changeBase}
+          onClose={() => setChangeBase(null)}
+        />
+      ) : null}
       <SchemaChangeNameDialog
         defaultName={renameTarget?.name ?? ""}
         description={

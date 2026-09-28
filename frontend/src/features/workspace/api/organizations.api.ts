@@ -60,12 +60,6 @@ export const getOrganizationPage = (
   });
 };
 
-export const getOrganization = (
-  organizationId: number,
-  signal?: AbortSignal,
-): Promise<OrganizationDto> =>
-  appFetch<OrganizationDto>(`/api/organizations/${organizationId}`, { signal });
-
 export const removeOrganizationMember = (
   organizationId: number,
   membershipId: number,

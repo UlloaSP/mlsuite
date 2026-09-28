@@ -7,11 +7,6 @@ import type { JsonRecord, SchemaVersionDto } from "./schema-types";
 
 export type SchemaDraftStatus = "DRAFT" | "CONFLICT" | "PUBLISHED";
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaDraftDto = {
   id: string;
   schemaId: string;
@@ -26,31 +21,16 @@ export type SchemaDraftDto = {
   updatedAt: string;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaDraftBindingDto = {
   modelId: string | number;
   modelName?: string;
   pluginPolicy?: JsonRecord;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type CreateSchemaDraftRequest = {
   name: string;
   baseVersionId: string | number;
 };
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export type UpdateSchemaDraftRequest = {
   expectedDraftRevision: number;
@@ -59,11 +39,6 @@ export type UpdateSchemaDraftRequest = {
   bindings: SchemaDraftBindingDto[];
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaDraftDiffDto = {
   baseVersionId: string;
   currentVersionId: string;
@@ -71,11 +46,6 @@ export type SchemaDraftDiffDto = {
   hasConflicts: boolean;
   changes: SchemaDraftChangeDto[];
 };
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export type SchemaDraftChangeDto = {
   path: string;
@@ -89,11 +59,6 @@ export type SchemaDraftChangeDto = {
   conflict: boolean;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaDraftMergeRequest = {
   expectedCurrentVersionId: string | number;
   expectedCurrentDocumentHash: string;
@@ -101,37 +66,17 @@ export type SchemaDraftMergeRequest = {
   resolutions: SchemaDraftMergeResolutionDto[];
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaDraftMergeResolutionDto = {
   path: string;
   side: SchemaDraftMergeSide;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaDraftMergeSide = "current" | "incoming";
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export type SchemaDraftMergeResultDto = {
   draft: SchemaDraftDto;
   diff: SchemaDraftDiffDto;
 };
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export type SchemaDraftPublishResultDto = {
   status: "published" | "conflict";

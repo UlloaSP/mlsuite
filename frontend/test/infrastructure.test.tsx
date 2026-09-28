@@ -4,7 +4,6 @@ import {
   buildDashboardAlerts,
   countHealthyServices,
   countProblemServices,
-  getOverviewTimestamp,
 } from "@/features/infrastructure/lib/dashboard-summary";
 import {
   appendLogLine,
@@ -51,12 +50,12 @@ const service = {
 
 const overview: InfrastructureOverviewDto = {
   aggregate: {
-    cpu: { percent: 10, supported: true },
-    ram: { percent: 20, supported: true },
-    diskRead: { bytes: 1024, supported: true },
-    diskWrite: { bytes: 2048, supported: true },
-    networkRx: { bytes: 4096, supported: true },
-    networkTx: { bytes: 8192, supported: true },
+    cpu: { percent: 10 },
+    ram: { percent: 20 },
+    diskRead: { bytes: 1024 },
+    diskWrite: { bytes: 2048 },
+    networkRx: { bytes: 4096 },
+    networkTx: { bytes: 8192 },
   },
   services: [service],
   history: {
@@ -156,6 +155,22 @@ describe("infra helpers", () => {
     });
   });
 
+  it("filters stopped services by the same exited and dead grouping the counts use", () => {
+    const services = ["running", "exited", "dead", "restarting", "missing"].map((status) => ({
+      ...overview.services[0],
+      name: status,
+      status,
+    }));
+    const stopped = filterAndSortServices(services, {
+      query: "",
+      status: "stopped",
+      health: "all",
+      sort: { key: "name", dir: "asc" },
+    });
+    expect(stopped.map((row) => row.name)).toEqual(["dead", "exited"]);
+    expect(serviceStatusCounts(services).stopped).toBe(stopped.length);
+  });
+
   it("applies overview delta without losing bounded history", () => {
     const next = applyInfrastructureEvent(overview, {
       type: "overview.delta",
@@ -228,7 +243,6 @@ describe("infra helpers", () => {
   it("computes dashboard summary facts from real overview data", () => {
     expect(countHealthyServices(overview.services)).toBe(1);
     expect(countProblemServices(overview.services)).toBe(0);
-    expect(getOverviewTimestamp(overview)).toBe("2026-05-07T00:00:00Z");
   });
 
   it("builds alert rail items from transport and service issues", () => {

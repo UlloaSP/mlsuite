@@ -1,5 +1,10 @@
 export type SystemRole = "USER" | "SUPERADMIN";
 
+export const SYSTEM_ROLE_OPTIONS: Array<{ value: SystemRole; label: string }> = [
+  { value: "USER", label: "User" },
+  { value: "SUPERADMIN", label: "Superadmin" },
+];
+
 export type AdminUser = {
   id: number;
   username: string;

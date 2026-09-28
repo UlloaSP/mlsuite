@@ -1,7 +1,7 @@
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog } from "radix-ui";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom } from "jotai";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
@@ -13,14 +13,7 @@ import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
-import { matchesShortcut, shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
-
-const isTypingTarget = (target: EventTarget | null) =>
-  target instanceof HTMLElement &&
-  (target.tagName === "INPUT" ||
-    target.tagName === "TEXTAREA" ||
-    target.tagName === "SELECT" ||
-    target.isContentEditable);
+import { useShortcut } from "@/shared/ui/use-shortcut";
 
 type SearchState = { query: string; activeIndex: number };
 type SearchAction = { type: "query"; value: string } | { type: "active"; value: number };
@@ -38,7 +31,6 @@ export function AppGlobalSearch() {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [open, setOpen] = useAtom(globalSearchOpenAtom);
-  const bindings = useAtomValue(shortcutBindingsAtom);
   const [{ query, activeIndex }, dispatch] = useReducer(searchReducer, {
     query: "",
     activeIndex: 0,
@@ -54,16 +46,7 @@ export function AppGlobalSearch() {
     [data?.groups],
   );
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (matchesShortcut(event, bindings["global-search"]) && !isTypingTarget(event.target)) {
-        event.preventDefault();
-        setOpen(true);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [bindings, setOpen]);
+  useShortcut("global-search", () => setOpen(true));
 
   useEffect(() => {
     if (open) {

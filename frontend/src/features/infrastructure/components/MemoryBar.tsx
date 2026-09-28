@@ -1,4 +1,4 @@
-import { formatBytes } from "@/features/infrastructure/lib/formatters";
+import { formatBytes } from "@/shared/lib/format-bytes";
 
 export function MemoryBar({
   service,

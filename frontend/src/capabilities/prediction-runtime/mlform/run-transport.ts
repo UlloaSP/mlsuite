@@ -9,10 +9,6 @@ import { createFanoutTransport } from "mlform/transport";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { normalizeAnalyzerPredictionResult } from "@/capabilities/prediction-runtime/data/analyzer-result-normalization";
 import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
-import {
-  schemaRunDebug,
-  schemaRunDebugError,
-} from "@/capabilities/prediction-runtime/mlform/run-debug";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
 import {
   type JsonRecord,
@@ -96,7 +92,6 @@ const runBinding = async (
       errorJson: isRecord(parsed) ? parsed : { raw: parsed },
     };
   } catch (error) {
-    schemaRunDebugError("transport.model.exception", error, { modelId: binding.modelId });
     return {
       modelId: binding.modelId,
       modelInput,
@@ -173,7 +168,6 @@ export const createSchemaRunTransport = (
         backendFieldValues: canonical,
         schemaRun: true,
       };
-      schemaRunDebug("transport.submit.done", { results, reportPayloads });
       return {
         reports: reportPayloads,
         meta,

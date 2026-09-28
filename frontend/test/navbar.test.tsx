@@ -8,13 +8,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Provider, createStore } from "jotai";
 import { navigationPositionAtom, sidebarStyleAtom } from "@/shared/ui/sidebar-preferences";
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { AppShellFrame } from "@/app/layouts/AppShellLayout";
 import { SidebarNavigation } from "@/app/components/SidebarNavigation";
 import { Navbar } from "@/app/components/navbar/Navbar";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
+import { mount } from "./support/dom";
 
 vi.mock("@/capabilities/workspace-context/session", () => ({
   useUser: () => ({
@@ -50,31 +50,22 @@ vi.mock("@/features/workspace/api/workspace.mutations", () => ({
 }));
 vi.mock("@/app/components/AppGlobalSearch", () => ({ AppGlobalSearch: () => null }));
 
-let root: Root | null = null;
-
 function LocationProbe() {
   return <output data-testid="location">{useLocation().pathname}</output>;
 }
 
 async function render(node: React.ReactNode, store = createStore()) {
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  await act(async () => {
-    root?.render(
-      <Provider store={store}>
-        <MemoryRouter initialEntries={["/home"]}>
-          {node}
-          <LocationProbe />
-        </MemoryRouter>
-      </Provider>,
-    );
-  });
-  return container;
+  const { host } = await mount(
+    <Provider store={store}>
+      {node}
+      <LocationProbe />
+    </Provider>,
+    { route: "/home" },
+  );
+  return host;
 }
 
 beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   localStorage.clear();
   vi.stubGlobal(
     "matchMedia",
@@ -83,9 +74,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  document.body.innerHTML = "";
   vi.unstubAllGlobals();
 });
 

@@ -8,11 +8,6 @@ export type CreateSchemaBookmarkRequest = {
   versionId: string;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type CreateSchemaRequest = {
   name: string;
   description?: string;
@@ -22,11 +17,6 @@ export type CreateSchemaWithInitialVersionRequest = {
   schema: CreateSchemaRequest;
   initialVersion: CreateSchemaVersionRequest;
 };
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export type CreateSchemaVersionRequest = {
   name: string;
@@ -38,37 +28,13 @@ export type CreateSchemaVersionRequest = {
   }>;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export interface DuplicateSchemaRequest {
   id: string;
   name: string;
   versionId?: string;
 }
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type JsonRecord = Record<string, unknown>;
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type MoveSchemaBookmarkRequest = {
-  versionId: string;
-};
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 /** A bookmark as the Predict launcher shows it: what it runs and how it has been used. */
 export type PredictBookmarkDto = {
@@ -102,11 +68,6 @@ export type SchemaBookmarkDto = {
   updatedAt: string;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaCatalogItemDto = {
   id: string;
   organizationId: string;
@@ -123,11 +84,6 @@ export type SchemaCatalogItemDto = {
   reportCount: number;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaDto = {
   id: string;
   organizationId: string;
@@ -138,11 +94,6 @@ export type SchemaDto = {
   archivedAt?: string | null;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type SchemaModelBindingDto = {
   id?: string;
   schemaVersionId?: string;
@@ -151,20 +102,10 @@ export type SchemaModelBindingDto = {
   pluginPolicy?: JsonRecord | null;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export interface SchemaNameRequest {
   id: string;
   name: string;
 }
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export interface SchemaPageDto {
   items: SchemaCatalogItemDto[];
@@ -174,11 +115,6 @@ export interface SchemaPageDto {
   hasNext: boolean;
 }
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export interface SchemaPageRequest {
   page: number;
   search?: string;
@@ -186,11 +122,6 @@ export interface SchemaPageRequest {
   sort?: string;
   status?: string;
 }
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export type SchemaVersionDto = {
   id: string;

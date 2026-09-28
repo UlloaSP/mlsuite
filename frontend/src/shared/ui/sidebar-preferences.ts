@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { atomWithStorage } from "jotai/utils";
+import { validatedStorage } from "@/shared/lib/validated-storage";
 
 /** The edge a vertical sidebar occupies. */
 export type SidebarPosition = "left" | "right";
@@ -12,29 +13,8 @@ export type NavigationPosition = SidebarPosition | "top" | "bottom";
 /** Fixed spans the viewport edge; floating is an inset panel on the page background. Applies to every position. */
 export type SidebarStyle = "fixed" | "floating";
 
-/** Stores one of a fixed set of string choices, ignoring anything else found in storage. */
-const choiceStorage = <T extends string>(choices: readonly T[]) => {
-  const isChoice = (value: unknown): value is T => choices.includes(value as T);
-  return {
-    getItem: (key: string, initialValue: T) => {
-      const raw = localStorage.getItem(key);
-      if (!raw) return initialValue;
-
-      try {
-        const value: unknown = JSON.parse(raw);
-        return isChoice(value) ? value : initialValue;
-      } catch {
-        return isChoice(raw) ? raw : initialValue;
-      }
-    },
-    setItem: (key: string, value: T) => {
-      localStorage.setItem(key, JSON.stringify(value));
-    },
-    removeItem: (key: string) => {
-      localStorage.removeItem(key);
-    },
-  };
-};
+const choiceStorage = <T extends string>(choices: readonly T[]) =>
+  validatedStorage((value: unknown): value is T => choices.includes(value as T));
 
 export const isSidebarPosition = (position: NavigationPosition): position is SidebarPosition =>
   position === "left" || position === "right";

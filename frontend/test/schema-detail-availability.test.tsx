@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { SchemaDetailPage } from "@/features/schemas/pages/schema-detail-page";
 import { LOADING_MIN_VISIBLE_MS, LOADING_REVEAL_DELAY_MS } from "@/shared/ui/useStableLoading";
+import { mount } from "./support/dom";
 
 const state = vi.hoisted(() => ({
   query: { data: undefined as unknown, isLoading: false, isError: false },
@@ -27,40 +26,26 @@ vi.mock("@/features/schemas/api/schema-queries", () => ({
 vi.mock("@/features/schemas/api/schema-draft-mutations", () => ({
   useCreateSchemaDraftMutation: () => ({ isPending: false }),
 }));
-vi.mock("@/features/schemas/lib/schema-plugin-catalog", () => ({
+vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
   useSchemaPluginCatalog: () => ({ data: { reportDefinitions: [] } }),
 }));
-let root: Root | undefined;
 afterEach(() => {
-  act(() => root?.unmount());
   vi.useRealTimers();
-  vi.unstubAllGlobals();
-  document.body.innerHTML = "";
 });
 
 test.each([["schema", SchemaDetailPage, "/schemas", "No published snapshots"]] as const)(
   "%s distinguishes loading, missing/error and loaded data",
-  (_kind, Page, back, success) => {
-    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  async (_kind, Page, back, success) => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    const render = () =>
-      root?.render(
-        <MemoryRouter>
-          <Page />
-        </MemoryRouter>,
-      );
     state.query = { data: undefined, isLoading: true, isError: false };
-    act(() => render());
+    const { host: container, rerender } = await mount(<Page />, { route: "/" });
     expect(container.textContent).toContain("Loading");
     expect(container.textContent).not.toContain("unavailable");
     void act(() => vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS + 1));
     for (const isError of [false, true]) {
       state.query = { data: undefined, isLoading: false, isError };
-      act(() => render());
+      await rerender(<Page />);
       if (!isError) {
         expect(container.textContent).toContain("Loading");
         void act(() => vi.advanceTimersByTime(LOADING_REVEAL_DELAY_MS + LOADING_MIN_VISIBLE_MS));
@@ -74,7 +59,7 @@ test.each([["schema", SchemaDetailPage, "/schemas", "No published snapshots"]] a
       isLoading: false,
       isError: false,
     };
-    act(() => render());
+    await rerender(<Page />);
     expect(container.textContent).toContain("Loaded record");
     expect(container.textContent).not.toContain("unavailable");
   },

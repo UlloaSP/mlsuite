@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { Route, Routes } from "react-router";
 import { expect, test } from "vite-plus/test";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
 import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
+import { mount } from "./support/dom";
 
 const bookmark: SchemaBookmarkDto = {
   id: "bookmark-1",
@@ -25,38 +25,26 @@ const bookmark: SchemaBookmarkDto = {
 };
 
 test("opening a bookmark in its schema goes straight to its Predict workspace", async () => {
-  const container = document.createElement("div");
-  document.body.append(container);
-  const root = createRoot(container);
+  const { host } = await mount(
+    <Routes>
+      <Route
+        path="/schemas/:schemaId/bookmarks"
+        element={<SchemaBookmarkCatalogItem bookmark={bookmark} />}
+      />
+      <Route path="/predict/:bookmarkId" element={<h1>Bookmark workspace</h1>} />
+    </Routes>,
+    { route: "/schemas/schema-1/bookmarks" },
+  );
 
-  try {
-    await act(async () => {
-      root.render(
-        <MemoryRouter initialEntries={["/schemas/schema-1/bookmarks"]}>
-          <Routes>
-            <Route
-              path="/schemas/:schemaId/bookmarks"
-              element={<SchemaBookmarkCatalogItem bookmark={bookmark} />}
-            />
-            <Route path="/predict/:bookmarkId" element={<h1>Bookmark workspace</h1>} />
-          </Routes>
-        </MemoryRouter>,
-      );
-    });
+  const tile = host.querySelector<HTMLAnchorElement>("article > a");
+  const predictLink = [...host.querySelectorAll<HTMLAnchorElement>("article a")].find(
+    (link) => link.textContent?.trim() === "Predict",
+  );
+  expect(tile?.getAttribute("href")).toBe("/predict/bookmark-1");
+  expect(predictLink?.getAttribute("href")).toBe("/predict/bookmark-1");
 
-    const tile = container.querySelector<HTMLAnchorElement>("article > a");
-    const predictLink = [...container.querySelectorAll<HTMLAnchorElement>("article a")].find(
-      (link) => link.textContent?.trim() === "Predict",
-    );
-    expect(tile?.getAttribute("href")).toBe("/predict/bookmark-1");
-    expect(predictLink?.getAttribute("href")).toBe("/predict/bookmark-1");
-
-    await act(async () => {
-      tile?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-    });
-    expect(container.textContent).toContain("Bookmark workspace");
-  } finally {
-    await act(async () => root.unmount());
-    container.remove();
-  }
+  await act(async () => {
+    tile?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+  expect(host.textContent).toContain("Bookmark workspace");
 });

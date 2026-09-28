@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { Route, Routes } from "react-router";
+import { expect, test, vi } from "vite-plus/test";
 import { InferenceDetailPage } from "@/features/inferences/pages/inference-detail-page";
+import { mount } from "./support/dom";
 
 const state = vi.hoisted(() => ({
   canRun: false,
@@ -45,20 +44,6 @@ vi.mock("@/features/inferences/components/InferenceReviewStatusSection", () => (
   InferenceReviewStatusSection: () => <section>Review management</section>,
 }));
 
-let root: Root;
-let container: HTMLDivElement;
-beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-});
-afterEach(async () => {
-  await act(async () => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
-});
-
 test.each([
   { canRun: false, canManageReviews: false, bookmarkId: 4 },
   { canRun: true, canManageReviews: false, bookmarkId: 4 },
@@ -66,26 +51,23 @@ test.each([
   { canRun: false, canManageReviews: true, bookmarkId: 4 },
 ])("run=$canRun reviews=$canManageReviews bookmark=$bookmarkId", async (permissions) => {
   Object.assign(state, permissions);
-  await act(async () =>
-    root.render(
-      <MemoryRouter initialEntries={["/inferences/1"]}>
-        <Routes>
-          <Route
-            path="/inferences/:inferenceId"
-            element={
-              <InferenceDetailPage
-                renderData={(_inference, reviews) => (
-                  <div>
-                    <p>Count {reviews?.count ?? "none"}</p>
-                    {reviews?.content}
-                  </div>
-                )}
-              />
-            }
+  const { host: container } = await mount(
+    <Routes>
+      <Route
+        path="/inferences/:inferenceId"
+        element={
+          <InferenceDetailPage
+            renderData={(_inference, reviews) => (
+              <div>
+                <p>Count {reviews?.count ?? "none"}</p>
+                {reviews?.content}
+              </div>
+            )}
           />
-        </Routes>
-      </MemoryRouter>,
-    ),
+        }
+      />
+    </Routes>,
+    { route: "/inferences/1" },
   );
 
   const predictAgain = [...container.querySelectorAll("a")].find(

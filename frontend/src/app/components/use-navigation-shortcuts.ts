@@ -6,8 +6,32 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useEffect, useEffectEvent, useState } from "react";
 import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
 import { useNavigate } from "react-router";
-import { isTypingTarget, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
+import { isTypingTarget, type ShortcutEvent } from "@/shared/ui/shortcut-state";
 import type { NavigationChild, NavigationItem } from "./sidebar-navigation-support";
+
+const SHIFT_DIGITS: Record<string, number> = {
+  "!": 1,
+  "@": 2,
+  "#": 3,
+  $: 4,
+  "%": 5,
+  "^": 6,
+  "&": 7,
+  "*": 8,
+  "(": 9,
+};
+
+/** The 1-9 digit a navigation shortcut names, reading the physical key when Shift changes it. */
+export const shortcutDigit = (event: ShortcutEvent) => {
+  const codeMatch = /^(Digit|Numpad)([1-9])$/.exec(event.code ?? "");
+  if (codeMatch) {
+    return Number(codeMatch[2]);
+  }
+  if (/^[1-9]$/.test(event.key)) {
+    return Number(event.key);
+  }
+  return SHIFT_DIGITS[event.key] ?? null;
+};
 
 /**
  * Alt+N opens the Nth entry and Alt+Shift+N the Nth child of the current

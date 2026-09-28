@@ -7,10 +7,6 @@ import { useAtom } from "jotai";
 import { nextThemeMode, themeModeAtom } from "./appearance-state";
 import { fullscreenAtom } from "./ui-state";
 
-type ViewTransitionDocument = Document & {
-  startViewTransition?: (callback: () => void) => { finished: Promise<void> };
-};
-
 const restoreRouteTransition = (element: HTMLElement, previousValue: string) => {
   if (previousValue) {
     element.style.viewTransitionName = previousValue;
@@ -25,10 +21,9 @@ export function useThemeModeCycle() {
   const nextMode = nextThemeMode(mode);
 
   const cycleMode = () => {
-    const transitionDocument = document as ViewTransitionDocument;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (!transitionDocument.startViewTransition || reduceMotion) {
+    if (typeof document.startViewTransition !== "function" || reduceMotion) {
       setMode(nextMode);
       return;
     }
@@ -40,7 +35,7 @@ export function useThemeModeCycle() {
     if (content) content.style.viewTransitionName = "none";
 
     root.classList.add("theme-corner-transition");
-    const transition = transitionDocument.startViewTransition(() => setMode(nextMode));
+    const transition = document.startViewTransition(() => setMode(nextMode));
     void transition.finished.finally(() => {
       window.setTimeout(() => {
         root.classList.remove("theme-corner-transition");

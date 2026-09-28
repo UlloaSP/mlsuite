@@ -5,10 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { flushSync } from "react-dom";
 
-type ViewTransitionDocument = Document & {
-  startViewTransition?: (callback: () => void) => { finished: Promise<void> };
-};
-
 // Names are applied only for this transition: permanent names would pull the
 // sidebar out of the theme reveal and the content out of its route fade.
 const PARTS = [
@@ -18,9 +14,8 @@ const PARTS = [
 
 /** Applies a shell layout change (sidebar side or style) as a morph instead of a jump. */
 export function animateLayoutChange(update: () => void) {
-  const transitionDocument = document as ViewTransitionDocument;
   const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  if (!transitionDocument.startViewTransition || reduceMotion) {
+  if (typeof document.startViewTransition !== "function" || reduceMotion) {
     update();
     document.scrollingElement?.scrollTo(0, 0);
     return;
@@ -42,6 +37,6 @@ export function animateLayoutChange(update: () => void) {
   };
 
   // The new snapshot is taken when the callback returns, so React must commit synchronously.
-  const transition = transitionDocument.startViewTransition(() => flushSync(update));
+  const transition = document.startViewTransition(() => flushSync(update));
   void transition.finished.finally(restore);
 }

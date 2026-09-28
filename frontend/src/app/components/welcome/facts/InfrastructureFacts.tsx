@@ -7,8 +7,8 @@ import { useInfrastructureOverview } from "@/features/infrastructure/api/infrast
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { FactList } from "@/app/components/welcome/FactList";
 
-const percent = (value: { percent: number | null; supported: boolean }) =>
-  value.supported && value.percent !== null ? `${Math.round(value.percent)}%` : "—";
+const percent = (value: { percent: number | null }) =>
+  value.percent !== null ? `${Math.round(value.percent)}%` : "—";
 
 /** The platform's services right now: how many are up and how loaded they are. */
 export function InfrastructureFacts() {

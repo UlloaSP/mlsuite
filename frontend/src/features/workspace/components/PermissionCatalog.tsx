@@ -1,11 +1,11 @@
-import { KeyRound, Search } from "lucide-react";
-import { useSearchParams } from "react-router";
+import { KeyRound } from "lucide-react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
-import { AppTextField } from "@/shared/ui/AppTextField";
+import { AppSearchField } from "@/shared/ui/AppSearchField";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import type { PermissionGroupDto } from "@/features/workspace/api/workspace.types";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
@@ -21,9 +21,9 @@ export function PermissionCatalog({
   error: boolean;
   onRetry: () => void;
 }) {
-  const [params, setParams] = useSearchParams();
+  const filters = useUrlFilters({ q: "" });
   const showLoading = useStableLoading(loading);
-  const search = params.get("q") ?? "";
+  const search = filters.values.q;
   const query = search.trim().toLowerCase();
   const filtered = groups
     .map((group) => ({
@@ -36,24 +36,11 @@ export function PermissionCatalog({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
-        <AppTextField
-          className="w-full"
-          aria-label="Search permissions"
+        <AppSearchField
+          label="Search permissions"
           placeholder="Search permissions…"
-          prefix={<Search className="size-4 text-fg-muted" />}
           value={search}
-          onChange={(event) =>
-            setParams(
-              (current) => {
-                const next = new URLSearchParams(current);
-                if (event.target.value) next.set("q", event.target.value);
-                else next.delete("q");
-                next.delete("page");
-                return next;
-              },
-              { replace: true },
-            )
-          }
+          onChange={(value) => filters.setFilters({ q: value })}
         />
       </AppToolbar>
       <section

@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
+import { buttonByText, changeValue, click, mount } from "./support/dom";
 
 let api: ReturnType<typeof useActionDialog>;
 function Harness() {
@@ -11,21 +11,11 @@ function Harness() {
   return api.dialog;
 }
 
-const button = (text: string) =>
-  [...document.querySelectorAll("button")].find((node) => node.textContent === text)!;
+const button = (text: string) => buttonByText(text)!;
 
 describe("action dialog", () => {
-  let root: Root;
-
-  beforeEach(() => {
-    Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-    root = createRoot(document.body.appendChild(document.createElement("div")));
-    act(() => root.render(<Harness />));
-  });
-
-  afterEach(() => {
-    act(() => root.unmount());
-    document.body.innerHTML = "";
+  beforeEach(async () => {
+    await mount(<Harness />);
   });
 
   it("confirms with a danger action and resolves false when cancelled", async () => {
@@ -35,13 +25,13 @@ describe("action dialog", () => {
     });
     expect(document.querySelector('[role="dialog"]')?.textContent).toContain("Delete model?");
     expect(button("Delete").className).toContain("text-danger-fg");
-    await act(async () => button("Delete").click());
+    await click("Delete");
     await expect(answer!).resolves.toBe(true);
 
     act(() => {
       answer = api.confirm({ title: "Archive?", confirmLabel: "Archive" });
     });
-    await act(async () => button("Cancel").click());
+    await click("Cancel");
     await expect(answer!).resolves.toBe(false);
     expect(document.querySelector('[role="dialog"]')).toBeNull();
   });
@@ -56,19 +46,11 @@ describe("action dialog", () => {
       });
     });
     const input = document.querySelector<HTMLInputElement>('input[aria-label="Model name"]')!;
-    const setValue = (value: string) =>
-      act(() => {
-        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
-          input,
-          value,
-        );
-        input.dispatchEvent(new Event("input", { bubbles: true }));
-      });
 
-    setValue("   ");
+    await changeValue(input, "   ");
     expect(button("Save name").disabled).toBe(true);
-    setValue("  Risk v2 ");
-    await act(async () => button("Save name").click());
+    await changeValue(input, "  Risk v2 ");
+    await click("Save name");
     await expect(answer!).resolves.toBe("Risk v2");
   });
 });

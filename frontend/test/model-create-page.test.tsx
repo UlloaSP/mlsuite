@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { CreateModelPage } from "@/features/models/pages/create-model-page";
 import { ModelActionsMenu } from "@/features/models/components/ModelActionsMenu";
+import { changeValue, click, mount, type Mounted } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -30,28 +29,14 @@ vi.mock("@/features/models/api/model.mutations", () => ({
   useMatchArtifactsMutation: () => ({ mutateAsync: vi.fn() }),
 }));
 
-let root: Root;
+let view: Mounted;
 let container: HTMLDivElement;
 beforeEach(async () => {
   vi.clearAllMocks();
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   mocks.inspect.mockResolvedValue({ kind: "model" });
   mocks.create.mockResolvedValue({});
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  await act(async () =>
-    root.render(
-      <MemoryRouter>
-        <CreateModelPage />
-      </MemoryRouter>,
-    ),
-  );
-});
-afterEach(async () => {
-  await act(async () => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
+  view = await mount(<CreateModelPage />, { route: "/" });
+  container = view.host;
 });
 
 const upload = async (...names: string[]) => {
@@ -64,19 +49,9 @@ const upload = async (...names: string[]) => {
   });
   await act(async () => input.dispatchEvent(new Event("change", { bubbles: true })));
 };
-const saveAll = async () => {
-  const button = [...container.querySelectorAll("button")].find(
-    (button) => button.textContent === "Save all",
-  )!;
-  await act(async () => button.click());
-};
-const blankFirstName = async () => {
-  const input = container.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')!;
-  await act(async () => {
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "");
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-};
+const saveAll = () => click("Save all", container);
+const blankFirstName = () =>
+  changeValue(container.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')!, "");
 
 test("saves all valid models and returns to catalog", async () => {
   await upload("first.joblib", "second.joblib");
@@ -108,8 +83,18 @@ test("retains other incomplete bundles after an individual save", async () => {
   const save = [...container.querySelectorAll("button")].find(
     (button) => button.textContent === "Save" && !button.disabled,
   )!;
-  await act(async () => save.click());
+  await click(save);
   expect(mocks.create).toHaveBeenCalledTimes(1);
+  expect(mocks.navigate).not.toHaveBeenCalled();
+});
+test("never saves a bundle whose one-hot separator is empty", async () => {
+  await upload("first.joblib");
+  const input = container.querySelector<HTMLInputElement>(
+    'input[aria-label^="One-hot separator"]',
+  )!;
+  await changeValue(input, "");
+  await saveAll();
+  expect(mocks.create).not.toHaveBeenCalled();
   expect(mocks.navigate).not.toHaveBeenCalled();
 });
 test("stays on upload page when persistence fails", async () => {
@@ -125,10 +110,8 @@ test("reports unsupported extensions without inspecting or creating bundles", as
   expect(container.textContent).toContain("No bundles yet");
 });
 test.each([false, true])("only offers archive for active models, archived=%s", async (archived) => {
-  await act(async () =>
-    root.render(
-      <ModelActionsMenu archived={archived} canEdit canDelete modelName="QA" onAction={vi.fn()} />,
-    ),
+  await view.rerender(
+    <ModelActionsMenu archived={archived} canEdit canDelete modelName="QA" onAction={vi.fn()} />,
   );
   const trigger = container.querySelector<HTMLButtonElement>('[aria-label="Open actions for QA"]')!;
   // The menu opens from the keyboard in jsdom and renders in a portal on the body.

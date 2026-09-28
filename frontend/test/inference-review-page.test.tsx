@@ -5,16 +5,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { Route, Routes } from "react-router";
+import { beforeEach, expect, test, vi } from "vite-plus/test";
 import type { InferenceReviewAssignmentDto } from "@/features/inferences/api/inference-api";
 import { InferenceReviewTile } from "@/features/inferences/components/InferenceReviewTile";
 import { InferenceReviewPage } from "@/features/inferences/pages/inference-review-page";
 import { InferenceReviewStatusSection } from "@/features/inferences/components/InferenceReviewStatusSection";
 import { ReviewerFeedbackAnswers } from "@/features/schemas/components/ReviewerFeedbackAnswers";
+import { click, mount, type Mounted } from "./support/dom";
 
 const state = vi.hoisted(() => ({
   assignments: [] as InferenceReviewAssignmentDto[],
@@ -53,8 +53,8 @@ vi.mock("@/features/schemas/api/schema-queries", () => ({
     ],
   }),
 }));
-vi.mock("@/capabilities/prediction-runtime/mlform/binding-rebase", () => ({
-  prepareSchemaVersionDtoForUse: (version: unknown) => version,
+vi.mock("@/capabilities/prediction-runtime/mlform/executable-schema", () => ({
+  toExecutableSchemaVersion: (version: unknown) => version,
 }));
 vi.mock("@/features/schemas/components/SchemaRunFeedbackSummary", () => ({
   SchemaRunFeedbackSummary: ({ feedback }: { feedback: Array<{ id: string }> }) => (
@@ -78,30 +78,16 @@ const assignment = (
   ...change,
 });
 
-let root: Root;
+let view: Mounted;
 let container: HTMLDivElement;
 beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   state.reopen.mockReset().mockResolvedValue(undefined);
   state.remove.mockReset().mockResolvedValue(undefined);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-});
-afterEach(async () => {
-  await act(async () => root.unmount());
-  document.body.innerHTML = "";
-  vi.unstubAllGlobals();
 });
 
 async function render(node: React.ReactNode, path = "/") {
-  await act(async () => {
-    root.render(
-      <QueryClientProvider client={new QueryClient()}>
-        <MemoryRouter initialEntries={[path]}>{node}</MemoryRouter>
-      </QueryClientProvider>,
-    );
-  });
+  view = await mount(node, { route: path, queryClient: new QueryClient() });
+  container = view.host;
   // Query results land after the mount's act; let them render.
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -170,12 +156,8 @@ test("the review page shows the assignment, the reviewer's answers and its actio
   );
   expect(crumbs).toContain("/inferences/1?tab=reviews");
 
-  const reopen = [...container.querySelectorAll("button")].find((b) => b.textContent === "Reopen");
-  await act(async () => reopen?.click());
-  const confirm = [
-    ...document.body.querySelectorAll<HTMLButtonElement>("[role=dialog] button"),
-  ].find((b) => b.textContent === "Reopen");
-  await act(async () => confirm?.click());
+  await click("Reopen", container);
+  await click("Reopen", document.body.querySelector("[role=dialog]")!);
   expect(state.reopen).toHaveBeenCalledWith({
     inferenceId: 1,
     reviewId: "rev-1",
@@ -191,8 +173,7 @@ test("a pending assignment offers neither reopen nor delete; a missing one expla
   expect(labels).not.toContain("Reopen");
   expect(labels).not.toContain("Delete response");
 
-  await act(async () => root.unmount());
-  root = createRoot(container);
+  await view.unmount();
   await render(reviewPage, "/inferences/1/reviews/run-a/reviewers/99");
   expect(container.textContent).toContain("Review unavailable");
 });
@@ -201,8 +182,7 @@ test("answers are only the chosen reviewer's", async () => {
   await render(<ReviewerFeedbackAnswers runId="1" reviewerId={4} />);
   expect(container.textContent).toBe("Answers f1");
 
-  await act(async () => root.unmount());
-  root = createRoot(container);
+  await view.unmount();
   await render(<ReviewerFeedbackAnswers runId="1" reviewerId={5} />);
   expect(container.textContent).toContain("No answers yet");
 });
@@ -219,9 +199,6 @@ test("the reviews list uses the catalog's filters and pagination", async () => {
   expect(container.querySelectorAll("article")).toHaveLength(9);
   expect(container.textContent).toContain("Page 1 of 2");
 
-  const pending = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-    (button) => button.textContent === "Pending",
-  );
-  await act(async () => pending?.click());
+  await click("Pending", container);
   expect(container.querySelectorAll("article")).toHaveLength(2);
 });

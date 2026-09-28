@@ -9,7 +9,6 @@ import { toAnalyzerReportPayload } from "@/capabilities/prediction-runtime/data/
 import { isRecord, type JsonRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { mappedTarget, targetKey } from "@/capabilities/prediction-runtime/mlform/mapped-to";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
-import { schemaRunDebug } from "@/capabilities/prediction-runtime/mlform/run-debug";
 
 type Options = {
   parsed: unknown;
@@ -25,14 +24,6 @@ type NormalizedAnalyzerResult = {
   raw: Record<string, unknown>;
 };
 
-/**
- * normalizeAnalyzerPredictionResult: normalizes loose runtime data into the app contract
- *
- * Purpose: normalizes analyzer prediction responses into MLForm report and meta payloads.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export const normalizeAnalyzerPredictionResult = ({
   parsed,
   modelId,
@@ -47,25 +38,14 @@ export const normalizeAnalyzerPredictionResult = ({
   normalizedMeta.backendUrl ??= getBackendBaseUrl();
   normalizedMeta.backendFieldValues ??= modelInput;
   const normalizedRaw = isRecord(parsed) ? parsed : { raw: parsed };
-  schemaRunDebug("normalize-analyzer.start", {
-    parsed,
-    modelId,
-    modelName,
-    modelInput,
-    reports,
-    normalizedReports,
-    normalizedMeta,
-  });
 
   reports.forEach((report) => {
     const kind = typeof report.kind === "string" ? report.kind : "";
     const target =
       reportTargetForBinding(report, { modelId, modelName }) ??
       targetKey(mappedTarget(report.mappedTo, { modelId, modelName }));
-    schemaRunDebug("normalize-analyzer.report-target", { report, kind, target });
     if (!target || normalizedReports.some((item) => String(item.mappedTo) === target)) return;
     const analyzerPayload = toAnalyzerReportPayload(report, parsed);
-    schemaRunDebug("normalize-analyzer.report-payload", { report, target, analyzerPayload });
     if (analyzerPayload === undefined) return;
     normalizedReports.push({
       ...analyzerPayload,
@@ -75,7 +55,7 @@ export const normalizeAnalyzerPredictionResult = ({
     });
   });
 
-  const normalized = {
+  return {
     reports: normalizedReports,
     meta: normalizedMeta,
     raw: {
@@ -87,6 +67,4 @@ export const normalizeAnalyzerPredictionResult = ({
       },
     },
   };
-  schemaRunDebug("normalize-analyzer.done", normalized);
-  return normalized;
 };

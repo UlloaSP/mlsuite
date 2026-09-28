@@ -5,8 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
-export const SCHEMAS_QUERY_KEY = (organizationId: number | string) =>
-  [...organizationQueryKey(organizationId), "schemas"] as const;
 export const SCHEMA_CATALOG_PAGE_SIZE = 24;
 export const SCHEMA_CATALOG_PAGE_QUERY_KEY = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "schemaCatalogPages"] as const;

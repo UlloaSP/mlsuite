@@ -12,13 +12,13 @@ import { useSidebar } from "./app-sidebar/SidebarContext";
 /** The organization's work, then platform administration for superadmins. */
 export function SidebarNavigation() {
   const [openItem, setOpenItem] = useState<string | null | undefined>(undefined);
-  const { state } = useSidebar();
+  const { collapsed } = useSidebar();
   const { navigation, administration, isParentActive, currentPath, pathname } =
     useNavigationItems();
   const allItems = [...navigation, ...administration];
   const showShortcutHints = useNavigationShortcuts({
     navigation: allItems,
-    showHints: state !== "collapsed",
+    showHints: !collapsed,
     shortcutChildren: () => {
       const parent =
         openItem === undefined

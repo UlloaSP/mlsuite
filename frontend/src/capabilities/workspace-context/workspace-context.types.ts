@@ -8,8 +8,7 @@ export interface InvitationDto {
   organizationId: number;
   organizationName: string;
   email: string;
-  role: OrganizationRole;
-  roleDefinition?: RoleSummaryDto | null;
+  roleDefinition: RoleSummaryDto;
   status: InvitationStatus;
   token: string;
   expiresAt: string;
@@ -37,7 +36,7 @@ export interface OrganizationMembershipDto {
   fullName: string;
   email: string;
   avatarUrl?: string | null;
-  role: OrganizationRole;
+  roleDefinition: RoleSummaryDto;
   status: MembershipStatus;
   createdAt: string;
 }
@@ -87,29 +86,7 @@ export type WorkspacePermissionKey =
   | "canViewPlugins"
   | "canManagePlugins";
 
-export interface WorkspacePermissionsDto {
-  canViewWorkspace: boolean;
-  canViewOrganization: boolean;
-  canEditOrganization: boolean;
-  canDeleteOrganization: boolean;
-  canTransferOwnership: boolean;
-  canViewMembers: boolean;
-  canInviteMembers: boolean;
-  canManageMemberRoles: boolean;
-  canRemoveMembers: boolean;
-  canViewInvitations: boolean;
-  canManageInvitations: boolean;
-  canViewModels: boolean;
-  canCreateModels: boolean;
-  canEditModels: boolean;
-  canDeleteModels: boolean;
-  canRunPredictions: boolean;
-  canExportPredictions: boolean;
-  canReview: boolean;
-  canManageReviews: boolean;
-  canViewPlugins: boolean;
-  canManagePlugins: boolean;
-}
+export type WorkspacePermissionsDto = Record<WorkspacePermissionKey, boolean>;
 
 export interface WorkspaceUserDto {
   id: number;

@@ -5,11 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { JsonRecord } from "./schema-types";
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type CreatePredictionRunRequest = {
   /** The snapshot that ran; saving fails if the bookmark has moved since. */
   schemaVersionId: string;
@@ -30,11 +25,6 @@ export type CreatePredictionRunRequest = {
   }>;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type PredictionResultDto = {
   id: string;
   runId: string;
@@ -46,11 +36,6 @@ export type PredictionResultDto = {
   errorJson?: JsonRecord | null;
   createdAt: string;
 };
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export type PredictionResultFeedbackDto = {
   id: string;
@@ -65,24 +50,9 @@ export type PredictionResultFeedbackDto = {
   updatedAt?: string;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type PredictionResultFeedbackType = "OUTPUT" | "EXPLANATION";
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type PredictionResultStatus = "SUCCESS" | "FAILED";
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
 
 export type PredictionRunDto = {
   createdByName?: string | null;
@@ -98,14 +68,4 @@ export type PredictionRunDto = {
   updatedAt?: string;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
 export type PredictionRunStatus = "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/

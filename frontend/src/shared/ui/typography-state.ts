@@ -5,11 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import { validatedStorage } from "@/shared/lib/validated-storage";
 
 import {
   INTERFACE_FONTS,
   INTERFACE_STACKS,
-  LEGACY_FONT_IDS,
   MONOSPACE_FONTS,
   MONOSPACE_STACKS,
   type InterfaceFont,
@@ -38,7 +38,7 @@ const DEFAULTS: TypographyPreferences = {
 const interfaceFontValues = new Set<string>(INTERFACE_FONTS.map(({ value }) => value));
 const monospaceFontValues = new Set<string>(MONOSPACE_FONTS.map(({ value }) => value));
 
-export const isTypographyPreferences = (value: unknown): value is TypographyPreferences => {
+const isTypographyPreferences = (value: unknown): value is TypographyPreferences => {
   if (!value || typeof value !== "object") return false;
   const preferences = value as Record<string, unknown>;
   return (
@@ -52,29 +52,7 @@ export const isTypographyPreferences = (value: unknown): value is TypographyPref
   );
 };
 
-const withCurrentFontIds = (value: unknown) => {
-  if (!value || typeof value !== "object") return null;
-  const stored = value as Record<string, unknown>;
-  const current = {
-    ...stored,
-    interfaceFont: LEGACY_FONT_IDS[String(stored.interfaceFont)] ?? stored.interfaceFont,
-    monospaceFont: LEGACY_FONT_IDS[String(stored.monospaceFont)] ?? stored.monospaceFont,
-  };
-  return isTypographyPreferences(current) ? current : null;
-};
-
-const readTypography = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULTS;
-    const parsed: unknown = JSON.parse(raw);
-    return isTypographyPreferences(parsed) ? parsed : (withCurrentFontIds(parsed) ?? DEFAULTS);
-  } catch {
-    return DEFAULTS;
-  }
-};
-
-export const applyTypography = (preferences: TypographyPreferences) => {
+const applyTypography = (preferences: TypographyPreferences) => {
   const root = document.documentElement;
   root.dataset.interfaceFont = preferences.interfaceFont;
   root.dataset.monospaceFont = preferences.monospaceFont;
@@ -85,20 +63,17 @@ export const applyTypography = (preferences: TypographyPreferences) => {
   root.style.setProperty("--font-mono", MONOSPACE_STACKS[preferences.monospaceFont]);
 };
 
-const storedTypographyAtom = atomWithStorage<unknown>(STORAGE_KEY, readTypography(), undefined, {
-  getOnInit: true,
-});
-
-export const typographyAtom = atom(
-  (get) => {
-    const value = get(storedTypographyAtom);
-    return isTypographyPreferences(value) ? value : (withCurrentFontIds(value) ?? DEFAULTS);
-  },
-  (_, set, preferences: TypographyPreferences) => {
-    const safe = isTypographyPreferences(preferences) ? preferences : DEFAULTS;
-    applyTypography(safe);
-    set(storedTypographyAtom, safe);
-  },
+const storedTypographyAtom = atomWithStorage(
+  STORAGE_KEY,
+  DEFAULTS,
+  validatedStorage(isTypographyPreferences),
+  { getOnInit: true },
 );
 
-typographyAtom.onMount = (setTypography) => setTypography(readTypography());
+export const typographyAtom = atom(
+  (get) => get(storedTypographyAtom),
+  (_, set, preferences: TypographyPreferences) => {
+    set(storedTypographyAtom, preferences);
+    applyTypography(preferences);
+  },
+);

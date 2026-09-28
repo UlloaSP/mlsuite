@@ -12,6 +12,8 @@ import {
   buildSchemaRunExportSummaries,
   collectSchemaRunExportReviewers,
   emptySchemaRunExportSelection,
+  schemaRunReviewerKey,
+  toggledInSet,
   type SchemaRunExportSelection,
 } from "./schema-run-export-selection";
 import { AppCheckMark } from "@/shared/ui/AppCheckMark";
@@ -46,33 +48,24 @@ export function SchemaRunExportReviewModal({
   );
   const reviewers = useMemo(() => collectSchemaRunExportReviewers(summaries), [summaries]);
 
-  const update = (recipe: (draft: SchemaRunExportSelection) => void) => {
-    setSelection((current) => {
-      const next = {
-        excludedRunIds: new Set(current.excludedRunIds),
-        excludedReviewers: new Set(current.excludedReviewers),
-        excludedRunReviewers: new Set(current.excludedRunReviewers),
-      };
-      recipe(next);
-      return next;
-    });
-  };
   const toggleRun = (runId: string) =>
-    update((draft) => {
-      if (draft.excludedRunIds.has(runId)) draft.excludedRunIds.delete(runId);
-      else draft.excludedRunIds.add(runId);
-    });
+    setSelection((current) => ({
+      ...current,
+      excludedRunIds: toggledInSet(current.excludedRunIds, runId),
+    }));
   const toggleReviewer = (reviewer: string) =>
-    update((draft) => {
-      if (draft.excludedReviewers.has(reviewer)) draft.excludedReviewers.delete(reviewer);
-      else draft.excludedReviewers.add(reviewer);
-    });
+    setSelection((current) => ({
+      ...current,
+      excludedReviewers: toggledInSet(current.excludedReviewers, reviewer),
+    }));
   const toggleRunReviewer = (runId: string, reviewer: string) =>
-    update((draft) => {
-      const key = `${runId}::${reviewer}`;
-      if (draft.excludedRunReviewers.has(key)) draft.excludedRunReviewers.delete(key);
-      else draft.excludedRunReviewers.add(key);
-    });
+    setSelection((current) => ({
+      ...current,
+      excludedRunReviewers: toggledInSet(
+        current.excludedRunReviewers,
+        schemaRunReviewerKey(runId, reviewer),
+      ),
+    }));
 
   return (
     <AppDialog
@@ -145,7 +138,10 @@ export function SchemaRunExportReviewModal({
                 variant="ghost"
                 size="sm"
                 onClick={() =>
-                  update((draft) => runs.forEach((item) => draft.excludedRunIds.add(item.id)))
+                  setSelection((current) => ({
+                    ...current,
+                    excludedRunIds: new Set(runs.map((item) => item.id)),
+                  }))
                 }
               >
                 Deselect all
@@ -160,12 +156,7 @@ export function SchemaRunExportReviewModal({
                 open={openRunIds.has(summary.run.id)}
                 selection={selection}
                 onToggleOpen={() =>
-                  setOpenRunIds((current) => {
-                    const next = new Set(current);
-                    if (next.has(summary.run.id)) next.delete(summary.run.id);
-                    else next.add(summary.run.id);
-                    return next;
-                  })
+                  setOpenRunIds((current) => toggledInSet(current, summary.run.id))
                 }
                 onToggleRun={toggleRun}
                 onToggleRunReviewer={toggleRunReviewer}

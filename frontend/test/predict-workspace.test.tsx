@@ -6,12 +6,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { createMemoryRouter, RouterProvider, useLocation } from "react-router";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { PredictPage } from "@/features/schemas/pages/predict-page";
 import { BookmarkWorkspacePage } from "@/features/schemas/pages/bookmark-workspace-page";
 import type { PredictBookmarkDto, SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
+import { click, mount } from "./support/dom";
 
 const state = vi.hoisted(() => ({
   canRun: true,
@@ -106,19 +106,9 @@ function InferencesProbe() {
   return <p>Inferences {useLocation().search}</p>;
 }
 
-let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   Object.assign(state, { canRun: true, bookmarks: [], bookmark: undefined, requestedVersions: [] });
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-});
-afterEach(async () => {
-  await act(async () => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
 });
 
 async function renderAt(path: string) {
@@ -133,7 +123,7 @@ async function renderAt(path: string) {
     ],
     { initialEntries: [path] },
   );
-  await act(async () => root.render(<RouterProvider router={router} />));
+  ({ host: container } = await mount(<RouterProvider router={router} />));
   return router;
 }
 
@@ -164,11 +154,7 @@ test("lists the organization's bookmarks as cards that say what they run", async
   expect(cards[1].textContent).toContain("Inferences24");
   expect(cards[1].textContent).toContain("Last run");
 
-  await act(async () =>
-    [...container.querySelectorAll<HTMLButtonElement>("button")]
-      .find((button) => button.textContent === "Update available")
-      ?.click(),
-  );
+  await click("Update available", container);
   expect(
     [...container.querySelectorAll('a[href^="/predict/"] h2')].map((item) => item.textContent),
   ).toEqual(["staging"]);
@@ -193,10 +179,7 @@ test("pins the snapshot the page opened with and offers to switch when the bookm
   expect(state.requestedVersions.at(-1)).toBe("1");
 
   await act(async () => router.navigate("/predict/7"));
-  const useLatest = [...container.querySelectorAll("button")].find(
-    (button) => button.textContent === "Use v2",
-  );
-  await act(async () => useLatest?.click());
+  await click("Use v2", container);
   expect(container.textContent).toContain("Form for snapshot 2");
   expect(container.textContent).not.toContain("now points to");
 });

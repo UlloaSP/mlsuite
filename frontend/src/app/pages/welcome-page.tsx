@@ -62,15 +62,14 @@ export function WelcomePage() {
             </AppButton>
           }
         />
-        <div className="flex flex-col gap-4">
-          <WelcomeVisitTabs
-            items={resumable}
-            selected={current.section.root}
-            onSelect={setSelected}
-            onForget={forget}
-          />
+        <WelcomeVisitTabs
+          items={resumable}
+          selected={current.section.root}
+          onSelect={setSelected}
+          onForget={forget}
+        >
           <WelcomeVisitPanel section={current.section} visit={current.visit} />
-        </div>
+        </WelcomeVisitTabs>
       </AppSurface>
     </AppPage>
   );

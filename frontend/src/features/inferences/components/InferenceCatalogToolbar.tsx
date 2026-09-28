@@ -1,8 +1,8 @@
-import { Search, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import type { InferenceCatalogItemDto } from "@/features/inferences/api/inference-api";
 import type { InferenceFilters } from "@/features/inferences/lib/inference-filter";
 import { AppSelect } from "@/shared/ui/AppSelect";
-import { AppTextField } from "@/shared/ui/AppTextField";
+import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 
 type Props = {
@@ -32,11 +32,11 @@ export function InferenceCatalogToolbar({ filters, inferences, onChange }: Props
   return (
     <AppToolbar variant="flat">
       <div className="flex flex-1 flex-wrap items-center gap-3">
-        <AppTextField
+        <AppSearchField
+          label="Search inferences"
           value={filters.query}
-          onChange={(event) => onChange("query", event.target.value)}
+          onChange={(value) => onChange("query", value)}
           placeholder="Search inferences…"
-          prefix={<Search size={16} className="text-fg-muted" />}
           className="min-w-[260px] flex-1"
         />
         <SlidersHorizontal size={15} className="text-fg-muted" />
