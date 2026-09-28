@@ -3,18 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import {
-  AlertTriangle,
-  GitCommitHorizontal,
-  GitCompareArrows,
-  MoreHorizontal,
-  PencilLine,
-} from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { AlertTriangle, GitCommitHorizontal, GitCompareArrows, PencilLine } from "lucide-react";
+import { useNavigate } from "react-router";
 import type { SchemaDraftDto } from "@/features/schemas/api/draft-types";
-import { AppIconButton } from "@/shared/ui/AppIconButton";
-import { cx } from "@/shared/ui/cx";
+import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
+import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 
 type Props = {
@@ -25,82 +18,43 @@ type Props = {
 };
 
 export function SchemaChangeCatalogItem({ baseSnapshotName, draft, onRename, schemaId }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const close = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
-    window.addEventListener("pointerdown", close);
-    return () => window.removeEventListener("pointerdown", close);
-  }, []);
+  const navigate = useNavigate();
+  const draftPath = `/schemas/${schemaId}/drafts/${draft.id}`;
 
   return (
-    <article
-      className={cx(
-        "relative grid rounded-card border border-line bg-surface transition hover:border-fg lg:grid-cols-[minmax(0,1fr)_auto]",
-        menuOpen ? "z-30" : "z-0",
-      )}
-    >
-      <Link
-        to={`/schemas/${schemaId}/drafts/${draft.id}`}
-        aria-label={`Edit ${draft.name}`}
-        className="absolute inset-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      />
-      <div className="pointer-events-none relative min-w-0 p-4">
-        <div className="flex items-center gap-2">
-          <h2 className="truncate text-base font-semibold text-fg">{draft.name}</h2>
-          {draft.status === "CONFLICT" ? (
-            <AlertTriangle size={16} className="shrink-0 text-danger-fg" />
-          ) : null}
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg-secondary">
+    <CatalogEntry
+      title={draft.name}
+      titleAccessory={
+        draft.status === "CONFLICT" ? (
+          <AlertTriangle size={16} aria-label="Conflict" className="shrink-0 text-danger-fg" />
+        ) : null
+      }
+      metadata={
+        <>
           <span className="inline-flex items-center gap-1">
-            <GitCommitHorizontal size={15} />
+            <GitCommitHorizontal size={14} />
             {baseSnapshotName ?? "Snapshot"} · v{draft.baseVersion}
           </span>
-          <span>·</span>
           <span>
-            updated <LiveRelativeTime value={draft.updatedAt} /> ago
+            Updated <LiveRelativeTime value={draft.updatedAt} /> ago
           </span>
-        </div>
-      </div>
-      <div ref={menuRef} className="relative z-10 flex items-center p-4 lg:justify-end">
-        <AppIconButton
-          type="button"
-          aria-label={`Open actions for ${draft.name}`}
-          onClick={() => setMenuOpen((current) => !current)}
-        >
-          <MoreHorizontal size={18} />
-        </AppIconButton>
-        {menuOpen ? (
-          <div className="absolute right-4 top-[calc(100%-0.25rem)] z-20 min-w-[170px] rounded-menu border border-line bg-surface p-2 shadow-hover">
-            <button
-              type="button"
-              className={menuItemClass}
-              onClick={() => {
-                setMenuOpen(false);
-                onRename(draft);
-              }}
-            >
-              <PencilLine size={15} />
-              Rename
-            </button>
-            <Link
-              to={`/schemas/${schemaId}/drafts/${draft.id}/conflicts`}
-              className={menuItemClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              <GitCompareArrows size={15} />
-              Review
-            </Link>
-          </div>
-        ) : null}
-      </div>
-    </article>
+        </>
+      }
+      actions={
+        <AppActionsMenu
+          label={`Open actions for ${draft.name}`}
+          actions={[
+            { key: "rename", label: "Rename", icon: PencilLine, onSelect: () => onRename(draft) },
+            {
+              key: "review",
+              label: "Review",
+              icon: GitCompareArrows,
+              onSelect: () => void navigate(`${draftPath}/conflicts`),
+            },
+          ]}
+        />
+      }
+      to={draftPath}
+    />
   );
 }
-
-const menuItemClass =
-  "flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left text-sm font-medium text-fg transition hover:bg-surface-muted";

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { Download, RefreshCw } from "lucide-react";
 import { AppButton } from "@/shared/ui/AppButton";
 import {
@@ -32,32 +33,29 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
   const totalMem = overview.services.reduce((sum, service) => sum + (service.memoryBytes ?? 0), 0);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
-            Infrastructure overview
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Control dashboard</h1>
-          <p className="mt-1 text-sm text-fg-secondary">
-            Managed services, live logs, shell access, and aggregate resource use.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <AppSegmentedControl
-            label="Chart range"
-            options={CHART_RANGES.map((range) => ({ value: range, label: range }))}
-            value={chartRange}
-            onChange={setChartRange}
-          />
-          <AppButton variant="secondary" className="gap-2 px-3 py-2 text-xs">
-            <RefreshCw size={13} /> Refresh
-          </AppButton>
-          <AppButton className="gap-2 px-3 py-2 text-xs">
-            <Download size={13} /> Export
-          </AppButton>
-        </div>
-      </div>
+    <>
+      <AppPageHeader
+        eyebrow="Infrastructure overview"
+        title="Control dashboard"
+        description="Managed services, live logs, shell access, and aggregate resource use."
+        actions={
+          <>
+            <AppButton>
+              <Download size={15} /> Export
+            </AppButton>
+            <AppButton variant="secondary">
+              <RefreshCw size={15} /> Refresh
+            </AppButton>
+            <AppSegmentedControl
+              label="Chart range"
+              size="md"
+              options={CHART_RANGES.map((range) => ({ value: range, label: range }))}
+              value={chartRange}
+              onChange={setChartRange}
+            />
+          </>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <KpiCard
@@ -128,6 +126,6 @@ export function OverviewView({ overview, streamConnected, onNavigateTab }: Props
         totalMem={totalMem}
         onNavigateTab={onNavigateTab}
       />
-    </div>
+    </>
   );
 }

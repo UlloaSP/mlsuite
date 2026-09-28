@@ -80,7 +80,6 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
               ? `Processing ${bulk.processed} of ${bulk.total}. Click to cancel.`
               : "Upload a CSV or XLSX file with up to 10000 records."
         }
-        className="justify-between"
       >
         <span className="inline-flex items-center gap-2">
           {icon}

@@ -47,7 +47,10 @@ describe("page header checkerboard actions", () => {
     expect(second.className).toContain("bg-accent");
     expect(fourth.className).toContain("text-danger-fg");
     expect(slots.some((slot) => /[&_button]:bg-/.test(slot.className))).toBe(false);
-    expect(slots.every((slot) => slot.classList.contains("h-12"))).toBe(true);
+    // Actions keep the shared control height; the grid only equalises widths.
+    expect(slots.every((slot) => slot.querySelector("button")!.className.includes("h-10"))).toBe(
+      true,
+    );
     act(() => root.unmount());
   });
 });

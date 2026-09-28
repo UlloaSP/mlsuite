@@ -6,6 +6,9 @@ import type {
 } from "@/capabilities/workspace-context/workspace-context.types";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
+import { cx } from "@/shared/ui/cx";
+import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import {
@@ -49,10 +52,10 @@ export function OrganizationSettingsContent({
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <div className={cx(FORM_MAX_WIDTH, "flex flex-col gap-6")}>
         {permissions.canEditOrganization ? (
           <form
-            className="grid max-w-3xl gap-5 border-t border-line pt-6"
+            className="grid gap-5 border-t border-line pt-6"
             onSubmit={(event) => {
               event.preventDefault();
               update.mutate(
@@ -107,11 +110,7 @@ export function OrganizationSettingsContent({
                 }
               />
             </div>
-            {update.isError ? (
-              <p role="alert" className="text-sm text-danger-fg">
-                {errorMessage(update.error)}
-              </p>
-            ) : null}
+            {update.isError ? <AppInlineAlert>{errorMessage(update.error)}</AppInlineAlert> : null}
             {update.isSuccess ? (
               <p role="status" className="text-sm text-success-fg">
                 Organization saved.
@@ -128,16 +127,16 @@ export function OrganizationSettingsContent({
         ) : null}
 
         {permissions.canTransferOwnership ? (
-          <section className="max-w-3xl border-t border-line py-6">
+          <section className="border-t border-line py-6">
             <h2 className="text-xl font-semibold text-fg">Ownership</h2>
             <AppCopy className="mt-1 max-w-2xl">
               Transfer full control to another active member. Your account will lose owner-only
               permissions as soon as the transfer completes.
             </AppCopy>
             {transfer.isError || members.isError ? (
-              <p role="alert" className="mt-3 text-sm text-danger-fg">
+              <AppInlineAlert className="mt-3">
                 {errorMessage(transfer.error ?? members.error)}
-              </p>
+              </AppInlineAlert>
             ) : null}
             {transfer.isSuccess ? (
               <p role="status" className="mt-3 text-sm text-success-fg">
@@ -157,16 +156,14 @@ export function OrganizationSettingsContent({
         ) : null}
 
         {permissions.canDeleteOrganization ? (
-          <section className="max-w-3xl border-t border-line py-6">
+          <section className="border-t border-line py-6">
             <h2 className="text-xl font-semibold text-danger-fg">Danger zone</h2>
             <AppCopy className="mt-1 max-w-2xl">
               Delete this organization permanently. The API refuses deletion while organization
               resources still exist.
             </AppCopy>
             {remove.isError ? (
-              <p role="alert" className="mt-3 text-sm text-danger-fg">
-                {errorMessage(remove.error)}
-              </p>
+              <AppInlineAlert className="mt-3">{errorMessage(remove.error)}</AppInlineAlert>
             ) : null}
             <AppButton
               type="button"

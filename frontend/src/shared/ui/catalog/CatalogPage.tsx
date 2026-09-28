@@ -29,9 +29,8 @@ type CatalogPageProps<TFilter extends string, TSort extends string> = {
   accessFallback: ReactNode;
   children: ReactNode;
   emptyState: CatalogEmptyState;
-  emptyWrapperClassName?: string;
   header: CatalogHeader;
-  list: Omit<CatalogListPanelProps, "children" | "emptyState" | "emptyWrapperClassName">;
+  list: Omit<CatalogListPanelProps, "children" | "emptyState">;
   navigation?: ReactNode;
   toolbar: CatalogToolbarProps<TFilter, TSort>;
 };
@@ -41,7 +40,6 @@ export function CatalogPage<TFilter extends string, TSort extends string>({
   accessFallback,
   children,
   emptyState,
-  emptyWrapperClassName,
   header,
   list,
   navigation,
@@ -51,16 +49,12 @@ export function CatalogPage<TFilter extends string, TSort extends string>({
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col overflow-hidden">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader {...header} />
         {navigation}
-        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card">
+        <section className="flex min-h-0 flex-1 flex-col">
           <CatalogToolbar {...toolbar} />
-          <CatalogListPanel
-            {...list}
-            emptyState={emptyState}
-            emptyWrapperClassName={emptyWrapperClassName}
-          >
+          <CatalogListPanel {...list} emptyState={emptyState}>
             {children}
           </CatalogListPanel>
         </section>

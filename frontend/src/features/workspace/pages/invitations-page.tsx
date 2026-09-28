@@ -38,7 +38,7 @@ export function InvitationsPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title="Invitations"
           description="Invite users, assign starting role, and revoke pending access."

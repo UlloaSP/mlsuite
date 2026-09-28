@@ -1,4 +1,5 @@
 import "@xterm/xterm/css/xterm.css";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
@@ -189,50 +190,45 @@ export function TerminalView({
   const runningServices = services.filter((s) => s.status === "running");
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
-            Shell session
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Embedded terminal</h1>
-          <p className="mt-1 text-sm text-fg-secondary">
-            Interactive shell in enabled services. Commands can modify files and interrupt services.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <AppSelect
-            className="h-8 min-w-40 px-3 text-xs"
-            value={selectedService ?? ""}
-            onValueChange={onSelectService}
-            options={runningServices.map((service) => ({
-              value: service.name,
-              label: service.name,
-            }))}
-          />
-          <AppButton
-            variant="secondary"
-            className="gap-2 px-3 py-2 text-xs"
-            disabled={
-              !selectedService ||
-              !terminalEnabled ||
-              isPending ||
-              status === "live" ||
-              status === "opening"
-            }
-            onClick={() => setRequestedService(selectedService)}
-          >
-            <SquareTerminal size={13} />
-            Open shell
-          </AppButton>
-        </div>
-      </div>
+    <>
+      <AppPageHeader
+        eyebrow="Shell session"
+        title="Embedded terminal"
+        description="Interactive shell in enabled services. Commands can modify files and interrupt services."
+        actions={
+          <>
+            <AppButton
+              variant="secondary"
+              disabled={
+                !selectedService ||
+                !terminalEnabled ||
+                isPending ||
+                status === "live" ||
+                status === "opening"
+              }
+              onClick={() => setRequestedService(selectedService)}
+            >
+              <SquareTerminal size={15} />
+              Open shell
+            </AppButton>
+            <AppSelect
+              aria-label="Select terminal service"
+              className="min-w-40"
+              value={selectedService ?? ""}
+              onValueChange={onSelectService}
+              options={runningServices.map((service) => ({
+                value: service.name,
+                label: service.name,
+              }))}
+            />
+          </>
+        }
+      />
 
       {/* Terminal + sidebar */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(28rem,1fr)_auto] gap-4 xl:grid-cols-[minmax(0,1fr)_260px] xl:grid-rows-[minmax(28rem,1fr)]">
         {/* Terminal card */}
-        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
           <div className="flex items-center justify-between border-b border-line px-5 py-3">
             <p className="text-sm font-semibold text-fg">
               {selectedService ?? "terminal"} &middot; /
@@ -241,7 +237,7 @@ export function TerminalView({
               <AppBadge tone={toneForStatus(status)}>{status}</AppBadge>
             </div>
           </div>
-          <div className="h-[480px] bg-code p-2">
+          <div className="min-h-0 flex-1 bg-code p-2">
             <div
               ref={mountRef}
               className="size-full overflow-hidden rounded-lg border border-code-fg/10 p-1"
@@ -250,7 +246,7 @@ export function TerminalView({
         </div>
 
         {/* Quick commands sidebar */}
-        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="overflow-hidden rounded-card border border-line bg-surface">
           <div className="border-b border-line px-4 py-3">
             <p className="text-sm font-semibold text-fg">Quick commands</p>
           </div>
@@ -274,7 +270,7 @@ export function TerminalView({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -8,6 +8,7 @@ import { useAtomValue, useSetAtom } from "jotai";
 import { Link } from "react-router";
 import { useUserGuideLauncher } from "@/app/user-guide/use-user-guide-launcher";
 import { cx } from "@/shared/ui/cx";
+import { AppIconButton } from "@/shared/ui/AppIconButton";
 import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
@@ -21,11 +22,6 @@ import { NavbarAccountMenu } from "./NavbarAccountMenu";
 import { NavbarItem } from "./NavbarItem";
 import { NavbarLabel } from "./NavbarLabel";
 import { NavbarOrganizationMenu } from "./NavbarOrganizationMenu";
-
-const TOOL_BUTTON = cx(
-  "grid size-9 shrink-0 place-items-center rounded-lg text-fg-secondary transition hover:bg-surface-hover hover:text-fg",
-  FOCUS_RING,
-);
 
 /** Horizontal navigation for the top and bottom positions. */
 export function Navbar({ position }: { position: "top" | "bottom" }) {
@@ -55,17 +51,20 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
       data-variant={variant}
       data-state={compact ? "collapsed" : "expanded"}
       className={cx(
-        "z-20 flex h-14 shrink-0 items-center gap-2 bg-sidebar px-2 text-fg backdrop-blur-xl sm:gap-3 sm:px-3",
+        "z-20 flex h-14 shrink-0 items-center gap-2 bg-sidebar text-fg backdrop-blur-xl sm:gap-3",
         floating
           ? cx(
-              // Width eases between the full row and the compact pill.
-              "max-w-[calc(100%-1rem)] self-center rounded-2xl border border-line shadow-card transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] [interpolate-size:allow-keywords]",
+              // Width eases between the full row and the compact pill. The 3rem inset
+              // puts the bar's edges on the page padding (AppSurface p-6).
+              "max-w-[calc(100%-3rem)] self-center rounded-2xl border border-line px-2 shadow-card transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] [interpolate-size:allow-keywords] sm:px-3",
               position === "top" ? "mt-2" : "mb-2",
-              compact ? "w-fit" : "w-[calc(100%-1rem)]",
+              compact ? "w-fit" : "w-[calc(100%-3rem)]",
             )
-          : position === "top"
-            ? "border-b border-line"
-            : "border-t border-line",
+          : cx(
+              // The brand link's own px-1.5 brings its mark onto the page padding (24px).
+              "px-4.5",
+              position === "top" ? "border-b border-line" : "border-t border-line",
+            ),
       )}
     >
       <Link
@@ -74,7 +73,7 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
         data-user-guide-item="brand"
         aria-label="MLsuite home"
         className={cx(
-          "flex h-10 shrink-0 items-center rounded-xl px-1.5 text-xl leading-none",
+          "flex h-10 shrink-0 items-center rounded-control px-1.5 text-xl leading-none",
           FOCUS_RING,
         )}
       >
@@ -119,27 +118,23 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
 
       <div className="flex shrink-0 items-center gap-1">
         <AppTooltip label="Global search" shortcut={shortcutToAria(searchShortcut)} side={menuSide}>
-          <button
-            type="button"
+          <AppIconButton
             data-user-guide-item="global-search"
             aria-keyshortcuts={shortcutToAria(searchShortcut)}
             aria-label="Global search"
-            className={TOOL_BUTTON}
             onClick={() => setSearchOpen(true)}
           >
             <Search size={17} />
-          </button>
+          </AppIconButton>
         </AppTooltip>
         <AppTooltip label="User guide" side={menuSide}>
-          <button
-            type="button"
+          <AppIconButton
             data-user-guide-item="user-guide"
             aria-label="User guide"
-            className={TOOL_BUTTON}
             onClick={(event) => startGuide(event.currentTarget)}
           >
             <BookOpenText size={17} />
-          </button>
+          </AppIconButton>
         </AppTooltip>
         <NavbarAccountMenu menuSide={menuSide} />
       </div>

@@ -17,6 +17,8 @@ import { AppTextField } from "@/shared/ui/AppTextField";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
 import { useCreateOrganizationMutation } from "@/features/workspace/api/workspace.mutations";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
+import { cx } from "@/shared/ui/cx";
+import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 
 type OrganizationOwnerCandidate = {
   avatarUrl?: string | null;
@@ -95,8 +97,9 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
+          className={FORM_MAX_WIDTH}
           eyebrow="Superadmin"
           title="Create organization"
           description="Create an organization and assign its first owner."
@@ -105,7 +108,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
             { label: "Create organization" },
           ]}
         />
-        <section className="mx-auto w-full max-w-3xl space-y-4">
+        <section className={cx(FORM_MAX_WIDTH, "space-y-4")}>
           <AppFieldLabel label="Name">
             <AppTextField
               value={name}
@@ -138,7 +141,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Short operational summary"
-              className="rounded shadow-none [&_textarea]:max-h-64 [&_textarea]:min-h-28 [&_textarea]:resize-y"
+              className="shadow-none [&_textarea]:max-h-64 [&_textarea]:min-h-28 [&_textarea]:resize-y"
             />
           </AppFieldLabel>
           {submitError ? <AppInlineAlert>{submitError}</AppInlineAlert> : null}

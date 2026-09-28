@@ -24,7 +24,7 @@ export function OverviewServicePanels({
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
         <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
           <div>
             <p className="text-sm font-semibold text-fg">Services at a glance</p>
@@ -79,7 +79,7 @@ export function OverviewServicePanels({
           </div>
         </div>
       </div>
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
         <div className="border-b border-line px-5 py-3.5">
           <p className="text-sm font-semibold text-fg">Memory usage by service</p>
           <p className="mt-0.5 text-xs text-fg-secondary">{formatBytes(totalMem)} allocated</p>

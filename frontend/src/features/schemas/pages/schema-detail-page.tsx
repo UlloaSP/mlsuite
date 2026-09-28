@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
@@ -59,8 +60,8 @@ export function SchemaDetailPage() {
           title="Schema unavailable"
           description="The schema could not be loaded. It may no longer exist or you may not have access."
           action={
-            <Link to="/schemas">
-              <AppButton>Back to schemas</AppButton>
+            <Link to="/schemas" className={appButtonClass()}>
+              Back to schemas
             </Link>
           }
         />
@@ -87,23 +88,19 @@ export function SchemaDetailPage() {
             ) : null
           }
         />
-        {schemaId ? (
-          <div className="flex shrink-0 flex-col gap-6 lg:min-h-0 lg:flex-1">
-            <SchemaRepoNav active="overview" schemaId={schemaId} />
-            {versionsQuery.isLoading ? (
-              <AppLoadingState label="Loading latest snapshot…" rows={2} />
-            ) : latestVersion ? (
-              <SchemaSnapshotPreviewPanel version={latestVersion} />
-            ) : (
-              <AppPanel className="flex flex-col gap-3">
-                <AppSectionTitle>No published snapshots</AppSectionTitle>
-                <p className="text-sm text-fg-secondary">
-                  Create a change and publish it to establish the schema document.
-                </p>
-              </AppPanel>
-            )}
-          </div>
-        ) : null}
+        {schemaId ? <SchemaRepoNav active="overview" schemaId={schemaId} /> : null}
+        {!schemaId ? null : versionsQuery.isLoading ? (
+          <AppLoadingState label="Loading latest snapshot…" rows={2} />
+        ) : latestVersion ? (
+          <SchemaSnapshotPreviewPanel version={latestVersion} />
+        ) : (
+          <AppPanel className="flex flex-col gap-3">
+            <AppSectionTitle>No published snapshots</AppSectionTitle>
+            <p className="text-sm text-fg-secondary">
+              Create a change and publish it to establish the schema document.
+            </p>
+          </AppPanel>
+        )}
       </AppSurface>
       <SchemaChangeNameDialog
         defaultName="Update schema"

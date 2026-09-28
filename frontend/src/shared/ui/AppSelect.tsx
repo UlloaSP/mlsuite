@@ -28,6 +28,8 @@ type AppSelectProps = Omit<ComponentPropsWithoutRef<typeof Select>, "children"> 
   options: AppSelectOption[];
   placeholder?: string;
   portalContainer?: HTMLElement | null;
+  /** `sm` for dense panel toolbars; rows of md controls keep the default. */
+  size?: "md" | "sm";
   title?: string;
 };
 
@@ -41,6 +43,7 @@ export function AppSelect({
   options,
   placeholder,
   portalContainer,
+  size,
   title,
   ...selectProps
 }: AppSelectProps) {
@@ -57,6 +60,7 @@ export function AppSelect({
         aria-labelledby={ariaLabelledBy}
         className={className}
         id={id}
+        size={size}
         title={title}
       >
         <span className="grid min-w-0">

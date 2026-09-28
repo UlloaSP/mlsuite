@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { Filter, RefreshCw, Search } from "lucide-react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -58,25 +59,18 @@ export function ServicesView({
     setHealthFilter("all");
   };
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
-            Service control
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Managed services</h1>
-          <p className="mt-1 text-sm text-fg-secondary">
-            {filtered.length} of {services.length} services &middot; click a row for details, logs,
-            and shell.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <AppButton variant="secondary" className="gap-2 px-3 py-2 text-xs">
-            <RefreshCw size={13} /> Sync
+    <>
+      <AppPageHeader
+        eyebrow="Service control"
+        title="Managed services"
+        description={`${filtered.length} of ${services.length} services · click a row for details, logs, and shell.`}
+        actions={
+          <AppButton variant="secondary">
+            <RefreshCw size={15} /> Sync
           </AppButton>
-        </div>
-      </div>
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+        }
+      />
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
           <label
             className={cx(
@@ -107,7 +101,8 @@ export function ServicesView({
           />
           <AppSelect
             aria-label="Filter by service health"
-            className="h-8 min-w-32 px-3 text-xs"
+            className="min-w-32"
+            size="sm"
             value={healthFilter}
             onValueChange={setHealthFilter}
             options={[
@@ -287,6 +282,6 @@ export function ServicesView({
           </table>
         </div>
       </div>
-    </div>
+    </>
   );
 }

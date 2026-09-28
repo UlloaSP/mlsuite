@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Play } from "lucide-react";
 import { useMemo } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router";
-import { AppButton } from "@/shared/ui/AppButton";
+import { Link, useParams, useSearchParams } from "react-router";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -53,7 +53,6 @@ const inRange = (run: PredictionRunDto, range: SchemaRunDateRangeFilter): boolea
 };
 
 export function SchemaRunHistoryPage() {
-  const navigate = useNavigate();
   const { schemaId, bookmarkId } = useParams<{
     schemaId: string;
     bookmarkId: string;
@@ -158,8 +157,8 @@ export function SchemaRunHistoryPage() {
           title="Invalid feedback questionnaire"
           description={questionnaireError}
           action={
-            <Link to="/schemas">
-              <AppButton>Back to schemas</AppButton>
+            <Link to="/schemas" className={appButtonClass()}>
+              Back to schemas
             </Link>
           }
         />
@@ -182,12 +181,6 @@ export function SchemaRunHistoryPage() {
             },
             { label: "Inference history" },
           ]}
-          description={
-            executableVersion
-              ? `${bookmark?.name ?? executableVersion.name} · v${executableVersion.version}`
-              : undefined
-          }
-          actionLayout="checkerboard"
           actions={
             executableVersion ? (
               <>
@@ -196,11 +189,12 @@ export function SchemaRunHistoryPage() {
                   version={executableVersion}
                   bookmarkId={bookmarkId ?? ""}
                 />
-                <Link to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}>
-                  <AppButton variant="secondary">
-                    <Play size={16} />
-                    Run
-                  </AppButton>
+                <Link
+                  to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}
+                  className={appButtonClass({ variant: "secondary" })}
+                >
+                  <Play size={16} />
+                  Run
                 </Link>
               </>
             ) : null
@@ -243,11 +237,12 @@ export function SchemaRunHistoryPage() {
                 : "Adjust the search or filters to see more results.",
             action:
               runs.length === 0 ? (
-                <Link to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}>
-                  <AppButton>
-                    <Play size={16} />
-                    Run schema
-                  </AppButton>
+                <Link
+                  to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}
+                  className={appButtonClass()}
+                >
+                  <Play size={16} />
+                  Run schema
                 </Link>
               ) : undefined,
           }}
@@ -255,7 +250,7 @@ export function SchemaRunHistoryPage() {
           <SchemaRunHistoryList
             runs={awaitingResults ? EMPTY_RUNS : pagination.visibleItems}
             feedbackStatusByRunId={feedbackStatusByRunId}
-            onOpenRun={(runId) => navigate(runHref(runId))}
+            runHref={runHref}
           />
         </CatalogListPanel>
       </AppSurface>

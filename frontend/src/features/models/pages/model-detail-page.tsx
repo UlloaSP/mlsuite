@@ -52,7 +52,7 @@ export function ModelDetailPage() {
             }
             action={
               <AppButton type="button" variant="secondary" onClick={() => navigate("/models")}>
-                Back to Models
+                Back to models
               </AppButton>
             }
           />
@@ -75,7 +75,10 @@ export function ModelDetailPage() {
               }
             />
 
-            <ModelSummaryTab model={model} onCreateSchema={() => navigate("/schemas/create")} />
+            <ModelSummaryTab
+              model={model}
+              onCreateSchema={() => navigate(`/schemas/create?modelId=${model.id}`)}
+            />
           </>
         )}
       </AppSurface>

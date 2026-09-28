@@ -7,12 +7,16 @@ export function OrganizationOwnerButton({ item }: { item: OrganizationCatalogIte
     <button
       type="button"
       onClick={() => toast.info("Not available yet.")}
-      className="flex w-fit max-w-full items-center gap-2 rounded px-1 py-1 text-left hover:bg-surface-muted"
+      className="flex w-fit max-w-full items-center gap-2 rounded-control px-1 py-1 text-left hover:bg-surface-muted"
     >
       {item.ownerAvatarUrl ? (
-        <img src={item.ownerAvatarUrl} alt="" className="size-7 shrink-0 rounded object-cover" />
+        <img
+          src={item.ownerAvatarUrl}
+          alt=""
+          className="size-7 shrink-0 rounded-full object-cover"
+        />
       ) : (
-        <span className="grid size-7 shrink-0 place-items-center rounded bg-accent-subtle text-xs font-semibold text-accent-strong">
+        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-accent-subtle text-xs font-semibold text-accent-strong">
           {owner.slice(0, 1).toUpperCase()}
         </span>
       )}

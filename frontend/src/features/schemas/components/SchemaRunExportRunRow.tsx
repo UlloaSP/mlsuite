@@ -52,7 +52,7 @@ export function SchemaRunExportRunRow({
           type="button"
           aria-label={`${open ? "Collapse" : "Expand"} ${summary.run.name}`}
           onClick={onToggleOpen}
-          className="rounded-md p-2 text-fg-muted hover:bg-surface-muted"
+          className="rounded-control p-2 text-fg-muted hover:bg-surface-muted"
         >
           {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>

@@ -108,7 +108,7 @@ export function SettingsAppearanceSection() {
               Apply a full pair, or choose either orb for only that mode.
             </p>
           </div>
-          <AppButton variant="secondary" className="px-3 py-2" onClick={() => setCreateOpen(true)}>
+          <AppButton variant="secondary" size="sm" onClick={() => setCreateOpen(true)}>
             <Paintbrush size={15} /> Create theme
           </AppButton>
         </div>

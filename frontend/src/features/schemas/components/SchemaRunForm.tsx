@@ -12,6 +12,7 @@ import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppButton } from "@/shared/ui/AppButton";
+import { cx } from "@/shared/ui/cx";
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
 import {
@@ -26,6 +27,7 @@ import {
 import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { getSchemaRunPrefillInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
+import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/features/schemas/lib/mlform-split-layout";
 
 type Props = {
   version: SchemaVersionDto;
@@ -190,6 +192,9 @@ export function SchemaRunForm({
       </AppButton>
     </AppPanel>
   ) : (
-    <div className="size-full min-h-0 overflow-auto" ref={containerRef} />
+    <div
+      className={cx("size-full min-h-0 overflow-auto", MLFORM_SPLIT_CONTAINER_CLASS)}
+      ref={containerRef}
+    />
   );
 }

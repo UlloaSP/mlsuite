@@ -125,7 +125,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
           <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_200px]">
             <AppTextField
               aria-label="Search reviewers"
-              className="w-full py-2.5"
+              className="w-full"
               placeholder="Search reviewer"
               prefix={<Search size={15} />}
               value={query}
@@ -157,11 +157,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
         ) : assignments.error ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-danger-fg">Review status unavailable.</p>
-            <AppButton
-              variant="secondary"
-              className="px-3 py-2"
-              onClick={() => void assignments.refetch()}
-            >
+            <AppButton size="sm" variant="secondary" onClick={() => void assignments.refetch()}>
               Try again
             </AppButton>
           </div>

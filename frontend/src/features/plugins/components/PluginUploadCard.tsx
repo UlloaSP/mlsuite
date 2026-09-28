@@ -41,7 +41,7 @@ export function PluginUploadCard({
         item.error ? "border-danger-border" : "border-line",
       )}
     >
-      <span className="mt-0.5 flex size-9 flex-shrink-0 items-center justify-center rounded-lg border border-line bg-surface-muted text-fg-muted">
+      <span className="mt-0.5 flex size-9 flex-shrink-0 items-center justify-center rounded-control border border-line bg-surface-muted text-fg-muted">
         <FileCode2 size={18} />
       </span>
       <div className="min-w-0 flex-1 space-y-1.5">

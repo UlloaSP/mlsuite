@@ -20,7 +20,7 @@ export function EditorErrorCard({ error }: EditorErrorCardProps) {
   const isWarning = error.severity === "warning";
   return (
     <motion.div
-      className={`flex space-x-3 rounded-2xl border p-4 ${
+      className={`flex space-x-3 rounded-card border p-4 ${
         isWarning
           ? "border-warning-subtle bg-warning-subtle"
           : "border-danger-subtle bg-danger-subtle"

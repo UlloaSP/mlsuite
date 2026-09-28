@@ -14,6 +14,7 @@ import { RoleBadge } from "@/features/workspace/components/RoleBadge";
 import { lifecycleStages } from "@/features/workspace/lib/workspace-overview";
 import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -24,6 +25,13 @@ import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { LifecycleStageCard } from "./LifecycleStageCard";
 import { OverviewInvitationsPanel } from "./OverviewInvitationsPanel";
 import { OverviewMembersPanel } from "./OverviewMembersPanel";
+
+// Columns follow the number of visible stages, so no row ends in empty cells.
+const STAGE_COLUMNS: Record<number, string> = {
+  2: "sm:grid-cols-2",
+  3: "md:grid-cols-3",
+  4: "sm:grid-cols-2 xl:grid-cols-4",
+};
 
 /**
  * The organization dashboard, for the active organization (/workspace) or any
@@ -56,7 +64,7 @@ export function OrganizationOverview({
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col gap-8 overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
           eyebrow="Workspace overview"
           breadcrumbs={breadcrumbs}
@@ -66,36 +74,29 @@ export function OrganizationOverview({
             `Everything ${organization.slug} runs, from uploaded models to reviewed predictions.`
           }
           actions={
-            <div className="flex items-center gap-2">
-              {role ? <RoleBadge value={role} /> : null}
+            <>
               {permissions.canViewOrganization ? (
                 <Link
                   to={`${basePath}/settings`}
                   viewTransition
-                  className={appButtonClass({ variant: "secondary", size: "sm" })}
+                  className={appButtonClass({ variant: "secondary" })}
                 >
                   <Settings size={15} />
                   Settings
                 </Link>
               ) : null}
-            </div>
+              {role ? <RoleBadge value={role} /> : null}
+            </>
           }
         />
 
         {dashboard.isError ? (
-          <div
-            role="alert"
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger-border bg-danger-subtle px-5 py-4 text-sm text-danger-fg"
-          >
+          <AppInlineAlert className="flex flex-wrap items-center justify-between gap-3">
             The overview could not be loaded. Counts and recent activity are unavailable.
-            <AppButton
-              variant="secondary"
-              className="px-3 py-2"
-              onClick={() => void dashboard.refetch()}
-            >
+            <AppButton variant="secondary" size="sm" onClick={() => void dashboard.refetch()}>
               Try again
             </AppButton>
-          </div>
+          </AppInlineAlert>
         ) : null}
 
         {stages.length > 0 ? (
@@ -106,7 +107,7 @@ export function OrganizationOverview({
             <p className="mt-1 text-sm text-fg-secondary">
               Upload models, describe them with schemas, run predictions, and review the results.
             </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className={cx("mt-4 grid gap-3", STAGE_COLUMNS[stages.length])}>
               {stages.map((stage, index) => (
                 <LifecycleStageCard key={stage.key} stage={stage} step={index + 1} />
               ))}
@@ -115,7 +116,12 @@ export function OrganizationOverview({
         ) : null}
 
         {showPeople ? (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div
+            className={cx(
+              "grid gap-4",
+              permissions.canViewMembers && permissions.canViewInvitations && "lg:grid-cols-2",
+            )}
+          >
             {permissions.canViewMembers ? (
               <OverviewMembersPanel
                 members={data?.recentMembers ?? []}
@@ -139,7 +145,7 @@ export function OrganizationOverview({
             to="/plugins"
             viewTransition
             className={cx(
-              "group flex items-center gap-4 rounded-xl border border-line bg-surface px-5 py-4 transition hover:border-line-strong hover:bg-surface-hover",
+              "group flex items-center gap-4 rounded-card border border-line bg-surface px-5 py-4 transition hover:border-line-strong hover:bg-surface-hover",
               FOCUS_RING,
             )}
           >

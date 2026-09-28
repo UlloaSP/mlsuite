@@ -135,7 +135,7 @@ export function SchemaRunExportReviewModal({
               <AppButton
                 type="button"
                 variant="secondary"
-                className="rounded-md px-3 py-2"
+                size="sm"
                 onClick={() => setSelection(emptySchemaRunExportSelection())}
               >
                 Select all
@@ -143,7 +143,7 @@ export function SchemaRunExportReviewModal({
               <AppButton
                 type="button"
                 variant="ghost"
-                className="rounded-md px-3 py-2"
+                size="sm"
                 onClick={() =>
                   update((draft) => runs.forEach((item) => draft.excludedRunIds.add(item.id)))
                 }

@@ -1,7 +1,9 @@
 import { Search } from "lucide-react";
+import { Fragment } from "react";
 import { useSearchParams } from "react-router";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
+import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
 import type {
@@ -47,21 +49,18 @@ export function RolesCatalog({
           key: String(template.id),
           text: `${template.name} ${template.description}`,
           content: (
-            <button
-              type="button"
-              disabled={!canManage}
-              onClick={() => onTemplate(template)}
-              className="h-full w-full rounded border border-line p-4 text-left transition-colors enabled:hover:border-fg-secondary disabled:cursor-default"
-            >
-              <p className="font-semibold">{template.name}</p>
-              {template.description && template.description !== template.name ? (
-                <p className="mt-1 text-sm text-fg-secondary">{template.description}</p>
-              ) : null}
-              <p className="mt-3 text-sm text-fg-secondary">
-                {template.permissionKeys.length}{" "}
-                {template.permissionKeys.length === 1 ? "permission" : "permissions"}
-              </p>
-            </button>
+            <CatalogEntry
+              title={template.name}
+              description={
+                template.description && template.description !== template.name
+                  ? template.description
+                  : undefined
+              }
+              details={`${template.permissionKeys.length} ${
+                template.permissionKeys.length === 1 ? "permission" : "permissions"
+              }`}
+              onOpen={canManage ? () => onTemplate(template) : undefined}
+            />
           ),
         }));
   const filtered = items.filter((item) =>
@@ -73,7 +72,7 @@ export function RolesCatalog({
     loading || !data,
   );
   return (
-    <>
+    <section className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
         <AppTextField
           className="w-full"
@@ -100,7 +99,6 @@ export function RolesCatalog({
         itemCount={filtered.length}
         isLoading={loading}
         isBusy={loading}
-        layout={tab === "roles" ? "list" : "grid"}
         loadingLabel={`Loading ${tab}…`}
         errorMessage={error ? `Could not load ${tab}.` : null}
         onRetry={onRetry}
@@ -110,9 +108,9 @@ export function RolesCatalog({
         }}
       >
         {pagination.visibleItems.map((item) => (
-          <div key={item.key}>{item.content}</div>
+          <Fragment key={item.key}>{item.content}</Fragment>
         ))}
       </CatalogListPanel>
-    </>
+    </section>
   );
 }

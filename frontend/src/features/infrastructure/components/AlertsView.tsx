@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AlertTriangle, CheckCircle2, TerminalSquare } from "lucide-react";
 import { cx } from "@/shared/ui/cx";
 import { buildDashboardAlerts } from "@/features/infrastructure/lib/dashboard-summary";
@@ -35,33 +36,29 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
-            Operational signals
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Alerts</h1>
-          <p className="mt-1 text-sm text-fg-secondary">
-            {filtered.length} active alerts across the cluster.
-          </p>
-        </div>
-        <AppSegmentedControl
-          label="Alert level"
-          options={[
-            { value: "all", label: `All ${counts.all}` },
-            { value: "danger", label: `Critical ${counts.danger}` },
-            { value: "warning", label: `Warning ${counts.warning}` },
-            { value: "info", label: `Info ${counts.info}` },
-          ]}
-          value={filter}
-          onChange={setFilter}
-        />
-      </div>
+    <>
+      <AppPageHeader
+        eyebrow="Operational signals"
+        title="Alerts"
+        description={`${filtered.length} active alerts across the cluster.`}
+        actions={
+          <AppSegmentedControl
+            label="Alert level"
+            size="md"
+            options={[
+              { value: "all", label: `All ${counts.all}` },
+              { value: "danger", label: `Critical ${counts.danger}` },
+              { value: "warning", label: `Warning ${counts.warning}` },
+              { value: "info", label: `Info ${counts.info}` },
+            ]}
+            value={filter}
+            onChange={setFilter}
+          />
+        }
+      />
 
       {/* Alert list */}
-      <div className="overflow-hidden rounded-xl border border-line bg-surface divide-y divide-line">
+      <div className="overflow-hidden rounded-card border border-line bg-surface divide-y divide-line">
         {filtered.map((alert) => (
           <div key={alert.id} className="flex items-start gap-3 px-5 py-4">
             <div
@@ -91,6 +88,6 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
           <AppEmptyState compact title="No matching alerts" description="Try another level." />
         )}
       </div>
-    </div>
+    </>
   );
 }

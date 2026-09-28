@@ -34,7 +34,7 @@ export function Sidebar({
         state === "collapsed" ? "h-auto" : "h-[calc(100dvh-1rem)]",
         side === "left" ? "ml-2" : "mr-2",
       )
-    : cx("h-screen", side === "left" ? "border-r" : "border-l");
+    : cx("h-dvh", side === "left" ? "border-r" : "border-l");
 
   if (isMobile) {
     return (

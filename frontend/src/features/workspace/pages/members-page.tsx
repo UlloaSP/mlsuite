@@ -84,69 +84,71 @@ export function MembersPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title="Members"
           description="Organization users, roles, and row-level permissions."
           breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Members" }]}
         />
-        <AppToolbar variant="flat">
-          <AppTextField
-            className="min-w-[min(100%,260px)] flex-1"
-            aria-label="Search members"
-            placeholder="Search members by name or email…"
-            prefix={<Search className="size-4 text-fg-muted" />}
-            suffix={
-              membersQuery.isSuccess ? (
-                <span className="shrink-0 whitespace-nowrap border-l border-line pl-3 text-sm font-semibold text-fg-secondary">
-                  {query || role !== "ALL"
-                    ? `${filtered.length} of ${members.length}`
-                    : members.length}{" "}
-                  members
-                </span>
-              ) : undefined
-            }
-            value={query}
-            onChange={(event) => setFilter("q", event.target.value)}
-          />
-          <AppSelect
-            aria-label="Filter by role"
-            className="min-w-44"
-            value={role}
-            onValueChange={(value) => setFilter("role", value)}
-            options={[{ value: "ALL", label: "All roles" }, ...roles]}
-          />
-        </AppToolbar>
-        <CatalogListPanel
-          {...pagination}
-          itemCount={filtered.length}
-          isLoading={loading}
-          isBusy={loading || membersQuery.isFetching}
-          loadingLabel="Loading members…"
-          errorMessage={membersQuery.isError ? "Could not load members." : null}
-          onRetry={() => {
-            void membersQuery.refetch();
-          }}
-          emptyState={{
-            title: query || role !== "ALL" ? "No matching members" : "No members yet",
-            description:
-              query || role !== "ALL"
-                ? "Try another name, email, or role."
-                : "Organization members will appear here.",
-          }}
-        >
-          {pagination.visibleItems.length > 0 ? (
-            <MemberTable
-              rows={pagination.visibleItems}
-              onRoleChange={(membershipId, roleDefinitionId) => {
-                updateMemberRole.mutate({ membershipId, roleDefinitionId });
-              }}
-              onRemove={(membershipId) => {
-                removeMember.mutate(membershipId);
-              }}
+        <section className="flex min-h-0 flex-1 flex-col">
+          <AppToolbar variant="flat">
+            <AppTextField
+              className="min-w-[min(100%,260px)] flex-1"
+              aria-label="Search members"
+              placeholder="Search members by name or email…"
+              prefix={<Search className="size-4 text-fg-muted" />}
+              suffix={
+                membersQuery.isSuccess ? (
+                  <span className="shrink-0 whitespace-nowrap border-l border-line pl-3 text-sm font-semibold text-fg-secondary">
+                    {query || role !== "ALL"
+                      ? `${filtered.length} of ${members.length}`
+                      : members.length}{" "}
+                    members
+                  </span>
+                ) : undefined
+              }
+              value={query}
+              onChange={(event) => setFilter("q", event.target.value)}
             />
-          ) : null}
-        </CatalogListPanel>
+            <AppSelect
+              aria-label="Filter by role"
+              className="min-w-44"
+              value={role}
+              onValueChange={(value) => setFilter("role", value)}
+              options={[{ value: "ALL", label: "All roles" }, ...roles]}
+            />
+          </AppToolbar>
+          <CatalogListPanel
+            {...pagination}
+            itemCount={filtered.length}
+            isLoading={loading}
+            isBusy={loading || membersQuery.isFetching}
+            loadingLabel="Loading members…"
+            errorMessage={membersQuery.isError ? "Could not load members." : null}
+            onRetry={() => {
+              void membersQuery.refetch();
+            }}
+            emptyState={{
+              title: query || role !== "ALL" ? "No matching members" : "No members yet",
+              description:
+                query || role !== "ALL"
+                  ? "Try another name, email, or role."
+                  : "Organization members will appear here.",
+            }}
+          >
+            {pagination.visibleItems.length > 0 ? (
+              <MemberTable
+                rows={pagination.visibleItems}
+                onRoleChange={(membershipId, roleDefinitionId) => {
+                  updateMemberRole.mutate({ membershipId, roleDefinitionId });
+                }}
+                onRemove={(membershipId) => {
+                  removeMember.mutate(membershipId);
+                }}
+              />
+            ) : null}
+          </CatalogListPanel>
+        </section>
       </AppSurface>
     </AppPage>
   );

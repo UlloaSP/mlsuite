@@ -4,6 +4,7 @@ import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AlertsView } from "@/features/infrastructure/components/AlertsView";
@@ -124,68 +125,76 @@ export function AdminInfrastructurePage() {
   return (
     <AppPage>
       {actionDialog.dialog}
-      <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll bg-page">
-        <div className="flex-1 px-6 py-5">
-          {currentOverview && !showLoading ? (
-            <>
-              {activeTab === "overview" && (
-                <OverviewView
-                  overview={currentOverview}
-                  streamConnected={streamConnected}
-                  onNavigateTab={setActiveTab}
-                />
-              )}
-              {activeTab === "services" && (
-                <ServicesView
-                  services={currentOverview.services}
-                  selectedService={selectedService}
-                  busyService={action.isPending ? (action.variables?.serviceName ?? null) : null}
-                  onSelect={(name) => {
-                    handleSelectService(name);
-                  }}
-                  onAction={(name, a) => {
-                    const confirmation = serviceActionConfirmation(name, a);
-                    void (async () => {
-                      if (confirmation && !(await actionDialog.confirm(confirmation))) return;
-                      action.mutate({ serviceName: name, action: a });
-                    })();
-                  }}
-                />
-              )}
-              {activeTab === "logs" && (
-                <LogsView
-                  services={currentOverview.services}
-                  selectedService={selectedService}
-                  logLines={logLines}
-                  streamConnected={streamConnected}
-                  onSelectService={handleSelectService}
-                />
-              )}
-              {activeTab === "terminal" && (
-                <TerminalView
-                  services={currentOverview.services}
-                  selectedService={selectedService}
-                  terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
-                  onSelectService={handleSelectService}
-                />
-              )}
-              {activeTab === "alerts" && (
-                <AlertsView
-                  overview={currentOverview}
-                  streamConnected={streamConnected}
-                  selectedService={selectedService}
-                />
-              )}
-            </>
-          ) : showLoading ? (
-            <AppLoadingState label="Loading infrastructure snapshot" />
-          ) : (
-            <AppEmptyState
-              title="No infrastructure snapshot"
-              description="The dashboard needs an ops-agent overview before it can render service metrics and controls."
+      {/* Each view renders its own page header; the loading and empty states share this one. */}
+      <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto">
+        {currentOverview && !showLoading ? (
+          <>
+            {activeTab === "overview" && (
+              <OverviewView
+                overview={currentOverview}
+                streamConnected={streamConnected}
+                onNavigateTab={setActiveTab}
+              />
+            )}
+            {activeTab === "services" && (
+              <ServicesView
+                services={currentOverview.services}
+                selectedService={selectedService}
+                busyService={action.isPending ? (action.variables?.serviceName ?? null) : null}
+                onSelect={(name) => {
+                  handleSelectService(name);
+                }}
+                onAction={(name, a) => {
+                  const confirmation = serviceActionConfirmation(name, a);
+                  void (async () => {
+                    if (confirmation && !(await actionDialog.confirm(confirmation))) return;
+                    action.mutate({ serviceName: name, action: a });
+                  })();
+                }}
+              />
+            )}
+            {activeTab === "logs" && (
+              <LogsView
+                services={currentOverview.services}
+                selectedService={selectedService}
+                logLines={logLines}
+                streamConnected={streamConnected}
+                onSelectService={handleSelectService}
+              />
+            )}
+            {activeTab === "terminal" && (
+              <TerminalView
+                services={currentOverview.services}
+                selectedService={selectedService}
+                terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
+                onSelectService={handleSelectService}
+              />
+            )}
+            {activeTab === "alerts" && (
+              <AlertsView
+                overview={currentOverview}
+                streamConnected={streamConnected}
+                selectedService={selectedService}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <AppPageHeader
+              eyebrow="Superadmin"
+              title="Infrastructure"
+              description="Managed services, live logs, shell access, and aggregate resource use."
             />
-          )}
-        </div>
+            {showLoading ? (
+              <AppLoadingState label="Loading infrastructure snapshot…" />
+            ) : (
+              <AppEmptyState
+                title="No infrastructure snapshot"
+                description="The dashboard needs an ops-agent overview before it can render service metrics and controls."
+              />
+            )}
+          </>
+        )}
       </AppSurface>
     </AppPage>
   );

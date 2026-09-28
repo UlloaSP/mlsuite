@@ -18,7 +18,7 @@ describe("workspace navigation in the organization switcher", () => {
       ["Overview", "/workspace"],
       ["Members", "/workspace/organizations/7/members"],
       ["Invitations", "/workspace/organizations/7/invitations"],
-      ["Roles & Templates", "/workspace/organizations/7/roles"],
+      ["Roles & templates", "/workspace/organizations/7/roles"],
       ["Settings", "/workspace/organizations/7/settings"],
     ]);
   });
@@ -28,9 +28,9 @@ describe("workspace navigation in the organization switcher", () => {
     expect(labels({ canInviteMembers: true })).toEqual([
       "Overview",
       "Invitations",
-      "Roles & Templates",
+      "Roles & templates",
     ]);
-    expect(labels({ canManageMemberRoles: true })).toEqual(["Overview", "Roles & Templates"]);
+    expect(labels({ canManageMemberRoles: true })).toEqual(["Overview", "Roles & templates"]);
   });
 
   it("offers nothing without workspace access", () => {

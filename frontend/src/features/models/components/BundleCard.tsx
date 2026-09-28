@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Check, Plus, Save } from "lucide-react";
-import { m as motion } from "motion/react";
 import type { DragEvent } from "react";
 import { cx } from "@/shared/ui/cx";
 import type { Bundle } from "@/features/models/lib/bundle-types";
@@ -15,7 +14,6 @@ import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   bundle: Bundle;
-  index: number;
   onSave: () => void;
   onRemove: () => void;
   onRename: (value: string) => void;
@@ -35,7 +33,6 @@ function dropFile(event: DragEvent<HTMLButtonElement>, handler: (file: File) => 
 
 export function BundleCard({
   bundle,
-  index,
   onSave,
   onRemove,
   onRename,
@@ -49,12 +46,9 @@ export function BundleCard({
     bundle.modelFile && bundle.name.trim() && bundle.oneHotSeparator !== "" && !bundle.saving;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.04 }}
+    <div
       className={cx(
-        "flex-shrink-0 overflow-hidden rounded-lg border transition-all duration-150",
+        "flex-shrink-0 overflow-hidden rounded-card border transition-all duration-150",
         bundle.saved
           ? "border-success-border bg-success-subtle"
           : "border-line bg-surface-muted hover:border-line-strong hover:shadow-hover",
@@ -76,7 +70,7 @@ export function BundleCard({
               onClick={onAttachModel}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => dropFile(event, onDropModel)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-accent bg-accent-subtle px-3 py-2 text-xs font-semibold text-accent transition-all duration-150 hover:bg-surface-subtle"
+              className="flex cursor-pointer items-center gap-2.5 rounded-control border border-dashed border-accent bg-accent-subtle px-3 py-2 text-xs font-semibold text-accent transition-all duration-150 hover:bg-surface-subtle"
             >
               <Plus size={12} />
               Select model{" "}
@@ -99,7 +93,7 @@ export function BundleCard({
               onClick={onAttachDf}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => dropFile(event, onDropDf)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-dashed border-line bg-surface-subtle px-3 py-2 text-xs text-fg-muted transition-all duration-150 hover:border-accent-border hover:bg-accent-subtle hover:text-accent"
+              className="flex cursor-pointer items-center gap-2.5 rounded-control border border-dashed border-line bg-surface-subtle px-3 py-2 text-xs text-fg-muted transition-all duration-150 hover:border-accent-border hover:bg-accent-subtle hover:text-accent"
             >
               <Plus size={12} />
               Attach dataframe{" "}
@@ -118,7 +112,7 @@ export function BundleCard({
             placeholder="Model name…"
             disabled={bundle.saved}
             className={cx(
-              "w-full rounded-lg border border-line bg-surface-subtle",
+              "w-full rounded-control border border-line bg-surface-subtle",
               "px-3 py-2 text-xs font-semibold text-fg outline-none",
               "transition-all duration-150 focus:border-accent focus:bg-surface",
               bundle.saved && "cursor-not-allowed opacity-70",
@@ -136,7 +130,7 @@ export function BundleCard({
               onChange={(e) => onOneHotSeparatorChange(e.target.value)}
               disabled={bundle.saved}
               className={cx(
-                "w-full rounded-lg border border-line bg-surface-subtle",
+                "w-full rounded-control border border-line bg-surface-subtle",
                 "px-3 py-2 font-mono text-xs text-fg outline-none",
                 "transition-all duration-150 focus:border-accent focus:bg-surface",
                 bundle.saved && "cursor-not-allowed opacity-70",
@@ -163,6 +157,6 @@ export function BundleCard({
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

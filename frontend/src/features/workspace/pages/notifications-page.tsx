@@ -28,10 +28,9 @@ export function NotificationsPage() {
             icon={<Bell size={18} />}
             title="No notifications"
             description="New invitations and account updates will appear here."
-            className="rounded"
           />
         ) : (
-          <AppPanel className="overflow-hidden rounded p-0">
+          <AppPanel className="overflow-hidden p-0">
             {invitations.map((invitation) => (
               <NotificationInvitationItem key={invitation.id} invitation={invitation} />
             ))}

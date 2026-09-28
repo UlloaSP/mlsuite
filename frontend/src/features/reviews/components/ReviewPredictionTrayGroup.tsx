@@ -1,5 +1,5 @@
 import { ChevronUp } from "lucide-react";
-import type { ReactNode, RefObject } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 
 type ReviewPredictionTrayGroupProps = {
   title: string;
@@ -56,8 +56,9 @@ export function ReviewPredictionTrayGroup({
       {open && count > 0 ? (
         <div
           ref={listRef}
-          className="mt-3 overflow-y-auto"
-          style={{ maxHeight: `${listHeight}px` }}
+          // The tray only has a bounded height beside the review (xl); below that lists grow.
+          className="mt-3 overflow-y-auto xl:max-h-(--tray-list-height)"
+          style={{ "--tray-list-height": `${listHeight}px` } as CSSProperties}
         >
           {children}
         </div>

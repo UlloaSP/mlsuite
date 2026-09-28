@@ -52,7 +52,6 @@ export function InviteForm({
         }
       />
       <AppSelect
-        className="rounded shadow-none"
         value={selectedRoleId ? String(selectedRoleId) : ""}
         onValueChange={setRoleDefinitionId}
         disabled={roleOptions.length === 0}
@@ -61,13 +60,8 @@ export function InviteForm({
           label: option.name,
         }))}
       />
-      <AppButton
-        type="button"
-        className="w-full rounded-xl px-5 lg:w-auto"
-        disabled={!canSubmit}
-        onClick={submit}
-      >
-        Send Invite
+      <AppButton type="button" className="w-full lg:w-auto" disabled={!canSubmit} onClick={submit}>
+        Send invite
       </AppButton>
     </div>
   );

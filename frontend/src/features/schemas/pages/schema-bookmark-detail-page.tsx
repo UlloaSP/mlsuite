@@ -5,7 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { History, Play } from "lucide-react";
 import { Link, useParams } from "react-router";
-import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
@@ -38,20 +38,22 @@ export function SchemaBookmarkDetailPage() {
           ]}
           actions={
             schemaId && bookmarkId ? (
-              <div className="flex flex-wrap gap-2">
-                <Link to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}>
-                  <AppButton>
-                    <Play size={16} />
-                    Run
-                  </AppButton>
+              <>
+                <Link
+                  to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs/create`}
+                  className={appButtonClass()}
+                >
+                  <Play size={16} />
+                  Run
                 </Link>
-                <Link to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs`}>
-                  <AppButton variant="secondary">
-                    <History size={16} />
-                    Inference history
-                  </AppButton>
+                <Link
+                  to={`/schemas/${schemaId}/bookmarks/${bookmarkId}/runs`}
+                  className={appButtonClass({ variant: "secondary" })}
+                >
+                  <History size={16} />
+                  Inference history
                 </Link>
-              </div>
+              </>
             ) : null
           }
         />

@@ -15,6 +15,7 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
+import { cx } from "@/shared/ui/cx";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
 import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
@@ -24,6 +25,7 @@ import {
 } from "@/features/schemas/lib/preview-transport";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
 import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
+import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/features/schemas/lib/mlform-split-layout";
 
 type Props = {
   schema: unknown;
@@ -137,7 +139,11 @@ export function SchemaFormPreview({ schema }: Props) {
       ) : null}
       {resolvedSchema.status === "ready" ? (
         <div
-          className={`size-full min-h-0 overflow-auto ${mountError ? "hidden" : ""}`}
+          className={cx(
+            "size-full min-h-0 overflow-auto",
+            MLFORM_SPLIT_CONTAINER_CLASS,
+            mountError && "hidden",
+          )}
           ref={containerRef}
         />
       ) : null}

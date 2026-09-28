@@ -1,9 +1,8 @@
-import { Ellipsis, RotateCcw, Trash2 } from "lucide-react";
-import { DropdownMenu } from "radix-ui";
+import { RotateCcw, Trash2 } from "lucide-react";
 import type { InferenceReviewAssignmentDto } from "@/features/inferences/api/inference-api";
 import { formatTimestamp } from "@/shared/lib/date-time";
 import { AppBadge } from "@/shared/ui/AppBadge";
-import { AppIconButton } from "@/shared/ui/AppIconButton";
+import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 
 type Props = {
   assignment: InferenceReviewAssignmentDto;
@@ -34,41 +33,26 @@ export function InferenceReviewTile({ assignment, disabled, onDelete, onReopen }
             <p className="truncate text-xs text-fg-secondary">{assignment.reviewer.email}</p>
           </div>
         </div>
-        {canReopen || hasResponse ? (
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <AppIconButton disabled={disabled} aria-label="Review actions">
-                <Ellipsis size={18} />
-              </AppIconButton>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                align="end"
-                sideOffset={8}
-                className="z-(--z-popover) min-w-48 rounded-menu border border-line bg-surface p-2 shadow-hover"
-              >
-                {canReopen ? (
-                  <DropdownMenu.Item
-                    onSelect={onReopen}
-                    className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium outline-none hover:bg-surface-muted focus:bg-surface-muted"
-                  >
-                    <RotateCcw size={15} />
-                    Reopen
-                  </DropdownMenu.Item>
-                ) : null}
-                {hasResponse ? (
-                  <DropdownMenu.Item
-                    onSelect={onDelete}
-                    className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium text-danger-fg outline-none hover:bg-danger-subtle focus:bg-danger-subtle"
-                  >
-                    <Trash2 size={15} />
-                    Delete response
-                  </DropdownMenu.Item>
-                ) : null}
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        ) : null}
+        <AppActionsMenu
+          label="Review actions"
+          disabled={disabled}
+          actions={[
+            ...(canReopen
+              ? [{ key: "reopen", label: "Reopen", icon: RotateCcw, onSelect: onReopen }]
+              : []),
+            ...(hasResponse
+              ? [
+                  {
+                    key: "delete",
+                    label: "Delete response",
+                    icon: Trash2,
+                    onSelect: onDelete,
+                    tone: "danger" as const,
+                  },
+                ]
+              : []),
+          ]}
+        />
       </div>
       <div className="mt-5 flex flex-wrap gap-2">
         <AppBadge tone={tone(assignment.reviewState)}>{label(assignment.reviewState)}</AppBadge>

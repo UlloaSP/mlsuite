@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Search, Plus } from "lucide-react";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import {
   useArchiveModelMutation,
@@ -17,7 +17,7 @@ import { useModelCatalogPageQuery } from "@/features/models/api/model.queries";
 import type { ModelDto } from "@/features/models/api/model.types";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
@@ -41,7 +41,6 @@ const SORT_OPTIONS: Array<{ value: ModelSortMode; label: string }> = [
 ];
 
 export function ModelsPage() {
-  const navigate = useNavigate();
   const { data: user, error } = useUser();
   const { data: workspace } = useWorkspaceContext();
   const organizationId = workspace?.currentOrganization.id;
@@ -140,9 +139,9 @@ export function ModelsPage() {
             workspace?.currentOrganization.name ?? "the current workspace"
           }.`,
           actions: canCreateModels ? (
-            <AppButton type="button" onClick={() => navigate("/models/create")}>
+            <Link className={appButtonClass()} to="/models/create">
               <Plus size={16} /> New model
-            </AppButton>
+            </Link>
           ) : null,
         }}
         isActionPending={isActionPending}
@@ -161,9 +160,9 @@ export function ModelsPage() {
         filteredEmptyDescription="Try another search term or status."
         emptyAction={
           canCreateModels ? (
-            <AppButton type="button" onClick={() => navigate("/models/create")}>
+            <Link className={appButtonClass()} to="/models/create">
               <Plus size={16} /> New model
-            </AppButton>
+            </Link>
           ) : undefined
         }
         renderItem={(model) => (
@@ -173,7 +172,7 @@ export function ModelsPage() {
             canEdit={canEditModels}
             item={model}
             schemaCount={hasSchema(model) ? 1 : 0}
-            onOpen={() => navigate(`/models/${model.id}`)}
+            to={`/models/${model.id}`}
             onAction={(action) => {
               void handleAction(action, model);
             }}

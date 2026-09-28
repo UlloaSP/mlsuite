@@ -129,54 +129,52 @@ export function CreateSchemaRunPage() {
   );
 
   const saveIcon = saveAction.loading ? (
-    <AppSpinner size={18} />
+    <AppSpinner size={16} />
   ) : phase === "saved" ? (
-    <Check size={18} />
+    <Check size={16} />
   ) : (
-    <Save size={18} />
+    <Save size={16} />
   );
 
   return (
     <AppPage>
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
-        <div className="shrink-0">
-          <AppPageHeader
-            title={
-              <span className="inline-flex max-w-full items-center gap-2">
-                <input
-                  aria-label="Inference name"
-                  disabled={isSaving || phase === "saved"}
-                  size={Math.max(name.length, 1)}
-                  spellCheck={false}
-                  value={name}
-                  onChange={(event) => {
-                    nameEditedRef.current = true;
-                    setName(event.target.value);
-                  }}
-                  className="min-w-0 max-w-full bg-transparent font-inherit text-inherit outline-none focus-visible:rounded focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default"
-                />
-                <PencilLine aria-hidden="true" className="shrink-0 text-fg-muted" size={17} />
-              </span>
-            }
-            breadcrumbs={[
-              { label: "Schemas", to: "/schemas" },
-              { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
-              { label: "Bookmarks", to: `/schemas/${schemaId}/bookmarks` },
-              { label: bookmark ? `${bookmark.name} · v${bookmark.version}` : "Bookmark" },
-              { label: "New inference" },
-            ]}
-            actions={
-              <AppButton
-                data-schema-run-save=""
-                disabled={saveAction.disabled}
-                onClick={() => void handleSave()}
-              >
-                {saveIcon}
-                <span aria-live="polite">{saveAction.label}</span>
-              </AppButton>
-            }
-          />
-        </div>
+        <AppPageHeader
+          title={
+            <span className="inline-flex max-w-full items-center gap-2">
+              <input
+                aria-label="Inference name"
+                disabled={isSaving || phase === "saved"}
+                size={Math.max(name.length, 1)}
+                spellCheck={false}
+                value={name}
+                onChange={(event) => {
+                  nameEditedRef.current = true;
+                  setName(event.target.value);
+                }}
+                className="min-w-0 max-w-full bg-transparent font-inherit text-inherit outline-none focus-visible:rounded-control focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default"
+              />
+              <PencilLine aria-hidden="true" className="shrink-0 text-fg-muted" size={17} />
+            </span>
+          }
+          breadcrumbs={[
+            { label: "Schemas", to: "/schemas" },
+            { label: schema?.name ?? "Schema", to: `/schemas/${schemaId}` },
+            { label: "Bookmarks", to: `/schemas/${schemaId}/bookmarks` },
+            { label: bookmark ? `${bookmark.name} · v${bookmark.version}` : "Bookmark" },
+            { label: "New inference" },
+          ]}
+          actions={
+            <AppButton
+              data-schema-run-save=""
+              disabled={saveAction.disabled}
+              onClick={() => void handleSave()}
+            >
+              {saveIcon}
+              <span aria-live="polite">{saveAction.label}</span>
+            </AppButton>
+          }
+        />
         {showLoading ? <AppLoadingState label="Loading schema version…" /> : null}
         {!showLoading && executableVersion && isRecord(executableVersion.formSchema) ? (
           <div className="min-h-0 flex-1 overflow-hidden">

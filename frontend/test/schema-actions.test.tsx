@@ -21,8 +21,15 @@ test.each([false, true])("archive action respects archived=%s", async (archived)
         />,
       ),
     );
-    await act(async () => container.querySelector("button")!.click());
-    const labels = [...container.querySelectorAll("button")].map((button) => button.textContent);
+    // The menu opens from the keyboard in jsdom and renders in a portal on the body.
+    await act(async () =>
+      container
+        .querySelector("button")!
+        .dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
+    );
+    const labels = [...document.body.querySelectorAll('[role="menuitem"]')].map(
+      (item) => item.textContent,
+    );
     expect(labels.includes("Archive")).toBe(!archived);
     expect(labels).toContain("Delete");
     expect(labels).toContain("Duplicate");

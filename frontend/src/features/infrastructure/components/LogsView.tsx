@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { Download, Pause, Play, Search } from "lucide-react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -57,36 +58,29 @@ export function LogsView({
   }, [follow, filtered.length]);
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
-            Observability
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-fg">Service logs</h1>
-          <p className="mt-1 text-sm text-fg-secondary">
-            {filtered.length} of {logLines.length} lines &middot; multi-service tail with live
-            filtering.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <AppButton
-            variant={follow ? "primary" : "secondary"}
-            className="gap-2 px-3 py-2 text-xs"
-            onClick={() => setFollow((f) => !f)}
-          >
-            {follow ? <Pause size={13} /> : <Play size={13} />}
-            {follow ? "Pause" : "Follow"}
-          </AppButton>
-          <AppButton variant="secondary" className="gap-2 px-3 py-2 text-xs">
-            <Download size={13} /> Export
-          </AppButton>
-        </div>
-      </div>
+    <>
+      <AppPageHeader
+        eyebrow="Observability"
+        title="Service logs"
+        description={`${filtered.length} of ${logLines.length} lines · multi-service tail with live filtering.`}
+        actions={
+          <>
+            <AppButton variant="secondary">
+              <Download size={15} /> Export
+            </AppButton>
+            <AppButton
+              variant={follow ? "primary" : "secondary"}
+              onClick={() => setFollow((f) => !f)}
+            >
+              {follow ? <Pause size={15} /> : <Play size={15} />}
+              {follow ? "Pause" : "Follow"}
+            </AppButton>
+          </>
+        }
+      />
 
       {/* Main card */}
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="flex min-h-96 flex-1 flex-col overflow-hidden rounded-card border border-line bg-surface">
         {/* Filter toolbar */}
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
           <label
@@ -107,7 +101,8 @@ export function LogsView({
           </label>
           <AppSelect
             aria-label="Select log service"
-            className="h-8 min-w-40 px-3 text-xs"
+            className="min-w-40"
+            size="sm"
             value={selectedService ?? ""}
             onValueChange={onSelectService}
             options={services.map((service) => ({
@@ -140,14 +135,14 @@ export function LogsView({
                 follow ? "bg-success-fg" : "bg-fg-muted",
               )}
             />
-            {follow ? "live tail" : "paused"}
+            {follow ? "Live tail" : "Paused"}
           </AppBadge>
         </div>
 
         {/* Log output */}
         <pre
           ref={termRef}
-          className="h-[540px] overflow-auto bg-code p-4 font-mono text-2xs leading-relaxed text-code-fg"
+          className="min-h-0 flex-1 overflow-auto bg-code p-4 font-mono text-2xs leading-relaxed text-code-fg"
         >
           {filtered.length > 0 ? (
             filtered.map((l) => (
@@ -173,7 +168,7 @@ export function LogsView({
           {follow && <span className="inline-block h-3.5 w-1.5 animate-pulse bg-success" />}
         </pre>
       </div>
-    </div>
+    </>
   );
 }
 

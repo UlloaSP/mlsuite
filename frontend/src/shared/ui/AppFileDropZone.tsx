@@ -3,8 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useRef, useState } from "react";
 import { cx } from "./cx";
+import { useFileDrop } from "./use-file-drop";
 
 type Props = {
   /** File input `accept`; a hint only, so callers still validate what arrives. */
@@ -17,28 +17,14 @@ type Props = {
 
 /** The whole zone is one control: click to browse or drop files onto it. */
 export function AppFileDropZone({ accept, hints, inputLabel, onFiles }: Props) {
-  const [dragOver, setDragOver] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handle = (list: FileList | null) => {
-    if (list?.length) void onFiles(Array.from(list));
-  };
+  const { browse, dragOver, dropProps, input } = useFileDrop({ accept, inputLabel, onFiles });
 
   return (
     <div className="flex-shrink-0 px-4 pt-4">
       <button
         type="button"
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          handle(e.dataTransfer.files);
-        }}
+        onClick={browse}
+        {...dropProps}
         className={cx(
           "group flex w-full cursor-pointer select-none items-center gap-4 rounded-lg border border-dashed px-4 py-4.5",
           "bg-surface-subtle",
@@ -95,18 +81,7 @@ export function AppFileDropZone({ accept, hints, inputLabel, onFiles }: Props) {
         </span>
       </button>
 
-      <input
-        aria-label={inputLabel}
-        ref={inputRef}
-        type="file"
-        multiple
-        hidden
-        accept={accept}
-        onChange={(e) => {
-          handle(e.target.files);
-          e.target.value = "";
-        }}
-      />
+      {input}
     </div>
   );
 }

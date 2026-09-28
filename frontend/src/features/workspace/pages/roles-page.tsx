@@ -63,17 +63,17 @@ export function RolesPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
-          title="Roles & Templates"
+          title="Roles & templates"
           description="Manage role definitions, templates, and permission coverage."
-          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Roles & Templates" }]}
+          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Roles & templates" }]}
           actions={
             canManage ? (
               <>
                 <AppButton variant="secondary" onClick={() => setTab("templates")}>
                   <Copy size={16} />
-                  From Template
+                  From template
                 </AppButton>
                 <AppButton
                   onClick={() =>
@@ -97,7 +97,7 @@ export function RolesPage() {
                   }
                 >
                   <Plus size={16} />
-                  Create Role
+                  Create role
                 </AppButton>
               </>
             ) : undefined
@@ -105,15 +105,14 @@ export function RolesPage() {
         />
         <AppTabs<RolesTab>
           items={[
-            { label: data ? `Roles (${data.roles.length})` : "Roles", value: "roles" },
+            { label: "Roles", count: data?.roles.length, value: "roles" },
+            { label: "Templates", count: data?.templates.length, value: "templates" },
             {
-              label: data ? `Templates (${data.templates.length})` : "Templates",
-              value: "templates",
-            },
-            {
-              label: data
-                ? `All permissions (${data.permissionCatalog.reduce((total, group) => total + group.permissions.length, 0)})`
-                : "All permissions",
+              label: "All permissions",
+              count: data?.permissionCatalog.reduce(
+                (total, group) => total + group.permissions.length,
+                0,
+              ),
               value: "permissions",
             },
           ]}

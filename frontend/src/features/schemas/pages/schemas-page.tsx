@@ -155,7 +155,7 @@ export function SchemasPage() {
             canDelete={canDeleteSchemas}
             canEdit={canEditSchemas}
             item={schema}
-            onOpen={() => navigate(`/schemas/${schema.id}`)}
+            to={`/schemas/${schema.id}`}
             onAction={(action) => setDialog({ action, schema })}
           />
         )}

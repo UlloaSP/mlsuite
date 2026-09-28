@@ -9,7 +9,7 @@ import {
 import { InferenceReviewStatusSection } from "@/features/inferences/components/InferenceReviewStatusSection";
 import { formatTimestamp } from "@/shared/lib/date-time";
 import { AppBadge } from "@/shared/ui/AppBadge";
-import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
@@ -59,16 +59,14 @@ export function InferenceDetailPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex-1 space-y-6 overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
           title={item.name}
           breadcrumbs={[{ label: "Inferences", to: "/inferences" }, { label: item.name }]}
           actions={
-            <Link to={dataHref(item)}>
-              <AppButton variant="secondary">
-                Open inference data
-                <ExternalLink size={15} />
-              </AppButton>
+            <Link to={dataHref(item)} className={appButtonClass({ variant: "secondary" })}>
+              Open inference data
+              <ExternalLink size={16} />
             </Link>
           }
         />

@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { AlertTriangle, GitCompareArrows, MoreHorizontal, PencilLine, Save } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { GitCompareArrows, PencilLine, Save } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
@@ -15,15 +15,17 @@ import {
   useSchemaDraftDiff,
 } from "@/features/schemas/api/schema-queries";
 import { useUpdateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
+import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { AppButton } from "@/shared/ui/AppButton";
-import { AppIconButton } from "@/shared/ui/AppIconButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppPanel } from "@/shared/ui/AppPanel";
+import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { schemaAtom, schemaErrorsAtom, schemaTextAtom } from "@/features/schemas/lib/editor-atoms";
 import { EditorWrapper } from "@/features/schemas/components/EditorWrapper";
-import { ToggleButton } from "@/features/schemas/components/ToggleButton";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
 import { SchemaCodeViewer } from "@/features/schemas/components/SchemaCodeViewer";
@@ -42,10 +44,9 @@ export function SchemaDraftEditorPage() {
   const [schemaErrors] = useAtom(schemaErrorsAtom);
   const [editorView, setEditorView] = useState<EditorView>("code");
   const [renameOpen, setRenameOpen] = useState(false);
-  const [actionsOpen, setActionsOpen] = useState(false);
-  const actionsRef = useRef<HTMLDivElement | null>(null);
 
   const editorHasErrors = Array.isArray(schemaErrors) && schemaErrors.length > 0;
+  const hasBlockingErrors = schemaErrors.some((error) => error.severity !== "warning");
   const conflictCount = diff?.changes.filter((change) => change.conflict).length ?? 0;
   const previewSchema = useMemo(() => schema ?? draft?.formSchema, [draft?.formSchema, schema]);
 
@@ -54,14 +55,6 @@ export function SchemaDraftEditorPage() {
     setSchema(draft.formSchema);
     setSchemaText(JSON.stringify(draft.formSchema, null, 2));
   }, [draft, setSchema, setSchemaText]);
-
-  useEffect(() => {
-    const close = (event: PointerEvent) => {
-      if (!actionsRef.current?.contains(event.target as Node)) setActionsOpen(false);
-    };
-    window.addEventListener("pointerdown", close);
-    return () => window.removeEventListener("pointerdown", close);
-  }, []);
 
   const save = async () => {
     if (!draftId || !draft) return false;
@@ -111,13 +104,13 @@ export function SchemaDraftEditorPage() {
   if (draft?.status === "PUBLISHED") {
     return (
       <AppPage>
-        <AppSurface className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
+        <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
           <AppPageHeader
             title={draft.name}
             description="This change has been published and is read-only."
             actions={
-              <Link to={`/schemas/${draft.schemaId}/snapshots`}>
-                <AppButton>View snapshots</AppButton>
+              <Link to={`/schemas/${draft.schemaId}/snapshots`} className={appButtonClass()}>
+                View snapshots
               </Link>
             }
           />
@@ -132,7 +125,7 @@ export function SchemaDraftEditorPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title={draft?.name ?? "Schema change"}
           description={
@@ -147,7 +140,25 @@ export function SchemaDraftEditorPage() {
             { label: draft?.name ?? "Change" },
           ]}
           actions={
-            <div className="flex flex-wrap gap-2">
+            <>
+              <AppActionsMenu
+                label="Open change actions"
+                actions={[
+                  {
+                    key: "rename",
+                    label: "Rename",
+                    icon: PencilLine,
+                    onSelect: () => setRenameOpen(true),
+                  },
+                ]}
+              />
+              <AppButton
+                onClick={review}
+                disabled={!draft || editorHasErrors || updateMutation.isPending}
+              >
+                <GitCompareArrows size={16} />
+                Review changes
+              </AppButton>
               <AppButton
                 variant="secondary"
                 onClick={save}
@@ -156,61 +167,29 @@ export function SchemaDraftEditorPage() {
                 <Save size={16} />
                 Save
               </AppButton>
-              <AppButton
-                onClick={review}
-                disabled={!draft || editorHasErrors || updateMutation.isPending}
-              >
-                <GitCompareArrows size={16} />
-                Review changes
-              </AppButton>
-              <div ref={actionsRef} className="relative">
-                <AppIconButton
-                  type="button"
-                  aria-label="Open change actions"
-                  onClick={() => setActionsOpen((current) => !current)}
-                >
-                  <MoreHorizontal size={18} />
-                </AppIconButton>
-                {actionsOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[170px] rounded-menu border border-line bg-surface p-2 shadow-hover">
-                    <button
-                      type="button"
-                      className={menuItemClass}
-                      onClick={() => {
-                        setActionsOpen(false);
-                        setRenameOpen(true);
-                      }}
-                    >
-                      <PencilLine size={15} />
-                      Rename
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+            </>
           }
         />
         {draft?.status === "CONFLICT" || conflictCount > 0 ? (
-          <AppPanel className="flex items-center justify-between gap-3 p-4">
-            <div className="flex items-center gap-3 text-sm text-danger-fg">
-              <AlertTriangle size={18} />
-              Publishing is blocked until conflicting changes are reviewed and resolved.
-            </div>
-            <AppButton variant="secondary" onClick={review}>
+          <AppInlineAlert className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+            Publishing is blocked until conflicting changes are reviewed and resolved.
+            <AppButton size="sm" variant="secondary" onClick={review}>
               <GitCompareArrows size={16} />
               Review
             </AppButton>
-          </AppPanel>
+          </AppInlineAlert>
         ) : null}
-        <div className="min-h-0 flex-1">
-          <div className="relative flex size-full min-h-0 overflow-hidden rounded-card border border-line bg-surface">
-            <div className="absolute right-4 top-4 z-20">
-              <ToggleButton
-                isProcessing={false}
-                isJsonActive={editorView === "code"}
-                onToggleMode={() => setEditorView((view) => (view === "code" ? "preview" : "code"))}
-              />
-            </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <AppSegmentedControl
+            label="Editor view"
+            options={[
+              { value: "code", label: "JSON" },
+              { value: "preview", label: "Form preview", disabled: hasBlockingErrors },
+            ]}
+            value={editorView}
+            onChange={setEditorView}
+          />
+          <div className="flex min-h-0 flex-1 overflow-hidden rounded-card border border-line bg-surface">
             {editorView === "code" ? (
               <EditorWrapper />
             ) : editorHasErrors ? (
@@ -234,6 +213,3 @@ export function SchemaDraftEditorPage() {
     </AppPage>
   );
 }
-
-const menuItemClass =
-  "flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left text-sm font-medium text-fg transition hover:bg-surface-muted";

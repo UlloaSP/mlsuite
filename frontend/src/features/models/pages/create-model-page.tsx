@@ -6,7 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { SECTION_ICONS } from "@/shared/ui/section-icons";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppFileDropArea } from "@/shared/ui/AppFileDropArea";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
@@ -19,6 +23,7 @@ import {
 import type { Bundle } from "@/features/models/lib/bundle-types";
 import { saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
 import {
+  ALL_EXTS,
   DF_EXTS,
   MODEL_EXTS,
   MODEL_EXT_LABEL,
@@ -28,7 +33,6 @@ import {
 } from "@/features/models/lib/bundle-utils";
 import { BundleCard } from "@/features/models/components/BundleCard";
 import { BundleDropZone } from "@/features/models/components/BundleDropZone";
-import { BundleEmptyState } from "@/features/models/components/BundleEmptyState";
 import { BundleSummaryPanel } from "@/features/models/components/BundleSummaryPanel";
 import {
   useCreateModelMutation,
@@ -216,7 +220,7 @@ export function CreateModelPage() {
 
   return (
     <AppPage>
-      <div className="app-scroll flex min-h-0 flex-1 flex-col overflow-auto px-4 py-7 sm:px-8 lg:overflow-hidden">
+      <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto lg:overflow-hidden">
         <AppPageHeader
           breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create model" }]}
           eyebrow="Model studio"
@@ -229,19 +233,30 @@ export function CreateModelPage() {
           {/* Left: drop zone + bundle list */}
           <section
             aria-label="Model bundles"
-            className="flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-card lg:flex-1"
+            className="flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card lg:flex-1"
           >
             <BundleDropZone onFiles={handleFiles} />
 
             <div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-line px-4 pb-4 pt-3">
               {bundles.length === 0 ? (
-                <BundleEmptyState onFiles={handleFiles} />
+                <AppFileDropArea
+                  accept={ALL_EXTS.join(",")}
+                  inputLabel="Upload bundle files from the empty list"
+                  label="Drop model or dataframe files"
+                  onFiles={handleFiles}
+                >
+                  <AppEmptyState
+                    compact
+                    icon={<SECTION_ICONS.models size={18} />}
+                    title="No bundles yet"
+                    description="Drop files here or click to browse. Dataframes can wait for a model."
+                  />
+                </AppFileDropArea>
               ) : (
-                bundles.map((bundle, i) => (
+                bundles.map((bundle) => (
                   <BundleCard
                     key={bundle.id}
                     bundle={bundle}
-                    index={i}
                     onSave={() => saveBundle(bundle.id)}
                     onRemove={() => removeBundle(bundle.id)}
                     onRename={(v) => setBundleName(bundle.id, v)}
@@ -267,7 +282,7 @@ export function CreateModelPage() {
             onClear={() => setBundles([])}
           />
         </div>
-      </div>
+      </AppSurface>
     </AppPage>
   );
 }

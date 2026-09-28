@@ -26,7 +26,7 @@ export function getWorkspaceLinks(
     ...(permissions.canViewMembers ||
     permissions.canInviteMembers ||
     permissions.canManageMemberRoles
-      ? [{ to: `${organizationPath}/roles`, icon: KeyRound, label: "Roles & Templates" }]
+      ? [{ to: `${organizationPath}/roles`, icon: KeyRound, label: "Roles & templates" }]
       : []),
     ...(permissions.canViewOrganization
       ? [{ to: `${organizationPath}/settings`, icon: Settings, label: "Settings" }]

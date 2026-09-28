@@ -15,6 +15,8 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSurface } from "@/shared/ui/AppSurface";
+import { cx } from "@/shared/ui/cx";
+import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { AdminUserFormField } from "@/features/admin/components/AdminUserFormField";
@@ -55,14 +57,15 @@ export function CreateAdminUserPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
+          className={FORM_MAX_WIDTH}
           eyebrow="Superadmin"
           title="Create user"
           description="Create platform access and assign global role."
           breadcrumbs={[{ label: "Users", to: "/admin/users" }, { label: "Create user" }]}
         />
-        <form onSubmit={submit} className="mx-auto grid w-full max-w-2xl gap-4">
+        <form onSubmit={submit} className={cx(FORM_MAX_WIDTH, "grid gap-4")}>
           <AdminUserFormField label="Email">
             <AppTextField
               required
@@ -96,7 +99,7 @@ export function CreateAdminUserPage() {
                 type="button"
                 aria-label={visible ? "Hide password" : "Show password"}
                 onClick={() => setVisible((current) => !current)}
-                className="shrink-0 rounded-card border border-line bg-surface"
+                className="shrink-0 border border-line bg-surface"
               >
                 {visible ? <EyeOff size={18} /> : <Eye size={18} />}
               </AppIconButton>

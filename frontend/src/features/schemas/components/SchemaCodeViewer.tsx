@@ -18,7 +18,8 @@ import { editorOptionsFor } from "@/capabilities/editor/editor-options";
 
 type Props = {
   value: string;
-  className?: string;
+  /** Monaco has no intrinsic height: the caller sizes the viewer to its layout. */
+  className: string;
 };
 
 const MonacoEditor = lazy(loadLocalMonacoEditor);
@@ -39,12 +40,7 @@ export function SchemaCodeViewer({ value, className }: Props) {
   }, [appearance.key, appearance.dark]);
 
   return (
-    <div
-      className={cx(
-        className ?? "h-[480px]",
-        "overflow-hidden rounded-card border border-line bg-surface",
-      )}
-    >
+    <div className={cx(className, "overflow-hidden rounded-card border border-line bg-surface")}>
       <Suspense fallback={<div className="h-full bg-surface" />}>
         <MonacoEditor
           className="h-full"

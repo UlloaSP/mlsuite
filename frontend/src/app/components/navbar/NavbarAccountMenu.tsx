@@ -33,7 +33,7 @@ export function NavbarAccountMenu({ menuSide }: { menuSide: "top" | "bottom" }) 
           data-user-guide-item="user-menu"
           aria-label={`Account: ${displayName}`}
           className={cx(
-            "grid size-10 shrink-0 place-items-center rounded-xl transition",
+            "grid size-10 shrink-0 place-items-center rounded-control transition",
             isAccountPath(location.pathname) ? "bg-accent-subtle" : "hover:bg-surface-hover",
             FOCUS_RING,
           )}

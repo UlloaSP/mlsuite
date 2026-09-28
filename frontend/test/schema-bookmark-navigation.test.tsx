@@ -50,15 +50,17 @@ test("opening a bookmark tile goes straight to the run page", async () => {
       );
     });
 
-    const tileLink = container.querySelector<HTMLAnchorElement>("article > a");
+    const tile = container.querySelector<HTMLAnchorElement>("article > a");
     const runLink = [...container.querySelectorAll<HTMLAnchorElement>("article a")].find(
       (link) => link.textContent?.trim() === "Run",
     );
-    expect(tileLink).not.toBeNull();
-    expect(tileLink?.getAttribute("href")).toBe(runLink?.getAttribute("href"));
+    expect(tile).not.toBeNull();
+    expect(runLink?.getAttribute("href")).toBe(
+      "/schemas/schema-1/bookmarks/bookmark-1/runs/create",
+    );
 
     await act(async () => {
-      tileLink?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      tile?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     });
     expect(container.textContent).toContain("Create run");
   } finally {

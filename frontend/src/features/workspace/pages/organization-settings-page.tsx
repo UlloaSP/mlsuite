@@ -3,6 +3,7 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
+import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
 import { useOrganizationAdminDashboardQuery } from "@/features/workspace/api/workspace.queries";
@@ -30,6 +31,7 @@ export function OrganizationSettingsPage() {
     <AppPage>
       <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
+          className={FORM_MAX_WIDTH}
           eyebrow="Organization settings"
           title={organization.name}
           description="Manage this organization's identity, ownership, and lifecycle."

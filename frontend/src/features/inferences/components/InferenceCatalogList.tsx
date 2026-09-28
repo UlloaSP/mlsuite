@@ -48,7 +48,7 @@ export function InferenceCatalogList({
           feedback={feedbackStatuses?.get(String(item.id))}
         />
       }
-      onOpen={() => navigate(inferenceHref(item))}
+      to={inferenceHref(item)}
       actions={
         canDelete || canManageReviews ? (
           <InferenceActionsMenu

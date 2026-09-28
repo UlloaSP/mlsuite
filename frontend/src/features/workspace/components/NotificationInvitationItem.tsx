@@ -14,7 +14,7 @@ export function NotificationInvitationItem({ invitation }: { invitation: Invitat
   return (
     <article className="flex items-start justify-between gap-4 border-t border-line px-5 py-4 first:border-t-0">
       <div className="flex min-w-0 items-start gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded bg-accent-subtle text-accent-strong">
+        <div className="grid size-9 shrink-0 place-items-center rounded-control bg-accent-subtle text-accent-strong">
           <Building2 size={16} />
         </div>
         <div className="min-w-0">
@@ -25,16 +25,12 @@ export function NotificationInvitationItem({ invitation }: { invitation: Invitat
         </div>
       </div>
       <div className="flex shrink-0 gap-2">
-        <AppButton
-          className="px-3 py-2"
-          disabled={busy}
-          onClick={() => accept.mutate(invitation.token)}
-        >
+        <AppButton size="sm" disabled={busy} onClick={() => accept.mutate(invitation.token)}>
           <Check size={14} />
           Accept
         </AppButton>
         <AppButton
-          className="px-3 py-2"
+          size="sm"
           variant="secondary"
           disabled={busy}
           onClick={() => decline.mutate(invitation.token)}

@@ -2,6 +2,7 @@ import { KeyRound, Search } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppTextField } from "@/shared/ui/AppTextField";
@@ -33,7 +34,7 @@ export function PermissionCatalog({
     }))
     .filter((group) => group.permissions.length > 0);
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
         <AppTextField
           className="w-full"
@@ -62,14 +63,15 @@ export function PermissionCatalog({
         {showLoading ? (
           <AppLoadingState compact label="Loading permissions…" />
         ) : error ? (
-          <div className="space-y-3">
-            <p role="alert">Could not load permissions.</p>
-            <AppButton variant="secondary" onClick={onRetry}>
+          <div className="flex flex-col items-start gap-3">
+            <AppInlineAlert>Could not load permissions.</AppInlineAlert>
+            <AppButton size="sm" variant="secondary" onClick={onRetry}>
               Retry
             </AppButton>
           </div>
         ) : filtered.length === 0 ? (
           <AppEmptyState
+            compact
             title={search ? "No matching permissions" : "No permissions yet"}
             description={search ? "Try another search." : "Available permissions will appear here."}
           />
@@ -91,6 +93,6 @@ export function PermissionCatalog({
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }

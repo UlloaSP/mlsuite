@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppEyebrow } from "@/shared/ui/AppEyebrow";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import type { ModelDto } from "@/features/models/api/model.types";
@@ -21,24 +22,24 @@ type ModelSummaryTabProps = {
 
 export function ModelSummaryTab({ model, onCreateSchema }: ModelSummaryTabProps) {
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid gap-6 xl:grid-cols-2">
       <AppPanel className="space-y-4">
         <AppSectionTitle>Model metadata</AppSectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">Type</p>
+            <AppEyebrow>Type</AppEyebrow>
             <p className="mt-1 text-sm font-medium text-fg">{getModelAlgorithmLabel(model)}</p>
           </div>
           <div>
-            <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">File</p>
+            <AppEyebrow>File</AppEyebrow>
             <p className="mt-1 text-sm font-medium text-fg">{model.fileName}</p>
           </div>
           <div>
-            <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">Created</p>
+            <AppEyebrow>Created</AppEyebrow>
             <p className="mt-1 text-sm font-medium text-fg">{formatTimestamp(model.createdAt)}</p>
           </div>
           <div>
-            <p className="text-2xs uppercase tracking-eyebrow text-fg-muted">Schema fields</p>
+            <AppEyebrow>Schema fields</AppEyebrow>
             <p className="mt-1 text-sm font-medium text-fg">
               {Array.isArray(model.inputSchema.fields) ? model.inputSchema.fields.length : 0}
             </p>
@@ -48,7 +49,7 @@ export function ModelSummaryTab({ model, onCreateSchema }: ModelSummaryTabProps)
 
       <AppPanel className="space-y-4">
         <AppSectionTitle>Operational status</AppSectionTitle>
-        <AppBadge tone="success">active</AppBadge>
+        <AppBadge tone="success">Active</AppBadge>
         <AppCopy>Model is available for schema creation and prediction workflows.</AppCopy>
       </AppPanel>
 
@@ -57,7 +58,7 @@ export function ModelSummaryTab({ model, onCreateSchema }: ModelSummaryTabProps)
         <div className="flex flex-wrap items-center justify-between gap-4">
           <AppCopy>Create a schema from this model snapshot.</AppCopy>
           <AppButton type="button" variant="secondary" onClick={onCreateSchema}>
-            Create Schema
+            Create schema
           </AppButton>
         </div>
       </AppPanel>

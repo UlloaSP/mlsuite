@@ -29,7 +29,7 @@ export function OverviewListPanel({
   to: string;
 }) {
   return (
-    <section className="flex min-w-0 flex-col rounded-xl border border-line bg-surface">
+    <section className="flex min-w-0 flex-col rounded-card border border-line bg-surface">
       <header className="flex items-baseline justify-between gap-3 border-b border-line px-5 py-4">
         <h2 className="text-sm font-semibold text-fg">{title}</h2>
         {summary ? <p className="text-xs text-fg-secondary">{summary}</p> : null}

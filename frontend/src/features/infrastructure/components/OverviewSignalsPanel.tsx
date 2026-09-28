@@ -17,7 +17,7 @@ export function OverviewSignalsPanel({
 }) {
   const alerts = buildDashboardAlerts(overview, streamConnected, null);
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface">
+    <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
         <div>
           <p className="text-sm font-semibold text-fg">Operational signals</p>

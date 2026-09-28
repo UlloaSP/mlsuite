@@ -17,6 +17,8 @@ export function RoleDetailsDialog({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  // Locked (system) roles can never be deleted, whatever the action flags say.
+  const canDelete = role.actions.canDelete && !role.locked;
   return (
     <AppDialog
       open
@@ -31,12 +33,12 @@ export function RoleDetailsDialog({
       description={role.description}
       footer={
         <>
-          {role.actions.canDelete && role.userCount > 0 ? (
+          {canDelete && role.userCount > 0 ? (
             <p id="role-delete-help" className="w-full text-sm text-fg-secondary">
               Assign these users to another role before deleting this role.
             </p>
           ) : null}
-          {role.actions.canDelete ? (
+          {canDelete ? (
             <AppButton
               variant="danger"
               disabled={role.userCount > 0}

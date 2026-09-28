@@ -3,7 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { m as motion } from "motion/react";
 import { AppBadge, enumLabel } from "@/shared/ui/AppBadge";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPanel } from "@/shared/ui/AppPanel";
@@ -22,40 +21,33 @@ export function ProfilePage() {
 
   return (
     <AppPage>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-1"
-      >
-        <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll">
-          <ProfileHeader
-            imageUrl={user?.avatarUrl}
-            name={user?.fullName || user?.userName || "Guest"}
-            provider={enumLabel(user.systemRole)}
-          />
-          {workspace ? (
-            <AppPanel className="mb-6 mt-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
-                    Current workspace
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-fg">
-                    {workspace.currentOrganization.name}
-                  </p>
-                  <p className="mt-1 text-sm text-fg-secondary">
-                    {workspace.memberships.length} organization{" "}
-                    {workspace.memberships.length === 1 ? "membership" : "memberships"}
-                  </p>
-                </div>
-                <AppBadge tone="accent">{workspace.currentMembership.role}</AppBadge>
+      <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto">
+        <ProfileHeader
+          imageUrl={user?.avatarUrl}
+          name={user?.fullName || user?.userName || "Guest"}
+          provider={enumLabel(user.systemRole)}
+        />
+        {workspace ? (
+          <AppPanel>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
+                  Current workspace
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-fg">
+                  {workspace.currentOrganization.name}
+                </p>
+                <p className="mt-1 text-sm text-fg-secondary">
+                  {workspace.memberships.length} organization{" "}
+                  {workspace.memberships.length === 1 ? "membership" : "memberships"}
+                </p>
               </div>
-            </AppPanel>
-          ) : null}
-          <ProfileBody user={user} />
-        </AppSurface>
-      </motion.div>
+              <AppBadge tone="accent">{workspace.currentMembership.role}</AppBadge>
+            </div>
+          </AppPanel>
+        ) : null}
+        <ProfileBody user={user} />
+      </AppSurface>
     </AppPage>
   );
 }

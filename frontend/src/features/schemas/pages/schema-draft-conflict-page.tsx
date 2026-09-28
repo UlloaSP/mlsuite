@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -173,7 +174,7 @@ export function SchemaDraftConflictPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-w-0 flex-1 flex-col gap-5 overflow-hidden">
+      <AppSurface className="flex min-w-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title="Review changes"
           description={draft ? `${draft.name} · base v${draft.baseVersion}` : undefined}
@@ -187,15 +188,7 @@ export function SchemaDraftConflictPage() {
             { label: "Review changes" },
           ]}
           actions={
-            <div className="flex flex-wrap gap-2">
-              {schemaId && draftId ? (
-                <Link to={`/schemas/${schemaId}/drafts/${draftId}`}>
-                  <AppButton variant="secondary">
-                    <PencilLine size={16} />
-                    Manual edit
-                  </AppButton>
-                </Link>
-              ) : null}
+            <>
               {needsMerge ? (
                 <AppButton
                   disabled={!draft || !diff || mergeMutation.isPending || unresolved > 0}
@@ -214,7 +207,16 @@ export function SchemaDraftConflictPage() {
                   Publish snapshot
                 </AppButton>
               )}
-            </div>
+              {schemaId && draftId ? (
+                <Link
+                  to={`/schemas/${schemaId}/drafts/${draftId}`}
+                  className={appButtonClass({ variant: "secondary" })}
+                >
+                  <PencilLine size={16} />
+                  Manual edit
+                </Link>
+              ) : null}
+            </>
           }
         />
         {showLoading ? (

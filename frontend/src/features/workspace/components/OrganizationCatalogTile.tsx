@@ -3,14 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Pencil, Share2, Trash2 } from "lucide-react";
+import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { useState } from "react";
 import type { OrganizationCatalogItemDto } from "@/features/workspace/api/workspace.types";
 import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 import { modifierName } from "@/shared/lib/relative-time";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
-import { OrganizationCardMenu } from "./OrganizationCatalogDialogs";
 import { DeleteOrganizationDialog } from "./DeleteOrganizationDialog";
 import { TransferOrganizationOwnerDialog } from "./TransferOrganizationOwnerDialog";
 import { EditableText, type OrganizationPatch } from "./OrganizationCatalogEditable";
@@ -106,13 +106,42 @@ export function OrganizationCatalogTile({
       </div>
 
       <div className="justify-self-end self-start">
-        <OrganizationCardMenu
+        <AppActionsMenu
+          label={`Open actions for ${item.name}`}
           disabled={disabled}
-          onDelete={() => setConfirmOpen(true)}
-          onEditDescription={() => setEditingField("description")}
-          onEditName={() => setEditingField("name")}
-          onEditSlug={() => setEditingField("slug")}
-          onTransferOwner={() => setTransferOpen(true)}
+          actions={[
+            {
+              key: "name",
+              label: "Edit name",
+              icon: Pencil,
+              onSelect: () => setEditingField("name"),
+            },
+            {
+              key: "slug",
+              label: "Edit slug",
+              icon: Pencil,
+              onSelect: () => setEditingField("slug"),
+            },
+            {
+              key: "description",
+              label: "Edit description",
+              icon: Pencil,
+              onSelect: () => setEditingField("description"),
+            },
+            {
+              key: "owner",
+              label: "Transfer owner",
+              icon: Share2,
+              onSelect: () => setTransferOpen(true),
+            },
+            {
+              key: "delete",
+              label: "Delete",
+              icon: Trash2,
+              tone: "danger",
+              onSelect: () => setConfirmOpen(true),
+            },
+          ]}
         />
       </div>
 

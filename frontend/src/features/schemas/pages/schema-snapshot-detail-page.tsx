@@ -72,18 +72,18 @@ export function SchemaSnapshotDetailPage() {
           ]}
           actions={
             version ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <AppButton variant="secondary" onClick={() => setDialogOpen(true)}>
-                  <Tag size={16} />
-                  Bookmark
-                </AppButton>
+              <>
                 {workspace?.permissions.canEditModels ? (
                   <AppButton onClick={() => setCloneDialogOpen(true)}>
                     <Copy size={16} />
                     Create schema
                   </AppButton>
                 ) : null}
-              </div>
+                <AppButton variant="secondary" onClick={() => setDialogOpen(true)}>
+                  <Tag size={16} />
+                  Bookmark
+                </AppButton>
+              </>
             ) : null
           }
         />

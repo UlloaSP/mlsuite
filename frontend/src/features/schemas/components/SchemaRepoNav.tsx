@@ -5,9 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal, GitPullRequestArrow, Tags } from "lucide-react";
 import { Link } from "react-router";
-import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppSkeleton } from "@/shared/ui/AppSkeleton";
 import { cx } from "@/shared/ui/cx";
+import { TAB_LIST_CLASS, tabCountClass, tabItemClass } from "@/shared/ui/tab-styles";
 import {
   useSchemaBookmarks,
   useSchemaDrafts,
@@ -19,7 +19,7 @@ type Props = {
   schemaId: string;
 };
 
-/** Loading is undefined (skeleton badge); a failed count is null (no badge) rather than a false 0. */
+/** Loading is undefined (skeleton count); a failed count is null (no count) rather than a false 0. */
 const countOf = (query: { data?: readonly unknown[]; isError: boolean }) =>
   query.isError ? null : query.data?.length;
 
@@ -54,7 +54,7 @@ export function SchemaRepoNav({ active, schemaId }: Props) {
   ] as const;
 
   return (
-    <nav className="flex flex-wrap gap-2 border-b border-line pb-3">
+    <nav aria-label="Schema sections" className={cx(TAB_LIST_CLASS, "shrink-0")}>
       {items.map((item) => {
         const Icon = item.icon;
         const selected = item.id === active;
@@ -62,19 +62,15 @@ export function SchemaRepoNav({ active, schemaId }: Props) {
           <Link
             key={item.id}
             to={item.to}
-            className={cx(
-              "inline-flex items-center gap-2 rounded px-3 py-2 text-sm font-medium transition",
-              selected
-                ? "bg-fg text-fg-inverse"
-                : "text-fg-secondary hover:bg-surface-muted hover:text-fg",
-            )}
+            aria-current={selected ? "page" : undefined}
+            className={tabItemClass(selected)}
           >
             {Icon ? <Icon size={15} /> : null}
             {item.label}
             {item.count === undefined ? (
-              <AppSkeleton className="h-5 w-6" />
+              <AppSkeleton className="h-5 w-6 rounded-full" />
             ) : item.count !== null ? (
-              <AppBadge tone="neutral">{item.count}</AppBadge>
+              <span className={tabCountClass(selected)}>{item.count}</span>
             ) : null}
           </Link>
         );

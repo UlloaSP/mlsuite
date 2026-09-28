@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { RotateCcw } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
@@ -101,8 +101,8 @@ export function PredictionRunDetailPage() {
           title="Invalid feedback questionnaire"
           description={questionnaireError}
           action={
-            <Link to="/inferences">
-              <AppButton>Back to inferences</AppButton>
+            <Link to="/inferences" className={appButtonClass()}>
+              Back to inferences
             </Link>
           }
         />
@@ -117,8 +117,8 @@ export function PredictionRunDetailPage() {
           title="Inference unavailable"
           description="The inference could not be loaded. It may no longer exist or you may not have access."
           action={
-            <Link to="/inferences">
-              <AppButton>Back to inferences</AppButton>
+            <Link to="/inferences" className={appButtonClass()}>
+              Back to inferences
             </Link>
           }
         />
@@ -128,7 +128,7 @@ export function PredictionRunDetailPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex-1 space-y-6 overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
           title={run?.name ?? "Prediction run"}
           breadcrumbs={[
@@ -141,11 +141,9 @@ export function PredictionRunDetailPage() {
           ]}
           actions={
             workspace?.permissions.canRunPredictions ? (
-              <Link to={rerunHref}>
-                <AppButton>
-                  <RotateCcw size={16} />
-                  Predict again
-                </AppButton>
+              <Link to={rerunHref} className={appButtonClass()}>
+                <RotateCcw size={16} />
+                Predict again
               </Link>
             ) : null
           }

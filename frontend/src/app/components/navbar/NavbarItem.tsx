@@ -18,7 +18,7 @@ import { NavbarLabel } from "./NavbarLabel";
 
 const itemClass = (active: boolean) =>
   cx(
-    "inline-flex h-9 shrink-0 items-center rounded-lg px-2.5 text-sm font-medium transition",
+    "inline-flex h-10 shrink-0 items-center rounded-control px-2.5 text-sm font-medium transition",
     active
       ? "bg-accent-subtle text-accent-strong"
       : "text-fg-secondary hover:bg-surface-hover hover:text-fg",

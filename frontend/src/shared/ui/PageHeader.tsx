@@ -59,9 +59,10 @@ export function AppPageHeader({
     <div className={cx("min-w-0 flex-shrink-0", className)}>
       {/* A lone crumb only repeats the title. */}
       {breadcrumbs && breadcrumbs.length > 1 ? (
-        <AppBreadcrumbs items={breadcrumbs} className="mb-5 max-w-full" />
+        <AppBreadcrumbs items={breadcrumbs} className="mb-3 max-w-full" />
       ) : null}
-      <header className="my-5 flex-shrink-0">
+      {/* No outer margin: the page body owns the gap after the header (gap-6). */}
+      <header className="flex-shrink-0">
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             {eyebrow && !repeatsTitle ? (
@@ -91,10 +92,7 @@ export function AppPageHeader({
                   className={cx(
                     checkerboard &&
                       // Equal slots only; each action keeps the variant it declares.
-                      cx(
-                        position,
-                        "h-12 min-w-0 [&_a]:block [&_a]:h-full [&_button]:h-full [&_button]:w-full",
-                      ),
+                      cx(position, "min-w-0 [&_a]:w-full [&_button]:w-full"),
                   )}
                 >
                   {node}

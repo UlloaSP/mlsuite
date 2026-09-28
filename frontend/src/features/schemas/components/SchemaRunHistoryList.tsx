@@ -14,14 +14,14 @@ import { type FeedbackStatusDisplay } from "@/capabilities/prediction-runtime/fe
 
 type Props = {
   runs: PredictionRunDto[];
-  onOpenRun: (runId: string) => void;
+  runHref: (runId: string) => string;
   feedbackStatusByRunId?: Map<string, FeedbackStatusDisplay>;
 };
 const EMPTY_FEEDBACK_STATUSES = new Map<string, FeedbackStatusDisplay>();
 
 export function SchemaRunHistoryList({
   runs,
-  onOpenRun,
+  runHref,
   feedbackStatusByRunId = EMPTY_FEEDBACK_STATUSES,
 }: Props) {
   return runs.map((run) => {
@@ -39,7 +39,7 @@ export function SchemaRunHistoryList({
           </>
         }
         details={<PredictionStatusSummary status={run.status} feedback={feedback} />}
-        onOpen={() => onOpenRun(run.id)}
+        to={runHref(run.id)}
       />
     );
   });

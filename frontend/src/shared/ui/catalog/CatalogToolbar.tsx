@@ -6,10 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 
+import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
+import { CONTROL_HEIGHT } from "@/shared/ui/control-size";
 import { cx } from "@/shared/ui/cx";
+import { FOCUS_RING } from "@/shared/ui/focus-ring";
 
 export type CatalogOption<TValue extends string> = {
   disabled?: boolean;
@@ -70,19 +73,22 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
       </div>
       {children}
       <div className="flex flex-wrap items-center gap-3">
-        {filters.length > 1 ? (
-          <fieldset
-            aria-label={filterLabel}
-            className={cx(
-              segmented
-                ? "inline-flex w-fit rounded-control border border-line bg-surface p-1"
-                : "flex w-fit gap-1",
-            )}
-          >
+        {filters.length > 1 && segmented ? (
+          <AppSegmentedControl
+            label={filterLabel}
+            options={filters}
+            size="md"
+            value={filter}
+            onChange={onFilterChange}
+          />
+        ) : null}
+        {filters.length > 1 && !segmented ? (
+          <fieldset aria-label={filterLabel} className="flex w-fit gap-1">
             {filters.map((option) => (
               <button
                 key={option.value}
-                className={getFilterClassName(segmented, filter === option.value)}
+                aria-pressed={filter === option.value}
+                className={filterChipClass(filter === option.value)}
                 disabled={option.disabled}
                 type="button"
                 onClick={() => onFilterChange(option.value)}
@@ -104,16 +110,11 @@ export function CatalogToolbar<TFilter extends string, TSort extends string>({
   );
 }
 
-function getFilterClassName(segmented: boolean, active: boolean) {
-  if (segmented) {
-    return cx(
-      "cursor-pointer rounded-md px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
-      active ? "bg-surface-subtle text-fg shadow-card" : "text-fg-secondary hover:text-fg",
-    );
-  }
-
+function filterChipClass(active: boolean) {
   return cx(
-    "cursor-pointer rounded-control border px-3 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed",
+    "cursor-pointer rounded-control border px-3 text-sm font-semibold transition disabled:cursor-not-allowed",
+    CONTROL_HEIGHT.md,
+    FOCUS_RING,
     active
       ? "border-accent bg-accent-subtle text-accent-strong"
       : "border-line text-fg-secondary hover:border-line-strong hover:text-fg",

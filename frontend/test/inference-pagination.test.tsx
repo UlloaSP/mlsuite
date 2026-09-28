@@ -171,7 +171,6 @@ test("shows empty and request failure states with retry", async () => {
 });
 
 test("renders inference and history as individual keyboard-focusable catalog entries", async () => {
-  const open = vi.fn();
   await act(async () =>
     root.render(
       <MemoryRouter>
@@ -210,7 +209,7 @@ test("renders inference and history as individual keyboard-focusable catalog ent
               results: [],
             },
           ]}
-          onOpenRun={open}
+          runHref={(runId) => `/runs/${runId}`}
           feedbackStatusByRunId={new Map([["2", "NOT_REQUIRED"]])}
         />
       </MemoryRouter>,
@@ -222,9 +221,9 @@ test("renders inference and history as individual keyboard-focusable catalog ent
   expect(host.textContent).toContain("By Ada Lovelace");
   expect(host.textContent).toContain("By Unknown author");
   expect(host.textContent).toContain("Not configured");
-  const entry = host.querySelectorAll("article button")[1] as HTMLButtonElement;
-  entry.focus();
-  expect(document.activeElement).toBe(entry);
-  await act(async () => entry.click());
-  expect(open).toHaveBeenCalledWith("2");
+  // Rows are real links, so they can be focused and opened in a new tab.
+  const entries = [...host.querySelectorAll<HTMLAnchorElement>("article a")];
+  expect(entries.map((entry) => entry.getAttribute("href"))).toContain("/runs/2");
+  entries[1].focus();
+  expect(document.activeElement).toBe(entries[1]);
 });

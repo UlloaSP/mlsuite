@@ -130,7 +130,12 @@ test.each([false, true])("only offers archive for active models, archived=%s", a
       <ModelActionsMenu archived={archived} canEdit canDelete modelName="QA" onAction={vi.fn()} />,
     ),
   );
-  await act(async () => container.querySelector<HTMLButtonElement>("button")!.click());
-  expect(container.textContent?.includes("Archive")).toBe(!archived);
-  expect(container.textContent).toContain("Delete");
+  const trigger = container.querySelector<HTMLButtonElement>('[aria-label="Open actions for QA"]')!;
+  // The menu opens from the keyboard in jsdom and renders in a portal on the body.
+  await act(async () =>
+    trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
+  );
+  const menu = document.body.querySelector('[role="menu"]');
+  expect(menu?.textContent?.includes("Archive")).toBe(!archived);
+  expect(menu?.textContent).toContain("Delete");
 });

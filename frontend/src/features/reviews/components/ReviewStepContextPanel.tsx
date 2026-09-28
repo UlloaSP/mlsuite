@@ -30,13 +30,11 @@ export function ReviewStepContextPanel() {
     return () => window.removeEventListener(REVIEW_STEP_CONTEXT_EVENT, onStepContext);
   }, []);
 
-  if (!activeStep) {
-    return <aside className="lg:sticky lg:top-28" />;
-  }
+  if (!activeStep) return null;
   const title = "Current output";
   const content = lines(activeStep.description.replace(/^Prediction (result|report):\s*/i, ""));
   return (
-    <aside className="lg:sticky lg:top-28">
+    <aside className="2xl:sticky 2xl:top-0 2xl:w-80 2xl:shrink-0">
       <div className="rounded-card border border-line bg-surface p-4">
         <p className="text-2xs font-semibold uppercase tracking-eyebrow text-accent">{title}</p>
         <h3 className="mt-2 text-base font-semibold leading-5 text-fg">{activeStep.title}</h3>

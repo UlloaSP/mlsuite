@@ -41,7 +41,7 @@ export function NavbarOrganizationMenu({
         <DropdownMenu.Trigger
           data-user-guide-item="workspace-switcher"
           className={cx(
-            "inline-flex h-10 min-w-0 shrink-0 items-center rounded-xl px-1 text-left transition",
+            "inline-flex h-10 min-w-0 shrink-0 items-center rounded-control px-1 text-left transition",
             !compact && "lg:pr-2",
             active ? "bg-accent-subtle" : "hover:bg-surface-hover",
             FOCUS_RING,

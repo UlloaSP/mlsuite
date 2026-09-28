@@ -49,7 +49,7 @@ export function BundleFilePill({ name, size, kind, badge }: Props) {
   const isModel = kind === "model";
 
   return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-line bg-surface-subtle px-3 py-2">
+    <div className="flex items-center gap-2.5 rounded-control border border-line bg-surface-subtle px-3 py-2">
       <div
         className={cx(
           "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md",

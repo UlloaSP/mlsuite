@@ -42,10 +42,10 @@ export function OverviewMembersPanel({
                 src={member.avatarUrl}
                 alt=""
                 referrerPolicy="no-referrer"
-                className="size-8 shrink-0 rounded-lg border border-line object-cover"
+                className="size-8 shrink-0 rounded-full border border-line object-cover"
               />
             ) : (
-              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-subtle text-2xs font-semibold text-accent-strong">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-subtle text-2xs font-semibold text-accent-strong">
                 {initials(name)}
               </span>
             )}

@@ -112,6 +112,16 @@ test("offers authorized actions, clears selection on page change, and disables a
   await click("Next");
   expect(host.textContent).not.toContain("Bulk revoke");
   await click("Next");
-  const resend = [...host.querySelectorAll("button")].find((node) => node.textContent === "Resend");
-  expect(resend?.disabled).toBe(true);
+  const trigger = host.querySelector<HTMLButtonElement>(
+    '[aria-label="Open actions for person21@example.com"]',
+  )!;
+  // The menu opens from the keyboard in jsdom and renders in a portal on the body.
+  await act(async () =>
+    trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
+  );
+  const resend = [...document.body.querySelectorAll('[role="menuitem"]')].find(
+    (node) => node.textContent === "Resend",
+  );
+  expect(resend?.getAttribute("aria-disabled")).toBe("true");
+  expect(document.body.querySelector('[role="menu"]')?.textContent).toContain("Revoke");
 });

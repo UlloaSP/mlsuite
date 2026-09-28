@@ -43,7 +43,9 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 - Persistent navigation owns global and section navigation. Do not repeat it as local tabs.
 - Users choose where navigation lives (left or right sidebar, top or bottom bar) and whether it is fixed or floating. Pages must not assume a sidebar: size against their container, and when a viewport-based height is unavoidable subtract `--app-nav-block`, the space a bar takes.
 - Keep page headers separate from centered or width-constrained content.
-- Catalogs use consistent toolbar, list, empty, loading, error, pagination, and overflow-action placement.
+- A page body is `AppSurface` (`p-6`) laid out as a column with `gap-6`; `AppPageHeader` has no outer margin, so that gap is the only space between the header, tabs, and content. Pages do not add their own outer padding.
+- Form pages (settings, create forms) are one centered column: the header and the form both use `FORM_MAX_WIDTH` from `page-layout.ts`.
+- Catalogs use consistent toolbar, list, empty, loading, error, pagination, and overflow-action placement. Every catalog row is `CatalogEntry`, with its overflow actions in `AppActionsMenu` at the top-right.
 - Dense resources use full-width rows or cards. Tiles are for genuinely scannable, low-density content.
 - Detail pages expose durable, linkable sections. Use dialogs for bounded actions, not complete workspaces.
 - Every layout must remain usable on mobile and tablet; do not solve desktop density by blocking smaller viewports.
@@ -56,6 +58,7 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 - Keep primary surfaces clickable without nesting interactive controls.
 - Put destructive actions behind explicit confirmation and explain blocked actions.
 - Show labels users recognize; internal ids may support them but should not replace them.
+- Controls that can share a row (buttons, fields, selects, comboboxes, segmented controls, filter chips, icon buttons) share one height from `control-size.ts`: `md` is 40px, `sm` 32px. Never resize a control with padding overrides; pick `size`.
 - Actions use `AppButton` (variants primary, secondary, ghost, danger; sizes md, sm). A link that looks like a button uses `appButtonClass`; never nest a button in a link. A header action's importance comes from its variant, never its position.
 - Every modal or side sheet is an `AppDialog`: it owns focus, Escape, overlay, and the title/close header. Pass `busy` to block dismissal during an action and `error` to show a failed action inside it.
 - Errors from a form or dialog appear inline with `AppInlineAlert` (or `AppDialog error`) and keep the input for a retry; toasts are for background actions and confirmations.
@@ -64,6 +67,7 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 - Fields show focus with `FIELD_FOCUS_RING`; other controls use the shared focus ring.
 - Icon-only controls get an `AppTooltip` with their name and shortcut instead of a native `title`. `AppIconButton` shares the control radius.
 - Confirm or ask for a value with `useActionDialog` (`confirm`, `prompt`); never `window.confirm` or `window.prompt`.
+- Row overflow menus use `AppActionsMenu`, which renders in a portal so lists never clip it. Tabs use `AppTabs`, or `tab-styles.ts` for tabs that are links; segmented choices use `AppSegmentedControl`.
 - Empty lists and panels use `AppEmptyState compact`; the full `AppEmptyState` is for an empty page.
 - Checkboxes are `AppCheckbox`; a row that is itself a toggle button shows `AppCheckMark` and sets `aria-pressed`.
 - Small uppercase labels use `AppEyebrow` or `text-2xs font-semibold uppercase tracking-eyebrow`.

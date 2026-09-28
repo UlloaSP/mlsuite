@@ -69,11 +69,7 @@ export function SettingsKeybindingsSection() {
             Select a binding, then press its replacement. Escape cancels recording.
           </p>
         </div>
-        <AppButton
-          variant="secondary"
-          className="px-3 py-2"
-          onClick={() => setBindings(DEFAULT_SHORTCUTS)}
-        >
+        <AppButton variant="secondary" size="sm" onClick={() => setBindings(DEFAULT_SHORTCUTS)}>
           <RotateCcw size={15} /> Reset all
         </AppButton>
       </div>

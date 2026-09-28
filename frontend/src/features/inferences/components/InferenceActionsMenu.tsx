@@ -1,6 +1,5 @@
-import { ClipboardCheck, Ellipsis, Trash2 } from "lucide-react";
-import { DropdownMenu } from "radix-ui";
-import { AppIconButton } from "@/shared/ui/AppIconButton";
+import { ClipboardCheck, Trash2 } from "lucide-react";
+import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
 
 type Props = {
   canDelete: boolean;
@@ -19,45 +18,35 @@ export function InferenceActionsMenu({
   onDelete,
   onReviewStatus,
 }: Props) {
+  const actions: AppMenuAction[] = [
+    ...(canManageReviews
+      ? [
+          {
+            key: "review-status",
+            label: "Review status",
+            icon: ClipboardCheck,
+            onSelect: onReviewStatus,
+          },
+        ]
+      : []),
+    ...(canDelete
+      ? [
+          {
+            key: "delete",
+            label: "Delete",
+            icon: Trash2,
+            onSelect: onDelete,
+            tone: "danger" as const,
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <AppIconButton
-          type="button"
-          disabled={disabled}
-          aria-label={`Open actions for ${inferenceName}`}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <Ellipsis size={18} />
-        </AppIconButton>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={8}
-          onClick={(event) => event.stopPropagation()}
-          className="z-(--z-popover) min-w-44 rounded-menu border border-line bg-surface p-2 shadow-hover"
-        >
-          {canManageReviews ? (
-            <DropdownMenu.Item
-              onSelect={onReviewStatus}
-              className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium text-fg outline-none hover:bg-surface-muted focus:bg-surface-muted"
-            >
-              <ClipboardCheck size={15} />
-              Review status
-            </DropdownMenu.Item>
-          ) : null}
-          {canDelete ? (
-            <DropdownMenu.Item
-              onSelect={onDelete}
-              className="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2.5 text-sm font-medium text-danger-fg outline-none hover:bg-danger-subtle focus:bg-danger-subtle"
-            >
-              <Trash2 size={15} />
-              Delete
-            </DropdownMenu.Item>
-          ) : null}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+    <AppActionsMenu
+      label={`Open actions for ${inferenceName}`}
+      actions={actions}
+      disabled={disabled}
+    />
   );
 }

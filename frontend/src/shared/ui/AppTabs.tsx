@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useRef, type HTMLAttributes, type KeyboardEvent, type ReactNode } from "react";
 import { cx } from "./cx";
+import { TAB_LIST_CLASS, tabCountClass, tabItemClass } from "./tab-styles";
 
 export function AppTabs<TValue extends string>({
   items,
@@ -37,12 +38,7 @@ export function AppTabs<TValue extends string>({
     onChange(items[next].value);
   };
   return (
-    <div
-      {...props}
-      id={id}
-      className={cx("flex w-full flex-wrap items-center gap-6 border-b border-line", className)}
-      role="tablist"
-    >
+    <div {...props} id={id} className={cx(TAB_LIST_CLASS, className)} role="tablist">
       {items.map((item, index) => {
         const active = item.value === value;
 
@@ -60,28 +56,12 @@ export function AppTabs<TValue extends string>({
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(item.value)}
             onKeyDown={(event) => moveFocus(event, index)}
-            className={cx(
-              "cursor-pointer border-b-2 px-1 py-3 text-sm font-semibold transition-colors",
-              active
-                ? "border-accent text-fg"
-                : "border-transparent text-fg-secondary hover:text-fg",
-            )}
+            className={tabItemClass(active)}
           >
-            <span className="flex items-center gap-2">
-              {item.label}
-              {item.count !== undefined ? (
-                <span
-                  className={cx(
-                    "min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-medium",
-                    active
-                      ? "bg-accent-subtle text-accent-strong"
-                      : "bg-surface-muted text-fg-secondary",
-                  )}
-                >
-                  {item.count}
-                </span>
-              ) : null}
-            </span>
+            {item.label}
+            {item.count !== undefined ? (
+              <span className={tabCountClass(active)}>{item.count}</span>
+            ) : null}
           </button>
         );
       })}

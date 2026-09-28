@@ -36,7 +36,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
         data-navigation-style={floating ? "floating" : "fixed"}
         className={cx(
           // clip, not hidden: see base.css, a hidden box can still be scrolled.
-          "flex h-screen w-screen overflow-clip bg-surface text-fg",
+          "flex h-dvh w-screen overflow-clip bg-surface text-fg",
           // Pages that size against the viewport subtract the bar (h-14, plus its inset when floating).
           !vertical && "flex-col",
           !vertical && (floating ? "[--app-nav-block:4rem]" : "[--app-nav-block:3.5rem]"),

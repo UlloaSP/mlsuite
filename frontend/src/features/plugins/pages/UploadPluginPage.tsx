@@ -19,9 +19,13 @@ import {
   pluginErrorMessage,
 } from "@/features/plugins/lib/plugin-upload-queue";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppFileDropArea } from "@/shared/ui/AppFileDropArea";
 import { AppFileDropZone } from "@/shared/ui/AppFileDropZone";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
+
+const PLUGIN_FILE_ACCEPT = `${PLUGIN_FILE_EXTENSION},text/typescript,application/typescript,text/plain`;
 
 export function UploadPluginPage() {
   const navigate = useNavigate();
@@ -75,7 +79,7 @@ export function UploadPluginPage() {
 
   return (
     <AppPage>
-      <div className="app-scroll flex min-h-0 flex-1 flex-col overflow-auto px-4 py-7 sm:px-8 lg:overflow-hidden">
+      <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto lg:overflow-hidden">
         <AppPageHeader
           breadcrumbs={[{ label: "Plugins", to: "/plugins" }, { label: "Upload plugins" }]}
           eyebrow="Workspace extensions"
@@ -86,10 +90,10 @@ export function UploadPluginPage() {
         <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:flex-row lg:overflow-hidden">
           <section
             aria-label="Plugin files"
-            className="flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-card lg:flex-1"
+            className="flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card lg:flex-1"
           >
             <AppFileDropZone
-              accept={`${PLUGIN_FILE_EXTENSION},text/typescript,application/typescript,text/plain`}
+              accept={PLUGIN_FILE_ACCEPT}
               hints={[`plugins: ${PLUGIN_FILE_EXTENSION} (field or report)`]}
               inputLabel="Upload plugin files"
               onFiles={addFiles}
@@ -97,13 +101,19 @@ export function UploadPluginPage() {
 
             <div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-line px-4 pb-4 pt-3">
               {items.length === 0 ? (
-                <AppEmptyState
-                  compact
-                  className="flex-1"
-                  icon={<FileCode2 size={18} />}
-                  title="No plugin files yet"
-                  description="Add files above. Nothing is uploaded until you choose Upload all."
-                />
+                <AppFileDropArea
+                  accept={PLUGIN_FILE_ACCEPT}
+                  inputLabel="Upload plugin files from the empty list"
+                  label="Drop plugin files"
+                  onFiles={addFiles}
+                >
+                  <AppEmptyState
+                    compact
+                    icon={<FileCode2 size={18} />}
+                    title="No plugin files yet"
+                    description="Drop files here or click to browse. Nothing is uploaded until you choose Upload all."
+                  />
+                </AppFileDropArea>
               ) : (
                 items.map((item) => (
                   <PluginUploadCard
@@ -129,7 +139,7 @@ export function UploadPluginPage() {
             onClear={() => setItems([])}
           />
         </div>
-      </div>
+      </AppSurface>
     </AppPage>
   );
 }

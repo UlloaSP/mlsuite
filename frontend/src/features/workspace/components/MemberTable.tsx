@@ -1,6 +1,7 @@
-import { AppButton } from "@/shared/ui/AppButton";
-import { AppPanel } from "@/shared/ui/AppPanel";
+import { UserMinus } from "lucide-react";
+import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { AppSelect } from "@/shared/ui/AppSelect";
+import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { RoleBadge } from "./RoleBadge";
 import type {
   MembershipStatus,
@@ -32,41 +33,51 @@ export function MemberTable({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {rows.map((row) => (
-        <AppPanel key={row.id} variant="catalog">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="min-w-0 space-y-2 break-words">
-              <p className="text-base font-semibold text-fg">{row.fullName}</p>
-              <p className="text-sm text-fg-secondary">{row.email}</p>
-              <div className="flex flex-wrap gap-2">
-                <RoleBadge value={row.role.name} />
-                <RoleBadge value={row.status} />
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {row.actions.canChangeRole && row.role.id ? (
-                <AppSelect
-                  aria-label={`Role for ${row.fullName}`}
-                  value={String(row.role.id)}
-                  onValueChange={(roleId) => onRoleChange(row.id, Number(roleId))}
-                  className="min-w-40"
-                  options={row.actions.assignableRoles.map((role) => ({
-                    value: String(role.id ?? ""),
-                    label: role.name,
-                  }))}
-                />
-              ) : (
-                <p className="text-sm text-fg-secondary">Read only</p>
-              )}
-              {row.actions.canRemove ? (
-                <AppButton type="button" variant="danger" onClick={() => onRemove(row.id)}>
-                  Remove
-                </AppButton>
-              ) : null}
-            </div>
-          </div>
-        </AppPanel>
+        <CatalogEntry
+          key={row.id}
+          title={row.fullName}
+          titleAccessory={
+            <>
+              <RoleBadge value={row.role.name} />
+              <RoleBadge value={row.status} />
+            </>
+          }
+          description={row.email}
+          details={
+            row.actions.canChangeRole && row.role.id ? (
+              <AppSelect
+                aria-label={`Role for ${row.fullName}`}
+                value={String(row.role.id)}
+                onValueChange={(roleId) => onRoleChange(row.id, Number(roleId))}
+                className="min-w-40"
+                options={row.actions.assignableRoles.map((role) => ({
+                  value: String(role.id ?? ""),
+                  label: role.name,
+                }))}
+              />
+            ) : (
+              <span>Read only</span>
+            )
+          }
+          actions={
+            row.actions.canRemove ? (
+              <AppActionsMenu
+                label={`Open actions for ${row.fullName}`}
+                actions={[
+                  {
+                    key: "remove",
+                    label: "Remove",
+                    icon: UserMinus,
+                    tone: "danger",
+                    onSelect: () => onRemove(row.id),
+                  },
+                ]}
+              />
+            ) : null
+          }
+        />
       ))}
     </div>
   );

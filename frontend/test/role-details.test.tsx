@@ -61,3 +61,38 @@ test.each([0, 2])(
     );
   },
 );
+
+test("never offers delete for a locked role", async () => {
+  const role: RoleDefinitionDto = {
+    id: 1,
+    name: "Owner",
+    slug: "owner",
+    description: "Full control",
+    scope: "ORGANIZATION",
+    locked: true,
+    systemKey: "OWNER",
+    userCount: 0,
+    permissions: [],
+    actions: {
+      canView: true,
+      canEdit: false,
+      canDelete: true,
+      canDuplicate: true,
+      canAssign: true,
+    },
+  };
+  await act(async () =>
+    root.render(
+      <RoleDetailsDialog
+        role={role}
+        onClose={vi.fn()}
+        onEdit={vi.fn()}
+        onDuplicate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    ),
+  );
+  const labels = [...document.body.querySelectorAll("button")].map((button) => button.textContent);
+  expect(labels).toContain("Duplicate");
+  expect(labels).not.toContain("Delete");
+});

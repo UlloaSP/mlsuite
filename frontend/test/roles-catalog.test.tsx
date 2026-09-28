@@ -81,9 +81,22 @@ async function render(search = "") {
   );
 }
 function hasLabel(label: string) {
-  return [...host.querySelectorAll("p")].some(
+  return [...host.querySelectorAll("p, h2")].some(
     (node) => node.textContent === label || node.firstChild?.textContent?.trim() === label,
   );
+}
+// Each tab reads "label|count": the count is its own badge, not part of the label.
+function tabLabels() {
+  return [...host.querySelectorAll('[role="tab"]')].map((node) =>
+    [...node.childNodes].map((child) => child.textContent).join("|"),
+  );
+}
+async function clickTab(label: string) {
+  const tab = [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find(
+    (node) => node.firstChild?.textContent === label,
+  );
+  expect(tab).toBeDefined();
+  await act(async () => tab!.click());
 }
 async function click(label: string) {
   const button = [...host.querySelectorAll("button")].find(
@@ -97,11 +110,7 @@ test.each([
   ["templates", "Template"],
 ])("paginates %s and keeps total tab counts", async (tab, label) => {
   await render(`?tab=${tab}`);
-  expect([...host.querySelectorAll('[role="tab"]')].map((node) => node.textContent)).toEqual([
-    "Roles (21)",
-    "Templates (21)",
-    "All permissions (21)",
-  ]);
+  expect(tabLabels()).toEqual(["Roles|21", "Templates|21", "All permissions|21"]);
   expect(hasLabel(`${label} 10`)).toBe(true);
   expect(hasLabel(`${label} 11`)).toBe(false);
   await click("Next");
@@ -119,13 +128,13 @@ test.each(["roles", "templates"])(
   async (tab) => {
     await render(`?tab=${tab}&q=21&page=3`);
     expect(host.querySelector('button[aria-current="page"]')?.textContent).toBe("1");
-    expect(host.textContent).toContain("Roles (21)");
+    expect(tabLabels()).toContain("Roles|21");
     expect(host.textContent).not.toContain(" 20");
   },
 );
 test("clears page and search when switching tabs", async () => {
   await render("?tab=roles&page=3&q=21");
-  await click("Templates (21)");
+  await clickTab("Templates");
   expect(host.textContent).toContain("Template 1");
   expect(hasLabel("Template 21")).toBe(false);
   expect(host.querySelector("input")?.value).toBe("");
@@ -153,11 +162,12 @@ test("shows an empty search result", async () => {
 test("read-only users cannot create roles or select a template", async () => {
   hooks.dashboard.mockReturnValue({ data: { permissions: { canViewMembers: true } } });
   await render("?tab=templates");
-  expect(host.textContent).not.toContain("Create Role");
+  expect(host.textContent).not.toContain("Create role");
+  expect(hasLabel("Template 1")).toBe(true);
   const template = [...host.querySelectorAll("button")].find((node) =>
     node.textContent?.startsWith("Template 1"),
   );
-  expect(template?.disabled).toBe(true);
+  expect(template).toBeUndefined();
 });
 
 test("keeps all permissions grouped without pagination", async () => {
@@ -167,7 +177,7 @@ test("keeps all permissions grouped without pagination", async () => {
   );
   expect(host.querySelectorAll('section[aria-label="Permission groups"] li')).toHaveLength(21);
   expect(host.querySelector("footer")).toBeNull();
-  expect(host.textContent).toContain("All permissions (21)");
+  expect(tabLabels()).toContain("All permissions|21");
 });
 test("permission search preserves the group and total", async () => {
   await render("?tab=permissions&q=21");
@@ -175,12 +185,12 @@ test("permission search preserves the group and total", async () => {
   expect(host.querySelector('section[aria-label="Permission groups"] h2')?.textContent).toBe(
     "Organization",
   );
-  expect(host.textContent).toContain("All permissions (21)");
+  expect(tabLabels()).toContain("All permissions|21");
   expect(host.querySelector("footer")).toBeNull();
 });
 test("role fields have visible associated labels in vertical document order", async () => {
   await render();
-  await click("Create Role");
+  await click("Create role");
   // The form is a dialog, rendered in a portal on document.body.
   expect(document.querySelector('label[for="role-name"]')?.textContent).toBe("Name");
   expect(document.querySelector('label[for="role-description"]')?.textContent).toBe("Description");

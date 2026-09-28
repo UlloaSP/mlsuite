@@ -56,7 +56,7 @@ export function OverviewChartPanel({
   const toggleLayer = (key: ChartLayer) => setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
 
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface">
+    <div className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5">
         <div>
           <p className="text-sm font-semibold text-fg">
@@ -69,7 +69,8 @@ export function OverviewChartPanel({
         <div className="flex items-center gap-2">
           <AppSelect
             aria-label="Select chart service"
-            className="h-8 min-w-36 px-3 text-xs"
+            className="min-w-36"
+            size="sm"
             value={chartService}
             onValueChange={setChartService}
             options={[
@@ -81,7 +82,7 @@ export function OverviewChartPanel({
             ]}
           />
           <AppBadge tone={streamConnected ? "success" : "warning"}>
-            {streamConnected ? "live" : "snapshot"}
+            {streamConnected ? "Live" : "Snapshot"}
           </AppBadge>
           <AppBadge>{overview.history.sampleIntervalSeconds}s sample</AppBadge>
         </div>
@@ -110,8 +111,9 @@ export function OverviewChartPanel({
           ),
         )}
       </div>
-      <div className="px-3 pb-3 pt-2">
-        <div className="h-[240px]">
+      {/* The chart grows with its row (next to the signals panel) instead of a fixed height. */}
+      <div className="flex flex-1 flex-col px-3 pb-3 pt-2">
+        <div className="min-h-60 flex-1">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartPoints} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
               <CartesianGrid stroke="var(--color-line)" strokeDasharray="2 4" vertical={false} />

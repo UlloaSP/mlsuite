@@ -6,7 +6,7 @@ export function MobileSidebarTrigger({ side }: { side: SidebarPosition }) {
   return (
     <div
       className={cx(
-        "flex shrink-0 px-4 pt-4 xl:hidden",
+        "flex shrink-0 px-6 pt-3 xl:hidden",
         side === "left" ? "justify-start" : "justify-end",
       )}
     >
