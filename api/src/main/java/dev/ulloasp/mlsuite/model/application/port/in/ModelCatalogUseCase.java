@@ -13,6 +13,8 @@ public interface ModelCatalogUseCase {
 
     List<Model> getModels(Long userId);
 
+    Model getModel(Long userId, Long modelId);
+
     ModelPageDto getModelPage(Long userId, int page, int size, String search, String sort, String status);
 
     Model renameModel(Long userId, Long modelId, String name, Long expectedVersion);

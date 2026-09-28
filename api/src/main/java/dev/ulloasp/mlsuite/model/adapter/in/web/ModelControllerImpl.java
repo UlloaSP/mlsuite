@@ -81,6 +81,13 @@ public class ModelControllerImpl implements ModelController {
     }
 
     @Override
+    public ResponseEntity<ModelDto> getModel(Authentication authentication, Long modelId) {
+        return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.getModel(
+                currentUserResolver.resolve(authentication).userId(),
+                modelId)));
+    }
+
+    @Override
     public ResponseEntity<ModelDto> rename(Authentication authentication, Long modelId, String name, Long version) {
         return ResponseEntity.ok(ModelDto.toDto(modelCatalogUseCase.renameModel(
                 currentUserResolver.resolve(authentication).userId(),

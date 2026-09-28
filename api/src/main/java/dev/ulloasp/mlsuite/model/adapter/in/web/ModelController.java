@@ -44,6 +44,9 @@ public interface ModelController {
     @GetMapping("/all")
     public ResponseEntity<List<ModelDto>> getAllModels(Authentication authentication);
 
+    @GetMapping("/{modelId}")
+    public ResponseEntity<ModelDto> getModel(Authentication authentication, @PathVariable Long modelId);
+
     @PatchMapping("/{modelId}")
     public ResponseEntity<ModelDto> rename(
             Authentication authentication,

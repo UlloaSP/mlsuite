@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,7 +21,9 @@ import dev.ulloasp.mlsuite.model.application.dto.CreateModelDto;
 import dev.ulloasp.mlsuite.model.application.dto.ModelPageDto;
 import dev.ulloasp.mlsuite.model.application.port.in.ModelCatalogUseCase;
 import dev.ulloasp.mlsuite.model.application.service.ModelCreationService;
+import dev.ulloasp.mlsuite.model.domain.exception.ModelDoesNotExistsException;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
+import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 
@@ -83,6 +86,31 @@ class ModelControllerTest {
 
         assertEquals(1, controller.getAllModels(authentication).getBody().size());
         verify(modelCatalogUseCase).getModels(4L);
+    }
+
+    @Test
+    void getModel_ReturnsTheModelDtoForTheInternalUserId() {
+        when(modelCatalogUseCase.getModel(4L, 9L)).thenReturn(model());
+
+        var response = controller.getModel(authentication, 9L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(9L, response.getBody().id());
+        assertEquals("demo", response.getBody().name());
+    }
+
+    @Test
+    void getModel_PropagatesNotFoundForTheExceptionHandler() {
+        when(modelCatalogUseCase.getModel(4L, 9L)).thenThrow(new ModelDoesNotExistsException(9L, "alice"));
+
+        assertThrows(ModelDoesNotExistsException.class, () -> controller.getModel(authentication, 9L));
+    }
+
+    @Test
+    void getModel_PropagatesForbiddenForTheExceptionHandler() {
+        when(modelCatalogUseCase.getModel(4L, 9L)).thenThrow(new OrganizationAccessDeniedException(41L));
+
+        assertThrows(OrganizationAccessDeniedException.class, () -> controller.getModel(authentication, 9L));
     }
 
     @Test

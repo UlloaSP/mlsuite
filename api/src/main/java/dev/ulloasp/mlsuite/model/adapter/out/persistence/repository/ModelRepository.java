@@ -83,6 +83,8 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     Optional<Model> findByIdAndOrganizationId(Long modelId, Long organizationId);
 
+    Optional<Model> findByIdAndOrganizationIdAndArchivedAtIsNull(Long modelId, Long organizationId);
+
     long countByOrganizationId(Long organizationId);
 
 }

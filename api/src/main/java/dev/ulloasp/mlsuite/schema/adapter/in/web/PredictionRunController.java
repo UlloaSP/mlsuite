@@ -71,6 +71,11 @@ public class PredictionRunController {
         return ResponseEntity.ok(toDto(predictionRunUseCase.getRun(userId(authentication), runId)));
     }
 
+    @GetMapping("/prediction-runs/{runId}/summary")
+    public ResponseEntity<PredictionRunCatalogItemDto> summary(Authentication authentication, @PathVariable Long runId) {
+        return ResponseEntity.ok(PredictionRunCatalogItemDto.from(predictionRunUseCase.getRun(userId(authentication), runId)));
+    }
+
     @DeleteMapping("/prediction-runs/{runId}")
     public ResponseEntity<Void> delete(Authentication authentication, @PathVariable Long runId) {
         predictionRunUseCase.deleteRun(userId(authentication), runId);

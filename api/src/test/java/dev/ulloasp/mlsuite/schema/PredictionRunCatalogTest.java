@@ -3,12 +3,15 @@ package dev.ulloasp.mlsuite.schema;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -23,9 +26,15 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
+import dev.ulloasp.mlsuite.schema.adapter.in.web.PredictionRunController;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
+import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -41,7 +50,9 @@ class PredictionRunCatalogTest {
     @Mock private ModelRepository models;
     @Mock private WorkspaceAccessService workspace;
     @Mock private WorkspaceAuthorizationService authorization;
+    @Mock private CurrentUserResolver currentUserResolver;
     @InjectMocks private PredictionRunServiceImpl service;
+    private final Authentication authentication = mock(Authentication.class);
 
     @Test
     void listsOnlyCurrentOrganizationRunsNewestFirst() {
@@ -95,6 +106,53 @@ class PredictionRunCatalogTest {
 
         verify(results, never()).deleteByRun_Id(12L);
         verify(runs, never()).delete(run);
+    }
+
+    @Test
+    void summaryReturnsTheCatalogItemOfAnOrganizationRun() {
+        allowRead();
+        PredictionRun run = new PredictionRun(SchemaFlowFixtures.bookmark(), SchemaFlowFixtures.version(), "case-1",
+                java.util.Map.of(), PredictionRunStatus.SUCCESS);
+        run.setId(12L);
+        when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
+
+        var response = controller().summary(authentication, 12L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(PredictionRunCatalogItemDto.from(run), response.getBody());
+        assertEquals(70L, response.getBody().bookmarkId());
+        verify(authorization).requireModelView(7L, 41L);
+    }
+
+    @Test
+    void summaryIsNotFoundForUnknownOrOtherOrganizationRun() {
+        allowRead();
+        when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.empty());
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> controller().summary(authentication, 12L));
+
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+    }
+
+    @Test
+    void summaryRejectsUserWithoutModelViewPermission() {
+        allowRead();
+        org.mockito.Mockito.doThrow(new OrganizationAccessDeniedException(41L))
+                .when(authorization).requireModelView(7L, 41L);
+
+        assertThrows(OrganizationAccessDeniedException.class, () -> controller().summary(authentication, 12L));
+        verify(runs, never()).findByIdAndOrganizationId(12L, 41L);
+    }
+
+    private PredictionRunController controller() {
+        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", SystemRole.USER));
+        return new PredictionRunController(currentUserResolver, service, results);
+    }
+
+    private void allowRead() {
+        when(users.requireById(7L)).thenReturn(new User());
+        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization());
     }
 
     private Organization organization() {

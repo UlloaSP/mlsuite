@@ -169,6 +169,12 @@ public class ModelServiceImpl implements ModelService {
     }
 
     @Override
+    public Model getModel(Long userId, Long modelId) {
+        return catalogReader.findModel(userId, modelId)
+                .orElseThrow(() -> new ModelDoesNotExistsException(modelId, userLookupService.requireById(userId).getUsername()));
+    }
+
+    @Override
     public ModelPageDto getModelPage(Long userId, int page, int size, String search, String sort, String status) {
         return catalogReader.getModelPage(userId, page, size, search, sort, status);
     }

@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.model.application.service;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -24,9 +25,17 @@ final class ModelCatalogReader {
     }
 
     public List<Model> getModels(Long userId) {
+        return modelRepository.findByOrganizationIdAndArchivedAtIsNull(requireModelView(userId));
+    }
+
+    public Optional<Model> findModel(Long userId, Long modelId) {
+        return modelRepository.findByIdAndOrganizationIdAndArchivedAtIsNull(modelId, requireModelView(userId));
+    }
+
+    private Long requireModelView(Long userId) {
         Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
         workspaceAuthorizationService.requireModelView(userId, organizationId);
-        return modelRepository.findByOrganizationIdAndArchivedAtIsNull(organizationId);
+        return organizationId;
     }
 
     public ModelPageDto getModelPage(Long userId, int page, int size, String search, String sort, String status) {
