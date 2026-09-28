@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 [[ $# -ge 1 && $# -le 3 ]] || {
   echo "usage: verify-recovery-rto.sh START_EPOCH [END_EPOCH] [failed-smoke]" >&2; exit 2;
@@ -7,12 +8,6 @@ set -euo pipefail
 
 ENV_FILE=${ENV_FILE:-.env}
 [[ -f "$ENV_FILE" ]] || { echo "environment file not found: $ENV_FILE" >&2; exit 1; }
-
-env_value() {
-  local line
-  line=$(grep -E "^${1}=" "$ENV_FILE" | tail -n1) || return 1
-  printf '%s' "${line#*=}"
-}
 
 start_epoch=$1
 end_epoch=${2:-$(date -u +%s)}
@@ -27,14 +22,6 @@ rto_minutes=$(env_value RECOVERY_RTO_MINUTES || true)
 (( end_epoch >= start_epoch )) || { echo "recovery end precedes its start" >&2; exit 1; }
 [[ "$result_mode" == verify || "$result_mode" == failed-smoke ]] || {
   echo "recovery result mode must be failed-smoke when supplied" >&2; exit 1;
-}
-
-write_env() {
-  local key=$1 value=$2 tmp
-  tmp=$(mktemp)
-  grep -vE "^${key}=" "$ENV_FILE" > "$tmp" || true
-  printf '%s=%s\n' "$key" "$value" >> "$tmp"
-  mv "$tmp" "$ENV_FILE"
 }
 
 elapsed_seconds=$((end_epoch - start_epoch))

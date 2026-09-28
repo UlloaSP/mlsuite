@@ -84,16 +84,16 @@ def test_action_logs_and_terminal_routes_work(monkeypatch) -> None:
         app.state.agent.compose = fake_compose
         app.state.agent.terminals = fake_terminals
         app.state.agent.metrics.points = deque([
-            SimpleNamespace(
-                timestamp="2026-05-07T00:00:00+00:00",
-                cpu_percent=1.0,
-                ram_percent=2.0,
-                disk_read_bytes=3,
-                disk_write_bytes=4,
-                network_rx_bytes=5,
-                network_tx_bytes=6,
-                services=[],
-            )
+            {
+                "timestamp": "2026-05-07T00:00:00+00:00",
+                "cpuPercent": 1.0,
+                "ramPercent": 2.0,
+                "diskReadBytes": 3,
+                "diskWriteBytes": 4,
+                "networkRxBytes": 5,
+                "networkTxBytes": 6,
+                "services": [],
+            }
         ], maxlen=10)
         app.state.agent._latest_services = await fake_compose.service_snapshot()
 
@@ -144,16 +144,16 @@ def test_stream_socket_sends_service_status_fields(monkeypatch) -> None:
 
     async def fake_start():
         app.state.agent.metrics.points = deque([
-            SimpleNamespace(
-                timestamp="2026-05-07T00:00:00+00:00",
-                cpu_percent=1.0,
-                ram_percent=2.0,
-                disk_read_bytes=3,
-                disk_write_bytes=4,
-                network_rx_bytes=5,
-                network_tx_bytes=6,
-                services=[],
-            )
+            {
+                "timestamp": "2026-05-07T00:00:00+00:00",
+                "cpuPercent": 1.0,
+                "ramPercent": 2.0,
+                "diskReadBytes": 3,
+                "diskWriteBytes": 4,
+                "networkRxBytes": 5,
+                "networkTxBytes": 6,
+                "services": [],
+            }
         ], maxlen=10)
         app.state.agent._latest_services = [
             {
@@ -186,7 +186,7 @@ def test_stream_socket_sends_service_status_fields(monkeypatch) -> None:
     service = message["payload"]["services"][0]
     assert message["type"] == "overview.snapshot"
     assert message["payload"]["aggregate"]["cpu"]["percent"] == 1.0
-    assert message["payload"]["aggregate"]["networkTx"]["bytes"] == 6
+    assert message["payload"]["aggregate"]["networkTx"] == {"bytes": 6}
     assert message["payload"]["history"]["points"][0]["services"] == []
     assert "host" not in message["payload"]
     assert service["status"] == "running"
@@ -212,9 +212,7 @@ def test_service_snapshot_treats_running_without_healthcheck_as_healthy_and_shel
                 '{"Service":"spring-app","Name":"spring-app","State":"running",'
                 '"Health":"","RunningFor":"1m","Publishers":[]}'
             )
-        if args == ("ps", "--services"):
-            return "spring-app\n"
-        if args[:3] == ("stats", "--no-stream", "--format"):
+        if args == ("stats", "--no-stream", "--format", "json"):
             return (
                 '{"Name":"spring-app","CPUPerc":"0.5%","MemUsage":"1MiB / 2MiB",'
                 '"BlockIO":"3MB / 4MB","NetIO":"5kB / 6kB"}'
@@ -241,14 +239,19 @@ def test_metrics_are_summed_from_services() -> None:
         {"cpuPercent": None, "memoryBytes": None, "memoryLimitBytes": None},
     ])
 
-    assert snapshot.cpu_percent == 4.0
-    assert snapshot.ram_percent == 25.0
-    assert snapshot.disk_read_bytes == 11
-    assert snapshot.network_tx_bytes == 44
-    assert snapshot.services[0].name == "spring-app"
-    assert snapshot.services[0].cpu_percent == 1.25
-    assert snapshot.services[0].ram_percent == 25.0
-    assert snapshot.services[0].disk_write_bytes == 20
+    assert snapshot["cpuPercent"] == 4.0
+    assert snapshot["ramPercent"] == 25.0
+    assert snapshot["diskReadBytes"] == 11
+    assert snapshot["networkTxBytes"] == 44
+    assert snapshot["services"][0] == {
+        "name": "spring-app",
+        "cpuPercent": 1.25,
+        "ramPercent": 25.0,
+        "diskReadBytes": 10,
+        "diskWriteBytes": 20,
+        "networkRxBytes": 30,
+        "networkTxBytes": 40,
+    }
 
 
 def test_terminal_creation_requires_shell_whitelist() -> None:

@@ -3,6 +3,7 @@
 # Gated production cutover for the initial single-server deployment.
 
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # ──────────────────────────────────────────────────────────────────────────
 # Small interactive helpers used by this cutover.
@@ -69,18 +70,11 @@ confirm() {
   [[ "$reply" =~ ^[Yy] ]]
 }
 
-# _existing KEY — current value of KEY in ENV_FILE, if any.
-_existing() {
-  [[ -f "$ENV_FILE" ]] || return 1
-  local line; line=$(grep -E "^${1}=" "$ENV_FILE" | tail -n1) || return 1
-  printf '%s' "${line#*=}"
-}
-
 # ask KEY "Prompt" — read a value into $KEY. Offers the existing .env value as
 # a default on re-runs (Enter keeps it). Visible input (non-secret).
 ask() {
   local key="$1" prompt="$2" current input
-  current=$(_existing "$key" || true)
+  current=$(env_value "$key" || true)
   if [[ -n "$current" ]]; then
     printf '  %s%s%s %s[Enter keeps current]%s ' "$BOLD" "$prompt" "$RESET" "$DIM" "$RESET"
   else
@@ -91,15 +85,10 @@ ask() {
   printf -v "$key" '%s' "$input"
 }
 
-# write_env KEY VALUE — upsert KEY=VALUE into ENV_FILE (creates it; replaces
-# any existing line). Idempotent.
-write_env() {
-  local key="$1" value="$2" tmp
-  touch "$ENV_FILE"
-  tmp=$(mktemp)
-  grep -vE "^${key}=" "$ENV_FILE" > "$tmp" || true
-  printf '%s=%s\n' "$key" "$value" >> "$tmp"
-  mv "$tmp" "$ENV_FILE"
+# save_env KEY VALUE — upsert KEY=VALUE into ENV_FILE and report it.
+save_env() {
+  local key="$1"
+  write_env "$key" "$2"
   WRITTEN_ENV+=("$key")
   printf '  %s✓ wrote%s %s → %s\n' "$GREEN" "$RESET" "$key" "$ENV_FILE"
 }
@@ -129,18 +118,18 @@ stage "Preflight"
 [[ -f "$ENV_FILE" ]] || { warn "$ENV_FILE does not exist; copy .env.example and fill it first"; exit 1; }
 for command in docker curl find python3 sha256sum sort systemctl; do command -v "$command" >/dev/null || { warn "missing command: $command"; exit 1; }; done
 for key in DB_ADMIN_USER DB_ADMIN_PASS DB_LEGACY_OWNER DB_LEGACY_PASS DB_USER DB_PASS DB_MIGRATION_USER DB_MIGRATION_PASS MINIO_ROOT_USER MINIO_ROOT_PASSWORD STORAGE_ACCESS_KEY STORAGE_SECRET_KEY; do
-  [[ -n "$(_existing "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
+  [[ -n "$(env_value "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
 done
-[[ "$(_existing MINIO_ROOT_USER)" != "$(_existing STORAGE_ACCESS_KEY)" ]] || {
+[[ "$(env_value MINIO_ROOT_USER)" != "$(env_value STORAGE_ACCESS_KEY)" ]] || {
   warn "MINIO_ROOT_USER and STORAGE_ACCESS_KEY must be different"; exit 1;
 }
 for key in RECOVERY_MODE SINGLE_DISK_RISK_ACCEPTED LOCAL_BACKUP_ROOT LOCAL_BACKUP_RETENTION_COUNT LOCAL_BACKUP_MIN_FREE_PERCENT RECOVERY_RPO_MINUTES RECOVERY_RTO_MINUTES; do
-  [[ -n "$(_existing "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
+  [[ -n "$(env_value "$key" || true)" ]] || { warn "$key must be set in $ENV_FILE"; exit 1; }
 done
-[[ "$(_existing MODEL_MUTATIONS_REQUIRE_VERSION)" == true ]] || { warn "Production requires MODEL_MUTATIONS_REQUIRE_VERSION=true"; exit 1; }
-[[ "$(_existing RECOVERY_MODE)" == local-single-disk ]] || { warn "This deployment supports RECOVERY_MODE=local-single-disk"; exit 1; }
-[[ "$(_existing SINGLE_DISK_RISK_ACCEPTED)" == true ]] || { warn "Set SINGLE_DISK_RISK_ACCEPTED=true only after accepting that disk loss is unrecoverable"; exit 1; }
-[[ "$(_existing RECOVERY_RPO_MINUTES)" =~ ^[0-9]+$ && "$(_existing RECOVERY_RTO_MINUTES)" =~ ^[0-9]+$ ]] || { warn "RPO/RTO must be integer minutes"; exit 1; }
+[[ "$(env_value MODEL_MUTATIONS_REQUIRE_VERSION)" == true ]] || { warn "Production requires MODEL_MUTATIONS_REQUIRE_VERSION=true"; exit 1; }
+[[ "$(env_value RECOVERY_MODE)" == local-single-disk ]] || { warn "This deployment supports RECOVERY_MODE=local-single-disk"; exit 1; }
+[[ "$(env_value SINGLE_DISK_RISK_ACCEPTED)" == true ]] || { warn "Set SINGLE_DISK_RISK_ACCEPTED=true only after accepting that disk loss is unrecoverable"; exit 1; }
+[[ "$(env_value RECOVERY_RPO_MINUTES)" =~ ^[0-9]+$ && "$(env_value RECOVERY_RTO_MINUTES)" =~ ^[0-9]+$ ]] || { warn "RPO/RTO must be integer minutes"; exit 1; }
 systemctl is-enabled --quiet mlsuite-backup.timer || {
   warn "Install and enable the daily backup timer before cutover"; exit 1;
 }
@@ -148,19 +137,17 @@ systemctl is-active --quiet mlsuite-backup.timer || {
   warn "The daily backup timer is enabled but not active"; exit 1;
 }
 warn "Backups share the only physical disk. They cover logical mistakes, not disk loss, theft or total host failure."
-step "Declared logical-recovery RPO: $(_existing RECOVERY_RPO_MINUTES) minutes; RTO: $(_existing RECOVERY_RTO_MINUTES) minutes."
+step "Declared logical-recovery RPO: $(env_value RECOVERY_RPO_MINUTES) minutes; RTO: $(env_value RECOVERY_RTO_MINUTES) minutes."
 confirm "Do you explicitly accept launching without recovery from physical disk failure?" || exit 1
 say "This wizard never performs an automatic destructive restore."
 
 stage "Immutable release"
 ask RELEASE_COMPOSE "Digest-pinned Compose override inside this repository:"
-[[ "$RELEASE_COMPOSE" != /* && "$RELEASE_COMPOSE" != *..* && -f "$RELEASE_COMPOSE" ]] || { warn "Release override must be an existing path inside this repository"; exit 1; }
-write_env RELEASE_COMPOSE "$RELEASE_COMPOSE"
-write_env OPS_AGENT_COMPOSE_FILES \
+require_release_compose "$RELEASE_COMPOSE" "$ENV_FILE"
+save_env RELEASE_COMPOSE "$RELEASE_COMPOSE"
+save_env OPS_AGENT_COMPOSE_FILES \
   "/workspace/docker-compose.yml,/workspace/docker-compose.prod.yml,/workspace/$RELEASE_COMPOSE"
 COMPOSE+=(-f "$RELEASE_COMPOSE")
-python3 deploy/verify_release_images.py \
-  --env-file "$ENV_FILE" --release-compose "$RELEASE_COMPOSE"
 "${COMPOSE[@]}" config --quiet
 step "Verify the release checksums and digest-pinned override using docs/RELEASES.md."
 confirm "Have image signatures/checksums and all CI required checks been verified?" || exit 1
@@ -185,7 +172,7 @@ confirm "Is this a verified pre-Flyway schema that exactly matches V1 and requir
 ./scripts/verify-production-backup.sh "$backup_dir" --keep
 restore_state="$backup_dir/restore.env"
 ./scripts/smoke-restored-release.sh start "$restore_state" "$ENV_FILE" "$RELEASE_COMPOSE" "$baseline_flag"
-restore_smoke_port=$(_existing RESTORE_SMOKE_PORT || true); restore_smoke_port=${restore_smoke_port:-18080}
+restore_smoke_port=$(env_value RESTORE_SMOKE_PORT || true); restore_smoke_port=${restore_smoke_port:-18080}
 step "Against http://127.0.0.1:${restore_smoke_port}, exercise login, model download, prediction, review and export."
 if ! confirm "Did every restored-release smoke test pass?"; then
   restore_finished_epoch=$(date -u +%s)

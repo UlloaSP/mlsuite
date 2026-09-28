@@ -42,8 +42,7 @@ class AgentState:
             self._latest_services = await self.compose.service_snapshot()
         except ComposeError:
             self._latest_services = []
-        first = collect_metrics(self._latest_services)
-        self.metrics.append(first)
+        self.metrics.append(collect_metrics(self._latest_services))
         self.sampler_task = asyncio.create_task(self._sample_loop())
         self.service_task = asyncio.create_task(self._service_loop())
         self.cleanup_task = asyncio.create_task(self._cleanup_loop())
@@ -63,18 +62,18 @@ class AgentState:
         latest = self.metrics.points[-1]
         return {
             "aggregate": {
-                "cpu": {"percent": latest.cpu_percent, "supported": True},
-                "ram": {"percent": latest.ram_percent, "supported": True},
-                "diskRead": {"bytes": latest.disk_read_bytes, "supported": True},
-                "diskWrite": {"bytes": latest.disk_write_bytes, "supported": True},
-                "networkRx": {"bytes": latest.network_rx_bytes, "supported": True},
-                "networkTx": {"bytes": latest.network_tx_bytes, "supported": True},
+                "cpu": {"percent": latest["cpuPercent"]},
+                "ram": {"percent": latest["ramPercent"]},
+                "diskRead": {"bytes": latest["diskReadBytes"]},
+                "diskWrite": {"bytes": latest["diskWriteBytes"]},
+                "networkRx": {"bytes": latest["networkRxBytes"]},
+                "networkTx": {"bytes": latest["networkTxBytes"]},
             },
             "services": self._latest_services,
             "history": {
                 "sampleIntervalSeconds": self.settings.sample_interval_seconds,
                 "retentionMinutes": self.settings.retention_minutes,
-                "points": self.metrics.as_points(),
+                "points": list(self.metrics.points),
             },
         }
 
@@ -97,35 +96,12 @@ class AgentState:
 
     async def _sample_loop(self) -> None:
         while True:
-            snapshot = collect_metrics(self._latest_services)
-            self.metrics.append(snapshot)
+            point = collect_metrics(self._latest_services)
+            self.metrics.append(point)
             await self.broadcast(
                 {
                     "type": "overview.delta",
-                    "payload": {
-                        "aggregate": {
-                            "timestamp": snapshot.timestamp,
-                            "cpuPercent": snapshot.cpu_percent,
-                            "ramPercent": snapshot.ram_percent,
-                            "diskReadBytes": snapshot.disk_read_bytes,
-                            "diskWriteBytes": snapshot.disk_write_bytes,
-                            "networkRxBytes": snapshot.network_rx_bytes,
-                            "networkTxBytes": snapshot.network_tx_bytes,
-                            "services": [
-                                {
-                                    "name": service.name,
-                                    "cpuPercent": service.cpu_percent,
-                                    "ramPercent": service.ram_percent,
-                                    "diskReadBytes": service.disk_read_bytes,
-                                    "diskWriteBytes": service.disk_write_bytes,
-                                    "networkRxBytes": service.network_rx_bytes,
-                                    "networkTxBytes": service.network_tx_bytes,
-                                }
-                                for service in snapshot.services
-                            ],
-                        },
-                        "services": self._latest_services,
-                    },
+                    "payload": {"aggregate": point, "services": self._latest_services},
                 }
             )
             await asyncio.sleep(self.settings.sample_interval_seconds)
