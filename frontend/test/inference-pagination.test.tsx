@@ -6,7 +6,6 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
 import { InferenceCatalogList } from "@/features/inferences/components/InferenceCatalogList";
-import { SchemaRunHistoryList } from "@/features/schemas/components/SchemaRunHistoryList";
 
 let host: HTMLDivElement;
 let root: Root;
@@ -170,7 +169,7 @@ test("shows empty and request failure states with retry", async () => {
   expect(retry).toHaveBeenCalledOnce();
 });
 
-test("renders inference and history as individual keyboard-focusable catalog entries", async () => {
+test("renders inferences as individual keyboard-focusable catalog entries", async () => {
   await act(async () =>
     root.render(
       <MemoryRouter>
@@ -197,33 +196,16 @@ test("renders inference and history as individual keyboard-focusable catalog ent
             },
           ]}
         />
-        <SchemaRunHistoryList
-          runs={[
-            {
-              id: "2",
-              name: "Bookmark run",
-              schemaVersionId: "3",
-              createdAt: "2026-09-09T10:00:00Z",
-              status: "SUCCESS",
-              inputData: {},
-              results: [],
-            },
-          ]}
-          runHref={(runId) => `/runs/${runId}`}
-          feedbackStatusByRunId={new Map([["2", "NOT_REQUIRED"]])}
-        />
       </MemoryRouter>,
     ),
   );
-  expect(host.querySelectorAll("article")).toHaveLength(2);
+  expect(host.querySelectorAll("article")).toHaveLength(1);
   expect(host.querySelector("table")).toBeNull();
   expect(host.textContent).toContain("Partial success");
   expect(host.textContent).toContain("By Ada Lovelace");
-  expect(host.textContent).toContain("By Unknown author");
-  expect(host.textContent).toContain("Not configured");
   // Rows are real links, so they can be focused and opened in a new tab.
   const entries = [...host.querySelectorAll<HTMLAnchorElement>("article a")];
-  expect(entries.map((entry) => entry.getAttribute("href"))).toContain("/runs/2");
-  entries[1].focus();
-  expect(document.activeElement).toBe(entries[1]);
+  expect(entries.map((entry) => entry.getAttribute("href"))).toContain("/inferences/1");
+  entries[0].focus();
+  expect(document.activeElement).toBe(entries[0]);
 });

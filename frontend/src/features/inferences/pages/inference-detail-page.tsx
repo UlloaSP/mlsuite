@@ -24,7 +24,7 @@ const statusTone = (status: InferenceCatalogItemDto["status"]) =>
 const dataHref = (item: InferenceCatalogItemDto) =>
   item.bookmarkId == null
     ? `/schemas/${item.schemaId}/versions/${item.schemaVersionId}`
-    : `/schemas/${item.schemaId}/bookmarks/${item.bookmarkId}/runs/${item.id}`;
+    : `/predict/${item.bookmarkId}/runs/${item.id}`;
 
 export function InferenceDetailPage() {
   const { inferenceId = "" } = useParams<{ inferenceId: string }>();

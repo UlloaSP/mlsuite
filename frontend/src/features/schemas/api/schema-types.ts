@@ -70,9 +70,30 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+/** A bookmark as the Predict launcher shows it: what it runs and how it has been used. */
+export type PredictBookmarkDto = {
+  id: string;
+  name: string;
+  schemaId: string;
+  schemaName: string;
+  schemaDescription?: string | null;
+  versionId: string;
+  version: number;
+  versionName: string;
+  /** The schema's newest snapshot; above `version` when the bookmark is behind. */
+  latestVersion: number;
+  models: string[];
+  fieldCount: number;
+  reportCount: number;
+  runCount: number;
+  lastRunAt?: string | null;
+  updatedAt: string;
+};
+
 export type SchemaBookmarkDto = {
   id: string;
   schemaId: string;
+  schemaName: string;
   versionId: string;
   version: number;
   versionName: string;

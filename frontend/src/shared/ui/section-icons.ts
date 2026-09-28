@@ -10,6 +10,7 @@ import {
   FileJson2,
   GitCommitHorizontal,
   GitCompareArrows,
+  Play,
   MessageSquareText,
   ServerCog,
   ShieldCheck,
@@ -25,6 +26,7 @@ import {
  * each must be distinct.
  */
 export const SECTION_ICONS = {
+  predict: Play,
   organizations: Building2,
   members: Users,
   models: BrainCircuit,

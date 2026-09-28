@@ -215,7 +215,7 @@ class SchemaFlowServiceTest {
         when(modelRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(model(12L)));
 
         PredictionRun run = runService.createRunForBookmark(7L, 70L,
-                new CreatePredictionRunRequest("case-1", Map.of("age", 52),
+                new CreatePredictionRunRequest(9L, "case-1", Map.of("age", 52),
                         List.of(result(11L, PredictionResultStatus.SUCCESS),
                                 result(12L, PredictionResultStatus.FAILED))));
 
@@ -237,13 +237,26 @@ class SchemaFlowServiceTest {
     }
 
     @Test
+    void createRun_RejectsSnapshotTheBookmarkNoLongerTargets() {
+        when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark()));
+        CreatePredictionRunRequest request = new CreatePredictionRunRequest(8L, "case-1", Map.of("age", 52),
+                List.of(result(11L, PredictionResultStatus.SUCCESS)));
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> runService.createRunForBookmark(7L, 70L, request));
+
+        assertEquals(409, error.getStatusCode().value());
+        verify(runRepository, times(0)).save(any());
+    }
+
+    @Test
     void createRun_RejectsUnboundResult() {
         SchemaBookmark bookmark = bookmark();
         SchemaVersion version = bookmark.getVersion();
         when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark));
         when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(binding(version, 11L)));
 
-        CreatePredictionRunRequest request = new CreatePredictionRunRequest("case-1", Map.of("age", 52),
+        CreatePredictionRunRequest request = new CreatePredictionRunRequest(9L, "case-1", Map.of("age", 52),
                 List.of(result(12L, PredictionResultStatus.SUCCESS)));
 
         assertThrows(ResponseStatusException.class, () -> runService.createRunForBookmark(7L, 70L, request));
@@ -258,7 +271,7 @@ class SchemaFlowServiceTest {
                 binding(version, 11L),
                 binding(version, 12L)));
 
-        CreatePredictionRunRequest request = new CreatePredictionRunRequest("case-1", Map.of("age", 52),
+        CreatePredictionRunRequest request = new CreatePredictionRunRequest(9L, "case-1", Map.of("age", 52),
                 List.of(result(11L, PredictionResultStatus.SUCCESS)));
 
         assertThrows(ResponseStatusException.class, () -> runService.createRunForBookmark(7L, 70L, request));

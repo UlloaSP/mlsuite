@@ -18,6 +18,8 @@ export const SCHEMA_VERSION_QUERY_KEY = (organizationId: number | string, versio
   [...organizationQueryKey(organizationId), "schemaVersion", { versionId }] as const;
 export const SCHEMA_BOOKMARKS_QUERY_KEY = (organizationId: number | string, schemaId: string) =>
   [...organizationQueryKey(organizationId), "schemaBookmarks", { schemaId }] as const;
+export const ORGANIZATION_BOOKMARKS_QUERY_KEY = (organizationId: number | string) =>
+  [...organizationQueryKey(organizationId), "organizationBookmarks"] as const;
 export const SCHEMA_BOOKMARK_QUERY_KEY = (organizationId: number | string, bookmarkId: string) =>
   [...organizationQueryKey(organizationId), "schemaBookmark", { bookmarkId }] as const;
 export const SCHEMA_DRAFTS_QUERY_KEY = (organizationId: number | string, schemaId: string) =>
@@ -28,15 +30,6 @@ export const SCHEMA_DRAFT_DIFF_QUERY_KEY = (organizationId: number | string, dra
   [...organizationQueryKey(organizationId), "schemaDraftDiff", { draftId }] as const;
 export const PREDICTION_RUN_QUERY_KEY = (organizationId: number | string, runId: string) =>
   [...organizationQueryKey(organizationId), "predictionRun", { runId }] as const;
-export const BOOKMARK_PREDICTION_RUNS_QUERY_KEY = (
-  organizationId: number | string,
-  bookmarkId: string | number,
-) =>
-  [
-    ...organizationQueryKey(organizationId),
-    "bookmarkPredictionRuns",
-    { bookmarkId: String(bookmarkId) },
-  ] as const;
 export const PREDICTION_FEEDBACK_QUERY_KEY = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "predictionFeedback"] as const;
 export const PREDICTION_RESULT_FEEDBACK_QUERY_KEY = (

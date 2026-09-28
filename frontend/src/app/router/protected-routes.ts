@@ -247,39 +247,32 @@ export const protectedPages: RouteObject[] = [
       ),
   },
   {
-    path: "schemas/:schemaId/bookmarks/:bookmarkId",
+    path: "predict",
     lazy: () =>
       lazyPage(
-        () => import("@/features/schemas/pages/schema-bookmark-detail-page"),
-        "SchemaBookmarkDetailPage",
+        () => import("@/features/schemas/pages/predict-page"),
+        "PredictPage",
         workspacePage("canViewModels"),
       ),
   },
   {
-    path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/create",
+    path: "predict/:bookmarkId",
     lazy: () =>
       lazyPage(
-        () => import("@/features/schemas/pages/create-schema-run-page"),
-        "CreateSchemaRunPage",
-        workspacePage("canRunPredictions"),
-      ),
-  },
-  {
-    path: "schemas/:schemaId/bookmarks/:bookmarkId/runs",
-    lazy: () =>
-      lazyPage(
-        () => import("@/features/schemas/pages/schema-run-history-page"),
-        "SchemaRunHistoryPage",
+        () => import("@/features/schemas/pages/bookmark-workspace-page"),
+        "BookmarkWorkspacePage",
         workspacePage("canViewModels"),
       ),
-  },
-  {
-    path: "schemas/:schemaId/bookmarks/:bookmarkId/runs/:runId",
-    lazy: () =>
-      lazyPage(
-        () => import("@/features/schemas/pages/prediction-run-detail-page"),
-        "PredictionRunDetailPage",
-        workspacePage("canViewModels"),
-      ),
+    // A saved run's page renders over its bookmark's workspace, which keeps the session alive.
+    children: [
+      {
+        path: "runs/:runId",
+        lazy: () =>
+          lazyPage(
+            () => import("@/features/schemas/pages/prediction-run-page"),
+            "PredictionRunPage",
+          ),
+      },
+    ],
   },
 ];

@@ -12,7 +12,7 @@ import type {
   UpdatePredictionResultFeedbackRequest,
 } from "./prediction-types";
 import {
-  BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
+  ORGANIZATION_BOOKMARKS_QUERY_KEY,
   PREDICTION_FEEDBACK_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
 } from "./schema-keys";
@@ -20,15 +20,13 @@ import {
 export const invalidatePredictionRunCollections = (
   queryClient: QueryClient,
   organizationId: number | string,
-  bookmarkId: string | number,
 ) =>
   Promise.all([
     queryClient.invalidateQueries({
-      queryKey: BOOKMARK_PREDICTION_RUNS_QUERY_KEY(organizationId, bookmarkId),
-    }),
-    queryClient.invalidateQueries({
       queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(organizationId),
     }),
+    // The Predict launcher shows each bookmark's run count and last run.
+    queryClient.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) }),
   ]);
 
 export function useCreatePredictionRunForBookmarkMutation(bookmarkId: string) {
@@ -40,7 +38,7 @@ export function useCreatePredictionRunForBookmarkMutation(bookmarkId: string) {
       createPredictionRunForBookmark(bookmarkId, req),
     onSuccess: (run) => {
       qc.setQueryData(PREDICTION_RUN_QUERY_KEY(organizationId, run.id), run);
-      void invalidatePredictionRunCollections(qc, organizationId, bookmarkId);
+      void invalidatePredictionRunCollections(qc, organizationId);
     },
   });
 }

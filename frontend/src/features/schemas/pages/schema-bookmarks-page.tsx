@@ -97,9 +97,7 @@ export function SchemaBookmarksPage() {
       emptyDescription="Bookmark a published snapshot to enable runs."
       filteredEmptyDescription="Try another search term or bookmark age."
       renderItem={(bookmark) =>
-        schemaId ? (
-          <SchemaBookmarkCatalogItem key={bookmark.id} bookmark={bookmark} schemaId={schemaId} />
-        ) : null
+        schemaId ? <SchemaBookmarkCatalogItem key={bookmark.id} bookmark={bookmark} /> : null
       }
     />
   );

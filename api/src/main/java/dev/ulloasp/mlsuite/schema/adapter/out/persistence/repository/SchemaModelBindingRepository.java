@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,6 +11,8 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 
 public interface SchemaModelBindingRepository extends JpaRepository<SchemaModelBinding, Long> {
     List<SchemaModelBinding> findBySchemaVersionId(Long schemaVersionId);
+
+    List<SchemaModelBinding> findBySchemaVersionIdIn(Collection<Long> schemaVersionIds);
 
     @Query("""
             SELECT b FROM SchemaModelBinding b

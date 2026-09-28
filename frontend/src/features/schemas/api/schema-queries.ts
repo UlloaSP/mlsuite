@@ -1,17 +1,20 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { keepPreviousData, queryOptions, useQueries, useQuery } from "@tanstack/react-query";
 import { getSchema, getSchemaPage, getSchemaVersion, getSchemaVersions } from "./schema-api";
-import { getSchemaBookmark, getSchemaBookmarks } from "./schema-bookmark-api";
+import {
+  getOrganizationBookmarks,
+  getSchemaBookmark,
+  getSchemaBookmarks,
+} from "./schema-bookmark-api";
 import { getSchemaDraft, getSchemaDraftDiff, getSchemaDrafts } from "./schema-draft-api";
 import {
   getPredictionResultFeedback,
   getPredictionRunsFeedback,
   getPredictionRun,
-  getPredictionRunsForBookmark,
 } from "./schema-prediction-api";
 import type { PredictionRunDto } from "./prediction-types";
 import {
-  BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
+  ORGANIZATION_BOOKMARKS_QUERY_KEY,
   PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
   PREDICTION_RUNS_FEEDBACK_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
@@ -72,6 +75,12 @@ export const schemaBookmarksQueryOptions = (organizationId: Scope, schemaId?: st
     enabled: Boolean(schemaId),
   });
 
+export const organizationBookmarksQueryOptions = (organizationId: Scope) =>
+  queryOptions({
+    queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId),
+    queryFn: ({ signal }) => getOrganizationBookmarks(signal),
+  });
+
 export const schemaBookmarkQueryOptions = (organizationId: Scope, bookmarkId?: string) =>
   queryOptions({
     queryKey: SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmarkId ?? ""),
@@ -105,13 +114,6 @@ export const predictionRunQueryOptions = (organizationId: Scope, runId?: string)
     queryKey: PREDICTION_RUN_QUERY_KEY(organizationId, runId ?? ""),
     queryFn: ({ signal }) => getPredictionRun(runId ?? "", signal),
     enabled: Boolean(runId),
-  });
-
-export const bookmarkPredictionRunsQueryOptions = (organizationId: Scope, bookmarkId?: string) =>
-  queryOptions({
-    queryKey: BOOKMARK_PREDICTION_RUNS_QUERY_KEY(organizationId, bookmarkId ?? ""),
-    queryFn: ({ signal }) => getPredictionRunsForBookmark(bookmarkId ?? "", signal),
-    enabled: Boolean(bookmarkId),
   });
 
 export const predictionResultFeedbackQueryOptions = (organizationId: Scope, resultId?: string) =>
@@ -155,6 +157,11 @@ export const useSchemaBookmarks = (schemaId?: string) => {
   return useQuery(schemaBookmarksQueryOptions(organizationId, schemaId));
 };
 
+export const useOrganizationBookmarks = () => {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  return useQuery(organizationBookmarksQueryOptions(organizationId));
+};
+
 export const useSchemaBookmark = (bookmarkId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery(schemaBookmarkQueryOptions(organizationId, bookmarkId));
@@ -178,11 +185,6 @@ export const useSchemaDraftDiff = (draftId?: string) => {
 export const usePredictionRun = (runId?: string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery(predictionRunQueryOptions(organizationId, runId));
-};
-
-export const usePredictionRunsForBookmark = (bookmarkId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(bookmarkPredictionRunsQueryOptions(organizationId, bookmarkId));
 };
 
 export const usePredictionRunFeedback = (run?: PredictionRunDto) => {

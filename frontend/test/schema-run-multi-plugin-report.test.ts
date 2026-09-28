@@ -87,9 +87,9 @@ describe("schema run multi-model plugin reports", () => {
     ]);
     mounted.form.setValues({ age: 42 });
     container
-      .querySelector("mlf-form")
-      ?.shadowRoot?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+      .querySelector("mlf-kit-tabs")
+      ?.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit")
+      ?.click();
     await flush();
     await flush();
 

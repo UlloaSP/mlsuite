@@ -109,7 +109,7 @@ class PredictionRunInitialFeedbackTest {
     }
 
     private CreatePredictionRunRequest request(List<CreatePredictionResultInitialFeedbackRequest> feedback) {
-        return new CreatePredictionRunRequest("case-1", Map.of("age", 52), List.of(
+        return new CreatePredictionRunRequest(9L, "case-1", Map.of("age", 52), List.of(
                 new CreatePredictionResultRequest(11L, Map.of("age", 52), Map.of("risk", 0.8),
                         PredictionResultStatus.SUCCESS, null, null, feedback)));
     }

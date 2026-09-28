@@ -97,6 +97,7 @@ describe("navigation bar", () => {
     const entries = [...nav.querySelectorAll<HTMLElement>("[data-user-guide-item]")];
     // The organization's work first, then platform administration after a divider.
     expect(entries.map((entry) => entry.dataset.userGuideItem)).toEqual([
+      "nav:Predict",
       "nav:Models",
       "nav:Schemas",
       "nav:Inferences",
@@ -106,13 +107,13 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Infra",
     ]);
-    expect(entries[5].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
-    expect(entries[1].getAttribute("href")).toBe("/schemas");
-    expect(entries[7].tagName).toBe("BUTTON");
-    expect(entries[7].getAttribute("aria-haspopup")).toBe("menu");
-    expect(entries[0].getAttribute("href")).toBe("/models");
+    expect(entries[6].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    expect(entries[2].getAttribute("href")).toBe("/schemas");
+    expect(entries[8].tagName).toBe("BUTTON");
+    expect(entries[8].getAttribute("aria-haspopup")).toBe("menu");
+    expect(entries[0].getAttribute("href")).toBe("/predict");
     expect(entries[0].getAttribute("aria-keyshortcuts")).toBe("Alt+1");
-    expect(entries[5].getAttribute("aria-keyshortcuts")).toBe("Alt+6");
+    expect(entries[6].getAttribute("aria-keyshortcuts")).toBe("Alt+7");
     for (const item of [
       "brand",
       "workspace-switcher",
@@ -159,6 +160,7 @@ describe("navigation bar", () => {
           .querySelectorAll("[data-user-guide-item^='nav:']"),
       ].map((item) => item.getAttribute("data-user-guide-item"));
     expect(group("Workspace")).toEqual([
+      "nav:Predict",
       "nav:Models",
       "nav:Schemas",
       "nav:Inferences",
@@ -170,7 +172,7 @@ describe("navigation bar", () => {
       container
         .querySelector('[data-user-guide-item="nav:Organizations"]')
         ?.getAttribute("aria-keyshortcuts"),
-    ).toBe("Alt+6");
+    ).toBe("Alt+7");
   });
 
   test("opens entries with Alt+number", async () => {
@@ -186,7 +188,7 @@ describe("navigation bar", () => {
       );
     });
 
-    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe("/models");
+    expect(container.querySelector('[data-testid="location"]')?.textContent).toBe("/predict");
   });
 
   test("places the bar at the chosen edge instead of the sidebar", async () => {

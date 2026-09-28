@@ -41,6 +41,7 @@ class SchemaReadPermissionTest {
     private SchemaVersionServiceImpl versionService;
     private SchemaDraftServiceImpl draftService;
     private SchemaBookmarkServiceImpl bookmarkService;
+    private PredictBookmarkCatalogService predictCatalog;
     private PredictionRunServiceImpl runService;
     private PredictionResultFeedbackService feedbackService;
     private final Organization organization = new Organization();
@@ -59,6 +60,7 @@ class SchemaReadPermissionTest {
                 mock(SchemaVersionUseCase.class), mock(SchemaDraftDiffService.class),
                 mock(SchemaDraftPublishedVersionResolver.class), access, auth);
         bookmarkService = new SchemaBookmarkServiceImpl(users, schemas, versions, bookmarks, access, auth);
+        predictCatalog = new PredictBookmarkCatalogService(users, access, auth, bookmarks, versions, bindings, runs);
         runService = new PredictionRunServiceImpl(users, bookmarks, bindings, runs, results, feedback,
                 mock(ModelRepository.class), access, auth);
         feedbackService = new PredictionResultFeedbackService(users, access, auth, results, feedback, runs);
@@ -66,7 +68,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
     void modelViewAllowsAllReadPathsWithoutOrganizationView(String operation) {
         membership(Set.of(PermissionKey.VIEW_MODELS));
         allowObjects();
@@ -76,7 +78,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
     void organizationViewAloneDoesNotExposeMlData(String operation) {
         membership(Set.of(PermissionKey.VIEW_ORGANIZATION));
         assertThrows(OrganizationAccessDeniedException.class, () -> read(operation));
@@ -85,7 +87,7 @@ class SchemaReadPermissionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"catalog", "page", "schema", "versions", "version", "bindings", "drafts", "draft",
-            "bookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
+            "bookmarks", "organizationBookmarks", "bookmark", "runs", "run", "organizationRuns", "feedback", "runFeedback"})
     void nonmemberCannotReadOrganizationMlData(String operation) {
         when(access.requireMembership(3L, 41L)).thenThrow(new OrganizationAccessDeniedException(41L));
         assertThrows(OrganizationAccessDeniedException.class, () -> read(operation));
@@ -133,6 +135,7 @@ class SchemaReadPermissionTest {
             case "drafts" -> draftService.listDrafts(3L, 7L);
             case "draft" -> draftService.getDraft(3L, 7L);
             case "bookmarks" -> bookmarkService.listBookmarks(3L, 7L);
+            case "organizationBookmarks" -> predictCatalog.listBookmarks(3L);
             case "bookmark" -> bookmarkService.getBookmark(3L, 7L);
             case "runs" -> runService.listRunsForBookmark(3L, 7L);
             case "run" -> runService.getRun(3L, 7L);

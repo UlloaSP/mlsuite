@@ -9,7 +9,7 @@ import {
 import { filterInferences } from "@/features/inferences/lib/inference-filter";
 import { groupReviewCandidates } from "@/capabilities/review-creation/review-creation-api";
 import { invalidatePredictionRunCollections } from "@/features/schemas/api/schema-prediction-mutations";
-import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/features/schemas/api/schema-keys";
+import { ORGANIZATION_BOOKMARKS_QUERY_KEY } from "@/features/schemas/api/schema-keys";
 
 const inference = (overrides: Partial<InferenceCatalogItemDto> = {}): InferenceCatalogItemDto => ({
   id: 11,
@@ -41,14 +41,14 @@ describe("organization inference catalog", () => {
   test("invalidates every visible prediction-run collection after creation", async () => {
     const queryClient = new QueryClient();
     const catalogKey = INFERENCES_QUERY_KEY(42);
-    const historyKey = BOOKMARK_PREDICTION_RUNS_QUERY_KEY(42, "5");
+    const launcherKey = ORGANIZATION_BOOKMARKS_QUERY_KEY(42);
     queryClient.setQueryData(catalogKey, [inference()]);
-    queryClient.setQueryData(historyKey, []);
+    queryClient.setQueryData(launcherKey, []);
 
-    await invalidatePredictionRunCollections(queryClient, 42, "5");
+    await invalidatePredictionRunCollections(queryClient, 42);
 
     expect(queryClient.getQueryState(catalogKey)?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState(historyKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(launcherKey)?.isInvalidated).toBe(true);
 
     const manualCreation = readFileSync(
       new URL("../src/features/schemas/api/schema-prediction-mutations.ts", import.meta.url),

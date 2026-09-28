@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.MoveSchemaBookmarkRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import jakarta.validation.Valid;
 
@@ -26,11 +28,13 @@ public class SchemaBookmarkController {
 
     private final CurrentUserResolver currentUserResolver;
     private final SchemaBookmarkUseCase bookmarkUseCase;
+    private final PredictBookmarkCatalogUseCase predictCatalog;
 
     public SchemaBookmarkController(CurrentUserResolver currentUserResolver,
-            SchemaBookmarkUseCase bookmarkUseCase) {
+            SchemaBookmarkUseCase bookmarkUseCase, PredictBookmarkCatalogUseCase predictCatalog) {
         this.currentUserResolver = currentUserResolver;
         this.bookmarkUseCase = bookmarkUseCase;
+        this.predictCatalog = predictCatalog;
     }
 
     @GetMapping("/schemas/{schemaId}/bookmarks")
@@ -39,6 +43,11 @@ public class SchemaBookmarkController {
         return ResponseEntity.ok(bookmarkUseCase.listBookmarks(userId(authentication), schemaId).stream()
                 .map(SchemaBookmarkDto::from)
                 .toList());
+    }
+
+    @GetMapping("/schema-bookmarks")
+    public ResponseEntity<List<PredictBookmarkDto>> listOrganization(Authentication authentication) {
+        return ResponseEntity.ok(predictCatalog.listBookmarks(userId(authentication)));
     }
 
     @PostMapping("/schemas/{schemaId}/bookmarks")

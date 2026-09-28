@@ -8,12 +8,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Provider, createStore } from "jotai";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
-import { CreateSchemaRunPage } from "@/features/schemas/pages/create-schema-run-page";
-import { getSchemaRunSaveAction } from "@/features/schemas/lib/schema-run-save-action";
+import { BookmarkPredictPanel } from "@/features/schemas/components/BookmarkPredictPanel";
+import { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 const mountState = vi.hoisted(() => ({
@@ -43,11 +42,6 @@ vi.mock("@/features/schemas/lib/schema-plugin-catalog", () => ({
 
 vi.mock("@/features/schemas/api/schema-queries", () => ({
   usePredictionRun: () => ({ data: undefined }),
-  useSchema: () => ({ data: { name: "Risk schema" } }),
-  useSchemaBookmark: () => ({
-    data: { name: "Risk bookmark", version: 1, versionId: "version-1" },
-  }),
-  useSchemaVersion: () => ({ data: pageState.version, isLoading: false }),
 }));
 
 vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
@@ -148,22 +142,6 @@ describe("schema run creation UI", () => {
     expect(mountState.updateTheme).toHaveBeenCalledWith("dark");
   });
 
-  test("explains every disabled save state", () => {
-    expect(getSchemaRunSaveAction("idle", false, false, true).label).toBe("Run inference first");
-    expect(getSchemaRunSaveAction("running", false, false, true).label).toBe("Running inference…");
-    expect(getSchemaRunSaveAction("unsaved", true, false, true).label).toBe("Waiting for reports…");
-    expect(getSchemaRunSaveAction("unsaved", false, false, false).label).toBe(
-      "Name inference first",
-    );
-    expect(getSchemaRunSaveAction("unsaved", false, true, true).label).toBe("Saving inference…");
-    expect(getSchemaRunSaveAction("saved", false, false, true).label).toBe("Inference saved");
-    expect(getSchemaRunSaveAction("unsaved", false, false, true)).toEqual({
-      disabled: false,
-      label: "Save inference",
-      loading: false,
-    });
-  });
-
   test("enters running only after MLForm validation succeeds", async () => {
     vi.stubGlobal(
       "fetch",
@@ -200,127 +178,180 @@ describe("schema run creation UI", () => {
 
     mounted.form.setValues({ age: 42 });
     container
-      .querySelector("mlf-form")
-      ?.shadowRoot?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+      .querySelector("mlf-kit-tabs")
+      ?.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit")
+      ?.click();
     await flush();
     await flush();
     expect(runningChanges).toEqual([true, false]);
     mounted.unmount();
   });
 
-  test("refreshes default names, preserves edited names and saves each result once", async () => {
+  test("keeps each run in the session until it is saved or removed", async () => {
+    const container = renderSession();
+    const options = () => mountState.mount.mock.calls[0][0];
+    const rows = () => [...container.querySelectorAll("aside li")];
+    expect(container.textContent).toContain("Each run appears here");
+
+    vi.setSystemTime(new Date("2026-08-24T14:49:00.000Z"));
+    await act(async () => options().onRunningChange(true));
+    expect(rows()).toHaveLength(1);
+    expect(rows()[0].textContent).toContain("Running…");
+    expect(nameInputs()[0].value).toBe("run-2026-08-24T14:49:00.000Z");
+
+    await act(async () => {
+      options().onRunningChange(false);
+      options().onSubmit({ age: 42 }, completedRaw, true);
+      await vi.runAllTimersAsync();
+    });
+    expect(rows()[0].textContent).toContain("Reports pending");
+    expect(saveButton(rows()[0]).disabled).toBe(true);
+
+    await act(async () => {
+      // Reports finished resolving.
+      options().onSubmit({ age: 42 }, completedRaw, false);
+      await vi.runAllTimersAsync();
+    });
+    expect(rows()[0].textContent).toContain("Success");
+    expect(saveButton(rows()[0]).disabled).toBe(false);
+
+    await act(async () => typeInto(nameInputs()[0], "Reviewed case"));
+    pageState.mutateAsync.mockRejectedValueOnce(new Error("Prediction run name already exists"));
+    await act(async () => {
+      saveButton(rows()[0]).click();
+      await vi.runAllTimersAsync();
+    });
+    expect(rows()[0].textContent).not.toContain("Saved");
+    await act(async () => {
+      saveButton(rows()[0]).click();
+      await vi.runAllTimersAsync();
+    });
+    expect(pageState.mutateAsync).toHaveBeenLastCalledWith(
+      expect.objectContaining({ name: "Reviewed case", schemaVersionId: "version-1" }),
+    );
+    expect(rows()[0].textContent).toContain("Saved");
+    expect(nameInputs()[0].disabled).toBe(true);
+
+    // A run that stops without a result leaves nothing behind.
+    await act(async () => {
+      options().onRunningChange(true);
+      options().onRunningChange(false);
+      await vi.runAllTimersAsync();
+    });
+    expect(rows()).toHaveLength(1);
+
+    await act(async () => removeButton(rows()[0]).click());
+    expect(rows()).toHaveLength(0);
+  });
+
+  test("saves every finished run in order, and asks before discarding unsaved ones", async () => {
+    const container = renderSession();
+    const options = () => mountState.mount.mock.calls[0][0];
+    for (const age of [1, 2]) {
+      vi.setSystemTime(new Date(`2026-08-24T14:5${age}:00.000Z`));
+      await act(async () => {
+        options().onRunningChange(true);
+        options().onRunningChange(false);
+        options().onSubmit({ age }, completedRaw, false);
+        await vi.runAllTimersAsync();
+      });
+    }
+    await act(async () => {
+      buttonNamed(container, "Save all (2)").click();
+      await vi.runAllTimersAsync();
+    });
+    expect(pageState.mutateAsync.mock.calls.map(([request]) => request.name)).toEqual([
+      "run-2026-08-24T14:51:00.000Z",
+      "run-2026-08-24T14:52:00.000Z",
+    ]);
+    expect(container.textContent).toContain("All saved");
+
+    await act(async () => {
+      options().onRunningChange(true);
+      options().onRunningChange(false);
+      options().onSubmit({ age: 3 }, completedRaw, false);
+      await vi.runAllTimersAsync();
+    });
+    await act(async () => buttonNamed(container, "Discard all").click());
+    expect(document.body.textContent).toContain("1 unsaved inference is lost");
+    await act(async () => {
+      buttonNamed(document.body, "Discard all", "[role=dialog]").click();
+      await vi.runAllTimersAsync();
+    });
+    expect(container.querySelectorAll("aside li")).toHaveLength(0);
+  });
+  test("the session outlives the page; a run still going when it closes is dropped", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.useFakeTimers();
     const store = createStore();
     const container = document.createElement("div");
     document.body.append(container);
-    root = createRoot(container);
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-24T14:48:41.705Z"));
+    const sessionRoot = createRoot(container);
+    const show = (visible: boolean) =>
+      act(async () => {
+        sessionRoot.render(
+          <Provider store={store}>{visible ? <SessionHarness /> : null}</Provider>,
+        );
+        await vi.runAllTimersAsync();
+      });
+    await show(true);
+    const options = () => mountState.mount.mock.calls.at(-1)![0];
     await act(async () => {
-      root?.render(
-        <Provider store={store}>
-          <MemoryRouter initialEntries={["/schemas/schema-1/bookmarks/bookmark-1/runs/create"]}>
-            <Routes>
-              <Route
-                path="/schemas/:schemaId/bookmarks/:bookmarkId/runs/create"
-                element={<CreateSchemaRunPage />}
-              />
-            </Routes>
-          </MemoryRouter>
-        </Provider>,
-      );
+      options().onRunningChange(true);
+      options().onRunningChange(false);
+      options().onSubmit({ age: 1 }, completedRaw, false);
+      options().onRunningChange(true);
       await vi.runAllTimersAsync();
     });
+    expect(container.querySelectorAll("aside li")).toHaveLength(2);
 
-    const name = document.body.querySelector<HTMLInputElement>('[aria-label="Inference name"]')!;
-    const save = document.body.querySelector<HTMLButtonElement>("[data-schema-run-save]")!;
-    const breadcrumbs = document.body.querySelector('nav[aria-label="Breadcrumb"]')!;
-    expect(
-      [...breadcrumbs.querySelectorAll("a")].map((link) => [
-        link.textContent,
-        link.getAttribute("href"),
-      ]),
-    ).toEqual([
-      ["Schemas", "/schemas"],
-      ["Risk schema", "/schemas/schema-1"],
-      ["Bookmarks", "/schemas/schema-1/bookmarks"],
-    ]);
-    expect(breadcrumbs.textContent).toContain("Risk bookmark");
-    expect(breadcrumbs.textContent).toContain("New inference");
-    expect(name.value).toBe("run-2026-08-24T14:48:41.705Z");
-    expect(save.textContent).toContain("Run inference first");
-    expect(save.disabled).toBe(true);
-
-    const mountOptions = mountState.mount.mock.calls[0][0];
-    vi.setSystemTime(new Date("2026-08-24T14:49:00.000Z"));
-    await act(async () => mountOptions.onRunningChange(true));
-    expect(name.value).toBe("run-2026-08-24T14:49:00.000Z");
-    expect(save.textContent).toContain("Running inference…");
-
-    await act(async () => {
-      mountOptions.onSubmit({ age: 42 }, completedRaw, true);
-      await vi.runAllTimersAsync();
-    });
-    expect(save.textContent).toContain("Waiting for reports…");
-    expect(save.disabled).toBe(true);
-
-    await act(async () => {
-      mountOptions.onSubmit({ age: 42 }, completedRaw, false);
-      await vi.runAllTimersAsync();
-    });
-    expect(save.textContent).toContain("Save inference");
-    expect(save.disabled).toBe(false);
-
-    pageState.mutateAsync.mockReset();
-    pageState.mutateAsync.mockRejectedValueOnce(new Error("Prediction run name already exists"));
-    await act(async () => {
-      save.click();
-      await vi.runAllTimersAsync();
-    });
-    expect(save.textContent).toContain("Save inference");
-    expect(save.disabled).toBe(false);
-
-    await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
-        name,
-        "Reviewed case",
-      );
-      name.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    let resolveOldSave!: (value: { id: string }) => void;
-    pageState.mutateAsync.mockReset();
-    pageState.mutateAsync
-      .mockImplementationOnce(
-        () => new Promise((resolve) => (resolveOldSave = resolve as typeof resolveOldSave)),
-      )
-      .mockResolvedValueOnce({ id: "run-2" });
-    await act(async () => {
-      save.click();
-      save.click();
-      await Promise.resolve();
-    });
-    expect(pageState.mutateAsync).toHaveBeenCalledTimes(1);
-    expect(save.textContent).toContain("Saving inference…");
-    expect(save.disabled).toBe(true);
-
-    vi.setSystemTime(new Date("2026-08-24T14:50:00.000Z"));
-    await act(async () => {
-      mountOptions.onRunningChange(true);
-      mountOptions.onSubmit({ age: 43 }, completedRaw, false);
-    });
-    expect(name.value).toBe("Reviewed case");
-    await act(async () => resolveOldSave({ id: "run-1" }));
-    expect(save.textContent).toContain("Save inference");
-    expect(save.disabled).toBe(false);
-
-    await act(async () => {
-      save.click();
-      await vi.runAllTimersAsync();
-    });
-    expect(pageState.mutateAsync).toHaveBeenCalledTimes(2);
-    expect(pageState.mutateAsync).toHaveBeenLastCalledWith(
-      expect.objectContaining({ name: "Reviewed case" }),
-    );
-    expect(save.textContent).toContain("Inference saved");
+    await show(false);
+    await show(true);
+    const rows = container.querySelectorAll("aside li");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toContain("Success");
+    expect(container.textContent).toContain("1 unsaved");
+    await act(async () => sessionRoot.unmount());
   });
 });
+
+function SessionHarness() {
+  const session = useInferenceSession("bookmark-1", version.id);
+  return <BookmarkPredictPanel version={version} session={session} />;
+}
+
+function renderSession() {
+  const container = document.createElement("div");
+  document.body.append(container);
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.useFakeTimers();
+  act(() => {
+    createRoot(container).render(
+      <Provider store={createStore()}>
+        <SessionHarness />
+      </Provider>,
+    );
+  });
+  void act(() => vi.runOnlyPendingTimers());
+  return container;
+}
+
+const nameInputs = () => [
+  ...document.body.querySelectorAll<HTMLInputElement>('aside [aria-label="Inference name"]'),
+];
+
+const saveButton = (row: Element) =>
+  [...row.querySelectorAll("button")].find((button) => button.textContent === "Save")!;
+
+const removeButton = (row: Element) =>
+  row.querySelector<HTMLButtonElement>('button[aria-label^="Remove"]')!;
+
+const buttonNamed = (scope: ParentNode, label: string, within = "") =>
+  [...scope.querySelectorAll<HTMLButtonElement>(`${within} button`.trim())].find(
+    (button) => button.textContent?.trim() === label,
+  )!;
+
+const typeInto = (input: HTMLInputElement, value: string) => {
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+};

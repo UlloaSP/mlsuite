@@ -69,6 +69,10 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
         User user = userLookupService.requireById(userId);
         Long organizationId = requireRunPredictions(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
+        if (!bookmark.getVersion().getId().equals(request.schemaVersionId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "The bookmark moved to another snapshot; reload before saving");
+        }
         return createRun(organizationId, user, bookmark, bookmark.getVersion(), request);
     }
 

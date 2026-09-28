@@ -18,6 +18,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 export type CreatePredictionRunRequest = {
+  /** The snapshot that ran; saving fails if the bookmark has moved since. */
+  schemaVersionId: string;
   name: string;
   inputData: JsonRecord;
   results: Array<{

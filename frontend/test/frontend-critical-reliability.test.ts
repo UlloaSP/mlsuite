@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test } from "vite-plus/test";
 import {
-  BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_DRAFT_QUERY_KEY,
@@ -31,7 +30,6 @@ const detailKeys = [
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_DRAFT_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
-  BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
 ] as unknown as TenantDetailKey[];
 
 describe("frontend critical reliability", () => {

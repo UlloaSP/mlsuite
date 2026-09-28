@@ -13,6 +13,7 @@ import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { SidebarMenuLink } from "@/app/components/SidebarMenuLink";
 import { sidebarMenuContent } from "@/app/components/sidebar-menu-styles";
+import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
 import { isChildActive, type NavigationItem } from "@/app/components/sidebar-navigation-support";
 import { NavbarLabel } from "./NavbarLabel";
 
@@ -81,6 +82,7 @@ export function NavbarItem({
       <Link
         {...common}
         to={item.to}
+        state={RESTORE_SCROLL_STATE}
         viewTransition
         aria-current={active ? "page" : undefined}
         className={itemClass(active)}

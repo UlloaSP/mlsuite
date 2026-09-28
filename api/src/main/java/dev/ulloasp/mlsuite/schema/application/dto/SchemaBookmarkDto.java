@@ -7,6 +7,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 public record SchemaBookmarkDto(
         Long id,
         Long schemaId,
+        String schemaName,
         Long versionId,
         int version,
         String versionName,
@@ -18,6 +19,7 @@ public record SchemaBookmarkDto(
         return new SchemaBookmarkDto(
                 bookmark.getId(),
                 bookmark.getSchema().getId(),
+                bookmark.getSchema().getName(),
                 bookmark.getVersion().getId(),
                 bookmark.getVersion().getVersion(),
                 bookmark.getVersion().getName(),

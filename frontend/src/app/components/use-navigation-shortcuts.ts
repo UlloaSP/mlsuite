@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useEffect, useEffectEvent, useState } from "react";
+import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
 import { useNavigate } from "react-router";
 import { isTypingTarget, shortcutDigit } from "@/app/utils/keyboard-shortcuts";
 import type { NavigationChild, NavigationItem } from "./sidebar-navigation-support";
@@ -40,7 +41,11 @@ export function useNavigationShortcuts({
     if (!target) return;
 
     event.preventDefault();
-    void navigate(target.to, { viewTransition: true });
+    // A section resumes where it was, scroll included; a child page starts fresh.
+    void navigate(target.to, {
+      viewTransition: true,
+      state: event.shiftKey ? undefined : RESTORE_SCROLL_STATE,
+    });
   });
 
   useEffect(() => {

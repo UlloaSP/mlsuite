@@ -1,4 +1,3 @@
-import { runMatchesQuery } from "@/features/schemas/lib/run-matches-query";
 import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
 /*
 SPDX-License-Identifier: MIT
@@ -72,15 +71,6 @@ const run: PredictionRunDto = {
 };
 
 describe("schema run history helpers", () => {
-  test("searches numeric API ids without crashing on nonmatching names", () => {
-    const numericRun = { ...run, id: 20 };
-    expect(runMatchesQuery(numericRun, "20")).toBe(true);
-    expect(runMatchesQuery(numericRun, " CASE-1 ")).toBe(true);
-    expect(runMatchesQuery(numericRun, "success")).toBe(true);
-    expect(runMatchesQuery(numericRun, "missing")).toBe(false);
-    expect(runMatchesQuery(numericRun, "")).toBe(true);
-    expect(runMatchesQuery(run, "run-1")).toBe(true);
-  });
   test("bulk schema exposes mapped one-hot model inputs", () => {
     const bulkSchema = getModelInputBulkSchema(version) as { fields: Array<{ label: string }> };
 

@@ -5,9 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { mountForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
-import type { PrimitiveSubmitSuccessDetail } from "mlform/primitives";
-import type { SubmitErrorContext } from "mlform/runtime";
-import type { ReportContext } from "mlform/schema";
+import type { AfterSubmitContext, SubmitErrorContext } from "mlform/runtime";
+import { normalizeSchema, type ReportContext } from "mlform/schema";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
@@ -24,7 +23,6 @@ import {
 } from "@/capabilities/prediction-runtime/mlform/run-debug";
 import {
   buildSchemaRunRawFromSubmitResult,
-  mergeReportFetchResults,
   reportStatesFromSnapshot,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 
@@ -43,13 +41,31 @@ type Options = {
   onRunningChange?: (running: boolean) => void;
 };
 
-const rawFromSubmitSuccess = (detail: PrimitiveSubmitSuccessDetail | undefined): JsonRecord => {
-  schemaRunDebug("mount.submit-success.detail", detail);
-  const result = detail?.pipelineResult?.submitResult ?? detail?.result;
-  const raw = isRecord(result?.raw) ? result.raw : { raw: result?.raw };
-  schemaRunDebug("mount.submit-success.raw", raw);
-  return raw;
-};
+const RESULTS_TAB = "results";
+
+/** The tabs view MLForm attaches to its host element in tabs layout. */
+type TabsHost = HTMLElement & { view?: { setActiveTab: (tabId: string) => void } };
+
+/** Inputs in one tab, model results in the other (when the schema has reports). */
+const tabsLayout = (fieldIds: string[], reportIds: string[]) => ({
+  kind: "tabs" as const,
+  tabs: [
+    {
+      id: "inputs",
+      title: "Inputs",
+      children: fieldIds.map((field) => ({ kind: "field" as const, field })),
+    },
+    ...(reportIds.length > 0
+      ? [
+          {
+            id: RESULTS_TAB,
+            title: "Results",
+            children: reportIds.map((report) => ({ kind: "report" as const, report })),
+          },
+        ]
+      : []),
+  ],
+});
 
 export const mountSchemaRunForm = ({
   container,
@@ -73,7 +89,41 @@ export const mountSchemaRunForm = ({
     customFieldDefinitions,
     customReportDefinitions,
   });
-  const mounted = mountForm(container, {
+  // Layout references use the ids MLForm gives fields and reports once normalized.
+  const normalized = normalizeSchema(runtime.formSchema, runtime.registry);
+  let mounted: ReturnType<typeof mountForm> | undefined;
+  // The submitted result waits here while "all" report fetching finishes; the run
+  // completes once every report has settled, as the split layout's success event did.
+  let submitted: { raw: JsonRecord; contexts: Record<string, ReportContext> } | null = null;
+  const completeWhenSettled = () => {
+    if (!mounted || !submitted) return;
+    const next = buildSchemaRunRawFromSubmitResult(
+      submitted.raw,
+      mounted.form.reports,
+      reportStatesFromSnapshot(mounted.form.state.reportStates),
+      bindings,
+      submitted.contexts,
+    );
+    if (next.reportsPending) return;
+    submitted = null;
+    schemaRunDebug("mount.after-submit", {
+      raw: next.raw,
+      reportCount: Array.isArray(next.raw.reports) ? next.raw.reports.length : 0,
+    });
+    onRunningChange?.(false);
+    onSubmit?.(isRecord(next.raw.inputData) ? next.raw.inputData : {}, next.raw, false);
+  };
+  const handleSubmitted = ({ result }: AfterSubmitContext) => {
+    submitted = {
+      raw: isRecord(result.raw) ? result.raw : { raw: result.raw },
+      contexts: (result.reportContexts ?? {}) as Record<string, ReportContext>,
+    };
+    if (mounted && normalized.reports.length > 0) {
+      (mounted.host as TabsHost).view?.setActiveTab(RESULTS_TAB);
+    }
+    completeWhenSettled();
+  };
+  mounted = mountForm(container, {
     schema: runtime.formSchema,
     registry: runtime.registry,
     descriptorRegistry: runtime.descriptorRegistry,
@@ -83,70 +133,38 @@ export const mountSchemaRunForm = ({
       beforeSubmit() {
         onRunningChange?.(true);
       },
+      afterSubmit: handleSubmitted,
       onSubmitError({ error }: SubmitErrorContext) {
+        submitted = null;
         schemaRunDebugError("mount.submit-error", error);
         onRunningChange?.(false);
         onSubmitError?.(error);
       },
     },
-    layout: { kind: "split" },
-    reportPane: "always",
+    layout: tabsLayout(
+      normalized.fields.map((field) => field.id),
+      normalized.reports.map((report) => report.id),
+    ),
     reportFetchMode: "all",
     labels: {
-      form: "Schema inputs",
-      reports: "Model results",
       submit: "Run schema",
       validating: "Checking schema…",
       submitting: "Running models…",
     },
     designSystem: getPredictionDesignSystem(theme),
   });
-  const handleSubmitAbort = () => onRunningChange?.(false);
-  const handleSubmitSuccess = (event: Event) => {
-    const detail = (event as CustomEvent<PrimitiveSubmitSuccessDetail>).detail;
-    const submitResult = detail?.pipelineResult?.submitResult ?? detail?.result;
-    const raw = rawFromSubmitSuccess(detail);
-    const reportStates = mergeReportFetchResults(
-      reportStatesFromSnapshot(mounted.form.state.reportStates),
-      detail?.pipelineResult?.reportFetchResults,
-    );
-    schemaRunDebug("mount.after-submit.before-normalize", {
-      raw,
-      reports: mounted.form.reports,
-      reportStates,
-    });
-    const next = buildSchemaRunRawFromSubmitResult(
-      raw,
-      mounted.form.reports,
-      reportStates,
-      bindings,
-      (submitResult?.reportContexts ?? {}) as Record<string, ReportContext>,
-    );
-    schemaRunDebug("mount.after-submit", {
-      raw: next.raw,
-      reportCount: Array.isArray(next.raw.reports) ? next.raw.reports.length : 0,
-      reportsPending: next.reportsPending,
-    });
-    onRunningChange?.(false);
-    onSubmit?.(
-      isRecord(next.raw.inputData) ? next.raw.inputData : {},
-      next.raw,
-      next.reportsPending,
-    );
-  };
-  mounted.host.addEventListener("mlf-submit-abort", handleSubmitAbort);
-  mounted.host.addEventListener("mlf-submit-success", handleSubmitSuccess);
+  const form = mounted;
+  const unsubscribe = form.form.subscribe(completeWhenSettled);
   return {
-    form: mounted.form,
-    host: mounted.host,
+    form: form.form,
+    host: form.host,
     updateTheme(nextTheme) {
-      mounted.replaceDesignSystem(getPredictionDesignSystem(nextTheme));
+      form.replaceDesignSystem(getPredictionDesignSystem(nextTheme));
     },
     unmount() {
       schemaRunDebug("mount.unmount");
-      mounted.host.removeEventListener("mlf-submit-abort", handleSubmitAbort);
-      mounted.host.removeEventListener("mlf-submit-success", handleSubmitSuccess);
-      mounted.unmount();
+      unsubscribe();
+      form.unmount();
     },
   };
 };

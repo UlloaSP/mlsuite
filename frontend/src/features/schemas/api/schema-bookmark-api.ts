@@ -1,5 +1,9 @@
 import { appFetch, json } from "@/shared/api/http";
-import type { CreateSchemaBookmarkRequest, SchemaBookmarkDto } from "./schema-types";
+import type {
+  CreateSchemaBookmarkRequest,
+  PredictBookmarkDto,
+  SchemaBookmarkDto,
+} from "./schema-types";
 
 export const getSchemaBookmarks = (
   schemaId: string,
@@ -8,6 +12,10 @@ export const getSchemaBookmarks = (
   appFetch<SchemaBookmarkDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/bookmarks`, {
     signal,
   });
+
+/** Bookmarks of every active schema in the organization, for the Predict launcher. */
+export const getOrganizationBookmarks = (signal?: AbortSignal): Promise<PredictBookmarkDto[]> =>
+  appFetch<PredictBookmarkDto[]>("/api/schema-bookmarks", { signal });
 
 export const getSchemaBookmark = (
   bookmarkId: string,

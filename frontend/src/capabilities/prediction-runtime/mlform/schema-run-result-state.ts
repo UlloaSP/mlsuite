@@ -45,18 +45,6 @@ const targetForReport = (
   return reportTargetForBinding(report.config ?? report, binding);
 };
 
-export const mergeReportFetchResults = (
-  reportStates: Record<string, ReportState>,
-  reportFetchResults: unknown,
-): Record<string, ReportState> => {
-  if (!isRecord(reportFetchResults)) return reportStates;
-  const next = { ...reportStates };
-  Object.entries(reportFetchResults).forEach(([id, payload]) => {
-    next[id] = { ...next[id], status: "ready", payload };
-  });
-  return next;
-};
-
 const patchResultOutput = (
   result: unknown,
   reportId: string,

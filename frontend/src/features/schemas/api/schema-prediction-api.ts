@@ -19,14 +19,6 @@ export const createPredictionRunForBookmark = (
 export const getPredictionRun = (runId: string, signal?: AbortSignal): Promise<PredictionRunDto> =>
   appFetch<PredictionRunDto>(`/api/prediction-runs/${encodeURIComponent(runId)}`, { signal });
 
-export const getPredictionRunsForBookmark = (
-  bookmarkId: string,
-  signal?: AbortSignal,
-): Promise<PredictionRunDto[]> =>
-  appFetch<PredictionRunDto[]>(`/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/runs`, {
-    signal,
-  });
-
 export const getLastPredictionRunId = async (): Promise<number> => {
   const dto = await appFetch<{ lastId: number }>("/api/prediction-runs/last-id");
   return Number(dto.lastId ?? 0);

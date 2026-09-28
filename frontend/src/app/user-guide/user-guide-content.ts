@@ -27,6 +27,11 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
     title: "Organizations",
     description: "Create and administer every organization on this MLsuite instance.",
   },
+  "nav:Predict": {
+    title: "Predict",
+    description:
+      "Run a bookmarked schema. Each run joins your session, where you name it and save it to the bookmark's history or discard it.",
+  },
   "nav:Models": {
     title: "Models",
     description:

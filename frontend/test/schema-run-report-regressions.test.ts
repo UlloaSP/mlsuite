@@ -7,10 +7,7 @@ import { createForm, executeFormPipeline } from "mlform/runtime";
 import { resolveMappedReportPayload } from "mlform/schema";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
-import {
-  buildSchemaRunRawFromSubmitResult,
-  mergeReportFetchResults,
-} from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
+import { buildSchemaRunRawFromSubmitResult } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 
 describe("schema run report regressions", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -93,7 +90,9 @@ describe("schema run report regressions", () => {
         mappedTo: { "model-1": "crystal-tree" },
       },
     ];
-    const states = mergeReportFetchResults({}, { crystal: { explanation: "root||leaf" } });
+    const states = {
+      crystal: { status: "ready" as const, payload: { explanation: "root||leaf" } },
+    };
 
     const built = buildSchemaRunRawFromSubmitResult(
       raw,

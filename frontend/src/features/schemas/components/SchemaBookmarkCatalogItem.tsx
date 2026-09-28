@@ -3,20 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { GitCommitHorizontal, History, Play, Tag } from "lucide-react";
+import { GitCommitHorizontal, Play, Tag } from "lucide-react";
 import { Link } from "react-router";
 import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 
-type Props = {
-  bookmark: SchemaBookmarkDto;
-  schemaId: string;
-};
-
-export function SchemaBookmarkCatalogItem({ bookmark, schemaId }: Props) {
-  const runPath = `/schemas/${schemaId}/bookmarks/${bookmark.id}/runs/create`;
+/** A bookmark in its schema's repository; opening it goes to its Predict workspace. */
+export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookmarkDto }) {
+  const workspacePath = `/predict/${bookmark.id}`;
 
   return (
     <CatalogEntry
@@ -34,21 +30,12 @@ export function SchemaBookmarkCatalogItem({ bookmark, schemaId }: Props) {
         </>
       }
       actions={
-        <>
-          <Link to={runPath} className={appButtonClass({ size: "sm" })}>
-            <Play size={14} />
-            Run
-          </Link>
-          <Link
-            to={`/schemas/${schemaId}/bookmarks/${bookmark.id}/runs`}
-            className={appButtonClass({ size: "sm", variant: "secondary" })}
-          >
-            <History size={14} />
-            History
-          </Link>
-        </>
+        <Link to={workspacePath} className={appButtonClass({ size: "sm" })}>
+          <Play size={14} />
+          Predict
+        </Link>
       }
-      to={runPath}
+      to={workspacePath}
     />
   );
 }

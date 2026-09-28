@@ -25,6 +25,9 @@ import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
 import { useDisplayShortcuts } from "./use-display-shortcuts";
 import { useQuietScrollbars } from "./use-quiet-scrollbars";
 import { useScrollMemory } from "./use-scroll-memory";
+import { useRecordSectionLocation } from "@/app/components/section-memory";
+import { useWarnOnUnsavedInferences } from "@/features/schemas/lib/inference-session-store";
+import { useNavigationItems } from "@/app/components/use-navigation-items";
 
 export function AppShellFrame({ children }: PropsWithChildren) {
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
@@ -34,6 +37,8 @@ export function AppShellFrame({ children }: PropsWithChildren) {
   useDisplayShortcuts();
   useQuietScrollbars(floating);
   useScrollMemory();
+  useRecordSectionLocation(useNavigationItems().activeRoot);
+  useWarnOnUnsavedInferences();
   const location = useLocationDisplay();
 
   return (

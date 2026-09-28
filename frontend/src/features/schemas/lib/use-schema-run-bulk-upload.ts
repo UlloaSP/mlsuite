@@ -13,17 +13,12 @@ import {
 } from "@/features/schemas/api/schema-prediction-api";
 import { invalidatePredictionRunCollections } from "@/features/schemas/api/schema-prediction-mutations";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import type {
-  PredictionRunDto,
-  CreatePredictionRunRequest,
-} from "@/features/schemas/api/prediction-types";
-import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/features/schemas/api/schema-keys";
+import type { CreatePredictionRunRequest } from "@/features/schemas/api/prediction-types";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { loadPredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions";
 import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
-import { prependMissingPredictionRuns } from "@/features/schemas/lib/run-cache";
 import { bulkUploadSummary, getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
 
@@ -44,7 +39,6 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
   const [state, setState] = useState(INITIAL);
   const abortRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
-  const runsQueryKey = BOOKMARK_PREDICTION_RUNS_QUERY_KEY(organizationId, bookmarkId);
 
   const cancel = () => abortRef.current?.abort();
   const reset = () => setState(INITIAL);
@@ -96,7 +90,6 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
 
       let saved = 0;
       let failed = 0;
-      const savedRuns: PredictionRunDto[] = [];
       for (let index = 0; index < parsed.records.length; index += 1) {
         if (controller.signal.aborted) break;
         const record = parsed.records[index];
@@ -110,12 +103,12 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
           } as unknown as SubmitRequest);
           const raw = isRecord(result) && isRecord(result.raw) ? result.raw : {};
           const request: CreatePredictionRunRequest = {
+            schemaVersionId: version.id,
             name: record.name,
             inputData: isRecord(raw.inputData) ? raw.inputData : record.inputs,
             results: Array.isArray(raw.results) ? raw.results : [],
           };
-          const savedRun = await createPredictionRunForBookmark(bookmarkId, request);
-          savedRuns.push(savedRun);
+          await createPredictionRunForBookmark(bookmarkId, request);
           saved += 1;
         } catch (error) {
           failed += 1;
@@ -137,12 +130,7 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
       notify(
         `Bulk upload ${controller.signal.aborted ? "cancelled" : "complete"}: ${summary.message}`,
       );
-      if (savedRuns.length > 0) {
-        queryClient.setQueryData<PredictionRunDto[]>(runsQueryKey, (current) =>
-          prependMissingPredictionRuns(current, savedRuns),
-        );
-        void invalidatePredictionRunCollections(queryClient, organizationId, bookmarkId);
-      }
+      if (saved > 0) void invalidatePredictionRunCollections(queryClient, organizationId);
     } catch (error) {
       setState(INITIAL);
       toast.error("Bulk upload could not start", {

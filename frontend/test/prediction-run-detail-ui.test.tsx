@@ -9,11 +9,11 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { PredictionRunDetailPage } from "@/features/schemas/pages/prediction-run-detail-page";
+import { PredictionRunPage } from "@/features/schemas/pages/prediction-run-page";
 import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
-const queryState = vi.hoisted(() => ({ refetch: vi.fn() }));
+const queryState = vi.hoisted(() => ({ refetch: vi.fn(), runError: false }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useWorkspaceContext: () => ({
     data: { permissions: { canRunPredictions: true, canViewOrganization: true } },
@@ -77,9 +77,13 @@ const run: PredictionRunDto = {
 };
 
 vi.mock("@/features/schemas/api/schema-queries", () => ({
-  useSchema: () => ({ data: { name: "Transplant schema" } }),
-  usePredictionRun: () => ({ data: run, isLoading: false }),
-  useSchemaBookmark: () => ({ data: { name: "Ward bookmark" } }),
+  usePredictionRun: () =>
+    queryState.runError
+      ? { data: undefined, isLoading: false, isError: true }
+      : { data: run, isLoading: false, isError: false },
+  useSchemaBookmark: () => ({
+    data: { id: "bookmark-1", schemaId: "schema-1", name: "Ward bookmark" },
+  }),
   useSchemaVersion: () => ({ data: version }),
   usePredictionRunFeedback: () => ({ data: [], refetch: queryState.refetch }),
 }));
@@ -127,10 +131,29 @@ const setInput = (input: HTMLInputElement, value: string) => {
   });
 };
 
-describe("prediction run detail", () => {
+describe("prediction run page", () => {
   let root: Root | null = null;
 
-  beforeEach(() => queryState.refetch.mockReset());
+  beforeEach(() => {
+    queryState.refetch.mockReset();
+    queryState.runError = false;
+  });
+
+  const renderPage = () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => {
+      root?.render(
+        <MemoryRouter initialEntries={["/predict/bookmark-1/runs/run-1"]}>
+          <Routes>
+            <Route path="/predict/:bookmarkId/runs/:runId" element={<PredictionRunPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+    });
+    return container;
+  };
 
   afterEach(() => {
     act(() => root?.unmount());
@@ -139,21 +162,7 @@ describe("prediction run detail", () => {
   });
 
   test("shows compact metadata, task tabs, and searchable inputs without overview", () => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    act(() => {
-      root?.render(
-        <MemoryRouter initialEntries={["/schemas/schema-1/bookmarks/bookmark-1/runs/run-1"]}>
-          <Routes>
-            <Route
-              path="/schemas/:schemaId/bookmarks/:bookmarkId/runs/:runId"
-              element={<PredictionRunDetailPage />}
-            />
-          </Routes>
-        </MemoryRouter>,
-      );
-    });
+    const container = renderPage();
 
     expect(container.textContent).toContain("Success");
     expect(container.textContent).toContain("Feedback pending");
@@ -183,5 +192,27 @@ describe("prediction run detail", () => {
 
     act(() => tabs.find((tab) => tab.textContent?.startsWith("Feedback"))?.click());
     expect(container.textContent).toContain("Feedback questionnaire");
+  });
+
+  test("offers to predict again with the run's inputs, inside the bookmark", () => {
+    const page = renderPage();
+    const link = [...page.querySelectorAll("a")].find(
+      (item) => item.textContent === "Predict again",
+    );
+    expect(link?.getAttribute("href")).toBe("/predict/bookmark-1?from=run-1");
+    const crumbs = [...page.querySelectorAll('nav[aria-label="Breadcrumb"] a')].map((item) =>
+      item.getAttribute("href"),
+    );
+    expect(crumbs).toEqual(["/predict", "/predict/bookmark-1"]);
+  });
+
+  test("explains a run that cannot be loaded", () => {
+    queryState.runError = true;
+    const page = renderPage();
+    expect(page.textContent).toContain("Inference unavailable");
+    expect(page.textContent).not.toContain("Predict again");
+    expect(
+      page.querySelector('a[href="/inferences?schema=schema-1&bookmark=bookmark-1"]'),
+    ).not.toBeNull();
   });
 });

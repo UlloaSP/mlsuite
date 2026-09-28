@@ -6,16 +6,33 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-rou
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { LocationBar } from "@/app/components/LocationBar";
 import { LocationRail } from "@/app/components/LocationRail";
-import { useScrollMemory } from "@/app/layouts/use-scroll-memory";
+import { RESTORE_SCROLL_STATE, useScrollMemory } from "@/app/layouts/use-scroll-memory";
+import { useRecordSectionLocation } from "@/app/components/section-memory";
+import { useNavigationItems } from "@/app/components/use-navigation-items";
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { locationDisplayAtom, type LocationDisplay } from "@/shared/ui/sidebar-preferences";
 
+const workspace = vi.hoisted(() => ({ organizationId: 7 }));
+vi.mock("@/capabilities/workspace-context/session", () => ({
+  useUser: () => ({ data: { systemRole: "USER" } }),
+}));
+vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useWorkspaceContext: () => ({
+    data: {
+      currentOrganization: { id: workspace.organizationId, name: "Acme", slug: "acme" },
+      permissions: { canViewModels: true },
+    },
+  }),
+}));
+
 let root: Root | undefined;
 let container: HTMLDivElement;
 afterEach(async () => {
   await act(async () => root?.unmount());
+  sessionStorage.clear();
+  workspace.organizationId = 7;
   vi.unstubAllGlobals();
   document.body.innerHTML = "";
 });
@@ -168,4 +185,111 @@ test("page scroll comes back on back navigation, not on a new visit", async () =
   await act(async () => container.querySelectorAll("button")[1].click());
   expect(scroller().dataset.testid).toBe("a");
   expect(scroller().scrollTop).toBe(480);
+});
+
+/** What the shell does: record the section location; the nav lists where each entry goes. */
+function SectionShell() {
+  const { navigation, activeRoot } = useNavigationItems();
+  useRecordSectionLocation(activeRoot);
+  const navigate = useNavigate();
+  const location = useLocation();
+  return (
+    <>
+      <output>{`${location.pathname}${location.search}`}</output>
+      {navigation.map((item) => (
+        <button
+          key={item.root}
+          type="button"
+          data-root={item.root}
+          onClick={() => void navigate(item.to)}
+        >
+          {item.to}
+        </button>
+      ))}
+    </>
+  );
+}
+
+test("each navigation section resumes where the member left it, per organization", async () => {
+  await render(
+    <Provider store={createStore()}>
+      <SectionShell />
+    </Provider>,
+    ["/predict/7?from=3"],
+  );
+  const entry = (root: string) =>
+    container.querySelector<HTMLButtonElement>(`[data-root="${root}"]`)!;
+
+  // Inside Predict its entry leads to the start of the section.
+  expect(entry("/predict").textContent).toBe("/predict");
+  await act(async () => entry("/models").click());
+  expect(container.querySelector("output")?.textContent).toBe("/models");
+  expect(entry("/predict").textContent).toBe("/predict/7?from=3");
+
+  await act(async () => entry("/predict").click());
+  expect(container.querySelector("output")?.textContent).toBe("/predict/7?from=3");
+  expect(entry("/models").textContent).toBe("/models");
+
+  // Another organization's pages would not resolve: it starts fresh.
+  workspace.organizationId = 8;
+  await act(async () => entry("/schemas").click());
+  expect(entry("/predict").textContent).toBe("/predict");
+});
+
+function SectionScrollPage({ name }: { name: string }) {
+  const navigate = useNavigate();
+  return (
+    <div>
+      <div data-scroll-memory="page" data-testid={name} />
+      <button type="button" onClick={() => void navigate(name === "a" ? "/b" : "/a")}>
+        visit
+      </button>
+      <button
+        type="button"
+        onClick={() => void navigate(name === "a" ? "/b" : "/a", { state: RESTORE_SCROLL_STATE })}
+      >
+        resume
+      </button>
+    </div>
+  );
+}
+
+test("returning to a section restores its scroll; a plain visit starts at the top", async () => {
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+    callback(0);
+    return 0;
+  });
+  vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(2000);
+  function ScrollShell() {
+    useScrollMemory();
+    return (
+      <Routes>
+        <Route path="/a" element={<SectionScrollPage name="a" />} />
+        <Route path="/b" element={<SectionScrollPage name="b" />} />
+      </Routes>
+    );
+  }
+  await render(<ScrollShell />, ["/a"]);
+  const scroller = () => container.querySelector<HTMLElement>('[data-scroll-memory="page"]')!;
+  const click = (label: string) =>
+    act(async () =>
+      [...container.querySelectorAll("button")]
+        .find((button) => button.textContent === label)!
+        .click(),
+    );
+
+  scroller().scrollTop = 320;
+  await act(async () => scroller().dispatchEvent(new Event("scroll")));
+  await click("visit");
+  expect(scroller().dataset.testid).toBe("b");
+  await click("visit");
+  expect(scroller().dataset.testid).toBe("a");
+  expect(scroller().scrollTop).toBe(0);
+
+  scroller().scrollTop = 320;
+  await act(async () => scroller().dispatchEvent(new Event("scroll")));
+  await click("visit");
+  await click("resume");
+  expect(scroller().dataset.testid).toBe("a");
+  expect(scroller().scrollTop).toBe(320);
 });

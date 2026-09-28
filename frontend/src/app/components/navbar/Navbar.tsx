@@ -113,7 +113,7 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
             />
           ) : null,
           <NavbarItem
-            key={item.to}
+            key={item.root}
             item={item}
             active={isParentActive(item)}
             currentPath={currentPath}

@@ -13,6 +13,13 @@ public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, 
     void deleteBySchemaId(Long schemaId);
     List<SchemaBookmark> findBySchemaIdOrderByNameAsc(Long schemaId);
 
+    @Query("""
+            SELECT b FROM SchemaBookmark b
+            WHERE b.schema.organization.id = :organizationId AND b.schema.archivedAt IS NULL
+            ORDER BY b.schema.name ASC, b.name ASC
+            """)
+    List<SchemaBookmark> findActiveByOrganizationId(Long organizationId);
+
     Optional<SchemaBookmark> findBySchemaIdAndName(Long schemaId, String name);
 
     @Query("SELECT b FROM SchemaBookmark b WHERE b.id = :id AND b.schema.organization.id = :organizationId")

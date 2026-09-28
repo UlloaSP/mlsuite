@@ -81,13 +81,11 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     expect(root?.querySelectorAll("mlf-field-frame")).toHaveLength(1);
 
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 
@@ -125,11 +123,9 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 
@@ -166,11 +162,9 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 
@@ -218,11 +212,9 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 
@@ -265,11 +257,9 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 

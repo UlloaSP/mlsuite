@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
-import { PredictionRunDetailPage } from "@/features/schemas/pages/prediction-run-detail-page";
+import { PredictionRunPage } from "@/features/schemas/pages/prediction-run-page";
 
 const state = vi.hoisted(() => ({ canRun: false, canEdit: false, saved: false }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -12,7 +12,6 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   }),
 }));
 vi.mock("@/features/schemas/api/schema-queries", () => ({
-  useSchema: () => ({ data: { name: "QA" } }),
   useSchemaBookmark: () => ({ data: { name: "QA bookmark" } }),
   useSchemaVersion: () => ({
     data: {
@@ -97,23 +96,26 @@ test.each([
   Object.assign(state, permissions);
   await act(async () =>
     root.render(
-      <MemoryRouter>
-        <PredictionRunDetailPage />
+      <MemoryRouter initialEntries={["/predict/1/runs/1"]}>
+        <Routes>
+          <Route path="/predict/:bookmarkId/runs/:runId" element={<PredictionRunPage />} />
+        </Routes>
       </MemoryRouter>,
     ),
   );
-  expect(container.textContent?.includes("Predict again")).toBe(state.canRun);
+  const page = container;
+  expect(page.textContent?.includes("Predict again")).toBe(state.canRun);
   await act(async () =>
-    [...container.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+    [...page.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
       .find((button) => button.textContent?.startsWith("Feedback"))!
       .click(),
   );
-  expect(container.textContent?.includes("Save feedback")).toBe(state.canEdit);
+  expect(page.textContent?.includes("Save feedback")).toBe(state.canEdit);
   if (!state.canEdit) {
-    expect(container.querySelectorAll("input,textarea,select")).toHaveLength(0);
+    expect(page.querySelectorAll("input,textarea,select")).toHaveLength(0);
     expect(
-      [...container.querySelectorAll("button")].some((button) => button.textContent === "Edit"),
+      [...page.querySelectorAll("button")].some((button) => button.textContent === "Edit"),
     ).toBe(false);
-    expect(container.textContent).toContain(state.saved ? "Assessment1" : "No feedback yet");
+    expect(page.textContent).toContain(state.saved ? "Assessment1" : "No feedback yet");
   }
 });

@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ChevronRight } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
+import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
 import { Link, useNavigate } from "react-router";
 import { cx } from "@/shared/ui/cx";
 import { AppKbd } from "@/shared/ui/AppKbd";
@@ -55,11 +56,11 @@ export function SidebarNavigationGroup({
             const index = firstIndex + position;
             const active = isParentActive(item);
             const hasChildren = Boolean(item.children?.length);
-            const open = openItem === undefined ? active : openItem === item.to;
+            const open = openItem === undefined ? active : openItem === item.root;
             const Icon = item.icon;
 
             return (
-              <SidebarMenuItem key={item.to}>
+              <SidebarMenuItem key={item.root}>
                 {hasChildren ? (
                   <SidebarMenuButton
                     data-user-guide-item={`nav:${item.label}`}
@@ -71,7 +72,7 @@ export function SidebarNavigationGroup({
                         void navigate(item.children?.[0]?.to ?? item.to, { viewTransition: true });
                         return;
                       }
-                      setOpenItem((current) => (current === item.to ? null : item.to));
+                      setOpenItem((current) => (current === item.root ? null : item.root));
                     }}
                     title={item.label}
                     type="button"
@@ -103,6 +104,7 @@ export function SidebarNavigationGroup({
                       data-user-guide-item={`nav:${item.label}`}
                       aria-keyshortcuts={`Alt+${String(index + 1)}`}
                       to={item.to}
+                      state={RESTORE_SCROLL_STATE}
                       viewTransition
                     >
                       <Icon size={18} className="shrink-0" />

@@ -23,7 +23,7 @@ export function SidebarNavigation() {
       const parent =
         openItem === undefined
           ? allItems.find((item) => item.children?.length && isParentActive(item))
-          : allItems.find((item) => item.to === openItem && item.children?.length);
+          : allItems.find((item) => item.root === openItem && item.children?.length);
       return parent?.children ?? [];
     },
   });
