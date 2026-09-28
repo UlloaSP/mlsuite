@@ -2,15 +2,18 @@ package dev.ulloasp.mlsuite.admin;
 
 import java.time.OffsetDateTime;
 
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+
+import jakarta.annotation.Nullable;
 
 public record AdminUserDto(
         Long id,
         String username,
         String email,
         String fullName,
-        String avatarUrl,
-        String systemRole,
+        @Nullable String avatarUrl,
+        SystemRole systemRole,
         boolean enabled,
         OffsetDateTime createdAt) {
 
@@ -21,7 +24,7 @@ public record AdminUserDto(
                 user.getEmail(),
                 user.getFullName(),
                 user.getAvatarUrl(),
-                user.getSystemRole().name(),
+                user.getSystemRole(),
                 user.isEnabled(),
                 user.getCreatedAt());
     }

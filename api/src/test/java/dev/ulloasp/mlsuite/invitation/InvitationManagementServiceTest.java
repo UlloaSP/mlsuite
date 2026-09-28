@@ -25,6 +25,7 @@ import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.Invitat
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
 import dev.ulloasp.mlsuite.invitation.application.usecase.InvitationManagementService;
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
+import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -148,7 +149,7 @@ class InvitationManagementServiceTest {
                 41L,
                 new CreateInvitationRequest("target@example.com", 5L));
 
-        assertEquals("ACCEPTED", result.status());
+        assertEquals(InvitationStatus.ACCEPTED, result.status());
         assertEquals(org, invitee.getCurrentOrganization());
         ArgumentCaptor<OrganizationMembership> membership = ArgumentCaptor.forClass(OrganizationMembership.class);
         verify(organizationMembershipRepository).save(membership.capture());
@@ -175,7 +176,7 @@ class InvitationManagementServiceTest {
                 41L,
                 new CreateInvitationRequest("target@example.com", 5L));
 
-        assertEquals("PENDING", result.status());
+        assertEquals(InvitationStatus.PENDING, result.status());
         verifyNoInteractions(organizationMembershipRepository);
     }
 

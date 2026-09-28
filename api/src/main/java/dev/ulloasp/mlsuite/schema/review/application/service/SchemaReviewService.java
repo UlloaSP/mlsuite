@@ -35,13 +35,14 @@ import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.Sche
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunSubmissionRepository;
 import dev.ulloasp.mlsuite.schema.review.application.dto.CreateSchemaReviewRequest;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewContextDto;
+import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewReviewerDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewRunDetailDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewRunListItemDto;
-import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewReviewerDto;
+import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewUseCase;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
-import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewUseCase;
+import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
@@ -181,8 +182,8 @@ public class SchemaReviewService implements SchemaReviewUseCase {
 
     private SchemaReviewRunListItemDto runItem(Long userId, SchemaReviewRun item,
             SchemaReviewRunSubmission submission) {
-        String reviewState = submission != null ? "COMPLETED"
-                : hasFeedback(userId, item.getRun()) ? "IN_PROGRESS" : "PENDING";
+        SchemaReviewState reviewState = submission != null ? SchemaReviewState.COMPLETED
+                : hasFeedback(userId, item.getRun()) ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
         OffsetDateTime stateAt = submission == null ? item.getRun().getCreatedAt() : submission.getSubmittedAt();
         return new SchemaReviewRunListItemDto(item.getPublicId(),
                 PredictionRunDto.from(item.getRun(), results.findByRunIdOrderByIdAsc(item.getRun().getId())),

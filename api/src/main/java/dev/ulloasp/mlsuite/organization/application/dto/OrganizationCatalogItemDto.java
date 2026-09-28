@@ -5,20 +5,22 @@ import java.time.OffsetDateTime;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
+import jakarta.annotation.Nullable;
+
 public record OrganizationCatalogItemDto(
         Long id,
         String slug,
         String name,
-        String description,
-        String avatarUrl,
+        @Nullable String description,
+        @Nullable String avatarUrl,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        String ownerName,
-        String ownerEmail,
-        String ownerAvatarUrl,
+        @Nullable String ownerName,
+        @Nullable String ownerEmail,
+        @Nullable String ownerAvatarUrl,
         String updatedByName,
         String updatedByEmail,
-        String updatedByAvatarUrl,
+        @Nullable String updatedByAvatarUrl,
         long modelCount,
         long schemaCount,
         long pluginCount,

@@ -1,0 +1,7330 @@
+{
+  "components": {
+    "schemas": {
+      "AdminCreateUserRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "minLength": 1,
+            "type": "string"
+          },
+          "enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "fullName": {
+            "maxLength": 150,
+            "minLength": 0,
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 10,
+            "type": "string"
+          },
+          "systemRole": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "username": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "fullName",
+          "password"
+        ],
+        "type": "object"
+      },
+      "AdminPasswordRequest": {
+        "properties": {
+          "password": {
+            "maxLength": 128,
+            "minLength": 10,
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "type": "object"
+      },
+      "AdminUpdateUserRequest": {
+        "properties": {
+          "enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "fullName": {
+            "maxLength": 150,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "systemRole": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "username": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "AdminUserDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "systemRole": {
+            "enum": [
+              "USER",
+              "SUPERADMIN"
+            ],
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "createdAt",
+          "email",
+          "enabled",
+          "fullName",
+          "id",
+          "systemRole",
+          "username"
+        ],
+        "type": "object"
+      },
+      "AdminUserPageDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserDto"
+            },
+            "type": "array"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "AuditEventDto": {
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "actorEmail": {
+            "type": "string"
+          },
+          "actorName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "metadata": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "actorEmail",
+          "actorName",
+          "createdAt",
+          "id",
+          "metadata",
+          "targetId",
+          "targetType"
+        ],
+        "type": "object"
+      },
+      "AuthRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "minLength": 1,
+            "type": "string"
+          },
+          "fullName": {
+            "maxLength": 150,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 10,
+            "type": "string"
+          },
+          "username": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "BulkInvitationRequest": {
+        "properties": {
+          "invitationIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "invitationIds"
+        ],
+        "type": "object"
+      },
+      "ConditionRequest": {
+        "properties": {
+          "operator": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "value": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "operator",
+          "value"
+        ],
+        "type": "object"
+      },
+      "CreateInvitationRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "minLength": 1,
+            "type": "string"
+          },
+          "roleDefinitionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "email",
+          "roleDefinitionId"
+        ],
+        "type": "object"
+      },
+      "CreateModelDto": {
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/ModelDto"
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "type": "object"
+      },
+      "CreateOrganizationRequest": {
+        "properties": {
+          "description": {
+            "maxLength": 600,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 150,
+            "minLength": 0,
+            "type": "string"
+          },
+          "ownerUserId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "slug": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "CreatePredictionResultFeedbackRequest": {
+        "properties": {
+          "order": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "resultId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": {
+            "enum": [
+              "OUTPUT",
+              "EXPLANATION"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        },
+        "required": [
+          "order",
+          "resultId",
+          "type",
+          "value"
+        ],
+        "type": "object"
+      },
+      "CreatePredictionResultInitialFeedbackRequest": {
+        "properties": {
+          "order": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "type": {
+            "enum": [
+              "OUTPUT",
+              "EXPLANATION"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        },
+        "required": [
+          "order",
+          "type",
+          "value"
+        ],
+        "type": "object"
+      },
+      "CreatePredictionResultRequest": {
+        "properties": {
+          "errorJson": {
+            "additionalProperties": { },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "errorMessage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "feedback": {
+            "items": {
+              "$ref": "#/components/schemas/CreatePredictionResultInitialFeedbackRequest"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "modelId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelInput": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "output": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "FAILED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "modelId",
+          "modelInput",
+          "output",
+          "status"
+        ],
+        "type": "object"
+      },
+      "CreatePredictionRunRequest": {
+        "properties": {
+          "inputData": {
+            "additionalProperties": { },
+            "minProperties": 1,
+            "type": "object"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/CreatePredictionResultRequest"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "schemaVersionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "inputData",
+          "name",
+          "results",
+          "schemaVersionId"
+        ],
+        "type": "object"
+      },
+      "CreateRoleFromTemplateRequest": {
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "permissionKeys": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "templateId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "templateId"
+        ],
+        "type": "object"
+      },
+      "CreateRoleRequest": {
+        "properties": {
+          "description": {
+            "maxLength": 600,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "permissionKeys": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "permissionKeys"
+        ],
+        "type": "object"
+      },
+      "CreateSchemaBookmarkRequest": {
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "versionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "versionId"
+        ],
+        "type": "object"
+      },
+      "CreateSchemaDraftRequest": {
+        "properties": {
+          "baseVersionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseVersionId",
+          "name"
+        ],
+        "type": "object"
+      },
+      "CreateSchemaModelBindingRequest": {
+        "properties": {
+          "modelId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "pluginPolicy": {
+            "additionalProperties": { },
+            "type": [
+              "object",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "modelId"
+        ],
+        "type": "object"
+      },
+      "CreateSchemaRequest": {
+        "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "CreateSchemaReviewRequest": {
+        "properties": {
+          "expiresAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviewerIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "runIds": {
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "schemaId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "versionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reviewerIds",
+          "runIds",
+          "schemaId",
+          "versionId"
+        ],
+        "type": "object"
+      },
+      "CreateSchemaVersionRequest": {
+        "properties": {
+          "bindings": {
+            "items": {
+              "$ref": "#/components/schemas/CreateSchemaModelBindingRequest"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "formSchema": {
+            "additionalProperties": { },
+            "minProperties": 1,
+            "type": "object"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "bindings",
+          "formSchema"
+        ],
+        "type": "object"
+      },
+      "CreateSchemaWithInitialVersionRequest": {
+        "properties": {
+          "initialVersion": {
+            "$ref": "#/components/schemas/CreateSchemaVersionRequest"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/CreateSchemaRequest"
+          }
+        },
+        "required": [
+          "initialVersion",
+          "schema"
+        ],
+        "type": "object"
+      },
+      "Dependency": {
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ready": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message",
+          "name",
+          "ready"
+        ],
+        "type": "object"
+      },
+      "DuplicateRoleRequest": {
+        "properties": {
+          "name": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "ErrorDto": {
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "timestamp"
+        ],
+        "type": "object"
+      },
+      "ExplainRequest": {
+        "properties": {
+          "instance": {
+            "additionalProperties": { },
+            "minProperties": 1,
+            "type": "object"
+          },
+          "traces": {
+            "items": {
+              "$ref": "#/components/schemas/TraceRequest"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "instance"
+        ],
+        "type": "object"
+      },
+      "InvitationCandidateDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "email",
+          "fullName",
+          "id"
+        ],
+        "type": "object"
+      },
+      "InvitationDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "roleDefinition": {
+            "$ref": "#/components/schemas/RoleSummaryDto"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "EXPIRED",
+              "REVOKED"
+            ],
+            "type": "string"
+          },
+          "token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "email",
+          "expiresAt",
+          "id",
+          "organizationId",
+          "organizationName",
+          "roleDefinition",
+          "status",
+          "token"
+        ],
+        "type": "object"
+      },
+      "JsonNode": { },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "MembershipActionsDto": {
+        "properties": {
+          "assignableRoles": {
+            "items": {
+              "$ref": "#/components/schemas/RoleSummaryDto"
+            },
+            "type": "array"
+          },
+          "canChangeRole": {
+            "type": "boolean"
+          },
+          "canRemove": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "assignableRoles",
+          "canChangeRole",
+          "canRemove"
+        ],
+        "type": "object"
+      },
+      "ModelDto": {
+        "properties": {
+          "archivedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fieldCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "inputSchema": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reportCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "specificType": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedByAvatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedByEmail": {
+            "type": "string"
+          },
+          "updatedByName": {
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "archivedAt",
+          "createdAt",
+          "fieldCount",
+          "fileName",
+          "id",
+          "inputSchema",
+          "name",
+          "reportCount",
+          "specificType",
+          "type",
+          "updatedAt",
+          "updatedByAvatarUrl",
+          "updatedByEmail",
+          "updatedByName",
+          "version"
+        ],
+        "type": "object"
+      },
+      "MoveSchemaBookmarkRequest": {
+        "properties": {
+          "versionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "versionId"
+        ],
+        "type": "object"
+      },
+      "OrganizationAdminDashboardDto": {
+        "properties": {
+          "organization": {
+            "$ref": "#/components/schemas/OrganizationDto"
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/WorkspacePermissionsDto"
+          },
+          "recentInvitations": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationDto"
+            },
+            "type": "array"
+          },
+          "recentMembers": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMembershipRowDto"
+            },
+            "type": "array"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/OrganizationAdminStatsDto"
+          }
+        },
+        "required": [
+          "organization",
+          "permissions",
+          "recentInvitations",
+          "recentMembers",
+          "stats"
+        ],
+        "type": "object"
+      },
+      "OrganizationAdminStatsDto": {
+        "properties": {
+          "pendingInvitations": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalInferences": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalMembers": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalModels": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPlugins": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalReviews": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalSchemas": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pendingInvitations",
+          "totalInferences",
+          "totalMembers",
+          "totalModels",
+          "totalPlugins",
+          "totalReviews",
+          "totalSchemas"
+        ],
+        "type": "object"
+      },
+      "OrganizationCatalogItemDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "inferenceCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "memberCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "ownerAvatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ownerEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ownerName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pluginCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedByAvatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedByEmail": {
+            "type": "string"
+          },
+          "updatedByName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "createdAt",
+          "description",
+          "id",
+          "inferenceCount",
+          "memberCount",
+          "modelCount",
+          "name",
+          "ownerAvatarUrl",
+          "ownerEmail",
+          "ownerName",
+          "pluginCount",
+          "schemaCount",
+          "slug",
+          "updatedAt",
+          "updatedByAvatarUrl",
+          "updatedByEmail",
+          "updatedByName"
+        ],
+        "type": "object"
+      },
+      "OrganizationDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "createdAt",
+          "description",
+          "id",
+          "name",
+          "slug",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "OrganizationMembershipDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "roleDefinition": {
+            "$ref": "#/components/schemas/RoleSummaryDto"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "PENDING",
+              "REMOVED"
+            ],
+            "type": "string"
+          },
+          "userId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "createdAt",
+          "email",
+          "fullName",
+          "id",
+          "organizationId",
+          "roleDefinition",
+          "status",
+          "userId"
+        ],
+        "type": "object"
+      },
+      "OrganizationMembershipRowDto": {
+        "properties": {
+          "actions": {
+            "$ref": "#/components/schemas/MembershipActionsDto"
+          },
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "role": {
+            "$ref": "#/components/schemas/RoleSummaryDto"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "PENDING",
+              "REMOVED"
+            ],
+            "type": "string"
+          },
+          "userId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "actions",
+          "avatarUrl",
+          "createdAt",
+          "email",
+          "fullName",
+          "id",
+          "organizationId",
+          "role",
+          "status",
+          "userId"
+        ],
+        "type": "object"
+      },
+      "PageDtoModelDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModelDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoOrganizationCatalogItemDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationCatalogItemDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoPluginDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PluginDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PageDtoSchemaCatalogItemDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaCatalogItemDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
+      "PermissionDto": {
+        "properties": {
+          "dangerous": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "key": {
+            "enum": [
+              "VIEW_WORKSPACE",
+              "VIEW_ORGANIZATION",
+              "EDIT_ORGANIZATION",
+              "DELETE_ORGANIZATION",
+              "TRANSFER_OWNERSHIP",
+              "VIEW_MEMBERS",
+              "INVITE_MEMBERS",
+              "MANAGE_MEMBER_ROLES",
+              "REMOVE_MEMBERS",
+              "VIEW_INVITATIONS",
+              "MANAGE_INVITATIONS",
+              "VIEW_MODELS",
+              "CREATE_MODELS",
+              "EDIT_MODELS",
+              "DELETE_MODELS",
+              "RUN_PREDICTIONS",
+              "EXPORT_PREDICTIONS",
+              "REVIEW",
+              "MANAGE_REVIEWS",
+              "VIEW_PLUGINS",
+              "MANAGE_PLUGINS",
+              "VIEW_AUDIT_LOG"
+            ],
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "dangerous",
+          "description",
+          "key",
+          "label"
+        ],
+        "type": "object"
+      },
+      "PermissionGroupDto": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "permissions"
+        ],
+        "type": "object"
+      },
+      "PluginDto": {
+        "properties": {
+          "contentType": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pluginType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "source": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedByAvatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedByEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "contentType",
+          "createdAt",
+          "fileName",
+          "id",
+          "kind",
+          "pluginType",
+          "sizeBytes",
+          "source",
+          "updatedAt",
+          "updatedByAvatarUrl",
+          "updatedByEmail",
+          "updatedByName"
+        ],
+        "type": "object"
+      },
+      "PluginRuntimeSourceDto": {
+        "properties": {
+          "contentType": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "source": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "contentType",
+          "createdAt",
+          "fileName",
+          "id",
+          "sizeBytes",
+          "source",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "PluginStatsDto": {
+        "properties": {
+          "fieldPlugins": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "reportPlugins": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fieldPlugins",
+          "reportPlugins"
+        ],
+        "type": "object"
+      },
+      "PredictBookmarkDto": {
+        "properties": {
+          "fieldCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lastRunAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latestVersion": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reportCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "runCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaDescription": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schemaId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "versionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "versionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "fieldCount",
+          "id",
+          "lastRunAt",
+          "latestVersion",
+          "models",
+          "name",
+          "reportCount",
+          "runCount",
+          "schemaDescription",
+          "schemaId",
+          "schemaName",
+          "updatedAt",
+          "version",
+          "versionId",
+          "versionName"
+        ],
+        "type": "object"
+      },
+      "PredictionResultDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "errorJson": {
+            "additionalProperties": { },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "errorMessage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelInput": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "output": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "runId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "FAILED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "errorJson",
+          "errorMessage",
+          "id",
+          "modelId",
+          "modelInput",
+          "output",
+          "runId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "PredictionResultFeedbackDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "order": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "resultId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": {
+            "enum": [
+              "OUTPUT",
+              "EXPLANATION"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "userEmail": {
+            "type": "string"
+          },
+          "userId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "userName": {
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "order",
+          "resultId",
+          "type",
+          "updatedAt",
+          "userEmail",
+          "userId",
+          "userName",
+          "value"
+        ],
+        "type": "object"
+      },
+      "PredictionRunCatalogItemDto": {
+        "properties": {
+          "bookmarkId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "bookmarkName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "schemaId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "schemaVersion": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "schemaVersionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaVersionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "PARTIAL_SUCCESS",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bookmarkId",
+          "bookmarkName",
+          "createdAt",
+          "createdByEmail",
+          "createdByName",
+          "id",
+          "name",
+          "schemaId",
+          "schemaName",
+          "schemaVersion",
+          "schemaVersionId",
+          "schemaVersionName",
+          "status",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "PredictionRunDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdByEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "inputData": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionResultDto"
+            },
+            "type": "array"
+          },
+          "schemaBookmarkId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "schemaVersionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "PARTIAL_SUCCESS",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "createdByEmail",
+          "createdByName",
+          "id",
+          "inputData",
+          "name",
+          "results",
+          "schemaBookmarkId",
+          "schemaVersionId",
+          "status",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "PredictionRunSequenceDto": {
+        "properties": {
+          "lastId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "lastId"
+        ],
+        "type": "object"
+      },
+      "PublishSchemaDraftRequest": {
+        "properties": {
+          "expectedDraftRevision": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expectedDraftRevision"
+        ],
+        "type": "object"
+      },
+      "RoleActionsDto": {
+        "properties": {
+          "canAssign": {
+            "type": "boolean"
+          },
+          "canDelete": {
+            "type": "boolean"
+          },
+          "canDuplicate": {
+            "type": "boolean"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canView": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "canAssign",
+          "canDelete",
+          "canDuplicate",
+          "canEdit",
+          "canView"
+        ],
+        "type": "object"
+      },
+      "RoleDefinitionDto": {
+        "properties": {
+          "actions": {
+            "$ref": "#/components/schemas/RoleActionsDto"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "permissions": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionDto"
+            },
+            "type": "array"
+          },
+          "scope": {
+            "enum": [
+              "SYSTEM",
+              "ORGANIZATION"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "systemKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userCount": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "actions",
+          "description",
+          "id",
+          "locked",
+          "name",
+          "permissions",
+          "scope",
+          "slug",
+          "systemKey",
+          "userCount"
+        ],
+        "type": "object"
+      },
+      "RoleStatsDto": {
+        "properties": {
+          "assignedUsers": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "customRoles": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "lockedRoles": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assignedUsers",
+          "customRoles",
+          "lockedRoles"
+        ],
+        "type": "object"
+      },
+      "RoleSummaryDto": {
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "scope": {
+            "enum": [
+              "SYSTEM",
+              "ORGANIZATION"
+            ],
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "systemKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "locked",
+          "name",
+          "scope",
+          "slug",
+          "systemKey"
+        ],
+        "type": "object"
+      },
+      "RoleTemplateDto": {
+        "properties": {
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "permissionKeys": {
+            "items": {
+              "enum": [
+                "VIEW_WORKSPACE",
+                "VIEW_ORGANIZATION",
+                "EDIT_ORGANIZATION",
+                "DELETE_ORGANIZATION",
+                "TRANSFER_OWNERSHIP",
+                "VIEW_MEMBERS",
+                "INVITE_MEMBERS",
+                "MANAGE_MEMBER_ROLES",
+                "REMOVE_MEMBERS",
+                "VIEW_INVITATIONS",
+                "MANAGE_INVITATIONS",
+                "VIEW_MODELS",
+                "CREATE_MODELS",
+                "EDIT_MODELS",
+                "DELETE_MODELS",
+                "RUN_PREDICTIONS",
+                "EXPORT_PREDICTIONS",
+                "REVIEW",
+                "MANAGE_REVIEWS",
+                "VIEW_PLUGINS",
+                "MANAGE_PLUGINS",
+                "VIEW_AUDIT_LOG"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "scope": {
+            "enum": [
+              "SYSTEM",
+              "ORGANIZATION"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "description",
+          "id",
+          "name",
+          "permissionKeys",
+          "scope"
+        ],
+        "type": "object"
+      },
+      "RolesResponseDto": {
+        "properties": {
+          "permissionCatalog": {
+            "items": {
+              "$ref": "#/components/schemas/PermissionGroupDto"
+            },
+            "type": "array"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/RoleDefinitionDto"
+            },
+            "type": "array"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/RoleStatsDto"
+          },
+          "templates": {
+            "items": {
+              "$ref": "#/components/schemas/RoleTemplateDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "permissionCatalog",
+          "roles",
+          "stats",
+          "templates"
+        ],
+        "type": "object"
+      },
+      "SchemaBookmarkDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "schemaId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "versionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "versionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "name",
+          "schemaId",
+          "schemaName",
+          "updatedAt",
+          "version",
+          "versionId",
+          "versionName"
+        ],
+        "type": "object"
+      },
+      "SchemaCatalogItemDto": {
+        "properties": {
+          "archivedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fieldCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "reportCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedByAvatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedByEmail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "archivedAt",
+          "createdAt",
+          "description",
+          "fieldCount",
+          "id",
+          "modelCount",
+          "name",
+          "organizationId",
+          "reportCount",
+          "updatedAt",
+          "updatedByAvatarUrl",
+          "updatedByEmail",
+          "updatedByName"
+        ],
+        "type": "object"
+      },
+      "SchemaDraftChangeDto": {
+        "properties": {
+          "basePresent": {
+            "type": "boolean"
+          },
+          "baseValue": { },
+          "conflict": {
+            "type": "boolean"
+          },
+          "currentPresent": {
+            "type": "boolean"
+          },
+          "currentValue": { },
+          "draftChanged": {
+            "type": "boolean"
+          },
+          "draftPresent": {
+            "type": "boolean"
+          },
+          "draftValue": { },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "basePresent",
+          "baseValue",
+          "conflict",
+          "currentPresent",
+          "currentValue",
+          "draftChanged",
+          "draftPresent",
+          "draftValue",
+          "path"
+        ],
+        "type": "object"
+      },
+      "SchemaDraftDiffDto": {
+        "properties": {
+          "baseVersionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaDraftChangeDto"
+            },
+            "type": "array"
+          },
+          "currentDocumentHash": {
+            "type": "string"
+          },
+          "currentVersionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "hasConflicts": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "baseVersionId",
+          "changes",
+          "currentDocumentHash",
+          "currentVersionId",
+          "hasConflicts"
+        ],
+        "type": "object"
+      },
+      "SchemaDraftDto": {
+        "properties": {
+          "baseVersion": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "baseVersionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "bindings": {
+            "items": {
+              "additionalProperties": { },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "formSchema": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "revision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "schemaId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "CONFLICT",
+              "PUBLISHED"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseVersion",
+          "baseVersionId",
+          "bindings",
+          "createdAt",
+          "formSchema",
+          "id",
+          "name",
+          "revision",
+          "schemaId",
+          "status",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "SchemaDraftMergeRequest": {
+        "properties": {
+          "expectedCurrentDocumentHash": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "expectedCurrentVersionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "expectedDraftRevision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "resolutions": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaDraftMergeResolutionDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "expectedCurrentDocumentHash",
+          "expectedCurrentVersionId",
+          "expectedDraftRevision",
+          "resolutions"
+        ],
+        "type": "object"
+      },
+      "SchemaDraftMergeResolutionDto": {
+        "properties": {
+          "path": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "current",
+              "incoming"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "side"
+        ],
+        "type": "object"
+      },
+      "SchemaDraftMergeResultDto": {
+        "properties": {
+          "diff": {
+            "$ref": "#/components/schemas/SchemaDraftDiffDto"
+          },
+          "draft": {
+            "$ref": "#/components/schemas/SchemaDraftDto"
+          }
+        },
+        "required": [
+          "diff",
+          "draft"
+        ],
+        "type": "object"
+      },
+      "SchemaDraftPublishResultDto": {
+        "properties": {
+          "diff": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SchemaDraftDiffDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "draft": {
+            "$ref": "#/components/schemas/SchemaDraftDto"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SchemaVersionDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "diff",
+          "draft",
+          "status",
+          "version"
+        ],
+        "type": "object"
+      },
+      "SchemaDto": {
+        "properties": {
+          "archivedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "archivedAt",
+          "createdAt",
+          "description",
+          "id",
+          "name",
+          "organizationId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "SchemaModelBindingDto": {
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "modelName": {
+            "type": "string"
+          },
+          "pluginPolicy": {
+            "additionalProperties": { },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "schemaVersionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "modelId",
+          "modelName",
+          "pluginPolicy",
+          "schemaVersionId"
+        ],
+        "type": "object"
+      },
+      "SchemaReviewAssignmentStatusDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/SchemaReviewReviewerDto"
+          },
+          "expired": {
+            "type": "boolean"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reviewId": {
+            "type": "string"
+          },
+          "reviewRunId": {
+            "type": "string"
+          },
+          "reviewState": {
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "reviewer": {
+            "$ref": "#/components/schemas/SchemaReviewReviewerDto"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "createdBy",
+          "expired",
+          "expiresAt",
+          "reviewId",
+          "reviewRunId",
+          "reviewState",
+          "reviewer",
+          "submittedAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "SchemaReviewContextDto": {
+        "properties": {
+          "publicId": {
+            "type": "string"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaReviewRunListItemDto"
+            },
+            "type": "array"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/SchemaDto"
+          },
+          "schemaVersion": {
+            "$ref": "#/components/schemas/SchemaVersionDto"
+          }
+        },
+        "required": [
+          "publicId",
+          "runs",
+          "schema",
+          "schemaVersion"
+        ],
+        "type": "object"
+      },
+      "SchemaReviewReviewerDto": {
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "email",
+          "fullName",
+          "id"
+        ],
+        "type": "object"
+      },
+      "SchemaReviewRunDetailDto": {
+        "properties": {
+          "feedback": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+            },
+            "type": "array"
+          },
+          "run": {
+            "$ref": "#/components/schemas/PredictionRunDto"
+          }
+        },
+        "required": [
+          "feedback",
+          "run"
+        ],
+        "type": "object"
+      },
+      "SchemaReviewRunListItemDto": {
+        "properties": {
+          "publicId": {
+            "type": "string"
+          },
+          "reviewState": {
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "COMPLETED"
+            ],
+            "type": "string"
+          },
+          "run": {
+            "$ref": "#/components/schemas/PredictionRunDto"
+          },
+          "stateEnteredAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "publicId",
+          "reviewState",
+          "run",
+          "stateEnteredAt",
+          "submittedAt"
+        ],
+        "type": "object"
+      },
+      "SchemaVersionDto": {
+        "properties": {
+          "bindings": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaModelBindingDto"
+            },
+            "type": "array"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "formSchema": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schemaId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bindings",
+          "createdAt",
+          "formSchema",
+          "id",
+          "name",
+          "schemaId",
+          "version"
+        ],
+        "type": "object"
+      },
+      "SearchGroupDto": {
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResultDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "label",
+          "results"
+        ],
+        "type": "object"
+      },
+      "SearchResponseDto": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/SearchGroupDto"
+            },
+            "type": "array"
+          },
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "groups",
+          "query"
+        ],
+        "type": "object"
+      },
+      "SearchResultDto": {
+        "properties": {
+          "href": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "modelId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "organizationId": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "subtitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "href",
+          "id",
+          "modelId",
+          "organizationId",
+          "subtitle",
+          "title",
+          "type"
+        ],
+        "type": "object"
+      },
+      "SelectOrganizationRequest": {
+        "properties": {
+          "organizationId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "organizationId"
+        ],
+        "type": "object"
+      },
+      "ServiceActionRequest": {
+        "properties": {
+          "action": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "StartupReadinessDto": {
+        "properties": {
+          "dependencies": {
+            "items": {
+              "$ref": "#/components/schemas/Dependency"
+            },
+            "type": "array"
+          },
+          "ready": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dependencies",
+          "ready"
+        ],
+        "type": "object"
+      },
+      "SubmitSchemaReviewRunsRequest": {
+        "properties": {
+          "reviewRunIds": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "reviewRunIds"
+        ],
+        "type": "object"
+      },
+      "TerminalSessionRequest": {
+        "properties": {
+          "cols": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "rows": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "serviceName": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "cols",
+          "rows",
+          "serviceName"
+        ],
+        "type": "object"
+      },
+      "TerminalSessionResponse": {
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "wsPath": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sessionId",
+          "wsPath"
+        ],
+        "type": "object"
+      },
+      "TraceRequest": {
+        "properties": {
+          "conditions": {
+            "items": {
+              "$ref": "#/components/schemas/ConditionRequest"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "feature": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "targetClass": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "text": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "feature",
+          "text"
+        ],
+        "type": "object"
+      },
+      "TransferOrganizationOwnershipRequest": {
+        "properties": {
+          "nextOwnerMembershipId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "nextOwnerMembershipId"
+        ],
+        "type": "object"
+      },
+      "UpdateOrganizationMembershipRoleRequest": {
+        "properties": {
+          "roleDefinitionId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "roleDefinitionId"
+        ],
+        "type": "object"
+      },
+      "UpdateOrganizationRequest": {
+        "properties": {
+          "description": {
+            "maxLength": 600,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 150,
+            "minLength": 0,
+            "type": "string"
+          },
+          "slug": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "UpdatePredictionResultFeedbackRequest": {
+        "properties": {
+          "feedbackId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        },
+        "required": [
+          "feedbackId",
+          "value"
+        ],
+        "type": "object"
+      },
+      "UpdateRoleRequest": {
+        "properties": {
+          "description": {
+            "maxLength": 600,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string"
+          },
+          "permissionKeys": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "permissionKeys"
+        ],
+        "type": "object"
+      },
+      "UpdateSchemaDraftRequest": {
+        "properties": {
+          "bindings": {
+            "items": {
+              "additionalProperties": { },
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "expectedDraftRevision": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "formSchema": {
+            "additionalProperties": { },
+            "minProperties": 1,
+            "type": "object"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "bindings",
+          "expectedDraftRevision",
+          "formSchema",
+          "name"
+        ],
+        "type": "object"
+      },
+      "UserDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "systemRole": {
+            "enum": [
+              "USER",
+              "SUPERADMIN"
+            ],
+            "type": "string"
+          },
+          "userName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "createdAt",
+          "email",
+          "enabled",
+          "fullName",
+          "id",
+          "systemRole",
+          "userName"
+        ],
+        "type": "object"
+      },
+      "WorkspaceContextDto": {
+        "properties": {
+          "currentMembership": {
+            "$ref": "#/components/schemas/OrganizationMembershipDto"
+          },
+          "currentOrganization": {
+            "$ref": "#/components/schemas/OrganizationDto"
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMembershipDto"
+            },
+            "type": "array"
+          },
+          "organizations": {
+            "items": {
+              "$ref": "#/components/schemas/OrganizationDto"
+            },
+            "type": "array"
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/WorkspacePermissionsDto"
+          },
+          "user": {
+            "$ref": "#/components/schemas/WorkspaceUserDto"
+          }
+        },
+        "required": [
+          "currentMembership",
+          "currentOrganization",
+          "memberships",
+          "organizations",
+          "permissions",
+          "user"
+        ],
+        "type": "object"
+      },
+      "WorkspacePermissionsDto": {
+        "properties": {
+          "canCreateModels": {
+            "type": "boolean"
+          },
+          "canDeleteModels": {
+            "type": "boolean"
+          },
+          "canDeleteOrganization": {
+            "type": "boolean"
+          },
+          "canEditModels": {
+            "type": "boolean"
+          },
+          "canEditOrganization": {
+            "type": "boolean"
+          },
+          "canExportPredictions": {
+            "type": "boolean"
+          },
+          "canInviteMembers": {
+            "type": "boolean"
+          },
+          "canManageInvitations": {
+            "type": "boolean"
+          },
+          "canManageMemberRoles": {
+            "type": "boolean"
+          },
+          "canManagePlugins": {
+            "type": "boolean"
+          },
+          "canManageReviews": {
+            "type": "boolean"
+          },
+          "canRemoveMembers": {
+            "type": "boolean"
+          },
+          "canReview": {
+            "type": "boolean"
+          },
+          "canRunPredictions": {
+            "type": "boolean"
+          },
+          "canTransferOwnership": {
+            "type": "boolean"
+          },
+          "canViewInvitations": {
+            "type": "boolean"
+          },
+          "canViewMembers": {
+            "type": "boolean"
+          },
+          "canViewModels": {
+            "type": "boolean"
+          },
+          "canViewOrganization": {
+            "type": "boolean"
+          },
+          "canViewPlugins": {
+            "type": "boolean"
+          },
+          "canViewWorkspace": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "canCreateModels",
+          "canDeleteModels",
+          "canDeleteOrganization",
+          "canEditModels",
+          "canEditOrganization",
+          "canExportPredictions",
+          "canInviteMembers",
+          "canManageInvitations",
+          "canManageMemberRoles",
+          "canManagePlugins",
+          "canManageReviews",
+          "canRemoveMembers",
+          "canReview",
+          "canRunPredictions",
+          "canTransferOwnership",
+          "canViewInvitations",
+          "canViewMembers",
+          "canViewModels",
+          "canViewOrganization",
+          "canViewPlugins",
+          "canViewWorkspace"
+        ],
+        "type": "object"
+      },
+      "WorkspaceUserDto": {
+        "properties": {
+          "avatarUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "avatarUrl",
+          "email",
+          "fullName",
+          "id"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "MLSuite API",
+    "version": "contract"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/admin/infrastructure/overview": {
+      "get": {
+        "operationId": "overview",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonNode"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "infrastructure-controller"
+        ]
+      }
+    },
+    "/api/admin/infrastructure/services/{serviceName}/actions": {
+      "post": {
+        "operationId": "action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "serviceName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "infrastructure-controller"
+        ]
+      }
+    },
+    "/api/admin/infrastructure/services/{serviceName}/logs": {
+      "get": {
+        "operationId": "logs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "serviceName",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tail",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonNode"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "infrastructure-controller"
+        ]
+      }
+    },
+    "/api/admin/infrastructure/terminal/sessions": {
+      "post": {
+        "operationId": "createTerminalSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminalSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminalSessionResponse"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "infrastructure-controller"
+        ]
+      }
+    },
+    "/api/admin/infrastructure/terminal/sessions/{sessionId}": {
+      "delete": {
+        "operationId": "closeTerminalSession",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "infrastructure-controller"
+        ]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "operationId": "list_6",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "current",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserPageDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-user-controller"
+        ]
+      },
+      "post": {
+        "operationId": "create_8",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminCreateUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-user-controller"
+        ]
+      }
+    },
+    "/api/admin/users/{id}": {
+      "delete": {
+        "operationId": "delete_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-user-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "update_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUpdateUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-user-controller"
+        ]
+      }
+    },
+    "/api/admin/users/{id}/password": {
+      "post": {
+        "operationId": "resetPassword",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "admin-user-controller"
+        ]
+      }
+    },
+    "/api/analyzer/artifacts/inspect": {
+      "post": {
+        "operationId": "inspectArtifact",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "artifact": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "artifact"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": { },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "analyzer-controller"
+        ]
+      }
+    },
+    "/api/analyzer/artifacts/match": {
+      "post": {
+        "operationId": "matchArtifacts",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "dataframes": {
+                    "items": {
+                      "format": "binary",
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "models": {
+                    "items": {
+                      "format": "binary",
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "dataframes",
+                  "models"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": { },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "analyzer-controller"
+        ]
+      }
+    },
+    "/api/analyzer/explanations": {
+      "post": {
+        "operationId": "explain",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": { },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "analyzer-controller"
+        ]
+      }
+    },
+    "/api/analyzer/predictions": {
+      "post": {
+        "operationId": "predict",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "data": {
+                    "additionalProperties": { },
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "data"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": { },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "analyzer-controller"
+        ]
+      }
+    },
+    "/api/analyzer/schema": {
+      "post": {
+        "operationId": "generateSchema",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "oneHotSeparator",
+            "required": false,
+            "schema": {
+              "default": "__",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "dataframe": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "model": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "model"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": { },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "analyzer-controller"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "auth-controller"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "auth-controller"
+        ]
+      }
+    },
+    "/api/invitations/pending": {
+      "get": {
+        "operationId": "listPendingForUser",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      }
+    },
+    "/api/invitations/{token}/accept": {
+      "post": {
+        "operationId": "acceptInvitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      }
+    },
+    "/api/invitations/{token}/decline": {
+      "post": {
+        "operationId": "declineInvitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      }
+    },
+    "/api/models": {
+      "get": {
+        "operationId": "getModelPage",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "updated",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "active",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createModel",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "oneHotSeparator",
+            "required": false,
+            "schema": {
+              "default": "__",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "dataframeFile": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "modelFile": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "modelFile"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
+    "/api/models/all": {
+      "get": {
+        "operationId": "getAllModels",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ModelDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
+    "/api/models/{modelId}": {
+      "delete": {
+        "operationId": "delete_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      },
+      "get": {
+        "operationId": "getModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "rename_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
+    "/api/models/{modelId}/archive": {
+      "post": {
+        "operationId": "archive_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
+    "/api/models/{modelId}/duplicate": {
+      "post": {
+        "operationId": "duplicate_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "modelId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "model-controller"
+        ]
+      }
+    },
+    "/api/organizations": {
+      "get": {
+        "operationId": "listOrganizations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createOrganization",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      }
+    },
+    "/api/organizations/catalog": {
+      "get": {
+        "operationId": "getOrganizationPage",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "updated",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoOrganizationCatalogItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}": {
+      "delete": {
+        "operationId": "deleteOrganization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      },
+      "get": {
+        "operationId": "getOrganization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "updateOrganization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/admin-dashboard": {
+      "get": {
+        "operationId": "getAdminDashboard",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationAdminDashboardDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/audit-events": {
+      "get": {
+        "operationId": "list_8",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEventDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "audit-log-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/invitation-candidates": {
+      "get": {
+        "operationId": "listInvitationCandidates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationCandidateDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/invitations": {
+      "get": {
+        "operationId": "listInvitations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createInvitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInvitationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/invitations/bulk-revoke": {
+      "post": {
+        "operationId": "bulkRevokeInvitations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkInvitationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/invitations/{invitationId}": {
+      "delete": {
+        "operationId": "revokeInvitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "invitationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/invitations/{invitationId}/resend": {
+      "post": {
+        "operationId": "resendInvitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "invitationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "invitation-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/members": {
+      "get": {
+        "operationId": "listMembers",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationMembershipRowDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/members/{membershipId}": {
+      "delete": {
+        "operationId": "removeMember",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "updateMemberRole",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "membershipId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationMembershipRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationMembershipDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/roles": {
+      "get": {
+        "operationId": "list_5",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolesResponseDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-catalog-controller"
+        ]
+      },
+      "post": {
+        "operationId": "create_7",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDefinitionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/roles/from-template": {
+      "post": {
+        "operationId": "fromTemplate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleFromTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDefinitionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/roles/{roleId}": {
+      "delete": {
+        "operationId": "delete_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "replacementRoleId",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-catalog-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDefinitionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/roles/{roleId}/duplicate": {
+      "post": {
+        "operationId": "duplicate_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleDefinitionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "role-catalog-controller"
+        ]
+      }
+    },
+    "/api/organizations/{organizationId}/transfer-ownership": {
+      "post": {
+        "operationId": "transferOwnership",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferOrganizationOwnershipRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationMembershipDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "organization-controller"
+        ]
+      }
+    },
+    "/api/plugins": {
+      "delete": {
+        "operationId": "delete",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "plugin-controller"
+        ]
+      },
+      "get": {
+        "operationId": "getAll",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "updated",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPluginDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "plugin-controller"
+        ]
+      },
+      "post": {
+        "operationId": "upload",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PluginDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "plugin-controller"
+        ]
+      }
+    },
+    "/api/plugins/runtime": {
+      "get": {
+        "operationId": "list_7",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PluginRuntimeSourceDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "plugin-runtime-controller"
+        ]
+      }
+    },
+    "/api/plugins/stats": {
+      "get": {
+        "operationId": "stats",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PluginStatsDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "plugin-controller"
+        ]
+      }
+    },
+    "/api/prediction-result-feedback": {
+      "get": {
+        "operationId": "list_4",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "resultId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-result-feedback-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "update_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePredictionResultFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-result-feedback-controller"
+        ]
+      },
+      "post": {
+        "operationId": "create_6",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePredictionResultFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-result-feedback-controller"
+        ]
+      }
+    },
+    "/api/prediction-result-feedback/by-runs": {
+      "get": {
+        "operationId": "listByRuns",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "runIds",
+            "required": true,
+            "schema": {
+              "items": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-result-feedback-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs": {
+      "get": {
+        "operationId": "listOrganizationRuns",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/last-id": {
+      "get": {
+        "operationId": "lastId",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionRunSequenceDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/{runId}": {
+      "delete": {
+        "operationId": "delete_5",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      },
+      "get": {
+        "operationId": "get_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionRunDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/{runId}/summary": {
+      "get": {
+        "operationId": "summary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/readiness": {
+      "get": {
+        "operationId": "readiness",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartupReadinessDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "startup-readiness-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks": {
+      "get": {
+        "operationId": "listOrganization",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictBookmarkDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}": {
+      "get": {
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      },
+      "put": {
+        "operationId": "move",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveSchemaBookmarkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/runs": {
+      "get": {
+        "operationId": "listForBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PredictionRunDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createForBookmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePredictionRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionRunDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/schema-drafts/{draftId}": {
+      "get": {
+        "operationId": "get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draftId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDraftDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-draft-controller"
+        ]
+      },
+      "put": {
+        "operationId": "update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draftId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSchemaDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDraftDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-draft-controller"
+        ]
+      }
+    },
+    "/api/schema-drafts/{draftId}/diff": {
+      "get": {
+        "operationId": "diff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draftId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDraftDiffDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-draft-controller"
+        ]
+      }
+    },
+    "/api/schema-drafts/{draftId}/merge": {
+      "post": {
+        "operationId": "merge",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draftId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchemaDraftMergeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDraftMergeResultDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-draft-controller"
+        ]
+      }
+    },
+    "/api/schema-drafts/{draftId}/publish": {
+      "post": {
+        "operationId": "publish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draftId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishSchemaDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDraftPublishResultDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-draft-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews": {
+      "post": {
+        "operationId": "create_5",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSchemaReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/eligible-reviewers": {
+      "get": {
+        "operationId": "eligibleReviewers",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaReviewReviewerDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inbox": {
+      "get": {
+        "operationId": "inbox",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaReviewContextDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/inferences/{predictionRunId}/assignments": {
+      "get": {
+        "operationId": "assignmentStatus",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "predictionRunId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaReviewAssignmentStatusDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/{reviewId}/runs/{reviewRunId}": {
+      "get": {
+        "operationId": "detail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewRunId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaReviewRunDetailDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/{reviewId}/runs/{reviewRunId}/feedback": {
+      "patch": {
+        "operationId": "updateFeedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewRunId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePredictionResultFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createFeedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewRunId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePredictionResultFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/{reviewId}/runs/{reviewRunId}/reviewers/{reviewerId}/reopen": {
+      "post": {
+        "operationId": "reopen",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewRunId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewerId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/{reviewId}/runs/{reviewRunId}/reviewers/{reviewerId}/response": {
+      "delete": {
+        "operationId": "deleteResponse",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewRunId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reviewerId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-reviews/{reviewId}/submit": {
+      "post": {
+        "operationId": "submit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reviewId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitSchemaReviewRunsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-review-controller"
+        ]
+      }
+    },
+    "/api/schema-versions/{versionId}": {
+      "get": {
+        "operationId": "get_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaVersionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-version-controller"
+        ]
+      }
+    },
+    "/api/schema-versions/{versionId}/bindings": {
+      "get": {
+        "operationId": "listBindings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaModelBindingDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-version-controller"
+        ]
+      },
+      "post": {
+        "operationId": "addBinding",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "versionId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSchemaModelBindingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaModelBindingDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-version-controller"
+        ]
+      }
+    },
+    "/api/schemas": {
+      "get": {
+        "operationId": "list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "updated",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "active",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoSchemaCatalogItemDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      },
+      "post": {
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSchemaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      }
+    },
+    "/api/schemas/all": {
+      "get": {
+        "operationId": "listAll",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      }
+    },
+    "/api/schemas/with-initial-version": {
+      "post": {
+        "operationId": "create_4",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSchemaWithInitialVersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-creation-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}": {
+      "delete": {
+        "operationId": "delete_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      },
+      "get": {
+        "operationId": "get_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "rename",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}/archive": {
+      "post": {
+        "operationId": "archive",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}/bookmarks": {
+      "get": {
+        "operationId": "list_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaBookmarkDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      },
+      "post": {
+        "operationId": "create_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSchemaBookmarkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}/drafts": {
+      "get": {
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaDraftDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-draft-controller"
+        ]
+      },
+      "post": {
+        "operationId": "create_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSchemaDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDraftDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-draft-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}/duplicate": {
+      "post": {
+        "operationId": "duplicate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "versionId",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-controller"
+        ]
+      }
+    },
+    "/api/schemas/{schemaId}/versions": {
+      "get": {
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaVersionDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-version-controller"
+        ]
+      },
+      "post": {
+        "operationId": "create_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schemaId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSchemaVersionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaVersionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-version-controller"
+        ]
+      }
+    },
+    "/api/search": {
+      "get": {
+        "operationId": "search",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponseDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "search-controller"
+        ]
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "operationId": "getProfile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "user-controller"
+        ]
+      }
+    },
+    "/api/workspace/context": {
+      "get": {
+        "operationId": "getContext",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceContextDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "workspace-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "selectOrganization",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectOrganizationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceContextDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "workspace-controller"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ]
+}

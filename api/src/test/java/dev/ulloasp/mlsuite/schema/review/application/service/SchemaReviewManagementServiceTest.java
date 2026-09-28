@@ -36,6 +36,7 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewAssignee;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
+import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
@@ -76,7 +77,7 @@ class SchemaReviewManagementServiceTest {
 
         var status = service.assignmentStatus(7L, 50L).getFirst();
 
-        assertEquals("COMPLETED", status.reviewState());
+        assertEquals(SchemaReviewState.COMPLETED, status.reviewState());
         assertEquals(12L, status.reviewer().id());
         assertEquals(12L, status.createdBy().id());
         assertEquals(submission.getSubmittedAt(), status.submittedAt());

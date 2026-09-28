@@ -7,6 +7,8 @@ import java.util.Map;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
 
+import jakarta.annotation.Nullable;
+
 public record PredictionResultDto(
         Long id,
         Long runId,
@@ -14,8 +16,8 @@ public record PredictionResultDto(
         Map<String, Object> modelInput,
         Map<String, Object> output,
         PredictionResultStatus status,
-        String errorMessage,
-        Map<String, Object> errorJson,
+        @Nullable String errorMessage,
+        @Nullable Map<String, Object> errorJson,
         OffsetDateTime createdAt) {
 
     public static PredictionResultDto from(PredictionResult result) {

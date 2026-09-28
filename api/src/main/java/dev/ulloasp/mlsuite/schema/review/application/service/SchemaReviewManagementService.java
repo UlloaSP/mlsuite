@@ -24,6 +24,7 @@ import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewAssignee;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
+import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import lombok.RequiredArgsConstructor;
@@ -94,10 +95,10 @@ public class SchemaReviewManagementService implements SchemaReviewManagementUseC
         Long reviewerId = assignee.getUser().getId();
         SchemaReviewRunSubmission submission = submissions
                 .findByReviewRunIdAndUserId(reviewRun.getId(), reviewerId).orElse(null);
-        String state = submission != null ? "COMPLETED"
+        SchemaReviewState state = submission != null ? SchemaReviewState.COMPLETED
                 : feedback.existsByResultRunIdAndUserId(reviewRun.getRun().getId(), reviewerId)
-                        ? "IN_PROGRESS"
-                        : "PENDING";
+                        ? SchemaReviewState.IN_PROGRESS
+                        : SchemaReviewState.PENDING;
         return new SchemaReviewAssignmentStatusDto(
                 review.getPublicId(), reviewRun.getPublicId(),
                 SchemaReviewReviewerDto.from(assignee.getUser()),

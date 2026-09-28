@@ -85,7 +85,7 @@ class ManualAuthServiceTest {
                 "SUPERADMIN",
                 true));
 
-        assertEquals("SUPERADMIN", dto.systemRole());
+        assertEquals(SystemRole.SUPERADMIN, dto.systemRole());
         verify(workspaceBootstrapService).ensureCurrentOrganization(org.mockito.ArgumentMatchers.any(User.class));
     }
 

@@ -7,11 +7,13 @@ import java.util.Map;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
+import jakarta.annotation.Nullable;
+
 public record SchemaVersionDto(
         Long id,
         Long schemaId,
         int version,
-        String name,
+        @Nullable String name,
         Map<String, Object> formSchema,
         List<SchemaModelBindingDto> bindings,
         OffsetDateTime createdAt) {

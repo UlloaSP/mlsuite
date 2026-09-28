@@ -5,14 +5,16 @@ import java.util.List;
 
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 
+import jakarta.annotation.Nullable;
+
 public record SchemaDto(
         Long id,
         Long organizationId,
         String name,
-        String description,
+        @Nullable String description,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        OffsetDateTime archivedAt) {
+        @Nullable OffsetDateTime archivedAt) {
 
     public static SchemaDto from(Schema schema) {
         return new SchemaDto(

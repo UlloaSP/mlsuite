@@ -1,11 +1,13 @@
 package dev.ulloasp.mlsuite.search.application.dto;
 
+import jakarta.annotation.Nullable;
+
 public record SearchResultDto(
         String type,
         String id,
         String title,
-        String subtitle,
+        @Nullable String subtitle,
         String href,
-        Long organizationId,
-        Long modelId) {
+        @Nullable Long organizationId,
+        @Nullable Long modelId) {
 }

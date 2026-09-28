@@ -3,6 +3,8 @@ package dev.ulloasp.mlsuite.schema.application.dto;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import jakarta.annotation.Nullable;
+
 /**
  * A bookmark as the Predict launcher shows it: what it runs (schema, snapshot,
  * models, inputs, reports) and how it has been used. {@code latestVersion} is the
@@ -13,15 +15,15 @@ public record PredictBookmarkDto(
         String name,
         Long schemaId,
         String schemaName,
-        String schemaDescription,
+        @Nullable String schemaDescription,
         Long versionId,
         int version,
-        String versionName,
+        @Nullable String versionName,
         int latestVersion,
         List<String> models,
         int fieldCount,
         int reportCount,
         long runCount,
-        OffsetDateTime lastRunAt,
+        @Nullable OffsetDateTime lastRunAt,
         OffsetDateTime updatedAt) {
 }

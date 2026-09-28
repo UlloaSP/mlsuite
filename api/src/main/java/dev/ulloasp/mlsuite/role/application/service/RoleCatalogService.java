@@ -64,7 +64,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
     public PermissionDto permission(PermissionKey key) {
         String label = key.name().replace('_', ' ').toLowerCase();
         boolean dangerous = key.name().contains("DELETE") || key.name().contains("TRANSFER") || key.name().contains("REMOVE");
-        return new PermissionDto(key.name(), label, "Allows " + label + ".", dangerous);
+        return new PermissionDto(key, label, "Allows " + label + ".", dangerous);
     }
 
     public RoleDefinitionDto toDto(Long userId, Long orgId, RoleDefinition role) {
@@ -75,7 +75,7 @@ public class RoleCatalogService implements RoleCatalogUseCase {
                 role.getName(),
                 role.getSlug(),
                 role.getDescription(),
-                role.getScope().name(),
+                role.getScope(),
                 role.isLocked(),
                 role.getSystemKey(),
                 users,
@@ -95,8 +95,8 @@ public class RoleCatalogService implements RoleCatalogUseCase {
                 template.getName(),
                 template.getDescription(),
                 template.getCategory(),
-                template.getScope().name(),
-                template.getPermissionKeys().stream().map(Enum::name).toList());
+                template.getScope(),
+                List.copyOf(template.getPermissionKeys()));
     }
 
     private PermissionGroupDto group(String name, String... keys) {

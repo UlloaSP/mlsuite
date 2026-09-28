@@ -1,8 +1,10 @@
 package dev.ulloasp.mlsuite.schema.application.dto;
 
+import jakarta.annotation.Nullable;
+
 public record SchemaDraftPublishResultDto(
         String status,
         SchemaDraftDto draft,
-        SchemaVersionDto version,
-        SchemaDraftDiffDto diff) {
+        @Nullable SchemaVersionDto version,
+        @Nullable SchemaDraftDiffDto diff) {
 }

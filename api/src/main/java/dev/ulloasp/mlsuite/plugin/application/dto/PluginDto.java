@@ -2,6 +2,8 @@ package dev.ulloasp.mlsuite.plugin.application.dto;
 
 import java.time.OffsetDateTime;
 
+import jakarta.annotation.Nullable;
+
 public record PluginDto(
         String id,
         String fileName,
@@ -9,11 +11,11 @@ public record PluginDto(
         long sizeBytes,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        String updatedByName,
-        String updatedByEmail,
-        String updatedByAvatarUrl,
+        @Nullable String updatedByName,
+        @Nullable String updatedByEmail,
+        @Nullable String updatedByAvatarUrl,
         String source,
         String pluginType,
-        String kind) {
+        @Nullable String kind) {
 }
 

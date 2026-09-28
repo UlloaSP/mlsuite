@@ -3,7 +3,10 @@ package dev.ulloasp.mlsuite.invitation.application.dto;
 import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
+import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
+
+import jakarta.annotation.Nullable;
 
 public record InvitationDto(
         Long id,
@@ -11,8 +14,8 @@ public record InvitationDto(
         String organizationName,
         String email,
         RoleSummaryDto roleDefinition,
-        String status,
-        String token,
+        InvitationStatus status,
+        @Nullable String token,
         OffsetDateTime expiresAt,
         OffsetDateTime createdAt) {
 
@@ -27,7 +30,7 @@ public record InvitationDto(
                 invitation.getOrganization().getName(),
                 invitation.getEmail(),
                 RoleSummaryDto.from(invitation.getRoleDefinition()),
-                invitation.getStatus().name(),
+                invitation.getStatus(),
                 includeToken ? invitation.getToken() : null,
                 invitation.getExpiresAt(),
                 invitation.getCreatedAt());
