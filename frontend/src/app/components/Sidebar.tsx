@@ -7,7 +7,6 @@ import { useAtomValue } from "jotai";
 import { sidebarStyleAtom, type SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { SidebarActions } from "./SidebarActions";
 import { SidebarBrand } from "./SidebarBrand";
-import { SidebarLocationTree } from "./SidebarLocationTree";
 import { SidebarNavigation } from "./SidebarNavigation";
 import { SidebarOrganizationHeader } from "./SidebarOrganizationHeader";
 import { SidebarUserFooter } from "./SidebarUserFooter";
@@ -27,8 +26,6 @@ export function Sidebar({ side }: { side: SidebarPosition }) {
           <SidebarOrganizationHeader side={side} />
         </SidebarHeader>
         <SidebarContent>
-          {/* First, so a deep page shows where it sits without scrolling the menu. */}
-          <SidebarLocationTree />
           <SidebarNavigation />
         </SidebarContent>
         <div className="shrink-0 border-t border-line px-3 py-2">

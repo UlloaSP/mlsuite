@@ -53,3 +53,24 @@ export const sidebarStyleAtom = atomWithStorage<SidebarStyle>(
   choiceStorage<SidebarStyle>(["fixed", "floating"]),
   { getOnInit: true },
 );
+
+/** Where the current page's breadcrumb trail is shown, if anywhere. */
+export type LocationDisplay =
+  | "breadcrumb-top"
+  | "breadcrumb-bottom"
+  | "rail-left"
+  | "rail-right"
+  | "off";
+
+export const locationDisplayAtom = atomWithStorage<LocationDisplay>(
+  "ui/location-display",
+  "breadcrumb-top",
+  choiceStorage<LocationDisplay>([
+    "breadcrumb-top",
+    "breadcrumb-bottom",
+    "rail-left",
+    "rail-right",
+    "off",
+  ]),
+  { getOnInit: true },
+);

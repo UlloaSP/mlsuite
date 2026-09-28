@@ -7,6 +7,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { Children, Fragment, isValidElement } from "react";
 import { AppBreadcrumbs, type AppBreadcrumbItem } from "./AppBreadcrumbs";
 import { usePageTrail, type BreadcrumbScope } from "./breadcrumb/breadcrumb-context";
+import { useLocationDisplay } from "./location-display";
 import { AppEyebrow } from "./AppEyebrow";
 import { cx } from "./cx";
 
@@ -51,6 +52,8 @@ export function AppPageHeader({
   // title is the current crumb, and a scope's home page is just its root.
   const levels = breadcrumbs ?? (typeof title === "string" ? [{ label: title }] : []);
   const { root, trail } = usePageTrail(levels, breadcrumbScope);
+  // The bottom bar and the rail are drawn by the app shell instead.
+  const inlineTrail = useLocationDisplay() === "breadcrumb-top";
   const actionNodes = flattenActionNodes(actions).slice(0, 4);
   // An eyebrow that says the title again ("Models" over "Models") is noise.
   const repeatsTitle =
@@ -68,7 +71,7 @@ export function AppPageHeader({
     <div className="min-w-0 flex-shrink-0">
       {/* Always top-left, outside `className`, so it sits in the same place on
           every page, including centered form pages. */}
-      {trail.length > 0 ? (
+      {inlineTrail && trail.length > 0 ? (
         <AppBreadcrumbs items={trail} root={root} className="mb-3 max-w-full" />
       ) : null}
       {/* No outer margin: the page body owns the gap after the header (gap-6). */}

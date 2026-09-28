@@ -8,7 +8,7 @@ import {
   BreadcrumbPublishContext,
   BreadcrumbRootsContext,
   BreadcrumbTrailContext,
-  type BreadcrumbTrailItem,
+  type PublishedTrail,
 } from "./breadcrumb-context";
 
 /** App shell owner of breadcrumb roots and of the trail pages publish. */
@@ -19,7 +19,7 @@ export function BreadcrumbProvider({
   children: ReactNode;
   roots: ComponentProps<typeof BreadcrumbRootsContext.Provider>["value"];
 }) {
-  const [trail, setTrail] = useState<BreadcrumbTrailItem[] | null>(null);
+  const [trail, setTrail] = useState<PublishedTrail | null>(null);
 
   return (
     <BreadcrumbRootsContext.Provider value={roots}>

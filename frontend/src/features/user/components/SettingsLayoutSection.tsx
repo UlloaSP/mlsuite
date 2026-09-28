@@ -12,11 +12,14 @@ import { useFullscreen } from "@/shared/ui/display-controls";
 import { shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
 import { sidebarCollapsedAtom } from "@/shared/ui/ui-state";
 import {
+  locationDisplayAtom,
   navigationPositionAtom,
   sidebarStyleAtom,
+  type LocationDisplay,
   type NavigationPosition,
   type SidebarStyle,
 } from "@/shared/ui/sidebar-preferences";
+import { LocationLayoutPreview } from "./LocationLayoutPreview";
 import { SidebarLayoutPreview } from "./SidebarLayoutPreview";
 
 const POSITIONS: { label: string; value: NavigationPosition }[] = [
@@ -31,12 +34,21 @@ const STYLES: { label: string; value: SidebarStyle }[] = [
   { label: "Floating", value: "floating" },
 ];
 
+const LOCATIONS: { label: string; value: LocationDisplay }[] = [
+  { label: "Breadcrumb above the title", value: "breadcrumb-top" },
+  { label: "Breadcrumb at the bottom", value: "breadcrumb-bottom" },
+  { label: "Rail on the left", value: "rail-left" },
+  { label: "Rail on the right", value: "rail-right" },
+  { label: "Off", value: "off" },
+];
+
 const OPTION_HEADING = "text-sm font-semibold text-fg";
 
 export function SettingsLayoutSection() {
   const [position, setPosition] = useAtom(navigationPositionAtom);
   const [variant, setVariant] = useAtom(sidebarStyleAtom);
   const [collapsed, setCollapsed] = useAtom(sidebarCollapsedAtom);
+  const [location, setLocation] = useAtom(locationDisplayAtom);
   const bindings = useAtomValue(shortcutBindingsAtom);
   const { isFullscreen, supported, toggleFullscreen } = useFullscreen();
 
@@ -44,8 +56,8 @@ export function SettingsLayoutSection() {
     <fieldset className="border-t border-line pt-8">
       <legend className="text-xl font-semibold tracking-[-0.02em] text-fg">Layout</legend>
       <p className="mt-1 text-sm leading-6 text-fg-secondary">
-        Choose where navigation lives, how it meets the page, and how much of the screen the
-        workspace uses.
+        Choose where navigation lives, how it meets the page, where your location is shown, and how
+        much of the screen the workspace uses.
       </p>
       <h3 className={`mt-6 ${OPTION_HEADING}`}>Navigation position</h3>
       <div className="mt-3 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
@@ -78,6 +90,26 @@ export function SettingsLayoutSection() {
             onChange={() => animateLayoutChange(() => setVariant(option.value))}
           >
             <SidebarLayoutPreview position={position} variant={option.value} />
+          </AppChoiceCard>
+        ))}
+      </div>
+      <h3 className={`mt-6 ${OPTION_HEADING}`}>Location</h3>
+      <p className="mt-1 text-sm text-fg-secondary">
+        Where the breadcrumb of the page you are on is shown: above its title, in a bar along the
+        bottom, as a slim rail at the edge of the page that names each level on hover, or not at
+        all. Touch and narrow screens show rails as the breadcrumb above the title.
+      </p>
+      <div className="mt-3 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+        {LOCATIONS.map((option) => (
+          <AppChoiceCard
+            key={option.value}
+            checked={location === option.value}
+            label={option.label}
+            name="location-display"
+            value={option.value}
+            onChange={() => animateLayoutChange(() => setLocation(option.value))}
+          >
+            <LocationLayoutPreview display={option.value} />
           </AppChoiceCard>
         ))}
       </div>

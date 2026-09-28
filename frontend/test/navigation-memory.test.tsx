@@ -1,14 +1,16 @@
 // @vitest-environment jsdom
+import { Provider, createStore, useAtomValue } from "jotai";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router";
 import { afterEach, expect, test, vi } from "vite-plus/test";
-import { SidebarLocationTree } from "@/app/components/SidebarLocationTree";
-import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
+import { LocationBar } from "@/app/components/LocationBar";
+import { LocationRail } from "@/app/components/LocationRail";
 import { useScrollMemory } from "@/app/layouts/use-scroll-memory";
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
+import { locationDisplayAtom, type LocationDisplay } from "@/shared/ui/sidebar-preferences";
 
 let root: Root | undefined;
 let container: HTMLDivElement;
@@ -28,42 +30,73 @@ async function render(node: React.ReactNode, entries = ["/"]) {
 
 const roots = { organization: { label: "Acme", to: "/workspace" } };
 
-test("the sidebar shows the page trail below the organization as a tree", async () => {
-  vi.stubGlobal("matchMedia", () => ({
-    matches: false,
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
-  }));
-  const page = (levels: { label: string; to?: string }[]) => (
+test("the rail draws one line per breadcrumb level and names a level on focus", async () => {
+  await render(
     <BreadcrumbProvider roots={roots}>
-      <SidebarProvider open onOpenChange={() => undefined}>
-        <SidebarLocationTree />
-        <AppPageHeader title="Page" breadcrumbs={levels} />
-      </SidebarProvider>
-    </BreadcrumbProvider>
-  );
-  await render(page([{ label: "Models" }]));
-  expect(container.querySelector('[aria-label="Current location"]')).toBeNull();
-
-  await act(async () =>
-    root?.render(
-      <MemoryRouter>
-        {page([
+      <LocationRail side="left" />
+      <AppPageHeader
+        title="Page"
+        breadcrumbs={[
           { label: "Schemas", to: "/schemas" },
           { label: "Risk schema", to: "/schemas/1" },
           { label: "Bookmarks" },
-        ])}
-      </MemoryRouter>,
-    ),
+        ]}
+      />
+    </BreadcrumbProvider>,
   );
-  const tree = container.querySelector('[aria-label="Current location"]')!;
-  expect([...tree.querySelectorAll("li")].map((level) => level.textContent)).toEqual([
+  const lines = [...container.querySelectorAll<HTMLElement>("nav[data-location-rail] li > *")];
+  expect(lines.map((line) => line.getAttribute("aria-label"))).toEqual([
+    "Acme",
     "Schemas",
     "Risk schema",
     "Bookmarks",
   ]);
-  expect(tree.querySelector('[aria-current="page"]')?.textContent).toBe("Bookmarks");
-  expect(tree.querySelector("a")?.getAttribute("href")).toBe("/schemas");
+  expect(lines[0].getAttribute("href")).toBe("/workspace");
+  expect(lines[3].getAttribute("aria-current")).toBe("page");
+
+  await act(async () => lines[2].focus());
+  const card = document.body.querySelector("[data-radix-popper-content-wrapper]");
+  expect(card?.textContent).toContain("Risk schema");
+  expect(card?.textContent).toContain("Acme › Schemas");
+});
+
+/** What the shell does: the bottom bar only for the bottom display. */
+function ShellBottom() {
+  return useAtomValue(locationDisplayAtom) === "breadcrumb-bottom" ? <LocationBar /> : null;
+}
+
+test("each location display draws the trail in one place only", async () => {
+  const page = (
+    <BreadcrumbProvider roots={roots}>
+      <AppPageHeader title="Models" />
+      <ShellBottom />
+    </BreadcrumbProvider>
+  );
+  const crumbs = () => container.querySelectorAll('nav[aria-label="Breadcrumb"]');
+
+  const renderWith = async (display: LocationDisplay) => {
+    await act(async () => root?.unmount());
+    const store = createStore();
+    store.set(locationDisplayAtom, display);
+    await render(<Provider store={store}>{page}</Provider>);
+  };
+
+  await renderWith("breadcrumb-top");
+  expect(crumbs()).toHaveLength(1);
+  expect(container.querySelector("footer")).toBeNull();
+
+  // A rail needs hover and width; jsdom has neither, so the breadcrumb stays above the title.
+  await renderWith("rail-left");
+  expect(crumbs()).toHaveLength(1);
+  expect(container.querySelector("footer")).toBeNull();
+
+  await renderWith("off");
+  expect(crumbs()).toHaveLength(0);
+  expect(container.querySelector("footer")).toBeNull();
+
+  await renderWith("breadcrumb-bottom");
+  expect(crumbs()).toHaveLength(1);
+  expect(container.querySelector("footer")?.textContent).toBe("AcmeModels");
 });
 
 function TabProbe() {

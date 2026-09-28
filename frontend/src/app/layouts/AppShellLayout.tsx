@@ -12,8 +12,11 @@ import {
 } from "@/shared/ui/sidebar-preferences";
 import { sidebarCollapsedAtom } from "@/shared/ui/ui-state";
 import { cx } from "@/shared/ui/cx";
+import { useLocationDisplay } from "@/shared/ui/location-display";
 import { AppBreadcrumbRoots } from "@/app/components/AppBreadcrumbRoots";
 import { AppGlobalSearch } from "@/app/components/AppGlobalSearch";
+import { LocationBar } from "@/app/components/LocationBar";
+import { LocationRail } from "@/app/components/LocationRail";
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/Sidebar";
 import { Navbar } from "@/app/components/navbar/Navbar";
@@ -31,6 +34,7 @@ export function AppShellFrame({ children }: PropsWithChildren) {
   useDisplayShortcuts();
   useQuietScrollbars(floating);
   useScrollMemory();
+  const location = useLocationDisplay();
 
   return (
     <AppBreadcrumbRoots>
@@ -52,7 +56,10 @@ export function AppShellFrame({ children }: PropsWithChildren) {
             {vertical ? <MobileSidebarTrigger side={position} /> : null}
             <div className="app-content-transition relative min-h-0 min-w-0 flex-1 overflow-clip [view-transition-name:app-content]">
               {children}
+              {location === "rail-left" ? <LocationRail side="left" /> : null}
+              {location === "rail-right" ? <LocationRail side="right" /> : null}
             </div>
+            {location === "breadcrumb-bottom" ? <LocationBar /> : null}
           </SidebarInset>
           {position === "right" ? <Sidebar side="right" /> : null}
           {position === "bottom" ? <Navbar position="bottom" /> : null}

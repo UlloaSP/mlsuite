@@ -12,7 +12,11 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/tes
 import { MobileSidebarTrigger } from "@/app/components/MobileSidebarTrigger";
 import { Sidebar } from "@/app/components/app-sidebar/Sidebar";
 import { SidebarProvider } from "@/app/components/app-sidebar/SidebarContext";
-import { navigationPositionAtom, sidebarStyleAtom } from "@/shared/ui/sidebar-preferences";
+import {
+  locationDisplayAtom,
+  navigationPositionAtom,
+  sidebarStyleAtom,
+} from "@/shared/ui/sidebar-preferences";
 
 const matchMedia = (matches: boolean) =>
   vi.fn(() => ({
@@ -61,6 +65,18 @@ describe("sidebar preferences", () => {
     const unsubscribe = store.sub(navigationPositionAtom, () => undefined);
 
     expect(store.get(navigationPositionAtom)).toBe("right");
+
+    unsubscribe();
+  });
+
+  test("location defaults to the top breadcrumb, persists a choice, and rejects unknown ones", () => {
+    localStorage.setItem("ui/location-display", JSON.stringify("tree-left"));
+    const store = createStore();
+    const unsubscribe = store.sub(locationDisplayAtom, () => undefined);
+
+    expect(store.get(locationDisplayAtom)).toBe("breadcrumb-top");
+    store.set(locationDisplayAtom, "off");
+    expect(localStorage.getItem("ui/location-display")).toBe(JSON.stringify("off"));
 
     unsubscribe();
   });
