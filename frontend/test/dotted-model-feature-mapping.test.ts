@@ -99,7 +99,7 @@ test("keeps dotted model feature names literal in prediction and explanation pay
         },
       ],
     },
-    bindings: [{ modelId: "3", modelName: "Tree" }],
+    bindings: [{ modelId: 3, modelName: "Tree" }],
     customReportDefinitions: [crystalReport],
   });
   const form = createForm({

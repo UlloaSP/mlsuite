@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { KeyRound, LayoutGrid, Mail, Settings, Users } from "lucide-react";
-import type { WorkspacePermissionsDto } from "@/capabilities/workspace-context/workspace-context.types";
 import type { NavigationChild } from "./sidebar-navigation-support";
+import type { WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
 /** Pages of the active organization, offered from the organization switcher. */
 export function getWorkspaceLinks(

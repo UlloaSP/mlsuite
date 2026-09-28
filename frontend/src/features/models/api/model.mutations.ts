@@ -15,7 +15,8 @@ import {
   renameModel,
 } from "./model.api";
 import { modelKeys } from "./model.keys";
-import type { CreateModelRequest, ModelDto } from "./model.types";
+import type { CreateModelRequest } from "./model.types";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
 const useInvalidateModelQueries = () => {
   const queryClient = useQueryClient();

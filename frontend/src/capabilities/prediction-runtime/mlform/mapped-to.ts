@@ -13,7 +13,7 @@ import {
 } from "mlform/schema";
 
 export type BindingIdentity = {
-  modelId: string;
+  modelId: number | string;
   modelName?: string;
 };
 
@@ -38,7 +38,7 @@ export const mappedTarget = (
   if (binding) {
     return (
       (binding.modelName ? resolveMappedTo(mapping, binding.modelName) : undefined) ??
-      resolveMappedTo(mapping, binding.modelId)
+      resolveMappedTo(mapping, String(binding.modelId))
     );
   }
   const values = resolveMappedTargets(mapping, undefined);

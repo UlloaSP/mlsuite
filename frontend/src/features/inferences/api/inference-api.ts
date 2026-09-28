@@ -3,46 +3,12 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import { INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY } from "@/capabilities/review-creation/review-creation-api";
 import { appFetch } from "@/shared/api/http";
+import type {
+  PredictionRunCatalogItemDto,
+  SchemaReviewAssignmentStatusDto,
+} from "@/shared/api/openapi.gen";
 
-export type InferenceStatus = "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
-
-export type InferenceCatalogItemDto = {
-  id: number;
-  name: string;
-  status: InferenceStatus;
-  createdAt: string;
-  updatedAt?: string | null;
-  createdByName?: string | null;
-  createdByEmail?: string | null;
-  schemaId: number;
-  schemaName: string;
-  schemaVersionId: number;
-  schemaVersion: number;
-  schemaVersionName: string;
-  bookmarkId?: number | null;
-  bookmarkName?: string | null;
-};
-
-export type InferenceReviewAssignmentDto = {
-  reviewId: string;
-  reviewRunId: string;
-  reviewer: {
-    id: number;
-    fullName: string;
-    email: string;
-  };
-  createdBy: {
-    id: number;
-    fullName: string;
-    email: string;
-  };
-  reviewState: "PENDING" | "IN_PROGRESS" | "COMPLETED";
-  submittedAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  expiresAt: string;
-  expired: boolean;
-};
+export type InferenceStatus = PredictionRunCatalogItemDto["status"];
 
 /** How often open review views check for reviewers' progress (paused in background tabs). */
 export const REVIEW_POLL_MS = 15_000;
@@ -54,7 +20,7 @@ export const inferenceCatalogQueryOptions = (organizationId: number | string) =>
   queryOptions({
     queryKey: INFERENCES_QUERY_KEY(organizationId),
     queryFn: ({ signal }) =>
-      appFetch<InferenceCatalogItemDto[]>("/api/prediction-runs", { signal }),
+      appFetch<PredictionRunCatalogItemDto[]>("/api/prediction-runs", { signal }),
     enabled: organizationId !== "none",
   });
 
@@ -66,7 +32,7 @@ export const inferenceQueryOptions = (organizationId: number | string, inference
   queryOptions({
     queryKey: inferenceQueryKey(organizationId, inferenceId),
     queryFn: ({ signal }) =>
-      appFetch<InferenceCatalogItemDto>(
+      appFetch<PredictionRunCatalogItemDto>(
         `/api/prediction-runs/${encodeURIComponent(inferenceId)}/summary`,
         { signal },
       ),
@@ -80,7 +46,7 @@ export const inferenceReviewAssignmentsQueryOptions = (
   queryOptions({
     queryKey: INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY(organizationId, inferenceId),
     queryFn: ({ signal }) =>
-      appFetch<InferenceReviewAssignmentDto[]>(
+      appFetch<SchemaReviewAssignmentStatusDto[]>(
         `/api/schema-reviews/inferences/${inferenceId}/assignments`,
         { signal },
       ),

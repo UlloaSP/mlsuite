@@ -5,15 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { getString, isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { applyOneHotCategories } from "@/features/schemas/lib/one-hot-category";
-import type { CreateSchemaVersionRequest, JsonRecord } from "@/features/schemas/api/schema-types";
+import type { JsonRecord } from "@/features/schemas/api/schema-types";
+import type { CreateSchemaVersionRequest, ModelDto } from "@/shared/api/openapi.gen";
 
-export type SchemaSourceModel = {
-  id: string;
-  name: string;
-  type: string;
-  specificType: string;
-  inputSchema: Record<string, unknown>;
-};
+export type SchemaSourceModel = Pick<
+  ModelDto,
+  "id" | "name" | "type" | "specificType" | "inputSchema"
+>;
 
 type CanonicalItem = {
   key: string | number | null;

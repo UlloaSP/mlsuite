@@ -8,7 +8,7 @@ import { useAtom } from "jotai";
 import { useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
-import type { LoginPayload, RegisterPayload } from "@/capabilities/workspace-context/session-api";
+import type { AuthRequest, LoginRequest } from "@/shared/api/openapi.gen";
 import { useLogin, useRegister } from "@/capabilities/workspace-context/session";
 import { AuthAccessOverlay } from "./auth-landing/AuthAccessOverlay";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
@@ -56,12 +56,12 @@ export function AuthLandingPage() {
     access.start(passRef.current);
 
     if (mode === "login") {
-      const request: LoginPayload = { email, password };
+      const request: LoginRequest = { email, password };
       login.mutate(request, callbacks);
       return;
     }
 
-    const request: RegisterPayload = {
+    const request: AuthRequest = {
       email,
       password,
       fullName: readFormValue(formData, "fullName"),

@@ -18,23 +18,23 @@ import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
 } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
-import type {
-  ReviewPredictionResultFeedbackDto,
-  ReviewPredictionRunDto,
-  ReviewSchemaVersionDto,
-} from "@/features/reviews/api/review-types";
 import { REVIEW_STEP_CONTEXT_EVENT } from "@/features/reviews/components/ReviewStepContextPanel";
 import {
   createSchemaReviewFeedback,
   updateSchemaReviewFeedback,
 } from "@/features/reviews/api/review-api";
+import type {
+  PredictionResultFeedbackDto,
+  PredictionRunDto,
+  SchemaVersionDto,
+} from "@/shared/api/openapi.gen";
 
 type Props = {
   reviewId: string;
   reviewRunId: string;
-  run: ReviewPredictionRunDto;
-  version: ReviewSchemaVersionDto;
-  feedback: ReviewPredictionResultFeedbackDto[];
+  run: PredictionRunDto;
+  version: SchemaVersionDto;
+  feedback: PredictionResultFeedbackDto[];
   onSaved: () => Promise<unknown> | unknown;
 };
 

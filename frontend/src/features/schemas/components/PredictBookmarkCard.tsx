@@ -5,13 +5,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowRight, GitCommitHorizontal, Tag } from "lucide-react";
 import { Link } from "react-router";
-import type { PredictBookmarkDto } from "@/features/schemas/api/schema-types";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import type { PredictBookmarkDto } from "@/shared/api/openapi.gen";
 
 const VISIBLE_MODELS = 3;
 

@@ -12,7 +12,7 @@ import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform
 
 type Options = {
   parsed: unknown;
-  modelId: string;
+  modelId: number;
   modelName?: string;
   modelInput: Record<string, unknown>;
   reports: readonly ReportConfig[];

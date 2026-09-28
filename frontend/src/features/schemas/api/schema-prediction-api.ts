@@ -3,10 +3,11 @@ import type {
   CreatePredictionRunRequest,
   PredictionResultFeedbackDto,
   PredictionRunDto,
-} from "./prediction-types";
+  PredictionRunSequenceDto,
+} from "@/shared/api/openapi.gen";
 
 export const createPredictionRunForBookmark = (
-  bookmarkId: string,
+  bookmarkId: number | string,
   req: CreatePredictionRunRequest,
 ): Promise<PredictionRunDto> =>
   appFetch<PredictionRunDto>(
@@ -14,16 +15,19 @@ export const createPredictionRunForBookmark = (
     json("POST", req),
   );
 
-export const getPredictionRun = (runId: string, signal?: AbortSignal): Promise<PredictionRunDto> =>
+export const getPredictionRun = (
+  runId: number | string,
+  signal?: AbortSignal,
+): Promise<PredictionRunDto> =>
   appFetch<PredictionRunDto>(`/api/prediction-runs/${encodeURIComponent(runId)}`, { signal });
 
 export const getLastPredictionRunId = async (): Promise<number> => {
-  const dto = await appFetch<{ lastId: number }>("/api/prediction-runs/last-id");
-  return Number(dto.lastId ?? 0);
+  const dto = await appFetch<PredictionRunSequenceDto>("/api/prediction-runs/last-id");
+  return dto.lastId;
 };
 
 export const getPredictionResultFeedback = (
-  resultId: string,
+  resultId: number | string,
   signal?: AbortSignal,
 ): Promise<PredictionResultFeedbackDto[]> =>
   appFetch<PredictionResultFeedbackDto[]>(

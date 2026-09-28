@@ -18,11 +18,11 @@ import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { useSchema, useSchemaVersions } from "@/features/schemas/api/schema-queries";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
 import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/SchemaSnapshotPreviewPanel";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();

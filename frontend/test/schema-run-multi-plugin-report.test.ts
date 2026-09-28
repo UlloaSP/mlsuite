@@ -72,7 +72,10 @@ describe("schema run multi-model plugin reports", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+      ],
       theme: "light",
       customReportDefinitions: [crystal()],
       onSubmit(_inputData, raw, reportsPending) {
@@ -81,10 +84,7 @@ describe("schema run multi-model plugin reports", () => {
     });
 
     await flush();
-    expect(mounted.form.reports.map((report) => report.id)).toEqual([
-      "crystal-model-1",
-      "crystal-model-2",
-    ]);
+    expect(mounted.form.reports.map((report) => report.id)).toEqual(["crystal-1", "crystal-2"]);
     mounted.form.setValues({ age: 42 });
     container
       .querySelector("mlf-kit-tabs")

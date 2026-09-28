@@ -7,8 +7,8 @@ import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import type { SchemaAction } from "./SchemaActionsMenu";
+import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   action: SchemaAction;

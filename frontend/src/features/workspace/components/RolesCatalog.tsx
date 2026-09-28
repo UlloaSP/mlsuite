@@ -5,12 +5,12 @@ import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
+import { RoleRow } from "./RoleRow";
 import type {
   RoleDefinitionDto,
-  RolesResponseDto,
   RoleTemplateDto,
-} from "@/features/workspace/api/workspace.types";
-import { RoleRow } from "./RoleRow";
+  RolesResponseDto,
+} from "@/shared/api/openapi.gen";
 
 export type RolesTab = "roles" | "templates" | "permissions";
 

@@ -9,7 +9,7 @@ vi.mock("@/features/schemas/api/schema-mutations", () => ({
   useCreateSchemaWithInitialVersionMutation: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 const model: SchemaSourceModel = {
-  id: "42",
+  id: 42,
   name: "Risk model",
   type: "CLASSIFIER",
   specificType: "tree",
@@ -17,7 +17,7 @@ const model: SchemaSourceModel = {
 };
 
 test("selects requested available model only", () => {
-  expect(initialSchemaModels([model], "42").map((item) => item.id)).toEqual(["42"]);
+  expect(initialSchemaModels([model], "42").map((item) => item.id)).toEqual([42]);
   expect(initialSchemaModels([model], null)).toEqual([]);
   expect(initialSchemaModels([model], "invalid")).toEqual([]);
   expect(initialSchemaModels([{ ...model, inputSchema: {} }], "42")).toEqual([]);
@@ -45,7 +45,7 @@ test("preselects after models load, then preserves an explicit deselection", asy
 
 const manyModels = Array.from({ length: 15 }, (_, index) => ({
   ...model,
-  id: String(index + 1),
+  id: index + 1,
   name: `Model ${String(index + 1).padStart(2, "0")}`,
 }));
 

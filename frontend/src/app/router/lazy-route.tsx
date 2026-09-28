@@ -5,10 +5,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { ComponentType, ReactElement } from "react";
 import { Outlet, type RouteObject } from "react-router";
-import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context.types";
 import { RequireWorkspacePermission } from "@/features/workspace/components/RequireWorkspacePermission";
 import { RequireSuperadmin } from "@/features/workspace/components/RequireSuperadmin";
 import { RequireReviewAccess } from "@/features/reviews/components/RequireReviewAccess";
+import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context";
 
 /** A lazily loaded page; keep `load` a literal `import()` so each page gets its own chunk. */
 export const page = (path: string, load: () => Promise<ComponentType>): RouteObject => ({

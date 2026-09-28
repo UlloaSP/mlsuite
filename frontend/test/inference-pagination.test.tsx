@@ -174,6 +174,7 @@ test("renders inferences as individual keyboard-focusable catalog entries", asyn
           bookmarkId: null,
           bookmarkName: null,
           createdAt: "2026-09-09T10:00:00Z",
+          updatedAt: "2026-09-09T10:00:00Z",
           status: "PARTIAL_SUCCESS",
         },
       ]}

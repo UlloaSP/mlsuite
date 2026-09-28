@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
-import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context.types";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
+import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context";
 
 export function RequireWorkspacePermission({
   permission,

@@ -3,20 +3,14 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import type { PermissionKey, RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
 import { AppCheckbox } from "@/shared/ui/AppCheckbox";
+import type {
+  PermissionDto,
+  PermissionGroupDto,
+  RoleDefinitionDto,
+} from "@/shared/api/openapi.gen";
 
-type RolePermission = {
-  key: PermissionKey;
-  label: string;
-  description: string;
-  dangerous: boolean;
-};
-
-type RolePermissionGroup = {
-  name: string;
-  permissions: RolePermission[];
-};
+type PermissionKey = PermissionDto["key"];
 
 export function RoleForm({
   roleDefinition,
@@ -27,7 +21,7 @@ export function RoleForm({
 }: {
   roleDefinition: RoleDefinitionDto | null;
   initial?: { name: string; description?: string; permissionKeys: PermissionKey[] };
-  permissionGroups: RolePermissionGroup[];
+  permissionGroups: PermissionGroupDto[];
   onClose: () => void;
   onSave: (payload: {
     name: string;

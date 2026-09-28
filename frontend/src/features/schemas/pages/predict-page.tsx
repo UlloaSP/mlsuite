@@ -6,13 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Play } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "react-router";
-import type { PredictBookmarkDto } from "@/features/schemas/api/schema-types";
 import { useOrganizationBookmarks } from "@/features/schemas/api/schema-queries";
 import { PredictBookmarkCard } from "@/features/schemas/components/PredictBookmarkCard";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
+import type { PredictBookmarkDto } from "@/shared/api/openapi.gen";
 
 type LauncherFilter = "all" | "behind";
 type LauncherSort = "schema" | "name" | "used" | "recent";

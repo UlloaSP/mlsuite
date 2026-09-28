@@ -14,7 +14,6 @@ import {
 } from "@/features/models/api/model.mutations";
 import { MODEL_CATALOG_PAGE_SIZE } from "@/features/models/api/model.keys";
 import { useModelCatalogPageQuery } from "@/features/models/api/model.queries";
-import type { ModelDto } from "@/features/models/api/model.types";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { appButtonClass } from "@/shared/ui/button-styles";
@@ -24,6 +23,7 @@ import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import type { ModelAction } from "@/features/models/components/ModelActionsMenu";
 import { ModelListItem } from "@/features/models/components/ModelListItem";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
 type ModelSortMode = "updated" | "name" | "algorithm";
 type ModelStatusFilter = "active" | "archived" | "all";

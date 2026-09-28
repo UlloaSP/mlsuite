@@ -2,7 +2,7 @@ import { Shield } from "lucide-react";
 import { badgeLabel } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
-import type { RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
+import type { RoleDefinitionDto } from "@/shared/api/openapi.gen";
 
 export function RoleDetailsDialog({
   role,

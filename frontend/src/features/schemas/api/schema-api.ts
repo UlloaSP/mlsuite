@@ -1,26 +1,24 @@
 import { appFetch, json } from "@/shared/api/http";
+import type { DuplicateSchemaRequest, SchemaNameRequest, SchemaPageRequest } from "./schema-types";
 import type {
   CreateSchemaWithInitialVersionRequest,
-  DuplicateSchemaRequest,
+  PageDtoSchemaCatalogItemDto,
   SchemaDto,
-  SchemaNameRequest,
-  SchemaPageDto,
-  SchemaPageRequest,
   SchemaVersionDto,
-} from "./schema-types";
+} from "@/shared/api/openapi.gen";
 
 export const createSchemaWithInitialVersion = (
   req: CreateSchemaWithInitialVersionRequest,
 ): Promise<SchemaDto> =>
   appFetch<SchemaDto>("/api/schemas/with-initial-version", json("POST", req));
 
-export const archiveSchema = (id: string): Promise<SchemaDto> => {
+export const archiveSchema = (id: number | string): Promise<SchemaDto> => {
   return appFetch<SchemaDto>(`/api/schemas/${encodeURIComponent(id)}/archive`, {
     method: "POST",
   });
 };
 
-export const deleteSchema = async (id: string): Promise<void> => {
+export const deleteSchema = async (id: number | string): Promise<void> => {
   await appFetch(`/api/schemas/${encodeURIComponent(id)}`, { method: "DELETE" });
 };
 
@@ -30,7 +28,7 @@ export const duplicateSchema = ({
   versionId,
 }: DuplicateSchemaRequest): Promise<SchemaDto> => {
   const params = new URLSearchParams({ name });
-  if (versionId) params.set("versionId", versionId);
+  if (versionId) params.set("versionId", String(versionId));
   return appFetch<SchemaDto>(
     `/api/schemas/${encodeURIComponent(id)}/duplicate?${params.toString()}`,
     { method: "POST" },
@@ -40,7 +38,7 @@ export const duplicateSchema = ({
 export const getSchemaPage = (
   { page, search = "", size, sort = "updated", status = "active" }: SchemaPageRequest,
   signal?: AbortSignal,
-): Promise<SchemaPageDto> => {
+): Promise<PageDtoSchemaCatalogItemDto> => {
   const params = new URLSearchParams({
     page: String(page),
     search,
@@ -48,10 +46,10 @@ export const getSchemaPage = (
     sort,
     status,
   });
-  return appFetch<SchemaPageDto>(`/api/schemas?${params.toString()}`, { signal });
+  return appFetch<PageDtoSchemaCatalogItemDto>(`/api/schemas?${params.toString()}`, { signal });
 };
 
-export const getSchema = (schemaId: string, signal?: AbortSignal): Promise<SchemaDto> =>
+export const getSchema = (schemaId: number | string, signal?: AbortSignal): Promise<SchemaDto> =>
   appFetch<SchemaDto>(`/api/schemas/${encodeURIComponent(schemaId)}`, { signal });
 
 export const renameSchema = ({ id, name }: SchemaNameRequest): Promise<SchemaDto> => {
@@ -62,7 +60,7 @@ export const renameSchema = ({ id, name }: SchemaNameRequest): Promise<SchemaDto
 };
 
 export const getSchemaVersions = (
-  schemaId: string,
+  schemaId: number | string,
   signal?: AbortSignal,
 ): Promise<SchemaVersionDto[]> =>
   appFetch<SchemaVersionDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/versions`, {
@@ -70,7 +68,7 @@ export const getSchemaVersions = (
   });
 
 export const getSchemaVersion = (
-  versionId: string,
+  versionId: number | string,
   signal?: AbortSignal,
 ): Promise<SchemaVersionDto> =>
   appFetch<SchemaVersionDto>(`/api/schema-versions/${encodeURIComponent(versionId)}`, { signal });

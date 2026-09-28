@@ -6,15 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { describe, expect, test, vi } from "vite-plus/test";
 import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlform/run-transport";
 import { toSchemaRunFieldValues } from "@/features/schemas/lib/bulk-upload";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { binding, schemaVersion } from "./support/api-fixtures";
 
-const version: SchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
+const version = schemaVersion({
   version: 1,
   name: "Risk",
   createdAt: "2026-06-04T00:00:00Z",
-  bindings: [{ modelId: "model-1" }],
+  bindings: [binding(1)],
   formSchema: {
     fields: [
       {
@@ -31,7 +29,7 @@ const version: SchemaVersionDto = {
     ],
     reports: [],
   },
-};
+});
 
 describe("schema one-hot select values", () => {
   test("bulk maps technical columns back to one visible field", () => {

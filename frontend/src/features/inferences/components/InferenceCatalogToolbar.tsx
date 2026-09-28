@@ -1,13 +1,13 @@
 import { SlidersHorizontal } from "lucide-react";
-import type { InferenceCatalogItemDto } from "@/features/inferences/api/inference-api";
 import type { InferenceFilters } from "@/features/inferences/lib/inference-filter";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   filters: InferenceFilters;
-  inferences: InferenceCatalogItemDto[];
+  inferences: PredictionRunCatalogItemDto[];
   onChange: <K extends keyof InferenceFilters>(key: K, value: InferenceFilters[K]) => void;
 };
 

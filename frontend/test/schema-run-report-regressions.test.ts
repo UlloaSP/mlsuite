@@ -42,7 +42,10 @@ describe("schema run report regressions", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+      ],
     });
     const form = createForm({
       schema: runtime.formSchema,
@@ -67,21 +70,21 @@ describe("schema run report regressions", () => {
     >;
     expect(
       reportConfigs.map((report) => resolveMappedReportPayload(report, result.submitResult)),
-    ).toEqual([{ prediction: "model-1" }, { prediction: "model-2" }]);
+    ).toEqual([{ prediction: "1" }, { prediction: "2" }]);
     expect(
       (
         result.submitResult.raw as { results: Array<{ output: { reports: unknown[] } }> }
       ).results.map((item) => item.output.reports),
     ).toEqual([
-      [{ mappedTo: "classifier9", prediction: "model-1" }],
-      [{ mappedTo: "classifier9", prediction: "model-2" }],
+      [{ mappedTo: "classifier9", prediction: "1" }],
+      [{ mappedTo: "classifier9", prediction: "2" }],
     ]);
   });
 
   test("merges fetched CrystalTree payload into modal and persistence results", () => {
     const raw = {
       reports: [],
-      results: [{ modelId: "model-1", output: { reports: [] } }],
+      results: [{ modelId: 1, output: { reports: [] } }],
     };
     const reports = [
       {
@@ -98,7 +101,7 @@ describe("schema run report regressions", () => {
       raw,
       reports,
       states,
-      [{ modelId: "model-1" }],
+      [{ modelId: 1, modelName: "model-1" }],
       {
         crystal: {
           reportId: "crystal",
@@ -108,7 +111,7 @@ describe("schema run report regressions", () => {
           displayValues: {},
           modelValues: {},
           reports: [],
-          meta: { modelId: "model-1" },
+          meta: { modelId: "1" },
           raw: {},
         },
       },
@@ -116,7 +119,7 @@ describe("schema run report regressions", () => {
 
     expect(built.raw.results).toEqual([
       {
-        modelId: "model-1",
+        modelId: 1,
         output: {
           reports: [
             {

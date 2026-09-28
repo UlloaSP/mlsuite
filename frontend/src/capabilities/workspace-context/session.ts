@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { getProfile, login, logout, register, type UserDTO } from "./session-api";
+import { getProfile, login, logout, register } from "./session-api";
+import type { UserDto } from "@/shared/api/openapi.gen";
 
 export const USER_QUERY_KEY = ["user"] as const;
 
@@ -34,7 +35,7 @@ export const safeReturnTo = (value: string | null | undefined, fallback = "/home
   value?.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : fallback;
 
 /** Signs in through `authenticate` and adopts the returned user as the session. */
-const useSessionMutation = <Payload>(authenticate: (payload: Payload) => Promise<UserDTO>) => {
+const useSessionMutation = <Payload>(authenticate: (payload: Payload) => Promise<UserDto>) => {
   const queryClient = useQueryClient();
   return useMutation({
     meta: { errorHandledLocally: true },

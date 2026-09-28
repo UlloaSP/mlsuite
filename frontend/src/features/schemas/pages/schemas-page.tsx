@@ -15,7 +15,6 @@ import {
   useRenameSchemaMutation,
 } from "@/features/schemas/api/schema-mutations";
 import { useSchemaCatalogPageQuery } from "@/features/schemas/api/schema-queries";
-import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -25,6 +24,7 @@ import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import type { SchemaAction } from "@/features/schemas/components/SchemaActionsMenu";
 import { SchemaActionDialog } from "@/features/schemas/components/SchemaActionDialog";
 import { SchemaListItem } from "@/features/schemas/components/SchemaListItem";
+import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type SchemaSortMode = "updated" | "created" | "name";
 type SchemaStatusFilter = "active" | "archived" | "all";

@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 import { useSubmitSchemaReviewInboxMutation } from "@/features/reviews/api/review-mutations";
 import { useSchemaReviewInbox } from "@/features/reviews/api/review-queries";
-import type { SchemaReviewContextDto } from "@/features/reviews/api/review-types";
 import { ReviewStepContextPanel } from "@/features/reviews/components/ReviewStepContextPanel";
 import { ReviewUnavailable } from "@/features/reviews/components/ReviewUnavailable";
 import { SchemaReviewRunDetailPanel } from "@/features/reviews/components/SchemaReviewRunDetailPanel";
@@ -18,6 +17,7 @@ import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
+import type { SchemaReviewContextDto } from "@/shared/api/openapi.gen";
 
 const inboxItems = (reviews: SchemaReviewContextDto[]): ReviewRailItem[] =>
   reviews.flatMap((review) =>

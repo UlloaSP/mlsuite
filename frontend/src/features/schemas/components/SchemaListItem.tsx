@@ -5,12 +5,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { CalendarDays, FileJson, Rows3, ScrollText } from "lucide-react";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
-import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import { modifierName } from "@/shared/lib/relative-time";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { SchemaActionsMenu, type SchemaAction } from "./SchemaActionsMenu";
+import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type SchemaListItemProps = {
   canDelete: boolean;

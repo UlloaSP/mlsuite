@@ -3,7 +3,6 @@ import { type ReactNode, useEffect } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import {
-  type InferenceCatalogItemDto,
   useInference,
   useInferenceReviewAssignments,
 } from "@/features/inferences/api/inference-api";
@@ -16,6 +15,7 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   /**
@@ -24,7 +24,7 @@ type Props = {
    * shown as the data's Reviews tab (null when the member cannot manage reviews).
    */
   renderData: (
-    inference: InferenceCatalogItemDto,
+    inference: PredictionRunCatalogItemDto,
     reviews: { content: ReactNode; count?: string } | null,
   ) => ReactNode;
 };

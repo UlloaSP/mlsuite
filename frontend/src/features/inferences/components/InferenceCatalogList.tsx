@@ -2,21 +2,21 @@ import { type FeedbackStatusDisplay } from "@/capabilities/prediction-runtime/fe
 import { useNavigate } from "react-router";
 import { getPredictionShortId } from "@/capabilities/prediction-runtime/data/model-utils";
 import { formatTimestamp } from "@/shared/lib/date-time";
-import type { InferenceCatalogItemDto } from "@/features/inferences/api/inference-api";
 import { PredictionStatusSummary } from "@/capabilities/prediction-runtime/feedback/PredictionStatusSummary";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { InferenceActionsMenu } from "./InferenceActionsMenu";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
-const inferenceHref = (item: InferenceCatalogItemDto) => `/inferences/${item.id}`;
+const inferenceHref = (item: PredictionRunCatalogItemDto) => `/inferences/${item.id}`;
 
 type Props = {
   canDelete: boolean;
   canManageReviews: boolean;
   deletePending: boolean;
-  items: InferenceCatalogItemDto[];
+  items: PredictionRunCatalogItemDto[];
   feedbackStatuses?: Map<string, FeedbackStatusDisplay>;
-  onDelete: (item: InferenceCatalogItemDto) => void;
+  onDelete: (item: PredictionRunCatalogItemDto) => void;
 };
 
 export function InferenceCatalogList({

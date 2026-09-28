@@ -3,7 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PluginRuntimeSource } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
 import { detectPluginType } from "@/capabilities/prediction-runtime/plugins/plugin-catalog-loader";
 import {
   resolveCustomFieldDefinition,
@@ -13,13 +12,14 @@ import {
   resolveCustomReportDefinition,
   type CustomReportKind,
 } from "@/capabilities/prediction-runtime/plugins/custom-report-source-runtime";
+import type { PluginRuntimeSourceDto } from "@/shared/api/openapi.gen";
 
-export type CatalogFieldDefinition = PluginRuntimeSource & {
+export type CatalogFieldDefinition = PluginRuntimeSourceDto & {
   kind: string;
   definition: CustomFieldKind;
 };
 
-export type CatalogReportDefinition = PluginRuntimeSource & {
+export type CatalogReportDefinition = PluginRuntimeSourceDto & {
   kind: string;
   definition: CustomReportKind;
 };
@@ -48,7 +48,7 @@ const assertUniqueKinds = (
 /** Detects each source's plugin type once and splits the catalog into fields and reports. */
 export const getCatalogDefinitions = async (
   organizationId: number | string,
-  sources: readonly PluginRuntimeSource[],
+  sources: readonly PluginRuntimeSourceDto[],
 ): Promise<PredictionCatalogDefinitions> => {
   const entries = await Promise.all(
     sources.map(async (item) => {

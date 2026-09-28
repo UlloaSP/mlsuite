@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Check } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useLocation, useNavigate } from "react-router";
-import type { WorkspaceContextDto } from "@/capabilities/workspace-context/workspace-context.types";
 import { useSelectOrganization } from "@/features/workspace/api/workspace.mutations";
 import { cx } from "@/shared/ui/cx";
 import { SidebarMenuLink } from "./SidebarMenuLink";
@@ -17,6 +16,7 @@ import {
 } from "./sidebar-menu-styles";
 import { isChildActive } from "./sidebar-navigation-support";
 import { getWorkspaceLinks } from "./workspace-navigation";
+import type { WorkspaceContextDto } from "@/shared/api/openapi.gen";
 
 /** Active organization pages and the organization switcher, shared by sidebar and bar. */
 export function OrganizationMenuContent({

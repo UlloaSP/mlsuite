@@ -2,8 +2,8 @@ import { useCurrentOrganizationId } from "@/capabilities/workspace-context/works
 import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import { createPredictionRunForBookmark } from "./schema-prediction-api";
-import type { CreatePredictionRunRequest } from "./prediction-types";
 import { ORGANIZATION_BOOKMARKS_QUERY_KEY, PREDICTION_RUN_QUERY_KEY } from "./schema-keys";
+import type { CreatePredictionRunRequest } from "@/shared/api/openapi.gen";
 
 export const invalidatePredictionRunCollections = (
   queryClient: QueryClient,
@@ -17,7 +17,7 @@ export const invalidatePredictionRunCollections = (
     queryClient.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) }),
   ]);
 
-export function useCreatePredictionRunForBookmarkMutation(bookmarkId: string) {
+export function useCreatePredictionRunForBookmarkMutation(bookmarkId: number | string) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
   return useMutation({

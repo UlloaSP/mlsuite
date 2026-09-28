@@ -33,6 +33,8 @@ Dependencies point left.
 
 Shared code may import only other shared modules and external packages. It owns HTTP transport, runtime configuration, design-system primitives, and domain-neutral functions. It must not know features or their DTOs.
 
+`shared/api/openapi.gen.ts` is the Spring API's JSON contract, generated from `api/openapi.json` with `vp run api:types`. Import API DTOs from it rather than redeclaring them; derive narrower or UI-specific types from it. Never edit it by hand. It is exempt from the line limit because the generator owns its size. Payloads owned by the Python runtime or ops agent, which the spec leaves untyped, keep hand-written types in their feature.
+
 ### `capabilities/`
 
 Capabilities own reusable product mechanisms such as MLForm integration, document editing, prediction feedback, or workspace context. They may depend on `shared/`, but not on features or another capability's internals.

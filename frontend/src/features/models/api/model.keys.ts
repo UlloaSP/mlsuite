@@ -12,8 +12,9 @@ export const modelKeys = {
   all: (organizationId: number | string) =>
     [...organizationQueryKey(organizationId), "models"] as const,
   list: (organizationId: number | string) => [...modelKeys.all(organizationId), "list"] as const,
-  detail: (organizationId: number | string, modelId: string) =>
-    [...modelKeys.all(organizationId), "detail", modelId] as const,
+  // Route params are strings and DTO ids numbers; the key holds a string so both match.
+  detail: (organizationId: number | string, modelId: number | string) =>
+    [...modelKeys.all(organizationId), "detail", String(modelId)] as const,
   catalogPage: (
     organizationId: number | string | undefined,
     page: number,

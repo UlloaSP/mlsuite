@@ -1,13 +1,13 @@
 import { toast } from "sonner";
-import type { InferenceReviewAssignmentDto } from "@/features/inferences/api/inference-api";
 import {
   useDeleteInferenceReviewResponseMutation,
   useReopenInferenceReviewMutation,
 } from "@/features/inferences/api/inference-mutations";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
+import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
 
 /** What an assignment allows: reopening a submitted review, or clearing a saved response. */
-export const assignmentActions = (assignment: InferenceReviewAssignmentDto) => ({
+export const assignmentActions = (assignment: SchemaReviewAssignmentStatusDto) => ({
   canReopen: assignment.reviewState === "COMPLETED" && !assignment.expired,
   canDelete: assignment.reviewState !== "PENDING",
 });
@@ -20,14 +20,14 @@ export function useReviewAssignmentActions(inferenceId: number, inferenceName: s
   const reopen = useReopenInferenceReviewMutation();
   const deleteResponse = useDeleteInferenceReviewResponseMutation();
   const actionDialog = useActionDialog();
-  const target = (assignment: InferenceReviewAssignmentDto) => ({
+  const target = (assignment: SchemaReviewAssignmentStatusDto) => ({
     inferenceId,
     reviewId: assignment.reviewId,
     reviewRunId: assignment.reviewRunId,
     reviewerId: assignment.reviewer.id,
   });
 
-  const handleReopen = async (assignment: InferenceReviewAssignmentDto) => {
+  const handleReopen = async (assignment: SchemaReviewAssignmentStatusDto) => {
     const confirmed = await actionDialog.confirm({
       title: "Reopen review?",
       description: `Reopen ${inferenceName} for ${assignment.reviewer.fullName}. Their saved answers will be kept.`,
@@ -46,7 +46,7 @@ export function useReviewAssignmentActions(inferenceId: number, inferenceName: s
     }
   };
 
-  const handleDelete = async (assignment: InferenceReviewAssignmentDto) => {
+  const handleDelete = async (assignment: SchemaReviewAssignmentStatusDto) => {
     const confirmed = await actionDialog.confirm({
       title: "Delete saved response?",
       description: `Delete ${assignment.reviewer.fullName}'s saved response for ${inferenceName}. Their assignment will remain and return to Pending.`,
@@ -67,8 +67,8 @@ export function useReviewAssignmentActions(inferenceId: number, inferenceName: s
   };
 
   return {
-    reopen: (assignment: InferenceReviewAssignmentDto) => void handleReopen(assignment),
-    remove: (assignment: InferenceReviewAssignmentDto) => void handleDelete(assignment),
+    reopen: (assignment: SchemaReviewAssignmentStatusDto) => void handleReopen(assignment),
+    remove: (assignment: SchemaReviewAssignmentStatusDto) => void handleDelete(assignment),
     pending: reopen.isPending || deleteResponse.isPending,
     dialog: actionDialog.dialog,
   };

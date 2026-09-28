@@ -1,7 +1,7 @@
 import { Lock } from "lucide-react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
-import type { RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
+import type { RoleDefinitionDto } from "@/shared/api/openapi.gen";
 
 export function RoleRow({ role, onOpen }: { role: RoleDefinitionDto; onOpen: () => void }) {
   return (

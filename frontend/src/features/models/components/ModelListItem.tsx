@@ -6,11 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { CalendarDays, Database, Rows3, ScrollText, TrendingUp } from "lucide-react";
 import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
 import { modifierName } from "@/shared/lib/relative-time";
-import type { ModelDto } from "@/features/models/api/model.types";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { type ModelAction, ModelActionsMenu } from "./ModelActionsMenu";
 import { ModelMetric } from "./ModelMetric";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
 const getModelIcon = (type: string) => {
   switch (type) {

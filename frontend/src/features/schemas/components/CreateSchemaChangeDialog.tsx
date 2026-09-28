@@ -4,10 +4,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useNavigate } from "react-router";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
-import { schemaVersionId } from "@/features/schemas/lib/version-selection";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   schemaId: string;
@@ -25,7 +24,7 @@ export function CreateSchemaChangeDialog({ schemaId, baseVersion, onClose }: Pro
     try {
       const draft = await mutation.mutateAsync({
         name,
-        baseVersionId: schemaVersionId(baseVersion),
+        baseVersionId: baseVersion.id,
       });
       onClose();
       void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);

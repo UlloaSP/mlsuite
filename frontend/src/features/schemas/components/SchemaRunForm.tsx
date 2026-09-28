@@ -19,10 +19,11 @@ import {
   reportStatesFromSnapshot,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { getSchemaRunPrefillInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   version: SchemaVersionDto;

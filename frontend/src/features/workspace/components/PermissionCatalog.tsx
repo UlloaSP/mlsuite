@@ -7,8 +7,8 @@ import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
-import type { PermissionGroupDto } from "@/features/workspace/api/workspace.types";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
+import type { PermissionGroupDto } from "@/shared/api/openapi.gen";
 
 export function PermissionCatalog({
   groups,

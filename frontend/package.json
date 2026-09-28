@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -b && vp build"
+    "build": "tsc -b && vp build",
+    "api:types": "openapi-typescript ../api/openapi.json --root-types --root-types-no-schema-prefix -o src/shared/api/openapi.gen.ts"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -38,6 +39,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "6.1.1",
     "jsdom": "^30.1.1",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.3.3",

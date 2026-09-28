@@ -16,7 +16,7 @@ import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import {
   SORT_LABELS,
-  TYPE_META,
+  pluginTypeMeta,
   type SortMode,
   type TypeFilter,
 } from "@/features/plugins/lib/catalog-page-model";
@@ -75,7 +75,7 @@ export function PluginCatalogPage() {
         controls.setPage((current) => current - 1);
       }
       toast.success(
-        `${item.fileName} (${TYPE_META[item.pluginType].shortLabel}) deleted from catalog.`,
+        `${item.fileName} (${pluginTypeMeta(item.pluginType).shortLabel}) deleted from catalog.`,
       );
     } catch (deleteError: unknown) {
       toast.error(deleteError instanceof Error ? deleteError.message : String(deleteError));

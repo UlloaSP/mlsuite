@@ -1,4 +1,4 @@
-import type { RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
+import type { RoleDefinitionDto } from "@/shared/api/openapi.gen";
 
 export function invitationRoleOptions(
   roles: RoleDefinitionDto[],

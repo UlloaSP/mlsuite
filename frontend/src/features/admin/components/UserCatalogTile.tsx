@@ -17,14 +17,14 @@ import {
 import { formatDate } from "@/shared/lib/date-time";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { AdminUser } from "@/features/admin/api/admin-user.types";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { ChangeRoleDialog } from "./ChangeRoleDialog";
 import { DeleteUserDialog } from "./DeleteUserDialog";
 import { UserInfoBadge } from "./UserInfoBadge";
+import type { AdminUserDto } from "@/shared/api/openapi.gen";
 
-type Role = AdminUser["systemRole"];
+type Role = AdminUserDto["systemRole"];
 
 export function UserCatalogTile({
   disabled,
@@ -34,7 +34,7 @@ export function UserCatalogTile({
   onUpdate,
 }: {
   disabled: boolean;
-  item: AdminUser;
+  item: AdminUserDto;
   onDelete: () => Promise<void>;
   onResetPassword: () => void;
   onUpdate: (payload: { enabled?: boolean; systemRole?: Role }) => Promise<void>;

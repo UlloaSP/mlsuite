@@ -18,11 +18,8 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { isHttpError } from "@/shared/api/http";
 import type {
   SchemaDraftBindingDto,
-  SchemaDraftChangeDto,
-  SchemaDraftDiffDto,
   SchemaDraftMergeSide,
 } from "@/features/schemas/api/draft-types";
-import type { SchemaModelBindingDto } from "@/features/schemas/api/schema-types";
 import {
   useMergeSchemaDraftMutation,
   usePublishSchemaDraftMutation,
@@ -34,7 +31,13 @@ import {
   useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
 import { SchemaMergeDiffViewer } from "@/features/schemas/components/SchemaMergeDiffViewer";
+import { schemaVersionName } from "@/features/schemas/lib/version-selection";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
+import type {
+  SchemaDraftChangeDto,
+  SchemaDraftDiffDto,
+  SchemaModelBindingDto,
+} from "@/shared/api/openapi.gen";
 
 export function SchemaDraftConflictPage() {
   const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
@@ -65,7 +68,7 @@ export function SchemaDraftConflictPage() {
   const staleBase = Boolean(draft && diff && draft.baseVersionId !== diff.currentVersionId);
   const needsMerge = Boolean(diff?.hasConflicts || staleBase);
   const currentLabel = currentVersion
-    ? `snapshot/${toCodeLabel(currentVersion.name)}@v${currentVersion.version}`
+    ? `snapshot/${toCodeLabel(schemaVersionName(currentVersion))}@v${currentVersion.version}`
     : "snapshot/latest";
   const incomingLabel = draft ? `change/${toCodeLabel(draft.name)}` : "change/incoming";
   const currentDocument = useMemo(

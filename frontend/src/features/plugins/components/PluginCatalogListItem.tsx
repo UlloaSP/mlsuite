@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { CalendarDays, Trash2 } from "lucide-react";
 import { modifierName } from "@/shared/lib/relative-time";
-import { type PluginPageItem, TYPE_META } from "@/features/plugins/lib/catalog-page-model";
+import { pluginTypeMeta } from "@/features/plugins/lib/catalog-page-model";
+import type { PluginDto } from "@/shared/api/openapi.gen";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
@@ -14,8 +15,8 @@ import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 type PluginCatalogListItemProps = {
   canManage: boolean;
   isBusy: boolean;
-  item: PluginPageItem;
-  onDelete: (item: PluginPageItem) => void | Promise<void>;
+  item: PluginDto;
+  onDelete: (item: PluginDto) => void | Promise<void>;
 };
 
 export function PluginCatalogListItem({
@@ -24,7 +25,7 @@ export function PluginCatalogListItem({
   item,
   onDelete,
 }: PluginCatalogListItemProps) {
-  const meta = TYPE_META[item.pluginType];
+  const meta = pluginTypeMeta(item.pluginType);
   const displayName = item.kind ?? item.fileName;
   const modifier = modifierName(item.updatedByName, item.updatedByEmail);
 

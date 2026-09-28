@@ -4,14 +4,14 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { Calendar, Fullscreen, Languages, Mail, MapPin, Plane, SunMoon, User } from "lucide-react";
+import { Calendar, Fullscreen, Languages, Mail, Plane, SunMoon, User } from "lucide-react";
 import { themeModeAtom } from "@/shared/ui/appearance-state";
 import { fullscreenAtom } from "@/shared/ui/ui-state";
-import type { UserDTO } from "@/capabilities/workspace-context/session-api";
 import { InfoCard } from "./InfoCard";
+import type { UserDto } from "@/shared/api/openapi.gen";
 
 export type ProfileBodyProps = {
-  user: UserDTO;
+  user: UserDto;
 };
 
 export function ProfileBody({ user }: ProfileBodyProps) {
@@ -22,7 +22,6 @@ export function ProfileBody({ user }: ProfileBodyProps) {
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       <InfoCard icon={Mail} title="Email" value={user?.email || "Not provided"} />
       <InfoCard icon={Calendar} title="Joined" value={user?.createdAt || "Not provided"} />
-      <InfoCard icon={MapPin} title="Location" value={user?.location || "Not provided"} />
       <InfoCard icon={User} title="Name" value={user?.fullName || "Not provided"} />
       <InfoCard
         icon={Languages}

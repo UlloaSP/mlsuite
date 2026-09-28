@@ -1,15 +1,5 @@
 import { appFetch } from "@/shared/api/http";
-
-export type StartupDependencyDto = {
-  name: string;
-  ready: boolean;
-  message: string;
-};
-
-export type StartupReadinessDto = {
-  ready: boolean;
-  dependencies: StartupDependencyDto[];
-};
+import type { StartupReadinessDto } from "@/shared/api/openapi.gen";
 
 export async function getStartupReadiness(signal?: AbortSignal): Promise<StartupReadinessDto> {
   return readServerReadiness(signal);

@@ -7,7 +7,6 @@ import { CalendarDays, Pencil, Share2, Trash2 } from "lucide-react";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { useState } from "react";
-import type { OrganizationCatalogItemDto } from "@/features/workspace/api/workspace.types";
 import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 import { modifierName } from "@/shared/lib/relative-time";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
@@ -15,6 +14,7 @@ import { DeleteOrganizationDialog } from "./DeleteOrganizationDialog";
 import { TransferOrganizationOwnerDialog } from "./TransferOrganizationOwnerDialog";
 import { EditableText, type OrganizationPatch } from "./OrganizationCatalogEditable";
 import { OrganizationOwnerButton } from "./OrganizationOwnerButton";
+import type { OrganizationCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type OrganizationCatalogTileProps = {
   disabled: boolean;

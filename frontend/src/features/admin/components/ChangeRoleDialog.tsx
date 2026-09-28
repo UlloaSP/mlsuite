@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { SYSTEM_ROLE_OPTIONS, type AdminUser } from "@/features/admin/api/admin-user.types";
+import { SYSTEM_ROLE_OPTIONS } from "@/features/admin/api/admin-user.types";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppSelect } from "@/shared/ui/AppSelect";
+import type { AdminUserDto } from "@/shared/api/openapi.gen";
 
-type Role = AdminUser["systemRole"];
+type Role = AdminUserDto["systemRole"];
 
 export function ChangeRoleDialog({
   disabled,
@@ -15,7 +16,7 @@ export function ChangeRoleDialog({
 }: {
   disabled: boolean;
   error?: string;
-  user: AdminUser;
+  user: AdminUserDto;
   onCancel: () => void;
   onConfirm: (role: Role) => Promise<void>;
 }) {

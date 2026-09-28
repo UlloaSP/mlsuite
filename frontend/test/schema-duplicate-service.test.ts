@@ -18,7 +18,7 @@ describe("schema duplicate service", () => {
   it("sends the selected snapshot id", async () => {
     (appFetch as Mock).mockResolvedValue({ id: "6", name: "Risk Copy" });
 
-    await duplicateSchema({ id: "5", name: "Risk Copy", versionId: "8" });
+    await duplicateSchema({ id: "5", name: "Risk Copy", versionId: 8 });
 
     expect(appFetch).toHaveBeenCalledWith("/api/schemas/5/duplicate?name=Risk+Copy&versionId=8", {
       method: "POST",
@@ -41,7 +41,7 @@ describe("schema duplicate service", () => {
 
     let caught: unknown;
     try {
-      await duplicateSchema({ id: "5", name: "Risk Copy", versionId: "8" });
+      await duplicateSchema({ id: "5", name: "Risk Copy", versionId: 8 });
     } catch (cause) {
       caught = cause;
     }

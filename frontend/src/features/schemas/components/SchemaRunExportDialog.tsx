@@ -1,16 +1,16 @@
 import { useMemo } from "react";
 import { usePredictionRunsFeedback } from "@/features/schemas/api/schema-queries";
-import type {
-  PredictionResultFeedbackDto,
-  PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { downloadSchemaRunExport } from "@/features/schemas/lib/export";
 import { SchemaRunExportReviewModal } from "./SchemaRunExportReviewModal";
 import {
   selectedSchemaRunExportData,
   type SchemaRunExportSelection,
 } from "./schema-run-export-selection";
+import type {
+  PredictionResultFeedbackDto,
+  PredictionRunDto,
+  SchemaVersionDto,
+} from "@/shared/api/openapi.gen";
 
 type Props = {
   open: boolean;

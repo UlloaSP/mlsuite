@@ -16,7 +16,7 @@ export const modelsQueryOptions = (organizationId: number | string) =>
     gcTime: 10 * 60_000,
   });
 
-export const modelQueryOptions = (organizationId: number | string, modelId: string) =>
+export const modelQueryOptions = (organizationId: number | string, modelId: number | string) =>
   queryOptions({
     queryKey: modelKeys.detail(organizationId, modelId),
     queryFn: ({ signal }) => getModel(modelId, signal),
@@ -47,7 +47,7 @@ export const useGetModels = () => {
   });
 };
 
-export const useModel = (modelId?: string) => {
+export const useModel = (modelId?: number | string) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery(modelQueryOptions(organizationId, modelId ?? ""));
 };

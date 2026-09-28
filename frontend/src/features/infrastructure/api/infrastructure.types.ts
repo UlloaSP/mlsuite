@@ -70,11 +70,6 @@ export type ServiceLogsSnapshotDto = {
   lines: string[];
 };
 
-export type TerminalSessionDto = {
-  sessionId: string;
-  wsPath: string;
-};
-
 export type OverviewDeltaEvent = {
   type: "overview.delta";
   payload: {

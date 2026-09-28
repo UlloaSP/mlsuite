@@ -3,12 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { schemaVersionName } from "@/features/schemas/lib/version-selection";
 import { Tag } from "lucide-react";
 import { toast } from "sonner";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { useCreateSchemaBookmarkMutation } from "@/features/schemas/api/schema-mutations";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
-import { schemaVersionId } from "@/features/schemas/lib/version-selection";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   schemaId: string;
@@ -23,7 +23,7 @@ export function BookmarkSnapshotDialog({ schemaId, version, onClose }: Props) {
   const create = async (name: string) => {
     if (!version) return;
     try {
-      await mutation.mutateAsync({ name, versionId: schemaVersionId(version) });
+      await mutation.mutateAsync({ name, versionId: version.id });
       onClose();
       toast.success("Bookmark saved");
     } catch {
@@ -33,8 +33,8 @@ export function BookmarkSnapshotDialog({ schemaId, version, onClose }: Props) {
 
   return (
     <SchemaChangeNameDialog
-      defaultName={version ? version.name.toLowerCase().replace(/\s+/g, "-") : ""}
-      description={version ? `${version.name} · v${version.version}` : "Snapshot"}
+      defaultName={version ? schemaVersionName(version).toLowerCase().replace(/\s+/g, "-") : ""}
+      description={version ? `${schemaVersionName(version)} · v${version.version}` : "Snapshot"}
       fieldLabel="Bookmark name"
       open={Boolean(version)}
       error={mutation.error?.message}

@@ -11,18 +11,18 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import type { SchemaDraftDto } from "@/features/schemas/api/draft-types";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { useUpdateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
 import {
   useSchema,
   useSchemaDrafts,
   useSchemaVersions,
 } from "@/features/schemas/api/schema-queries";
-import { latestSchemaVersion, schemaVersionId } from "@/features/schemas/lib/version-selection";
+import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
 import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
 import { SchemaChangeCatalogItem } from "@/features/schemas/components/SchemaChangeCatalogItem";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 const EMPTY_DRAFTS: never[] = [];
 const EMPTY_VERSIONS: never[] = [];
@@ -135,7 +135,7 @@ export function SchemaChangesPage() {
             <SchemaChangeCatalogItem
               key={draft.id}
               baseSnapshotName={
-                versions.find((version) => schemaVersionId(version) === draft.baseVersionId)?.name
+                versions.find((version) => version.id === draft.baseVersionId)?.name ?? undefined
               }
               draft={draft}
               onRename={setRenameTarget}

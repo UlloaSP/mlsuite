@@ -17,7 +17,7 @@ import { createSchemaRunTransport } from "@/capabilities/prediction-runtime/mlfo
 import { prepareRuntimeReports } from "@/capabilities/prediction-runtime/mlform/runtime-report-targets";
 
 type Binding = {
-  modelId: string;
+  modelId: number;
   modelName?: string;
   pluginPolicy?: Record<string, unknown> | null;
 };

@@ -8,11 +8,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { act } from "react";
 import { Route, Routes } from "react-router";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import type { WorkspacePermissionsDto } from "@/capabilities/workspace-context/workspace-context.types";
 import { InvitationsPage } from "@/features/workspace/pages/invitations-page";
 import { OrganizationSettingsPage } from "@/features/workspace/pages/organization-settings-page";
 import { RolesPage } from "@/features/workspace/pages/roles-page";
 import { click, mount, type Mounted } from "./support/dom";
+import type { WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
 const hooks = vi.hoisted(() => ({
   dashboard: vi.fn(),

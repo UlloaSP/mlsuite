@@ -4,8 +4,8 @@ import {
   schemaVersionId,
   sortSchemaVersions,
 } from "@/features/schemas/lib/version-selection";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { DEFAULT_SHORTCUTS, matchesShortcut } from "@/shared/ui/shortcut-state";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 const version = (id: string | number, versionNumber: number): SchemaVersionDto =>
   ({

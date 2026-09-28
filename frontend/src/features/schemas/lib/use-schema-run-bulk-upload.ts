@@ -12,14 +12,13 @@ import {
   getLastPredictionRunId,
 } from "@/features/schemas/api/schema-prediction-api";
 import { invalidatePredictionRunCollections } from "@/features/schemas/api/schema-prediction-mutations";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import type { CreatePredictionRunRequest } from "@/features/schemas/api/prediction-types";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
 import { bulkUploadSummary, getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
+import type { CreatePredictionRunRequest, SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Status = "idle" | "parsing" | "processing" | "done";
 

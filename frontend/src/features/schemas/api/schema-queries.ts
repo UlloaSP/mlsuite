@@ -18,7 +18,6 @@ import {
   getPredictionRunsFeedback,
   getPredictionRun,
 } from "./schema-prediction-api";
-import type { PredictionRunDto } from "./prediction-types";
 import {
   ORGANIZATION_BOOKMARKS_QUERY_KEY,
   PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
@@ -35,6 +34,7 @@ import {
   SCHEMA_VERSION_QUERY_KEY,
   schemaCatalogPageQueryKey,
 } from "./schema-keys";
+import type { PredictionRunDto } from "@/shared/api/openapi.gen";
 
 type Scope = number | string;
 
@@ -55,16 +55,16 @@ export const schemaCatalogPageQueryOptions = (
 
 /** Query options and hook for one tenant resource fetched by id; disabled until the id is known. */
 function byIdQuery<T>(
-  key: (organizationId: Scope, id: string) => QueryKey,
-  fetcher: (id: string, signal: AbortSignal) => Promise<T>,
+  key: (organizationId: Scope, id: number | string) => QueryKey,
+  fetcher: (id: number | string, signal: AbortSignal) => Promise<T>,
 ) {
-  const options = (organizationId: Scope, id?: string) =>
+  const options = (organizationId: Scope, id?: number | string) =>
     queryOptions({
       queryKey: key(organizationId, id ?? ""),
       queryFn: ({ signal }) => fetcher(id ?? "", signal),
       enabled: Boolean(id),
     });
-  const useById = (id?: string) => {
+  const useById = (id?: number | string) => {
     const organizationId = useCurrentOrganizationId() ?? "none";
     return useQuery(options(organizationId, id));
   };

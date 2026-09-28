@@ -1,6 +1,6 @@
 import { formatTimestamp } from "@/shared/lib/date-time";
-import type { SchemaReviewRunListItemDto } from "@/features/reviews/api/review-types";
 import { cx } from "@/shared/ui/cx";
+import type { SchemaReviewRunListItemDto } from "@/shared/api/openapi.gen";
 
 type ReviewTrayRowProps = {
   item: SchemaReviewRunListItemDto & { schemaName: string };

@@ -44,7 +44,7 @@ function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
   const bookmark = bookmarkQuery.data;
   // The snapshot is fixed when the page opens; moving the bookmark elsewhere
   // must not swap the form (or the saved runs' version) underneath the user.
-  const [pinnedVersionId, setPinnedVersionId] = useState<string>();
+  const [pinnedVersionId, setPinnedVersionId] = useState<number>();
   if (bookmark && pinnedVersionId === undefined) setPinnedVersionId(bookmark.versionId);
   const versionQuery = useSchemaVersion(pinnedVersionId);
   const version = useMemo(
@@ -55,7 +55,7 @@ function BookmarkWorkspace({ bookmarkId }: { bookmarkId: string }) {
   const runCount = useOrganizationBookmarks().data?.find(
     (item) => String(item.id) === bookmarkId,
   )?.runCount;
-  const session = useInferenceSession(bookmarkId, pinnedVersionId ?? "");
+  const session = useInferenceSession(bookmarkId, pinnedVersionId);
   const [params] = useSearchParams();
   // "Predict again" asks for a run's inputs with ?from=; the form keeps that source
   // until another is asked for.

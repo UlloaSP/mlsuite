@@ -6,7 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect } from "react";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
-import type { CreatePredictionRunRequest } from "@/features/schemas/api/prediction-types";
+import type { CreatePredictionRunRequest } from "@/shared/api/openapi.gen";
 
 /**
  * One execution of a bookmark's form. It stays local until saved; saving
@@ -15,7 +15,7 @@ import type { CreatePredictionRunRequest } from "@/features/schemas/api/predicti
 export type SessionEntry = {
   key: string;
   /** The snapshot the run executed; saving is refused if the bookmark moved since. */
-  schemaVersionId: string;
+  schemaVersionId: number;
   name: string;
   state: "running" | "ready" | "saving" | "saved";
   inputData: JsonRecord;
@@ -23,7 +23,7 @@ export type SessionEntry = {
   /** Reports still resolving; the entry cannot be saved until they finish. */
   reportsPending: boolean;
   createdAt: string;
-  savedRunId?: string;
+  savedRunId?: number;
 };
 
 /**
@@ -34,7 +34,7 @@ export type SessionEntry = {
 export const inferenceSessionsAtom = atom<Record<string, SessionEntry[]>>({});
 
 /** Whose sessions the store holds; sessions never outlive a change of member. */
-const sessionsOwnerAtom = atom<string | undefined>(undefined);
+const sessionsOwnerAtom = atom<number | undefined>(undefined);
 
 /**
  * Drops the previous member's sessions when a different member signs in on this
@@ -42,7 +42,7 @@ const sessionsOwnerAtom = atom<string | undefined>(undefined);
  * reload warning only counts the current member's work. The same member signing
  * in again keeps them.
  */
-export function useScopeInferenceSessionsToUser(userId: string | undefined) {
+export function useScopeInferenceSessionsToUser(userId: number | undefined) {
   const [owner, setOwner] = useAtom(sessionsOwnerAtom);
   const setSessions = useSetAtom(inferenceSessionsAtom);
 
@@ -61,7 +61,7 @@ const unsavedCountAtom = atom(
 );
 
 /** How many runs of a member's session on a bookmark are not saved yet. */
-export function useUnsavedSessionRuns(userId: string | undefined, bookmarkId: string) {
+export function useUnsavedSessionRuns(userId: number | undefined, bookmarkId: string) {
   const entries = useAtomValue(inferenceSessionsAtom)[`${userId ?? "anonymous"}:${bookmarkId}`];
   return entries?.filter((entry) => entry.state !== "saved").length ?? 0;
 }

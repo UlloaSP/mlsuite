@@ -4,11 +4,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Copy, GitCommitHorizontal, PencilLine, Tag } from "lucide-react";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import { schemaVersionId } from "@/features/schemas/lib/version-selection";
+import { schemaVersionId, schemaVersionName } from "@/features/schemas/lib/version-selection";
 import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   onBookmark: (version: SchemaVersionDto) => void;
@@ -47,7 +47,7 @@ export function SchemaSnapshotCatalogItem({
 
   return (
     <CatalogEntry
-      title={version.name}
+      title={schemaVersionName(version)}
       icon={<GitCommitHorizontal size={16} className="mt-1 text-fg-secondary" />}
       metadata={
         <span>

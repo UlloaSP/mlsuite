@@ -1,10 +1,10 @@
 import { useState } from "react";
-import type { OrganizationMembershipRowDto } from "@/features/workspace/api/workspace.types";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
+import type { OrganizationMembershipRowDto } from "@/shared/api/openapi.gen";
 
 export function TransferOrganizationOwnerDialog({
   disabled,

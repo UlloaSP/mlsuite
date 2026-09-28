@@ -3,10 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { UserDTO } from "@/capabilities/workspace-context/session-api";
 import { cx } from "@/shared/ui/cx";
 import { countLabel } from "./account-navigation";
 import { SIDEBAR_MENU_TILE } from "./sidebar-menu-styles";
+import type { UserDto } from "@/shared/api/openapi.gen";
 
 export function AccountAvatar({
   displayName,
@@ -15,7 +15,7 @@ export function AccountAvatar({
 }: {
   displayName: string;
   notificationCount: number;
-  user: Pick<UserDTO, "avatarUrl">;
+  user: Pick<UserDto, "avatarUrl">;
 }) {
   return (
     <span className="relative shrink-0">

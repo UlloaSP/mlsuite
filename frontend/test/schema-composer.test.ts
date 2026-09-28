@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import { composeSchemaVersion } from "@/features/schemas/lib/merge";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
-import type { ModelDto } from "@/features/models/api/model.types";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
 const withMappedTo = (items: unknown[]): unknown[] =>
   items.map((item) =>
@@ -20,9 +20,9 @@ const withMappedTo = (items: unknown[]): unknown[] =>
       : item,
   );
 
-const model = (fields: unknown[], reports: unknown[] = [], id = "model-1"): ModelDto => ({
+const model = (fields: unknown[], reports: unknown[] = [], id = 1): ModelDto => ({
   id,
-  name: id,
+  name: `model-${id}`,
   type: "classifier",
   specificType: "LogisticRegression",
   fileName: "model.joblib",
@@ -30,6 +30,9 @@ const model = (fields: unknown[], reports: unknown[] = [], id = "model-1"): Mode
   createdAt: "2026-06-02T00:00:00Z",
   updatedAt: "2026-06-02T00:00:00Z",
   archivedAt: null,
+  updatedByName: "Owner",
+  updatedByEmail: "owner@example.com",
+  updatedByAvatarUrl: null,
   version: 0,
   fieldCount: fields.length,
   reportCount: reports.length,
@@ -147,13 +150,13 @@ describe("composeSchemaVersion one-hot mapping", () => {
 
   test("composes one schema from multiple models", () => {
     const result = composeSchemaVersion("v1", [
-      model([{ kind: "number", id: "age", label: "age" }], [], "model-1"),
-      model([{ kind: "number", id: "score", label: "score" }], [], "model-2"),
+      model([{ kind: "number", id: "age", label: "age" }], [], 1),
+      model([{ kind: "number", id: "score", label: "score" }], [], 2),
     ]);
 
     expect(result.bindings).toEqual([
-      expect.objectContaining({ modelId: "model-1" }),
-      expect.objectContaining({ modelId: "model-2" }),
+      expect.objectContaining({ modelId: 1, modelName: "model-1" }),
+      expect.objectContaining({ modelId: 2, modelName: "model-2" }),
     ]);
     expect(result.formSchema.fields).toEqual([
       expect.objectContaining({ mappedTo: { "model-1": "age" } }),

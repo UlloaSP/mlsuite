@@ -11,35 +11,15 @@ import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/bu
 import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import type {
+  PredictionResultDto,
+  PredictionResultFeedbackDto,
+  SchemaVersionDto,
+} from "@/shared/api/openapi.gen";
 
-type JsonRecord = Record<string, unknown>;
-type PredictionResultFeedbackType = "OUTPUT" | "EXPLANATION";
-type PredictionResultFeedback = {
-  id: string;
-  resultId: string;
-  type: PredictionResultFeedbackType;
-  order: number;
-  value: unknown;
-  userId?: string | null;
-  userEmail?: string | null;
-  userName?: string | null;
-  createdAt?: string;
-};
-type PredictionResult = {
-  [key: string]: unknown;
-  id: string;
-  modelId: string;
-  output: JsonRecord;
-  status: "SUCCESS" | "FAILED";
-};
-type SchemaVersion = {
-  [key: string]: unknown;
-  id: string;
-  schemaId?: string;
-  version?: number;
-  formSchema: JsonRecord;
-  bindings: Array<{ modelId: string; pluginPolicy?: JsonRecord | null }>;
-};
+type PredictionResultFeedbackType = PredictionResultFeedbackDto["type"];
+type PredictionResult = Pick<PredictionResultDto, "id" | "modelId" | "output" | "status">;
+type SchemaVersion = Pick<SchemaVersionDto, "formSchema" | "bindings">;
 
 type FeedbackKind = "OUTPUT" | "EXPLANATION";
 
@@ -49,9 +29,9 @@ export type SchemaFeedbackStep = CombinedFeedbackStep<FeedbackKind, never> & {
 };
 
 export type SchemaFeedbackTarget = {
-  resultId: string;
-  modelId: string;
-  feedback?: PredictionResultFeedback;
+  resultId: number;
+  modelId: number;
+  feedback?: PredictionResultFeedbackDto;
 };
 
 const reportsOf = (schema: unknown): Record<string, unknown>[] =>
@@ -92,7 +72,7 @@ const reportDescription = (payload: unknown): string => {
   return content ? `Prediction report:\n${content}` : "Prediction report";
 };
 
-const feedbackKey = (resultId: string, type: PredictionResultFeedbackType, order: number): string =>
+const feedbackKey = (resultId: number, type: PredictionResultFeedbackType, order: number): string =>
   `${resultId}:${type}:${order}`;
 
 type DisplayTarget = {
@@ -104,7 +84,7 @@ const stepTargets = (
   members: readonly DisplayTarget[],
   type: PredictionResultFeedbackType,
   order: number,
-  feedbackByKey: ReadonlyMap<string, PredictionResultFeedback>,
+  feedbackByKey: ReadonlyMap<string, PredictionResultFeedbackDto>,
 ): SchemaFeedbackTarget[] =>
   members.map(({ result }) => ({
     resultId: result.id,
@@ -125,7 +105,7 @@ const combinedDescription = (
 export const buildSchemaFeedbackSteps = (
   version: SchemaVersion,
   results: readonly PredictionResult[],
-  feedback: readonly PredictionResultFeedback[],
+  feedback: readonly PredictionResultFeedbackDto[],
 ): SchemaFeedbackStep[] => {
   const feedbackByKey = new Map(
     feedback.map((item) => [feedbackKey(item.resultId, item.type, item.order), item]),

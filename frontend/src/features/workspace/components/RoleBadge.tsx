@@ -1,11 +1,9 @@
 import { AppBadge } from "@/shared/ui/AppBadge";
-import type {
-  InvitationStatus,
-  MembershipStatus,
-  OrganizationRole,
-} from "@/capabilities/workspace-context/workspace-context.types";
+import type { InvitationDto, OrganizationMembershipDto } from "@/shared/api/openapi.gen";
 
-type RoleValue = OrganizationRole | MembershipStatus | InvitationStatus;
+/** System keys of the built-in organization roles. */
+type OrganizationRole = "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
+type RoleValue = OrganizationRole | OrganizationMembershipDto["status"] | InvitationDto["status"];
 
 const tones: Record<RoleValue, "accent" | "danger" | "neutral" | "success" | "warning"> = {
   OWNER: "accent",

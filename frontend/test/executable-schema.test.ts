@@ -7,7 +7,7 @@ import { describe, expect, test } from "vite-plus/test";
 import { toExecutableSchemaVersion } from "@/capabilities/prediction-runtime/mlform/executable-schema";
 
 const bindings = [
-  { modelId: "model-1", modelName: "Model One", pluginPolicy: { reportKinds: ["classifier"] } },
+  { modelId: 1, modelName: "Model One", pluginPolicy: { reportKinds: ["classifier"] } },
 ];
 
 describe("toExecutableSchemaVersion", () => {

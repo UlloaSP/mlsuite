@@ -1,6 +1,6 @@
-import type { AdminUser } from "@/features/admin/api/admin-user.types";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
+import type { AdminUserDto } from "@/shared/api/openapi.gen";
 
 export function DeleteUserDialog({
   disabled,
@@ -11,7 +11,7 @@ export function DeleteUserDialog({
 }: {
   disabled: boolean;
   error?: string;
-  user: AdminUser;
+  user: AdminUserDto;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
 }) {

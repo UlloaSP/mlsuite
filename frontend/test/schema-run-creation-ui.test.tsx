@@ -13,8 +13,9 @@ import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
 import { BookmarkPredictPanel } from "@/features/schemas/components/BookmarkPredictPanel";
 import { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { buttonByText, changeValue, click, mount } from "./support/dom";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
+import { binding, schemaVersion } from "./support/api-fixtures";
 
 const mountState = vi.hoisted(() => ({
   mount: vi.fn(),
@@ -61,9 +62,7 @@ vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-const version: SchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
+const version = schemaVersion({
   version: 1,
   name: "Snapshot 1",
   formSchema: {
@@ -77,14 +76,14 @@ const version: SchemaVersionDto = {
       },
     ],
   },
-  bindings: [{ modelId: "model-1" }],
+  bindings: [binding(1)],
   createdAt: "",
-};
+});
 
 const completedRaw = {
   results: [
     {
-      modelId: "model-1",
+      modelId: 1,
       modelInput: { age: 42 },
       output: { reports: [{ mappedTo: "score", value: 0.8 }] },
       status: "SUCCESS",
@@ -98,7 +97,7 @@ describe("schema run creation UI", () => {
     mountState.unmount.mockReset();
     mountState.updateTheme.mockReset();
     pageState.mutateAsync.mockReset();
-    pageState.mutateAsync.mockResolvedValue({ id: "run-1" });
+    pageState.mutateAsync.mockResolvedValue({ id: 1 });
     pageState.version = version;
     mountState.mount.mockImplementation(() => ({
       form: {
@@ -166,7 +165,7 @@ describe("schema run creation UI", () => {
         ],
         reports: [],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [binding(1)],
       theme: "light",
       onRunningChange: (running) => runningChanges.push(running),
     });
@@ -225,10 +224,10 @@ describe("schema run creation UI", () => {
       await vi.runAllTimersAsync();
     });
     expect(pageState.mutateAsync).toHaveBeenLastCalledWith(
-      expect.objectContaining({ name: "Reviewed case", schemaVersionId: "version-1" }),
+      expect.objectContaining({ name: "Reviewed case", schemaVersionId: 1 }),
     );
     expect(rows()[0].textContent).toContain("Saved");
-    expect(rows()[0].querySelector("a")?.getAttribute("href")).toBe("/inferences/run-1");
+    expect(rows()[0].querySelector("a")?.getAttribute("href")).toBe("/inferences/1");
     expect(nameInputs()[0].disabled).toBe(true);
 
     // A run that stops without a result leaves nothing behind.

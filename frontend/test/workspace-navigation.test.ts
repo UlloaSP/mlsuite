@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { getWorkspaceLinks, isWorkspacePath } from "@/app/components/workspace-navigation";
-import type { WorkspacePermissionsDto } from "@/capabilities/workspace-context/workspace-context.types";
+import type { WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
 const permissions = (granted: Partial<WorkspacePermissionsDto>) =>
   ({ canViewWorkspace: true, ...granted }) as WorkspacePermissionsDto;

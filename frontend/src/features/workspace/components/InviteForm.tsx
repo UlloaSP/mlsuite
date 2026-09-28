@@ -2,10 +2,7 @@ import { useState } from "react";
 import { AppCombobox } from "@/shared/ui/AppCombobox";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
-import type {
-  InvitationCandidateDto,
-  RoleDefinitionDto,
-} from "@/features/workspace/api/workspace.types";
+import type { InvitationCandidateDto, RoleDefinitionDto } from "@/shared/api/openapi.gen";
 
 const defaultRoleId = (roles: RoleDefinitionDto[]) =>
   roles.find((role) => role.systemKey === "MEMBER")?.id ?? roles[0]?.id ?? null;

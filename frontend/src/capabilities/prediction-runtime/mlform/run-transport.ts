@@ -17,13 +17,13 @@ import {
 } from "@/capabilities/prediction-runtime/mlform/shared";
 
 type SchemaRunBinding = {
-  modelId: string;
+  modelId: number;
   modelName?: string;
   pluginPolicy?: JsonRecord | null;
 };
 
 type BindingResult = {
-  modelId: string;
+  modelId: number;
   modelInput: JsonRecord;
   output: JsonRecord;
   status: "SUCCESS" | "FAILED";
@@ -43,7 +43,7 @@ const parseResponse = async (response: Response): Promise<unknown> => {
   }
 };
 
-const failureOutput = (modelId: string, modelInput: JsonRecord): JsonRecord => ({
+const failureOutput = (modelId: number, modelInput: JsonRecord): JsonRecord => ({
   meta: { modelId, backendUrl: getBackendBaseUrl(), backendFieldValues: modelInput },
 });
 

@@ -8,16 +8,16 @@ import { useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { useSchema, useSchemaVersions } from "@/features/schemas/api/schema-queries";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
-import { sortSchemaVersions } from "@/features/schemas/lib/version-selection";
+import { schemaVersionName, sortSchemaVersions } from "@/features/schemas/lib/version-selection";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { BookmarkSnapshotDialog } from "@/features/schemas/components/BookmarkSnapshotDialog";
 import { CloneSchemaDialog } from "@/features/schemas/components/CloneSchemaDialog";
 import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaSnapshotCatalogItem } from "@/features/schemas/components/SchemaSnapshotCatalogItem";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type SnapshotFilter = "all" | "latest" | "withBindings";
 type SnapshotSort = "created" | "version" | "name";
@@ -163,7 +163,7 @@ function filterSnapshots(
       return filterMatch && haystack.toLowerCase().includes(query);
     })
     .sort((left, right) => {
-      if (sort === "name") return left.name.localeCompare(right.name);
+      if (sort === "name") return schemaVersionName(left).localeCompare(schemaVersionName(right));
       if (sort === "version") return right.version - left.version;
       return right.createdAt.localeCompare(left.createdAt);
     });

@@ -1,26 +1,11 @@
-export type SystemRole = "USER" | "SUPERADMIN";
+import type { AdminUserDto } from "@/shared/api/openapi.gen";
+
+export type SystemRole = AdminUserDto["systemRole"];
 
 export const SYSTEM_ROLE_OPTIONS: Array<{ value: SystemRole; label: string }> = [
   { value: "USER", label: "User" },
   { value: "SUPERADMIN", label: "Superadmin" },
 ];
-
-export type AdminUser = {
-  id: number;
-  username: string;
-  email: string;
-  fullName: string;
-  avatarUrl: string | null;
-  systemRole: SystemRole;
-  enabled: boolean;
-  createdAt: string;
-};
-
-export type AdminUserPage = {
-  items: AdminUser[];
-  totalItems: number;
-  hasNext: boolean;
-};
 
 export type AdminUserPageRequest = {
   page: number;
@@ -28,20 +13,4 @@ export type AdminUserPageRequest = {
   search: string;
   size: number;
   sort: string;
-};
-
-export type AdminCreateUserPayload = {
-  email: string;
-  password: string;
-  fullName: string;
-  username?: string;
-  systemRole?: SystemRole;
-  enabled?: boolean;
-};
-
-export type AdminUpdateUserPayload = {
-  username?: string;
-  fullName?: string;
-  systemRole?: SystemRole;
-  enabled?: boolean;
 };

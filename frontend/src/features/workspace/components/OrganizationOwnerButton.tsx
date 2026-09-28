@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import type { OrganizationCatalogItemDto } from "@/features/workspace/api/workspace.types";
+import type { OrganizationCatalogItemDto } from "@/shared/api/openapi.gen";
 
 export function OrganizationOwnerButton({ item }: { item: OrganizationCatalogItemDto }) {
   const owner = item.ownerName || item.ownerEmail || "No owner";

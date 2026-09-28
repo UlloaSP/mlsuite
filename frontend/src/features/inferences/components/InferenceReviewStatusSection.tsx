@@ -1,9 +1,6 @@
 import { MessageSquareText } from "lucide-react";
 import { useMemo } from "react";
-import {
-  type InferenceReviewAssignmentDto,
-  useInferenceReviewAssignments,
-} from "@/features/inferences/api/inference-api";
+import { useInferenceReviewAssignments } from "@/features/inferences/api/inference-api";
 import { useReviewAssignmentActions } from "@/features/inferences/lib/use-review-assignment-actions";
 import { reviewAssignmentHref } from "@/features/inferences/lib/review-assignment-href";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
@@ -11,6 +8,7 @@ import { CatalogToolbar } from "@/shared/ui/catalog/CatalogToolbar";
 import { getCatalogErrorMessage, getCatalogTotalPages } from "@/shared/ui/catalog/catalogPageUtils";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { InferenceReviewTile } from "./InferenceReviewTile";
+import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   inferenceId: number;
@@ -20,7 +18,7 @@ type Props = {
 type StateFilter = "all" | "completed" | "in-progress" | "pending";
 type ReviewSort = "requested" | "submitted" | "reviewer";
 
-const EMPTY: InferenceReviewAssignmentDto[] = [];
+const EMPTY: SchemaReviewAssignmentStatusDto[] = [];
 const PAGE_SIZE = 9;
 const FILTERS: Array<{ value: StateFilter; label: string }> = [
   { value: "all", label: "All" },
@@ -28,7 +26,10 @@ const FILTERS: Array<{ value: StateFilter; label: string }> = [
   { value: "in-progress", label: "In progress" },
   { value: "pending", label: "Pending" },
 ];
-const STATE_OF: Record<Exclude<StateFilter, "all">, InferenceReviewAssignmentDto["reviewState"]> = {
+const STATE_OF: Record<
+  Exclude<StateFilter, "all">,
+  SchemaReviewAssignmentStatusDto["reviewState"]
+> = {
   completed: "COMPLETED",
   "in-progress": "IN_PROGRESS",
   pending: "PENDING",
@@ -114,7 +115,7 @@ export function InferenceReviewStatusSection({ inferenceId, inferenceName }: Pro
 }
 
 function matchAssignments(
-  assignments: InferenceReviewAssignmentDto[],
+  assignments: SchemaReviewAssignmentStatusDto[],
   search: string,
   filter: StateFilter,
 ) {
@@ -130,7 +131,7 @@ function matchAssignments(
   );
 }
 
-function sortAssignments(assignments: InferenceReviewAssignmentDto[], sort: ReviewSort) {
+function sortAssignments(assignments: SchemaReviewAssignmentStatusDto[], sort: ReviewSort) {
   return [...assignments].sort((left, right) => {
     if (sort === "reviewer") return left.reviewer.fullName.localeCompare(right.reviewer.fullName);
     if (sort === "submitted")

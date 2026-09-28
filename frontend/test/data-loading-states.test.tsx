@@ -3,8 +3,8 @@ import { expect, test, vi } from "vite-plus/test";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaRunExportReviewModal } from "@/features/schemas/components/SchemaRunExportReviewModal";
 import { SchemaReviewRunDetailPanel } from "@/features/reviews/components/SchemaReviewRunDetailPanel";
-import type { ReviewSchemaVersionDto } from "@/features/reviews/api/review-types";
 import { mount } from "./support/dom";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type ListQuery = { data?: unknown[]; isError: boolean };
 const state = vi.hoisted(() => ({
@@ -68,7 +68,7 @@ test.each([
 });
 
 test("switching review runs keeps the previous shell as a skeleton without its form", async () => {
-  const version = { formSchema: { fields: [], reports: [] } } as unknown as ReviewSchemaVersionDto;
+  const version = { formSchema: { fields: [], reports: [] } } as unknown as SchemaVersionDto;
   const detail = {
     run: { id: "1", name: "Previous run", inputData: {}, results: [] },
     feedback: [],

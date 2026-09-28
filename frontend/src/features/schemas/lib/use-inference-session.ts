@@ -9,12 +9,9 @@ import { toast } from "sonner";
 import { mergeSchemaRunInputs } from "@/capabilities/prediction-runtime/data/input-display";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useCreatePredictionRunForBookmarkMutation } from "@/features/schemas/api/schema-prediction-mutations";
-import type {
-  CreatePredictionRunRequest,
-  PredictionRunStatus,
-} from "@/features/schemas/api/prediction-types";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { inferenceSessionsAtom, type SessionEntry } from "./inference-session-store";
+import type { CreatePredictionRunRequest, PredictionRunDto } from "@/shared/api/openapi.gen";
 
 export type { SessionEntry } from "./inference-session-store";
 
@@ -25,7 +22,7 @@ const createRunName = () => `run-${new Date().toISOString()}`;
 const toResults = (raw: JsonRecord): Results =>
   Array.isArray(raw.results) ? (raw.results as Results) : [];
 
-export const sessionEntryStatus = (entry: SessionEntry): PredictionRunStatus => {
+export const sessionEntryStatus = (entry: SessionEntry): PredictionRunDto["status"] => {
   const succeeded = entry.results.filter((result) => result.status === "SUCCESS").length;
   if (succeeded === entry.results.length) return "SUCCESS";
   return succeeded === 0 ? "FAILED" : "PARTIAL_SUCCESS";
@@ -40,7 +37,7 @@ const NO_ENTRIES: SessionEntry[] = [];
  * The bookmark's session of runs: newest first, each saved or discarded. The
  * entries live in the app-wide store, so leaving the page and coming back keeps them.
  */
-export function useInferenceSession(bookmarkId: string, schemaVersionId: string) {
+export function useInferenceSession(bookmarkId: string, schemaVersionId: number | undefined) {
   // Keyed by member too: another member signing in on this page never sees these.
   const sessionKey = `${useUser().data?.id ?? "anonymous"}:${bookmarkId}`;
   const entries = useAtomValue(inferenceSessionsAtom)[sessionKey] ?? NO_ENTRIES;
@@ -82,6 +79,8 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: string)
   const onRunningChange = useCallback(
     (running: boolean) => {
       if (running) {
+        // The form only mounts once its snapshot has loaded.
+        if (schemaVersionId === undefined) return;
         const key = crypto.randomUUID();
         setLiveKey(key);
         setEntries((current) => [

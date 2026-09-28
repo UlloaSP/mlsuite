@@ -10,12 +10,12 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { useSchema, useSchemaVersion } from "@/features/schemas/api/schema-queries";
 import { BookmarkSnapshotDialog } from "@/features/schemas/components/BookmarkSnapshotDialog";
 import { CloneSchemaDialog } from "@/features/schemas/components/CloneSchemaDialog";
 import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/SchemaSnapshotPreviewPanel";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 export function SchemaSnapshotDetailPage() {
   const { schemaId, versionId } = useParams<{ schemaId: string; versionId: string }>();

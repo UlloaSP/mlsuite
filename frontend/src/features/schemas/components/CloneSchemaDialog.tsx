@@ -6,10 +6,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { Copy } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { useDuplicateSchemaMutation } from "@/features/schemas/api/schema-mutations";
 import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
-import { schemaVersionId } from "@/features/schemas/lib/version-selection";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   schemaId: string;
@@ -29,7 +28,7 @@ export function CloneSchemaDialog({ schemaId, schemaName, version, onClose }: Pr
       const copy = await mutation.mutateAsync({
         id: schemaId,
         name,
-        versionId: schemaVersionId(version),
+        versionId: version.id,
       });
       onClose();
       toast.success("Schema created from snapshot");

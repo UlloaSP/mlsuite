@@ -9,15 +9,15 @@ import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
 import { Route, Routes } from "react-router";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
-import type { InferenceReviewAssignmentDto } from "@/features/inferences/api/inference-api";
 import { InferenceReviewTile } from "@/features/inferences/components/InferenceReviewTile";
 import { InferenceReviewPage } from "@/features/inferences/pages/inference-review-page";
 import { InferenceReviewStatusSection } from "@/features/inferences/components/InferenceReviewStatusSection";
 import { ReviewerFeedbackAnswers } from "@/features/schemas/components/ReviewerFeedbackAnswers";
 import { click, mount, type Mounted } from "./support/dom";
+import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
 
 const state = vi.hoisted(() => ({
-  assignments: [] as InferenceReviewAssignmentDto[],
+  assignments: [] as SchemaReviewAssignmentStatusDto[],
   reopen: vi.fn(),
   remove: vi.fn(),
 }));
@@ -63,8 +63,8 @@ vi.mock("@/features/schemas/components/SchemaRunFeedbackSummary", () => ({
 }));
 
 const assignment = (
-  change: Partial<InferenceReviewAssignmentDto> = {},
-): InferenceReviewAssignmentDto => ({
+  change: Partial<SchemaReviewAssignmentStatusDto> = {},
+): SchemaReviewAssignmentStatusDto => ({
   reviewId: "rev-1",
   reviewRunId: "run-a",
   reviewer: { id: 4, fullName: "Grace Hopper", email: "grace@acme.test" },

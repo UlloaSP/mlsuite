@@ -4,8 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { stringify } from "json-source-map";
-
-import type { SchemaDraftChangeDto } from "@/features/schemas/api/draft-types";
+import type { SchemaDraftChangeDto } from "@/shared/api/openapi.gen";
 
 type Range = { end: number; start: number };
 type PrintResult = { lines: string[]; ranges: Map<string, Range> };

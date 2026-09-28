@@ -8,17 +8,10 @@ import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/bu
 import { isRecord, type JsonRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
 import { mappingLabels } from "@/capabilities/prediction-runtime/data/report-normalization";
+import type { PredictionResultDto, SchemaVersionDto } from "@/shared/api/openapi.gen";
 
-type SchemaVersion = {
-  [key: string]: unknown;
-  id: string;
-  schemaId?: string;
-  version?: number;
-  formSchema: JsonRecord;
-  bindings: Array<{ modelId: string; pluginPolicy?: JsonRecord | null }>;
-};
-
-type PredictionResult = { modelId: string; output: JsonRecord };
+type SchemaVersion = Pick<SchemaVersionDto, "formSchema" | "bindings">;
+type PredictionResult = Pick<PredictionResultDto, "modelId" | "output">;
 
 export type SchemaDisplayReport = {
   id: string;
@@ -34,11 +27,6 @@ const reportsOf = (schema: unknown): ReportConfig[] =>
   isRecord(schema) && Array.isArray(schema.reports)
     ? (schema.reports.filter(isRecord) as ReportConfig[])
     : [];
-
-const sameId = (left: unknown, right: unknown): boolean =>
-  (typeof left === "string" || typeof left === "number") &&
-  (typeof right === "string" || typeof right === "number") &&
-  String(left) === String(right);
 
 const reportId = (report: ReportConfig): string | undefined =>
   typeof report.id === "string"
@@ -126,7 +114,7 @@ export const getSchemaResultReports = (
   version: SchemaVersion,
   result: PredictionResult,
 ): SchemaDisplayReport[] => {
-  const binding = version.bindings.find((item) => sameId(item.modelId, result.modelId));
+  const binding = version.bindings.find((item) => item.modelId === result.modelId);
   return reportsOf(version.formSchema).reduce<SchemaDisplayReport[]>((items, report, order) => {
     const id = reportId(report);
     const kind = typeof report.kind === "string" ? report.kind : "report";

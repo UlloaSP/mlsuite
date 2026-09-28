@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { mappedTargets } from "@/capabilities/prediction-runtime/mlform/mapped-to";
-import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import type { JsonRecord } from "@/features/schemas/api/schema-types";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type FieldRecord = JsonRecord & {
   id?: string;

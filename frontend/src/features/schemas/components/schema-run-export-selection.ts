@@ -1,11 +1,8 @@
-import type {
-  PredictionResultFeedbackDto,
-  PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
 import { schemaRunReviewerLabel } from "@/features/schemas/lib/export";
+import type { PredictionResultFeedbackDto, PredictionRunDto } from "@/shared/api/openapi.gen";
 
 export type SchemaRunExportSelection = {
-  excludedRunIds: Set<string>;
+  excludedRunIds: Set<number>;
   excludedReviewers: Set<string>;
   excludedRunReviewers: Set<string>;
 };
@@ -22,7 +19,7 @@ export type SchemaRunExportRunSummary = {
   reviewCount: number;
 };
 
-export const schemaRunReviewerKey = (runId: string, reviewer: string) => `${runId}::${reviewer}`;
+export const schemaRunReviewerKey = (runId: number, reviewer: string) => `${runId}::${reviewer}`;
 
 export const emptySchemaRunExportSelection = (): SchemaRunExportSelection => ({
   excludedRunIds: new Set(),
@@ -32,7 +29,7 @@ export const emptySchemaRunExportSelection = (): SchemaRunExportSelection => ({
 
 export const isSchemaRunReviewSelected = (
   selection: SchemaRunExportSelection,
-  runId: string,
+  runId: number,
   reviewer: string,
 ) =>
   !selection.excludedRunIds.has(runId) &&

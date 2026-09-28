@@ -10,8 +10,8 @@ import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feed
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+  SchemaVersionDto,
+} from "@/shared/api/openapi.gen";
 
 type Props = {
   run: PredictionRunDto;

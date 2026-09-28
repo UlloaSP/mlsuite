@@ -8,9 +8,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { act } from "react";
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { PredictionRunDetails } from "@/features/schemas/components/PredictionRunDetails";
-import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 import { changeValue, mount } from "./support/dom";
+import { binding, predictionResult, predictionRun, schemaVersion } from "./support/api-fixtures";
 
 const queryState = vi.hoisted(() => ({ refetch: vi.fn(), runError: false }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
@@ -20,16 +19,11 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   }),
 }));
 
-const version: SchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
+const version = schemaVersion({
   version: 3,
   name: "Risk model",
   createdAt: "2026-08-24T12:00:00Z",
-  bindings: [
-    { modelId: "model-1", modelName: "Risk Forest" },
-    { modelId: "model-2", modelName: "Risk Boost" },
-  ],
+  bindings: [binding(1, { modelName: "Risk Forest" }), binding(2, { modelName: "Risk Boost" })],
   formSchema: {
     fields: [
       { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
@@ -40,41 +34,35 @@ const version: SchemaVersionDto = {
         id: "score",
         label: "Risk score",
         kind: "regressor",
-        mappedTo: { "model-1": "score", "model-2": "score-2" },
+        mappedTo: { "Risk Forest": "score", "Risk Boost": "score-2" },
       },
     ],
   },
-};
+});
 
-const run: PredictionRunDto = {
-  id: "run-1",
+const run = predictionRun({
   schemaVersionId: version.id,
-  schemaBookmarkId: "bookmark-1",
+  schemaBookmarkId: 1,
   name: "manito",
-  status: "SUCCESS",
   createdAt: "2026-08-24T15:15:00Z",
   inputData: { age: 52, sex: "Female" },
   results: [
-    {
-      id: "result-1",
-      runId: "run-1",
-      modelId: "model-1",
-      status: "SUCCESS",
+    predictionResult({
+      id: 1,
+      modelId: 1,
       createdAt: "2026-08-24T15:15:00Z",
       modelInput: { age: 52, sex: "Female" },
       output: { reports: [{ mappedTo: "score", value: "High" }] },
-    },
-    {
-      id: "result-2",
-      runId: "run-1",
-      modelId: "model-2",
-      status: "SUCCESS",
+    }),
+    predictionResult({
+      id: 2,
+      modelId: 2,
       createdAt: "2026-08-24T15:15:00Z",
       modelInput: { age: 52 },
       output: { reports: [{ mappedTo: "score-2", value: "Low" }] },
-    },
+    }),
   ],
-};
+});
 
 vi.mock("@/features/schemas/api/schema-queries", () => ({
   usePredictionRun: () =>
@@ -82,7 +70,7 @@ vi.mock("@/features/schemas/api/schema-queries", () => ({
       ? { data: undefined, isLoading: false, isError: true }
       : { data: run, isLoading: false, isError: false },
   useSchemaBookmark: () => ({
-    data: { id: "bookmark-1", schemaId: "schema-1", name: "Ward bookmark" },
+    data: { id: 1, schemaId: 1, name: "Ward bookmark" },
   }),
   useSchemaVersion: () => ({ data: version }),
   usePredictionRunFeedback: () => ({ data: [], refetch: queryState.refetch }),

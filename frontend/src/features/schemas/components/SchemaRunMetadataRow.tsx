@@ -5,8 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { formatTimestamp } from "@/shared/lib/date-time";
-import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
 import type { SchemaFeedbackStatus } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
+import type { PredictionRunDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   run: PredictionRunDto;

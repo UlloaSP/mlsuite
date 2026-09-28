@@ -28,7 +28,8 @@ type Options = {
   container: HTMLElement;
   schema: unknown;
   bindings: readonly {
-    modelId: string;
+    modelId: number;
+    modelName?: string;
     pluginPolicy?: JsonRecord | null;
   }[];
   theme: PredictionTheme;

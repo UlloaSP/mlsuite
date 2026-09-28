@@ -2,8 +2,8 @@ import { Send } from "lucide-react";
 import { useState } from "react";
 import { ReviewPredictionTrayGroup } from "@/features/reviews/components/ReviewPredictionTrayGroup";
 import { ReviewTrayRow } from "@/features/reviews/components/ReviewTrayRow";
-import type { SchemaReviewRunListItemDto } from "@/features/reviews/api/review-types";
 import { AppButton } from "@/shared/ui/AppButton";
+import type { SchemaReviewRunListItemDto } from "@/shared/api/openapi.gen";
 
 export type ReviewRailItem = SchemaReviewRunListItemDto & {
   reviewId: string;

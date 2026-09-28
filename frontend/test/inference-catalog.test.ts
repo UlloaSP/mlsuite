@@ -2,16 +2,18 @@ import { existsSync, readFileSync } from "node:fs";
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, test } from "vite-plus/test";
 import {
-  INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY,
   INFERENCES_QUERY_KEY,
-  type InferenceCatalogItemDto,
+  INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY,
 } from "@/features/inferences/api/inference-api";
 import { filterInferences } from "@/features/inferences/lib/inference-filter";
 import { groupReviewCandidates } from "@/capabilities/review-creation/review-creation-api";
 import { invalidatePredictionRunCollections } from "@/features/schemas/api/schema-prediction-mutations";
 import { ORGANIZATION_BOOKMARKS_QUERY_KEY } from "@/features/schemas/api/schema-keys";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
-const inference = (overrides: Partial<InferenceCatalogItemDto> = {}): InferenceCatalogItemDto => ({
+const inference = (
+  overrides: Partial<PredictionRunCatalogItemDto> = {},
+): PredictionRunCatalogItemDto => ({
   id: 11,
   name: "Fraud check",
   status: "SUCCESS",
@@ -24,6 +26,8 @@ const inference = (overrides: Partial<InferenceCatalogItemDto> = {}): InferenceC
   schemaVersionName: "Production",
   bookmarkId: 5,
   bookmarkName: "Stable",
+  createdByName: "Ada Lovelace",
+  createdByEmail: "ada@example.com",
   ...overrides,
 });
 
@@ -236,7 +240,7 @@ describe("organization inference catalog", () => {
     expect(catalog).toContain("<AppTextField");
     expect(catalog).toContain("selectedIds");
     expect(dialog).toContain("const schemaId = Number(group.schemaId)");
-    expect(api).toContain("schemaId: number");
+    expect(api).toContain("request: CreateSchemaReviewRequest");
   });
 
   test("renders paginated review tiles with reopen and delete response actions", () => {

@@ -17,7 +17,7 @@ type ReportController = {
   config?: { mappedTo?: unknown };
 };
 
-type Binding = { modelId: string; modelName?: string };
+type Binding = { modelId: number; modelName?: string };
 
 const statusOf = (state: ReportState | undefined): string => state?.status ?? "idle";
 
@@ -40,7 +40,7 @@ const targetForReport = (
 ): string | undefined => {
   if (context?.target !== undefined) return String(context.target);
   const modelId = contextId(context?.meta.modelId);
-  const binding = bindings.find((item) => item.modelId === modelId);
+  const binding = bindings.find((item) => String(item.modelId) === modelId);
   return reportTargetForBinding(report.config ?? report, binding);
 };
 

@@ -9,9 +9,9 @@ import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppEyebrow } from "@/shared/ui/AppEyebrow";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
-import type { ModelDto } from "@/features/models/api/model.types";
 import { getModelAlgorithmLabel } from "@/capabilities/prediction-runtime/data/model-utils";
 import { formatTimestamp } from "@/shared/lib/date-time";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
 type ModelSummaryTabProps = {
   model: ModelDto;

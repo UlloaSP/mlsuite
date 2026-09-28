@@ -16,14 +16,10 @@ import {
   useOrganizationAdminDashboardQuery,
   useOrganizationRolesQuery,
 } from "@/features/workspace/api/workspace.queries";
-import type {
-  PermissionKey,
-  RoleDefinitionDto,
-  RoleTemplateDto,
-} from "@/features/workspace/api/workspace.types";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
 import { RolesCatalog, type RolesTab } from "@/features/workspace/components/RolesCatalog";
+import type { RoleDefinitionDto, RoleTemplateDto } from "@/shared/api/openapi.gen";
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- Dialog, tab, and search state are separate controls with separate lifetimes.
 export function RolesPage() {
@@ -78,6 +74,7 @@ export function RolesPage() {
                       description: "",
                       scope: "ORGANIZATION",
                       locked: false,
+                      systemKey: null,
                       userCount: 0,
                       permissions: [],
                       actions: {
@@ -178,8 +175,8 @@ export function RolesPage() {
             roleDefinition={null}
             initial={{
               name: template.name,
-              description: template.description,
-              permissionKeys: template.permissionKeys as PermissionKey[],
+              description: template.description ?? undefined,
+              permissionKeys: template.permissionKeys,
             }}
             permissionGroups={data?.permissionCatalog ?? []}
             onClose={() => setTemplate(null)}

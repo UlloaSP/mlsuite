@@ -7,17 +7,14 @@ import { ArrowLeft } from "lucide-react";
 import { useCallback, useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { usePredictionRun } from "@/features/schemas/api/schema-queries";
-import type { PredictionResultDto } from "@/features/schemas/api/prediction-types";
-import type { JsonRecord, SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { InferenceSessionPanel } from "@/features/schemas/components/InferenceSessionPanel";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
 import { SchemaRunReportsPanel } from "@/features/schemas/components/SchemaRunReportsPanel";
 import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import type {
-  SessionEntry,
-  useInferenceSession,
-} from "@/features/schemas/lib/use-inference-session";
+import type { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   /** The pinned, executable snapshot the form runs. */
@@ -26,15 +23,6 @@ type Props = {
   /** A saved run whose inputs prefill the form ("Predict again"). */
   fromRunId?: string;
 };
-
-/** Unsaved results in the shape the saved-run report renderer reads. */
-const entryResults = (entry: SessionEntry): PredictionResultDto[] =>
-  entry.results.map((result, index) => ({
-    ...result,
-    id: `${entry.key}-${index}`,
-    runId: entry.key,
-    createdAt: entry.createdAt,
-  }));
 
 /**
  * MLForm (its Inputs and Results tabs) beside the session of runs. The newest
@@ -73,7 +61,7 @@ export function BookmarkPredictPanel({ version, session, fromRunId }: Props) {
             <div className="app-scroll min-h-0 flex-1 overflow-y-auto">
               <SchemaRunReportsPanel
                 version={version}
-                results={entryResults(viewing)}
+                results={viewing.results}
                 customReportDefinitions={catalog.data.reportDefinitions}
               />
             </div>

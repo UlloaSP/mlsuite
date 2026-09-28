@@ -5,11 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { ArrowRight, Settings } from "lucide-react";
 import { Link } from "react-router";
-import type {
-  OrganizationDto,
-  WorkspacePermissionsDto,
-} from "@/capabilities/workspace-context/workspace-context.types";
-import type { OrganizationAdminDashboardDto } from "@/features/workspace/api/workspace.types";
 import { RoleBadge } from "@/features/workspace/components/RoleBadge";
 import { lifecycleStages } from "@/features/workspace/lib/workspace-overview";
 import type { AppBreadcrumbItem } from "@/shared/ui/AppBreadcrumbs";
@@ -25,6 +20,11 @@ import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { LifecycleStageCard } from "./LifecycleStageCard";
 import { OverviewInvitationsPanel } from "./OverviewInvitationsPanel";
 import { OverviewMembersPanel } from "./OverviewMembersPanel";
+import type {
+  OrganizationAdminDashboardDto,
+  OrganizationDto,
+  WorkspacePermissionsDto,
+} from "@/shared/api/openapi.gen";
 
 // Columns follow the number of visible stages, so no row ends in empty cells.
 const STAGE_COLUMNS: Record<number, string> = {

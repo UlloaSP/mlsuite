@@ -1,5 +1,5 @@
-import type { InferenceReviewAssignmentDto } from "@/features/inferences/api/inference-api";
 import { formatTimestamp } from "@/shared/lib/date-time";
+import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
 
 /**
  * Who asked for the review and when, when it was submitted, and — while it is
@@ -9,7 +9,7 @@ export function ReviewAssignmentFacts({
   assignment,
   inline = false,
 }: {
-  assignment: InferenceReviewAssignmentDto;
+  assignment: SchemaReviewAssignmentStatusDto;
   /** Side by side, for wide panels; stacked (the default) in tiles. */
   inline?: boolean;
 }) {

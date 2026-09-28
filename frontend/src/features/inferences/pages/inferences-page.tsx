@@ -3,10 +3,7 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { ReviewCreationButton } from "@/capabilities/review-creation/ReviewCreationButton";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import {
-  type InferenceCatalogItemDto,
-  useInferenceCatalog,
-} from "@/features/inferences/api/inference-api";
+import { useInferenceCatalog } from "@/features/inferences/api/inference-api";
 import { useDeleteInferenceMutation } from "@/features/inferences/api/inference-mutations";
 import { InferenceCatalogList } from "@/features/inferences/components/InferenceCatalogList";
 import { InferenceCatalogToolbar } from "@/features/inferences/components/InferenceCatalogToolbar";
@@ -22,6 +19,7 @@ import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 const URL_FILTER_DEFAULTS = { q: "", schema: "all", bookmark: "all", status: "all" };
 const URL_FILTER_PARAMS = {
@@ -39,10 +37,10 @@ export function InferencesPage({
   renderFeedbackStatuses,
 }: {
   renderFeedbackStatuses?: (
-    items: InferenceCatalogItemDto[],
+    items: PredictionRunCatalogItemDto[],
     children: (statuses: Map<string, FeedbackStatusDisplay>) => ReactNode,
   ) => ReactNode;
-  renderExportAction?: (items: InferenceCatalogItemDto[]) => ReactNode;
+  renderExportAction?: (items: PredictionRunCatalogItemDto[]) => ReactNode;
 }) {
   const catalog = useInferenceCatalog();
   const { data: workspace } = useWorkspaceContext();

@@ -6,17 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { describe, expect, test } from "vite-plus/test";
 import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { getVisibleSchemaInputRecord } from "@/capabilities/prediction-runtime/data/input-display";
+import { binding } from "./support/api-fixtures";
 
 describe("schema review output context", () => {
   test("describes classifier feedback with prediction and probability", () => {
     const steps = buildSchemaFeedbackSteps(
       {
-        id: "version-1",
-        schemaId: "schema-1",
-        version: 1,
-        name: "Risk",
-        createdAt: "2026-06-04T00:00:00Z",
-        bindings: [{ modelId: "model-1" }],
+        bindings: [binding(1)],
         formSchema: {
           fields: [],
           reports: [
@@ -32,12 +28,9 @@ describe("schema review output context", () => {
       },
       [
         {
-          id: "result-1",
-          runId: "run-1",
-          modelId: "model-1",
+          id: 1,
+          modelId: 1,
           status: "SUCCESS",
-          createdAt: "2026-06-04T00:00:00Z",
-          modelInput: {},
           output: {
             reports: [{ mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] }],
           },

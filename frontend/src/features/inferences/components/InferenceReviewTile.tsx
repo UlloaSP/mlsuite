@@ -1,15 +1,15 @@
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Link } from "react-router";
-import type { InferenceReviewAssignmentDto } from "@/features/inferences/api/inference-api";
 import { assignmentActions } from "@/features/inferences/lib/use-review-assignment-actions";
 import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { ReviewAssignmentFacts } from "./ReviewAssignmentFacts";
 import { ReviewStateBadges } from "./ReviewStateBadges";
+import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
 
 type Props = {
-  assignment: InferenceReviewAssignmentDto;
+  assignment: SchemaReviewAssignmentStatusDto;
   /** The assignment's detail page (its answers). */
   to: string;
   disabled: boolean;

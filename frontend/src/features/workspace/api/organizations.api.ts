@@ -5,16 +5,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { appFetch, json } from "@/shared/api/http";
 import type {
-  OrganizationDto,
-  OrganizationMembershipDto,
-} from "@/capabilities/workspace-context/workspace-context.types";
-import type {
   CreateOrganizationRequest,
   OrganizationAdminDashboardDto,
+  OrganizationDto,
+  OrganizationMembershipDto,
   OrganizationMembershipRowDto,
-  OrganizationPageDto,
+  PageDtoOrganizationCatalogItemDto,
+  TransferOrganizationOwnershipRequest,
+  UpdateOrganizationMembershipRoleRequest,
   UpdateOrganizationRequest,
-} from "./workspace.types";
+} from "@/shared/api/openapi.gen";
 
 export const createOrganization = (payload: CreateOrganizationRequest): Promise<OrganizationDto> =>
   appFetch<OrganizationDto>("/api/organizations", json("POST", payload));
@@ -48,16 +48,19 @@ export type OrganizationPageRequest = {
 export const getOrganizationPage = (
   { page, search = "", size, sort = "updated" }: OrganizationPageRequest,
   signal?: AbortSignal,
-): Promise<OrganizationPageDto> => {
+): Promise<PageDtoOrganizationCatalogItemDto> => {
   const params = new URLSearchParams({
     page: String(page),
     search,
     size: String(size),
     sort,
   });
-  return appFetch<OrganizationPageDto>(`/api/organizations/catalog?${params.toString()}`, {
-    signal,
-  });
+  return appFetch<PageDtoOrganizationCatalogItemDto>(
+    `/api/organizations/catalog?${params.toString()}`,
+    {
+      signal,
+    },
+  );
 };
 
 export const removeOrganizationMember = (
@@ -74,7 +77,7 @@ export const transferOrganizationOwnership = (
 ): Promise<OrganizationMembershipDto> =>
   appFetch<OrganizationMembershipDto>(
     `/api/organizations/${organizationId}/transfer-ownership`,
-    json("POST", { nextOwnerMembershipId }),
+    json("POST", { nextOwnerMembershipId } satisfies TransferOrganizationOwnershipRequest),
   );
 
 export const updateOrganizationMemberRole = (
@@ -84,7 +87,7 @@ export const updateOrganizationMemberRole = (
 ): Promise<OrganizationMembershipDto> =>
   appFetch<OrganizationMembershipDto>(
     `/api/organizations/${organizationId}/members/${membershipId}`,
-    json("PATCH", { roleDefinitionId }),
+    json("PATCH", { roleDefinitionId } satisfies UpdateOrganizationMembershipRoleRequest),
   );
 
 export const updateOrganization = (

@@ -7,10 +7,10 @@ import { Square, Upload } from "lucide-react";
 import { useRef, type ChangeEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { useSchemaRunBulkUpload } from "@/features/schemas/lib/use-schema-run-bulk-upload";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 import { bulkUploadSummary } from "@/features/schemas/lib/bulk-upload";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   version: SchemaVersionDto;

@@ -82,7 +82,8 @@ describe("schema binding plugin policy", () => {
     const transport = createSchemaRunTransport(
       [
         {
-          modelId: "model-1",
+          modelId: 1,
+          modelName: "model-1",
           pluginPolicy: { reportKinds: ["other-report"] },
         },
       ],
@@ -126,7 +127,10 @@ describe("schema binding plugin policy", () => {
         ),
     );
     const transport = createSchemaRunTransport(
-      [{ modelId: "model-1" }, { modelId: "model-2" }],
+      [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+      ],
       [],
     );
     const result = await transport.submit({
@@ -150,8 +154,8 @@ describe("schema binding plugin policy", () => {
     } as never);
     const reports = (result as { reports: Array<{ context?: { meta?: { modelId?: string } } }> })
       .reports;
-    expect(reports[0]?.context?.meta?.modelId).toBe("model-1");
-    expect(reports[1]?.context?.meta?.modelId).toBe("model-2");
+    expect(reports[0]?.context?.meta?.modelId).toBe("1");
+    expect(reports[1]?.context?.meta?.modelId).toBe("2");
   });
 
   test("schema report context exists when custom report payload must be fetched", async () => {
@@ -159,7 +163,7 @@ describe("schema binding plugin policy", () => {
       "fetch",
       vi.fn(async () => new Response(JSON.stringify({ reports: [] }))),
     );
-    const transport = createSchemaRunTransport([{ modelId: "model-1" }], []);
+    const transport = createSchemaRunTransport([{ modelId: 1, modelName: "model-1" }], []);
     const result = await transport.submit({
       inputs: [],
       displayValues: {},
@@ -178,7 +182,7 @@ describe("schema binding plugin policy", () => {
         backend: "model-1",
         mappedTo: "score",
         status: "pending",
-        context: { meta: { modelId: "model-1" } },
+        context: { meta: { modelId: "1" } },
       },
     ]);
   });
@@ -219,7 +223,7 @@ describe("schema binding plugin policy", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       customReportDefinitions: [fetchDefinition],
     });
     const form = createForm({
@@ -230,7 +234,7 @@ describe("schema binding plugin policy", () => {
     form.setValues({ age: 42 });
     await executeFormPipeline({ form });
     const explanationCall = (fetch as ReturnType<typeof vi.fn>).mock.calls[1];
-    expect(String(explanationCall?.[0])).toContain("modelId=model-1");
+    expect(String(explanationCall?.[0])).toContain("modelId=1");
     expect(JSON.parse(requestBody(explanationCall?.[1])).instance).toEqual({ age: 42 });
   });
 
@@ -250,8 +254,8 @@ describe("schema binding plugin policy", () => {
       reports: [],
       results: [
         {
-          modelId: "model-1",
-          output: { reports: [], meta: { modelId: "model-1" } },
+          modelId: 1,
+          output: { reports: [], meta: { modelId: "1" } },
         },
       ],
     };
@@ -265,7 +269,7 @@ describe("schema binding plugin policy", () => {
         },
       ],
       {},
-      [{ modelId: "model-1" }],
+      [{ modelId: 1, modelName: "model-1" }],
       {
         report_1: {
           reportId: "report_1",
@@ -275,7 +279,7 @@ describe("schema binding plugin policy", () => {
           displayValues: {},
           modelValues: {},
           reports: [],
-          meta: { modelId: "model-1" },
+          meta: { modelId: "1" },
           raw: {},
         },
       },

@@ -5,8 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { LucideIcon } from "lucide-react";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
-import type { WorkspacePermissionsDto } from "@/capabilities/workspace-context/workspace-context.types";
-import type { OrganizationAdminStatsDto } from "@/features/workspace/api/workspace.types";
+import type { OrganizationAdminStatsDto, WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
 export type LifecycleStage = {
   key: "models" | "schemas" | "inferences" | "reviews";

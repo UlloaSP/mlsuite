@@ -1,15 +1,18 @@
 import { Building2, Check, X } from "lucide-react";
-import type { InvitationDto } from "@/capabilities/workspace-context/workspace-context.types";
 import {
   useAcceptInvitation,
   useDeclineInvitation,
 } from "@/features/workspace/api/workspace.mutations";
 import { AppButton } from "@/shared/ui/AppButton";
+import type { InvitationDto } from "@/shared/api/openapi.gen";
 
 export function NotificationInvitationItem({ invitation }: { invitation: InvitationDto }) {
   const accept = useAcceptInvitation();
   const decline = useDeclineInvitation();
   const busy = accept.isPending || decline.isPending;
+  // Invitations addressed to the caller always carry their token; only admin listings omit it.
+  const token = invitation.token;
+  if (!token) return null;
 
   return (
     <article className="flex items-start justify-between gap-4 border-t border-line px-5 py-4 first:border-t-0">
@@ -25,7 +28,7 @@ export function NotificationInvitationItem({ invitation }: { invitation: Invitat
         </div>
       </div>
       <div className="flex shrink-0 gap-2">
-        <AppButton size="sm" disabled={busy} onClick={() => accept.mutate(invitation.token)}>
+        <AppButton size="sm" disabled={busy} onClick={() => accept.mutate(token)}>
           <Check size={14} />
           Accept
         </AppButton>
@@ -33,7 +36,7 @@ export function NotificationInvitationItem({ invitation }: { invitation: Invitat
           size="sm"
           variant="secondary"
           disabled={busy}
-          onClick={() => decline.mutate(invitation.token)}
+          onClick={() => decline.mutate(token)}
         >
           <X size={14} />
           Decline

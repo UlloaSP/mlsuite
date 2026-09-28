@@ -8,14 +8,14 @@ import { ReviewInputsSection } from "@/features/reviews/components/ReviewInputsS
 import { ReviewOutputsSection } from "@/features/reviews/components/ReviewOutputsSection";
 import { getVisibleSchemaInputRecord } from "@/capabilities/prediction-runtime/data/input-display";
 import { useSchemaReviewRun } from "@/features/reviews/api/review-queries";
-import type { ReviewSchemaVersionDto } from "@/features/reviews/api/review-types";
 import { SchemaReviewCombinedFeedbackForm } from "./SchemaReviewCombinedFeedbackForm";
 import { questionnaireConfigError } from "@/capabilities/prediction-runtime/feedback/questionnaire-config";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   reviewId: string;
   reviewRunId: string;
-  version: ReviewSchemaVersionDto;
+  version: SchemaVersionDto;
   onReviewChanged: () => unknown;
 };
 

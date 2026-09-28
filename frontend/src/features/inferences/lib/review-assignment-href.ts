@@ -1,8 +1,8 @@
-import type { InferenceReviewAssignmentDto } from "@/features/inferences/api/inference-api";
+import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
 
 /** One reviewer's assignment on an inference: the page with their answers. */
 export const reviewAssignmentHref = (
   inferenceId: number | string,
-  assignment: Pick<InferenceReviewAssignmentDto, "reviewRunId" | "reviewer">,
+  assignment: Pick<SchemaReviewAssignmentStatusDto, "reviewRunId" | "reviewer">,
 ) =>
   `/inferences/${inferenceId}/reviews/${encodeURIComponent(assignment.reviewRunId)}/reviewers/${assignment.reviewer.id}`;

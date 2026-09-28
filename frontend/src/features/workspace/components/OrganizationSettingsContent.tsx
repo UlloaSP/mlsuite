@@ -1,9 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import type {
-  OrganizationDto,
-  WorkspacePermissionsDto,
-} from "@/capabilities/workspace-context/workspace-context.types";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
@@ -19,6 +15,7 @@ import {
 import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 import { DeleteOrganizationDialog } from "./DeleteOrganizationDialog";
 import { TransferOrganizationOwnerDialog } from "./TransferOrganizationOwnerDialog";
+import type { OrganizationDto, WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
 type OrganizationDraft = { description?: string; name?: string; slug?: string };
 

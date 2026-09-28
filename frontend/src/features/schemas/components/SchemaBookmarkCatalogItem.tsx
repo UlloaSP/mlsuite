@@ -5,11 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal, Play, Tag } from "lucide-react";
 import { Link } from "react-router";
-import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import type { SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
 /** A bookmark in its schema's repository; opening it goes to its Predict workspace. */
 export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookmarkDto }) {

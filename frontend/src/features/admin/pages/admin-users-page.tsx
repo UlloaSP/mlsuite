@@ -13,11 +13,7 @@ import {
   useUpdateAdminUser,
 } from "@/features/admin/api/admin-user.mutations";
 import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
-import {
-  SYSTEM_ROLE_OPTIONS,
-  type AdminUser,
-  type SystemRole,
-} from "@/features/admin/api/admin-user.types";
+import { SYSTEM_ROLE_OPTIONS, type SystemRole } from "@/features/admin/api/admin-user.types";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
@@ -25,6 +21,7 @@ import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { ResetPasswordDialog } from "@/features/admin/components/ResetPasswordDialog";
 import { UserCatalogTile } from "@/features/admin/components/UserCatalogTile";
+import type { AdminUserDto } from "@/shared/api/openapi.gen";
 
 const PAGE_SIZE = 8;
 type ResetTarget = { id: number; fullName: string } | null;
@@ -68,14 +65,14 @@ export function AdminUsersPage() {
     updateUser.isPending || resetPassword.isPending || deleteUser.isPending || pageQuery.isLoading;
 
   const update = async (
-    row: AdminUser,
-    payload: { enabled?: boolean; systemRole?: AdminUser["systemRole"] },
+    row: AdminUserDto,
+    payload: { enabled?: boolean; systemRole?: AdminUserDto["systemRole"] },
   ) => {
     // Failures propagate: the tile shows them inline in a dialog, or as a toast for the switch.
     await updateUser.mutateAsync({ id: row.id, payload });
     toast.success("User updated.");
   };
-  const remove = async (row: AdminUser) => {
+  const remove = async (row: AdminUserDto) => {
     // Failures propagate to the delete dialog, which stays open and shows them.
     await deleteUser.mutateAsync(row.id);
     if (pageItems.length === 1 && controls.page > 0) {

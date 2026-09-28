@@ -8,9 +8,12 @@ import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
 import { defineConfig } from "vite-plus";
 
+// Generated from api/openapi.json by `vp run api:types`; test/openapi-types.test.ts keeps it current.
+const API_TYPES = "src/shared/api/openapi.gen.ts";
+
 export default defineConfig({
-  fmt: {},
-  lint: { options: { typeAware: true, typeCheck: true } },
+  fmt: { ignorePatterns: [API_TYPES] },
+  lint: { ignorePatterns: [API_TYPES], options: { typeAware: true, typeCheck: true } },
   resolve: { alias: { "@": resolve(import.meta.dirname, "src") } },
   server: {
     proxy: {

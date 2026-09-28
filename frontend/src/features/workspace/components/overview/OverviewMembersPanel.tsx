@@ -4,8 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { formatCompactRelativeTime } from "@/shared/lib/relative-time";
-import type { OrganizationMembershipRowDto } from "@/features/workspace/api/workspace.types";
 import { OverviewListPanel } from "./OverviewListPanel";
+import type { OrganizationMembershipRowDto } from "@/shared/api/openapi.gen";
 
 const initials = (name: string) =>
   name

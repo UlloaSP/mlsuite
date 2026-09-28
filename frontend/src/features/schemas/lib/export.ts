@@ -14,12 +14,12 @@ import {
   getSchemaResultReports,
   type SchemaDisplayReport,
 } from "@/capabilities/prediction-runtime/data/report-display";
+import { downloadTextFile } from "@/shared/lib/download-text-file";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import { downloadTextFile } from "@/shared/lib/download-text-file";
+  SchemaVersionDto,
+} from "@/shared/api/openapi.gen";
 
 const safeFilePart = (value: string): string =>
   value
@@ -46,7 +46,7 @@ const reportsOf = (schema: unknown): Record<string, unknown>[] =>
       )
     : [];
 
-const modelInputColumn = (modelId: string, key: string): string => `input.${modelId}.${key}`;
+const modelInputColumn = (modelId: number, key: string): string => `input.${modelId}.${key}`;
 
 const reportColumnId = (report: SchemaDisplayReport): string => report.id;
 

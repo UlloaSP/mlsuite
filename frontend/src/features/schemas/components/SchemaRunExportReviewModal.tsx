@@ -3,10 +3,6 @@ import { useMemo, useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppSkeletonScope } from "@/shared/ui/AppSkeletonScope";
-import type {
-  PredictionResultFeedbackDto,
-  PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
 import { SchemaRunExportRunRow } from "./SchemaRunExportRunRow";
 import {
   buildSchemaRunExportSummaries,
@@ -17,6 +13,7 @@ import {
   type SchemaRunExportSelection,
 } from "./schema-run-export-selection";
 import { AppCheckMark } from "@/shared/ui/AppCheckMark";
+import type { PredictionResultFeedbackDto, PredictionRunDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   open: boolean;
@@ -41,14 +38,14 @@ export function SchemaRunExportReviewModal({
   const [selection, setSelection] = useState<SchemaRunExportSelection>(
     emptySchemaRunExportSelection,
   );
-  const [openRunIds, setOpenRunIds] = useState<Set<string>>(new Set());
+  const [openRunIds, setOpenRunIds] = useState<Set<number>>(new Set());
   const summaries = useMemo(
     () => buildSchemaRunExportSummaries(runs, feedbackByRun),
     [feedbackByRun, runs],
   );
   const reviewers = useMemo(() => collectSchemaRunExportReviewers(summaries), [summaries]);
 
-  const toggleRun = (runId: string) =>
+  const toggleRun = (runId: number) =>
     setSelection((current) => ({
       ...current,
       excludedRunIds: toggledInSet(current.excludedRunIds, runId),
@@ -58,7 +55,7 @@ export function SchemaRunExportReviewModal({
       ...current,
       excludedReviewers: toggledInSet(current.excludedReviewers, reviewer),
     }));
-  const toggleRunReviewer = (runId: string, reviewer: string) =>
+  const toggleRunReviewer = (runId: number, reviewer: string) =>
     setSelection((current) => ({
       ...current,
       excludedRunReviewers: toggledInSet(

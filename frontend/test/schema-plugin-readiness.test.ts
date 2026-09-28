@@ -92,7 +92,7 @@ describe("schema plugin readiness failures", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       customReportDefinitions: [crystal()],
     });
 
@@ -114,7 +114,7 @@ describe("schema plugin readiness failures", () => {
           fields: [{ id: "age", label: "age", kind: "number", displayKey: "age", mappedTo: "age" }],
           reports: [{ id: "crystal", source: "crystal", kind: "Crystal Tree" }],
         },
-        bindings: [{ modelId: "model-1" }],
+        bindings: [{ modelId: 1, modelName: "model-1" }],
         customReportDefinitions: [crystal()],
       }),
     ).toThrow("Schema report 1 falta mappedTo");
@@ -139,16 +139,14 @@ describe("schema plugin readiness failures", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       customReportDefinitions: [crystal()],
     });
 
     await submit(runtime);
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
   });
 
   test("numeric backend ids still call explanations with string modelId", async () => {

@@ -73,7 +73,7 @@ describe("schema run mounted render", () => {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [{ id: "prediction", kind: "regressor", mappedTo: "prediction" }],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       theme: "light",
       onSubmit(inputData) {
         submitted.push(inputData);
@@ -153,7 +153,7 @@ describe("schema run mounted render", () => {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [{ id: "crystal", kind: "Crystal Tree", mappedTo: { "model-1": "crystal-tree" } }],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       theme: "light",
       customReportDefinitions: [crystal()],
       onSubmit(_inputData, raw, reportsPending) {
@@ -169,9 +169,7 @@ describe("schema run mounted render", () => {
     await flush();
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
     expect(updates.at(-1)?.pending).toBe(false);
     expect(updates.at(-1)?.raw.reports).toMatchObject([
       { id: "crystal", mappedTo: "crystal-tree", payload: { explanation: "ok" } },
@@ -203,7 +201,7 @@ describe("schema run mounted render", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       theme: "light",
       customReportDefinitions: [crystal("crystal-tree")],
       onSubmit(_inputData, raw, reportsPending) {
@@ -219,9 +217,7 @@ describe("schema run mounted render", () => {
     await flush();
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
     expect(updates.at(-1)?.pending).toBe(false);
     expect(updates.at(-1)?.raw.reports).toMatchObject([
       { id: "report-2", mappedTo: "crystal-tree", payload: { explanation: "ok" } },

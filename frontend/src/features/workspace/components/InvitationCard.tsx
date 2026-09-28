@@ -3,8 +3,8 @@ import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { RoleBadge } from "./RoleBadge";
 import { StatusBadge } from "./admin/StatusBadge";
-import type { OrganizationInvitationDto } from "@/features/workspace/api/workspace.types";
 import { AppCheckbox } from "@/shared/ui/AppCheckbox";
+import type { InvitationDto } from "@/shared/api/openapi.gen";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "short" });
 
@@ -16,7 +16,7 @@ export function InvitationCard({
   onResend,
   onRevoke,
 }: {
-  invite: OrganizationInvitationDto;
+  invite: InvitationDto;
   canManage: boolean;
   selected: boolean;
   onSelect: (checked: boolean) => void;

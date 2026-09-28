@@ -4,7 +4,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { WorkspaceContextDto } from "@/capabilities/workspace-context/workspace-context.types";
 import { WORKSPACE_CONTEXT_QUERY_KEY } from "@/capabilities/workspace-context/workspace-context";
 import { acceptInvitation, declineInvitation } from "./invitations.api";
 import {
@@ -15,13 +14,13 @@ import {
 } from "./organizations.api";
 import { selectOrganization } from "./workspace-selection.api";
 import { removeOrganizationCache } from "./organization-cache";
-import type { UpdateOrganizationRequest } from "./workspace.types";
 import {
   ORGANIZATION_CATALOG_PAGE_QUERY_KEY,
   organizationAdminDashboardQueryKey,
   organizationMembersQueryKey,
   PENDING_INVITATIONS_QUERY_KEY,
 } from "./workspace.keys";
+import type { UpdateOrganizationRequest, WorkspaceContextDto } from "@/shared/api/openapi.gen";
 
 export const useAcceptInvitation = () => {
   const qc = useQueryClient();

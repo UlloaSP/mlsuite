@@ -1,7 +1,5 @@
-import type {
-  InferenceCatalogItemDto,
-  InferenceStatus,
-} from "@/features/inferences/api/inference-api";
+import type { InferenceStatus } from "@/features/inferences/api/inference-api";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 export type InferenceFilters = {
   query: string;
@@ -11,7 +9,7 @@ export type InferenceFilters = {
 };
 
 export const filterInferences = (
-  inferences: InferenceCatalogItemDto[],
+  inferences: PredictionRunCatalogItemDto[],
   filters: InferenceFilters,
 ) => {
   const query = filters.query.trim().toLowerCase();

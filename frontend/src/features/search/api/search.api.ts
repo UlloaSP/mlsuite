@@ -1,5 +1,5 @@
 import { appFetch } from "@/shared/api/http";
-import type { SearchResponse } from "./search.types";
+import type { SearchResponseDto } from "@/shared/api/openapi.gen";
 
-export const searchWorkspace = (query: string, signal?: AbortSignal): Promise<SearchResponse> =>
-  appFetch<SearchResponse>(`/api/search?q=${encodeURIComponent(query)}`, { signal });
+export const searchWorkspace = (query: string, signal?: AbortSignal): Promise<SearchResponseDto> =>
+  appFetch<SearchResponseDto>(`/api/search?q=${encodeURIComponent(query)}`, { signal });

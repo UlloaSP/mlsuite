@@ -1,9 +1,10 @@
-import type { LucideIcon } from "lucide-react";
+import { Search, type LucideIcon } from "lucide-react";
 import { SECTION_ICONS } from "@/shared/ui/section-icons";
 import { Link } from "react-router";
-import type { SearchResult, SearchResultType } from "@/features/search/api/search.types";
+import type { SearchResultDto } from "@/shared/api/openapi.gen";
 
-const icons: Record<SearchResultType, LucideIcon> = {
+// Keyed by the result types SearchWorkspaceCandidateFactory emits.
+const icons: Record<string, LucideIcon> = {
   organization: SECTION_ICONS.organizations,
   model: SECTION_ICONS.models,
   schema: SECTION_ICONS.schemas,
@@ -19,12 +20,12 @@ export function SearchResultItem({
   onHover,
   onSelect,
 }: {
-  result: SearchResult;
+  result: SearchResultDto;
   active: boolean;
   onHover: () => void;
   onSelect: () => void;
 }) {
-  const Icon = icons[result.type];
+  const Icon = icons[result.type] ?? Search;
   const stateClass = active
     ? "bg-accent-subtle text-accent-strong"
     : "text-fg hover:bg-surface-muted";

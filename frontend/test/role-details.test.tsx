@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { expect, test, vi } from "vite-plus/test";
 import { RoleDetailsDialog } from "@/features/workspace/components/RoleDetailsDialog";
-import type { RoleDefinitionDto } from "@/features/workspace/api/workspace.types";
 import { buttonByText, click, mount } from "./support/dom";
+import type { RoleDefinitionDto } from "@/shared/api/openapi.gen";
 
 test.each([0, 2])(
   "requires reassignment before deleting a role with %i users",
@@ -14,6 +14,7 @@ test.each([0, 2])(
       description: "Reviews",
       scope: "ORGANIZATION",
       locked: false,
+      systemKey: null,
       userCount,
       permissions: [],
       actions: {

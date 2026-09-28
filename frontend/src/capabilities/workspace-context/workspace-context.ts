@@ -5,7 +5,9 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { appFetch } from "@/shared/api/http";
-import type { WorkspaceContextDto, WorkspacePermissionKey } from "./workspace-context.types";
+import type { WorkspaceContextDto, WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
+
+export type WorkspacePermissionKey = keyof WorkspacePermissionsDto;
 
 export const WORKSPACE_CONTEXT_QUERY_KEY = ["workspaceContext"] as const;
 

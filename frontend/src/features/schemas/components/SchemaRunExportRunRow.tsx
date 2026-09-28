@@ -13,8 +13,8 @@ type Props = {
   open: boolean;
   selection: SchemaRunExportSelection;
   onToggleOpen: () => void;
-  onToggleRun: (runId: string) => void;
-  onToggleRunReviewer: (runId: string, reviewer: string) => void;
+  onToggleRun: (runId: number) => void;
+  onToggleRunReviewer: (runId: number, reviewer: string) => void;
 };
 
 const valueText = (value: unknown) =>

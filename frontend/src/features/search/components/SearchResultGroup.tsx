@@ -1,5 +1,5 @@
-import type { SearchGroup } from "@/features/search/api/search.types";
 import { SearchResultItem } from "./SearchResultItem";
+import type { SearchGroupDto } from "@/shared/api/openapi.gen";
 
 export function SearchResultGroup({
   group,
@@ -8,7 +8,7 @@ export function SearchResultGroup({
   onHover,
   onSelect,
 }: {
-  group: SearchGroup;
+  group: SearchGroupDto;
   activeIndex: number;
   offset: number;
   onHover: (index: number) => void;

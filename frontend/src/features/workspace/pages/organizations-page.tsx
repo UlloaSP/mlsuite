@@ -7,7 +7,6 @@ import { Search, Plus } from "lucide-react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
-import type { OrganizationCatalogItemDto } from "@/features/workspace/api/workspace.types";
 import {
   useDeleteOrganizationMutation,
   useTransferOrganizationOwnershipMutation,
@@ -22,6 +21,7 @@ import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import type { OrganizationPatch } from "@/features/workspace/components/OrganizationCatalogEditable";
 import { OrganizationCatalogTile } from "@/features/workspace/components/OrganizationCatalogTile";
+import type { OrganizationCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type OrganizationSortMode = "updated" | "created" | "name";
 type OrganizationFilterMode = "all";

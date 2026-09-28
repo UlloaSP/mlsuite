@@ -8,12 +8,10 @@ import { useAtomValue } from "jotai";
 import { useMemo } from "react";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { cx } from "@/shared/ui/cx";
-import type {
-  SchemaDraftChangeDto,
-  SchemaDraftMergeSide,
-} from "@/features/schemas/api/draft-types";
+import type { SchemaDraftMergeSide } from "@/features/schemas/api/draft-types";
 import { MergeButton } from "@/features/schemas/components/MergeButton";
 import { buildSchemaMergeFile } from "@/features/schemas/lib/schema-merge-file";
+import type { SchemaDraftChangeDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   currentLabel: string;

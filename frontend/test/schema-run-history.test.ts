@@ -10,19 +10,20 @@ import {
   getModelInputBulkSchema,
   toSchemaRunFieldValues,
 } from "@/features/schemas/lib/bulk-upload";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import type {
-  PredictionResultFeedbackDto,
-  PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
+import type { PredictionResultFeedbackDto } from "@/shared/api/openapi.gen";
+import {
+  binding,
+  predictionResult,
+  predictionRun,
+  resultFeedback,
+  schemaVersion,
+} from "./support/api-fixtures";
 
-const version: SchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
+const version = schemaVersion({
   version: 1,
   name: "Risk schema",
   createdAt: "2026-06-02T00:00:00Z",
-  bindings: [{ modelId: "model-1" }],
+  bindings: [binding(1)],
   formSchema: {
     fields: [
       {
@@ -46,29 +47,26 @@ const version: SchemaVersionDto = {
       },
     ],
   },
-};
+});
 
-const run: PredictionRunDto = {
-  id: "run-1",
-  schemaVersionId: "version-1",
+const run = predictionRun({
   name: "case-1",
   status: "SUCCESS",
   createdAt: "2026-06-02T10:00:00Z",
   inputData: { "Blood Group": "B", age: 52 },
   results: [
-    {
-      id: "result-1",
-      runId: "run-1",
-      modelId: "model-1",
+    predictionResult({
+      id: 1,
+      modelId: 1,
       status: "SUCCESS",
       createdAt: "2026-06-02T10:00:00Z",
       modelInput: { blood_group__A: 0, blood_group__B: 1, age: 52 },
       output: {
         reports: [{ mappedTo: "predicted_class", prediction: 1, probabilities: [0.2, 0.8] }],
       },
-    },
+    }),
   ],
-};
+});
 
 describe("schema run history helpers", () => {
   test("bulk schema exposes mapped one-hot model inputs", () => {
@@ -108,24 +106,24 @@ describe("schema run history helpers", () => {
     const exported = buildSchemaRunExport([run], version);
 
     expect(exported.fileName).toContain("Risk_schema");
-    expect(exported.content).toContain("input.model-1.blood_group__A");
-    expect(exported.content).toContain("input.model-1.blood_group__B");
+    expect(exported.content).toContain("input.1.blood_group__A");
+    expect(exported.content).toContain("input.1.blood_group__B");
     expect(exported.content).toContain("output.report_1.predicted");
     expect(exported.content).toContain("High");
   });
 
   test("exports schema output feedback with signature-style columns", () => {
     const feedback: PredictionResultFeedbackDto[] = [
-      {
-        id: "feedback-1",
-        resultId: "result-1",
-        userId: "7",
+      resultFeedback({
+        id: 1,
+        resultId: 1,
+        userId: 7,
         userEmail: "reviewer@example.com",
         type: "OUTPUT",
         order: 0,
         value: { assessment: "High" },
         createdAt: "2026-06-02T10:00:00Z",
-      },
+      }),
     ];
     const exported = buildSchemaRunExport([run], version, feedback);
 

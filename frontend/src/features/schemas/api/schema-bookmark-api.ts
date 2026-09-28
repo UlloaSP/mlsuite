@@ -3,10 +3,10 @@ import type {
   CreateSchemaBookmarkRequest,
   PredictBookmarkDto,
   SchemaBookmarkDto,
-} from "./schema-types";
+} from "@/shared/api/openapi.gen";
 
 export const getSchemaBookmarks = (
-  schemaId: string,
+  schemaId: number | string,
   signal?: AbortSignal,
 ): Promise<SchemaBookmarkDto[]> =>
   appFetch<SchemaBookmarkDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/bookmarks`, {
@@ -18,7 +18,7 @@ export const getOrganizationBookmarks = (signal?: AbortSignal): Promise<PredictB
   appFetch<PredictBookmarkDto[]>("/api/schema-bookmarks", { signal });
 
 export const getSchemaBookmark = (
-  bookmarkId: string,
+  bookmarkId: number | string,
   signal?: AbortSignal,
 ): Promise<SchemaBookmarkDto> =>
   appFetch<SchemaBookmarkDto>(`/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}`, {
@@ -26,7 +26,7 @@ export const getSchemaBookmark = (
   });
 
 export const createSchemaBookmark = (
-  schemaId: string,
+  schemaId: number | string,
   req: CreateSchemaBookmarkRequest,
 ): Promise<SchemaBookmarkDto> =>
   appFetch<SchemaBookmarkDto>(

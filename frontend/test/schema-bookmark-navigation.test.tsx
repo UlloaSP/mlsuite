@@ -9,14 +9,14 @@ import { act } from "react";
 import { Route, Routes } from "react-router";
 import { expect, test } from "vite-plus/test";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
-import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import { mount } from "./support/dom";
+import type { SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
 const bookmark: SchemaBookmarkDto = {
-  id: "bookmark-1",
-  schemaId: "schema-1",
+  id: 1,
+  schemaId: 1,
   schemaName: "Credit risk",
-  versionId: "version-1",
+  versionId: 1,
   version: 1,
   versionName: "Snapshot 1",
   name: "Risk model",
@@ -33,15 +33,15 @@ test("opening a bookmark in its schema goes straight to its Predict workspace", 
       />
       <Route path="/predict/:bookmarkId" element={<h1>Bookmark workspace</h1>} />
     </Routes>,
-    { route: "/schemas/schema-1/bookmarks" },
+    { route: "/schemas/1/bookmarks" },
   );
 
   const tile = host.querySelector<HTMLAnchorElement>("article > a");
   const predictLink = [...host.querySelectorAll<HTMLAnchorElement>("article a")].find(
     (link) => link.textContent?.trim() === "Predict",
   );
-  expect(tile?.getAttribute("href")).toBe("/predict/bookmark-1");
-  expect(predictLink?.getAttribute("href")).toBe("/predict/bookmark-1");
+  expect(tile?.getAttribute("href")).toBe("/predict/1");
+  expect(predictLink?.getAttribute("href")).toBe("/predict/1");
 
   await act(async () => {
     tile?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));

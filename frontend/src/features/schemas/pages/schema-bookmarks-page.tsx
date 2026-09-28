@@ -8,7 +8,6 @@ import { useMemo } from "react";
 import { useParams } from "react-router";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
-import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import {
   useSchema,
   useSchemaBookmarks,
@@ -17,6 +16,7 @@ import {
 import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
+import type { SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
 const EMPTY_BOOKMARKS: never[] = [];
 const EMPTY_VERSIONS: never[] = [];

@@ -4,16 +4,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { formatCompactRelativeTime } from "@/shared/lib/relative-time";
-import type { OrganizationInvitationDto } from "@/features/workspace/api/workspace.types";
 import { StatusBadge } from "@/features/workspace/components/admin/StatusBadge";
 import { OverviewListPanel } from "./OverviewListPanel";
+import type { InvitationDto } from "@/shared/api/openapi.gen";
 
 export function OverviewInvitationsPanel({
   invitations,
   pending,
   to,
 }: {
-  invitations: OrganizationInvitationDto[];
+  invitations: InvitationDto[];
   pending: number | undefined;
   to: string;
 }) {

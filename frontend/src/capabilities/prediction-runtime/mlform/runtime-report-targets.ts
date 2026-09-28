@@ -7,7 +7,8 @@ import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { mappedTarget, targetKey } from "@/capabilities/prediction-runtime/mlform/mapped-to";
 
 type Binding = {
-  modelId: string;
+  /** Schema previews bind synthetic string ids before any model is saved. */
+  modelId: number | string;
   modelName?: string;
 };
 

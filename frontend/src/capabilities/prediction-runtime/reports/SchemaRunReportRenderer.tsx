@@ -16,16 +16,13 @@ import type { SchemaDisplayReport } from "@/capabilities/prediction-runtime/data
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { describeSchemaCustomReport } from "@/capabilities/prediction-runtime/reports/report-descriptor";
 import { SchemaPrimitiveReport } from "./SchemaPrimitiveReport";
+import type { PredictionResultDto } from "@/shared/api/openapi.gen";
 import { SchemaRunReportCard } from "./SchemaRunReportCard";
 
-type PredictionResultDto = {
-  modelId: string;
-  modelInput: Record<string, unknown>;
-  output: Record<string, unknown>;
-};
+type RenderedResult = Pick<PredictionResultDto, "modelId" | "modelInput" | "output">;
 
 type Props = {
-  result: PredictionResultDto;
+  result: RenderedResult;
   report: SchemaDisplayReport;
   customReportDefinitions?: readonly CatalogReportDefinition[];
 };
@@ -40,7 +37,7 @@ const customReportByKind = (
 
 const resultPayload = (
   report: SchemaDisplayReport,
-  result: PredictionResultDto,
+  result: RenderedResult,
 ): PrimitiveSubmitResult => {
   const state = { payload: report.payload, error: null, status: "ready" as const };
   const outputMeta = isRecord(result.output.meta) ? result.output.meta : {};
@@ -58,7 +55,7 @@ const resultPayload = (
     modelValues: result.modelInput,
     reports: [
       {
-        backend: result.modelId,
+        backend: String(result.modelId),
         mappedTo: target,
         status: "ready",
         payload: report.payload,
@@ -72,7 +69,7 @@ const resultPayload = (
         mappedTo: report.config.mappedTo,
         target,
         targetKey: String(target),
-        backend: result.modelId,
+        backend: String(result.modelId),
         displayValues: {},
         modelValues: result.modelInput,
         reports: [],

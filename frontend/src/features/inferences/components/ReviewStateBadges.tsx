@@ -1,7 +1,7 @@
-import type { InferenceReviewAssignmentDto } from "@/features/inferences/api/inference-api";
 import { AppBadge } from "@/shared/ui/AppBadge";
+import type { SchemaReviewAssignmentStatusDto } from "@/shared/api/openapi.gen";
 
-type State = InferenceReviewAssignmentDto["reviewState"];
+type State = SchemaReviewAssignmentStatusDto["reviewState"];
 
 const TONE = { COMPLETED: "success", IN_PROGRESS: "accent", PENDING: "neutral" } as const;
 const LABEL: Record<State, string> = {
@@ -10,7 +10,7 @@ const LABEL: Record<State, string> = {
   PENDING: "Pending",
 };
 
-export function ReviewStateBadges({ assignment }: { assignment: InferenceReviewAssignmentDto }) {
+export function ReviewStateBadges({ assignment }: { assignment: SchemaReviewAssignmentStatusDto }) {
   return (
     <div className="flex flex-wrap gap-2">
       <AppBadge tone={TONE[assignment.reviewState]}>{LABEL[assignment.reviewState]}</AppBadge>

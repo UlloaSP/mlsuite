@@ -3,20 +3,20 @@ import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { RoleBadge } from "./RoleBadge";
-import type {
-  MembershipStatus,
-  RoleSummaryDto,
-} from "@/capabilities/workspace-context/workspace-context.types";
-import type { MembershipRowActionsDto } from "@/features/workspace/api/workspace.types";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import type {
+  MembershipActionsDto,
+  OrganizationMembershipRowDto,
+  RoleSummaryDto,
+} from "@/shared/api/openapi.gen";
 
 type MemberTableRow = {
   id: number;
   fullName: string;
   email: string;
-  status: MembershipStatus;
+  status: OrganizationMembershipRowDto["status"];
   role: RoleSummaryDto;
-  actions: MembershipRowActionsDto;
+  actions: MembershipActionsDto;
 };
 
 export function MemberTable({
