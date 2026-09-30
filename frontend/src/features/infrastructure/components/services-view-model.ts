@@ -4,6 +4,8 @@ export type SortKey = "name" | "status" | "uptime" | "cpuPercent" | "memoryBytes
 export type SortDir = "asc" | "desc";
 export type ServiceSort = { key: SortKey; dir: SortDir };
 
+type ServiceStatusFilter = "all" | "running" | "stopped" | "restarting";
+
 type Filters = {
   query: string;
   status: string;
@@ -17,7 +19,8 @@ export function filterAndSortServices(services: ServiceStatusDto[], filters: Fil
 
   return services
     .filter((service) => {
-      if (filters.status !== "all" && service.status !== filters.status) return false;
+      if (filters.status !== "all" && serviceStatusGroup(service.status) !== filters.status)
+        return false;
       if (filters.health === "healthy" && service.health !== "healthy") return false;
       if (filters.health === "degraded" && service.health !== "degraded") return false;
       if (filters.health === "unknown" && service.health != null) return false;
@@ -39,10 +42,23 @@ export function filterAndSortServices(services: ServiceStatusDto[], filters: Fil
     });
 }
 
-export const serviceStatusCounts = (services: ServiceStatusDto[]) => ({
-  all: services.length,
-  running: services.filter((service) => service.status === "running").length,
-  stopped: services.filter((service) => service.status === "exited" || service.status === "dead")
-    .length,
-  restarting: services.filter((service) => service.status === "restarting").length,
-});
+/** Groups raw container states into the status filter options; "stopped" covers exited and dead. */
+function serviceStatusGroup(status: string): ServiceStatusFilter | null {
+  if (status === "running" || status === "restarting") return status;
+  if (status === "exited" || status === "dead") return "stopped";
+  return null;
+}
+
+export const serviceStatusCounts = (services: ServiceStatusDto[]) => {
+  const counts: Record<ServiceStatusFilter, number> = {
+    all: services.length,
+    running: 0,
+    stopped: 0,
+    restarting: 0,
+  };
+  for (const service of services) {
+    const group = serviceStatusGroup(service.status);
+    if (group) counts[group] += 1;
+  }
+  return counts;
+};

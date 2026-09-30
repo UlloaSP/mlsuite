@@ -79,9 +79,10 @@ public interface ModelRepository extends JpaRepository<Model, Long> {
 
     boolean existsByNameAndOrganizationIdAndIdNot(String name, Long organizationId, Long id);
 
-    Optional<Model> findByIdAndUserId(Long modelId, Long userId);
 
     Optional<Model> findByIdAndOrganizationId(Long modelId, Long organizationId);
+
+    Optional<Model> findByIdAndOrganizationIdAndArchivedAtIsNull(Long modelId, Long organizationId);
 
     long countByOrganizationId(Long organizationId);
 

@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Routes, Route } from "react-router";
+import { Routes, Route } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { MembersPage } from "@/features/workspace/pages/members-page";
+import { click, mount } from "./support/dom";
 const hooks = vi.hoisted(() => ({
   dashboard: vi.fn(),
   members: vi.fn(),
@@ -19,7 +18,6 @@ vi.mock("@/features/workspace/api/member.mutations", () => ({
   useUpdateOrganizationMemberRoleMutation: () => ({ mutate: hooks.mutate }),
 }));
 let host: HTMLDivElement;
-let root: Root;
 const rows = Array.from({ length: 21 }, (_, i) => ({
   id: i + 1,
   fullName: `Person ${i + 1}`,
@@ -33,35 +31,19 @@ const rows = Array.from({ length: 21 }, (_, i) => ({
   actions: { canChangeRole: false, canRemove: false, assignableRoles: [] },
 }));
 beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  host = document.createElement("div");
-  document.body.append(host);
-  root = createRoot(host);
   hooks.dashboard.mockReturnValue({ data: { permissions: { canViewMembers: true } } });
   hooks.members.mockReturnValue({ data: rows, isSuccess: true, refetch: hooks.retry });
 });
 afterEach(() => {
-  act(() => root.unmount());
-  host.remove();
   vi.clearAllMocks();
 });
 async function render(search = "") {
-  await act(async () =>
-    root.render(
-      <MemoryRouter initialEntries={[`/organizations/3/members${search}`]}>
-        <Routes>
-          <Route path="/organizations/:organizationId/members" element={<MembersPage />} />
-        </Routes>
-      </MemoryRouter>,
-    ),
-  );
-}
-async function click(label: string) {
-  const button = [...host.querySelectorAll("button")].find(
-    (node) => node.textContent?.trim() === label,
-  );
-  expect(button).toBeDefined();
-  await act(async () => button!.click());
+  ({ host } = await mount(
+    <Routes>
+      <Route path="/organizations/:organizationId/members" element={<MembersPage />} />
+    </Routes>,
+    { route: `/organizations/3/members${search}` },
+  ));
 }
 test("shows one total, ten member cards and advances pages without role KPI duplicates", async () => {
   await render();
@@ -100,7 +82,7 @@ test("does not mistake a failed request for an empty membership", async () => {
 test("shows loading while awaiting data instead of a zero total", async () => {
   hooks.members.mockReturnValue({ isPending: true });
   await render("?page=2");
-  expect(host.textContent).toContain("Loading members...");
+  expect(host.textContent).toContain("Loading members…");
   expect(host.textContent).not.toContain("0 members");
 });
 test("shows no matches for unmatched search", async () => {

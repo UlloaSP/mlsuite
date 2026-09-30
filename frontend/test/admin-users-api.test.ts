@@ -9,9 +9,9 @@ import {
   updateUser,
 } from "@/features/admin/api/admin-user.api";
 import { adminUsersQueryOptions } from "@/features/admin/api/admin-user.queries";
-import type { AdminUser, AdminUserPage } from "@/features/admin/api/admin-user.types";
+import type { AdminUserDto, AdminUserPageDto } from "@/shared/api/openapi.gen";
 
-const user: AdminUser = {
+const user: AdminUserDto = {
   id: 7,
   username: "ada",
   email: "ada@example.com",
@@ -32,7 +32,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("admin users API", () => {
   test("fetches the default page through tenant-independent query options", async () => {
-    const page: AdminUserPage = { items: [user], totalItems: 1, hasNext: false };
+    const page: AdminUserPageDto = { items: [user], totalItems: 1, hasNext: false };
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(page));
     vi.stubGlobal("fetch", fetchMock);
 

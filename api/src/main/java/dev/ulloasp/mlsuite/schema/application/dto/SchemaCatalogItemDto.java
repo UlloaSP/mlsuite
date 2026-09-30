@@ -8,17 +8,19 @@ import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
+import jakarta.annotation.Nullable;
+
 public record SchemaCatalogItemDto(
         Long id,
         Long organizationId,
         String name,
-        String description,
+        @Nullable String description,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        OffsetDateTime archivedAt,
-        String updatedByName,
-        String updatedByEmail,
-        String updatedByAvatarUrl,
+        @Nullable OffsetDateTime archivedAt,
+        @Nullable String updatedByName,
+        @Nullable String updatedByEmail,
+        @Nullable String updatedByAvatarUrl,
         long modelCount,
         long fieldCount,
         long reportCount) {

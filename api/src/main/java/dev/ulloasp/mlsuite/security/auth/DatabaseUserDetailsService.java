@@ -6,15 +6,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class DatabaseUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
-
-    public DatabaseUserDetailsService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Override
     public UserDetails loadUserByUsername(String email) {

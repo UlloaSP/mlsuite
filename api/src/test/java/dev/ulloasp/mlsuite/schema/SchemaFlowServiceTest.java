@@ -1,11 +1,13 @@
 package dev.ulloasp.mlsuite.schema;
 
 import static dev.ulloasp.mlsuite.schema.SchemaFlowFixtures.*;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,23 +28,23 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
-import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
-import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultFeedbackRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaModelBindingRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaVersionRequest;
-import dev.ulloasp.mlsuite.schema.application.dto.SchemaPageDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaCatalogItemDto;
+import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionResultFeedbackService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaServiceImpl;
@@ -59,8 +61,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,7 +76,6 @@ class SchemaFlowServiceTest {
     @Mock private PredictionResultFeedbackRepository feedbackRepository;
     @Mock private SchemaReviewRepository reviewRepository;
     @Mock private ModelRepository modelRepository;
-    @Mock private WorkspaceAccessService workspaceAccessService;
     @Mock private WorkspaceAuthorizationService authorizationService;
 
     private SchemaServiceImpl schemaService;
@@ -88,17 +87,15 @@ class SchemaFlowServiceTest {
     void setUp() {
         schemaService = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, runRepository, reviewRepository,
-                workspaceAccessService, authorizationService, org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository.class),
-                org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository.class));
+                authorizationService, mock(SchemaDraftRepository.class), mock(SchemaBookmarkRepository.class));
         versionService = new SchemaVersionServiceImpl(userLookupService, schemaRepository, versionRepository,
-                bindingRepository, modelRepository, workspaceAccessService, authorizationService);
+                bindingRepository, modelRepository, mock(SchemaDraftRepository.class), authorizationService);
         runService = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, bindingRepository,
-                runRepository, resultRepository, feedbackRepository, modelRepository,
-                workspaceAccessService, authorizationService);
-        feedbackService = new PredictionResultFeedbackService(userLookupService, workspaceAccessService,
-                authorizationService, resultRepository, feedbackRepository, runRepository);
-        when(userLookupService.requireById(7L)).thenReturn(user());
-        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization());
+                runRepository, resultRepository, feedbackRepository, modelRepository, authorizationService);
+        feedbackService = new PredictionResultFeedbackService(
+                userLookupService, authorizationService, resultRepository, feedbackRepository, runRepository);
+        lenient().when(userLookupService.requireById(7L)).thenReturn(user());
+        lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
 
     @Test
@@ -111,7 +108,7 @@ class SchemaFlowServiceTest {
         assertEquals("Transplant risk", result.getDescription());
         assertEquals(7L, result.getUpdatedBy().getId());
         assertEquals(41L, result.getOrganization().getId());
-        verify(authorizationService).requireOrganizationOperate(7L, 41L);
+        verify(authorizationService).requireCurrent(7L, PermissionKey.CREATE_MODELS);
     }
 
     @Test
@@ -121,19 +118,18 @@ class SchemaFlowServiceTest {
         when(versionRepository.findTopBySchemaIdOrderByVersionDesc(5L)).thenReturn(Optional.of(version()));
         when(bindingRepository.countBySchemaVersionId(9L)).thenReturn(2L);
 
-        SchemaPageDto page = schemaService.getSchemaPage(7L, 0, 24, "risk", "updated", "active");
+        PageDto<SchemaCatalogItemDto> page = schemaService.getSchemaPage(7L, 0, 24, "risk", "updated", "active");
 
         assertEquals(1, page.totalItems());
         assertEquals("Risk", page.items().get(0).name());
         assertEquals(2L, page.items().get(0).modelCount());
         assertEquals(1L, page.items().get(0).fieldCount());
         assertEquals("Alice", page.items().get(0).updatedByName());
-        verify(authorizationService).requireModelView(7L, 41L);
+        verify(authorizationService).requireCurrent(7L, PermissionKey.VIEW_MODELS);
     }
 
     @Test
     void renameSchema_RejectsDuplicateName() {
-        when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
         when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
         when(schemaRepository.existsByNameAndOrganizationIdAndIdNot("Risk 2", 41L, 5L)).thenReturn(true);
 
@@ -143,7 +139,6 @@ class SchemaFlowServiceTest {
     @Test
     void archiveSchema_SetsArchivedAt() {
         Schema schema = schema();
-        when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
         when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema));
         when(schemaRepository.save(any(Schema.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -155,7 +150,6 @@ class SchemaFlowServiceTest {
 
     @Test
     void deleteSchema_RejectsSchemaWithRuns() {
-        when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
         when(schemaRepository.findByIdAndOrganizationId(5L, 41L)).thenReturn(Optional.of(schema()));
         when(runRepository.existsBySchemaId(5L)).thenReturn(true);
 
@@ -204,7 +198,7 @@ class SchemaFlowServiceTest {
     void createRun_PersistsPartialSuccessWhenEachBindingHasAResult() {
         User creator = user();
         creator.setEmail("alice@example.com");
-        when(userLookupService.requireById(7L)).thenReturn(creator);
+        lenient().when(userLookupService.requireById(7L)).thenReturn(creator);
         SchemaBookmark bookmark = bookmark();
         SchemaVersion version = bookmark.getVersion();
         when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark));
@@ -215,7 +209,7 @@ class SchemaFlowServiceTest {
         when(modelRepository.findByIdAndOrganizationId(12L, 41L)).thenReturn(Optional.of(model(12L)));
 
         PredictionRun run = runService.createRunForBookmark(7L, 70L,
-                new CreatePredictionRunRequest("case-1", Map.of("age", 52),
+                new CreatePredictionRunRequest(9L, "case-1", Map.of("age", 52),
                         List.of(result(11L, PredictionResultStatus.SUCCESS),
                                 result(12L, PredictionResultStatus.FAILED))));
 
@@ -237,13 +231,26 @@ class SchemaFlowServiceTest {
     }
 
     @Test
+    void createRun_RejectsSnapshotTheBookmarkNoLongerTargets() {
+        when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark()));
+        CreatePredictionRunRequest request = new CreatePredictionRunRequest(8L, "case-1", Map.of("age", 52),
+                List.of(result(11L, PredictionResultStatus.SUCCESS)));
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> runService.createRunForBookmark(7L, 70L, request));
+
+        assertEquals(409, error.getStatusCode().value());
+        verify(runRepository, times(0)).save(any());
+    }
+
+    @Test
     void createRun_RejectsUnboundResult() {
         SchemaBookmark bookmark = bookmark();
         SchemaVersion version = bookmark.getVersion();
         when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark));
         when(bindingRepository.findBySchemaVersionId(9L)).thenReturn(List.of(binding(version, 11L)));
 
-        CreatePredictionRunRequest request = new CreatePredictionRunRequest("case-1", Map.of("age", 52),
+        CreatePredictionRunRequest request = new CreatePredictionRunRequest(9L, "case-1", Map.of("age", 52),
                 List.of(result(12L, PredictionResultStatus.SUCCESS)));
 
         assertThrows(ResponseStatusException.class, () -> runService.createRunForBookmark(7L, 70L, request));
@@ -258,7 +265,7 @@ class SchemaFlowServiceTest {
                 binding(version, 11L),
                 binding(version, 12L)));
 
-        CreatePredictionRunRequest request = new CreatePredictionRunRequest("case-1", Map.of("age", 52),
+        CreatePredictionRunRequest request = new CreatePredictionRunRequest(9L, "case-1", Map.of("age", 52),
                 List.of(result(11L, PredictionResultStatus.SUCCESS)));
 
         assertThrows(ResponseStatusException.class, () -> runService.createRunForBookmark(7L, 70L, request));
@@ -269,7 +276,7 @@ class SchemaFlowServiceTest {
         when(runRepository.findLastPredictionRunId()).thenReturn(41L);
 
         assertEquals(41L, runService.getLastPredictionRunId(7L));
-        verify(authorizationService).requireRunPredictions(7L, 41L);
+        verify(authorizationService).requireCurrent(7L, PermissionKey.RUN_PREDICTIONS);
     }
 
     @Test
@@ -287,7 +294,7 @@ class SchemaFlowServiceTest {
 
         assertEquals(PredictionResultFeedbackType.OUTPUT, feedback.getType());
         assertEquals(77L, feedback.getResult().getId());
-        verify(authorizationService).requireOrganizationRead(7L, 41L);
+        verify(authorizationService).requireCurrent(7L, PermissionKey.VIEW_ORGANIZATION);
     }
 
     @Test

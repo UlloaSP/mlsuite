@@ -8,12 +8,10 @@ import { useAtomValue } from "jotai";
 import { useMemo } from "react";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { cx } from "@/shared/ui/cx";
-import type {
-  SchemaDraftChangeDto,
-  SchemaDraftMergeSide,
-} from "@/features/schemas/api/draft-types";
+import type { SchemaDraftMergeSide } from "@/features/schemas/api/draft-types";
 import { MergeButton } from "@/features/schemas/components/MergeButton";
 import { buildSchemaMergeFile } from "@/features/schemas/lib/schema-merge-file";
+import type { SchemaDraftChangeDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   currentLabel: string;
@@ -69,7 +67,7 @@ export function SchemaMergeDiffViewer({
   return (
     <div
       className={cx(
-        "min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]",
+        "min-h-0 overflow-hidden rounded-card border border-line bg-surface",
         className,
       )}
     >
@@ -91,7 +89,7 @@ export function SchemaMergeDiffViewer({
             renderHeaderMetadata={() => `${selectableChanges.length} changes`}
             renderMergeConflictUtility={(action) => (
               <div data-merge-conflict-actions-content="">
-                <span className="mr-2 max-w-[40ch] min-w-0 truncate font-mono text-[11px] text-[var(--text-muted)]">
+                <span className="mr-2 max-w-[40ch] min-w-0 truncate font-mono text-2xs text-fg-muted">
                   {mergeData.groups[action.conflictIndex]?.paths.join(", ") ??
                     `change ${action.conflictIndex + 1}`}
                 </span>

@@ -2,18 +2,22 @@ package dev.ulloasp.mlsuite.organization.application.dto;
 
 import java.time.OffsetDateTime;
 
+import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
+import dev.ulloasp.mlsuite.role.application.dto.RoleSummaryDto;
+
+import jakarta.annotation.Nullable;
 
 public record OrganizationMembershipDto(
-        Long id,
+        @Nullable Long id,
         Long organizationId,
         Long userId,
         String fullName,
         String email,
-        String avatarUrl,
-        String role,
-        String status,
-        OffsetDateTime createdAt) {
+        @Nullable String avatarUrl,
+        RoleSummaryDto roleDefinition,
+        MembershipStatus status,
+        @Nullable OffsetDateTime createdAt) {
 
     public static OrganizationMembershipDto from(OrganizationMembership membership) {
         return new OrganizationMembershipDto(
@@ -23,8 +27,8 @@ public record OrganizationMembershipDto(
                 membership.getUser().getFullName(),
                 membership.getUser().getEmail(),
                 membership.getUser().getAvatarUrl(),
-                membership.getRole().name(),
-                membership.getStatus().name(),
+                RoleSummaryDto.from(membership.getRoleDefinition()),
+                membership.getStatus(),
                 membership.getCreatedAt());
     }
 }

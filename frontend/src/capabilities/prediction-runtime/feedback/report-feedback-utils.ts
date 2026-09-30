@@ -4,11 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { normalizeCustomReportResult } from "@/capabilities/prediction-runtime/mlform/custom-report-result";
-
-type JsonRecord = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is JsonRecord =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 
 const stripTreeToken = (value: string): string =>
   value

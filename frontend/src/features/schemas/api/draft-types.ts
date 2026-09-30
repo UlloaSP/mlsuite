@@ -3,139 +3,31 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { JsonRecord, SchemaVersionDto } from "./schema-types";
+import type * as Api from "@/shared/api/openapi.gen";
+import type { JsonRecord } from "./schema-types";
 
-export type SchemaDraftStatus = "DRAFT" | "CONFLICT" | "PUBLISHED";
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaDraftDto = {
-  id: string;
-  schemaId: string;
-  baseVersionId: string;
-  baseVersion: number;
-  name: string;
-  formSchema: JsonRecord;
-  bindings: SchemaDraftBindingDto[];
-  status: SchemaDraftStatus;
-  revision: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
+/**
+ * The API stores draft bindings as free-form JSON and publishes whatever it holds, so the spec
+ * leaves them untyped. This is the shape the editor writes; older drafts may hold string ids.
+ */
 export type SchemaDraftBindingDto = {
   modelId: string | number;
   modelName?: string;
   pluginPolicy?: JsonRecord;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
+type WithBindings<T> = Omit<T, "bindings"> & { bindings: SchemaDraftBindingDto[] };
 
-export type CreateSchemaDraftRequest = {
-  name: string;
-  baseVersionId: string | number;
-};
+export type SchemaDraftDto = WithBindings<Api.SchemaDraftDto>;
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
+export type UpdateSchemaDraftRequest = WithBindings<Api.UpdateSchemaDraftRequest>;
 
-export type UpdateSchemaDraftRequest = {
-  expectedDraftRevision: number;
-  name: string;
-  formSchema: JsonRecord;
-  bindings: SchemaDraftBindingDto[];
-};
+export type SchemaDraftMergeSide = Api.SchemaDraftMergeResolutionDto["side"];
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaDraftDiffDto = {
-  baseVersionId: string;
-  currentVersionId: string;
-  currentDocumentHash: string;
-  hasConflicts: boolean;
-  changes: SchemaDraftChangeDto[];
-};
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaDraftChangeDto = {
-  path: string;
-  baseValue: unknown;
-  basePresent: boolean;
-  draftValue: unknown;
-  draftPresent: boolean;
-  currentValue: unknown;
-  currentPresent: boolean;
-  draftChanged: boolean;
-  conflict: boolean;
-};
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaDraftMergeRequest = {
-  expectedCurrentVersionId: string | number;
-  expectedCurrentDocumentHash: string;
-  expectedDraftRevision: number;
-  resolutions: SchemaDraftMergeResolutionDto[];
-};
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaDraftMergeResolutionDto = {
-  path: string;
-  side: SchemaDraftMergeSide;
-};
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaDraftMergeSide = "current" | "incoming";
-
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaDraftMergeResultDto = {
+export type SchemaDraftMergeResultDto = Omit<Api.SchemaDraftMergeResultDto, "draft"> & {
   draft: SchemaDraftDto;
-  diff: SchemaDraftDiffDto;
 };
 
-/*
-SPDX-License-Identifier: MIT
-Copyright (c) 2025 Pablo Ulloa Santin
-*/
-
-export type SchemaDraftPublishResultDto = {
-  status: "published" | "conflict";
+export type SchemaDraftPublishResultDto = Omit<Api.SchemaDraftPublishResultDto, "draft"> & {
   draft: SchemaDraftDto;
-  version?: SchemaVersionDto | null;
-  diff?: SchemaDraftDiffDto | null;
 };

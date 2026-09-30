@@ -14,7 +14,6 @@ export const useDeleteInferenceMutation = () => {
   const queryClient = useQueryClient();
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useMutation({
-    meta: { errorHandledLocally: true },
     mutationFn: deleteInference,
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: INFERENCES_QUERY_KEY(organizationId) }),
@@ -72,6 +71,7 @@ export const useDeleteInferenceReviewResponseMutation = () => {
     mutationFn: deleteInferenceReviewResponse,
     onSuccess: (_data, assignment) =>
       Promise.all([
+        queryClient.invalidateQueries({ queryKey: INFERENCES_QUERY_KEY(organizationId) }),
         queryClient.invalidateQueries({ queryKey: REVIEWS_ROOT_QUERY_KEY(organizationId) }),
         queryClient.invalidateQueries({
           queryKey: INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY(organizationId, assignment.inferenceId),

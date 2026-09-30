@@ -14,29 +14,20 @@ import {
   matchArtifacts,
   renameModel,
 } from "./model.api";
-import {
-  CREATE_MODEL_QUERY_KEY,
-  GET_MODELS_QUERY_KEY,
-  MODEL_CATALOG_PAGE_QUERY_KEY,
-} from "./model.keys";
-import type { CreateModelRequest, ModelDto } from "./model.types";
+import { modelKeys } from "./model.keys";
+import type { CreateModelRequest } from "./model.types";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
-export const useInvalidateModelQueries = () => {
+const useInvalidateModelQueries = () => {
   const queryClient = useQueryClient();
   const organizationId = useCurrentOrganizationId() ?? "none";
-  return async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: GET_MODELS_QUERY_KEY(organizationId) }),
-      queryClient.invalidateQueries({ queryKey: MODEL_CATALOG_PAGE_QUERY_KEY(organizationId) }),
-    ]);
-  };
+  return () => queryClient.invalidateQueries({ queryKey: modelKeys.all(organizationId) });
 };
 
 const invalidatingMutationOptions = <TVariables>(
   mutationFn: (variables: TVariables) => Promise<unknown>,
   invalidate: () => Promise<void>,
 ) => ({
-  meta: { errorHandledLocally: true },
   mutationFn,
   onSuccess: () => void invalidate(),
 });
@@ -66,10 +57,9 @@ export const useCreateModelMutation = () => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const invalidate = useInvalidateModelQueries();
   return useMutation({
-    mutationKey: CREATE_MODEL_QUERY_KEY,
     mutationFn: (data: CreateModelRequest) => createModel(data),
     onSuccess: async (created) => {
-      queryClient.setQueryData<ModelDto[]>(GET_MODELS_QUERY_KEY(organizationId), (previous) =>
+      queryClient.setQueryData<ModelDto[]>(modelKeys.list(organizationId), (previous) =>
         previous ? [created.model, ...previous] : [created.model],
       );
       await invalidate();

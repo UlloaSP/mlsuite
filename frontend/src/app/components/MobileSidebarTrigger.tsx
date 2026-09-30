@@ -1,4 +1,4 @@
-import type { SidebarPosition } from "@/shared/ui/sidebar-position";
+import type { SidebarPosition } from "@/shared/ui/sidebar-preferences";
 import { cx } from "@/shared/ui/cx";
 import { SidebarTrigger } from "./app-sidebar/SidebarTrigger";
 
@@ -6,13 +6,13 @@ export function MobileSidebarTrigger({ side }: { side: SidebarPosition }) {
   return (
     <div
       className={cx(
-        "flex shrink-0 px-4 pt-4 xl:hidden",
+        "flex shrink-0 px-6 pt-3 xl:hidden",
         side === "left" ? "justify-start" : "justify-end",
       )}
     >
       <SidebarTrigger
         side={side}
-        className="size-10 rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)] shadow-[var(--shadow-card)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+        className="size-10 rounded-full border border-line bg-surface text-fg-secondary shadow-card hover:bg-surface-muted hover:text-fg"
       />
     </div>
   );

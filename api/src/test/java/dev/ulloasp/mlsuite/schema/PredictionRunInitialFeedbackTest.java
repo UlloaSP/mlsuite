@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,6 +15,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -44,7 +47,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,7 +59,6 @@ class PredictionRunInitialFeedbackTest {
     @Mock private PredictionResultRepository resultRepository;
     @Mock private PredictionResultFeedbackRepository feedbackRepository;
     @Mock private ModelRepository modelRepository;
-    @Mock private WorkspaceAccessService workspaceAccessService;
     @Mock private WorkspaceAuthorizationService authorizationService;
     private PredictionRunServiceImpl service;
     private SchemaBookmark bookmark;
@@ -67,7 +68,7 @@ class PredictionRunInitialFeedbackTest {
     void setUp() {
         service = new PredictionRunServiceImpl(userLookupService, bookmarkRepository, bindingRepository,
                 runRepository, resultRepository, feedbackRepository, modelRepository,
-                workspaceAccessService, authorizationService);
+                authorizationService);
         Organization organization = new Organization();
         organization.setId(41L);
         User user = new User();
@@ -80,8 +81,8 @@ class PredictionRunInitialFeedbackTest {
         version.setId(9L);
         bookmark = new SchemaBookmark(schema, version, "main");
         bookmark.setId(70L);
-        when(userLookupService.requireById(7L)).thenReturn(user);
-        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(userLookupService.requireById(7L)).thenReturn(user);
+        lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(bookmarkRepository.findByIdAndOrganizationId(70L, 41L)).thenReturn(Optional.of(bookmark));
         when(bindingRepository.findBySchemaVersionId(9L))
                 .thenReturn(List.of(new SchemaModelBinding(version, model, Map.of())));
@@ -109,7 +110,7 @@ class PredictionRunInitialFeedbackTest {
     }
 
     private CreatePredictionRunRequest request(List<CreatePredictionResultInitialFeedbackRequest> feedback) {
-        return new CreatePredictionRunRequest("case-1", Map.of("age", 52), List.of(
+        return new CreatePredictionRunRequest(9L, "case-1", Map.of("age", 52), List.of(
                 new CreatePredictionResultRequest(11L, Map.of("age", 52), Map.of("risk", 0.8),
                         PredictionResultStatus.SUCCESS, null, null, feedback)));
     }

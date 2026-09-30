@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.InvitationRepository;
 import dev.ulloasp.mlsuite.invitation.application.dto.CreateInvitationRequest;
 import dev.ulloasp.mlsuite.invitation.application.dto.InvitationCandidateDto;
@@ -18,8 +19,6 @@ import dev.ulloasp.mlsuite.invitation.domain.model.Invitation;
 import dev.ulloasp.mlsuite.invitation.domain.model.InvitationStatus;
 import dev.ulloasp.mlsuite.audit.application.service.AuditLogService;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
-import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
-import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
@@ -34,9 +33,11 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class InvitationManagementService implements InvitationManagementUseCase {
 
     private final WorkspaceAccessService workspaceAccessService;
@@ -46,44 +47,21 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     private final UserLookupService userLookupService;
     private final WorkspaceAuthorizationService workspaceAuthorizationService;
     private final AuditLogService auditLogService;
-    private final RoleSeedService roleSeedService;
     private final RoleDefinitionRepository roleDefinitionRepository;
     private final UserRepository userRepository;
 
-    public InvitationManagementService(
-            WorkspaceAccessService workspaceAccessService,
-            InvitationRepository invitationRepository,
-            OrganizationMembershipRepository organizationMembershipRepository,
-            OrganizationRepository organizationRepository,
-            UserLookupService userLookupService,
-            WorkspaceAuthorizationService workspaceAuthorizationService,
-            AuditLogService auditLogService,
-            RoleSeedService roleSeedService,
-            RoleDefinitionRepository roleDefinitionRepository,
-            UserRepository userRepository) {
-        this.workspaceAccessService = workspaceAccessService;
-        this.invitationRepository = invitationRepository;
-        this.organizationMembershipRepository = organizationMembershipRepository;
-        this.organizationRepository = organizationRepository;
-        this.userLookupService = userLookupService;
-        this.workspaceAuthorizationService = workspaceAuthorizationService;
-        this.auditLogService = auditLogService;
-        this.roleSeedService = roleSeedService;
-        this.roleDefinitionRepository = roleDefinitionRepository;
-        this.userRepository = userRepository;
-    }
-
     @Override
     public List<InvitationDto> listInvitations(Long userId, Long organizationId) {
-        var permissions = workspaceAuthorizationService.requireInvitationView(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.VIEW_INVITATIONS);
+        boolean includeTokens = workspaceAuthorizationService.has(userId, organizationId, PermissionKey.MANAGE_INVITATIONS);
         return invitationRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
-                .map(invitation -> InvitationDto.from(invitation, permissions.canManageInvitations()))
+                .map(invitation -> InvitationDto.from(invitation, includeTokens))
                 .toList();
     }
 
     @Override
     public List<InvitationCandidateDto> listInvitationCandidates(Long userId, Long organizationId) {
-        workspaceAuthorizationService.requireInvitationCreate(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.INVITE_MEMBERS);
         return userRepository.findEnabledUsersOutsideActiveOrganization(organizationId)
                 .stream()
                 .map(InvitationCandidateDto::from)
@@ -93,19 +71,17 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     @Override
     public InvitationDto createInvitation(Long userId, Long organizationId, CreateInvitationRequest request) {
         User user = workspaceAccessService.requireUser(userId);
-        workspaceAuthorizationService.requireInvitationCreate(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.INVITE_MEMBERS);
         var organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new OrganizationNotFoundException(organizationId));
-        roleSeedService.ensureOrganizationRoles(organization);
         RoleDefinition roleDefinition = resolveRoleDefinition(organization, request);
-        OrganizationRole legacyRole = legacyRole(roleDefinition);
-        if (!workspaceAuthorizationService.workspacePermissions(userId, organizationId).canTransferOwnership() && legacyRole == OrganizationRole.OWNER) {
+        if (OrganizationRole.OWNER.name().equals(roleDefinition.getSystemKey())
+                && !workspaceAuthorizationService.has(userId, organizationId, PermissionKey.TRANSFER_OWNERSHIP)) {
             throw new IllegalArgumentException("Only owners can transfer ownership.");
         }
         Invitation invitation = new Invitation(
                 organization,
                 request.email().strip().toLowerCase(),
-                legacyRole,
                 roleDefinition,
                 UUID.randomUUID().toString(),
                 user,
@@ -123,7 +99,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     @Override
     public InvitationDto resendInvitation(Long userId, Long organizationId, Long invitationId) {
         User user = workspaceAccessService.requireUser(userId);
-        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.MANAGE_INVITATIONS);
         Invitation invitation = requireOrganizationInvitation(organizationId, invitationId);
         if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
             throw new IllegalArgumentException("Accepted invitation cannot be resent.");
@@ -138,7 +114,7 @@ public class InvitationManagementService implements InvitationManagementUseCase 
 
     @Override
     public void revokeInvitation(Long userId, Long organizationId, Long invitationId) {
-        workspaceAuthorizationService.requireInvitationManagement(userId, organizationId);
+        workspaceAuthorizationService.require(userId, organizationId, PermissionKey.MANAGE_INVITATIONS);
         Invitation invitation = invitationRepository.findById(invitationId)
                 .orElseThrow(() -> new InvitationNotFoundException(invitationId.toString()));
         if (!invitation.getOrganization().getId().equals(organizationId)) {
@@ -203,17 +179,13 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     }
 
     private void acceptPendingInvitation(Invitation invitation, User user) {
-        roleSeedService.ensureOrganizationRoles(invitation.getOrganization());
-        RoleDefinition roleDefinition = invitation.getRoleDefinition() != null
-                ? invitation.getRoleDefinition()
-                : roleSeedService.orgRole(invitation.getOrganization(), invitation.getRole());
+        RoleDefinition roleDefinition = invitation.getRoleDefinition();
         var existingMembership = organizationMembershipRepository
                 .findByOrganizationIdAndUserId(invitation.getOrganization().getId(), user.getId());
         OrganizationMembership membership = existingMembership.orElseGet(() -> new OrganizationMembership(
-                invitation.getOrganization(), user, invitation.getRole(), MembershipStatus.ACTIVE));
+                invitation.getOrganization(), user, roleDefinition, MembershipStatus.ACTIVE));
         if (existingMembership.isEmpty() || membership.getStatus() != MembershipStatus.ACTIVE) {
             membership.setStatus(MembershipStatus.ACTIVE);
-            membership.setRole(invitation.getRole());
             membership.setRoleDefinition(roleDefinition);
             organizationMembershipRepository.save(membership);
         }
@@ -223,19 +195,8 @@ public class InvitationManagementService implements InvitationManagementUseCase 
     }
 
     private RoleDefinition resolveRoleDefinition(Organization organization, CreateInvitationRequest request) {
-        if (request.roleDefinitionId() != null) {
-            return roleDefinitionRepository.findByIdAndOrganizationId(request.roleDefinitionId(), organization.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Role does not exist."));
-        }
-        if (request.role() == null || request.role().isBlank()) {
-            throw new IllegalArgumentException("Role is required.");
-        }
-        OrganizationRole role = OrganizationRole.valueOf(request.role().trim().toUpperCase());
-        return roleSeedService.orgRole(organization, role);
-    }
-
-    private OrganizationRole legacyRole(RoleDefinition roleDefinition) {
-        return OrganizationSystemRole.legacyRole(roleDefinition, OrganizationRole.MEMBER);
+        return roleDefinitionRepository.findByIdAndOrganizationId(request.roleDefinitionId(), organization.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Role does not exist."));
     }
 
     private Invitation requireOrganizationInvitation(Long organizationId, Long invitationId) {

@@ -3,20 +3,40 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { formatCompactRelativeTime } from "@/shared/lib/relative-time";
 
-type LiveRelativeTimeProps = {
-  value?: string;
+// One clock for every relative time on the page: a single interval while any is
+// mounted, and each instance re-renders only when its own text changes.
+const clock = {
+  now: Date.now(),
+  listeners: new Set<() => void>(),
+  timer: undefined as number | undefined,
 };
 
-export function LiveRelativeTime({ value }: LiveRelativeTimeProps) {
-  const [now, setNow] = useState(() => Date.now());
+const subscribe = (listener: () => void) => {
+  clock.listeners.add(listener);
+  if (clock.timer === undefined) {
+    clock.now = Date.now();
+    clock.timer = window.setInterval(() => {
+      clock.now = Date.now();
+      clock.listeners.forEach((notify) => notify());
+    }, 1000);
+  }
+  return () => {
+    clock.listeners.delete(listener);
+    if (clock.listeners.size === 0) {
+      window.clearInterval(clock.timer);
+      clock.timer = undefined;
+    }
+  };
+};
 
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  return <>{formatCompactRelativeTime(value, now)}</>;
+export function LiveRelativeTime({ value }: { value?: string }) {
+  const text = useSyncExternalStore(
+    subscribe,
+    () => formatCompactRelativeTime(value, clock.now),
+    () => formatCompactRelativeTime(value),
+  );
+  return <>{text}</>;
 }

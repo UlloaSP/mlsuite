@@ -12,18 +12,16 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapServi
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
+import dev.ulloasp.mlsuite.user.application.port.in.GetCurrentUserProfileUseCase;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
-public class UserServiceImpl implements UserService {
+@RequiredArgsConstructor
+public class UserServiceImpl implements GetCurrentUserProfileUseCase {
 
     private final UserRepository userRepository;
     private final WorkspaceBootstrapService workspaceBootstrapService;
-
-    public UserServiceImpl(UserRepository userRepository, WorkspaceBootstrapService workspaceBootstrapService) {
-        this.userRepository = userRepository;
-        this.workspaceBootstrapService = workspaceBootstrapService;
-    }
 
     @Override
     public User getProfile(Long userId) throws UserDoesNotExistException {

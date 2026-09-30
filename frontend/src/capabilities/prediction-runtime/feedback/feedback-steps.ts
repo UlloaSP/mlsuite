@@ -5,82 +5,43 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { CombinedFeedbackStep } from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
 import { createOutputFeedbackQuestionnaire } from "@/capabilities/prediction-runtime/feedback/output-feedback-questionnaire";
-import {
-  getEffectiveFeedbackValues,
-  getQuestionnaireFieldIds,
-} from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
+import { agreedFeedbackValues } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import { isBuiltinReportKind } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import { getFormattedReportContent } from "@/capabilities/prediction-runtime/feedback/report-feedback-utils";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
+import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import type {
+  PredictionResultDto,
+  PredictionResultFeedbackDto,
+  SchemaVersionDto,
+} from "@/shared/api/openapi.gen";
 
-type JsonRecord = Record<string, unknown>;
-type PredictionResultFeedbackType = "OUTPUT" | "EXPLANATION";
-type PredictionResultFeedback = {
-  id: string;
-  resultId: string;
-  type: PredictionResultFeedbackType;
-  order: number;
-  value: unknown;
-  userId?: string | null;
-  userEmail?: string | null;
-  userName?: string | null;
-  createdAt?: string;
-};
-type PredictionResult = {
-  [key: string]: unknown;
-  id: string;
-  modelId: string;
-  output: JsonRecord;
-  status: "SUCCESS" | "FAILED";
-};
-type SchemaVersion = {
-  [key: string]: unknown;
-  id: string;
-  schemaId?: string;
-  version?: number;
-  formSchema: JsonRecord;
-  bindings: Array<{ modelId: string; pluginPolicy?: JsonRecord | null }>;
-};
+type PredictionResultFeedbackType = PredictionResultFeedbackDto["type"];
+type PredictionResult = Pick<PredictionResultDto, "id" | "modelId" | "output" | "status">;
+type SchemaVersion = Pick<SchemaVersionDto, "formSchema" | "bindings">;
 
 type FeedbackKind = "OUTPUT" | "EXPLANATION";
 
-/**
- * SchemaFeedbackStep: describes the public data contract consumed or returned by this algorithm.
- *
- * Purpose: builds ordered feedback steps for schema run model reports and plugin reports.
- * @param order - Input consumed by SchemaFeedbackStep; uses the ordered feedback steps for schema run reports contract.
- * @param value - Input consumed by SchemaFeedbackStep; uses the ordered feedback steps for schema run reports contract.
- * @returns Type-only export; no runtime value is emitted.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export type SchemaFeedbackStep = CombinedFeedbackStep<FeedbackKind, never> & {
   type: PredictionResultFeedbackType;
   targets: SchemaFeedbackTarget[];
 };
 
 export type SchemaFeedbackTarget = {
-  resultId: string;
-  modelId: string;
-  feedback?: PredictionResultFeedback;
+  resultId: number;
+  modelId: number;
+  feedback?: PredictionResultFeedbackDto;
 };
 
-/** isRecord: internal predicate for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-/** reportsOf: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportsOf = (schema: unknown): Record<string, unknown>[] =>
   isRecord(schema) && Array.isArray(schema.reports) ? schema.reports.filter(isRecord) : [];
 
-/** feedbackQuestionnaire: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const feedbackQuestionnaire = (report: Record<string, unknown>): QuestionnaireSchema | undefined =>
   isRecord(report.feedbackQuestionnaire)
     ? (report.feedbackQuestionnaire as QuestionnaireSchema)
     : undefined;
 
-/** fakeTarget: internal helper for schema composition, run, report, and feedback flow. @remarks Args: order, value; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const fakeTarget = (order: number, value: unknown) =>
   ({
     id: String(order),
@@ -88,14 +49,11 @@ const fakeTarget = (order: number, value: unknown) =>
     value,
   }) as any;
 
-/** displayRecord: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const displayRecord = (value: unknown): Record<string, unknown> => (isRecord(value) ? value : {});
 
-/** formatProbability: internal normalization helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const formatProbability = (value: unknown): string | null =>
   typeof value === "number" ? `${(value * 100).toFixed(2)}%` : null;
 
-/** outputDescription: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const outputDescription = (payload: unknown): string => {
   const record = displayRecord(payload);
   const probabilities = Array.isArray(record.probabilities) ? record.probabilities : [];
@@ -109,13 +67,12 @@ const outputDescription = (payload: unknown): string => {
     : `Prediction result: ${String(prediction)}`;
 };
 
-/** reportDescription: internal helper for schema composition, run, report, and feedback flow. @remarks Args: none; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 const reportDescription = (payload: unknown): string => {
   const content = getFormattedReportContent(payload).join("\n\n");
   return content ? `Prediction report:\n${content}` : "Prediction report";
 };
 
-const feedbackKey = (resultId: string, type: PredictionResultFeedbackType, order: number): string =>
+const feedbackKey = (resultId: number, type: PredictionResultFeedbackType, order: number): string =>
   `${resultId}:${type}:${order}`;
 
 type DisplayTarget = {
@@ -123,25 +80,11 @@ type DisplayTarget = {
   display: ReturnType<typeof getSchemaResultReports>[number];
 };
 
-const commonFeedbackValues = (
-  targets: readonly SchemaFeedbackTarget[],
-  schema: QuestionnaireSchema,
-): Record<string, unknown> => {
-  if (targets.length === 0 || targets.some((target) => !target.feedback)) return {};
-  const values = targets.map((target) => getEffectiveFeedbackValues(target.feedback, schema));
-  const fieldIds = getQuestionnaireFieldIds(schema);
-  const first = values[0] ?? {};
-  const equal = values.every((value) =>
-    fieldIds.every((fieldId) => JSON.stringify(value[fieldId]) === JSON.stringify(first[fieldId])),
-  );
-  return equal ? first : {};
-};
-
 const stepTargets = (
   members: readonly DisplayTarget[],
   type: PredictionResultFeedbackType,
   order: number,
-  feedbackByKey: ReadonlyMap<string, PredictionResultFeedback>,
+  feedbackByKey: ReadonlyMap<string, PredictionResultFeedbackDto>,
 ): SchemaFeedbackTarget[] =>
   members.map(({ result }) => ({
     resultId: result.id,
@@ -159,18 +102,10 @@ const combinedDescription = (
         .map(({ result, display }) => `${result.modelId}: ${describe(display.payload)}`)
         .join("\n");
 
-/**
- * buildSchemaFeedbackSteps: constructs a new derived object from source data
- *
- * Purpose: builds ordered feedback steps for schema run model reports and plugin reports.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export const buildSchemaFeedbackSteps = (
   version: SchemaVersion,
   results: readonly PredictionResult[],
-  feedback: readonly PredictionResultFeedback[],
+  feedback: readonly PredictionResultFeedbackDto[],
 ): SchemaFeedbackStep[] => {
   const feedbackByKey = new Map(
     feedback.map((item) => [feedbackKey(item.resultId, item.type, item.order), item]),
@@ -199,7 +134,7 @@ export const buildSchemaFeedbackSteps = (
           title: `${first.display.label} review`,
           description: combinedDescription(members, reportDescription),
           schema: questionnaire,
-          initialValues: commonFeedbackValues(explanationTargets, questionnaire),
+          initialValues: agreedFeedbackValues(explanationTargets, questionnaire) ?? {},
         }
       : null;
     if (!isBuiltinReportKind(first.display.kind)) {
@@ -220,7 +155,7 @@ export const buildSchemaFeedbackSteps = (
       title: first.display.label,
       description: combinedDescription(members, outputDescription),
       schema: outputSchema,
-      initialValues: commonFeedbackValues(outputTargets, outputSchema),
+      initialValues: agreedFeedbackValues(outputTargets, outputSchema) ?? {},
     };
     return explanationStep ? [outputStep, explanationStep] : [outputStep];
   });

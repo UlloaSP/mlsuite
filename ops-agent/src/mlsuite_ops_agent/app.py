@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from .compose import ComposeError
 from .config import SETTINGS
 from .models import ServiceActionRequest, ServiceLogsSnapshot, TerminalSessionRequest, TerminalSessionResponse
+from .startup import StartupStatus
 from .state import AgentState, parse_topics
 
 
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(lifespan=lifespan)
     app.state.agent = state
+    app.state.startup = StartupStatus(state.compose)
 
     @app.exception_handler(ComposeError)
     async def handle_compose_error(_request: Request, exc: ComposeError) -> JSONResponse:
@@ -46,6 +48,15 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/startup/services")
+    async def startup_services() -> JSONResponse:
+        """Unauthenticated: only ordered states, never names, logs, or actions."""
+        try:
+            states = await app.state.startup.states()
+        except ComposeError:
+            return JSONResponse(status_code=503, content={"detail": "Service states unavailable."})
+        return JSONResponse(content={"services": [{"state": state} for state in states]})
 
     @app.get("/internal/overview", dependencies=[Depends(verify_request)])
     async def overview() -> dict[str, object]:

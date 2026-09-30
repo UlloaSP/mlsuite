@@ -12,7 +12,9 @@ export const createAppQueryClient = (
   new QueryClient({
     queryCache: new QueryCache({
       onError: (error, query) => {
-        if (query.queryKey[0] !== "user") reportError(error);
+        if (query.queryKey[0] !== "user" && query.meta?.errorHandledLocally !== true) {
+          reportError(error);
+        }
       },
     }),
     mutationCache: new MutationCache({

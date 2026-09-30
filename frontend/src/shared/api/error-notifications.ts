@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { toast } from "sonner";
-import { HttpError, isHttpError, type ErrorDto } from "@/shared/api/http";
+import { HttpError, isHttpError } from "@/shared/api/http";
+import type { ErrorDto } from "@/shared/api/openapi.gen";
 
 const toastErrorDto = (error: ErrorDto) => {
   toast.error(error.message || "Request failed", {

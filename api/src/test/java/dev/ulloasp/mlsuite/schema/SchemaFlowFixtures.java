@@ -7,7 +7,6 @@ import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.domain.model.*;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 
 final class SchemaFlowFixtures {
     private SchemaFlowFixtures() {}
@@ -64,10 +63,5 @@ final class SchemaFlowFixtures {
 
     static User user() {
         User user = new User(); user.setId(7L); user.setUsername("alice"); user.setFullName("Alice"); return user;
-    }
-
-    static WorkspacePermissionsDto permissions() {
-        return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true);
     }
 }

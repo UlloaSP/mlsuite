@@ -1,0 +1,250 @@
+/* Document-level styles: page chrome, scrollbars and transitions. */
+
+/* Interface and code sizes come from the typography preference; font families from tokens.css. */
+:root {
+  color-scheme: light;
+  --ui-font-size: 16px;
+  --code-font-size: 13px;
+  background: var(--color-page);
+  font-size: var(--ui-font-size);
+  font-family: var(--font-sans);
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top, var(--color-page-accent), transparent 34%), var(--color-page);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 24%, transparent);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+.theme-corner-transition::view-transition-new(root) {
+  animation: theme-corner-reveal var(--duration-slow) var(--ease-emphasized) both;
+  clip-path: circle(150vmax at 0 0);
+  mix-blend-mode: normal;
+}
+
+.theme-corner-transition::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+:root.theme-corner-transition::view-transition-group(root) {
+  animation: none !important;
+}
+
+::view-transition-old(app-content),
+::view-transition-new(app-content) {
+  animation-duration: var(--duration-base);
+  animation-timing-function: ease-out;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(app-content) {
+  animation-name: app-route-fade-out;
+}
+
+::view-transition-new(app-content) {
+  animation-name: app-route-fade-in;
+}
+
+/* Sidebar side and style changes morph the shell (see layout-transition.ts). */
+::view-transition-group(app-layout-sidebar) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease-emphasized);
+}
+
+/* Content cross-fades in place: sliding it along with the navigation reads as the
+   whole page moving. */
+::view-transition-group(app-layout-main) {
+  animation: none;
+}
+
+::view-transition-old(app-layout-main),
+::view-transition-new(app-layout-main) {
+  animation-duration: var(--duration-base);
+}
+
+/* Snapshots keep their real size: scaling them would stretch the text inside. */
+::view-transition-old(app-layout-sidebar),
+::view-transition-new(app-layout-sidebar),
+::view-transition-old(app-layout-main),
+::view-transition-new(app-layout-main) {
+  width: 100%;
+  height: 100%;
+  object-fit: none;
+  object-position: top left;
+}
+
+/* AppDialog: overlay fades, the panel rises slightly (a sheet slides in). */
+.app-dialog-overlay[data-state="open"] {
+  animation: app-dialog-fade var(--duration-fast) ease-out;
+}
+
+.app-dialog-overlay[data-state="closed"] {
+  animation: app-dialog-fade var(--duration-fast) ease-in reverse;
+}
+
+.app-dialog[data-state="open"] {
+  animation: app-dialog-in var(--duration-base) var(--ease-emphasized);
+}
+
+.app-dialog[data-state="closed"] {
+  animation: app-dialog-fade var(--duration-fast) ease-in reverse;
+}
+
+.app-dialog[data-variant="sheet"][data-state="open"] {
+  animation-name: app-sheet-in;
+}
+
+@keyframes app-dialog-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* transform, not translate: Tailwind centers the dialog with the translate property. */
+@keyframes app-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+@keyframes app-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes app-route-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes app-route-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes theme-corner-reveal {
+  from {
+    clip-path: circle(0 at 0 0);
+  }
+
+  to {
+    clip-path: circle(150vmax at 0 0);
+  }
+}
+
+/* A floating navigation panel sits on the page itself, so a permanent scrollbar
+   beside it would draw the very edge floating removes. Content scrollbars stay
+   invisible until use-quiet-scrollbars.ts marks one as hovered or scrolling. */
+[data-navigation-style="floating"] .app-content-transition,
+[data-navigation-style="floating"] .app-content-transition * {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+[data-navigation-style="floating"] .app-content-transition[data-scrollbar-visible],
+[data-navigation-style="floating"] .app-content-transition [data-scrollbar-visible] {
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+/* Every page scrolls inside its own container. The document and the shell
+   wrappers use overflow: clip, not hidden: hidden boxes can still be scrolled by
+   the browser (keeping a focused control in view), which left page headers cut
+   off after a layout change. */
+html:has([data-navigation-position]) {
+  overflow: clip;
+}
+
+/* Baseline focus indicator in the theme's focus color. It must live in the base
+   layer: unlayered CSS beats every layered utility regardless of specificity, so
+   outside a layer it overrode outline-none and fields showed a second ring inside
+   their wrapper's FIELD_FOCUS_RING. */
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex], [role="button"]):focus-visible {
+    outline: 2px solid color-mix(in oklch, var(--color-focus) 60%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+.app-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+.app-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.app-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-line-strong) 82%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(app-content),
+  ::view-transition-new(app-content) {
+    animation: none !important;
+  }
+}

@@ -17,9 +17,11 @@ import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class WorkspaceBootstrapService {
 
     private final OrganizationRepository organizationRepository;
@@ -27,19 +29,6 @@ public class WorkspaceBootstrapService {
     private final UserRepository userRepository;
     private final ModelRepository modelRepository;
     private final RoleSeedService roleSeedService;
-
-    public WorkspaceBootstrapService(
-            OrganizationRepository organizationRepository,
-            OrganizationMembershipRepository membershipRepository,
-            UserRepository userRepository,
-            ModelRepository modelRepository,
-            RoleSeedService roleSeedService) {
-        this.organizationRepository = organizationRepository;
-        this.membershipRepository = membershipRepository;
-        this.userRepository = userRepository;
-        this.modelRepository = modelRepository;
-        this.roleSeedService = roleSeedService;
-    }
 
     public Organization ensureCurrentOrganization(User user) {
         if (user.getSystemRole() == SystemRole.SUPERADMIN && user.getCurrentOrganization() != null) {
@@ -73,13 +62,11 @@ public class WorkspaceBootstrapService {
                 user));
         roleSeedService.ensureOrganizationRoles(organization);
         roleSeedService.reviewerRole(organization);
-        OrganizationMembership membership = new OrganizationMembership(
+        membershipRepository.save(new OrganizationMembership(
                 organization,
                 user,
-                OrganizationRole.OWNER,
-                MembershipStatus.ACTIVE);
-        membership.setRoleDefinition(roleSeedService.orgRole(organization, OrganizationRole.OWNER));
-        membershipRepository.save(membership);
+                roleSeedService.orgRole(organization, OrganizationRole.OWNER),
+                MembershipStatus.ACTIVE));
         user.setCurrentOrganization(organization);
         userRepository.save(user);
         backfillModels(user, organization);

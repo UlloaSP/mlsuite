@@ -313,6 +313,19 @@ def test_explain_rejects_invalid_traces_json() -> None:
     assert response.json()["detail"].startswith("Invalid traces JSON:")
 
 
+def test_explain_rejects_invalid_trace_shape() -> None:
+    response = client.post(
+        "/explain",
+        files={"model_file": serialize_joblib(make_tree(), "model.joblib")},
+        data={
+            "data": json.dumps({"age": 40, "income": 55_000}),
+            "traces": json.dumps([{"text": "old", "conditions": [{"value": 1}]}]),
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"].startswith("Invalid traces JSON:")
+
+
 def test_explain_rejects_missing_features() -> None:
     response = client.post(
         "/explain",

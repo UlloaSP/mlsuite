@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
@@ -36,11 +37,12 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraftStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
     private final UserLookupService users;
     private final SchemaRepository schemas;
@@ -49,23 +51,7 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
     private final SchemaVersionUseCase versionUseCase;
     private final SchemaDraftDiffService merger;
     private final SchemaDraftPublishedVersionResolver publishedVersions;
-    private final WorkspaceAccessService workspaces;
     private final WorkspaceAuthorizationService authorization;
-    public SchemaDraftServiceImpl(UserLookupService users, SchemaRepository schemas,
-            SchemaVersionRepository versions, SchemaDraftRepository drafts,
-            SchemaVersionUseCase versionUseCase, SchemaDraftDiffService merger,
-            SchemaDraftPublishedVersionResolver publishedVersions,
-            WorkspaceAccessService workspaces, WorkspaceAuthorizationService authorization) {
-        this.users = users;
-        this.schemas = schemas;
-        this.versions = versions;
-        this.drafts = drafts;
-        this.versionUseCase = versionUseCase;
-        this.merger = merger;
-        this.publishedVersions = publishedVersions;
-        this.workspaces = workspaces;
-        this.authorization = authorization;
-    }
     @Override
     public List<SchemaDraft> listDrafts(Long userId, Long schemaId) {
         Long orgId = requireRead(userId);
@@ -202,17 +188,11 @@ public class SchemaDraftServiceImpl implements SchemaDraftUseCase {
         return result;
     }
     private Long requireRead(Long userId) {
-        users.requireById(userId);
-        Long orgId = workspaces.requireCurrentOrganization(userId).getId();
-        authorization.requireModelView(userId, orgId);
-        return orgId;
+        return authorization.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
     }
 
     private Long requireOperate(Long userId) {
-        users.requireById(userId);
-        Long orgId = workspaces.requireCurrentOrganization(userId).getId();
-        authorization.requireOrganizationOperate(userId, orgId);
-        return orgId;
+        return authorization.requireCurrent(userId, PermissionKey.CREATE_MODELS).getId();
     }
 
     private Schema requireSchema(Long id, Long orgId) {

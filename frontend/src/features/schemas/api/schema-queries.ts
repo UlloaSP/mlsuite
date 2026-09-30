@@ -1,17 +1,25 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
-import { keepPreviousData, queryOptions, useQueries, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  queryOptions,
+  useQueries,
+  useQuery,
+  type QueryKey,
+} from "@tanstack/react-query";
 import { getSchema, getSchemaPage, getSchemaVersion, getSchemaVersions } from "./schema-api";
-import { getSchemaBookmark, getSchemaBookmarks } from "./schema-bookmark-api";
+import {
+  getOrganizationBookmarks,
+  getSchemaBookmark,
+  getSchemaBookmarks,
+} from "./schema-bookmark-api";
 import { getSchemaDraft, getSchemaDraftDiff, getSchemaDrafts } from "./schema-draft-api";
 import {
   getPredictionResultFeedback,
   getPredictionRunsFeedback,
   getPredictionRun,
-  getPredictionRunsForBookmark,
 } from "./schema-prediction-api";
-import type { PredictionRunDto } from "./prediction-types";
 import {
-  BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
+  ORGANIZATION_BOOKMARKS_QUERY_KEY,
   PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
   PREDICTION_RUNS_FEEDBACK_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
@@ -26,6 +34,7 @@ import {
   SCHEMA_VERSION_QUERY_KEY,
   schemaCatalogPageQueryKey,
 } from "./schema-keys";
+import type { PredictionRunDto } from "@/shared/api/openapi.gen";
 
 type Scope = number | string;
 
@@ -44,82 +53,62 @@ export const schemaCatalogPageQueryOptions = (
     placeholderData: keepPreviousData,
   });
 
-export const schemaQueryOptions = (organizationId: Scope, schemaId?: string) =>
+/** Query options and hook for one tenant resource fetched by id; disabled until the id is known. */
+function byIdQuery<T>(
+  key: (organizationId: Scope, id: number | string) => QueryKey,
+  fetcher: (id: number | string, signal: AbortSignal) => Promise<T>,
+) {
+  const options = (organizationId: Scope, id?: number | string) =>
+    queryOptions({
+      queryKey: key(organizationId, id ?? ""),
+      queryFn: ({ signal }) => fetcher(id ?? "", signal),
+      enabled: Boolean(id),
+    });
+  const useById = (id?: number | string) => {
+    const organizationId = useCurrentOrganizationId() ?? "none";
+    return useQuery(options(organizationId, id));
+  };
+  return { options, useById };
+}
+
+const schemaQuery = byIdQuery(SCHEMA_QUERY_KEY, getSchema);
+const schemaVersionsQuery = byIdQuery(SCHEMA_VERSIONS_QUERY_KEY, getSchemaVersions);
+const schemaVersionQuery = byIdQuery(SCHEMA_VERSION_QUERY_KEY, getSchemaVersion);
+const schemaBookmarksQuery = byIdQuery(SCHEMA_BOOKMARKS_QUERY_KEY, getSchemaBookmarks);
+const schemaBookmarkQuery = byIdQuery(SCHEMA_BOOKMARK_QUERY_KEY, getSchemaBookmark);
+const schemaDraftsQuery = byIdQuery(SCHEMA_DRAFTS_QUERY_KEY, getSchemaDrafts);
+const schemaDraftQuery = byIdQuery(SCHEMA_DRAFT_QUERY_KEY, getSchemaDraft);
+const schemaDraftDiffQuery = byIdQuery(SCHEMA_DRAFT_DIFF_QUERY_KEY, getSchemaDraftDiff);
+const predictionRunQuery = byIdQuery(PREDICTION_RUN_QUERY_KEY, getPredictionRun);
+const predictionResultFeedbackQuery = byIdQuery(
+  PREDICTION_RESULT_FEEDBACK_QUERY_KEY,
+  getPredictionResultFeedback,
+);
+
+export const schemaVersionQueryOptions = schemaVersionQuery.options;
+export const predictionRunQueryOptions = predictionRunQuery.options;
+export const predictionResultFeedbackQueryOptions = predictionResultFeedbackQuery.options;
+
+export const useSchema = schemaQuery.useById;
+export const useSchemaVersions = schemaVersionsQuery.useById;
+export const useSchemaVersion = schemaVersionQuery.useById;
+export const useSchemaBookmarks = schemaBookmarksQuery.useById;
+export const useSchemaBookmark = schemaBookmarkQuery.useById;
+export const useSchemaDrafts = schemaDraftsQuery.useById;
+export const useSchemaDraft = schemaDraftQuery.useById;
+export const useSchemaDraftDiff = schemaDraftDiffQuery.useById;
+export const usePredictionRun = predictionRunQuery.useById;
+
+const organizationBookmarksQueryOptions = (organizationId: Scope) =>
   queryOptions({
-    queryKey: SCHEMA_QUERY_KEY(organizationId, schemaId ?? ""),
-    queryFn: ({ signal }) => getSchema(schemaId ?? "", signal),
-    enabled: Boolean(schemaId),
+    queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId),
+    queryFn: ({ signal }) => getOrganizationBookmarks(signal),
   });
 
-export const schemaVersionsQueryOptions = (organizationId: Scope, schemaId?: string) =>
-  queryOptions({
-    queryKey: SCHEMA_VERSIONS_QUERY_KEY(organizationId, schemaId ?? ""),
-    queryFn: ({ signal }) => getSchemaVersions(schemaId ?? "", signal),
-    enabled: Boolean(schemaId),
-  });
-
-export const schemaVersionQueryOptions = (organizationId: Scope, versionId?: string) =>
-  queryOptions({
-    queryKey: SCHEMA_VERSION_QUERY_KEY(organizationId, versionId ?? ""),
-    queryFn: ({ signal }) => getSchemaVersion(versionId ?? "", signal),
-    enabled: Boolean(versionId),
-  });
-
-export const schemaBookmarksQueryOptions = (organizationId: Scope, schemaId?: string) =>
-  queryOptions({
-    queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, schemaId ?? ""),
-    queryFn: ({ signal }) => getSchemaBookmarks(schemaId ?? "", signal),
-    enabled: Boolean(schemaId),
-  });
-
-export const schemaBookmarkQueryOptions = (organizationId: Scope, bookmarkId?: string) =>
-  queryOptions({
-    queryKey: SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmarkId ?? ""),
-    queryFn: ({ signal }) => getSchemaBookmark(bookmarkId ?? "", signal),
-    enabled: Boolean(bookmarkId),
-  });
-
-export const schemaDraftsQueryOptions = (organizationId: Scope, schemaId?: string) =>
-  queryOptions({
-    queryKey: SCHEMA_DRAFTS_QUERY_KEY(organizationId, schemaId ?? ""),
-    queryFn: ({ signal }) => getSchemaDrafts(schemaId ?? "", signal),
-    enabled: Boolean(schemaId),
-  });
-
-export const schemaDraftQueryOptions = (organizationId: Scope, draftId?: string) =>
-  queryOptions({
-    queryKey: SCHEMA_DRAFT_QUERY_KEY(organizationId, draftId ?? ""),
-    queryFn: ({ signal }) => getSchemaDraft(draftId ?? "", signal),
-    enabled: Boolean(draftId),
-  });
-
-export const schemaDraftDiffQueryOptions = (organizationId: Scope, draftId?: string) =>
-  queryOptions({
-    queryKey: SCHEMA_DRAFT_DIFF_QUERY_KEY(organizationId, draftId ?? ""),
-    queryFn: ({ signal }) => getSchemaDraftDiff(draftId ?? "", signal),
-    enabled: Boolean(draftId),
-  });
-
-export const predictionRunQueryOptions = (organizationId: Scope, runId?: string) =>
-  queryOptions({
-    queryKey: PREDICTION_RUN_QUERY_KEY(organizationId, runId ?? ""),
-    queryFn: ({ signal }) => getPredictionRun(runId ?? "", signal),
-    enabled: Boolean(runId),
-  });
-
-export const bookmarkPredictionRunsQueryOptions = (organizationId: Scope, bookmarkId?: string) =>
-  queryOptions({
-    queryKey: BOOKMARK_PREDICTION_RUNS_QUERY_KEY(organizationId, bookmarkId ?? ""),
-    queryFn: ({ signal }) => getPredictionRunsForBookmark(bookmarkId ?? "", signal),
-    enabled: Boolean(bookmarkId),
-  });
-
-export const predictionResultFeedbackQueryOptions = (organizationId: Scope, resultId?: string) =>
-  queryOptions({
-    queryKey: PREDICTION_RESULT_FEEDBACK_QUERY_KEY(organizationId, resultId ?? ""),
-    queryFn: ({ signal }) => getPredictionResultFeedback(resultId ?? "", signal),
-    enabled: Boolean(resultId),
-  });
+export const useOrganizationBookmarks = () => {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  return useQuery(organizationBookmarksQueryOptions(organizationId));
+};
 
 export const predictionRunsFeedbackQueryOptions = (
   organizationId: Scope,
@@ -135,72 +124,12 @@ export const predictionRunsFeedbackQueryOptions = (
   });
 };
 
-export const useSchema = (schemaId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(schemaQueryOptions(organizationId, schemaId));
-};
-
-export const useSchemaVersions = (schemaId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
-    ...schemaVersionsQueryOptions(organizationId, schemaId),
-    placeholderData: [],
-  });
-};
-
-export const useSchemaVersion = (versionId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(schemaVersionQueryOptions(organizationId, versionId));
-};
-
-export const useSchemaBookmarks = (schemaId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
-    ...schemaBookmarksQueryOptions(organizationId, schemaId),
-    placeholderData: [],
-  });
-};
-
-export const useSchemaBookmark = (bookmarkId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(schemaBookmarkQueryOptions(organizationId, bookmarkId));
-};
-
-export const useSchemaDrafts = (schemaId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(schemaDraftsQueryOptions(organizationId, schemaId));
-};
-
-export const useSchemaDraft = (draftId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(schemaDraftQueryOptions(organizationId, draftId));
-};
-
-export const useSchemaDraftDiff = (draftId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(schemaDraftDiffQueryOptions(organizationId, draftId));
-};
-
-export const usePredictionRun = (runId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery(predictionRunQueryOptions(organizationId, runId));
-};
-
-export const usePredictionRunsForBookmark = (bookmarkId?: string) => {
-  const organizationId = useCurrentOrganizationId() ?? "none";
-  return useQuery({
-    ...bookmarkPredictionRunsQueryOptions(organizationId, bookmarkId),
-    placeholderData: [],
-  });
-};
-
 export const usePredictionRunFeedback = (run?: PredictionRunDto) => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const queries = useQueries({
-    queries: (run?.results ?? []).map((result) => ({
-      ...predictionResultFeedbackQueryOptions(organizationId, result.id),
-      placeholderData: [],
-    })),
+    queries: (run?.results ?? []).map((result) =>
+      predictionResultFeedbackQueryOptions(organizationId, result.id),
+    ),
   });
   return {
     data: queries.flatMap((query) => query.data ?? []),
@@ -216,7 +145,6 @@ export const usePredictionRunsFeedback = (runs: readonly PredictionRunDto[]) => 
       organizationId,
       runs.map((run) => run.id),
     ),
-    placeholderData: [],
   });
   return { ...query, data: query.data ?? [] };
 };

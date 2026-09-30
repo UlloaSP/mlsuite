@@ -1,16 +1,24 @@
 import { appFetch, json } from "@/shared/api/http";
-import type { CreateSchemaBookmarkRequest, SchemaBookmarkDto } from "./schema-types";
+import type {
+  CreateSchemaBookmarkRequest,
+  PredictBookmarkDto,
+  SchemaBookmarkDto,
+} from "@/shared/api/openapi.gen";
 
 export const getSchemaBookmarks = (
-  schemaId: string,
+  schemaId: number | string,
   signal?: AbortSignal,
 ): Promise<SchemaBookmarkDto[]> =>
   appFetch<SchemaBookmarkDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/bookmarks`, {
     signal,
   });
 
+/** Bookmarks of every active schema in the organization, for the Predict launcher. */
+export const getOrganizationBookmarks = (signal?: AbortSignal): Promise<PredictBookmarkDto[]> =>
+  appFetch<PredictBookmarkDto[]>("/api/schema-bookmarks", { signal });
+
 export const getSchemaBookmark = (
-  bookmarkId: string,
+  bookmarkId: number | string,
   signal?: AbortSignal,
 ): Promise<SchemaBookmarkDto> =>
   appFetch<SchemaBookmarkDto>(`/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}`, {
@@ -18,7 +26,7 @@ export const getSchemaBookmark = (
   });
 
 export const createSchemaBookmark = (
-  schemaId: string,
+  schemaId: number | string,
   req: CreateSchemaBookmarkRequest,
 ): Promise<SchemaBookmarkDto> =>
   appFetch<SchemaBookmarkDto>(

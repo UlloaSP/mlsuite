@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
-import { act, createRef } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { act, createRef, type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 import {
   ReportQuestionnaireMount,
   type ReportQuestionnaireMountHandle,
 } from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
 import type { Transport } from "mlform/runtime";
+import { mount } from "./support/dom";
 
 const schema = {
   steps: [
@@ -18,20 +18,14 @@ const schema = {
     },
   ],
 };
-let root: Root | null = null;
-beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
-afterEach(() => {
-  act(() => root?.unmount());
-  root = null;
-  document.body.innerHTML = "";
-  vi.unstubAllGlobals();
-});
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+async function mountSettled(ui: ReactNode) {
+  const view = await mount(ui);
+  await act(flush);
+  return view;
+}
 
 test("keeps in-flight submission mounted across prop refresh and completes before summary", async () => {
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
   const ref = createRef<ReportQuestionnaireMountHandle>();
   const statuses: boolean[] = [];
   let resolve!: (value: { raw: object; reports: never[] }) => void;
@@ -42,27 +36,24 @@ test("keeps in-flight submission mounted across prop refresh and completes befor
       }),
   );
   const saved = vi.fn((values: Record<string, unknown>) => {
-    flushSync(() => root?.render(<p>Saved answer: {String(values.answer)}</p>));
+    flushSync(() => view.root.render(<p>Saved answer: {String(values.answer)}</p>));
   });
-  const render = (transport: Transport) =>
-    root?.render(
-      <ReportQuestionnaireMount
-        ref={ref}
-        title="Feedback"
-        schema={{ ...schema }}
-        initialValues={{ answer: "Reviewed" }}
-        editable
-        theme="light"
-        mode="standalone"
-        transport={transport}
-        onSubmitted={saved}
-        onSubmittingChange={(value) => statuses.push(value)}
-      />,
-    );
-  await act(async () => {
-    render({ submit });
-    await flush();
-  });
+  const questionnaire = (transport: Transport) => (
+    <ReportQuestionnaireMount
+      ref={ref}
+      title="Feedback"
+      schema={{ ...schema }}
+      initialValues={{ answer: "Reviewed" }}
+      editable
+      theme="light"
+      mode="standalone"
+      transport={transport}
+      onSubmitted={saved}
+      onSubmittingChange={(value) => statuses.push(value)}
+    />
+  );
+  const view = await mountSettled(questionnaire({ submit }));
+  const container = view.host;
   const host = container.querySelector("mlf-kit-wizard");
   expect(host).not.toBeNull();
   let result!: Promise<Record<string, unknown>>;
@@ -73,7 +64,7 @@ test("keeps in-flight submission mounted across prop refresh and completes befor
   expect(submit).toHaveBeenCalledTimes(1);
   expect(saved).not.toHaveBeenCalled();
   await act(async () => {
-    render({ submit: () => submit() });
+    view.root.render(questionnaire({ submit: () => submit() }));
     await flush();
   });
   expect(container.querySelector("mlf-kit-wizard")).toBe(host);
@@ -87,33 +78,27 @@ test("keeps in-flight submission mounted across prop refresh and completes befor
 });
 
 test("preserves save errors without showing a saved summary", async () => {
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
   const ref = createRef<ReportQuestionnaireMountHandle>();
   const saved = vi.fn();
   const statuses: boolean[] = [];
   const failure = new Error("Feedback unavailable");
-  await act(async () => {
-    root?.render(
-      <ReportQuestionnaireMount
-        ref={ref}
-        title="Feedback"
-        schema={schema}
-        initialValues={{ answer: "Reviewed" }}
-        editable
-        theme="light"
-        transport={{
-          submit: async () => {
-            throw failure;
-          },
-        }}
-        onSubmitted={saved}
-        onSubmittingChange={(value) => statuses.push(value)}
-      />,
-    );
-    await flush();
-  });
+  const { host: container } = await mountSettled(
+    <ReportQuestionnaireMount
+      ref={ref}
+      title="Feedback"
+      schema={schema}
+      initialValues={{ answer: "Reviewed" }}
+      editable
+      theme="light"
+      transport={{
+        submit: async () => {
+          throw failure;
+        },
+      }}
+      onSubmitted={saved}
+      onSubmittingChange={(value) => statuses.push(value)}
+    />,
+  );
   await act(async () => {
     await expect(ref.current!.submit()).rejects.toThrow("Feedback unavailable");
   });

@@ -1,5 +1,5 @@
 import { Play, RotateCcw, StopCircle } from "lucide-react";
-import { cx } from "@/shared/ui/cx";
+import { AppButton } from "@/shared/ui/AppButton";
 
 export function ActionBtn({
   action,
@@ -23,18 +23,13 @@ export function ActionBtn({
       <RotateCcw size={12} />
     );
   return (
-    <button
-      type="button"
-      className={cx(
-        "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[0.65rem] font-medium transition disabled:cursor-not-allowed disabled:opacity-40",
-        danger
-          ? "border-[var(--danger-quiet)] text-[var(--danger-text)] hover:bg-[var(--danger-quiet)]"
-          : "border-[var(--border-soft)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
-      )}
+    <AppButton
+      size="sm"
+      variant={danger ? "danger" : "secondary"}
       disabled={disabled}
       onClick={onClick}
     >
       {icon} {label}
-    </button>
+    </AppButton>
   );
 }

@@ -6,7 +6,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { SECTION_ICONS } from "@/shared/ui/section-icons";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppFileDropArea } from "@/shared/ui/AppFileDropArea";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { emitErrorFromUnknown } from "@/shared/api/error-notifications";
@@ -17,8 +21,9 @@ import {
   type InspectedBundleFile,
 } from "@/features/models/lib/bundle-planner";
 import type { Bundle } from "@/features/models/lib/bundle-types";
-import { saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
+import { isBundleSaveable, saveModelBundlesSequentially } from "@/features/models/lib/bundle-save";
 import {
+  ALL_EXTS,
   DF_EXTS,
   MODEL_EXTS,
   MODEL_EXT_LABEL,
@@ -28,7 +33,6 @@ import {
 } from "@/features/models/lib/bundle-utils";
 import { BundleCard } from "@/features/models/components/BundleCard";
 import { BundleDropZone } from "@/features/models/components/BundleDropZone";
-import { BundleEmptyState } from "@/features/models/components/BundleEmptyState";
 import { BundleSummaryPanel } from "@/features/models/components/BundleSummaryPanel";
 import {
   useCreateModelMutation,
@@ -110,12 +114,14 @@ export function CreateModelPage() {
 
   const removeBundle = (id: number) => setBundles((prev) => prev.filter((b) => b.id !== id));
 
-  const setBundleName = (id: number, value: string) =>
-    setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, name: value } : b)));
-
-  const setBundleOneHotSeparator = (id: number, value: string) =>
+  const patchBundle = (
+    id: number,
+    changes: Partial<Bundle> | ((bundle: Bundle) => Partial<Bundle>),
+  ) =>
     setBundles((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, oneHotSeparator: value, saved: false } : b)),
+      prev.map((b) =>
+        b.id === id ? { ...b, ...(typeof changes === "function" ? changes(b) : changes) } : b,
+      ),
     );
 
   const attachFileToBundle = async (bundleId: number, file: File, kind: "model" | "dataframe") => {
@@ -126,52 +132,34 @@ export function CreateModelPage() {
       emitErrorFromUnknown(error);
       return;
     }
-    setBundles((prev) =>
-      prev.map((b) =>
-        b.id !== bundleId
-          ? b
-          : kind === "model"
-            ? {
-                ...b,
-                modelFile: file,
-                name: b.name.trim() ? b.name : slugToTitle(getStem(file.name)),
-                saved: false,
-              }
-            : { ...b, dfFile: file, saved: false },
-      ),
+    patchBundle(bundleId, (b) =>
+      kind === "model"
+        ? {
+            modelFile: file,
+            name: b.name.trim() ? b.name : slugToTitle(getStem(file.name)),
+            saved: false,
+          }
+        : { dfFile: file, saved: false },
     );
   };
 
-  const attachModel = (bundleId: number) => {
+  const pickFile = (bundleId: number, kind: "model" | "dataframe") => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = MODEL_EXTS.join(",");
-    input.onchange = async (e) => {
-      const files = Array.from((e.target as HTMLInputElement).files ?? []);
-      if (!files.length) return;
-      await attachFileToBundle(bundleId, files[0], "model");
-    };
-    input.click();
-  };
-
-  const attachDf = (bundleId: number) => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = DF_EXTS.join(",");
-    input.onchange = async (e) => {
-      const files = Array.from((e.target as HTMLInputElement).files ?? []);
-      if (!files.length) return;
-      await attachFileToBundle(bundleId, files[0], "dataframe");
+    input.accept = (kind === "model" ? MODEL_EXTS : DF_EXTS).join(",");
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (file) void attachFileToBundle(bundleId, file, kind);
     };
     input.click();
   };
 
   const saveBundle = async (id: number, options: { navigateWhenComplete?: boolean } = {}) => {
     const bundle = bundles.find((b) => b.id === id);
-    if (!bundle?.modelFile || !bundle.name.trim() || bundle.saved || bundle.saving) return false;
+    if (!bundle?.modelFile || !isBundleSaveable(bundle)) return false;
     const hasOtherUnsaved = bundles.some((b) => b.id !== id && !b.saved);
 
-    setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, saving: true } : b)));
+    patchBundle(id, { saving: true });
     try {
       await mutation.mutateAsync({
         name: bundle.name.trim(),
@@ -179,15 +167,13 @@ export function CreateModelPage() {
         dataframeFile: bundle.dfFile ?? undefined,
         oneHotSeparator: bundle.oneHotSeparator,
       });
-      setBundles((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, saved: true, saving: false } : b)),
-      );
+      patchBundle(id, { saved: true, saving: false });
       if (options.navigateWhenComplete !== false && !hasOtherUnsaved) {
         void navigate("/models");
       }
       return true;
     } catch {
-      setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, saving: false } : b)));
+      patchBundle(id, { saving: false });
       return false;
     }
   };
@@ -206,9 +192,7 @@ export function CreateModelPage() {
   const total = bundles.length;
   const withDf = bundles.filter((b) => b.dfFile).length;
   const saved = bundles.filter((b) => b.saved).length;
-  const unsavedReady = bundles.filter(
-    (b) => b.modelFile && b.name.trim() && !b.saved && !b.saving,
-  ).length;
+  const unsavedReady = bundles.filter(isBundleSaveable).length;
   const anySaving = bundles.some((b) => b.saving);
 
   if (!user || error) return <NotFoundError />;
@@ -216,11 +200,11 @@ export function CreateModelPage() {
 
   return (
     <AppPage>
-      <div className="app-scroll flex min-h-0 flex-1 flex-col overflow-auto px-4 py-7 sm:px-8 lg:overflow-hidden">
+      <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto lg:overflow-hidden">
         <AppPageHeader
-          breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create Model" }]}
-          eyebrow="Model Studio"
-          title="Create New Model"
+          breadcrumbs={[{ label: "Models", to: "/models" }, { label: "Create model" }]}
+          eyebrow="Model studio"
+          title="Create model"
           description="Drop model artifacts and dataframes. Files are grouped by name when possible."
         />
 
@@ -229,25 +213,38 @@ export function CreateModelPage() {
           {/* Left: drop zone + bundle list */}
           <section
             aria-label="Model bundles"
-            className="flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)] lg:flex-1"
+            className="flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card lg:flex-1"
           >
             <BundleDropZone onFiles={handleFiles} />
 
-            <div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-[var(--border-soft)] px-4 pb-4 pt-3">
+            <div className="app-scroll mt-4 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto border-t border-line px-4 pb-4 pt-3">
               {bundles.length === 0 ? (
-                <BundleEmptyState onFiles={handleFiles} />
+                <AppFileDropArea
+                  accept={ALL_EXTS.join(",")}
+                  inputLabel="Upload bundle files from the empty list"
+                  label="Drop model or dataframe files"
+                  onFiles={handleFiles}
+                >
+                  <AppEmptyState
+                    compact
+                    icon={<SECTION_ICONS.models size={18} />}
+                    title="No bundles yet"
+                    description="Drop files here or click to browse. Dataframes can wait for a model."
+                  />
+                </AppFileDropArea>
               ) : (
-                bundles.map((bundle, i) => (
+                bundles.map((bundle) => (
                   <BundleCard
                     key={bundle.id}
                     bundle={bundle}
-                    index={i}
                     onSave={() => saveBundle(bundle.id)}
                     onRemove={() => removeBundle(bundle.id)}
-                    onRename={(v) => setBundleName(bundle.id, v)}
-                    onOneHotSeparatorChange={(v) => setBundleOneHotSeparator(bundle.id, v)}
-                    onAttachModel={() => attachModel(bundle.id)}
-                    onAttachDf={() => attachDf(bundle.id)}
+                    onRename={(name) => patchBundle(bundle.id, { name })}
+                    onOneHotSeparatorChange={(oneHotSeparator) =>
+                      patchBundle(bundle.id, { oneHotSeparator, saved: false })
+                    }
+                    onAttachModel={() => pickFile(bundle.id, "model")}
+                    onAttachDf={() => pickFile(bundle.id, "dataframe")}
                     onDropModel={(file) => void attachFileToBundle(bundle.id, file, "model")}
                     onDropDf={(file) => void attachFileToBundle(bundle.id, file, "dataframe")}
                   />
@@ -267,7 +264,7 @@ export function CreateModelPage() {
             onClear={() => setBundles([])}
           />
         </div>
-      </div>
+      </AppSurface>
     </AppPage>
   );
 }

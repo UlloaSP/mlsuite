@@ -5,7 +5,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test } from "vite-plus/test";
 import {
-  BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_DRAFT_QUERY_KEY,
@@ -31,7 +30,6 @@ const detailKeys = [
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_DRAFT_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
-  BOOKMARK_PREDICTION_RUNS_QUERY_KEY,
 ] as unknown as TenantDetailKey[];
 
 describe("frontend critical reliability", () => {
@@ -60,6 +58,28 @@ describe("frontend critical reliability", () => {
     await expect(unhandled.execute(undefined)).rejects.toThrow("global");
     await expect(handled.execute(undefined)).rejects.toThrow("local");
     expect(errors).toHaveLength(1);
+  });
+
+  test("reports only query errors without local ownership", async () => {
+    const errors: unknown[] = [];
+    const client = createAppQueryClient((error) => errors.push(error));
+    const fail = (message: string) => async () => Promise.reject(new Error(message));
+
+    await expect(
+      client.fetchQuery({ queryKey: ["global"], queryFn: fail("global"), retry: false }),
+    ).rejects.toThrow("global");
+    await expect(
+      client.fetchQuery({
+        queryKey: ["local"],
+        queryFn: fail("local"),
+        retry: false,
+        meta: { errorHandledLocally: true },
+      }),
+    ).rejects.toThrow("local");
+    await expect(
+      client.fetchQuery({ queryKey: ["user"], queryFn: fail("session"), retry: false }),
+    ).rejects.toThrow("session");
+    expect(errors).toEqual([new Error("global")]);
   });
 
   test("removes only the previous organization cache", async () => {

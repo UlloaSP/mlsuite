@@ -9,18 +9,14 @@ import {
   type PropsWithChildren,
   type SetStateAction,
   use,
-  useEffect,
-  useEffectEvent,
   useMemo,
   useState,
 } from "react";
-import { useAtomValue } from "jotai";
-import { isTypingTarget } from "@/app/utils/keyboard-shortcuts";
-import { matchesShortcut, shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
+import { useMediaQuery } from "@/shared/ui/use-media-query";
+import { useShortcut } from "@/shared/ui/use-shortcut";
 
 type SidebarContextValue = {
-  state: "expanded" | "collapsed";
-  open: boolean;
+  collapsed: boolean;
   setOpen: (open: boolean) => void;
   openMobile: boolean;
   setOpenMobile: Dispatch<SetStateAction<boolean>>;
@@ -29,8 +25,6 @@ type SidebarContextValue = {
 };
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
-const MOBILE_QUERY = "(max-width: 1279px)";
-const isMobileViewport = () => window.matchMedia(MOBILE_QUERY).matches;
 
 export function SidebarProvider({
   children,
@@ -41,38 +35,11 @@ export function SidebarProvider({
   onOpenChange: (open: boolean) => void;
 }>) {
   const [openMobile, setOpenMobile] = useState(false);
-  const [isMobile, setIsMobile] = useState(isMobileViewport);
-  const bindings = useAtomValue(shortcutBindingsAtom);
-  const toggleFromShortcut = useEffectEvent(() => {
-    if (isMobileViewport()) {
-      setOpenMobile((value) => !value);
-    } else {
-      onOpenChange(!open);
-    }
-  });
-
-  useEffect(() => {
-    const media = window.matchMedia(MOBILE_QUERY);
-    const sync = () => setIsMobile(media.matches);
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!isTypingTarget(event.target) && matchesShortcut(event, bindings["toggle-sidebar"])) {
-        event.preventDefault();
-        toggleFromShortcut();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [bindings]);
+  const isMobile = useMediaQuery("(max-width: 1279px)");
 
   const value = useMemo<SidebarContextValue>(
     () => ({
-      state: open ? "expanded" : "collapsed",
-      open,
+      collapsed: !open,
       setOpen: onOpenChange,
       openMobile,
       setOpenMobile,
@@ -87,6 +54,7 @@ export function SidebarProvider({
     }),
     [isMobile, onOpenChange, open, openMobile],
   );
+  useShortcut("toggle-sidebar", value.toggleSidebar);
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
 }

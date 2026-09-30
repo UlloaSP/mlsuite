@@ -33,14 +33,15 @@ describe("schema run transport mapping", () => {
       }),
     );
     const bindings = Array.from({ length: 6 }, (_, index) => ({
-      modelId: `model-${index + 1}`,
+      modelId: index + 1,
+      modelName: `model-${index + 1}`,
     }));
     const reports = bindings.flatMap((binding, index) => {
       const baseReport = {
         id: `report-${index + 1}`,
-        label: `Predicted class · ${binding.modelId}`,
+        label: `Predicted class · ${binding.modelName}`,
         kind: "classifier",
-        mappedTo: { [binding.modelId]: "predicted" },
+        mappedTo: { [binding.modelName]: "predicted" },
       };
       if (index !== 0) {
         return [baseReport];

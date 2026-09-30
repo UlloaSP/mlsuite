@@ -2,16 +2,17 @@ import { existsSync, readFileSync } from "node:fs";
 import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, test } from "vite-plus/test";
 import {
-  INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY,
   INFERENCES_QUERY_KEY,
-  type InferenceCatalogItemDto,
+  INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY,
 } from "@/features/inferences/api/inference-api";
-import { filterInferences } from "@/features/inferences/lib/inference-filter";
 import { groupReviewCandidates } from "@/capabilities/review-creation/review-creation-api";
 import { invalidatePredictionRunCollections } from "@/features/schemas/api/schema-prediction-mutations";
-import { BOOKMARK_PREDICTION_RUNS_QUERY_KEY } from "@/features/schemas/api/schema-keys";
+import { ORGANIZATION_BOOKMARKS_QUERY_KEY } from "@/features/schemas/api/schema-keys";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
-const inference = (overrides: Partial<InferenceCatalogItemDto> = {}): InferenceCatalogItemDto => ({
+const inference = (
+  overrides: Partial<PredictionRunCatalogItemDto> = {},
+): PredictionRunCatalogItemDto => ({
   id: 11,
   name: "Fraud check",
   status: "SUCCESS",
@@ -24,6 +25,8 @@ const inference = (overrides: Partial<InferenceCatalogItemDto> = {}): InferenceC
   schemaVersionName: "Production",
   bookmarkId: 5,
   bookmarkName: "Stable",
+  createdByName: "Ada Lovelace",
+  createdByEmail: "ada@example.com",
   ...overrides,
 });
 
@@ -41,14 +44,14 @@ describe("organization inference catalog", () => {
   test("invalidates every visible prediction-run collection after creation", async () => {
     const queryClient = new QueryClient();
     const catalogKey = INFERENCES_QUERY_KEY(42);
-    const historyKey = BOOKMARK_PREDICTION_RUNS_QUERY_KEY(42, "5");
+    const launcherKey = ORGANIZATION_BOOKMARKS_QUERY_KEY(42);
     queryClient.setQueryData(catalogKey, [inference()]);
-    queryClient.setQueryData(historyKey, []);
+    queryClient.setQueryData(launcherKey, []);
 
-    await invalidatePredictionRunCollections(queryClient, 42, "5");
+    await invalidatePredictionRunCollections(queryClient, 42);
 
     expect(queryClient.getQueryState(catalogKey)?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState(historyKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(launcherKey)?.isInvalidated).toBe(true);
 
     const manualCreation = readFileSync(
       new URL("../src/features/schemas/api/schema-prediction-mutations.ts", import.meta.url),
@@ -60,33 +63,6 @@ describe("organization inference catalog", () => {
     );
     expect(manualCreation).toContain("invalidatePredictionRunCollections(qc");
     expect(bulkCreation).toContain("invalidatePredictionRunCollections(queryClient");
-  });
-
-  test("combines search, schema, bookmark and status filters", () => {
-    const items = [
-      inference(),
-      inference({ id: 12, schemaId: 3, schemaName: "Support", status: "FAILED" }),
-    ];
-
-    expect(
-      filterInferences(items, {
-        query: "fraud",
-        schemaId: "2",
-        bookmarkId: "5",
-        status: "SUCCESS",
-      }).map((item) => item.id),
-    ).toEqual([11]);
-  });
-
-  test("handles filters with no matching inference", () => {
-    expect(
-      filterInferences([inference({ bookmarkId: null, bookmarkName: null })], {
-        query: "",
-        schemaId: "all",
-        bookmarkId: "5",
-        status: "all",
-      }),
-    ).toEqual([]);
   });
 
   test("keeps review candidates grouped by schema snapshot", () => {
@@ -115,18 +91,11 @@ describe("organization inference catalog", () => {
     ]);
   });
 
-  test("keeps catalog actions on the page and makes the full row the detail target", () => {
+  test("keeps catalog actions on the page and previews rows beside the table", () => {
     const page = readFileSync(
       new URL("../src/features/inferences/pages/inferences-page.tsx", import.meta.url),
       "utf8",
     );
-    const table = readFileSync(
-      new URL("../src/features/inferences/components/InferenceCatalogList.tsx", import.meta.url),
-      "utf8",
-    );
-
-    expect(page).toContain("<ReviewCreationButton");
-    expect(page).toContain("renderExportAction?.(filteredItems)");
     const routePage = readFileSync(
       new URL("../src/app/pages/InferencesRoutePage.tsx", import.meta.url),
       "utf8",
@@ -138,15 +107,16 @@ describe("organization inference catalog", () => {
       ),
       "utf8",
     );
+
+    expect(page).toContain("<ReviewCreationButton");
+    expect(page).toContain("renderExportAction?.(visibleItems)");
+    expect(page).toContain("<InferenceActionsMenu");
+    expect(page).toContain("?tab=reviews&section=reviews");
+    expect(page).toContain("<InferencePreviewSheet");
     expect(routePage).toContain("<OrganizationInferenceExportButton");
+    expect(routePage).toContain("<PredictionRunDetails");
     expect(exportAction).toContain("predictionRunQueryOptions");
     expect(exportAction).toContain("<SchemaRunExportDialog");
-    expect(table).toContain("<CatalogEntry");
-    expect(table).toContain("<InferenceActionsMenu");
-    expect(table).toContain("`/inferences/${item.id}`");
-    expect(table).toContain("?section=reviews");
-    expect(table).not.toContain(">View<");
-    expect(table).not.toContain("useState");
   });
 
   test("exposes reviewer status and explicit completed-submission reopening", () => {
@@ -161,8 +131,8 @@ describe("organization inference catalog", () => {
       ),
       "utf8",
     );
-    const tile = readFileSync(
-      new URL("../src/features/inferences/components/InferenceReviewTile.tsx", import.meta.url),
+    const actions = readFileSync(
+      new URL("../src/features/inferences/lib/use-review-assignment-actions.tsx", import.meta.url),
       "utf8",
     );
     const mutations = readFileSync(
@@ -171,27 +141,26 @@ describe("organization inference catalog", () => {
     );
 
     expect(menu).toContain("Review status");
-    expect(tile).toContain('assignment.reviewState === "COMPLETED"');
-    expect(section).toContain("Their saved answers will be kept.");
-    expect(section).toContain("Review status unavailable.");
-    expect(section).toContain("No reviews include this inference.");
+    expect(actions).toContain('assignment.reviewState === "COMPLETED"');
+    expect(actions).toContain("Their saved answers will be kept.");
+    expect(section).toContain("No review includes this inference.");
     expect(mutations).toContain("/reviewers/${reviewerId}/reopen");
   });
 
   test("registers catalog and canonical detail as protected Inferences destinations", () => {
     const routes = readFileSync(
-      new URL("../src/app/router/inference-routes.ts", import.meta.url),
+      new URL("../src/app/router/protected-routes.ts", import.meta.url),
       "utf8",
     );
     const sidebar = readFileSync(
-      new URL("../src/app/components/SidebarNavigation.tsx", import.meta.url),
+      new URL("../src/app/components/use-navigation-items.ts", import.meta.url),
       "utf8",
     );
 
-    expect(routes).toContain('path: "inferences"');
-    expect(routes).toContain('path: "inferences/:inferenceId"');
+    expect(routes).toContain('page("inferences", ');
+    expect(routes).toContain('page("inferences/:inferenceId", ');
     expect(routes).toContain('import("@/app/pages/InferencesRoutePage")');
-    expect(routes).toContain('import("@/features/inferences/pages/inference-detail-page")');
+    expect(routes).toContain('import("@/app/pages/InferenceDetailRoutePage")');
     expect(sidebar).toContain('to: "/inferences"');
     expect(sidebar).toContain('label: "Inferences"');
   });
@@ -209,7 +178,7 @@ describe("organization inference catalog", () => {
     expect(detail).toContain('searchParams.get("section") === "reviews"');
     expect(detail).toContain('getElementById("reviews")?.scrollIntoView()');
     expect(detail).toContain("<InferenceReviewStatusSection");
-    expect(detail).toContain("Loading inference...");
+    expect(detail).toContain("Loading inference…");
     expect(detail).toContain("Inference unavailable");
     expect(detail).toContain("Review management unavailable");
     expect(detail).not.toContain("AppTabs");
@@ -237,7 +206,7 @@ describe("organization inference catalog", () => {
     expect(catalog).toContain("<AppTextField");
     expect(catalog).toContain("selectedIds");
     expect(dialog).toContain("const schemaId = Number(group.schemaId)");
-    expect(api).toContain("schemaId: number");
+    expect(api).toContain("request: CreateSchemaReviewRequest");
   });
 
   test("renders paginated review tiles with reopen and delete response actions", () => {
@@ -248,8 +217,8 @@ describe("organization inference catalog", () => {
       ),
       "utf8",
     );
-    const tile = readFileSync(
-      new URL("../src/features/inferences/components/InferenceReviewTile.tsx", import.meta.url),
+    const actions = readFileSync(
+      new URL("../src/features/inferences/lib/use-review-assignment-actions.tsx", import.meta.url),
       "utf8",
     );
     const mutations = readFileSync(
@@ -258,9 +227,9 @@ describe("organization inference catalog", () => {
     );
 
     expect(section).toContain("<InferenceReviewTile");
-    expect(section).toContain("<CatalogPaginationFooter");
-    expect(tile).toContain("Reopen");
-    expect(tile).toContain("Delete response");
+    expect(section).toContain("<CatalogListPanel");
+    expect(actions).toContain("Reopen");
+    expect(actions).toContain("Delete response");
     expect(mutations).toContain("/response`");
   });
 });

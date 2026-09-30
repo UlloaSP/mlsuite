@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter } from "react-router";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
+import { mount } from "./support/dom";
 
 const mocks = vi.hoisted(() => ({
   update: vi.fn(),
@@ -43,31 +41,11 @@ vi.mock("@/features/schemas/components/SchemaChangeNameDialog", () => ({
 
 import { SchemaDraftEditorPage } from "@/features/schemas/pages/schema-draft-editor-page";
 
-let root: Root;
-let container: HTMLDivElement;
-beforeEach(() => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-});
-afterEach(async () => {
-  await act(async () => root.unmount());
-  container.remove();
-  vi.unstubAllGlobals();
-});
-
 test.each(["DRAFT", "CONFLICT", "PUBLISHED"])(
   "%s change exposes only supported editing actions",
   async (status) => {
     mocks.draft = { ...mocks.draft, status };
-    await act(async () =>
-      root.render(
-        <MemoryRouter>
-          <SchemaDraftEditorPage />
-        </MemoryRouter>,
-      ),
-    );
+    const { host: container } = await mount(<SchemaDraftEditorPage />, { route: "/" });
     const published = status === "PUBLISHED";
     expect(Boolean(container.querySelector('[aria-label="Editable schema"]'))).toBe(!published);
     expect(Boolean(container.querySelector('[data-testid="readonly"]'))).toBe(published);

@@ -335,6 +335,8 @@ cd api
 mvn test
 ```
 
+The API's JSON contract lives in `api/openapi.json`, and the frontend's types in `frontend/src/shared/api/openapi.gen.ts` are generated from it. After changing a controller or DTO, run `mvn test -Dtest=OpenApiContractTest -Dopenapi.update=true` in `api/`, then `vp run api:types` in `frontend/`. CI fails when either file is stale.
+
 ### Python runtime
 
 The runtime requires Python 3.14+ and `uv`:

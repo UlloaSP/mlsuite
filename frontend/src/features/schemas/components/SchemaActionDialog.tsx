@@ -5,13 +5,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppTextField } from "@/shared/ui/AppTextField";
-import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import type { SchemaAction } from "./SchemaActionsMenu";
+import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   action: SchemaAction;
   disabled: boolean;
+  error?: string;
   item: SchemaCatalogItemDto;
   onCancel: () => void;
   onConfirm: (value?: string) => Promise<void>;
@@ -40,37 +42,25 @@ const copy = {
   },
 } satisfies Record<SchemaAction, { title: string; submit: string; description: string }>;
 
-export function SchemaActionDialog({ action, disabled, item, onCancel, onConfirm }: Props) {
+export function SchemaActionDialog({ action, disabled, error, item, onCancel, onConfirm }: Props) {
   const needsName = action === "edit" || action === "duplicate";
   const [name, setName] = useState(action === "duplicate" ? `${item.name} Copy` : item.name);
   const meta = copy[action];
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
-      <form
-        className="w-full max-w-sm rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-hover)]"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void onConfirm(needsName ? name.trim() : undefined);
-        }}
-      >
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">{meta.title}</h2>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">{meta.description}</p>
-        {needsName ? (
-          <AppTextField
-            value={name}
-            autoFocus
-            required
-            placeholder="Schema name"
-            className="mt-4 w-full"
-            onChange={(event) => setName(event.target.value)}
-          />
-        ) : (
-          <p className="mt-4 rounded bg-[var(--surface-muted)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)]">
-            {item.name}
-          </p>
-        )}
-        <div className="mt-5 flex justify-end gap-2">
+    <AppDialog
+      open
+      busy={disabled}
+      error={error}
+      onClose={onCancel}
+      title={meta.title}
+      description={meta.description}
+      onSubmit={(event) => {
+        event.preventDefault();
+        void onConfirm(needsName ? name.trim() : undefined);
+      }}
+      footer={
+        <>
           <AppButton type="button" variant="secondary" onClick={onCancel} disabled={disabled}>
             Cancel
           </AppButton>
@@ -81,8 +71,24 @@ export function SchemaActionDialog({ action, disabled, item, onCancel, onConfirm
           >
             {meta.submit}
           </AppButton>
-        </div>
-      </form>
-    </div>
+        </>
+      }
+    >
+      {needsName ? (
+        <AppTextField
+          value={name}
+          autoFocus
+          required
+          aria-label="Schema name"
+          placeholder="Schema name"
+          className="w-full"
+          onChange={(event) => setName(event.target.value)}
+        />
+      ) : (
+        <p className="rounded-control bg-surface-muted px-3 py-2 text-sm font-semibold text-fg">
+          {item.name}
+        </p>
+      )}
+    </AppDialog>
   );
 }

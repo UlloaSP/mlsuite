@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 import { composeSchemaVersion } from "@/features/schemas/lib/merge";
 import { countVisibleSchemaFields } from "@/features/schemas/lib/one-hot-category";
-import type { ModelDto } from "@/features/models/api/model.types";
+import type { ModelDto } from "@/shared/api/openapi.gen";
 
 const withMappedTo = (items: unknown[]): unknown[] =>
   items.map((item) =>
@@ -20,33 +20,32 @@ const withMappedTo = (items: unknown[]): unknown[] =>
       : item,
   );
 
-const model = (fields: unknown[], reports: unknown[] = [], id = "model-1"): ModelDto => ({
+const model = (fields: unknown[], reports: unknown[] = [], id = 1): ModelDto => ({
   id,
-  name: id,
+  name: `model-${id}`,
   type: "classifier",
   specificType: "LogisticRegression",
   fileName: "model.joblib",
   inputSchema: { fields: withMappedTo(fields), reports: withMappedTo(reports) },
   createdAt: "2026-06-02T00:00:00Z",
   updatedAt: "2026-06-02T00:00:00Z",
-    archivedAt: null,
-    version: 0,
+  archivedAt: null,
+  updatedByName: "Owner",
+  updatedByEmail: "owner@example.com",
+  updatedByAvatarUrl: null,
+  version: 0,
   fieldCount: fields.length,
   reportCount: reports.length,
 });
 
-const selected = (item: ModelDto) => ({ modelId: item.id, modelName: item.name, model: item });
-
 describe("composeSchemaVersion one-hot mapping", () => {
   test("converts safe one-hot groups into native onehot categories", () => {
     const result = composeSchemaVersion("v1", [
-      selected(
-        model([
-          { kind: "number", id: "blood_group__A", label: "blood_group__A" },
-          { kind: "number", id: "blood_group__B", label: "blood_group__B" },
-          { kind: "number", id: "age", label: "age" },
-        ]),
-      ),
+      model([
+        { kind: "number", id: "blood_group__A", label: "blood_group__A" },
+        { kind: "number", id: "blood_group__B", label: "blood_group__B" },
+        { kind: "number", id: "age", label: "age" },
+      ]),
     ]);
 
     const fields = result.formSchema.fields as Array<Record<string, unknown>>;
@@ -78,7 +77,7 @@ describe("composeSchemaVersion one-hot mapping", () => {
         reports: [],
       },
     };
-    const result = composeSchemaVersion("v1", [selected(analyzerModel)]);
+    const result = composeSchemaVersion("v1", [analyzerModel]);
 
     const fields = result.formSchema.fields as Array<Record<string, unknown>>;
     expect(fields).toHaveLength(1);
@@ -95,13 +94,11 @@ describe("composeSchemaVersion one-hot mapping", () => {
 
   test("keeps plus and minus one-hot categories as unique mapped targets", () => {
     const result = composeSchemaVersion("v1", [
-      selected(
-        model([
-          { kind: "number", id: "rec_blood_group__A+", label: "rec_blood_group__A+" },
-          { kind: "number", id: "rec_blood_group__A-", label: "rec_blood_group__A-" },
-          { kind: "number", id: "rec_blood_group__B+", label: "rec_blood_group__B+" },
-        ]),
-      ),
+      model([
+        { kind: "number", id: "rec_blood_group__A+", label: "rec_blood_group__A+" },
+        { kind: "number", id: "rec_blood_group__A-", label: "rec_blood_group__A-" },
+        { kind: "number", id: "rec_blood_group__B+", label: "rec_blood_group__B+" },
+      ]),
     ]);
 
     const fields = result.formSchema.fields as Array<Record<string, unknown>>;
@@ -119,7 +116,7 @@ describe("composeSchemaVersion one-hot mapping", () => {
 
   test("does not convert singleton encoded fields", () => {
     const result = composeSchemaVersion("v1", [
-      selected(model([{ kind: "number", id: "blood_group__A", label: "blood_group__A" }])),
+      model([{ kind: "number", id: "blood_group__A", label: "blood_group__A" }]),
     ]);
 
     const fields = result.formSchema.fields as Array<Record<string, unknown>>;
@@ -129,13 +126,11 @@ describe("composeSchemaVersion one-hot mapping", () => {
 
   test("does not convert groups when base field already exists", () => {
     const result = composeSchemaVersion("v1", [
-      selected(
-        model([
-          { kind: "category", id: "blood_group", label: "blood_group" },
-          { kind: "number", id: "blood_group__A", label: "blood_group__A" },
-          { kind: "number", id: "blood_group__B", label: "blood_group__B" },
-        ]),
-      ),
+      model([
+        { kind: "category", id: "blood_group", label: "blood_group" },
+        { kind: "number", id: "blood_group__A", label: "blood_group__A" },
+        { kind: "number", id: "blood_group__B", label: "blood_group__B" },
+      ]),
     ]);
 
     const fields = result.formSchema.fields as Array<Record<string, unknown>>;
@@ -145,7 +140,7 @@ describe("composeSchemaVersion one-hot mapping", () => {
 
   test("keeps model reports on the schema", () => {
     const report = { kind: "classifier", id: "risk", source: "risk", label: "Risk" };
-    const result = composeSchemaVersion("v1", [selected(model([], [report]))]);
+    const result = composeSchemaVersion("v1", [model([], [report])]);
 
     const reports = result.formSchema.reports as Array<Record<string, unknown>>;
     expect(reports).toHaveLength(1);
@@ -155,13 +150,13 @@ describe("composeSchemaVersion one-hot mapping", () => {
 
   test("composes one schema from multiple models", () => {
     const result = composeSchemaVersion("v1", [
-      selected(model([{ kind: "number", id: "age", label: "age" }], [], "model-1")),
-      selected(model([{ kind: "number", id: "score", label: "score" }], [], "model-2")),
+      model([{ kind: "number", id: "age", label: "age" }], [], 1),
+      model([{ kind: "number", id: "score", label: "score" }], [], 2),
     ]);
 
     expect(result.bindings).toEqual([
-      expect.objectContaining({ modelId: "model-1" }),
-      expect.objectContaining({ modelId: "model-2" }),
+      expect.objectContaining({ modelId: 1, modelName: "model-1" }),
+      expect.objectContaining({ modelId: 2, modelName: "model-2" }),
     ]);
     expect(result.formSchema.fields).toEqual([
       expect.objectContaining({ mappedTo: { "model-1": "age" } }),

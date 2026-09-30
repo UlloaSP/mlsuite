@@ -13,6 +13,8 @@ const ALLOWED_ROOTS = TARGET_ROOTS;
 const ALLOWED_ROOT_FILES = new Set(["vite-env.d.ts"]);
 const FEATURE_PARTS = new Set("api lib components pages routes.tsx index.ts".split(" "));
 const SHARED_PARTS = new Set("api config ui lib".split(" "));
+// Generated from api/openapi.json; openapi-types.test.ts owns its freshness, not the line limit.
+const GENERATED_API_TYPES = "shared/api/openapi.gen.ts";
 
 type SourceImport = {
   importer: string;
@@ -255,6 +257,7 @@ describe("frontend architecture contract", () => {
 
   test("keeps source modules within the line limit", () => {
     const failures = sourceFiles()
+      .filter((file) => rel(file) !== GENERATED_API_TYPES)
       .map((file) => ({ file: rel(file), lines: codeLineCount(file) }))
       .filter(({ lines }) => lines > 300)
       .map(({ file, lines }) => `${file}: ${lines}`);

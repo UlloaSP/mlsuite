@@ -8,7 +8,7 @@ import { defineReportKind } from "mlform/kit";
 import { createForm, executeFormPipeline } from "mlform/runtime";
 import { z } from "zod";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
 
@@ -67,7 +67,7 @@ describe("schema plugin transport", () => {
         if (url.includes("/predictions")) {
           return new Response(JSON.stringify({ reports: [] }));
         }
-        if (url.includes("modelId=model-1")) {
+        if (url.includes("modelId=1")) {
           return new Response(JSON.stringify({ explanation: "tree-1" }));
         }
         return new Response("unsupported", { status: 400 });
@@ -114,12 +114,8 @@ describe("schema plugin transport", () => {
         ],
       },
       bindings: [
-        {
-          modelId: "model-1",
-        },
-        {
-          modelId: "model-2",
-        },
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
       ],
       customReportDefinitions: [crystalTreeDefinition()],
     });
@@ -135,12 +131,8 @@ describe("schema plugin transport", () => {
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls;
     const urls = calls.map((call) => String(call[0]));
     expect(urls.filter((url) => url.includes("/predictions"))).toHaveLength(2);
-    expect(urls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
-    expect(urls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-2"))).toBe(
-      true,
-    );
+    expect(urls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
+    expect(urls.some((url) => url.includes("/api/analyzer/explanations?modelId=2"))).toBe(true);
     const explanationBodies = calls
       .filter((call) => String(call[0]).includes("/api/analyzer/explanations"))
       .map((call) => JSON.parse(requestBody(call[1] as RequestInit | undefined)));
@@ -176,7 +168,7 @@ describe("schema plugin transport", () => {
       },
       bindings: [
         {
-          modelId: "3",
+          modelId: 3,
         },
       ],
       customReportDefinitions: [crystalTreeDefinition()],
@@ -224,7 +216,8 @@ describe("schema plugin transport", () => {
       },
       bindings: [
         {
-          modelId: "model-1",
+          modelId: 1,
+          modelName: "model-1",
           pluginPolicy: { reportKinds: ["classifier"] },
         },
       ],
@@ -240,9 +233,7 @@ describe("schema plugin transport", () => {
     const result = await executeFormPipeline({ form });
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
     expect(result.reportFetchResults.crystal).toEqual({
       explanation: "tree",
     });

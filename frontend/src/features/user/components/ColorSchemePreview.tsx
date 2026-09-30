@@ -17,7 +17,7 @@ export function ColorSchemePreview({ mode }: { mode: ThemeMode }) {
   return (
     <span
       aria-hidden="true"
-      className="grid h-24 w-full max-w-56 grid-cols-2 overflow-hidden rounded-xl border border-[var(--border-soft)]"
+      className="grid h-24 w-full max-w-56 grid-cols-2 overflow-hidden rounded-xl border border-line"
     >
       {[left, right].map((colors, index) => (
         <span
@@ -32,7 +32,7 @@ export function ColorSchemePreview({ mode }: { mode: ThemeMode }) {
           <span className="flex min-w-0 flex-1 flex-col gap-2 pt-2">
             <span className="h-2 w-4/5 rounded-full" style={{ backgroundColor: colors.muted }} />
             <span className="h-2 w-3/5 rounded-full" style={{ backgroundColor: colors.muted }} />
-            <span className="mt-auto h-2 rounded-full bg-[var(--accent-primary)]" />
+            <span className="mt-auto h-2 rounded-full bg-accent" />
           </span>
         </span>
       ))}

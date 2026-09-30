@@ -1,75 +1,56 @@
-import { Search, SlidersHorizontal } from "lucide-react";
-import type { InferenceCatalogItemDto } from "@/features/inferences/api/inference-api";
-import type { InferenceFilters } from "@/features/inferences/lib/inference-filter";
-import { AppSelect } from "@/shared/ui/AppSelect";
-import { AppTextField } from "@/shared/ui/AppTextField";
+import { SlidersHorizontal } from "lucide-react";
+import type { ReactNode } from "react";
+import { AppButton } from "@/shared/ui/AppButton";
+import { AppSearchField } from "@/shared/ui/AppSearchField";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 
 type Props = {
-  filters: InferenceFilters;
-  inferences: InferenceCatalogItemDto[];
-  onChange: <K extends keyof InferenceFilters>(key: K, value: InferenceFilters[K]) => void;
+  query: string;
+  count: { shown: number; total: number };
+  /** Filters applied besides the search. */
+  activeFilters: number;
+  onQueryChange: (query: string) => void;
+  onOpenFilters: () => void;
+  onClearFilters: () => void;
+  /** The table's own controls, such as the columns menu. */
+  actions?: ReactNode;
 };
 
-const uniqueOptions = (items: Array<{ value: string; label: string }>) =>
-  [...new Map(items.map((item) => [item.value, item])).values()].sort((a, b) =>
-    a.label.localeCompare(b.label),
-  );
-
-export function InferenceCatalogToolbar({ filters, inferences, onChange }: Props) {
-  const schemaOptions = uniqueOptions(
-    inferences.map((item) => ({ value: String(item.schemaId), label: item.schemaName })),
-  );
-  const visibleBookmarks = inferences.filter(
-    (item) => filters.schemaId === "all" || String(item.schemaId) === filters.schemaId,
-  );
-  const bookmarkOptions = uniqueOptions(
-    visibleBookmarks
-      .filter((item) => item.bookmarkId != null)
-      .map((item) => ({ value: String(item.bookmarkId), label: item.bookmarkName ?? "Bookmark" })),
-  );
-
+export function InferenceCatalogToolbar({
+  query,
+  count,
+  activeFilters,
+  onQueryChange,
+  onOpenFilters,
+  onClearFilters,
+  actions,
+}: Props) {
   return (
     <AppToolbar variant="flat">
       <div className="flex flex-1 flex-wrap items-center gap-3">
-        <AppTextField
-          value={filters.query}
-          onChange={(event) => onChange("query", event.target.value)}
-          placeholder="Search inferences..."
-          prefix={<Search size={16} className="text-[var(--text-muted)]" />}
+        <AppSearchField
+          label="Search inferences"
+          value={query}
+          onChange={onQueryChange}
+          placeholder="Search names, inputs, outputs and feedback…"
           className="min-w-[260px] flex-1"
+          count={{ ...count, filtered: count.shown !== count.total, noun: "inferences" }}
         />
-        <SlidersHorizontal size={15} className="text-[var(--text-muted)]" />
-        <AppSelect
-          aria-label="Schema"
-          value={filters.schemaId}
-          onValueChange={(value) => onChange("schemaId", value)}
-          className="min-w-44"
-          options={[{ value: "all", label: "All schemas" }, ...schemaOptions]}
-        />
-        <AppSelect
-          aria-label="Bookmark"
-          value={filters.bookmarkId}
-          onValueChange={(value) => onChange("bookmarkId", value)}
-          className="min-w-44"
-          options={[
-            { value: "all", label: "All bookmarks" },
-            { value: "unbookmarked", label: "Without bookmark" },
-            ...bookmarkOptions,
-          ]}
-        />
-        <AppSelect
-          aria-label="Inference status"
-          value={filters.status}
-          onValueChange={(value) => onChange("status", value as InferenceFilters["status"])}
-          className="min-w-44"
-          options={[
-            { value: "all", label: "All statuses" },
-            { value: "SUCCESS", label: "Success" },
-            { value: "PARTIAL_SUCCESS", label: "Partial success" },
-            { value: "FAILED", label: "Failed" },
-          ]}
-        />
+        <AppButton variant="secondary" onClick={onOpenFilters}>
+          <SlidersHorizontal size={16} />
+          Filters
+          {activeFilters > 0 ? (
+            <span className="rounded-full bg-accent-subtle px-1.5 text-xs font-semibold text-accent-strong">
+              {activeFilters}
+            </span>
+          ) : null}
+        </AppButton>
+        {activeFilters > 0 ? (
+          <AppButton variant="ghost" onClick={onClearFilters}>
+            Clear filters
+          </AppButton>
+        ) : null}
+        {actions}
       </div>
     </AppToolbar>
   );

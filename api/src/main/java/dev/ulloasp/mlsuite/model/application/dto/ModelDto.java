@@ -12,6 +12,8 @@ import java.util.Map;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 
+import jakarta.annotation.Nullable;
+
 public record ModelDto(
         Long id,
         String name,
@@ -21,11 +23,11 @@ public record ModelDto(
         Map<String, Object> inputSchema,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        OffsetDateTime archivedAt,
+        @Nullable OffsetDateTime archivedAt,
         long version,
         String updatedByName,
         String updatedByEmail,
-        String updatedByAvatarUrl,
+        @Nullable String updatedByAvatarUrl,
         long fieldCount,
         long reportCount) {
 

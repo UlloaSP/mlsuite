@@ -1,15 +1,16 @@
-import { Search } from "lucide-react";
-import { useSearchParams } from "react-router";
-import { AppTextField } from "@/shared/ui/AppTextField";
+import { Fragment } from "react";
+import { AppSearchField } from "@/shared/ui/AppSearchField";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
+import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
+import { RoleRow } from "./RoleRow";
 import type {
   RoleDefinitionDto,
-  RolesResponseDto,
   RoleTemplateDto,
-} from "@/features/workspace/api/workspace.types";
-import { RoleRow } from "./RoleRow";
+  RolesResponseDto,
+} from "@/shared/api/openapi.gen";
 
 export type RolesTab = "roles" | "templates" | "permissions";
 
@@ -34,8 +35,8 @@ export function RolesCatalog({
   onRole: (role: RoleDefinitionDto) => void;
   onTemplate: (template: RoleTemplateDto) => void;
 }) {
-  const [params, setParams] = useSearchParams();
-  const search = params.get("q") ?? "";
+  const filters = useUrlFilters({ q: "" });
+  const search = filters.values.q;
   const items =
     tab === "roles"
       ? (data?.roles ?? []).map((role) => ({
@@ -47,21 +48,18 @@ export function RolesCatalog({
           key: String(template.id),
           text: `${template.name} ${template.description}`,
           content: (
-            <button
-              type="button"
-              disabled={!canManage}
-              onClick={() => onTemplate(template)}
-              className="h-full w-full rounded border border-[var(--border-soft)] p-4 text-left transition-colors enabled:hover:border-[var(--text-secondary)] disabled:cursor-default"
-            >
-              <p className="font-semibold">{template.name}</p>
-              {template.description && template.description !== template.name ? (
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">{template.description}</p>
-              ) : null}
-              <p className="mt-3 text-sm text-[var(--text-secondary)]">
-                {template.permissionKeys.length}{" "}
-                {template.permissionKeys.length === 1 ? "permission" : "permissions"}
-              </p>
-            </button>
+            <CatalogEntry
+              title={template.name}
+              description={
+                template.description && template.description !== template.name
+                  ? template.description
+                  : undefined
+              }
+              details={`${template.permissionKeys.length} ${
+                template.permissionKeys.length === 1 ? "permission" : "permissions"
+              }`}
+              onOpen={canManage ? () => onTemplate(template) : undefined}
+            />
           ),
         }));
   const filtered = items.filter((item) =>
@@ -73,26 +71,13 @@ export function RolesCatalog({
     loading || !data,
   );
   return (
-    <>
+    <section className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
-        <AppTextField
-          className="w-full"
-          aria-label={`Search ${tab}`}
-          placeholder={`Search ${tab}...`}
-          prefix={<Search className="size-4 text-[var(--text-muted)]" />}
+        <AppSearchField
+          label={`Search ${tab}`}
+          placeholder={`Search ${tab}…`}
           value={search}
-          onChange={(event) =>
-            setParams(
-              (current) => {
-                const next = new URLSearchParams(current);
-                if (event.target.value) next.set("q", event.target.value);
-                else next.delete("q");
-                next.delete("page");
-                return next;
-              },
-              { replace: true },
-            )
-          }
+          onChange={(value) => filters.setFilters({ q: value })}
         />
       </AppToolbar>
       <CatalogListPanel
@@ -100,8 +85,7 @@ export function RolesCatalog({
         itemCount={filtered.length}
         isLoading={loading}
         isBusy={loading}
-        layout={tab === "roles" ? "list" : "grid"}
-        loadingLabel={`Loading ${tab}...`}
+        loadingLabel={`Loading ${tab}…`}
         errorMessage={error ? `Could not load ${tab}.` : null}
         onRetry={onRetry}
         emptyState={{
@@ -110,9 +94,9 @@ export function RolesCatalog({
         }}
       >
         {pagination.visibleItems.map((item) => (
-          <div key={item.key}>{item.content}</div>
+          <Fragment key={item.key}>{item.content}</Fragment>
         ))}
       </CatalogListPanel>
-    </>
+    </section>
   );
 }

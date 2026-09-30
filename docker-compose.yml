@@ -1,4 +1,22 @@
 # Shared service topology. Always combine this file with the dev or prod image override.
+
+# Settings shared by the API image's migrate, artifact-migrate and server modes.
+x-api-env: &api-env
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+  LOG_PATH: ${LOG_PATH}
+  DB_HOST: ${DB_HOST}
+  DB_PORT: ${DB_PORT}
+  DB_PROD: ${DB_PROD}
+  DB_USER: ${DB_USER}
+  DB_PASS: ${DB_PASS}
+
+x-api-pool-env: &api-pool-env
+  <<: *api-env
+  DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-10}
+  DB_POOL_MIN_IDLE: ${DB_POOL_MIN_IDLE:-2}
+  DB_POOL_CONNECTION_TIMEOUT_MS: ${DB_POOL_CONNECTION_TIMEOUT_MS:-30000}
+
+
 networks:
   appnet:
 
@@ -15,7 +33,6 @@ services:
       OPS_AGENT_PORT: ${OPS_AGENT_PORT}
       OPS_AGENT_SHARED_SECRET: ${OPS_AGENT_SHARED_SECRET}
       OPS_AGENT_DOCKER_BIN: ${OPS_AGENT_DOCKER_BIN}
-      OPS_AGENT_COMPOSE_FILE: /workspace/docker-compose.yml
       OPS_AGENT_COMPOSE_PROJECT: ${OPS_AGENT_COMPOSE_PROJECT}
       OPS_AGENT_MANAGED_SERVICES: ${OPS_AGENT_MANAGED_SERVICES}
       OPS_AGENT_SAMPLE_INTERVAL_SECONDS: ${OPS_AGENT_SAMPLE_INTERVAL_SECONDS}
@@ -121,14 +138,8 @@ services:
 
   db-migrate:
     environment:
+      <<: *api-env
       MLSUITE_MODE: migrate
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      LOG_PATH: ${LOG_PATH}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_PROD: ${DB_PROD}
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
       DB_MIGRATION_USER: ${DB_MIGRATION_USER}
       DB_MIGRATION_PASS: ${DB_MIGRATION_PASS}
       FLYWAY_ENABLED: "true"
@@ -145,17 +156,8 @@ services:
   artifact-migrate:
     profiles: [ operations ]
     environment:
+      <<: *api-pool-env
       MLSUITE_MODE: artifact-migrate
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      LOG_PATH: ${LOG_PATH}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_PROD: ${DB_PROD}
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
-      DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-10}
-      DB_POOL_MIN_IDLE: ${DB_POOL_MIN_IDLE:-2}
-      DB_POOL_CONNECTION_TIMEOUT_MS: ${DB_POOL_CONNECTION_TIMEOUT_MS:-30000}
       FLYWAY_ENABLED: "false"
       STORAGE_ENABLED: "true"
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
@@ -180,17 +182,8 @@ services:
 
   spring-app:
     environment:
+      <<: *api-pool-env
       SPRING_PORT: ${SPRING_PORT}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      LOG_PATH: ${LOG_PATH}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_PROD: ${DB_PROD}
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
-      DB_POOL_MAX_SIZE: ${DB_POOL_MAX_SIZE:-10}
-      DB_POOL_MIN_IDLE: ${DB_POOL_MIN_IDLE:-2}
-      DB_POOL_CONNECTION_TIMEOUT_MS: ${DB_POOL_CONNECTION_TIMEOUT_MS:-30000}
       FLYWAY_ENABLED: "false"
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
       ANALYZER_BASE_URL: ${ANALYZER_BASE_URL}
@@ -235,8 +228,9 @@ services:
   frontend:
     ports:
       - ${WEB_PORT}:5173
+    # Starts before spring-app so the boot screen can report startup progress.
     depends_on:
-      spring-app:
-        condition: service_healthy
+      ops-agent:
+        condition: service_started
     networks: [ appnet ]
     restart: unless-stopped

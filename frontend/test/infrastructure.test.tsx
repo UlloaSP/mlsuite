@@ -4,11 +4,10 @@ import {
   buildDashboardAlerts,
   countHealthyServices,
   countProblemServices,
-  getOverviewTimestamp,
 } from "@/features/infrastructure/lib/dashboard-summary";
 import {
   appendLogLine,
-  confirmServiceAction,
+  serviceActionConfirmation,
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
@@ -51,12 +50,12 @@ const service = {
 
 const overview: InfrastructureOverviewDto = {
   aggregate: {
-    cpu: { percent: 10, supported: true },
-    ram: { percent: 20, supported: true },
-    diskRead: { bytes: 1024, supported: true },
-    diskWrite: { bytes: 2048, supported: true },
-    networkRx: { bytes: 4096, supported: true },
-    networkTx: { bytes: 8192, supported: true },
+    cpu: { percent: 10 },
+    ram: { percent: 20 },
+    diskRead: { bytes: 1024 },
+    diskWrite: { bytes: 2048 },
+    networkRx: { bytes: 4096 },
+    networkTx: { bytes: 8192 },
   },
   services: [service],
   history: {
@@ -86,20 +85,13 @@ const jsonResponse = (body: unknown, status = 200) =>
 afterEach(() => vi.unstubAllGlobals());
 
 describe("infra helpers", () => {
-  it.each(["STOP", "RESTART"] as const)(
-    "requires confirmation for %s and respects cancellation",
-    (action) => {
-      const confirm = vi.fn().mockReturnValue(false);
-      vi.stubGlobal("window", { confirm });
-      expect(confirmServiceAction("frontend", action)).toBe(false);
-      expect(confirm).toHaveBeenCalledWith(expect.stringContaining("frontend"));
-      confirm.mockReturnValue(true);
-      expect(confirmServiceAction("frontend", action)).toBe(true);
-      confirm.mockClear();
-      expect(confirmServiceAction("frontend", "START")).toBe(true);
-      expect(confirm).not.toHaveBeenCalled();
-    },
-  );
+  it.each(["STOP", "RESTART"] as const)("asks before %s but never before START", (action) => {
+    const confirmation = serviceActionConfirmation("frontend", action);
+    expect(confirmation?.title).toContain("frontend");
+    expect(confirmation?.description).toContain("interrupts the service");
+    expect(confirmation?.danger).toBe(action === "STOP");
+    expect(serviceActionConfirmation("frontend", "START")).toBeNull();
+  });
   it("keeps health categories exclusive and never claims unknown services healthy", () => {
     const services = [
       overview.services[0],
@@ -161,6 +153,22 @@ describe("infra helpers", () => {
       stopped: 1,
       restarting: 0,
     });
+  });
+
+  it("filters stopped services by the same exited and dead grouping the counts use", () => {
+    const services = ["running", "exited", "dead", "restarting", "missing"].map((status) => ({
+      ...overview.services[0],
+      name: status,
+      status,
+    }));
+    const stopped = filterAndSortServices(services, {
+      query: "",
+      status: "stopped",
+      health: "all",
+      sort: { key: "name", dir: "asc" },
+    });
+    expect(stopped.map((row) => row.name)).toEqual(["dead", "exited"]);
+    expect(serviceStatusCounts(services).stopped).toBe(stopped.length);
   });
 
   it("applies overview delta without losing bounded history", () => {
@@ -235,7 +243,6 @@ describe("infra helpers", () => {
   it("computes dashboard summary facts from real overview data", () => {
     expect(countHealthyServices(overview.services)).toBe(1);
     expect(countProblemServices(overview.services)).toBe(0);
-    expect(getOverviewTimestamp(overview)).toBe("2026-05-07T00:00:00Z");
   });
 
   it("builds alert rail items from transport and service issues", () => {

@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.List;
@@ -14,7 +17,6 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.user.domain.model.*;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.*;
-import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,15 +45,12 @@ class SchemaDeletionServiceTest {
     @EnableJpaRepositories("dev.ulloasp.mlsuite")
     static class PersistenceConfig {
         @Bean UserLookupService users() { return mock(UserLookupService.class); }
-        @Bean WorkspaceAccessService access() { return mock(WorkspaceAccessService.class); }
         @Bean WorkspaceAuthorizationService authorization() { return mock(WorkspaceAuthorizationService.class); }
     }
     @Autowired EntityManager entityManager;
     @Autowired SchemaServiceImpl service;
     @Autowired UserLookupService users;
-    @Autowired WorkspaceAccessService access;
     @Autowired WorkspaceAuthorizationService authorization;
-    private WorkspacePermissionsDto permissions;
     private User owner;
     private Organization org;
     private Schema schema;
@@ -59,7 +58,7 @@ class SchemaDeletionServiceTest {
 
     @BeforeEach
     void setUp() {
-        reset(users, access, authorization);
+        reset(users, authorization);
         owner = new User("qa", "qa@example.test", "unused", "QA", SystemRole.USER);
         entityManager.persist(owner);
         org = new Organization("qa-schema", "QA", null, null, owner);
@@ -68,11 +67,8 @@ class SchemaDeletionServiceTest {
         entityManager.persist(schema);
         version = new SchemaVersion(schema, 1, "v1", Map.of());
         entityManager.persist(version);
-        permissions = mock(WorkspacePermissionsDto.class);
-        when(permissions.canDeleteModels()).thenReturn(true);
         when(users.requireById(owner.getId())).thenReturn(owner);
-        when(access.requireCurrentOrganization(owner.getId())).thenReturn(org);
-        when(authorization.workspacePermissions(owner.getId(), org.getId())).thenReturn(permissions);
+        when(authorization.requireCurrent(eq(owner.getId()), any(PermissionKey[].class))).thenReturn(org);
     }
 
     @Test
@@ -119,7 +115,8 @@ class SchemaDeletionServiceTest {
 
     @Test
     void missingDeletePermissionPreservesSchema() {
-        when(permissions.canDeleteModels()).thenReturn(false);
+        when(authorization.requireCurrent(owner.getId(), PermissionKey.DELETE_MODELS))
+                .thenThrow(new OrganizationAccessDeniedException(org.getId()));
         assertThrows(OrganizationAccessDeniedException.class, () -> service.deleteSchema(owner.getId(), schema.getId()));
         assertNotNull(entityManager.find(Schema.class, schema.getId()));
     }

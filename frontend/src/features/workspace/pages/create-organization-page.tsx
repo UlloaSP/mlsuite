@@ -16,6 +16,9 @@ import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
 import { useCreateOrganizationMutation } from "@/features/workspace/api/workspace.mutations";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
+import { cx } from "@/shared/ui/cx";
+import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 
 type OrganizationOwnerCandidate = {
   avatarUrl?: string | null;
@@ -37,6 +40,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [owner, setOwner] = useState<OrganizationOwnerCandidate | null>(null);
+  const [submitError, setSubmitError] = useState<string>();
   const ownerInitializedRef = useRef(false);
   const slugEditedRef = useRef(false);
   const ownerItems = useMemo(
@@ -64,6 +68,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
   }, [currentUserId, users]);
 
   async function submit() {
+    setSubmitError(undefined);
     const trimmedName = name.trim();
     if (!trimmedName || !owner || createOrganization.isPending) return;
     try {
@@ -75,8 +80,8 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
       });
       toast.success("Organization created.");
       void navigate("/workspace/organizations");
-    } catch (submitError: unknown) {
-      toast.error(submitError instanceof Error ? submitError.message : String(submitError));
+    } catch (error: unknown) {
+      setSubmitError(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -92,17 +97,19 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
+          breadcrumbScope="platform"
+          className={FORM_MAX_WIDTH}
           eyebrow="Superadmin"
-          title="Create Organization"
+          title="Create organization"
           description="Create an organization and assign its first owner."
           breadcrumbs={[
             { label: "Organizations", to: "/workspace/organizations" },
-            { label: "Create Organization" },
+            { label: "Create organization" },
           ]}
         />
-        <section className="mx-auto w-full max-w-3xl space-y-4">
+        <section className={cx(FORM_MAX_WIDTH, "space-y-4")}>
           <AppFieldLabel label="Name">
             <AppTextField
               value={name}
@@ -116,7 +123,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
               value={slug}
               onChange={(event) => updateSlug(event.target.value)}
               placeholder="northwind-ai"
-              prefix={<Hash size={15} className="text-[var(--text-muted)]" />}
+              prefix={<Hash size={15} className="text-fg-muted" />}
             />
           </AppFieldLabel>
           <AppFieldLabel label="Owner">
@@ -135,9 +142,10 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Short operational summary"
-              className="rounded shadow-none [&_textarea]:max-h-64 [&_textarea]:min-h-28 [&_textarea]:resize-y"
+              className="shadow-none [&_textarea]:max-h-64 [&_textarea]:min-h-28 [&_textarea]:resize-y"
             />
           </AppFieldLabel>
+          {submitError ? <AppInlineAlert>{submitError}</AppInlineAlert> : null}
           <div className="flex justify-end gap-2">
             <AppButton
               type="button"
@@ -151,7 +159,7 @@ export function CreateOrganizationPage({ currentUserId, users }: Props) {
               onClick={() => void submit()}
               disabled={!name.trim() || !owner || createOrganization.isPending}
             >
-              {createOrganization.isPending ? "Creating..." : "Create Organization"}
+              {createOrganization.isPending ? "Creating…" : "Create organization"}
             </AppButton>
           </div>
         </section>

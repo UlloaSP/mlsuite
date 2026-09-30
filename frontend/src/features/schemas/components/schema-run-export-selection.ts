@@ -1,10 +1,8 @@
-import type {
-  PredictionResultFeedbackDto,
-  PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
+import { schemaRunReviewerLabel } from "@/features/schemas/lib/export";
+import type { PredictionResultFeedbackDto, PredictionRunDto } from "@/shared/api/openapi.gen";
 
 export type SchemaRunExportSelection = {
-  excludedRunIds: Set<string>;
+  excludedRunIds: Set<number>;
   excludedReviewers: Set<string>;
   excludedRunReviewers: Set<string>;
 };
@@ -21,10 +19,7 @@ export type SchemaRunExportRunSummary = {
   reviewCount: number;
 };
 
-export const schemaRunReviewerLabel = (feedback: PredictionResultFeedbackDto): string =>
-  feedback.userEmail || feedback.userName || `user-${feedback.userId ?? "unknown"}`;
-
-export const schemaRunReviewerKey = (runId: string, reviewer: string) => `${runId}::${reviewer}`;
+export const schemaRunReviewerKey = (runId: number, reviewer: string) => `${runId}::${reviewer}`;
 
 export const emptySchemaRunExportSelection = (): SchemaRunExportSelection => ({
   excludedRunIds: new Set(),
@@ -34,7 +29,7 @@ export const emptySchemaRunExportSelection = (): SchemaRunExportSelection => ({
 
 export const isSchemaRunReviewSelected = (
   selection: SchemaRunExportSelection,
-  runId: string,
+  runId: number,
   reviewer: string,
 ) =>
   !selection.excludedRunIds.has(runId) &&
@@ -71,18 +66,28 @@ export const collectSchemaRunExportReviewers = (summaries: readonly SchemaRunExp
 export const selectedSchemaRunExportData = (
   selection: SchemaRunExportSelection,
   runs: PredictionRunDto[],
-  feedbackByRun: readonly PredictionResultFeedbackDto[][],
+  feedback: readonly PredictionResultFeedbackDto[],
 ) => {
-  const selectedRuns: PredictionRunDto[] = [];
-  const selectedFeedback: PredictionResultFeedbackDto[] = [];
-  runs.forEach((run, index) => {
-    if (selection.excludedRunIds.has(run.id)) return;
-    selectedRuns.push(run);
-    selectedFeedback.push(
-      ...(feedbackByRun[index] ?? []).filter((item) =>
-        isSchemaRunReviewSelected(selection, run.id, schemaRunReviewerLabel(item)),
-      ),
-    );
-  });
-  return { runs: selectedRuns, feedback: selectedFeedback };
+  const selectedRuns = runs.filter((run) => !selection.excludedRunIds.has(run.id));
+  const runIdByResult = new Map(
+    selectedRuns.flatMap((run) => run.results.map((result) => [result.id, run.id] as const)),
+  );
+  return {
+    runs: selectedRuns,
+    feedback: feedback.filter((item) => {
+      const runId = runIdByResult.get(item.resultId);
+      return (
+        runId !== undefined &&
+        isSchemaRunReviewSelected(selection, runId, schemaRunReviewerLabel(item))
+      );
+    }),
+  };
+};
+
+/** A copy of `set` with `value` added, or removed when it was already there. */
+export const toggledInSet = <T>(set: ReadonlySet<T>, value: T): Set<T> => {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
 };

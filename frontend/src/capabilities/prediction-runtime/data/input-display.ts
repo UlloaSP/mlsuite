@@ -35,15 +35,18 @@ const fieldValue = (field: JsonRecord, inputData: JsonRecord): unknown => {
   return undefined;
 };
 
-export const getVisibleSchemaInputs = (schema: unknown, inputData: JsonRecord): DisplayInput[] =>
+export const getSchemaInputColumns = (schema: unknown, inputData: JsonRecord): DisplayInput[] =>
   fieldsOf(schema).reduce<DisplayInput[]>((items, field) => {
     if (field.hidden === true) return items;
     const key = resolveDisplayKey(field);
     const value = fieldValue(field, inputData);
-    if (!key || !hasDisplayValue(value)) return items;
+    if (!key) return items;
     items.push({ key, label: getString(field.label) ?? key, value });
     return items;
   }, []);
+
+export const getVisibleSchemaInputs = (schema: unknown, inputData: JsonRecord): DisplayInput[] =>
+  getSchemaInputColumns(schema, inputData).filter((input) => hasDisplayValue(input.value));
 
 export const getSchemaRunPrefillInputs = (schema: unknown, inputData: JsonRecord): JsonRecord =>
   Object.fromEntries(

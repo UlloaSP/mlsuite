@@ -4,12 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { appFetch, json } from "@/shared/api/http";
-import type { InvitationDto } from "@/capabilities/workspace-context/workspace-context.types";
 import type {
+  BulkInvitationRequest,
   CreateInvitationRequest,
   InvitationCandidateDto,
-  OrganizationInvitationDto,
-} from "./workspace.types";
+  InvitationDto,
+} from "@/shared/api/openapi.gen";
 
 export const acceptInvitation = (token: string): Promise<InvitationDto> =>
   appFetch<InvitationDto>(`/api/invitations/${encodeURIComponent(token)}/accept`, {
@@ -22,7 +22,7 @@ export const bulkRevokeInvitations = (
 ): Promise<void> =>
   appFetch<void>(
     `/api/organizations/${organizationId}/invitations/bulk-revoke`,
-    json("POST", { invitationIds }),
+    json("POST", { invitationIds } satisfies BulkInvitationRequest),
   );
 
 export const createInvitation = (
@@ -48,8 +48,8 @@ export const getInvitationCandidates = (
 export const getInvitations = (
   organizationId: number,
   signal?: AbortSignal,
-): Promise<OrganizationInvitationDto[]> =>
-  appFetch<OrganizationInvitationDto[]>(`/api/organizations/${organizationId}/invitations`, {
+): Promise<InvitationDto[]> =>
+  appFetch<InvitationDto[]>(`/api/organizations/${organizationId}/invitations`, {
     signal,
   });
 

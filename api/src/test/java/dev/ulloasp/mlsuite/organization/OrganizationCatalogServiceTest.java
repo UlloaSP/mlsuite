@@ -27,7 +27,7 @@ import dev.ulloasp.mlsuite.organization.application.usecase.OrganizationCatalogS
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
-import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -116,7 +116,7 @@ class OrganizationCatalogServiceTest {
         membership.setId(user.getId());
         membership.setOrganization(organization);
         membership.setUser(user);
-        membership.setRole(OrganizationRole.OWNER);
+        membership.setRoleDefinition(TestFixtures.role(organization, "OWNER"));
         membership.setStatus(MembershipStatus.ACTIVE);
         return membership;
     }

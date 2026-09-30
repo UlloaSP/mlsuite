@@ -7,14 +7,6 @@ import type { ArtifactKind, ArtifactMatchDto } from "@/features/models/api/model
 import type { Bundle } from "@/features/models/lib/bundle-types";
 import { getStem, slugToTitle } from "@/features/models/lib/bundle-utils";
 
-/**
- * InspectedBundleFile: describes the public data contract consumed or returned by this algorithm.
- *
- * Purpose: matches uploaded model/dataframe artifacts to inspected bundle file plans.
- * @returns Type-only export; no runtime value is emitted.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export type InspectedBundleFile = {
   file: File;
   kind: ArtifactKind;
@@ -31,18 +23,6 @@ type ApplyOptions = {
   matchDataframes?: File[];
 };
 
-/**
- * applyInspectedBundleFiles: applies a deterministic transformation to the supplied data
- *
- * Purpose: matches uploaded model/dataframe artifacts to inspected bundle file plans.
- * @param previous - Input consumed by applyInspectedBundleFiles; uses the matches uploaded model/dataframe artifacts to inspected bundle file plans contract.
- * @param inspected - Input consumed by applyInspectedBundleFiles; uses the matches uploaded model/dataframe artifacts to inspected bundle file plans contract.
- * @param firstId - Input consumed by applyInspectedBundleFiles; uses the matches uploaded model/dataframe artifacts to inspected bundle file plans contract.
- * @param options - Input consumed by applyInspectedBundleFiles; uses the matches uploaded model/dataframe artifacts to inspected bundle file plans contract.
- * @returns New normalized/derived value; input objects are not mutated unless explicitly documented by called platform APIs.
- * @throws Does not intentionally throw; callers should still guard platform/runtime exceptions.
- * @remarks Side cases/effects: Treats nullish, missing, or malformed optional records as absent unless the domain contract requires an error.
- */
 export function applyInspectedBundleFiles(
   previous: Bundle[],
   inspected: InspectedBundleFile[],
@@ -124,7 +104,6 @@ export function applyInspectedBundleFiles(
   return { bundles: next, nextId };
 }
 
-/** applyMatches: internal transformation helper for model prediction, feedback, upload, and export data shaping. @remarks Args: bundles, match, models, dataframes; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 function applyMatches(
   bundles: Bundle[],
   match: ArtifactMatchDto | undefined,
@@ -153,7 +132,6 @@ function applyMatches(
   });
 }
 
-/** findMatchedDataframe: internal lookup helper for model prediction, feedback, upload, and export data shaping. @remarks Args: modelFile, match, models, dataframes; side cases: nullish or malformed optional values stay local to this helper unless caller enforces errors. @returns Internal derived value/cache/side-effect result for enclosing algorithm. @throws Propagates errors from called validators, parsers, browser APIs, or explicit domain guards. */
 function findMatchedDataframe(
   modelFile: File,
   match: ArtifactMatchDto | undefined,

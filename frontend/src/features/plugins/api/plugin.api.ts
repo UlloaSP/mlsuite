@@ -4,12 +4,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { appFetch } from "@/shared/api/http";
-import type { PluginDto, PluginPageDto, PluginPageRequest, PluginStatsDto } from "./plugin.types";
+import type { PluginPageRequest } from "./plugin.types";
+import type { PageDtoPluginDto, PluginDto, PluginStatsDto } from "@/shared/api/openapi.gen";
 
 export const getPluginPage = (
   { page, search = "", size, sort = "updated", type = "all" }: PluginPageRequest,
   signal?: AbortSignal,
-): Promise<PluginPageDto> => {
+): Promise<PageDtoPluginDto> => {
   const params = new URLSearchParams({
     page: String(page),
     search,
@@ -17,7 +18,7 @@ export const getPluginPage = (
     sort,
     type,
   });
-  return appFetch<PluginPageDto>(`/api/plugins?${params.toString()}`, { signal });
+  return appFetch<PageDtoPluginDto>(`/api/plugins?${params.toString()}`, { signal });
 };
 
 export const getPluginStats = (signal?: AbortSignal): Promise<PluginStatsDto> =>

@@ -17,7 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import dev.ulloasp.mlsuite.admin.AdminCreateUserRequest;
 import dev.ulloasp.mlsuite.admin.AdminUpdateUserRequest;
 import dev.ulloasp.mlsuite.admin.AdminUserService;
-import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -36,9 +35,6 @@ class ManualAuthServiceTest {
     @Mock
     private WorkspaceBootstrapService workspaceBootstrapService;
 
-    @Mock
-    private CurrentUserResolver currentUserResolver;
-
     private AuthService authService;
     private AdminUserService adminUserService;
 
@@ -47,8 +43,7 @@ class ManualAuthServiceTest {
         authService = new AuthService(
                 userRepository,
                 passwordEncoder,
-                workspaceBootstrapService,
-                currentUserResolver);
+                workspaceBootstrapService);
         adminUserService = new AdminUserService(
                 userRepository,
                 passwordEncoder,
@@ -90,7 +85,7 @@ class ManualAuthServiceTest {
                 "SUPERADMIN",
                 true));
 
-        assertEquals("SUPERADMIN", dto.systemRole());
+        assertEquals(SystemRole.SUPERADMIN, dto.systemRole());
         verify(workspaceBootstrapService).ensureCurrentOrganization(org.mockito.ArgumentMatchers.any(User.class));
     }
 

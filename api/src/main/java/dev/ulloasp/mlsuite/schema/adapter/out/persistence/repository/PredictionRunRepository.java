@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,6 +11,22 @@ import org.springframework.data.jpa.repository.Query;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 
 public interface PredictionRunRepository extends JpaRepository<PredictionRun, Long> {
+
+    interface BookmarkRunStats {
+        Long getBookmarkId();
+
+        long getRunCount();
+
+        OffsetDateTime getLastRunAt();
+    }
+
+    @Query("""
+            SELECT r.schemaBookmark.id AS bookmarkId, COUNT(r) AS runCount, MAX(r.createdAt) AS lastRunAt
+            FROM PredictionRun r
+            WHERE r.schemaBookmark.schema.organization.id = :organizationId
+            GROUP BY r.schemaBookmark.id
+            """)
+    List<BookmarkRunStats> findBookmarkRunStats(Long organizationId);
 
     @Query("""
             SELECT COUNT(r) FROM PredictionRun r

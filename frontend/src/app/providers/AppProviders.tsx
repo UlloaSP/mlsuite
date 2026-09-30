@@ -21,14 +21,14 @@ export function AppProviders({ children, queryClient }: AppProvidersProps) {
                   toastOptions={{
                     classNames: {
                       toast:
-                        "rounded-lg border border-neutral-200 bg-white text-neutral-950 shadow-lg",
+                        "rounded-lg border border-line bg-surface-raised text-fg shadow-overlay",
                       title: "text-sm font-medium",
-                      description: "text-sm text-neutral-600",
+                      description: "text-sm text-fg-secondary",
                       actionButton:
-                        "rounded-md bg-neutral-950 px-3 py-2 text-sm font-medium text-white",
+                        "rounded-md bg-accent px-3 py-2 text-sm font-medium text-on-accent",
                       cancelButton:
-                        "rounded-md bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-950",
-                      closeButton: "border-neutral-200 bg-white text-neutral-950",
+                        "rounded-md bg-surface-muted px-3 py-2 text-sm font-medium text-fg",
+                      closeButton: "border-line bg-surface-raised text-fg",
                     },
                   }}
                 />

@@ -34,14 +34,13 @@ export function ThemePresetPreview({
             aria-label={`Use ${label} for ${mode} mode`}
             aria-pressed={selected}
             className={cx(
-              "pointer-events-auto relative size-16 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-secondary)]",
-              selected &&
-                "ring-2 ring-[var(--accent-primary)] ring-offset-2 ring-offset-[var(--surface-secondary)]",
+              "pointer-events-auto relative size-16 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-subtle",
+              selected && "ring-2 ring-accent ring-offset-2 ring-offset-surface-subtle",
             )}
             onClick={() => onSelect(mode)}
           >
             <AppThemeSwatch colors={preview[mode]} mode={mode} />
-            <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full border border-[var(--border-soft)] bg-[var(--surface-primary)] text-[var(--text-secondary)]">
+            <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full border border-line bg-surface text-fg-secondary">
               {selected ? <Check size={13} strokeWidth={3} /> : <Icon size={13} />}
             </span>
           </button>

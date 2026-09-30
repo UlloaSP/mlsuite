@@ -8,15 +8,17 @@ import { cx } from "@/shared/ui/cx";
 import { useSidebar } from "./SidebarContext";
 
 export function SidebarGroupLabel({ children, className, ...props }: ComponentProps<"div">) {
-  const { state } = useSidebar();
+  const { collapsed } = useSidebar();
 
-  if (state === "collapsed") {
-    return null;
-  }
-
+  // Kept mounted and eased in height, so expanding does not make the menu jump.
   return (
     <div
-      className={cx("px-2 py-1 text-xs font-medium text-[var(--text-secondary)]", className)}
+      aria-hidden={collapsed}
+      className={cx(
+        "overflow-hidden whitespace-nowrap px-2 text-xs font-medium text-fg-secondary transition-[height,padding,opacity] duration-200 [interpolate-size:allow-keywords]",
+        collapsed ? "h-0 py-0 opacity-0" : "h-auto py-1 opacity-100 delay-150",
+        className,
+      )}
       {...props}
     >
       {children}

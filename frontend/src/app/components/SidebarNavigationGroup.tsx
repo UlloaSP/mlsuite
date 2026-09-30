@@ -1,0 +1,169 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
+import { ChevronRight } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
+import { RESTORE_SCROLL_STATE } from "@/app/layouts/use-scroll-memory";
+import { Link, useNavigate } from "react-router";
+import { cx } from "@/shared/ui/cx";
+import { AppKbd } from "@/shared/ui/AppKbd";
+import { isChildActive, type NavigationItem } from "./sidebar-navigation-support";
+import { SidebarGroupLabel } from "./app-sidebar/SidebarGroupLabel";
+import { SidebarLabel } from "./app-sidebar/SidebarLabel";
+import { SidebarMenuButton } from "./app-sidebar/SidebarMenuButton";
+import { SidebarMenuSubButton } from "./app-sidebar/SidebarMenuSubButton";
+import { useSidebar } from "./app-sidebar/SidebarContext";
+
+/** One labelled section of the sidebar menu; `firstIndex` continues the Alt+N numbering. */
+export function SidebarNavigationGroup({
+  currentPath,
+  firstIndex,
+  isParentActive,
+  items,
+  label,
+  openItem,
+  pathname,
+  setOpenItem,
+  showShortcutHints,
+}: {
+  currentPath: string;
+  firstIndex: number;
+  isParentActive: (item: NavigationItem) => boolean;
+  items: NavigationItem[];
+  label: string;
+  openItem: string | null | undefined;
+  pathname: string;
+  setOpenItem: Dispatch<SetStateAction<string | null | undefined>>;
+  showShortcutHints: boolean;
+}) {
+  const navigate = useNavigate();
+  const { collapsed } = useSidebar();
+
+  return (
+    <section className="grid gap-1.5 py-2">
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <div className="grid gap-1">
+        <ul aria-label={label} className="grid gap-1">
+          {items.map((item, position) => {
+            const index = firstIndex + position;
+            const active = isParentActive(item);
+            const hasChildren = Boolean(item.children?.length);
+            const open = openItem === undefined ? active : openItem === item.root;
+            const Icon = item.icon;
+
+            return (
+              <li key={item.root} className="relative min-w-0">
+                {hasChildren ? (
+                  <SidebarMenuButton
+                    data-user-guide-item={`nav:${item.label}`}
+                    aria-expanded={open}
+                    aria-keyshortcuts={`Alt+${String(index + 1)}`}
+                    isActive={active}
+                    onClick={() => {
+                      if (collapsed) {
+                        void navigate(item.children?.[0]?.to ?? item.to, { viewTransition: true });
+                        return;
+                      }
+                      setOpenItem((current) => (current === item.root ? null : item.root));
+                    }}
+                    title={item.label}
+                    type="button"
+                  >
+                    <Icon size={18} className="shrink-0" />
+                    <SidebarLabel className="truncate">{item.label}</SidebarLabel>
+                    {!collapsed ? (
+                      <AppKbd
+                        aria-hidden={!showShortcutHints}
+                        className={cx("ml-auto shrink-0", !showShortcutHints && "invisible")}
+                      >
+                        {String(index + 1)}
+                      </AppKbd>
+                    ) : null}
+                    {!collapsed ? (
+                      <ChevronRight
+                        size={15}
+                        className={cx(
+                          "shrink-0 transition-transform duration-200",
+                          !showShortcutHints && "ml-auto",
+                          open && "rotate-90",
+                        )}
+                      />
+                    ) : null}
+                  </SidebarMenuButton>
+                ) : (
+                  <SidebarMenuButton asChild isActive={active} title={item.label}>
+                    <Link
+                      data-user-guide-item={`nav:${item.label}`}
+                      aria-keyshortcuts={`Alt+${String(index + 1)}`}
+                      to={item.to}
+                      state={RESTORE_SCROLL_STATE}
+                      viewTransition
+                    >
+                      <Icon size={18} className="shrink-0" />
+                      <SidebarLabel className="truncate">{item.label}</SidebarLabel>
+                      {!collapsed ? (
+                        <AppKbd
+                          aria-hidden={!showShortcutHints}
+                          className={cx("ml-auto shrink-0", !showShortcutHints && "invisible")}
+                        >
+                          {String(index + 1)}
+                        </AppKbd>
+                      ) : null}
+                    </Link>
+                  </SidebarMenuButton>
+                )}
+                {item.children && !collapsed ? (
+                  <div
+                    aria-hidden={!open}
+                    inert={!open}
+                    className={cx(
+                      "grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+                    )}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <ul className="ml-5 mt-1 grid gap-1 border-l border-line pl-2 transition-[opacity,transform] duration-150 ease-out">
+                        {item.children.map((child, childIndex) => {
+                          const childActive = isChildActive(child, currentPath, pathname);
+                          const ChildIcon = child.icon;
+                          const childShortcut = String(childIndex + 1);
+
+                          return (
+                            <li key={child.to} className="min-w-0">
+                              <SidebarMenuSubButton asChild isActive={childActive}>
+                                <Link
+                                  data-user-guide-item={`subnav:${child.label}`}
+                                  aria-keyshortcuts={`Alt+Shift+${childShortcut}`}
+                                  to={child.to}
+                                  viewTransition
+                                >
+                                  <ChildIcon size={14} className="shrink-0" />
+                                  <span className="truncate">{child.label}</span>
+                                  <AppKbd
+                                    aria-hidden={!showShortcutHints}
+                                    className={cx(
+                                      "ml-auto h-4 min-w-4 shrink-0 text-3xs",
+                                      !showShortcutHints && "invisible",
+                                    )}
+                                  >
+                                    {childShortcut}
+                                  </AppKbd>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}

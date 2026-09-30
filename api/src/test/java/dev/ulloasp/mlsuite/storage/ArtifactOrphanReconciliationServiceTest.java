@@ -26,7 +26,7 @@ class ArtifactOrphanReconciliationServiceTest {
         when(storage.list("organizations/")).thenReturn(List.of(
                 new StoredObjectItem("bucket", orphan, 5, "etag", old),
                 new StoredObjectItem("bucket", referenced, 5, "etag", old)));
-        when(storage.inspectOptional("bucket", orphan)).thenReturn(Optional.of(
+        when(storage.inspectOptional("bucket", orphan, null)).thenReturn(Optional.of(
                 new StoredObjectMetadata("bucket", orphan, 5, "etag", "orphan-v1", "hash")));
         when(models.existsByStorageBucketAndStorageObjectKey("bucket", referenced)).thenReturn(true);
 
@@ -37,6 +37,6 @@ class ArtifactOrphanReconciliationServiceTest {
         assertEquals(1, report.deleted());
         assertEquals(0, report.failed());
         verify(storage).delete("bucket", orphan, "orphan-v1");
-        verify(storage, never()).inspectOptional("bucket", referenced);
+        verify(storage, never()).inspectOptional("bucket", referenced, null);
     }
 }

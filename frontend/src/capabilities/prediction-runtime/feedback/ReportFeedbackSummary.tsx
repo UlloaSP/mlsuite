@@ -12,6 +12,7 @@ import {
   type QuestionnaireFieldDescriptor,
 } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 type ReportFeedbackSummaryProps = {
   schema?: QuestionnaireSchema;
@@ -23,7 +24,7 @@ const EMPTY_VALUES: Record<string, unknown> = {};
 
 export function ReportFeedbackSummary({
   schema,
-  title = "Saved Feedback",
+  title = "Saved feedback",
   values = EMPTY_VALUES,
 }: ReportFeedbackSummaryProps) {
   if (!schema) {
@@ -42,19 +43,17 @@ export function ReportFeedbackSummary({
           {fields.map((field) => (
             <div
               key={field.id}
-              className="flex items-center justify-between rounded-[18px] bg-[var(--surface-muted)] px-4 py-3"
+              className="flex items-center justify-between rounded-2xl bg-surface-muted px-4 py-3"
             >
-              <span className="text-sm font-medium text-[var(--text-secondary)]">
-                {field.label}
-              </span>
-              <span className="font-mono text-sm text-[var(--text-primary)]">
+              <span className="text-sm font-medium text-fg-secondary">{field.label}</span>
+              <span className="font-mono text-sm text-fg">
                 {formatFeedbackValue(values[field.id], field)}
               </span>
             </div>
           ))}
         </div>
       ) : (
-        <AppCopy>No feedback saved yet.</AppCopy>
+        <AppEmptyState compact title="No feedback yet" description="Saved answers appear here." />
       )}
     </AppPanel>
   );

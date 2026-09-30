@@ -1,16 +1,19 @@
 import { appFetch, json } from "@/shared/api/http";
 import type {
-  CreateSchemaDraftRequest,
-  SchemaDraftDiffDto,
   SchemaDraftDto,
-  SchemaDraftMergeRequest,
   SchemaDraftMergeResultDto,
   SchemaDraftPublishResultDto,
   UpdateSchemaDraftRequest,
 } from "./draft-types";
+import type {
+  CreateSchemaDraftRequest,
+  PublishSchemaDraftRequest,
+  SchemaDraftDiffDto,
+  SchemaDraftMergeRequest,
+} from "@/shared/api/openapi.gen";
 
 export const createSchemaDraft = (
-  schemaId: string,
+  schemaId: number | string,
   req: CreateSchemaDraftRequest,
 ): Promise<SchemaDraftDto> =>
   appFetch<SchemaDraftDto>(
@@ -19,22 +22,25 @@ export const createSchemaDraft = (
   );
 
 export const getSchemaDrafts = (
-  schemaId: string,
+  schemaId: number | string,
   signal?: AbortSignal,
 ): Promise<SchemaDraftDto[]> =>
   appFetch<SchemaDraftDto[]>(`/api/schemas/${encodeURIComponent(schemaId)}/drafts`, { signal });
 
-export const getSchemaDraft = (draftId: string, signal?: AbortSignal): Promise<SchemaDraftDto> =>
+export const getSchemaDraft = (
+  draftId: number | string,
+  signal?: AbortSignal,
+): Promise<SchemaDraftDto> =>
   appFetch<SchemaDraftDto>(`/api/schema-drafts/${encodeURIComponent(draftId)}`, { signal });
 
 export const updateSchemaDraft = (
-  draftId: string,
+  draftId: number | string,
   req: UpdateSchemaDraftRequest,
 ): Promise<SchemaDraftDto> =>
   appFetch<SchemaDraftDto>(`/api/schema-drafts/${encodeURIComponent(draftId)}`, json("PUT", req));
 
 export const getSchemaDraftDiff = (
-  draftId: string,
+  draftId: number | string,
   signal?: AbortSignal,
 ): Promise<SchemaDraftDiffDto> =>
   appFetch<SchemaDraftDiffDto>(`/api/schema-drafts/${encodeURIComponent(draftId)}/diff`, {
@@ -42,7 +48,7 @@ export const getSchemaDraftDiff = (
   });
 
 export const mergeSchemaDraft = (
-  draftId: string,
+  draftId: number | string,
   request: SchemaDraftMergeRequest,
 ): Promise<SchemaDraftMergeResultDto> =>
   appFetch<SchemaDraftMergeResultDto>(
@@ -51,10 +57,10 @@ export const mergeSchemaDraft = (
   );
 
 export const publishSchemaDraft = (
-  draftId: string,
+  draftId: number | string,
   expectedDraftRevision: number,
 ): Promise<SchemaDraftPublishResultDto> =>
   appFetch<SchemaDraftPublishResultDto>(
     `/api/schema-drafts/${encodeURIComponent(draftId)}/publish`,
-    json("POST", { expectedDraftRevision }),
+    json("POST", { expectedDraftRevision } satisfies PublishSchemaDraftRequest),
   );

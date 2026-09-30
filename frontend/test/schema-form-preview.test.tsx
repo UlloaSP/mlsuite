@@ -6,10 +6,10 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import { createRoot, type Root } from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { SchemaFormPreview } from "@/features/schemas/components/SchemaFormPreview";
 import { createSchemaPreviewTransport } from "@/features/schemas/lib/preview-transport";
+import { mount } from "./support/dom";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 const kitState = vi.hoisted(() => ({ mountError: null as Error | null }));
@@ -24,12 +24,13 @@ vi.mock("mlform/kit", async (importOriginal) => {
     },
   };
 });
-vi.mock("@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions", () => ({
-  loadPredictionCatalogDefinitions: vi.fn(async () => {
+vi.mock("@/capabilities/prediction-runtime/plugins/plugin-catalog", () => ({
+  getCatalogDefinitions: vi.fn(async () => {
     throw new Error("catalog failed");
   }),
 }));
 vi.mock("@/capabilities/prediction-runtime/plugins/plugin-runtime-sources", () => ({
+  PLUGIN_RUNTIME_SOURCES_QUERY_KEY: () => ["plugin-runtime-sources"],
   pluginRuntimeSourcesQueryOptions: () => ({
     queryKey: ["plugin-runtime-sources"],
     queryFn: async () => [],
@@ -40,31 +41,21 @@ vi.mock("../src/capabilities/workspace-context/workspace-context", () => ({
 }));
 
 describe("schema form preview", () => {
-  let root: Root | null = null;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   afterEach(() => {
-    root?.unmount();
-    root = null;
     kitState.mountError = null;
-    document.body.innerHTML = "";
   });
 
   test("renders a schema form and local built-in report preview", async () => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    root.render(
-      <QueryClientProvider client={queryClient}>
-        <SchemaFormPreview
-          schema={{
-            fields: [
-              { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
-            ],
-            reports: [{ id: "prediction", kind: "classifier", mappedTo: "prediction" }],
-          }}
-        />
-      </QueryClientProvider>,
+    const { host: container } = await mount(
+      <SchemaFormPreview
+        schema={{
+          fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
+          reports: [{ id: "prediction", kind: "classifier", mappedTo: "prediction" }],
+        }}
+      />,
+      { queryClient },
     );
 
     await flush();
@@ -102,27 +93,21 @@ describe("schema form preview", () => {
   });
 
   test("renders one local report preview per mappedTo entry", async () => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    root.render(
-      <QueryClientProvider client={queryClient}>
-        <SchemaFormPreview
-          schema={{
-            fields: [
-              { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
-            ],
-            reports: [
-              {
-                id: "prediction",
-                label: "Prediction",
-                kind: "classifier",
-                mappedTo: { "Model A": "prediction_a", "Model B": "prediction_b" },
-              },
-            ],
-          }}
-        />
-      </QueryClientProvider>,
+    const { host: container } = await mount(
+      <SchemaFormPreview
+        schema={{
+          fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
+          reports: [
+            {
+              id: "prediction",
+              label: "Prediction",
+              kind: "classifier",
+              mappedTo: { "Model A": "prediction_a", "Model B": "prediction_b" },
+            },
+          ],
+        }}
+      />,
+      { queryClient },
     );
 
     await flush();
@@ -138,27 +123,21 @@ describe("schema form preview", () => {
   });
 
   test("renders multi-model reports when mappedTo entries share the same analyzer key", async () => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    root.render(
-      <QueryClientProvider client={queryClient}>
-        <SchemaFormPreview
-          schema={{
-            fields: [
-              { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
-            ],
-            reports: [
-              {
-                id: "prediction",
-                label: "Prediction",
-                kind: "classifier",
-                mappedTo: { "Model A": "classifier9", "Model B": "classifier9" },
-              },
-            ],
-          }}
-        />
-      </QueryClientProvider>,
+    const { host: container } = await mount(
+      <SchemaFormPreview
+        schema={{
+          fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
+          reports: [
+            {
+              id: "prediction",
+              label: "Prediction",
+              kind: "classifier",
+              mappedTo: { "Model A": "classifier9", "Model B": "classifier9" },
+            },
+          ],
+        }}
+      />,
+      { queryClient },
     );
 
     await flush();
@@ -179,20 +158,14 @@ describe("schema form preview", () => {
 
   test("keeps invalid preview schemas inside the preview error panel", async () => {
     kitState.mountError = new Error("Preview mount failed");
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    root.render(
-      <QueryClientProvider client={queryClient}>
-        <SchemaFormPreview
-          schema={{
-            fields: [
-              { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
-            ],
-            reports: [],
-          }}
-        />
-      </QueryClientProvider>,
+    const { host: container } = await mount(
+      <SchemaFormPreview
+        schema={{
+          fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
+          reports: [],
+        }}
+      />,
+      { queryClient },
     );
 
     for (let attempt = 0; attempt < 5; attempt += 1) await flush();
@@ -201,20 +174,16 @@ describe("schema form preview", () => {
   });
 
   test("shows an error when required plugin definitions are unavailable", async () => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    root.render(
-      <QueryClientProvider client={queryClient}>
-        <SchemaFormPreview
-          schema={{
-            fields: [
-              { id: "custom", label: "Custom", kind: "External Slider", displayKey: "custom" },
-            ],
-            reports: [],
-          }}
-        />
-      </QueryClientProvider>,
+    const { host: container } = await mount(
+      <SchemaFormPreview
+        schema={{
+          fields: [
+            { id: "custom", label: "Custom", kind: "External Slider", displayKey: "custom" },
+          ],
+          reports: [],
+        }}
+      />,
+      { queryClient },
     );
 
     for (let attempt = 0; attempt < 5; attempt += 1) await flush();

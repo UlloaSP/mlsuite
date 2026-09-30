@@ -1,20 +1,22 @@
 import { FileDown } from "lucide-react";
 import { useState } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 import { OrganizationInferenceExportDialog } from "./OrganizationInferenceExportDialog";
 
-export type InferenceExportCandidate = {
-  id: number;
-  name: string;
-  createdAt: string;
-  schemaId: number;
-  schemaName: string;
-  schemaVersionId: number;
-  schemaVersionName: string;
-  schemaVersion: number;
-  bookmarkId?: number | null;
-  bookmarkName?: string | null;
-};
+export type InferenceExportCandidate = Pick<
+  PredictionRunCatalogItemDto,
+  | "id"
+  | "name"
+  | "createdAt"
+  | "schemaId"
+  | "schemaName"
+  | "schemaVersionId"
+  | "schemaVersionName"
+  | "schemaVersion"
+  | "bookmarkId"
+  | "bookmarkName"
+>;
 
 export function OrganizationInferenceExportButton({
   items,

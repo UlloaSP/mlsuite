@@ -8,10 +8,10 @@ export function ServiceHealthSegment({
 }) {
   const category = serviceHealthCategory(service);
   const colors = {
-    healthy: "var(--success-text)",
-    unknown: "var(--text-muted)",
-    degraded: "var(--warning-text)",
-    down: "var(--danger-text)",
+    healthy: "var(--color-success-fg)",
+    unknown: "var(--color-fg-muted)",
+    degraded: "var(--color-warning-fg)",
+    down: "var(--color-danger-fg)",
   };
   return (
     <div

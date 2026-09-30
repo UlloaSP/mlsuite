@@ -10,14 +10,7 @@ import { mappedRoutes } from "@/capabilities/prediction-runtime/mlform/mapped-to
 import { prepareRuntimeReports } from "@/capabilities/prediction-runtime/mlform/runtime-report-targets";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 
-/**
- * prepareSchemaPreviewReports: prepares preview reports with runtime-safe identities.
- *
- * Purpose: makes preview and real inference use the same multi-model report expansion and
- * duplicate-target rules.
- * @returns Schema with expanded reports when possible; otherwise the original value.
- * @throws Does not intentionally throw.
- */
+/** Preview expands multi-model reports with the same duplicate-target rules as real inference. */
 export const prepareSchemaPreviewReports = (schema: unknown): unknown => {
   if (!isRecord(schema) || !Array.isArray(schema.reports)) return schema;
   const keys = [
@@ -63,12 +56,8 @@ const fakeReports = (report: ReportConfig): ReportResult[] =>
     .filter((item: ReportResult | null): item is ReportResult => Boolean(item));
 
 /**
- * createSchemaPreviewTransport: creates a local MLForm transport for editor previews.
- *
- * Purpose: renders schema forms and built-in report panes without calling analyzer models.
- * @returns Local transport; never performs network calls.
- * @throws Does not intentionally throw.
- * @remarks Custom report payloads are not faked because plugin payload schemas are arbitrary.
+ * Local transport for editor previews. Custom report payloads are not faked:
+ * plugin payload schemas are arbitrary.
  */
 export const createSchemaPreviewTransport = (): Transport => ({
   async submit(request: SubmitRequest) {

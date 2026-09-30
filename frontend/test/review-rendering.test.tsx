@@ -1,13 +1,10 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import { ReviewWithoutQuestionnaire } from "@/features/reviews/components/ReviewWithoutQuestionnaire";
 import { ReviewOutputsSection } from "@/features/reviews/components/ReviewOutputsSection";
-import type {
-  ReviewSchemaVersionDto,
-  ReviewPredictionResultDto,
-} from "@/features/reviews/api/review-types";
+import { mount } from "./support/dom";
+import { binding, predictionResult, schemaVersion } from "./support/api-fixtures";
 
 const state = vi.hoisted(() => ({
   submit: vi.fn(),
@@ -43,24 +40,14 @@ vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () 
     </div>
   ),
 }));
-let root: Root | undefined;
 afterEach(() => {
-  act(() => root?.unmount());
-  document.body.innerHTML = "";
   vi.clearAllMocks();
   state.status = "ready";
 });
-const mount = async (element: React.ReactNode) => {
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  await act(async () => root?.render(element));
-  return container;
-};
 test("completes selected zero-questionnaire run explicitly and retries failures", async () => {
   const onCompleted = vi.fn();
   state.submit.mockRejectedValueOnce(new Error("Unavailable")).mockResolvedValueOnce(undefined);
-  const container = await mount(
+  const { host: container } = await mount(
     <ReviewWithoutQuestionnaire
       reviewId="review-1"
       reviewRunId="item-2"
@@ -74,47 +61,41 @@ test("completes selected zero-questionnaire run explicitly and retries failures"
   expect(state.submit).toHaveBeenLastCalledWith("review-1", ["item-2"]);
   expect(onCompleted).toHaveBeenCalledOnce();
 });
-const version: ReviewSchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
-  version: 1,
+const version = schemaVersion({
   name: "Test",
-  createdAt: "2026-09-09",
-  bindings: [{ modelId: "model-1" }],
+  bindings: [binding(1)],
   formSchema: {
     fields: [],
     reports: [
       { id: "custom", kind: "QA Report", label: "Custom", mappedTo: { "model-1": "custom" } },
     ],
   },
-};
-const result: ReviewPredictionResultDto = {
-  id: "result-1",
-  runId: "run-1",
-  modelId: "model-1",
+});
+const result = predictionResult({
   modelInput: { age: 42 },
-  status: "SUCCESS",
-  createdAt: "2026-09-09",
   output: { reports: [{ mappedTo: "custom", payload: { message: "Proof" } }] },
-};
+});
 test("review outputs pass matched reports and catalog to shared renderer", async () => {
-  const container = await mount(<ReviewOutputsSection version={version} results={[result]} />);
-  expect(container.querySelector('[data-rendered="model-1"]')?.textContent).toContain(
+  const { host: container } = await mount(
+    <ReviewOutputsSection version={version} results={[result]} />,
+  );
+  expect(container.querySelector('[data-rendered="1"]')?.textContent).toContain(
     "QA Report renderer QA Report",
   );
   expect(container.querySelector("pre")).toBeNull();
 });
 test("reports loading, errors with retry, and no outputs without raw JSON fallback", async () => {
   state.status = "loading";
-  const container = await mount(<ReviewOutputsSection version={version} results={[]} />);
+  const view = await mount(<ReviewOutputsSection version={version} results={[]} />);
+  const container = view.host;
   expect(container.textContent).toContain("Loading report renderers");
   state.status = "error";
   state.error = "Catalog inaccessible";
-  await act(async () => root?.render(<ReviewOutputsSection version={version} results={[]} />));
+  await view.rerender(<ReviewOutputsSection version={version} results={[]} />);
   expect(container.textContent).toContain("Catalog inaccessible");
   await act(async () => container.querySelector("button")?.click());
   expect(state.retry).toHaveBeenCalledOnce();
   state.status = "ready";
-  await act(async () => root?.render(<ReviewOutputsSection version={version} results={[]} />));
+  await view.rerender(<ReviewOutputsSection version={version} results={[]} />);
   expect(container.textContent).toContain("No outputs returned");
 });

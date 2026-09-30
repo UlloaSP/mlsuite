@@ -12,7 +12,7 @@ import {
   buildSchemaRunRawFromSubmitResult,
   reportStatesFromSnapshot,
 } from "@/capabilities/prediction-runtime/mlform/schema-run-result-state";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const stringMeta = (value: unknown): string => (typeof value === "string" ? value : "");
 
@@ -84,7 +84,11 @@ describe("schema plugin real mlform lifecycle", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }, { modelId: "model-3" }],
+      bindings: [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+        { modelId: 3, modelName: "model-3" },
+      ],
       customReportDefinitions: [crystal()],
     });
     const form = createForm({
@@ -95,25 +99,29 @@ describe("schema plugin real mlform lifecycle", () => {
     form.setValues({ age: 42 });
     const result = await executeFormPipeline({ form });
     expect(form.reports.map((report) => report.id)).toEqual([
-      "crystal-model-1",
-      "crystal-model-2",
-      "crystal-model-3",
+      "crystal-1",
+      "crystal-2",
+      "crystal-3",
     ]);
     expect(form.reports.map((report) => report.state.status)).toEqual(["ready", "ready", "ready"]);
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
-      "/api/analyzer/explanations?modelId=model-1",
-      "/api/analyzer/explanations?modelId=model-2",
-      "/api/analyzer/explanations?modelId=model-3",
+      "/api/analyzer/explanations?modelId=1",
+      "/api/analyzer/explanations?modelId=2",
+      "/api/analyzer/explanations?modelId=3",
     ]);
-    expect(result.reportFetchResults["crystal-model-1"]).toEqual({
-      explanation: "/api/analyzer/explanations?modelId=model-1",
+    expect(result.reportFetchResults["crystal-1"]).toEqual({
+      explanation: "/api/analyzer/explanations?modelId=1",
     });
     const built = buildSchemaRunRawFromSubmitResult(
       result.submitResult.raw as Record<string, unknown>,
       form.reports,
       reportStatesFromSnapshot(form.state.reportStates),
-      [{ modelId: "model-1" }, { modelId: "model-2" }, { modelId: "model-3" }],
+      [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+        { modelId: 3, modelName: "model-3" },
+      ],
       result.submitResult.reportContexts,
     );
     expect(
@@ -147,7 +155,10 @@ describe("schema plugin real mlform lifecycle", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+      ],
       customReportDefinitions: [crystal()],
     });
     const form = createForm({
@@ -159,11 +170,11 @@ describe("schema plugin real mlform lifecycle", () => {
     const result = await executeFormPipeline({ form });
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
-      "/api/analyzer/explanations?modelId=model-1",
-      "/api/analyzer/explanations?modelId=model-2",
+      "/api/analyzer/explanations?modelId=1",
+      "/api/analyzer/explanations?modelId=2",
     ]);
     expect(result.reportFetchResults["crystal-1"]).toEqual({
-      explanation: "/api/analyzer/explanations?modelId=model-1",
+      explanation: "/api/analyzer/explanations?modelId=1",
     });
   });
 
@@ -172,7 +183,7 @@ describe("schema plugin real mlform lifecycle", () => {
       "fetch",
       vi.fn(async (url: string) => {
         if (url.includes("/predictions")) return new Response(JSON.stringify({ reports: [] }));
-        if (url.includes("modelId=model-2")) {
+        if (url.includes("modelId=2")) {
           return new Response("unsupported", { status: 400 });
         }
         return new Response(JSON.stringify({ explanation: url }));
@@ -194,7 +205,10 @@ describe("schema plugin real mlform lifecycle", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+      ],
       customReportDefinitions: [crystal()],
     });
     const form = createForm({
@@ -207,12 +221,12 @@ describe("schema plugin real mlform lifecycle", () => {
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
     expect(calls.filter((url) => url.includes("/api/analyzer/explanations"))).toEqual([
-      "/api/analyzer/explanations?modelId=model-1",
-      "/api/analyzer/explanations?modelId=model-2",
+      "/api/analyzer/explanations?modelId=1",
+      "/api/analyzer/explanations?modelId=2",
     ]);
     expect(form.reports[0]?.state).toMatchObject({
       status: "ready",
-      payload: { explanation: "/api/analyzer/explanations?modelId=model-1" },
+      payload: { explanation: "/api/analyzer/explanations?modelId=1" },
     });
     expect(form.reports[1]?.state.status).toBe("error");
     expect(form.reports[1]?.state.error).toBe("unsupported");
@@ -220,7 +234,10 @@ describe("schema plugin real mlform lifecycle", () => {
       result.submitResult.raw as Record<string, unknown>,
       form.reports,
       reportStatesFromSnapshot(form.state.reportStates),
-      [{ modelId: "model-1" }, { modelId: "model-2" }],
+      [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+      ],
       result.submitResult.reportContexts,
     );
     expect(built.reportsPending).toBe(false);
@@ -266,7 +283,7 @@ describe("schema plugin real mlform lifecycle", () => {
       },
       bindings: [
         {
-          modelId: "model-1",
+          modelId: 1,
           modelName: "Model One",
         },
       ],
@@ -295,7 +312,7 @@ describe("schema plugin real mlform lifecycle", () => {
       category__11: 0,
     });
     expect(result.reportFetchResults.report).toEqual({
-      explanation: "/api/analyzer/explanations?modelId=model-1",
+      explanation: "/api/analyzer/explanations?modelId=1",
     });
   });
 });

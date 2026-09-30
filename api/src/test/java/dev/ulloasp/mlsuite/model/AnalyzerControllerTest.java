@@ -15,28 +15,21 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
-import dev.ulloasp.mlsuite.model.adapter.in.web.AnalyzerControllerImpl;
+import dev.ulloasp.mlsuite.model.adapter.in.web.AnalyzerController;
 import dev.ulloasp.mlsuite.model.application.dto.ExplainRequest;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
-import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import jakarta.servlet.http.HttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
 class AnalyzerControllerTest {
 
     @Mock
-    private CurrentUserResolver currentUserResolver;
-
-    @Mock
     private AnalyzerUseCase analyzerUseCase;
-
-    @Mock
-    private Authentication authentication;
+    private CurrentUser user;
 
     @Mock
     private MultipartFile modelFile;
@@ -44,19 +37,19 @@ class AnalyzerControllerTest {
     @Mock
     private HttpServletRequest request;
 
-    private AnalyzerControllerImpl controller;
+    private AnalyzerController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AnalyzerControllerImpl(currentUserResolver, analyzerUseCase);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(5L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
+        controller = new AnalyzerController(analyzerUseCase);
+        user = new CurrentUser(5L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
     }
 
     @Test
     void generateSchema_UsesInternalUserId() {
         when(analyzerUseCase.generateInputSchema(5L, modelFile, null, "__")).thenReturn(Map.of("x", "int"));
 
-        ResponseEntity<Map<String, Object>> response = controller.generateSchema(authentication, modelFile, null, "__");
+        ResponseEntity<Map<String, Object>> response = controller.generateSchema(user, modelFile, null, "__");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(analyzerUseCase).generateInputSchema(5L, modelFile, null, "__");
@@ -66,7 +59,7 @@ class AnalyzerControllerTest {
     void inspectArtifact_UsesInternalUserId() {
         when(analyzerUseCase.inspectArtifact(5L, modelFile)).thenReturn(Map.of("kind", "model"));
 
-        ResponseEntity<Map<String, Object>> response = controller.inspectArtifact(authentication, modelFile);
+        ResponseEntity<Map<String, Object>> response = controller.inspectArtifact(user, modelFile);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("model", response.getBody().get("kind"));
@@ -79,7 +72,7 @@ class AnalyzerControllerTest {
                 .thenReturn(Map.of("models", List.of()));
 
         ResponseEntity<Map<String, Object>> response = controller.matchArtifacts(
-                authentication,
+                user,
                 List.of(modelFile),
                 List.of(modelFile));
 
@@ -91,7 +84,7 @@ class AnalyzerControllerTest {
     void predict_UsesInternalUserId() {
         when(analyzerUseCase.predict(5L, 11L, Map.of("x", 1))).thenReturn(Map.of("prediction", 1));
 
-        ResponseEntity<Map<String, Object>> response = controller.predict(authentication, 11L, Map.of("x", 1));
+        ResponseEntity<Map<String, Object>> response = controller.predict(user, 11L, Map.of("x", 1));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(analyzerUseCase).predict(5L, 11L, Map.of("x", 1));
@@ -101,9 +94,9 @@ class AnalyzerControllerTest {
     void explain_PropagatesAnalyzerErrors() {
         ExplainRequest requestBody = new ExplainRequest(Map.of("feature", 1), null);
         when(analyzerUseCase.explain(5L, 11L, requestBody))
-                .thenThrow(new AnalyzerServiceException(422, "/explain", "bad", "bad", null));
+                .thenThrow(new AnalyzerServiceException(422, "bad"));
 
-        assertThrows(AnalyzerServiceException.class, () -> controller.explain(authentication, 11L, requestBody));
+        assertThrows(AnalyzerServiceException.class, () -> controller.explain(user, 11L, requestBody));
     }
 }
 

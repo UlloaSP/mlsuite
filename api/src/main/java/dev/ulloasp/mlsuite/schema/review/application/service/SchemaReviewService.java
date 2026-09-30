@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -34,20 +35,23 @@ import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.Sche
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRunSubmissionRepository;
 import dev.ulloasp.mlsuite.schema.review.application.dto.CreateSchemaReviewRequest;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewContextDto;
+import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewReviewerDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewRunDetailDto;
 import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewRunListItemDto;
-import dev.ulloasp.mlsuite.schema.review.application.dto.SchemaReviewReviewerDto;
+import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewUseCase;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReview;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRun;
 import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewRunSubmission;
-import dev.ulloasp.mlsuite.schema.review.application.port.in.SchemaReviewUseCase;
+import dev.ulloasp.mlsuite.schema.review.domain.model.SchemaReviewState;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class SchemaReviewService implements SchemaReviewUseCase {
     private final SchemaReviewRepository reviewRepository;
     private final SchemaReviewRunRepository reviewRunRepository;
@@ -63,32 +67,9 @@ public class SchemaReviewService implements SchemaReviewUseCase {
     private final PredictionResultRepository results;
     private final PredictionResultFeedbackRepository feedback;
 
-    public SchemaReviewService(SchemaReviewRepository reviewRepository,
-            SchemaReviewRunRepository reviewRunRepository,
-            SchemaReviewRunSubmissionRepository submissionRepository,
-            SchemaReviewAssignmentService assignments,
-            WorkspaceAccessService workspaceAccess, WorkspaceAuthorizationService authorization,
-            UserLookupService users, SchemaRepository schemas, SchemaVersionRepository versions,
-            SchemaModelBindingRepository bindings, PredictionRunRepository runs,
-            PredictionResultRepository results, PredictionResultFeedbackRepository feedback) {
-        this.reviewRepository = reviewRepository;
-        this.reviewRunRepository = reviewRunRepository;
-        this.submissionRepository = submissionRepository;
-        this.assignments = assignments;
-        this.workspaceAccess = workspaceAccess;
-        this.authorization = authorization;
-        this.users = users;
-        this.schemas = schemas;
-        this.versions = versions;
-        this.bindings = bindings;
-        this.runs = runs;
-        this.results = results;
-        this.feedback = feedback;
-    }
-
     public void create(Long userId, CreateSchemaReviewRequest request) {
         Long organizationId = organizationId(userId);
-        authorization.requireReviewManagement(userId, organizationId);
+        authorization.require(userId, organizationId, PermissionKey.MANAGE_REVIEWS);
         Schema schema = schemas.findByIdAndOrganizationId(request.schemaId(), organizationId)
                 .orElseThrow(() -> badRequest("Schema unavailable"));
         SchemaVersion version = versions.findByIdAndOrganizationId(request.versionId(), organizationId)
@@ -106,7 +87,7 @@ public class SchemaReviewService implements SchemaReviewUseCase {
     @Transactional(readOnly = true)
     public List<SchemaReviewContextDto> inbox(Long userId) {
         Long organizationId = organizationId(userId);
-        authorization.requireReviewAccess(userId, organizationId);
+        authorization.require(userId, organizationId, PermissionKey.REVIEW, PermissionKey.MANAGE_REVIEWS);
         return reviewRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId).stream()
                 .filter(this::isOpen)
                 .filter(review -> assignments.isAssigned(review.getId(), userId))
@@ -180,7 +161,7 @@ public class SchemaReviewService implements SchemaReviewUseCase {
 
     private SchemaReview accessibleReview(Long userId, String publicId) {
         Long organizationId = organizationId(userId);
-        authorization.requireReviewAccess(userId, organizationId);
+        authorization.require(userId, organizationId, PermissionKey.REVIEW, PermissionKey.MANAGE_REVIEWS);
         SchemaReview review = requireReview(publicId, organizationId);
         if (!assignments.isAssigned(review.getId(), userId) || !isOpen(review)) {
             throw new SchemaReviewUnavailableException();
@@ -201,8 +182,8 @@ public class SchemaReviewService implements SchemaReviewUseCase {
 
     private SchemaReviewRunListItemDto runItem(Long userId, SchemaReviewRun item,
             SchemaReviewRunSubmission submission) {
-        String reviewState = submission != null ? "COMPLETED"
-                : hasFeedback(userId, item.getRun()) ? "IN_PROGRESS" : "PENDING";
+        SchemaReviewState reviewState = submission != null ? SchemaReviewState.COMPLETED
+                : hasFeedback(userId, item.getRun()) ? SchemaReviewState.IN_PROGRESS : SchemaReviewState.PENDING;
         OffsetDateTime stateAt = submission == null ? item.getRun().getCreatedAt() : submission.getSubmittedAt();
         return new SchemaReviewRunListItemDto(item.getPublicId(),
                 PredictionRunDto.from(item.getRun(), results.findByRunIdOrderByIdAsc(item.getRun().getId())),

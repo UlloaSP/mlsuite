@@ -5,18 +5,29 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { GitCommitHorizontal, GitPullRequestArrow, Tags } from "lucide-react";
 import { Link } from "react-router";
-import { AppBadge } from "@/shared/ui/AppBadge";
+import { AppSkeleton } from "@/shared/ui/AppSkeleton";
 import { cx } from "@/shared/ui/cx";
+import { TAB_LIST_CLASS, tabCountClass, tabItemClass } from "@/shared/ui/tab-styles";
+import {
+  useSchemaBookmarks,
+  useSchemaDrafts,
+  useSchemaVersions,
+} from "@/features/schemas/api/schema-queries";
 
 type Props = {
   active: "overview" | "changes" | "bookmarks" | "snapshots";
   schemaId: string;
-  changes: number;
-  bookmarks: number;
-  snapshots: number;
 };
 
-export function SchemaRepoNav({ active, schemaId, changes, bookmarks, snapshots }: Props) {
+/** Loading is undefined (skeleton count); a failed count is null (no count) rather than a false 0. */
+const countOf = (query: { data?: readonly unknown[]; isError: boolean }) =>
+  query.isError ? null : query.data?.length;
+
+/** Counts come from the same cached queries the tab pages read. */
+export function SchemaRepoNav({ active, schemaId }: Props) {
+  const changes = countOf(useSchemaDrafts(schemaId));
+  const bookmarks = countOf(useSchemaBookmarks(schemaId));
+  const snapshots = countOf(useSchemaVersions(schemaId));
   const items = [
     { id: "overview", label: "Overview", to: `/schemas/${schemaId}`, count: null, icon: null },
     {
@@ -43,7 +54,7 @@ export function SchemaRepoNav({ active, schemaId, changes, bookmarks, snapshots 
   ] as const;
 
   return (
-    <nav className="flex flex-wrap gap-2 border-b border-[var(--border-soft)] pb-3">
+    <nav aria-label="Schema sections" className={cx(TAB_LIST_CLASS, "shrink-0")}>
       {items.map((item) => {
         const Icon = item.icon;
         const selected = item.id === active;
@@ -51,16 +62,16 @@ export function SchemaRepoNav({ active, schemaId, changes, bookmarks, snapshots 
           <Link
             key={item.id}
             to={item.to}
-            className={cx(
-              "inline-flex items-center gap-2 rounded px-3 py-2 text-sm font-medium transition",
-              selected
-                ? "bg-[var(--text-primary)] text-[var(--text-inverse)]"
-                : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
-            )}
+            aria-current={selected ? "page" : undefined}
+            className={tabItemClass(selected)}
           >
             {Icon ? <Icon size={15} /> : null}
             {item.label}
-            {item.count !== null ? <AppBadge tone="neutral">{item.count}</AppBadge> : null}
+            {item.count === undefined ? (
+              <AppSkeleton className="h-5 w-6 rounded-full" />
+            ) : item.count !== null ? (
+              <span className={tabCountClass(selected)}>{item.count}</span>
+            ) : null}
           </Link>
         );
       })}

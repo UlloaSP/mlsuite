@@ -20,6 +20,9 @@ export type NavigationChild = {
 };
 
 export type NavigationItem = {
+  /** The section's own address: its identity, and what decides whether it is active. */
+  root: string;
+  /** Where the entry goes: the section's last visited location when elsewhere. */
   to: string;
   icon: LucideIcon;
   label: string;

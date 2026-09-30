@@ -3,6 +3,16 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import type { Bundle } from "./bundle-types";
+
+/** A bundle can be saved once it has a model, a name, and a non-empty one-hot separator. */
+export const isBundleSaveable = (bundle: Bundle) =>
+  Boolean(bundle.modelFile) &&
+  bundle.name.trim() !== "" &&
+  bundle.oneHotSeparator !== "" &&
+  !bundle.saved &&
+  !bundle.saving;
+
 /**
  * Saves model bundles one at a time and reports whether every save succeeded.
  *

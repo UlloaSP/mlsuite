@@ -14,17 +14,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/admin/infrastructure")
 @PreAuthorize("hasRole('SUPERADMIN')")
+@RequiredArgsConstructor
 public class InfrastructureController {
 
     private final InfrastructureService infrastructureService;
-
-    public InfrastructureController(InfrastructureService infrastructureService) {
-        this.infrastructureService = infrastructureService;
-    }
 
     @GetMapping("/overview")
     public ResponseEntity<JsonNode> overview() {

@@ -7,10 +7,11 @@ import { appFetch, json } from "@/shared/api/http";
 import type {
   CreateRoleFromTemplateRequest,
   CreateRoleRequest,
+  DuplicateRoleRequest,
   RoleDefinitionDto,
   RolesResponseDto,
   UpdateRoleRequest,
-} from "./workspace.types";
+} from "@/shared/api/openapi.gen";
 
 export const createRoleFromTemplate = (
   organizationId: number,
@@ -45,7 +46,7 @@ export const duplicateRole = (
 ): Promise<RoleDefinitionDto> =>
   appFetch<RoleDefinitionDto>(
     `/api/organizations/${organizationId}/roles/${roleId}/duplicate`,
-    json("POST", { name }),
+    json("POST", { name } satisfies DuplicateRoleRequest),
   );
 
 export const getRoles = (organizationId: number, signal?: AbortSignal): Promise<RolesResponseDto> =>

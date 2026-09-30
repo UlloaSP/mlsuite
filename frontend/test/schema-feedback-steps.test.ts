@@ -1,16 +1,12 @@
 import { describe, expect, test } from "vite-plus/test";
 import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
+import type { PredictionRunDto, SchemaVersionDto } from "@/shared/api/openapi.gen";
+import { binding, predictionResult, predictionRun, schemaVersion } from "./support/api-fixtures";
 
-const version: SchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
-  version: 1,
+const version = schemaVersion({
   name: "Risk",
-  createdAt: "2026-06-02T00:00:00Z",
-  bindings: [{ modelId: "model-1" }],
+  bindings: [binding(1)],
   formSchema: {
     fields: [],
     reports: [
@@ -26,43 +22,27 @@ const version: SchemaVersionDto = {
       },
     ],
   },
-};
+});
 
-const run: PredictionRunDto = {
-  id: "run-1",
-  schemaVersionId: "version-1",
+const run = predictionRun({
   name: "case",
-  inputData: {},
   status: "PARTIAL_SUCCESS",
-  createdAt: "2026-06-02T00:00:00Z",
   results: [
-    {
-      id: "result-1",
-      runId: "run-1",
-      modelId: "model-1",
-      modelInput: {},
+    predictionResult({
+      id: 1,
+      modelId: 1,
       output: { reports: [{ mappedTo: "score", prediction: 1, probabilities: [0.1, 0.9] }] },
-      status: "SUCCESS",
-      createdAt: "2026-06-02T00:00:00Z",
-    },
-    {
-      id: "result-2",
-      runId: "run-1",
-      modelId: "model-2",
-      modelInput: {},
-      output: {},
-      status: "FAILED",
-      createdAt: "2026-06-02T00:00:00Z",
-    },
+    }),
+    predictionResult({ id: 2, modelId: 2, status: "FAILED" }),
   ],
-};
+});
 
 describe("schema feedback steps", () => {
   test("builds output and explanation steps for successful mapped reports only", () => {
     const steps = buildSchemaFeedbackSteps(version, run.results, []);
     expect(steps.map((step) => [step.targets[0]?.resultId, step.type, step.title])).toEqual([
-      ["result-1", "OUTPUT", "Score"],
-      ["result-1", "EXPLANATION", "Score review"],
+      [1, "OUTPUT", "Score"],
+      [1, "EXPLANATION", "Score review"],
     ]);
     expect(steps[0]?.schema.steps[0]?.fields[0]).toMatchObject({
       id: "output-feedback-assessment",
@@ -201,7 +181,7 @@ describe("schema feedback steps", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [binding(1), binding(2)],
     };
     const customRun = {
       ...run,
@@ -214,8 +194,8 @@ describe("schema feedback steps", () => {
         },
         {
           ...run.results[0]!,
-          id: "result-2",
-          modelId: "model-2",
+          id: 2,
+          modelId: 2,
           output: { reports: [] },
         },
       ],
@@ -229,7 +209,7 @@ describe("schema feedback steps", () => {
       buildSchemaFeedbackSteps(customVersion, customRun.results, []).map(
         (step) => step.targets[0]?.resultId,
       ),
-    ).toEqual(["result-1"]);
+    ).toEqual([1]);
   });
 
   test("hides empty custom report payload and its feedback questionnaire", () => {
@@ -258,7 +238,7 @@ describe("schema feedback steps", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [binding(1), binding(2)],
     };
     const customRun = {
       ...run,
@@ -271,8 +251,8 @@ describe("schema feedback steps", () => {
         },
         {
           ...run.results[0]!,
-          id: "result-2",
-          modelId: "model-2",
+          id: 2,
+          modelId: 2,
           output: {
             reports: [
               {
@@ -302,7 +282,7 @@ describe("schema feedback steps", () => {
   test("builds one logical assessment for one report mapped to multiple models", () => {
     const multiModelVersion: SchemaVersionDto = {
       ...version,
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [binding(1), binding(2)],
       formSchema: {
         fields: [],
         reports: [
@@ -325,8 +305,8 @@ describe("schema feedback steps", () => {
       },
       {
         ...run.results[0]!,
-        id: "result-2",
-        modelId: "model-2",
+        id: 2,
+        modelId: 2,
         output: {
           reports: [{ id: "shared-score-model-2", mappedTo: "classifier9", prediction: "No" }],
         },
@@ -336,13 +316,13 @@ describe("schema feedback steps", () => {
     const steps = buildSchemaFeedbackSteps(multiModelVersion, results, []);
 
     expect(steps).toHaveLength(1);
-    expect(steps[0]?.targets.map((target) => target.resultId)).toEqual(["result-1", "result-2"]);
+    expect(steps[0]?.targets.map((target) => target.resultId)).toEqual([1, 2]);
   });
 
   test("keeps separate assessments for separate reports sharing an analyzer key", () => {
     const separateVersion: SchemaVersionDto = {
       ...version,
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [binding(1), binding(2)],
       formSchema: {
         fields: [],
         reports: [
@@ -368,8 +348,8 @@ describe("schema feedback steps", () => {
       },
       {
         ...run.results[0]!,
-        id: "result-2",
-        modelId: "model-2",
+        id: 2,
+        modelId: 2,
         output: { reports: [{ id: "score-b", mappedTo: "classifier9", prediction: "No" }] },
       },
     ];
@@ -377,9 +357,6 @@ describe("schema feedback steps", () => {
     const steps = buildSchemaFeedbackSteps(separateVersion, results, []);
 
     expect(steps.map((step) => step.title)).toEqual(["Score A", "Score B"]);
-    expect(steps.map((step) => step.targets)).toMatchObject([
-      [{ resultId: "result-1" }],
-      [{ resultId: "result-2" }],
-    ]);
+    expect(steps.map((step) => step.targets)).toMatchObject([[{ resultId: 1 }], [{ resultId: 2 }]]);
   });
 });

@@ -1,13 +1,12 @@
 // @vitest-environment jsdom
 
-import { afterEach, describe, expect, test } from "vite-plus/test";
-import { createRoot, type Root } from "react-dom/client";
+import { describe, expect, test } from "vite-plus/test";
 import { act } from "react";
-import { MemoryRouter, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
+import { mount } from "./support/dom";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
-let root: Root | null = null;
 
 function CatalogControlsProbe() {
   const location = useLocation();
@@ -38,25 +37,10 @@ function CatalogControlsProbe() {
   );
 }
 
-afterEach(() => {
-  root?.unmount();
-  root = null;
-  document.body.innerHTML = "";
-});
-
 const render = async (entry: string) => {
-  const container = document.createElement("div");
-  document.body.append(container);
-  root = createRoot(container);
-  await act(async () => {
-    root?.render(
-      <MemoryRouter initialEntries={[entry]}>
-        <CatalogControlsProbe />
-      </MemoryRouter>,
-    );
-    await flush();
-  });
-  return container.querySelector("div")!;
+  const { host } = await mount(<CatalogControlsProbe />, { route: entry });
+  await act(flush);
+  return host.querySelector("div")!;
 };
 
 describe("catalog URL controls", () => {

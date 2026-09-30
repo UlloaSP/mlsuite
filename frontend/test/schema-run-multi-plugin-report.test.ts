@@ -9,7 +9,7 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -72,7 +72,10 @@ describe("schema run multi-model plugin reports", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }, { modelId: "model-2" }],
+      bindings: [
+        { modelId: 1, modelName: "model-1" },
+        { modelId: 2, modelName: "model-2" },
+      ],
       theme: "light",
       customReportDefinitions: [crystal()],
       onSubmit(_inputData, raw, reportsPending) {
@@ -81,15 +84,12 @@ describe("schema run multi-model plugin reports", () => {
     });
 
     await flush();
-    expect(mounted.form.reports.map((report) => report.id)).toEqual([
-      "crystal-model-1",
-      "crystal-model-2",
-    ]);
+    expect(mounted.form.reports.map((report) => report.id)).toEqual(["crystal-1", "crystal-2"]);
     mounted.form.setValues({ age: 42 });
     container
-      .querySelector("mlf-form")
-      ?.shadowRoot?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+      .querySelector("mlf-kit-tabs")
+      ?.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit")
+      ?.click();
     await flush();
     await flush();
 

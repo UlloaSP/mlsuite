@@ -114,6 +114,6 @@ class SearchWorkspaceSchemaArtifactsTest {
         assertEquals("snapshot", response.groups().get(0).results().getFirst().type());
         assertEquals("/schemas/31/versions/51", response.groups().get(0).results().getFirst().href());
         assertEquals("bookmark", response.groups().get(1).results().getFirst().type());
-        assertEquals("/schemas/31/bookmarks/61", response.groups().get(1).results().getFirst().href());
+        assertEquals("/predict/61", response.groups().get(1).results().getFirst().href());
     }
 }

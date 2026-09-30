@@ -7,12 +7,14 @@ import java.util.Map;
 
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 
+import jakarta.annotation.Nullable;
+
 public record SchemaModelBindingDto(
         Long id,
         Long schemaVersionId,
         Long modelId,
         String modelName,
-        Map<String, Object> pluginPolicy) {
+        @Nullable Map<String, Object> pluginPolicy) {
 
     public static SchemaModelBindingDto from(SchemaModelBinding binding) {
         return new SchemaModelBindingDto(

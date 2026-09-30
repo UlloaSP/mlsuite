@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./theme-presets.css";
+@import "./theme-presets-community.css";
+@import "./appearance.css";
+@import "./base.css";
+
+@custom-variant dark (&:where(.dark, .dark *));

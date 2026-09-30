@@ -86,7 +86,7 @@ class ModelCreationServiceTest {
         MultipartFile reusable = modelCaptor.getValue();
         assertNotSame(modelFile, reusable);
         assertEquals("x", new String(reusable.getInputStream().readAllBytes()));
-        verify(objectStorageService, never()).delete(any(), any());
+        verify(objectStorageService, never()).delete(any(), any(), any());
         verify(objectStorageService, never()).delete(any(), any(), any());
     }
 
@@ -117,7 +117,7 @@ class ModelCreationServiceTest {
                 () -> service.create(4L, "demo", modelFile, null, "__"));
 
         assertEquals(failure, thrown);
-        verify(objectStorageService, never()).delete(any(), any());
+        verify(objectStorageService, never()).delete(any(), any(), any());
         verify(objectStorageService, never()).delete(any(), any(), any());
     }
 

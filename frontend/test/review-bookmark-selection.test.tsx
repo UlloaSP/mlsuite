@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, expect, test } from "vite-plus/test";
+import { expect, test } from "vite-plus/test";
 import { useReviewRunSelection } from "@/capabilities/review-creation/useReviewRunSelection";
 import type { ReviewCandidate } from "@/capabilities/review-creation/review-creation-api";
+import { mount } from "./support/dom";
 const candidates: ReviewCandidate[] = [
   {
     runId: "1",
@@ -46,22 +46,12 @@ const candidates: ReviewCandidate[] = [
   },
 ];
 let selection: ReturnType<typeof useReviewRunSelection>;
-let root: Root;
-let host: HTMLDivElement;
 function Harness({ items }: { items: ReviewCandidate[] }) {
   selection = useReviewRunSelection(items);
   return null;
 }
-beforeEach(() => {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  host = document.createElement("div");
-  root = createRoot(host);
-});
-afterEach(() => {
-  act(() => root.unmount());
-});
 async function render(items = candidates) {
-  await act(async () => root.render(<Harness items={items} />));
+  await mount(<Harness items={items} />);
 }
 test("keeps initial selection within one snapshot and offers its bookmarks", async () => {
   await render();

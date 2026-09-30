@@ -6,16 +6,14 @@ import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class UserLookupService {
 
     private final UserRepository userRepository;
-
-    public UserLookupService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     public User requireById(Long userId) {
         return userRepository.findById(userId)

@@ -7,17 +7,14 @@ import org.springframework.stereotype.Service;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ModelArtifactWriter {
 
     private final ObjectStorageService objectStorageService;
     private final StorageProperties properties;
-
-    public ModelArtifactWriter(ObjectStorageService objectStorageService, StorageProperties properties) {
-        this.objectStorageService = objectStorageService;
-        this.properties = properties;
-    }
 
     public StoredObject storeAndAttach(Model model, byte[] bytes, String contentType) {
         requirePersisted(model);
@@ -41,7 +38,7 @@ public class ModelArtifactWriter {
         requirePersisted(model);
         String sha256 = ArtifactHash.sha256(bytes);
         String objectKey = objectKey(model, sha256);
-        var existing = objectStorageService.inspectOptional(properties.getBucket(), objectKey);
+        var existing = objectStorageService.inspectOptional(properties.getBucket(), objectKey, null);
         if (existing.isEmpty()) {
             return false;
         }

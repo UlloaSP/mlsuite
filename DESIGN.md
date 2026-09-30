@@ -28,18 +28,29 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 
 ## Visual system
 
-- Use semantic theme tokens from `frontend/src/shared/ui/theme-presets.css`; never hardcode a preset color in a feature.
-- MLSuite, Airbnb, Grove, Ocean, Ember, Iris, and custom themes support light and dark modes.
-- Product identity and success, warning, danger, focus, and selection roles remain semantic across themes.
-- Manrope is the default interface font. IBM Plex Sans, Source Sans 3, and the system stack are supported alternatives.
-- Use the shared radius, typography, spacing, shadow, and motion tokens instead of feature-local scales.
+- `frontend/src/shared/ui/tokens.css` is the single token source and replaces Tailwind's default palette, radius, and shadow scales. Themes in `theme-presets.css` and custom themes only set `--theme-*` inputs; every token derives from them.
+- Style with token utilities (`bg-surface`, `text-fg-muted`, `border-line`, `bg-accent`, `text-on-accent`), never hex values, Tailwind palette colors, or `[var(--…)]` wrappers.
+- Color roles: page, surface (`subtle`, `muted`, `hover`, `selected`, `raised`, `inverse`), `overlay`, `fg` (`secondary`, `muted`, `disabled`, `inverse`), `line` (`strong`), accent (`hover`, `strong`, `subtle`, `border`, `on-accent`), `focus`, `chart-1…6`, and `code` surfaces for logs and terminals.
+- Status roles `success`, `warning`, `danger`, and `info` each provide a solid color, `-fg`, `-subtle`, and `-border`. Pair them with text or icons; color is never the only signal.
+- Scales: text `3xs`, `2xs`, then Tailwind's `xs` upward; radius `sm` to `3xl`; shadows `card`, `hover`, and `overlay`; motion `--duration-fast|base|slow` with `--ease-emphasized`; fixed layers `z-(--z-drawer|overlay|modal|popover)`.
+- Built-in themes (MLSuite, Airbnb, Grove, Ocean, Ember, Iris, and the community palettes Graphite, Nord, Catppuccin, Rosé Pine, Tokyo Night, Gruvbox, and Solarized) and custom themes support light and dark modes.
+- Fonts are presets in `frontend/src/shared/ui/font-catalog.ts`, like themes. Manrope and DM Mono are the defaults; Inter, Geist, IBM Plex Sans, Source Sans 3, Figtree, DM Sans, Atkinson Hyperlegible, and the system stack are the interface alternatives, and JetBrains Mono, Geist Mono, IBM Plex Mono, Fira Code, Source Code Pro, and the system stack the monospace ones. One stylesheet in `index.html` declares every family; browsers only download the family in use. Style text with `font-sans`, `font-mono`, and `text-code`.
+- `frontend/test/design-tokens.test.ts` rejects palette and hex classes and undefined color tokens. Add a role to `tokens.css` instead of an exception.
 - Treat tables, code, schemas, logs, and reports as first-class content surfaces.
 
 ## Layout
 
 - Persistent navigation owns global and section navigation. Do not repeat it as local tabs.
+- Using a schema and maintaining it are separate places. Predict lists bookmarks as cards and gives each one workspace: the run form (MLForm owns the Inputs/Results tabs, so the page adds none) beside the session of unsaved runs, which survives leaving the page. Its History button opens the Inferences catalog filtered to the bookmark. Inferences owns every saved run: one virtualized table, without pagination. Its columns are the run summary plus every schema's inputs, outputs and each reviewer's answer to each feedback question, grouped per schema (a column belongs to one schema; a missing value shows "—"). Search sits in the toolbar; every other filter, including conditions on any column, lives in one Filters dialog applied as a whole. Sort and filters live in the URL, column choices per schema filter on the device, and a row opens a preview sheet. Each run also has one detail page (inputs, outputs and, for review managers, a Reviews tab). Feedback is never given there: the Reviews tab lists each reviewer assignment as a tile (search, state filter, pagination), and each tile opens a page with that reviewer's answers, reopen and delete. Review views poll while open so progress appears without reloading; Schemas holds only the repository (overview, changes, bookmarks, snapshots).
+- Navigation has two groups: the organization's work (Predict, Models, Schemas, Inferences, Plugins, Review) and, for superadmins, platform administration (Organizations, Users, Infra). The sidebar labels them; the bar separates them with a divider. Administration pages use the `platform` breadcrumb scope.
+- Users choose where navigation lives (left or right sidebar, top or bottom bar) and whether it is fixed or floating. Pages must not assume a sidebar: size against their container, and when a viewport-based height is unavoidable subtract `--app-nav-block`, the space a bar takes.
 - Keep page headers separate from centered or width-constrained content.
-- Catalogs use consistent toolbar, list, empty, loading, error, pagination, and overflow-action placement.
+- Breadcrumbs start at who the page belongs to: pass levels below the root and set `breadcrumbScope` (`organization` by default, `account`, or `platform`); the root crumb and the organization switcher come from the app shell. Long trails fold their middle into a "…" menu. Users choose where the trail is shown (Settings › Layout › Location): above the title (default), in a bar at the bottom of the content, as a rail floating in the page's left or right padding (one line per level, named on hover or focus, no frame and no width of its own), or off. Rails fall back to the breadcrumb above the title on touch and narrow screens. The breadcrumb is always the page's place in the hierarchy, never the path you took. Pages only declare their trail; the shell draws it.
+- View choices (tabs, modes, filters, sort, page) live in the URL through `useSearchParamState` or `useCatalogControls`, so back/forward and links restore them. Scroll containers carry `data-scroll-memory` and are restored on back/forward.
+- Each navigation section remembers where the member was in it (per member and organization, on this device), named by the page's breadcrumb: its entry resumes that location and scroll when coming from another section, and leads to the section start from inside it. Signing in (not registering, not returning from an expired session) opens Welcome back, one card per section the member can still open, most recent first; with nothing to resume it goes to the usual home. Work in progress that has no URL, like a Predict session, lives in an app-wide store rather than in the page, so switching sections keeps it; only a reload or closed tab ends it, and the browser warns first.
+- A page body is `AppSurface` (`p-6`) laid out as a column with `gap-6`; `AppPageHeader` has no outer margin, so that gap is the only space between the header, tabs, and content. Pages do not add their own outer padding.
+- Form pages (settings, create forms) are one centered column: the header and the form both use `FORM_MAX_WIDTH` from `page-layout.ts`.
+- Catalogs use consistent toolbar, list, empty, loading, error, pagination, and overflow-action placement. Every catalog row is `CatalogEntry`, with its overflow actions in `AppActionsMenu` at the top-right; the Inferences table is the exception, with the menu in its last column.
 - Dense resources use full-width rows or cards. Tiles are for genuinely scannable, low-density content.
 - Detail pages expose durable, linkable sections. Use dialogs for bounded actions, not complete workspaces.
 - Every layout must remain usable on mobile and tablet; do not solve desktop density by blocking smaller viewports.
@@ -52,6 +63,24 @@ Do not unmount stateful editors, forms, or report runtimes for cosmetic changes.
 - Keep primary surfaces clickable without nesting interactive controls.
 - Put destructive actions behind explicit confirmation and explain blocked actions.
 - Show labels users recognize; internal ids may support them but should not replace them.
+- Controls that can share a row (buttons, fields, selects, comboboxes, segmented controls, filter chips, icon buttons) share one height from `control-size.ts`: `md` is 40px, `sm` 32px. Never resize a control with padding overrides; pick `size`.
+- Actions use `AppButton` (variants primary, secondary, ghost, danger; sizes md, sm). A link that looks like a button uses `appButtonClass`; never nest a button in a link. A header action's importance comes from its variant, never its position.
+- Every modal or side sheet is an `AppDialog`: it owns focus, Escape, overlay, and the title/close header. Pass `busy` to block dismissal during an action and `error` to show a failed action inside it.
+- Errors from a form or dialog appear inline with `AppInlineAlert` (or `AppDialog error`) and keep the input for a retry; toasts are for background actions and confirmations.
+- Actions in progress use `AppSpinner` and copy ending in "…" ("Saving…").
+- Loading data uses skeletons built from `AppSkeleton`, scoped to the region that waits: render static headers and chrome, and skeleton only the fetched part. `AppLoadingState` covers lists and panels; `AppPageLoader` is for pages whose header comes from the request. When the region already has something to draw (the previous record while switching, a partial record), wrap it in `AppSkeletonScope` so the skeleton takes the real layout. A loading list is never shown as an empty one.
+- Fields show focus with `FIELD_FOCUS_RING`; other controls use the shared focus ring.
+- Icon-only controls get an `AppTooltip` with their name and shortcut instead of a native `title`. `AppIconButton` shares the control radius.
+- Confirm or ask for a value with `useActionDialog` (`confirm`, `prompt`); never `window.confirm` or `window.prompt`.
+- Row overflow menus use `AppActionsMenu`, which renders in a portal so lists never clip it. Tabs use `AppTabs`, or `tab-styles.ts` for tabs that are links; segmented choices use `AppSegmentedControl`.
+- Empty lists and panels use `AppEmptyState compact`; the full `AppEmptyState` is for an empty page.
+- Checkboxes are `AppCheckbox`; a row that is itself a toggle button shows `AppCheckMark` and sets `aria-pressed`.
+- Small uppercase labels use `AppEyebrow` or `text-2xs font-semibold uppercase tracking-eyebrow`.
+- Copy uses sentence case for titles, buttons, labels, and breadcrumbs ("Create organization", not "Create Organization"); proper names keep their casing.
+- Dates go through `formatTimestamp`, `formatDate`, or `LiveRelativeTime`, all in the user's locale.
+- Badges are `AppBadge` in sentence case; API enum values ("PARTIAL_SUCCESS") are formatted for you.
+- Each product section has one icon in `section-icons.ts`, used everywhere the section appears.
+- Radius follows the element's role: `rounded-control` (buttons, fields, menu items), `rounded-menu` (menus, popovers), `rounded-card` (cards, rows, panels), `rounded-dialog` (dialogs, sheets), `rounded-full` (badges, avatars, switches).
 
 ## Motion
 

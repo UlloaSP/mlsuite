@@ -8,18 +8,20 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 
+import jakarta.annotation.Nullable;
+
 public record PredictionRunDto(
         Long id,
         Long schemaVersionId,
-        Long schemaBookmarkId,
+        @Nullable Long schemaBookmarkId,
         String name,
         Map<String, Object> inputData,
         PredictionRunStatus status,
         List<PredictionResultDto> results,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        String createdByName,
-        String createdByEmail) {
+        @Nullable String createdByName,
+        @Nullable String createdByEmail) {
 
     public static PredictionRunDto from(PredictionRun run, List<PredictionResult> results) {
         return new PredictionRunDto(

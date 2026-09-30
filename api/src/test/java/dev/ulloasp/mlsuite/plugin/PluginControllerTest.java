@@ -16,51 +16,27 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.core.Authentication;
 
-import dev.ulloasp.mlsuite.plugin.adapter.in.web.PluginControllerImpl;
+import dev.ulloasp.mlsuite.plugin.adapter.in.web.PluginController;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
-import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
+import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.plugin.application.dto.PluginStatsDto;
-import dev.ulloasp.mlsuite.plugin.application.port.in.DeletePluginUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.GetPluginStatsUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.ListPluginsUseCase;
-import dev.ulloasp.mlsuite.plugin.application.port.in.UploadPluginUseCase;
+import dev.ulloasp.mlsuite.plugin.application.port.in.PluginCatalogUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
-import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 
 @ExtendWith(MockitoExtension.class)
 class PluginControllerTest {
 
     @Mock
-    private CurrentUserResolver currentUserResolver;
+    private PluginCatalogUseCase pluginCatalogUseCase;
+    private CurrentUser user;
 
-    @Mock
-    private UploadPluginUseCase uploadPluginUseCase;
-
-    @Mock
-    private ListPluginsUseCase listPluginsUseCase;
-
-    @Mock
-    private GetPluginStatsUseCase getPluginStatsUseCase;
-
-    @Mock
-    private DeletePluginUseCase deletePluginUseCase;
-
-    @Mock
-    private Authentication authentication;
-
-    private PluginControllerImpl controller;
+    private PluginController controller;
     private PluginDto dto;
 
     @BeforeEach
     void setUp() {
-        controller = new PluginControllerImpl(
-                currentUserResolver,
-                uploadPluginUseCase,
-                listPluginsUseCase,
-                getPluginStatsUseCase,
-                deletePluginUseCase);
+        controller = new PluginController(pluginCatalogUseCase);
         dto = new PluginDto("item-1", "plugin.ts", "application/typescript", 10,
                 OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC),
                 OffsetDateTime.of(2026, 4, 17, 12, 0, 0, 0, ZoneOffset.UTC),
@@ -71,39 +47,39 @@ class PluginControllerTest {
     @Test
     void upload_UsesInternalUserId() {
         MockMultipartFile file = new MockMultipartFile("file", "plugin.ts", "application/typescript", "x".getBytes());
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
-        when(uploadPluginUseCase.upload(7L, file)).thenReturn(dto);
+        user = new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
+        when(pluginCatalogUseCase.upload(7L, file)).thenReturn(dto);
 
-        ResponseEntity<PluginDto> response = controller.upload(authentication, file);
+        ResponseEntity<PluginDto> response = controller.upload(user, file);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(uploadPluginUseCase).upload(7L, file);
+        verify(pluginCatalogUseCase).upload(7L, file);
     }
 
     @Test
     void getAll_UsesInternalUserIdAndPagination() {
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
-        when(listPluginsUseCase.list(7L, 2, 5, "field", "custom", "name"))
-                .thenReturn(new PluginPageDto(List.of(dto), 2, 5, 1, false));
+        user = new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
+        when(pluginCatalogUseCase.list(7L, 2, 5, "field", "custom", "name"))
+                .thenReturn(new PageDto<>(List.of(dto), 2, 5, 1, false));
 
-        ResponseEntity<PluginPageDto> response = controller.getAll(authentication, 2, 5, "field", "custom", "name");
+        ResponseEntity<PageDto<PluginDto>> response = controller.getAll(user, 2, 5, "field", "custom", "name");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, response.getBody().items().size());
-        verify(listPluginsUseCase).list(7L, 2, 5, "field", "custom", "name");
+        verify(pluginCatalogUseCase).list(7L, 2, 5, "field", "custom", "name");
     }
 
     @Test
     void stats_UsesInternalUserId() {
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
-        when(getPluginStatsUseCase.stats(7L)).thenReturn(new PluginStatsDto(2, 3));
+        user = new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
+        when(pluginCatalogUseCase.stats(7L)).thenReturn(new PluginStatsDto(2, 3));
 
-        ResponseEntity<PluginStatsDto> response = controller.stats(authentication);
+        ResponseEntity<PluginStatsDto> response = controller.stats(user);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(2, response.getBody().fieldPlugins());
         assertEquals(3, response.getBody().reportPlugins());
-        verify(getPluginStatsUseCase).stats(7L);
+        verify(pluginCatalogUseCase).stats(7L);
     }
 
 }

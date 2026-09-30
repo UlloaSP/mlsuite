@@ -9,7 +9,7 @@ import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 import { defineReportKind } from "mlform/kit";
 import { z } from "zod";
 import { mountSchemaRunForm } from "@/capabilities/prediction-runtime/mlform/schema-run-mount";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -73,7 +73,7 @@ describe("schema run mounted render", () => {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [{ id: "prediction", kind: "regressor", mappedTo: "prediction" }],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       theme: "light",
       onSubmit(inputData) {
         submitted.push(inputData);
@@ -81,13 +81,11 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     expect(root?.querySelectorAll("mlf-field-frame")).toHaveLength(1);
 
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 
@@ -125,11 +123,9 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 
@@ -157,7 +153,7 @@ describe("schema run mounted render", () => {
         fields: [{ id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" }],
         reports: [{ id: "crystal", kind: "Crystal Tree", mappedTo: { "model-1": "crystal-tree" } }],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       theme: "light",
       customReportDefinitions: [crystal()],
       onSubmit(_inputData, raw, reportsPending) {
@@ -166,18 +162,14 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
     expect(updates.at(-1)?.pending).toBe(false);
     expect(updates.at(-1)?.raw.reports).toMatchObject([
       { id: "crystal", mappedTo: "crystal-tree", payload: { explanation: "ok" } },
@@ -209,7 +201,7 @@ describe("schema run mounted render", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
       theme: "light",
       customReportDefinitions: [crystal("crystal-tree")],
       onSubmit(_inputData, raw, reportsPending) {
@@ -218,18 +210,14 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 
     const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((call) => String(call[0]));
-    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=model-1"))).toBe(
-      true,
-    );
+    expect(calls.some((url) => url.includes("/api/analyzer/explanations?modelId=1"))).toBe(true);
     expect(updates.at(-1)?.pending).toBe(false);
     expect(updates.at(-1)?.raw.reports).toMatchObject([
       { id: "report-2", mappedTo: "crystal-tree", payload: { explanation: "ok" } },
@@ -265,11 +253,9 @@ describe("schema run mounted render", () => {
     });
 
     await flush();
-    const root = container.querySelector("mlf-form")?.shadowRoot;
+    const root = container.querySelector("mlf-kit-tabs")?.shadowRoot;
     mounted.form.setValues({ age: 42 });
-    root
-      ?.querySelector("mlf-submit-button")
-      ?.dispatchEvent(new CustomEvent("mlf-submit-request", { bubbles: true, composed: true }));
+    root?.querySelector<HTMLButtonElement>(".btn-submit")?.click();
     await flush();
     await flush();
 

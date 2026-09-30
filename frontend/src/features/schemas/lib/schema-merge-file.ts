@@ -3,7 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { SchemaDraftChangeDto } from "@/features/schemas/api/draft-types";
+import { stringify } from "json-source-map";
+import type { SchemaDraftChangeDto } from "@/shared/api/openapi.gen";
 
 type Range = { end: number; start: number };
 type PrintResult = { lines: string[]; ranges: Map<string, Range> };
@@ -78,77 +79,19 @@ function sharedAncestor(path: string, current: PrintResult, incoming: PrintResul
 }
 
 function printJson(value: unknown): PrintResult {
-  const result: PrintResult = { lines: [], ranges: new Map() };
-  writeValue(result, value, "", 0, false);
-  return result;
-}
-
-function writeValue(
-  result: PrintResult,
-  value: unknown,
-  path: string,
-  level: number,
-  comma: boolean,
-  prefix = "",
-) {
-  const start = result.lines.length;
-  if (Array.isArray(value)) writeArray(result, value, path, level, comma, prefix);
-  else if (isRecord(value)) writeObject(result, value, path, level, comma, prefix);
-  else result.lines.push(`${indent(level)}${prefix}${JSON.stringify(value)}${comma ? "," : ""}`);
-  result.ranges.set(path, { start, end: result.lines.length - 1 });
-}
-
-function writeArray(
-  result: PrintResult,
-  values: unknown[],
-  path: string,
-  level: number,
-  comma: boolean,
-  prefix: string,
-) {
-  if (values.length === 0) {
-    result.lines.push(`${indent(level)}${prefix}[]${comma ? "," : ""}`);
-    return;
+  // Any JSON value is accepted at runtime; the typings leave out null.
+  const { json, pointers } = stringify(value as object, null, 2);
+  const ranges = new Map<string, Range>();
+  for (const [path, pointer] of Object.entries(pointers)) {
+    ranges.set(path, {
+      start: pointer.key?.line ?? pointer.value.line,
+      end: pointer.valueEnd.line,
+    });
   }
-  result.lines.push(`${indent(level)}${prefix}[`);
-  values.forEach((value, index) =>
-    writeValue(result, value, `${path}/${index}`, level + 1, index < values.length - 1),
-  );
-  result.lines.push(`${indent(level)}]${comma ? "," : ""}`);
-}
-
-function writeObject(
-  result: PrintResult,
-  value: Record<string, unknown>,
-  path: string,
-  level: number,
-  comma: boolean,
-  prefix: string,
-) {
-  const entries = Object.entries(value);
-  if (entries.length === 0) {
-    result.lines.push(`${indent(level)}${prefix}{}${comma ? "," : ""}`);
-    return;
-  }
-  result.lines.push(`${indent(level)}${prefix}{`);
-  entries.forEach(([key, child], index) =>
-    writeValue(
-      result,
-      child,
-      `${path}/${escapePointer(key)}`,
-      level + 1,
-      index < entries.length - 1,
-      `${JSON.stringify(key)}: `,
-    ),
-  );
-  result.lines.push(`${indent(level)}}${comma ? "," : ""}`);
+  return { lines: json.split("\n"), ranges };
 }
 
 const compareRanges = (left: Range, right: Range) =>
   left.start - right.start || right.end - left.end;
 const contains = (parent: Range, child: Range) =>
   parent.start <= child.start && parent.end >= child.end;
-const escapePointer = (value: string) => value.replaceAll("~", "~0").replaceAll("/", "~1");
-const indent = (level: number) => "  ".repeat(level);
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;

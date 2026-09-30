@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultStatus;
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.Valid;
@@ -13,9 +14,9 @@ public record CreatePredictionResultRequest(
         Map<String, Object> modelInput,
         Map<String, Object> output,
         @NotNull PredictionResultStatus status,
-        String errorMessage,
-        Map<String, Object> errorJson,
-        List<@Valid CreatePredictionResultInitialFeedbackRequest> feedback) {
+        @Nullable String errorMessage,
+        @Nullable Map<String, Object> errorJson,
+        @Nullable List<@Valid CreatePredictionResultInitialFeedbackRequest> feedback) {
 
     public CreatePredictionResultRequest {
         feedback = feedback == null ? List.of() : List.copyOf(feedback);

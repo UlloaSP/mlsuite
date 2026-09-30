@@ -3,24 +3,44 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { createElement, type ComponentType, type ReactNode } from "react";
-import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context.types";
+import type { ComponentType, ReactElement } from "react";
+import { Outlet, type RouteObject } from "react-router";
 import { RequireWorkspacePermission } from "@/features/workspace/components/RequireWorkspacePermission";
 import { RequireSuperadmin } from "@/features/workspace/components/RequireSuperadmin";
 import { RequireReviewAccess } from "@/features/reviews/components/RequireReviewAccess";
+import type { WorkspacePermissionKey } from "@/capabilities/workspace-context/workspace-context";
 
-type Wrap = (element: ReactNode) => ReactNode;
+/** A lazily loaded page; keep `load` a literal `import()` so each page gets its own chunk. */
+export const page = (path: string, load: () => Promise<ComponentType>): RouteObject => ({
+  path,
+  lazy: async () => ({ Component: await load() }),
+});
 
-export const lazyPage = async (load: () => Promise<unknown>, name: string, wrap?: Wrap) => {
-  const page = (await load()) as Record<string, ComponentType>;
-  const element = createElement(page[name]);
-  return { element: wrap ? wrap(element) : element };
-};
+const guard = (element: ReactElement, children: RouteObject[]): RouteObject => ({
+  element,
+  children,
+});
 
-export const superadmin: Wrap = (element) => <RequireSuperadmin>{element}</RequireSuperadmin>;
-export const reviewAccess: Wrap = (element) => <RequireReviewAccess>{element}</RequireReviewAccess>;
-export const workspacePage =
-  (permission: WorkspacePermissionKey): Wrap =>
-  (element) => (
-    <RequireWorkspacePermission permission={permission}>{element}</RequireWorkspacePermission>
+export const superadmin = (children: RouteObject[]) =>
+  guard(
+    <RequireSuperadmin>
+      <Outlet />
+    </RequireSuperadmin>,
+    children,
+  );
+
+export const reviewAccess = (children: RouteObject[]) =>
+  guard(
+    <RequireReviewAccess>
+      <Outlet />
+    </RequireReviewAccess>,
+    children,
+  );
+
+export const workspace = (permission: WorkspacePermissionKey, children: RouteObject[]) =>
+  guard(
+    <RequireWorkspacePermission permission={permission}>
+      <Outlet />
+    </RequireWorkspacePermission>,
+    children,
   );

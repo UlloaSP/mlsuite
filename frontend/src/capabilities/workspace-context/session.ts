@@ -6,6 +6,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { getProfile, login, logout, register } from "./session-api";
+import type { UserDto } from "@/shared/api/openapi.gen";
 
 export const USER_QUERY_KEY = ["user"] as const;
 
@@ -33,33 +34,22 @@ export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "
 export const safeReturnTo = (value: string | null | undefined, fallback = "/home") =>
   value?.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : fallback;
 
-export const useLogin = (destination = "/home") => {
+/** Signs in through `authenticate` and adopts the returned user as the session. */
+const useSessionMutation = <Payload>(authenticate: (payload: Payload) => Promise<UserDto>) => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   return useMutation({
     meta: { errorHandledLocally: true },
-    mutationFn: login,
+    mutationFn: authenticate,
     onSuccess: (user) => {
       queryClient.setQueryData(USER_QUERY_KEY, user);
       void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      void navigate(destination, { replace: true });
     },
   });
 };
 
-export const useRegister = (destination = "/home") => {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  return useMutation({
-    meta: { errorHandledLocally: true },
-    mutationFn: register,
-    onSuccess: (user) => {
-      queryClient.setQueryData(USER_QUERY_KEY, user);
-      void queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      void navigate(destination, { replace: true });
-    },
-  });
-};
+export const useLogin = () => useSessionMutation(login);
+
+export const useRegister = () => useSessionMutation(register);
 
 export const useLogout = (redirectTo = "/") => {
   const queryClient = useQueryClient();
@@ -68,7 +58,7 @@ export const useLogout = (redirectTo = "/") => {
     mutationFn: logout,
     onSuccess: () => {
       queryClient.clear();
-      navigate(redirectTo, { replace: true });
+      void navigate(redirectTo, { replace: true });
     },
   });
 };

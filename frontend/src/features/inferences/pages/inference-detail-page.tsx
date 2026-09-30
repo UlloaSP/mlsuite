@@ -1,120 +1,110 @@
-import { ExternalLink } from "lucide-react";
-import { useEffect } from "react";
+import { RotateCcw } from "lucide-react";
+import { type ReactNode, useEffect } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import {
-  type InferenceCatalogItemDto,
-  useInferenceCatalog,
+  useInference,
+  useInferenceReviewAssignments,
 } from "@/features/inferences/api/inference-api";
 import { InferenceReviewStatusSection } from "@/features/inferences/components/InferenceReviewStatusSection";
-import { formatTimestamp } from "@/shared/lib/date-time";
-import { AppBadge } from "@/shared/ui/AppBadge";
-import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
-import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
+import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
-const statusTone = (status: InferenceCatalogItemDto["status"]) =>
-  status === "SUCCESS" ? "success" : status === "PARTIAL_SUCCESS" ? "warning" : "danger";
+type Props = {
+  /**
+   * The inference's data (inputs, outputs, feedback), owned by the schemas feature.
+   * `reviews` is this page's review management and its completed/total count,
+   * shown as the data's Reviews tab (null when the member cannot manage reviews).
+   */
+  renderData: (
+    inference: PredictionRunCatalogItemDto,
+    reviews: { content: ReactNode; count?: string } | null,
+  ) => ReactNode;
+};
 
-const dataHref = (item: InferenceCatalogItemDto) =>
-  item.bookmarkId == null
-    ? `/schemas/${item.schemaId}/versions/${item.schemaVersionId}`
-    : `/schemas/${item.schemaId}/bookmarks/${item.bookmarkId}/runs/${item.id}`;
-
-export function InferenceDetailPage() {
+/** One inference: what produced it, its data and feedback, and the reviews it is part of. */
+export function InferenceDetailPage({ renderData }: Props) {
   const { inferenceId = "" } = useParams<{ inferenceId: string }>();
   const [searchParams] = useSearchParams();
-  const catalog = useInferenceCatalog();
-  const showLoader = useStableLoading(catalog.isLoading);
+  const inference = useInference(inferenceId);
+  const showLoader = useStableLoading(inference.isLoading);
   const { data: workspace } = useWorkspaceContext();
-  const item = catalog.data?.find((candidate) => String(candidate.id) === inferenceId);
-  const canManageReviews = workspace?.permissions.canManageReviews ?? false;
+  const item = inference.data;
+  const permissions = workspace?.permissions;
   const reviewRequested = searchParams.get("section") === "reviews";
+  const canManageReviews = permissions?.canManageReviews ?? false;
+  // Shares the cache with the Reviews tab's list; only fetched for managers.
+  const assignments = useInferenceReviewAssignments(Number(inferenceId), canManageReviews).data;
+  const reviewCount = assignments
+    ? `${assignments.filter((item) => item.reviewState === "COMPLETED").length}/${assignments.length}`
+    : undefined;
 
   useEffect(() => {
     if (reviewRequested && item) document.getElementById("reviews")?.scrollIntoView();
   }, [item, reviewRequested]);
 
   if (showLoader) {
-    return <AppPageLoader label="Loading inference..." />;
+    return <AppPageLoader label="Loading inference…" />;
   }
 
-  if (catalog.error || !item) {
+  if (!item) {
     return (
       <AppPage>
         <AppSurface className="flex-1">
           <AppEmptyState
             title="Inference unavailable"
             description="It may have been deleted or belong to another organization."
+            action={
+              <Link to="/inferences" className={appButtonClass()}>
+                Back to inferences
+              </Link>
+            }
           />
         </AppSurface>
       </AppPage>
     );
   }
 
+  const reviews = canManageReviews
+    ? {
+        content: <InferenceReviewStatusSection inferenceId={item.id} inferenceName={item.name} />,
+        count: reviewCount,
+      }
+    : reviewRequested
+      ? {
+          content: (
+            <AppEmptyState
+              title="Review management unavailable"
+              description="You do not have permission to manage reviews in this organization."
+            />
+          ),
+        }
+      : null;
+
   return (
     <AppPage>
-      <AppSurface className="flex-1 space-y-6 overflow-auto">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title={item.name}
+          description={`${item.schemaName} · ${snapshotLabel(item.schemaVersionName, item.schemaVersion)}`}
           breadcrumbs={[{ label: "Inferences", to: "/inferences" }, { label: item.name }]}
           actions={
-            <Link to={dataHref(item)}>
-              <AppButton variant="secondary">
-                Open inference data
-                <ExternalLink size={15} />
-              </AppButton>
-            </Link>
+            item.bookmarkId != null && permissions?.canRunPredictions ? (
+              <Link to={`/predict/${item.bookmarkId}?from=${item.id}`} className={appButtonClass()}>
+                <RotateCcw size={16} />
+                Predict again
+              </Link>
+            ) : null
           }
         />
-        <AppPanel>
-          <dl className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Status
-              </dt>
-              <dd className="mt-2">
-                <AppBadge tone={statusTone(item.status)}>{item.status}</AppBadge>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Schema
-              </dt>
-              <dd className="mt-2 font-medium text-[var(--text-primary)]">{item.schemaName}</dd>
-              <dd className="mt-1 text-sm text-[var(--text-secondary)]">
-                {item.schemaVersionName} · v{item.schemaVersion}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Bookmark
-              </dt>
-              <dd className="mt-2 text-[var(--text-primary)]">{item.bookmarkName ?? "None"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Updated
-              </dt>
-              <dd className="mt-2 text-[var(--text-primary)]">
-                {formatTimestamp(item.updatedAt ?? item.createdAt)}
-              </dd>
-            </div>
-          </dl>
-        </AppPanel>
-        {canManageReviews ? (
-          <InferenceReviewStatusSection inferenceId={item.id} inferenceName={item.name} />
-        ) : reviewRequested ? (
-          <AppEmptyState
-            title="Review management unavailable"
-            description="You do not have permission to manage reviews in this organization."
-          />
-        ) : null}
+        {renderData(item, reviews)}
       </AppSurface>
     </AppPage>
   );

@@ -3,17 +3,18 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Check, Plus, RefreshCcw, Save } from "lucide-react";
-import { m as motion } from "motion/react";
+import { Check, Plus, Save } from "lucide-react";
 import type { DragEvent } from "react";
 import { cx } from "@/shared/ui/cx";
 import type { Bundle } from "@/features/models/lib/bundle-types";
+import { isBundleSaveable } from "@/features/models/lib/bundle-save";
 import { MODEL_EXT_LABEL } from "@/features/models/lib/bundle-utils";
 import { BundleFilePill } from "./BundleFilePill";
+import { AppButton } from "@/shared/ui/AppButton";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   bundle: Bundle;
-  index: number;
   onSave: () => void;
   onRemove: () => void;
   onRename: (value: string) => void;
@@ -33,7 +34,6 @@ function dropFile(event: DragEvent<HTMLButtonElement>, handler: (file: File) => 
 
 export function BundleCard({
   bundle,
-  index,
   onSave,
   onRemove,
   onRename,
@@ -43,24 +43,18 @@ export function BundleCard({
   onDropModel,
   onDropDf,
 }: Props) {
-  const isSaveable =
-    bundle.modelFile && bundle.name.trim() && bundle.oneHotSeparator !== "" && !bundle.saving;
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: index * 0.04 }}
+    <div
       className={cx(
-        "flex-shrink-0 overflow-hidden rounded-[10px] border transition-all duration-150",
+        "flex-shrink-0 overflow-hidden rounded-card border transition-all duration-150",
         bundle.saved
-          ? "border-[#b4ebc8] bg-gradient-to-br from-green-500/[0.045] to-[var(--surface-muted)]"
-          : "border-[var(--border-soft)] bg-[var(--surface-muted)] hover:-translate-y-px hover:border-[var(--border-strong)] hover:shadow-[var(--shadow-hover)]",
+          ? "border-success-border bg-success-subtle"
+          : "border-line bg-surface-muted hover:border-line-strong hover:shadow-hover",
       )}
     >
       <div className="flex items-stretch">
         {/* ── Files section ──────────────────────────────────────── */}
-        <div className="flex min-w-0 flex-1 flex-col gap-2 border-r border-[var(--border-soft)] px-4 py-3.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-2 border-r border-line px-4 py-3.5">
           {bundle.modelFile ? (
             <BundleFilePill
               name={bundle.modelFile.name}
@@ -74,11 +68,11 @@ export function BundleCard({
               onClick={onAttachModel}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => dropFile(event, onDropModel)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--accent-primary)] bg-[var(--accent-quiet)] px-3 py-[7px] text-[12px] font-bold text-[var(--accent-primary)] transition-all duration-150 hover:bg-[var(--surface-secondary)]"
+              className="flex cursor-pointer items-center gap-2.5 rounded-control border border-dashed border-accent bg-accent-subtle px-3 py-2 text-xs font-semibold text-accent transition-all duration-150 hover:bg-surface-subtle"
             >
               <Plus size={12} />
               Select model{" "}
-              <span className="cursor-pointer font-mono text-[10px] opacity-70">
+              <span className="cursor-pointer font-mono text-3xs opacity-70">
                 ({MODEL_EXT_LABEL})
               </span>
             </button>
@@ -97,11 +91,11 @@ export function BundleCard({
               onClick={onAttachDf}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => dropFile(event, onDropDf)}
-              className="flex cursor-pointer items-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-[var(--border-soft)] bg-[var(--surface-secondary)] px-3 py-[7px] text-[12px] text-[var(--text-muted)] transition-all duration-150 hover:border-blue-400 hover:bg-blue-500/10 hover:text-blue-500"
+              className="flex cursor-pointer items-center gap-2.5 rounded-control border border-dashed border-line bg-surface-subtle px-3 py-2 text-xs text-fg-muted transition-all duration-150 hover:border-accent-border hover:bg-accent-subtle hover:text-accent"
             >
               <Plus size={12} />
               Attach dataframe{" "}
-              <span className="cursor-pointer font-mono text-[10px] opacity-60">(optional)</span>
+              <span className="cursor-pointer font-mono text-3xs opacity-60">(optional)</span>
             </button>
           )}
         </div>
@@ -116,15 +110,15 @@ export function BundleCard({
             placeholder="Model name…"
             disabled={bundle.saved}
             className={cx(
-              "w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-secondary)]",
-              "px-3 py-2 text-[12px] font-bold text-[var(--text-primary)] outline-none",
-              "transition-all duration-150 focus:border-[var(--accent-primary)] focus:bg-[var(--surface-primary)]",
+              "w-full rounded-control border border-line bg-surface-subtle",
+              "px-3 py-2 text-xs font-semibold text-fg outline-none",
+              "transition-all duration-150 focus:border-accent focus:bg-surface",
               bundle.saved && "cursor-not-allowed opacity-70",
             )}
           />
 
           <label className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold uppercase text-[var(--text-muted)]">
+            <span className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
               One-hot separator
             </span>
             <input
@@ -134,9 +128,9 @@ export function BundleCard({
               onChange={(e) => onOneHotSeparatorChange(e.target.value)}
               disabled={bundle.saved}
               className={cx(
-                "w-full rounded-lg border border-[var(--border-soft)] bg-[var(--surface-secondary)]",
-                "px-3 py-2 font-mono text-[12px] text-[var(--text-primary)] outline-none",
-                "transition-all duration-150 focus:border-[var(--accent-primary)] focus:bg-[var(--surface-primary)]",
+                "w-full rounded-control border border-line bg-surface-subtle",
+                "px-3 py-2 font-mono text-xs text-fg outline-none",
+                "transition-all duration-150 focus:border-accent focus:bg-surface",
                 bundle.saved && "cursor-not-allowed opacity-70",
               )}
             />
@@ -144,42 +138,23 @@ export function BundleCard({
 
           <div className="flex items-center justify-between gap-2">
             {bundle.saved ? (
-              <span className="flex items-center gap-1.5 text-[12px] font-bold text-green-500">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-success-fg">
                 <Check size={13} />
                 Saved
               </span>
             ) : (
-              <button
-                type="button"
-                disabled={!isSaveable}
-                onClick={onSave}
-                className={cx(
-                  "inline-flex items-center gap-1.5 rounded-lg border-none px-3.5 py-[7px] text-[12px] font-bold text-white transition-all duration-150",
-                  isSaveable
-                    ? "cursor-pointer bg-[var(--accent-primary)] hover:-translate-y-px hover:bg-[var(--accent-primary-strong)]"
-                    : "cursor-not-allowed bg-[var(--accent-primary)] opacity-40",
-                )}
-              >
-                {bundle.saving ? (
-                  <RefreshCcw size={11} className="animate-spin" />
-                ) : (
-                  <Save size={11} />
-                )}
-                {bundle.saving ? "…" : "Save"}
-              </button>
+              <AppButton size="sm" disabled={!isBundleSaveable(bundle)} onClick={onSave}>
+                {bundle.saving ? <AppSpinner size={11} /> : <Save size={11} />}
+                {bundle.saving ? "Saving…" : "Save"}
+              </AppButton>
             )}
 
-            <button
-              type="button"
-              onClick={onRemove}
-              aria-label="Remove bundle"
-              className="inline-flex flex-shrink-0 cursor-pointer items-center justify-center rounded-[7px] border border-[var(--border-soft)] bg-[var(--surface-primary)] px-2.5 py-[7px] text-[12px] font-bold text-[var(--text-muted)] transition-all duration-150 hover:border-[var(--accent-primary)] hover:bg-[var(--accent-quiet)] hover:text-[var(--accent-primary)]"
-            >
-              Clear
-            </button>
+            <AppButton size="sm" variant="secondary" className="shrink-0" onClick={onRemove}>
+              Remove
+            </AppButton>
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

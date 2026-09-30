@@ -3,55 +3,40 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { GitCommitHorizontal, History, Play, Tag } from "lucide-react";
+import { GitCommitHorizontal, Play, Tag } from "lucide-react";
 import { Link } from "react-router";
-import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
-import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
+import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
+import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import type { SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
-type Props = {
-  bookmark: SchemaBookmarkDto;
-  schemaId: string;
-};
+/** A bookmark in its schema's repository; opening it goes to its Predict workspace. */
+export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookmarkDto }) {
+  const workspacePath = `/predict/${bookmark.id}`;
 
-export function SchemaBookmarkCatalogItem({ bookmark, schemaId }: Props) {
   return (
-    <article className="grid gap-4 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 transition hover:border-[var(--text-primary)] lg:grid-cols-[minmax(0,1fr)_auto]">
-      <Link
-        to={`/schemas/${schemaId}/bookmarks/${bookmark.id}/runs/create`}
-        className="min-w-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
-      >
-        <div className="flex items-center gap-2">
-          <Tag size={16} className="shrink-0 text-[var(--text-secondary)]" />
-          <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">
-            {bookmark.name}
-          </h2>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--text-secondary)]">
+    <CatalogEntry
+      title={bookmark.name}
+      icon={<Tag size={16} className="mt-1 text-fg-secondary" />}
+      metadata={
+        <>
           <span className="inline-flex items-center gap-1">
-            <GitCommitHorizontal size={15} />
-            {bookmark.versionName} · v{bookmark.version}
+            <GitCommitHorizontal size={14} />
+            {snapshotLabel(bookmark.versionName, bookmark.version)}
           </span>
-          <span>·</span>
           <span>
-            updated <LiveRelativeTime value={bookmark.updatedAt} /> ago
+            Updated <LiveRelativeTime value={bookmark.updatedAt} /> ago
           </span>
-        </div>
-      </Link>
-      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-        <Link to={`/schemas/${schemaId}/bookmarks/${bookmark.id}/runs/create`}>
-          <AppButton>
-            <Play size={16} />
-            Run
-          </AppButton>
+        </>
+      }
+      actions={
+        <Link to={workspacePath} className={appButtonClass({ size: "sm" })}>
+          <Play size={14} />
+          Predict
         </Link>
-        <Link to={`/schemas/${schemaId}/bookmarks/${bookmark.id}/runs`}>
-          <AppButton variant="secondary">
-            <History size={16} />
-            History
-          </AppButton>
-        </Link>
-      </div>
-    </article>
+      }
+      to={workspacePath}
+    />
   );
 }

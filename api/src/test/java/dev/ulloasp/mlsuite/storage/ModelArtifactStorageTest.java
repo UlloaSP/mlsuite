@@ -58,7 +58,7 @@ class ModelArtifactStorageTest {
                 () -> writer.storeAndAttach(model(), bytes, "application/octet-stream"));
 
         verify(storage).delete("bucket", "key", "v1");
-        verify(storage, never()).delete("bucket", "key");
+        verify(storage, never()).delete("bucket", "key", null);
     }
 
     @Test
@@ -71,7 +71,7 @@ class ModelArtifactStorageTest {
         byte[] bytes = "model".getBytes();
         String sha256 = ArtifactHash.sha256(bytes);
         String key = "organizations/41/models/7/artifacts/" + sha256 + "/model.joblib";
-        when(storage.inspectOptional("bucket", key)).thenReturn(Optional.of(
+        when(storage.inspectOptional("bucket", key, null)).thenReturn(Optional.of(
                 new StoredObjectMetadata("bucket", key, bytes.length, "etag", "v1", sha256)));
         when(storage.verify("bucket", key, "v1")).thenReturn(new StoredObjectVerification(bytes.length, sha256));
 
@@ -91,7 +91,7 @@ class ModelArtifactStorageTest {
         byte[] bytes = "model".getBytes();
         String sha256 = ArtifactHash.sha256(bytes);
         String key = "organizations/41/models/7/artifacts/" + sha256 + "/model.joblib";
-        when(storage.inspectOptional("bucket", key)).thenReturn(Optional.of(
+        when(storage.inspectOptional("bucket", key, null)).thenReturn(Optional.of(
                 new StoredObjectMetadata("bucket", key, bytes.length, "etag", "v1", sha256)));
         when(storage.verify("bucket", key, "v1"))
                 .thenReturn(new StoredObjectVerification(bytes.length, ArtifactHash.sha256("bad".getBytes())));
@@ -106,7 +106,7 @@ class ModelArtifactStorageTest {
         StorageProperties properties = new StorageProperties();
         properties.setBucket("bucket");
         ModelArtifactWriter writer = new ModelArtifactWriter(storage, properties);
-        when(storage.inspectOptional(anyString(), anyString())).thenReturn(Optional.empty());
+        when(storage.inspectOptional(anyString(), anyString(), any())).thenReturn(Optional.empty());
 
         assertFalse(writer.attachExisting(model(), "model".getBytes()));
     }
@@ -119,7 +119,7 @@ class ModelArtifactStorageTest {
         ModelArtifactWriter writer = new ModelArtifactWriter(storage, properties);
         byte[] bytes = "model".getBytes();
         String key = "organizations/41/models/7/artifacts/" + ArtifactHash.sha256(bytes) + "/model.joblib";
-        when(storage.inspectOptional("bucket", key)).thenReturn(Optional.of(
+        when(storage.inspectOptional("bucket", key, null)).thenReturn(Optional.of(
                 new StoredObjectMetadata("bucket", key, bytes.length, "etag", null, ArtifactHash.sha256(bytes))));
 
         assertFalse(writer.attachExisting(model(), bytes));
@@ -161,7 +161,7 @@ class ModelArtifactStorageTest {
         assertArrayEquals(bytes, new ModelArtifactContentReader(storage).loadVerified(model));
 
         verify(storage).load("bucket", "key", "v1");
-        verify(storage, never()).load("bucket", "key");
+        verify(storage, never()).load("bucket", "key", null);
     }
 
     private Model model() {

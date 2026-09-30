@@ -8,19 +8,17 @@ import { useMemo } from "react";
 import { useParams } from "react-router";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
-import type { SchemaBookmarkDto } from "@/features/schemas/api/schema-types";
 import {
   useSchema,
   useSchemaBookmarks,
-  useSchemaDrafts,
   useSchemaVersions,
 } from "@/features/schemas/api/schema-queries";
-import { sortSchemaVersions } from "@/features/schemas/lib/version-selection";
+import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
+import type { SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
 const EMPTY_BOOKMARKS: never[] = [];
-const EMPTY_DRAFTS: never[] = [];
 const EMPTY_VERSIONS: never[] = [];
 type BookmarkFilter = "all" | "latest" | "older";
 type BookmarkSort = "updated" | "name" | "version";
@@ -40,9 +38,9 @@ const SORTS: Array<{ value: BookmarkSort; label: string }> = [
 export function SchemaBookmarksPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
   const { data: schema } = useSchema(schemaId);
-  const { data: drafts = EMPTY_DRAFTS } = useSchemaDrafts(schemaId);
   const bookmarksQuery = useSchemaBookmarks(schemaId);
-  const { data: versions = EMPTY_VERSIONS } = useSchemaVersions(schemaId);
+  const versionsQuery = useSchemaVersions(schemaId);
+  const versions = versionsQuery.data ?? EMPTY_VERSIONS;
   const controls = useCatalogControls<BookmarkFilter, BookmarkSort>({
     filters: FILTERS.map(({ value }) => value),
     initialFilter: "all",
@@ -51,8 +49,7 @@ export function SchemaBookmarksPage() {
     sorts: SORTS.map(({ value }) => value),
   });
   const bookmarks = bookmarksQuery.data ?? EMPTY_BOOKMARKS;
-  const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
-  const latestVersion = sortedVersions[0]?.version;
+  const latestVersion = useMemo(() => latestSchemaVersion(versions)?.version, [versions]);
   const filtered = useMemo(
     () =>
       filterBookmarks(bookmarks, controls.search, controls.filter, controls.sort, latestVersion),
@@ -64,17 +61,7 @@ export function SchemaBookmarksPage() {
     <CatalogResourcePage
       accessFallback={null}
       controls={controls}
-      navigation={
-        schemaId ? (
-          <SchemaRepoNav
-            active="bookmarks"
-            schemaId={schemaId}
-            changes={drafts.length}
-            bookmarks={bookmarks.length}
-            snapshots={sortedVersions.length}
-          />
-        ) : null
-      }
+      navigation={schemaId ? <SchemaRepoNav active="bookmarks" schemaId={schemaId} /> : null}
       header={{
         title: "Bookmarks",
         description: "Operational tags that point to exact published snapshots.",
@@ -84,7 +71,7 @@ export function SchemaBookmarksPage() {
           { label: "Bookmarks" },
         ],
       }}
-      loadingLabel="Loading bookmarks..."
+      loadingLabel="Loading bookmarks…"
       pageSize={PAGE_SIZE}
       filterLabel="Filter bookmarks"
       filters={FILTERS}
@@ -97,7 +84,8 @@ export function SchemaBookmarksPage() {
         },
         error: bookmarksQuery.error,
         isFetching: bookmarksQuery.isFetching,
-        isLoading: bookmarksQuery.isLoading,
+        // The latest/older filter compares against the newest snapshot.
+        isLoading: bookmarksQuery.isLoading || versionsQuery.isLoading,
         refetch: bookmarksQuery.refetch,
       }}
       sortLabel="Sort bookmarks"
@@ -108,9 +96,7 @@ export function SchemaBookmarksPage() {
       emptyDescription="Bookmark a published snapshot to enable runs."
       filteredEmptyDescription="Try another search term or bookmark age."
       renderItem={(bookmark) =>
-        schemaId ? (
-          <SchemaBookmarkCatalogItem key={bookmark.id} bookmark={bookmark} schemaId={schemaId} />
-        ) : null
+        schemaId ? <SchemaBookmarkCatalogItem key={bookmark.id} bookmark={bookmark} /> : null
       }
     />
   );

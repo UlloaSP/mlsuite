@@ -4,14 +4,16 @@ import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.audit.domain.model.AuditEvent;
 
+import jakarta.annotation.Nullable;
+
 public record AuditEventDto(
         Long id,
         String actorName,
         String actorEmail,
         String action,
         String targetType,
-        String targetId,
-        String metadata,
+        @Nullable String targetId,
+        @Nullable String metadata,
         OffsetDateTime createdAt) {
 
     public static AuditEventDto from(AuditEvent event) {

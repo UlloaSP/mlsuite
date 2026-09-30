@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AlertTriangle, CheckCircle2, TerminalSquare } from "lucide-react";
 import { cx } from "@/shared/ui/cx";
 import { buildDashboardAlerts } from "@/features/infrastructure/lib/dashboard-summary";
 import type { InfrastructureOverviewDto } from "@/features/infrastructure/api/infrastructure.types";
-import { AlertSegmentedControl } from "./AlertSegmentedControl";
+import { AppSegmentedControl } from "@/shared/ui/AppSegmentedControl";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 
 type Props = {
   overview: InfrastructureOverviewDto;
@@ -34,44 +36,43 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-            Operational signals
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Alerts
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            {filtered.length} active alerts across the cluster.
-          </p>
-        </div>
-        <AlertSegmentedControl
-          options={[
-            { key: "all", label: `All ${counts.all}` },
-            { key: "danger", label: `Critical ${counts.danger}` },
-            { key: "warning", label: `Warning ${counts.warning}` },
-            { key: "info", label: `Info ${counts.info}` },
-          ]}
-          value={filter}
-          onChange={(v) => setFilter(v as AlertLevel)}
-        />
-      </div>
+    <>
+      <AppPageHeader
+        breadcrumbScope="platform"
+        breadcrumbs={[
+          { label: "Infrastructure", to: "/admin/infrastructure" },
+          { label: "Alerts" },
+        ]}
+        eyebrow="Operational signals"
+        title="Alerts"
+        description={`${filtered.length} active alerts across the cluster.`}
+        actions={
+          <AppSegmentedControl
+            label="Alert level"
+            size="md"
+            options={[
+              { value: "all", label: `All ${counts.all}` },
+              { value: "danger", label: `Critical ${counts.danger}` },
+              { value: "warning", label: `Warning ${counts.warning}` },
+              { value: "info", label: `Info ${counts.info}` },
+            ]}
+            value={filter}
+            onChange={setFilter}
+          />
+        }
+      />
 
       {/* Alert list */}
-      <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] divide-y divide-[var(--border-soft)]">
+      <div className="overflow-hidden rounded-card border border-line bg-surface divide-y divide-line">
         {filtered.map((alert) => (
           <div key={alert.id} className="flex items-start gap-3 px-5 py-4">
             <div
               className={cx(
                 "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg",
-                alert.tone === "danger" && "bg-[var(--danger-quiet)] text-[var(--danger-text)]",
-                alert.tone === "warning" && "bg-[var(--warning-quiet)] text-[var(--warning-text)]",
-                alert.tone === "accent" &&
-                  "bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]",
-                alert.tone === "success" && "bg-[var(--success-quiet)] text-[var(--success-text)]",
+                alert.tone === "danger" && "bg-danger-subtle text-danger-fg",
+                alert.tone === "warning" && "bg-warning-subtle text-warning-fg",
+                alert.tone === "accent" && "bg-accent-subtle text-accent-strong",
+                alert.tone === "success" && "bg-success-subtle text-success-fg",
               )}
             >
               {alert.tone === "success" ? (
@@ -83,17 +84,15 @@ export function AlertsView({ overview, streamConnected, selectedService }: Props
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-[var(--text-primary)]">{alert.title}</p>
-              <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{alert.detail}</p>
+              <p className="text-sm font-medium text-fg">{alert.title}</p>
+              <p className="mt-0.5 text-xs text-fg-secondary">{alert.detail}</p>
             </div>
           </div>
         ))}
         {filtered.length === 0 && (
-          <div className="px-5 py-10 text-center text-sm text-[var(--text-muted)]">
-            No alerts match this filter.
-          </div>
+          <AppEmptyState compact title="No matching alerts" description="Try another level." />
         )}
       </div>
-    </div>
+    </>
   );
 }

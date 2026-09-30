@@ -23,7 +23,7 @@ class StorageDeletionProcessorTest {
 
         processor.processPending();
 
-        verify(storage).delete("models", "immutable/key");
+        verify(storage).delete("models", "immutable/key", null);
         verify(queue).complete(org.mockito.ArgumentMatchers.eq(7L), anyString());
     }
 
@@ -33,7 +33,7 @@ class StorageDeletionProcessorTest {
         when(queue.claim(org.mockito.ArgumentMatchers.eq(20), org.mockito.ArgumentMatchers.eq(300L), anyString()))
                 .thenReturn(List.of(item));
         org.mockito.Mockito.doThrow(new ObjectStorageException("storage unavailable"))
-                .when(storage).delete("models", "immutable/key");
+                .when(storage).delete("models", "immutable/key", null);
 
         processor.processPending();
 

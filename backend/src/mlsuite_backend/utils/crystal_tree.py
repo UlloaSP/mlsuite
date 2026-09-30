@@ -1,9 +1,11 @@
 import json
 import math
+from typing import Any
 
 from crystal_tree import Condition, CrystalTree, Trace
 from crystal_tree.crystal_tree import CrystalTreeContext, Dafacter
 from sklearn.tree import DecisionTreeClassifier
+from pydantic import BaseModel, TypeAdapter, ValidationError
 from xclingo import XclingoControl
 
 from .errors import bad_request
@@ -73,34 +75,35 @@ def get_logic_feature_count(model: object) -> int:
     return max(used_features) + 1 if used_features else 0
 
 
-def parse_trace_definitions(raw_traces: list[object]) -> list[Trace]:
-    traces: list[Trace] = []
-    for item in raw_traces:
-        if not isinstance(item, dict):
-            raise bad_request("Invalid traces JSON: each trace must be an object")
-        text = item.get("text")
-        feature = item.get("feature")
-        if not isinstance(text, str) or not isinstance(feature, str):
-            raise bad_request(
-                "Invalid traces JSON: trace text and feature are required"
-            )
-        conditions = []
-        for condition in item.get("conditions", []):
-            if not isinstance(condition, dict):
-                raise bad_request("Invalid traces JSON: condition must be an object")
-            operator = condition.get("operator")
-            if not isinstance(operator, str):
-                raise bad_request("Invalid traces JSON: condition operator is required")
-            conditions.append(Condition(operator, condition.get("value")))
-        traces.append(
-            Trace(
-                text,
-                feature,
-                conditions=conditions,
-                target_class=item.get("targetClass"),
-            )
+class TraceConditionDefinition(BaseModel):
+    operator: str
+    value: Any = None
+
+
+class TraceDefinition(BaseModel):
+    text: str
+    feature: str
+    targetClass: Any = None
+    conditions: list[TraceConditionDefinition] = []
+
+
+_TRACE_LIST = TypeAdapter(list[TraceDefinition])
+
+
+def parse_trace_definitions(payload: str) -> list[Trace]:
+    try:
+        definitions = _TRACE_LIST.validate_json(payload)
+    except ValidationError as exc:
+        raise bad_request(f"Invalid traces JSON: {exc}") from exc
+    return [
+        Trace(
+            item.text,
+            item.feature,
+            conditions=[Condition(condition.operator, condition.value) for condition in item.conditions],
+            target_class=item.targetClass,
         )
-    return traces
+        for item in definitions
+    ]
 
 
 def explain_with_feature_name_aliases(
