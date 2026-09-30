@@ -10,9 +10,7 @@ import { usePredictionRun } from "@/features/schemas/api/schema-queries";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import { InferenceSessionPanel } from "@/features/schemas/components/InferenceSessionPanel";
 import { SchemaRunForm } from "@/features/schemas/components/SchemaRunForm";
-import { SchemaRunReportsPanel } from "@/features/schemas/components/SchemaRunReportsPanel";
-import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
-import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import { InferenceSessionResultPreview } from "./InferenceSessionResultPreview";
 import type { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
@@ -31,12 +29,9 @@ type Props = {
  */
 export function BookmarkPredictPanel({ version, session, fromRunId }: Props) {
   const { data: sourceRun } = usePredictionRun(fromRunId);
-  const catalog = useSchemaPluginCatalog(version.formSchema, useCurrentOrganizationId() ?? "none");
   const [viewingKey, setViewingKey] = useState<string | null>(null);
   const { onResult } = session;
-  const viewing = session.entries.find(
-    (entry) => entry.key === viewingKey && entry.key !== session.liveKey,
-  );
+  const viewing = session.entries.find((entry) => entry.key === viewingKey);
 
   const handleSubmit = useCallback(
     (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => {
@@ -59,10 +54,10 @@ export function BookmarkPredictPanel({ version, session, fromRunId }: Props) {
               </AppButton>
             </div>
             <div className="app-scroll min-h-0 flex-1 overflow-y-auto">
-              <SchemaRunReportsPanel
-                version={version}
-                results={viewing.results}
-                customReportDefinitions={catalog.data.reportDefinitions}
+              <InferenceSessionResultPreview
+                key={viewing.key}
+                entry={viewing}
+                currentVersion={version}
               />
             </div>
           </div>

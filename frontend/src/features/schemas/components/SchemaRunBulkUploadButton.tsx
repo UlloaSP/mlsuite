@@ -11,17 +11,18 @@ import { useSchemaRunBulkUpload } from "@/features/schemas/lib/use-schema-run-bu
 import { bulkUploadSummary } from "@/features/schemas/lib/bulk-upload";
 import { AppSpinner } from "@/shared/ui/AppSpinner";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
+import type { useInferenceSession } from "@/features/schemas/lib/use-inference-session";
 
 type Props = {
   version: SchemaVersionDto;
-  bookmarkId: string;
+  onResult: ReturnType<typeof useInferenceSession>["addResult"];
 };
 
-export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
+export function SchemaRunBulkUploadButton({ version, onResult }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const bulk = useSchemaRunBulkUpload(version, bookmarkId);
+  const bulk = useSchemaRunBulkUpload(version, onResult);
   const summary = bulkUploadSummary(
-    bulk.saved,
+    bulk.added,
     bulk.failed,
     bulk.skipped,
     Math.max(0, bulk.total - bulk.processed),
@@ -78,7 +79,7 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
             ? `${summary.message}. Click to upload another file.`
             : processing
               ? `Processing ${bulk.processed} of ${bulk.total}. Click to cancel.`
-              : "Upload a CSV or XLSX file with up to 10000 records."
+              : "Add up to 10000 CSV or XLSX records to the session. Review them before saving."
         }
       >
         <span className="inline-flex items-center gap-2">
