@@ -111,10 +111,10 @@ export const toSchemaRunFieldValues = (
   return values;
 };
 
-export function bulkUploadSummary(saved: number, failed: number, skipped: number, remaining = 0) {
-  const summary = `${saved} saved, ${failed} failed, ${skipped} skipped`;
+export function bulkUploadSummary(added: number, failed: number, skipped: number, remaining = 0) {
+  const summary = `${added} uploaded, ${failed} failed, ${skipped} skipped`;
   return {
     message: remaining > 0 ? `${summary}, ${remaining} not processed` : summary,
-    warning: failed > 0 || skipped > 0 || remaining > 0 || saved === 0,
+    warning: failed > 0 || skipped > 0 || remaining > 0 || added === 0,
   };
 }

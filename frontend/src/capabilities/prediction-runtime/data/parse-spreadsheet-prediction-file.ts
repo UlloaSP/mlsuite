@@ -46,7 +46,7 @@ export async function parseSpreadsheetPredictionFile(
   file: File,
   schemaDefinition: unknown,
   maxRecords = 10000,
-  autoNameBase?: number,
+  autoNameBase?: number | string,
 ): Promise<ParseSpreadsheetPredictionResult> {
   if (isCsvFile(file)) {
     return parseCsvPredictionFile(await file.text(), schemaDefinition, maxRecords, autoNameBase);

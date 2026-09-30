@@ -70,7 +70,7 @@ export function parseCsvPredictionFile(
   text: string,
   schemaDefinition: unknown,
   maxRecords = 10000,
-  autoNameBase?: number,
+  autoNameBase?: number | string,
 ): ParseCsvPredictionResult {
   const { rows, error } = parseCsvRows(text);
   if (error) return { records: [], skipped: [error] };

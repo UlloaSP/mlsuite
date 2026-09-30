@@ -5,20 +5,16 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  createPredictionRunForBookmark,
-  getLastPredictionRunId,
-} from "@/features/schemas/api/schema-prediction-api";
-import { invalidatePredictionRunCollections } from "@/features/schemas/api/schema-prediction-mutations";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
 import { predictionCatalogQueryOptions } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
 import { parseSpreadsheetPredictionFile } from "@/capabilities/prediction-runtime/data/parse-spreadsheet-prediction-file";
 import { bulkUploadSummary, getModelInputBulkSchema } from "@/features/schemas/lib/bulk-upload";
 import type { SubmitRequest } from "mlform/runtime";
-import type { CreatePredictionRunRequest, SchemaVersionDto } from "@/shared/api/openapi.gen";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
+import type { useInferenceSession } from "./use-inference-session";
 
 type Status = "idle" | "parsing" | "processing" | "done";
 
@@ -26,31 +22,41 @@ const INITIAL = {
   status: "idle" as Status,
   processed: 0,
   total: 0,
-  saved: 0,
+  added: 0,
   failed: 0,
   skipped: 0,
 };
 const MAX_RECORDS = 10000;
 
-export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: string) {
+export function useSchemaRunBulkUpload(
+  version: SchemaVersionDto,
+  onResult: ReturnType<typeof useInferenceSession>["addResult"],
+) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const [state, setState] = useState(INITIAL);
   const abortRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
 
+  useEffect(() => () => abortRef.current?.abort(), [onResult, version.id]);
+
   const cancel = () => abortRef.current?.abort();
   const reset = () => setState(INITIAL);
 
   const start = async (file: File) => {
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       setState({ ...INITIAL, status: "parsing" });
-      const lastPredictionRunId = await getLastPredictionRunId();
       const parsed = await parseSpreadsheetPredictionFile(
         file,
         getModelInputBulkSchema(version),
         MAX_RECORDS,
-        lastPredictionRunId,
+        `bulk-upload-${crypto.randomUUID()}`,
       );
+      if (controller.signal.aborted) {
+        setState((current) => ({ ...current, status: "done" }));
+        return;
+      }
       parsed.skipped
         .slice(0, 5)
         .forEach((entry) =>
@@ -64,9 +70,11 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
         return;
       }
 
-      const controller = new AbortController();
-      abortRef.current = controller;
       const catalog = await queryClient.fetchQuery(predictionCatalogQueryOptions(organizationId));
+      if (controller.signal.aborted) {
+        setState((current) => ({ ...current, status: "done" }));
+        return;
+      }
       const runtime = createSchemaRunRuntime({
         schema: version.formSchema,
         bindings: version.bindings,
@@ -78,12 +86,12 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
         status: "processing",
         processed: 0,
         total: parsed.records.length,
-        saved: 0,
+        added: 0,
         failed: 0,
         skipped: parsed.skipped.length,
       });
 
-      let saved = 0;
+      let added = 0;
       let failed = 0;
       for (let index = 0; index < parsed.records.length; index += 1) {
         if (controller.signal.aborted) break;
@@ -96,36 +104,31 @@ export function useSchemaRunBulkUpload(version: SchemaVersionDto, bookmarkId: st
             modelValues: record.inputs,
             reports: runtime.formSchema.reports,
           } as unknown as SubmitRequest);
+          if (controller.signal.aborted) break;
           const raw = isRecord(result) && isRecord(result.raw) ? result.raw : {};
-          const request: CreatePredictionRunRequest = {
-            schemaVersionId: version.id,
-            name: record.name,
-            inputData: isRecord(raw.inputData) ? raw.inputData : record.inputs,
-            results: Array.isArray(raw.results) ? raw.results : [],
-          };
-          await createPredictionRunForBookmark(bookmarkId, request);
-          saved += 1;
+          onResult(record.name, isRecord(raw.inputData) ? raw.inputData : record.inputs, raw);
+          added += 1;
         } catch (error) {
+          if (controller.signal.aborted) break;
           failed += 1;
           toast.error(`Failed: ${record.name}`, {
             description: error instanceof Error ? error.message : String(error),
           });
         }
-        setState((current) => ({ ...current, processed: index + 1, saved, failed }));
+        setState((current) => ({ ...current, processed: index + 1, added, failed }));
       }
 
-      setState((current) => ({ ...current, status: "done", saved, failed }));
+      setState((current) => ({ ...current, status: "done", added, failed }));
       const summary = bulkUploadSummary(
-        saved,
+        added,
         failed,
         parsed.skipped.length,
-        parsed.records.length - saved - failed,
+        parsed.records.length - added - failed,
       );
       const notify = summary.warning ? toast.warning : toast.success;
       notify(
         `Bulk upload ${controller.signal.aborted ? "cancelled" : "complete"}: ${summary.message}`,
       );
-      if (saved > 0) void invalidatePredictionRunCollections(queryClient, organizationId);
     } catch (error) {
       setState(INITIAL);
       toast.error("Bulk upload could not start", {
