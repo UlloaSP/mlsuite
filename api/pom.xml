@@ -17,6 +17,8 @@
 
     <properties>
         <java.version>25</java.version>
+        <!-- Spring Boot's Jackson BOM is affected by CVE-2026-68497. -->
+        <jackson-bom.version>2.21.6</jackson-bom.version>
         <tomcat.version>10.1.60</tomcat.version>
         <postgresql.version>42.7.12</postgresql.version>
     </properties>
