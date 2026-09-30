@@ -34,7 +34,7 @@ export const mappedTarget = (
   binding?: BindingIdentity,
 ): string | number | undefined => {
   const mapping = asMappedTo(mappedTo);
-  if (!mapping) return undefined;
+  if (mapping === undefined) return undefined;
   if (binding) {
     return (
       (binding.modelName ? resolveMappedTo(mapping, binding.modelName) : undefined) ??
