@@ -1,5 +1,5 @@
-import type { SearchGroup } from "@/features/search/api/search.types";
 import { SearchResultItem } from "./SearchResultItem";
+import type { SearchGroupDto } from "@/shared/api/openapi.gen";
 
 export function SearchResultGroup({
   group,
@@ -8,7 +8,7 @@ export function SearchResultGroup({
   onHover,
   onSelect,
 }: {
-  group: SearchGroup;
+  group: SearchGroupDto;
   activeIndex: number;
   offset: number;
   onHover: (index: number) => void;
@@ -16,7 +16,7 @@ export function SearchResultGroup({
 }) {
   return (
     <section className="space-y-2">
-      <p className="px-2 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[var(--text-secondary)]">
+      <p className="px-2 text-2xs font-semibold uppercase tracking-eyebrow text-fg-secondary">
         {group.label}
       </p>
       <div className="space-y-1">

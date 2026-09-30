@@ -4,10 +4,12 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Paintbrush } from "lucide-react";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useState } from "react";
 import { AppChoiceCard } from "@/shared/ui/AppChoiceCard";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppShortcut } from "@/shared/ui/AppShortcut";
+import { shortcutBindingsAtom } from "@/shared/ui/shortcut-state";
 import {
   customThemesAtom,
   themeModeAtom,
@@ -31,6 +33,7 @@ export function SettingsAppearanceSection() {
   const [selection, setSelection] = useAtom(themeSelectionAtom);
   const [customThemes, setCustomThemes] = useAtom(customThemesAtom);
   const [createOpen, setCreateOpen] = useState(false);
+  const bindings = useAtomValue(shortcutBindingsAtom);
   const themes: Array<{
     value: ThemeId;
     label: string;
@@ -63,19 +66,22 @@ export function SettingsAppearanceSection() {
   return (
     <section aria-labelledby="appearance-heading">
       <div>
-        <h2
-          id="appearance-heading"
-          className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]"
-        >
+        <h2 id="appearance-heading" className="text-xl font-semibold tracking-[-0.02em] text-fg">
           Appearance
         </h2>
-        <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+        <p className="mt-1 text-sm leading-6 text-fg-secondary">
           Choose a built-in palette, follow your system, and tune interface definition.
         </p>
       </div>
 
       <fieldset className="mt-7">
-        <legend className="text-base font-semibold text-[var(--text-primary)]">Color scheme</legend>
+        <legend className="flex w-full items-center justify-between gap-3 text-base font-semibold text-fg">
+          Color scheme
+          <span className="flex items-center gap-2 text-xs font-normal text-fg-secondary">
+            Cycle
+            <AppShortcut binding={bindings["toggle-theme"]} />
+          </span>
+        </legend>
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
           {MODES.map((option) => (
             <AppChoiceCard
@@ -95,14 +101,14 @@ export function SettingsAppearanceSection() {
       <section className="mt-9" aria-labelledby="themes-heading">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h3 id="themes-heading" className="text-base font-semibold text-[var(--text-primary)]">
+            <h3 id="themes-heading" className="text-base font-semibold text-fg">
               Themes
             </h3>
-            <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm leading-6 text-fg-secondary">
               Apply a full pair, or choose either orb for only that mode.
             </p>
           </div>
-          <AppButton variant="secondary" className="px-3 py-2" onClick={() => setCreateOpen(true)}>
+          <AppButton variant="secondary" size="sm" onClick={() => setCreateOpen(true)}>
             <Paintbrush size={15} /> Create theme
           </AppButton>
         </div>

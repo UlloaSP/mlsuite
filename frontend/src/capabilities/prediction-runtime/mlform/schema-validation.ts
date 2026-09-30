@@ -10,8 +10,10 @@ import {
   validateSchema,
   type SchemaValidationIssue,
 } from "mlform/schema";
-import type { CatalogFieldDefinition } from "@/capabilities/prediction-runtime/plugins/custom-field-catalog";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type {
+  CatalogFieldDefinition,
+  CatalogReportDefinition,
+} from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import { getBuiltinRegistry } from "@/capabilities/prediction-runtime/mlform/builtin-registry";
 import type {
   CompatIssue,

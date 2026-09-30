@@ -3,15 +3,13 @@ package dev.ulloasp.mlsuite.admin.infrastructure;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class InfrastructureService {
 
     private final OpsAgentClient opsAgentClient;
-
-    public InfrastructureService(OpsAgentClient opsAgentClient) {
-        this.opsAgentClient = opsAgentClient;
-    }
 
     public JsonNode overview() {
         return opsAgentClient.overview();

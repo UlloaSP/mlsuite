@@ -109,11 +109,11 @@ describe("schema run display", () => {
           },
         ],
       },
-      bindings: [{ modelId: "model-1", modelName: "model-1" }],
+      bindings: [{ modelId: 1, modelName: "model-1" }],
     };
 
     const reports = getSchemaResultReports(version as never, {
-      modelId: "model-1",
+      modelId: 1,
       output: {
         reports: [
           { mappedTo: "normal_output", prediction: 1 },

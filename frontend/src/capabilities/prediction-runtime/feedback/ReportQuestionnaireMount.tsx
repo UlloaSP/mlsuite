@@ -11,13 +11,7 @@ import {
   type FormViewSnapshot,
   type MountedForm,
 } from "mlform/kit";
-import type {
-  AfterSubmitContext,
-  FormState,
-  SubmissionInputRecord,
-  SubmitRequest,
-  Transport,
-} from "mlform/runtime";
+import type { AfterSubmitContext, FormState, SubmitRequest, Transport } from "mlform/runtime";
 import type { QuestionnaireSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import {
   buildQuestionnaireFormSchema,
@@ -27,6 +21,7 @@ import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { createLocalQuestionnaireTransport } from "@/capabilities/prediction-runtime/feedback/local-questionnaire-transport";
 import {
   getQuestionnaireValues,
+  submissionValues,
   submitQuestionnaire,
   toQuestionnaireSchema,
 } from "@/capabilities/prediction-runtime/feedback/questionnaire-feedback";
@@ -54,7 +49,6 @@ type ReportQuestionnaireMountProps = {
     submit?: string;
     submitting?: string;
   };
-  square?: boolean;
 };
 
 const buildEmbeddedStyles = (singleStep: boolean): string => `
@@ -76,12 +70,12 @@ const getMountedView = (mounted: MountedForm): FormViewController | undefined =>
 
 const renderMountError = (container: HTMLDivElement, error: unknown) => {
   const panel = document.createElement("div");
-  panel.className = "space-y-3 border border-[var(--border-soft)] p-4";
+  panel.className = "space-y-3 border border-line p-4";
   const title = document.createElement("h3");
-  title.className = "text-base font-semibold text-[var(--text-primary)]";
+  title.className = "text-base font-semibold text-fg";
   title.textContent = "Questionnaire unavailable";
   const message = document.createElement("p");
-  message.className = "text-sm text-[var(--text-secondary)]";
+  message.className = "text-sm text-fg-secondary";
   message.textContent = error instanceof Error ? error.message : String(error);
   panel.replaceChildren(title, message);
   container.replaceChildren(panel);
@@ -97,7 +91,6 @@ type MountQuestionnaireHostOptions = {
   onMounted: (mounted: MountedForm | null) => void;
   onStepChange: (stepId: string | null) => void;
   onValuesChange: (values: Record<string, unknown>) => void;
-  square: boolean;
   theme: "light" | "dark";
   transport?: Transport;
   onSubmitted?: (values: Record<string, unknown>) => unknown;
@@ -114,7 +107,6 @@ const mountQuestionnaireHost = ({
   onMounted,
   onStepChange,
   onValuesChange,
-  square,
   theme,
   transport,
   onSubmitted,
@@ -131,14 +123,7 @@ const mountQuestionnaireHost = ({
         beforeSubmit: () => onSubmittingChange?.(true),
         afterSubmit: async ({ result }: AfterSubmitContext) => {
           try {
-            await onSubmitted?.(
-              Object.fromEntries(
-                result.inputs.map((input: SubmissionInputRecord) => [
-                  input.fieldId,
-                  input.serializedValue,
-                ]),
-              ),
-            );
+            await onSubmitted?.(submissionValues(result.inputs));
           } finally {
             onSubmittingChange?.(false);
           }
@@ -148,7 +133,7 @@ const mountQuestionnaireHost = ({
       designSystem: getPredictionDesignSystem(theme),
       labels: {
         submit: labels?.submit ?? (editable ? "Check answers" : "Reviewed"),
-        submitting: labels?.submitting ?? "Checking answers...",
+        submitting: labels?.submitting ?? "Checking answers…",
       },
       reportPane: "hidden",
     });
@@ -161,11 +146,6 @@ const mountQuestionnaireHost = ({
     if (mode === "navigation") {
       const style = document.createElement("style");
       style.textContent = NAVIGATION_ONLY_STYLES;
-      mounted.host.shadowRoot?.append(style);
-    }
-    if (square) {
-      const style = document.createElement("style");
-      style.textContent = "* { border-radius: 0 !important; }";
       mounted.host.shadowRoot?.append(style);
     }
 
@@ -215,25 +195,34 @@ export function ReportQuestionnaireMount({
   onSubmitted,
   onSubmittingChange,
   labels,
-  square = false,
 }: ReportQuestionnaireMountProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedForm | null>(null);
   const initialValuesRef = useRef(initialValues);
-  const transportRef = useRef(transport);
-  const submissionRef = useRef({ onSubmitted, onSubmittingChange });
+  // The form stays mounted across renders; callbacks and transport are read from here.
+  const latestRef = useRef({
+    transport,
+    onSubmitted,
+    onSubmittingChange,
+    onValuesChange,
+    onStepChange,
+  });
+  useEffect(() => {
+    latestRef.current = {
+      transport,
+      onSubmitted,
+      onSubmittingChange,
+      onValuesChange,
+      onStepChange,
+    };
+  }, [transport, onSubmitted, onSubmittingChange, onValuesChange, onStepChange]);
   const stableTransport = useMemo<Transport>(() => {
     const local = createLocalQuestionnaireTransport();
-    return { submit: (request: SubmitRequest) => (transportRef.current ?? local).submit(request) };
+    return {
+      submit: (request: SubmitRequest) => (latestRef.current.transport ?? local).submit(request),
+    };
   }, []);
-  useEffect(() => {
-    transportRef.current = transport;
-    submissionRef.current = { onSubmitted, onSubmittingChange };
-  }, [transport, onSubmitted, onSubmittingChange]);
   const [initialTheme] = useState(theme);
-  const onValuesChangeRef = useRef(onValuesChange);
-  const onStepChangeRef = useRef(onStepChange);
-  const currentStepIdRef = useRef<string | null>(null);
   const serializedSchema = JSON.stringify(toQuestionnaireSchema(schema, editable));
   const effectiveSchema = useMemo<QuestionnaireSchema>(
     () => JSON.parse(serializedSchema),
@@ -250,14 +239,6 @@ export function ReportQuestionnaireMount({
   }));
 
   useEffect(() => {
-    onValuesChangeRef.current = onValuesChange;
-  }, [onValuesChange]);
-
-  useEffect(() => {
-    onStepChangeRef.current = onStepChange;
-  }, [onStepChange]);
-
-  useEffect(() => {
     if (!containerRef.current) {
       return;
     }
@@ -272,18 +253,14 @@ export function ReportQuestionnaireMount({
       onMounted: (mounted) => {
         mountedRef.current = mounted;
       },
-      onStepChange: (stepId) => {
-        currentStepIdRef.current = stepId;
-        onStepChangeRef.current?.(stepId);
-      },
-      onValuesChange: (values) => onValuesChangeRef.current?.(values),
-      square,
+      onStepChange: (stepId) => latestRef.current.onStepChange?.(stepId),
+      onValuesChange: (values) => latestRef.current.onValuesChange?.(values),
       theme: initialTheme,
       transport: stableTransport,
-      onSubmitted: (values) => submissionRef.current.onSubmitted?.(values),
-      onSubmittingChange: (submitting) => submissionRef.current.onSubmittingChange?.(submitting),
+      onSubmitted: (values) => latestRef.current.onSubmitted?.(values),
+      onSubmittingChange: (submitting) => latestRef.current.onSubmittingChange?.(submitting),
     });
-  }, [effectiveSchema, editable, initialTheme, labels, mode, square, stableTransport]);
+  }, [effectiveSchema, editable, initialTheme, labels, mode, stableTransport]);
 
   useEffect(() => {
     mountedRef.current?.replaceDesignSystem(getPredictionDesignSystem(theme));

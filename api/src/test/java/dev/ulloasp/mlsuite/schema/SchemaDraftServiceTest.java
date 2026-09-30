@@ -1,7 +1,6 @@
 package dev.ulloasp.mlsuite.schema;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
@@ -12,6 +11,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,7 +33,6 @@ import dev.ulloasp.mlsuite.schema.application.service.SchemaVersionServiceImpl;
 import dev.ulloasp.mlsuite.schema.domain.model.*;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,7 +45,6 @@ class SchemaDraftServiceTest {
     @Mock ModelRepository models;
     @Mock SchemaVersionUseCase versionUseCase;
     @Mock SchemaDraftPublishedVersionResolver publishedVersions;
-    @Mock WorkspaceAccessService workspaces;
     @Mock WorkspaceAuthorizationService authorization;
     SchemaDraftDiffService engine;
     SchemaDraftServiceImpl service;
@@ -55,9 +53,9 @@ class SchemaDraftServiceTest {
     void setUp() {
         engine = new SchemaDraftDiffService();
         service = new SchemaDraftServiceImpl(users, schemas, versions, drafts, versionUseCase,
-                engine, publishedVersions, workspaces, authorization);
+                engine, publishedVersions, authorization);
         lenient().when(users.requireById(7L)).thenReturn(user());
-        lenient().when(workspaces.requireCurrentOrganization(7L)).thenReturn(organization());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
 
     @Test
@@ -216,7 +214,7 @@ class SchemaDraftServiceTest {
         SchemaDraft legacy = draft(base);
         legacy.setBaseBindings(null);
         SchemaVersionServiceImpl versionService = new SchemaVersionServiceImpl(users, schemas, versions, bindings,
-                models, drafts, workspaces, authorization);
+                models, drafts, authorization);
         when(versions.findByIdAndOrganizationId(9L, 41L)).thenReturn(Optional.of(base));
         when(schemas.findForUpdate(5L, 41L)).thenReturn(Optional.of(schema()));
         when(bindings.findBinding(9L, 12L)).thenReturn(Optional.empty());

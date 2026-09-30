@@ -6,30 +6,24 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
-import { PredictionRunDetailPage } from "@/features/schemas/pages/prediction-run-detail-page";
-import type { PredictionRunDto } from "@/features/schemas/api/prediction-types";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
+import { PredictionRunDetails } from "@/features/schemas/components/PredictionRunDetails";
+import { changeValue, mount } from "./support/dom";
+import { binding, predictionResult, predictionRun, schemaVersion } from "./support/api-fixtures";
 
-const queryState = vi.hoisted(() => ({ refetch: vi.fn() }));
+const queryState = vi.hoisted(() => ({ refetch: vi.fn(), runError: false }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useCurrentOrganizationId: () => 1,
   useWorkspaceContext: () => ({
     data: { permissions: { canRunPredictions: true, canViewOrganization: true } },
   }),
 }));
 
-const version: SchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
+const version = schemaVersion({
   version: 3,
   name: "Risk model",
   createdAt: "2026-08-24T12:00:00Z",
-  bindings: [
-    { modelId: "model-1", modelName: "Risk Forest" },
-    { modelId: "model-2", modelName: "Risk Boost" },
-  ],
+  bindings: [binding(1, { modelName: "Risk Forest" }), binding(2, { modelName: "Risk Boost" })],
   formSchema: {
     fields: [
       { id: "age", label: "Age", kind: "number", displayKey: "age", mappedTo: "age" },
@@ -40,51 +34,49 @@ const version: SchemaVersionDto = {
         id: "score",
         label: "Risk score",
         kind: "regressor",
-        mappedTo: { "model-1": "score", "model-2": "score-2" },
+        mappedTo: { "Risk Forest": "score", "Risk Boost": "score-2" },
       },
     ],
   },
-};
+});
 
-const run: PredictionRunDto = {
-  id: "run-1",
+const run = predictionRun({
   schemaVersionId: version.id,
-  schemaBookmarkId: "bookmark-1",
+  schemaBookmarkId: 1,
   name: "manito",
-  status: "SUCCESS",
   createdAt: "2026-08-24T15:15:00Z",
   inputData: { age: 52, sex: "Female" },
   results: [
-    {
-      id: "result-1",
-      runId: "run-1",
-      modelId: "model-1",
-      status: "SUCCESS",
+    predictionResult({
+      id: 1,
+      modelId: 1,
       createdAt: "2026-08-24T15:15:00Z",
       modelInput: { age: 52, sex: "Female" },
       output: { reports: [{ mappedTo: "score", value: "High" }] },
-    },
-    {
-      id: "result-2",
-      runId: "run-1",
-      modelId: "model-2",
-      status: "SUCCESS",
+    }),
+    predictionResult({
+      id: 2,
+      modelId: 2,
       createdAt: "2026-08-24T15:15:00Z",
       modelInput: { age: 52 },
       output: { reports: [{ mappedTo: "score-2", value: "Low" }] },
-    },
+    }),
   ],
-};
+});
 
 vi.mock("@/features/schemas/api/schema-queries", () => ({
-  useSchema: () => ({ data: { name: "Transplant schema" } }),
-  usePredictionRun: () => ({ data: run, isLoading: false }),
-  useSchemaBookmark: () => ({ data: { name: "Ward bookmark" } }),
+  usePredictionRun: () =>
+    queryState.runError
+      ? { data: undefined, isLoading: false, isError: true }
+      : { data: run, isLoading: false, isError: false },
+  useSchemaBookmark: () => ({
+    data: { id: 1, schemaId: 1, name: "Ward bookmark" },
+  }),
   useSchemaVersion: () => ({ data: version }),
   usePredictionRunFeedback: () => ({ data: [], refetch: queryState.refetch }),
 }));
 
-vi.mock("@/features/schemas/lib/schema-plugin-catalog", () => ({
+vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () => ({
   useSchemaPluginCatalog: () => ({ data: { reportDefinitions: [] } }),
 }));
 
@@ -105,10 +97,6 @@ vi.mock("@/capabilities/prediction-runtime/feedback/feedback-steps", () => ({
   ],
 }));
 
-vi.mock("@/features/schemas/components/SchemaRunFeedbackQuestionnaire", () => ({
-  SchemaRunFeedbackQuestionnaire: () => <div>Feedback questionnaire</div>,
-}));
-
 vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () => ({
   SchemaRunReportRenderer: ({
     result,
@@ -119,43 +107,30 @@ vi.mock("@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer", () 
   }) => <div data-output="">{`${result.modelId} ${JSON.stringify(report)}`}</div>,
 }));
 
-const setInput = (input: HTMLInputElement, value: string) => {
-  const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
-  act(() => {
-    descriptor?.set?.call(input, value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-  });
-};
-
-describe("prediction run detail", () => {
-  let root: Root | null = null;
-
-  beforeEach(() => queryState.refetch.mockReset());
-
-  afterEach(() => {
-    act(() => root?.unmount());
-    root = null;
-    document.body.innerHTML = "";
+describe("prediction run details", () => {
+  beforeEach(() => {
+    queryState.refetch.mockReset();
+    queryState.runError = false;
   });
 
-  test("shows compact metadata, task tabs, and searchable inputs without overview", () => {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    act(() => {
-      root?.render(
-        <MemoryRouter initialEntries={["/schemas/schema-1/bookmarks/bookmark-1/runs/run-1"]}>
-          <Routes>
-            <Route
-              path="/schemas/:schemaId/bookmarks/:bookmarkId/runs/:runId"
-              element={<PredictionRunDetailPage />}
-            />
-          </Routes>
-        </MemoryRouter>,
-      );
-    });
+  const renderPage = async (withReviews = true) => {
+    const { host } = await mount(
+      <PredictionRunDetails
+        runId="run-1"
+        bookmarkName="Ward bookmark"
+        reviews={
+          withReviews ? { content: <section>Review management</section>, count: "1/2" } : undefined
+        }
+      />,
+      { route: "/" },
+    );
+    return host;
+  };
 
-    expect(container.textContent).toContain("SUCCESS");
+  test("shows compact metadata, task tabs, and searchable inputs without overview", async () => {
+    const container = await renderPage();
+
+    expect(container.textContent).toContain("Success");
     expect(container.textContent).toContain("Feedback pending");
     expect(container.textContent).toContain("Ward bookmark");
     expect(container.textContent).toContain("2 models");
@@ -163,25 +138,47 @@ describe("prediction run detail", () => {
     expect(initialTabs.map((item) => item.textContent)).toEqual([
       "Inputs2",
       "Outputs2",
-      "Feedback0/1",
+      "Reviews1/2",
     ]);
     expect(container.textContent).not.toContain("Overview");
 
     const inputsPanel = container.querySelector<HTMLElement>('[role="tabpanel"]')!;
     const inputSearch = container.querySelector<HTMLInputElement>('[aria-label="Search inputs"]')!;
-    setInput(inputSearch, "sex");
+    await changeValue(inputSearch, "sex");
     expect(inputsPanel.textContent).toContain("Sex");
     expect(inputsPanel.textContent).not.toContain("Age");
-    setInput(inputSearch, "missing");
-    expect(inputsPanel.textContent).toContain('No inputs match "missing".');
+    await changeValue(inputSearch, "missing");
+    expect(inputsPanel.textContent).toContain('No inputs match "missing"');
 
     const tabs = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
-    act(() => tabs.find((tab) => tab.textContent?.startsWith("Outputs"))?.click());
+    act(() => {
+      tabs
+        .find((tab) => tab.textContent?.startsWith("Outputs"))
+        ?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    });
     expect(container.textContent).toContain("Risk score");
     expect(container.querySelector('[aria-label="Search outputs"]')).toBeNull();
     expect(container.querySelectorAll("[data-output]")).toHaveLength(2);
 
-    act(() => tabs.find((tab) => tab.textContent?.startsWith("Feedback"))?.click());
-    expect(container.textContent).toContain("Feedback questionnaire");
+    expect(container.textContent).not.toContain("Review management");
+    act(() => {
+      tabs
+        .find((tab) => tab.textContent?.startsWith("Reviews"))
+        ?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    });
+    expect(container.textContent).toContain("Review management");
+  });
+
+  test("offers no Reviews tab to members who cannot manage reviews", async () => {
+    const container = await renderPage(false);
+    const tabs = [...container.querySelectorAll('[role="tab"]')].map((item) => item.textContent);
+    expect(tabs).toEqual(["Inputs2", "Outputs2"]);
+  });
+
+  test("explains a run that cannot be loaded", async () => {
+    queryState.runError = true;
+    const page = await renderPage();
+    expect(page.textContent).toContain("Inference data unavailable");
+    expect(page.querySelector('[role="tab"]')).toBeNull();
   });
 });

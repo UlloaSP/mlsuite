@@ -9,7 +9,9 @@ import org.springframework.boot.ApplicationRunner;
 
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class ArtifactMigrationCommand implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(ArtifactMigrationCommand.class);
@@ -17,17 +19,6 @@ public class ArtifactMigrationCommand implements ApplicationRunner {
     private final ArtifactMigrationService service;
     private final ArtifactOrphanReconciliationService orphanReconciliation;
     private final ModelRepository models;
-
-    public ArtifactMigrationCommand(
-            ArtifactMigrationProperties properties,
-            ArtifactMigrationService service,
-            ArtifactOrphanReconciliationService orphanReconciliation,
-            ModelRepository models) {
-        this.properties = properties;
-        this.service = service;
-        this.orphanReconciliation = orphanReconciliation;
-        this.models = models;
-    }
 
     @Override
     public void run(ApplicationArguments args) {

@@ -17,22 +17,15 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ModelCreationService implements ModelCreationUseCase {
 
     private final ModelCatalogUseCase modelCatalogUseCase;
     private final AnalyzerUseCase analyzerUseCase;
     private final ObjectStorageService objectStorageService;
-
-    public ModelCreationService(
-            ModelCatalogUseCase modelCatalogUseCase,
-            AnalyzerUseCase analyzerUseCase,
-            ObjectStorageService objectStorageService) {
-        this.modelCatalogUseCase = modelCatalogUseCase;
-        this.analyzerUseCase = analyzerUseCase;
-        this.objectStorageService = objectStorageService;
-    }
 
     @Override
     @Transactional

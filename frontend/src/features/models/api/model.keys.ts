@@ -5,24 +5,30 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
-export const GET_MODELS_QUERY_KEY = (organizationId: number | string) =>
-  [...organizationQueryKey(organizationId), "getModels"] as const;
 export const MODEL_CATALOG_PAGE_SIZE = 24;
-export const MODEL_CATALOG_PAGE_QUERY_KEY = (organizationId: number | string) =>
-  [...organizationQueryKey(organizationId), "modelCatalogPages"] as const;
-export const CREATE_MODEL_QUERY_KEY = ["createModel"] as const;
 
-export const modelCatalogPageQueryKey = (
-  organizationId: number | string | undefined,
-  page: number,
-  search: string,
-  sort: string,
-  status: string,
-) => [
-  ...MODEL_CATALOG_PAGE_QUERY_KEY(organizationId ?? "none"),
-  page,
-  MODEL_CATALOG_PAGE_SIZE,
-  search,
-  sort,
-  status,
-];
+/** Every model query nests under `all`, so one invalidation refreshes lists, pages, and details. */
+export const modelKeys = {
+  all: (organizationId: number | string) =>
+    [...organizationQueryKey(organizationId), "models"] as const,
+  list: (organizationId: number | string) => [...modelKeys.all(organizationId), "list"] as const,
+  // Route params are strings and DTO ids numbers; the key holds a string so both match.
+  detail: (organizationId: number | string, modelId: number | string) =>
+    [...modelKeys.all(organizationId), "detail", String(modelId)] as const,
+  catalogPage: (
+    organizationId: number | string | undefined,
+    page: number,
+    search: string,
+    sort: string,
+    status: string,
+  ) =>
+    [
+      ...modelKeys.all(organizationId ?? "none"),
+      "catalogPage",
+      page,
+      MODEL_CATALOG_PAGE_SIZE,
+      search,
+      sort,
+      status,
+    ] as const,
+};

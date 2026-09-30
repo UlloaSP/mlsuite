@@ -13,33 +13,26 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 
-import dev.ulloasp.mlsuite.search.adapter.in.web.SearchControllerImpl;
+import dev.ulloasp.mlsuite.search.adapter.in.web.SearchController;
 import dev.ulloasp.mlsuite.search.application.dto.SearchGroupDto;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResponseDto;
 import dev.ulloasp.mlsuite.search.application.dto.SearchResultDto;
 import dev.ulloasp.mlsuite.search.application.port.in.SearchWorkspaceUseCase;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
-import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 
 @ExtendWith(MockitoExtension.class)
 class SearchControllerTest {
 
     @Mock
-    private CurrentUserResolver currentUserResolver;
-
-    @Mock
     private SearchWorkspaceUseCase searchWorkspaceUseCase;
+    private CurrentUser user;
 
-    @Mock
-    private Authentication authentication;
-
-    private SearchControllerImpl controller;
+    private SearchController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new SearchControllerImpl(currentUserResolver, searchWorkspaceUseCase);
+        controller = new SearchController(searchWorkspaceUseCase);
     }
 
     @Test
@@ -54,10 +47,10 @@ class SearchControllerTest {
                         "/workspace/organizations/41",
                         41L,
                         null)))));
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER));
+        user = new CurrentUser(7L, "alice", dev.ulloasp.mlsuite.user.domain.model.SystemRole.USER);
         when(searchWorkspaceUseCase.search(7L, "ac")).thenReturn(response);
 
-        ResponseEntity<SearchResponseDto> entity = controller.search(authentication, "ac");
+        ResponseEntity<SearchResponseDto> entity = controller.search(user, "ac");
 
         assertEquals(HttpStatus.OK, entity.getStatusCode());
         assertEquals("ac", entity.getBody().query());

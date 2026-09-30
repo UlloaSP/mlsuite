@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 umask 077
-
-read_state() {
-  local key=$1 file=$2
-  sed -n "s/^${key}=//p" "$file" | tail -n 1
-}
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 require_restore_name() {
   [[ "$1" =~ ^mlsuite-restore-[a-z]+-[0-9]+-[0-9]+$ ]] || {
@@ -75,15 +71,15 @@ trap cleanup EXIT INT TERM
 docker network create "$network" >/dev/null
 docker volume create "$postgres_volume" >/dev/null
 docker volume create "$minio_volume" >/dev/null
-docker run --rm -v "$minio_volume:/data" -v "$BACKUP_DIR:/backup:ro" postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 \
+docker run --rm -v "$minio_volume:/data" -v "$BACKUP_DIR:/backup:ro" "$POSTGRES_IMAGE" \
   sh -c 'tar -C /data -xzf /backup/minio-data.tar.gz'
 docker run -d --name "$postgres" --network "$network" -p 127.0.0.1::5432 \
   -e POSTGRES_DB=restored -e POSTGRES_USER=restore -e POSTGRES_PASSWORD=restore-pass \
   -e PGDATA=/var/lib/postgresql/data/pgdata \
-  -v "$postgres_volume:/var/lib/postgresql/data" postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 >/dev/null
+  -v "$postgres_volume:/var/lib/postgresql/data" "$POSTGRES_IMAGE" >/dev/null
 docker run -d --name "$minio" --network "$network" -p 127.0.0.1::9000 \
   -e MINIO_ROOT_USER=restore -e MINIO_ROOT_PASSWORD=restore-secret \
-  -v "$minio_volume:/data" ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e \
+  -v "$minio_volume:/data" "$MINIO_IMAGE" \
   server /data >/dev/null
 
 for _ in $(seq 1 30); do
@@ -97,7 +93,7 @@ docker cp "$BACKUP_DIR/postgres.dump" "$postgres:/tmp/postgres.dump"
 docker exec "$postgres" pg_restore -U restore -d restored --no-owner --no-privileges /tmp/postgres.dump
 
 docker run --rm --network "$network" \
-  --entrypoint /bin/sh ghcr.io/teableio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e -c "
+  --entrypoint /bin/sh "$MINIO_IMAGE" -c "
     set -eu
     until mc alias set target http://$minio:9000 restore restore-secret >/dev/null 2>&1; do sleep 1; done
     mc ls target/$storage_bucket >/dev/null

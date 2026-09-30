@@ -2,8 +2,8 @@ import pandas as pd
 from fastapi import UploadFile
 from mlschema import infer_schema
 
-from ..model_adapters import load_runtime_model_from_upload
-from ..model_adapters.features import FeatureMetadata
+from ..model_adapters import RuntimeModel, load_runtime_model_from_upload
+from ..model_adapters.features import FeatureMetadata, fit_dataframe
 from ..utils.errors import bad_request
 from ..utils.uploads import load_uploaded_object
 
@@ -22,16 +22,15 @@ def _load_candidate_dataframe(
         raise bad_request("File does not contain a DataFrame.")
     if candidate.empty:
         raise bad_request("DataFrame is empty.")
+    fit = fit_dataframe(features, candidate)
+    if not fit.compatible and features.generated:
+        raise bad_request(f"DataFrame feature count mismatch: {fit.reason}.")
+    if not fit.compatible:
+        raise bad_request(
+            f"DataFrame does not contain all required columns: {', '.join(fit.missing)}"
+        )
     if features.generated:
-        if len(candidate.columns) != len(features.names):
-            raise bad_request(
-                "DataFrame feature count mismatch: "
-                f"model expects {len(features.names)} columns, dataframe has {len(candidate.columns)}."
-            )
         return candidate.set_axis(range(len(candidate.columns)), axis="columns")
-    missing = set(features.names) - set(candidate.columns)
-    if missing:
-        raise bad_request(f"DataFrame does not contain all required columns: {missing}")
     return candidate[features.names]
 
 
@@ -61,7 +60,7 @@ def _build_schema_fields(
     return fields
 
 
-def _build_schema_reports(runtime) -> list[dict[str, object]]:
+def _build_schema_reports(runtime: RuntimeModel) -> list[dict[str, object]]:
     if runtime.kind == "classifier":
         return [
             {
@@ -72,11 +71,7 @@ def _build_schema_reports(runtime) -> list[dict[str, object]]:
                 "showClassProbabilities": True,
             }
         ]
-    if runtime.kind == "regressor":
-        return [
-            {"kind": "regressor", "label": "Predicted value", "mappedTo": "regressor"}
-        ]
-    return []
+    return [{"kind": "regressor", "label": "Predicted value", "mappedTo": "regressor"}]
 
 
 async def build_schema(

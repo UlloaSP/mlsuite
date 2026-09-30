@@ -9,11 +9,9 @@ import {
   toSchemaRunFieldValues,
 } from "@/features/schemas/lib/bulk-upload";
 import { parseCsvPredictionFile } from "@/capabilities/prediction-runtime/data/parse-csv-prediction-file";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
+import { schemaVersion } from "./support/api-fixtures";
 
-const version: SchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
+const version = schemaVersion({
   version: 1,
   name: "Risk schema",
   createdAt: "2026-06-02T00:00:00Z",
@@ -22,7 +20,7 @@ const version: SchemaVersionDto = {
     fields: [{ id: "age-ui", label: "Patient age", kind: "number", mappedTo: "age" }],
     reports: [],
   },
-};
+});
 
 describe("schema bulk mappedTo", () => {
   test("uses mappedTo as technical bulk column after label edits", () => {

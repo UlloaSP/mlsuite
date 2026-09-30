@@ -4,104 +4,72 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import type { HTMLAttributes, ReactNode } from "react";
-import { Children, Fragment, isValidElement } from "react";
 import { AppBreadcrumbs, type AppBreadcrumbItem } from "./AppBreadcrumbs";
+import { usePageTrail, type BreadcrumbScope } from "./breadcrumb/breadcrumb-context";
+import { useLocationDisplay } from "./location-display";
+import { AppEyebrow } from "./AppEyebrow";
 import { cx } from "./cx";
-
-const ACTION_POSITIONS = [
-  "col-start-2 row-start-1",
-  "col-start-1 row-start-1",
-  "col-start-2 row-start-2",
-  "col-start-1 row-start-2",
-];
-const PRIMARY_ACTION_TONE =
-  "[&_button]:border-transparent [&_button]:bg-[var(--accent-primary)] [&_button]:text-[var(--text-inverse)] [&_button:hover]:bg-[var(--accent-primary-strong)]";
-const SECONDARY_ACTION_TONE =
-  "[&_button]:border-[var(--border-soft)] [&_button]:bg-[var(--surface-primary)] [&_button]:text-[var(--text-primary)] [&_button:hover]:border-[var(--text-primary)] [&_button:hover]:bg-[var(--surface-muted)]";
-const CHECKERBOARD_TONES = [
-  PRIMARY_ACTION_TONE,
-  SECONDARY_ACTION_TONE,
-  SECONDARY_ACTION_TONE,
-  PRIMARY_ACTION_TONE,
-];
-const CHECKERBOARD_TONE_NAMES = ["primary", "secondary", "secondary", "primary"];
-const ACTION_SLOT_NAMES = ["top-right", "top-left", "bottom-right", "bottom-left"];
-
-function flattenActionNodes(nodes: ReactNode): ReactNode[] {
-  return Children.toArray(nodes).flatMap((node) => {
-    if (isValidElement(node) && node.type === Fragment) {
-      return flattenActionNodes((node.props as { children?: ReactNode }).children);
-    }
-    return [node];
-  });
-}
 
 export function AppPageHeader({
   eyebrow,
   title,
   description,
   breadcrumbs,
+  breadcrumbScope = "organization",
   actions,
-  actionLayout = "default",
   className,
 }: Omit<HTMLAttributes<HTMLDivElement>, "title"> & {
   eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
+  /** The levels below the root; the root crumb comes from `breadcrumbScope`. */
   breadcrumbs?: AppBreadcrumbItem[];
+  /** Who the page belongs to: the current organization (default), your account, or the platform. */
+  breadcrumbScope?: BreadcrumbScope;
   actions?: ReactNode;
-  actionLayout?: "default" | "checkerboard";
 }) {
-  const actionNodes = flattenActionNodes(actions).slice(0, 4);
-  const positionedActions = actionNodes.map((node, index) => ({
-    node,
-    position: ACTION_POSITIONS[index],
-    slot: ACTION_SLOT_NAMES[index],
-    tone: CHECKERBOARD_TONE_NAMES[index],
-    toneClass: CHECKERBOARD_TONES[index],
-  }));
+  // Every page has a trail, like a portal: without explicit levels the page's own
+  // title is the current crumb, and a scope's home page is just its root.
+  const levels = breadcrumbs ?? (typeof title === "string" ? [{ label: title }] : []);
+  const { root, trail } = usePageTrail(
+    levels,
+    breadcrumbScope,
+    typeof description === "string" ? description : undefined,
+  );
+  // The bottom bar and the rail are drawn by the app shell instead.
+  const inlineTrail = useLocationDisplay() === "breadcrumb-top";
+  // An eyebrow that says the title again ("Models" over "Models") is noise.
+  const repeatsTitle =
+    typeof eyebrow === "string" &&
+    typeof title === "string" &&
+    eyebrow.trim().toLowerCase() === title.trim().toLowerCase();
 
   return (
-    <div className={cx("min-w-0 flex-shrink-0", className)}>
-      {breadcrumbs ? <AppBreadcrumbs items={breadcrumbs} className="mb-5 max-w-full" /> : null}
-      <header className="my-5 flex-shrink-0">
+    <div className="min-w-0 flex-shrink-0">
+      {/* Always top-left, outside `className`, so it sits in the same place on
+          every page, including centered form pages. */}
+      {inlineTrail && trail.length > 0 ? (
+        <AppBreadcrumbs items={trail} root={root} className="mb-3 max-w-full" />
+      ) : null}
+      {/* No outer margin: the page body owns the gap after the header (gap-6). */}
+      <header className={cx("flex-shrink-0", className)}>
         <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            {eyebrow ? (
-              <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-primary)]">
-                {eyebrow}
-              </p>
+            {eyebrow && !repeatsTitle ? (
+              <AppEyebrow className="mb-1 text-accent">{eyebrow}</AppEyebrow>
             ) : null}
-            <h1 className="text-[27px] font-semibold leading-[1.05] tracking-[-0.8px] text-[var(--text-primary)]">
+            <h1 className="text-3xl font-semibold leading-[1.05] tracking-[-0.8px] text-fg">
               {title}
             </h1>
             {description ? (
-              <p className="mt-1.5 max-w-2xl text-[13px] leading-5 text-[var(--text-muted)]">
-                {description}
-              </p>
+              <p className="mt-1.5 max-w-2xl text-sm leading-5 text-fg-muted">{description}</p>
             ) : null}
           </div>
-          {actionNodes.length > 0 ? (
-            <div
-              className={cx(
-                "grid shrink-0 grid-cols-2 gap-2",
-                actionLayout === "checkerboard" && "w-full sm:w-96",
-              )}
-            >
-              {positionedActions.map(({ node, position, slot, tone, toneClass }) => (
-                <div
-                  key={isValidElement(node) ? (node.key ?? slot) : slot}
-                  data-page-header-action={slot}
-                  data-tone={actionLayout === "checkerboard" ? tone : undefined}
-                  className={cx(
-                    position,
-                    actionLayout === "checkerboard" &&
-                      `h-12 min-w-0 [&_a]:block [&_a]:h-full [&_button]:h-full [&_button]:w-full ${toneClass}`,
-                  )}
-                >
-                  {node}
-                </div>
-              ))}
+          {actions ? (
+            // The first action sits at the outer edge: left-aligned on small screens,
+            // right-aligned from sm up.
+            <div className="flex shrink-0 flex-row-reverse flex-wrap items-center justify-end gap-2 sm:justify-start">
+              {actions}
             </div>
           ) : null}
         </div>

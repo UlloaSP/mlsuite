@@ -3,24 +3,6 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-export interface ModelDto {
-  id: string;
-  name: string;
-  type: string;
-  specificType: string;
-  fileName: string;
-  inputSchema: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-  archivedAt: string | null;
-  version: number;
-  updatedByName?: string | null;
-  updatedByEmail?: string | null;
-  updatedByAvatarUrl?: string | null;
-  fieldCount: number;
-  reportCount: number;
-}
-
 export interface ModelPageRequest {
   page: number;
   search?: string;
@@ -29,22 +11,14 @@ export interface ModelPageRequest {
   status?: string;
 }
 
-export interface ModelPageDto {
-  items: ModelDto[];
-  page: number;
-  size: number;
-  totalItems: number;
-  hasNext: boolean;
-}
-
 export interface ModelNameRequest {
-  id: string;
+  id: number | string;
   name: string;
   version?: number;
 }
 
 export interface ModelVersionRequest {
-  id: string;
+  id: number | string;
   version: number;
 }
 
@@ -53,10 +27,6 @@ export interface CreateModelRequest {
   modelFile: File;
   dataframeFile?: File;
   oneHotSeparator?: string;
-}
-
-export interface CreateModelDto {
-  model: ModelDto;
 }
 
 export type ArtifactKind = "model" | "dataframe";

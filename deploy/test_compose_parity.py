@@ -10,18 +10,10 @@ import re
 import subprocess
 import tempfile
 
-from verify_release_images import validate_release_config
+from verify_release_images import APP_SERVICES, validate_release_config
 
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_SERVICES = {
-    "ops-agent",
-    "py-analyzer",
-    "db-migrate",
-    "artifact-migrate",
-    "spring-app",
-    "frontend",
-}
 OPS_COMPOSE_FILES = {
     "development": "/workspace/docker-compose.yml,/workspace/docker-compose.dev.yml",
     "production": (
@@ -103,7 +95,6 @@ def main() -> None:
     ), "production ops-agent must preserve the digest-pinned release model"
     for name in APP_SERVICES:
         assert "build" in development["services"][name], f"development must build {name}"
-        assert "build" not in production["services"][name], f"production must not build {name}"
     assert normalize(development) == normalize(production), (
         "development and production Compose differ outside build/image selection"
     )
@@ -121,11 +112,14 @@ def main() -> None:
     assert production["services"]["minio-init"]["image"] == minio_image, (
         "object storage provisioner must use the same pinned image"
     )
-    for name in APP_SERVICES:
-        image = production["services"][name].get("image", "")
-        assert IMAGE_DIGEST.fullmatch(image), f"production release must pin {name} by digest"
-        assert "build" not in production["services"][name], f"production must not build {name}"
     validate_release_config(production)
+    script_pins = (ROOT / "scripts/lib.sh").read_text().splitlines()
+    assert f"POSTGRES_IMAGE={postgres_image}" in script_pins, (
+        "operational scripts must use the Compose PostgreSQL image"
+    )
+    assert f"MINIO_IMAGE={minio_image}" in script_pins, (
+        "operational scripts must use the Compose object storage image"
+    )
     root_user = development["services"]["minio"]["environment"]["MINIO_ROOT_USER"]
     app_user = development["services"]["spring-app"]["environment"]["STORAGE_ACCESS_KEY"]
     assert root_user and app_user and root_user != app_user, (

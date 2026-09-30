@@ -13,7 +13,7 @@ import {
   useUpdateAdminUser,
 } from "@/features/admin/api/admin-user.mutations";
 import { useAdminUsers } from "@/features/admin/api/admin-user.queries";
-import type { AdminUser } from "@/features/admin/api/admin-user.types";
+import { SYSTEM_ROLE_OPTIONS, type SystemRole } from "@/features/admin/api/admin-user.types";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AppButton } from "@/shared/ui/AppButton";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
@@ -21,16 +21,16 @@ import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import { ResetPasswordDialog } from "@/features/admin/components/ResetPasswordDialog";
 import { UserCatalogTile } from "@/features/admin/components/UserCatalogTile";
+import type { AdminUserDto } from "@/shared/api/openapi.gen";
 
 const PAGE_SIZE = 8;
 type ResetTarget = { id: number; fullName: string } | null;
-type UserRoleFilter = "all" | "USER" | "SUPERADMIN";
+type UserRoleFilter = "all" | SystemRole;
 type UserSortMode = "current" | "name" | "newest" | "oldest";
 
 const FILTERS: Array<{ value: UserRoleFilter; label: string }> = [
   { value: "all", label: "All" },
-  { value: "USER", label: "User" },
-  { value: "SUPERADMIN", label: "Superadmin" },
+  ...SYSTEM_ROLE_OPTIONS,
 ];
 
 const SORT_OPTIONS: Array<{ value: UserSortMode; label: string }> = [
@@ -65,28 +65,20 @@ export function AdminUsersPage() {
     updateUser.isPending || resetPassword.isPending || deleteUser.isPending || pageQuery.isLoading;
 
   const update = async (
-    row: AdminUser,
-    payload: { enabled?: boolean; systemRole?: AdminUser["systemRole"] },
+    row: AdminUserDto,
+    payload: { enabled?: boolean; systemRole?: AdminUserDto["systemRole"] },
   ) => {
-    try {
-      await updateUser.mutateAsync({ id: row.id, payload });
-      toast.success("User updated.");
-    } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
-      throw actionError;
-    }
+    // Failures propagate: the tile shows them inline in a dialog, or as a toast for the switch.
+    await updateUser.mutateAsync({ id: row.id, payload });
+    toast.success("User updated.");
   };
-  const remove = async (row: AdminUser) => {
-    try {
-      await deleteUser.mutateAsync(row.id);
-      if (pageItems.length === 1 && controls.page > 0) {
-        controls.setPage((current) => current - 1);
-      }
-      toast.success("User deleted.");
-    } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
-      throw actionError;
+  const remove = async (row: AdminUserDto) => {
+    // Failures propagate to the delete dialog, which stays open and shows them.
+    await deleteUser.mutateAsync(row.id);
+    if (pageItems.length === 1 && controls.page > 0) {
+      controls.setPage((current) => current - 1);
     }
+    toast.success("User deleted.");
   };
   const submitResetPassword = (nextPassword: string) => {
     if (!resetTarget) return;
@@ -97,7 +89,6 @@ export function AdminUsersPage() {
           toast.success("Password changed.");
           setResetTarget(null);
         },
-        onError: (actionError) => toast.error(actionError.message),
       },
     );
   };
@@ -112,16 +103,17 @@ export function AdminUsersPage() {
           eyebrow: "Superadmin",
           title: "Users",
           description: "Search, filter, and maintain platform users.",
+          breadcrumbScope: "platform",
           breadcrumbs: [{ label: "Users" }],
           actions: (
             <AppButton type="button" onClick={() => navigate("/admin/users/create")}>
               <Plus size={16} />
-              New User
+              New user
             </AppButton>
           ),
         }}
         isActionPending={isActionPending || pageQuery.isFetching}
-        loadingLabel="Loading users..."
+        loadingLabel="Loading users…"
         pageSize={PAGE_SIZE}
         filterLabel="Filter users by role"
         filters={FILTERS}
@@ -149,7 +141,11 @@ export function AdminUsersPage() {
         <ResetPasswordDialog
           fullName={resetTarget.fullName}
           isPending={resetPassword.isPending}
-          onClose={() => setResetTarget(null)}
+          error={resetPassword.error?.message}
+          onClose={() => {
+            resetPassword.reset();
+            setResetTarget(null);
+          }}
           onSubmit={submitResetPassword}
         />
       ) : null}

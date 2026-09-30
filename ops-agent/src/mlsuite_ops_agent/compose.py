@@ -24,6 +24,25 @@ SIZE_UNITS = {
 }
 
 
+def _missing_service(name: str) -> dict[str, Any]:
+    return {
+        "name": name,
+        "containerName": None,
+        "status": "missing",
+        "health": None,
+        "uptime": None,
+        "cpuPercent": None,
+        "memoryBytes": None,
+        "memoryLimitBytes": None,
+        "diskReadBytes": None,
+        "diskWriteBytes": None,
+        "networkRxBytes": None,
+        "networkTxBytes": None,
+        "ports": [],
+        "terminalEnabled": False,
+    }
+
+
 class ComposeError(RuntimeError):
     """Raised when docker compose command fails."""
 
@@ -31,8 +50,7 @@ class ComposeError(RuntimeError):
 class ComposeGateway:
     def __init__(self, settings: Settings):
         self.settings = settings
-        configured_files = settings.compose_files or (settings.compose_file,)
-        self.compose_files = tuple(str(Path(path)) for path in configured_files)
+        self.compose_files = tuple(str(Path(path)) for path in settings.compose_files)
         self.managed_services = set(settings.managed_services)
         self.terminal_services = set(settings.terminal_services)
 
@@ -72,69 +90,38 @@ class ComposeGateway:
         return stdout.decode("utf-8", "ignore")
 
     async def service_snapshot(self) -> list[dict[str, Any]]:
-        ps_output = await self.run("ps", "--all", "--format", "json")
-        ps_rows = _parse_json_rows(ps_output)
-        stats_output = await self._docker_stats()
+        ps_rows = _parse_json_rows(await self.run("ps", "--all", "--format", "json"))
+        # One project-wide call; stats only lists running containers, keyed by container name.
+        stats_output = await self.run("stats", "--no-stream", "--format", "json")
         stats = {row.get("Name"): row for row in _parse_json_rows(stats_output)}
         rows: list[dict[str, Any]] = []
         for row in ps_rows:
             service_name = row.get("Service") or row.get("Name")
             if service_name not in self.managed_services:
                 continue
-            stat = stats.get(row.get("Name"))
-            memory_bytes, memory_limit_bytes = _parse_memory_usage(stat.get("MemUsage")) if stat else (None, None)
-            disk_read_bytes, disk_write_bytes = _parse_io_bytes(stat.get("BlockIO")) if stat else (None, None)
-            network_rx_bytes, network_tx_bytes = _parse_io_bytes(stat.get("NetIO")) if stat else (None, None)
-            rows.append(
-                {
-                    "name": service_name,
-                    "containerName": row.get("Name"),
-                    "status": (row.get("State") or "unknown").lower(),
-                    "health": _normalize_health(row.get("Health")),
-                    "uptime": row.get("RunningFor"),
-                    "cpuPercent": _parse_percent(stat.get("CPUPerc")) if stat else None,
-                    "memoryBytes": memory_bytes,
-                    "memoryLimitBytes": memory_limit_bytes,
-                    "diskReadBytes": disk_read_bytes,
-                    "diskWriteBytes": disk_write_bytes,
-                    "networkRxBytes": network_rx_bytes,
-                    "networkTxBytes": network_tx_bytes,
-                    "ports": _parse_ports(row.get("Publishers")),
-                    "terminalEnabled": service_name in self.terminal_services,
-                }
-            )
-        for service_name in sorted(self.managed_services):
-            if any(row["name"] == service_name for row in rows):
-                continue
-            rows.append(
-                {
-                    "name": service_name,
-                    "containerName": None,
-                    "status": "missing",
-                    "health": None,
-                    "uptime": None,
-                    "cpuPercent": None,
-                    "memoryBytes": None,
-                    "memoryLimitBytes": None,
-                    "diskReadBytes": None,
-                    "diskWriteBytes": None,
-                    "networkRxBytes": None,
-                    "networkTxBytes": None,
-                    "ports": [],
-                    "terminalEnabled": False,
-                }
-            )
-        return rows
-
-    async def _docker_stats(self) -> str:
-        names = await self.run("ps", "--services")
-        services = [item.strip() for item in names.splitlines() if item.strip() in self.managed_services]
-        if not services:
-            return ""
-        rows = []
-        for service_name in services:
-            rows.append(await self.run("stats", "--no-stream", "--format", "json", service_name))
-        return "\n".join(row.strip() for row in rows if row.strip())
+            stat = stats.get(row.get("Name")) or {}
+            memory_bytes, memory_limit_bytes = _parse_byte_pair(stat.get("MemUsage"))
+            disk_read_bytes, disk_write_bytes = _parse_byte_pair(stat.get("BlockIO"))
+            network_rx_bytes, network_tx_bytes = _parse_byte_pair(stat.get("NetIO"))
+            rows.append({
+                "name": service_name,
+                "containerName": row.get("Name"),
+                "status": (row.get("State") or "unknown").lower(),
+                "health": _normalize_health(row.get("Health")),
+                "uptime": row.get("RunningFor"),
+                "cpuPercent": _parse_percent(stat.get("CPUPerc")),
+                "memoryBytes": memory_bytes,
+                "memoryLimitBytes": memory_limit_bytes,
+                "diskReadBytes": disk_read_bytes,
+                "diskWriteBytes": disk_write_bytes,
+                "networkRxBytes": network_rx_bytes,
+                "networkTxBytes": network_tx_bytes,
+                "ports": _parse_ports(row.get("Publishers")),
+                "terminalEnabled": service_name in self.terminal_services,
+            })
+        present = {row["name"] for row in rows}
+        missing = [_missing_service(name) for name in sorted(self.managed_services) if name not in present]
+        return [*rows, *missing]
 
     async def action(self, service_name: str, action: str) -> None:
         self.assert_managed(service_name)
@@ -213,16 +200,8 @@ def _parse_memory_bytes(value: Any) -> int | None:
     return int(amount * multiplier)
 
 
-def _parse_memory_usage(value: Any) -> tuple[int | None, int | None]:
-    if value is None:
-        return None, None
-    parts = str(value).split("/", 1)
-    used = _parse_memory_bytes(parts[0])
-    limit = _parse_memory_bytes(parts[1]) if len(parts) > 1 else None
-    return used, limit
-
-
-def _parse_io_bytes(value: Any) -> tuple[int | None, int | None]:
+def _parse_byte_pair(value: Any) -> tuple[int | None, int | None]:
+    """Parse docker stats pairs such as "1MiB / 2MiB" or "3MB / 4MB"."""
     if value is None:
         return None, None
     parts = str(value).split("/", 1)

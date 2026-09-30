@@ -6,7 +6,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
-import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import jakarta.persistence.Column;
@@ -37,14 +36,12 @@ public class Invitation {
     public Invitation(
             Organization organization,
             String email,
-            OrganizationRole role,
             RoleDefinition roleDefinition,
             String token,
             User invitedBy,
             OffsetDateTime expiresAt) {
         this.organization = organization;
         this.email = email;
-        this.role = role;
         this.roleDefinition = roleDefinition;
         this.token = token;
         this.status = InvitationStatus.PENDING;
@@ -63,12 +60,8 @@ public class Invitation {
     @Column(name = "email", nullable = false, length = 200)
     private String email;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 32)
-    private OrganizationRole role;
-
-    @ManyToOne
-    @JoinColumn(name = "role_definition_id", foreignKey = @ForeignKey(name = "fk_invitation_role_definition"))
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "role_definition_id", nullable = false, foreignKey = @ForeignKey(name = "fk_invitation_role_definition"))
     private RoleDefinition roleDefinition;
 
     @Column(name = "token", nullable = false, length = 120)

@@ -15,15 +15,18 @@ import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPanel } from "@/shared/ui/AppPanel";
+import { cx } from "@/shared/ui/cx";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { toMlformSchema } from "@/capabilities/prediction-runtime/mlform/schema-validation";
-import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/custom-report-catalog";
+import type { CatalogReportDefinition } from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
 import {
   createSchemaPreviewTransport,
   prepareSchemaPreviewReports,
 } from "@/features/schemas/lib/preview-transport";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
-import { useSchemaPluginCatalog } from "@/features/schemas/lib/schema-plugin-catalog";
+import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
+import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
+import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/features/schemas/lib/mlform-split-layout";
 
 type Props = {
   schema: unknown;
@@ -44,7 +47,7 @@ export function SchemaFormPreview({ schema }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [initialTheme] = useState(theme);
   const [mountError, setMountError] = useState<string | null>(null);
-  const catalog = useSchemaPluginCatalog(schema);
+  const catalog = useSchemaPluginCatalog(schema, useCurrentOrganizationId() ?? "none");
   const showCatalogLoading = useStableLoading(catalog.needsPlugins && catalog.status === "loading");
 
   const resolvedSchema = useMemo<ResolvedSchema>(() => {
@@ -92,11 +95,11 @@ export function SchemaFormPreview({ schema }: Props) {
         reportPane: "always",
         reportFetchMode: "none",
         labels: {
-          form: "Schema Inputs",
-          reports: "Preview Results",
-          submit: "Run Preview",
-          validating: "Checking schema...",
-          submitting: "Rendering preview...",
+          form: "Schema inputs",
+          reports: "Preview results",
+          submit: "Run preview",
+          validating: "Checking schema…",
+          submitting: "Rendering preview…",
         },
         designSystem: getPredictionDesignSystem(initialTheme),
       });
@@ -129,7 +132,7 @@ export function SchemaFormPreview({ schema }: Props) {
   }
 
   return (
-    <div className="size-full min-h-0 overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]">
+    <div className="size-full min-h-0 overflow-hidden rounded-card border border-line bg-surface">
       {resolvedSchema.status === "error" || mountError ? (
         <AppPanel className="m-4">
           {resolvedSchema.status === "error" ? resolvedSchema.message : mountError}
@@ -137,7 +140,11 @@ export function SchemaFormPreview({ schema }: Props) {
       ) : null}
       {resolvedSchema.status === "ready" ? (
         <div
-          className={`size-full min-h-0 overflow-auto ${mountError ? "hidden" : ""}`}
+          className={cx(
+            "size-full min-h-0 overflow-auto",
+            MLFORM_SPLIT_CONTAINER_CLASS,
+            mountError && "hidden",
+          )}
           ref={containerRef}
         />
       ) : null}

@@ -15,16 +15,13 @@ import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { AppSurface } from "@/shared/ui/AppSurface";
+import { cx } from "@/shared/ui/cx";
+import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import { NotFoundError } from "@/shared/ui/RouteStatusPage";
-import { AdminUserFormField } from "@/features/admin/components/AdminUserFormField";
-
-type Role = "USER" | "SUPERADMIN";
-
-const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
-  { value: "USER", label: "User" },
-  { value: "SUPERADMIN", label: "Superadmin" },
-];
+import { AppFieldLabel } from "@/shared/ui/AppFieldLabel";
+import { SYSTEM_ROLE_OPTIONS, type SystemRole } from "@/features/admin/api/admin-user.types";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 
 export function CreateAdminUserPage() {
   const navigate = useNavigate();
@@ -33,7 +30,7 @@ export function CreateAdminUserPage() {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("USER");
+  const [role, setRole] = useState<SystemRole>("USER");
   const [visible, setVisible] = useState(false);
 
   if (!user || error) return <NotFoundError />;
@@ -48,22 +45,23 @@ export function CreateAdminUserPage() {
           toast.success("User created.");
           void navigate("/admin/users");
         },
-        onError: (actionError) => toast.error(actionError.message),
       },
     );
   };
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col overflow-auto">
+      <AppSurface className="flex flex-1 flex-col gap-6 overflow-auto">
         <AppPageHeader
+          breadcrumbScope="platform"
+          className={FORM_MAX_WIDTH}
           eyebrow="Superadmin"
-          title="Create User"
+          title="Create user"
           description="Create platform access and assign global role."
-          breadcrumbs={[{ label: "Users", to: "/admin/users" }, { label: "Create User" }]}
+          breadcrumbs={[{ label: "Users", to: "/admin/users" }, { label: "Create user" }]}
         />
-        <form onSubmit={submit} className="mx-auto grid w-full max-w-2xl gap-4">
-          <AdminUserFormField label="Email">
+        <form onSubmit={submit} className={cx(FORM_MAX_WIDTH, "grid gap-4")}>
+          <AppFieldLabel label="Email">
             <AppTextField
               required
               type="email"
@@ -72,16 +70,16 @@ export function CreateAdminUserPage() {
               placeholder="user@example.com"
               autoFocus
             />
-          </AdminUserFormField>
-          <AdminUserFormField label="Full name">
+          </AppFieldLabel>
+          <AppFieldLabel label="Full name">
             <AppTextField
               required
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
               placeholder="Ada Lovelace"
             />
-          </AdminUserFormField>
-          <AdminUserFormField label="Password">
+          </AppFieldLabel>
+          <AppFieldLabel label="Password">
             <div className="flex gap-2">
               <AppTextField
                 required
@@ -96,26 +94,27 @@ export function CreateAdminUserPage() {
                 type="button"
                 aria-label={visible ? "Hide password" : "Show password"}
                 onClick={() => setVisible((current) => !current)}
-                className="shrink-0 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]"
+                className="shrink-0 border border-line bg-surface"
               >
                 {visible ? <EyeOff size={18} /> : <Eye size={18} />}
               </AppIconButton>
             </div>
-          </AdminUserFormField>
-          <AdminUserFormField label="Role">
+          </AppFieldLabel>
+          <AppFieldLabel label="Role">
             <AppSelect
               value={role}
-              onValueChange={(nextRole) => setRole(nextRole as Role)}
-              options={ROLE_OPTIONS}
+              onValueChange={(nextRole) => setRole(nextRole as SystemRole)}
+              options={SYSTEM_ROLE_OPTIONS}
             />
-          </AdminUserFormField>
+          </AppFieldLabel>
+          {createUser.error ? <AppInlineAlert>{createUser.error.message}</AppInlineAlert> : null}
           <div className="flex justify-end gap-2 pt-2">
             <AppButton type="button" variant="secondary" onClick={() => navigate("/admin/users")}>
               Cancel
             </AppButton>
             <AppButton type="submit" disabled={createUser.isPending}>
               <UserPlus size={16} />
-              {createUser.isPending ? "Creating..." : "Create User"}
+              {createUser.isPending ? "Creating…" : "Create user"}
             </AppButton>
           </div>
         </form>

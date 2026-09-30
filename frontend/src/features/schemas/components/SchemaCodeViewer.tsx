@@ -3,52 +3,45 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useAtom, useAtomValue } from "jotai";
+import { useAtomValue } from "jotai";
 import type { OnMount } from "@monaco-editor/react";
 import { lazy, Suspense, useEffect, useRef } from "react";
 import { cx } from "@/shared/ui/cx";
-import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { typographyAtom } from "@/shared/ui/typography-state";
 import { loadLocalMonacoEditor } from "@/capabilities/editor/load-local-monaco-editor";
 import {
-  defineEditorThemes,
-  setEditorTheme,
+  applyEditorTheme,
+  useEditorAppearance,
   type MonacoNamespace,
 } from "@/capabilities/editor/configure-editor-theme";
 import { editorOptionsFor } from "@/capabilities/editor/editor-options";
 
 type Props = {
   value: string;
-  className?: string;
+  /** Monaco has no intrinsic height: the caller sizes the viewer to its layout. */
+  className: string;
 };
 
 const MonacoEditor = lazy(loadLocalMonacoEditor);
 
 export function SchemaCodeViewer({ value, className }: Props) {
-  const [theme] = useAtom(themeWithHtmlAtom);
+  const appearance = useEditorAppearance();
   const typography = useAtomValue(typographyAtom);
   const monacoRef = useRef<MonacoNamespace | null>(null);
 
   const mount: OnMount = (_editor, monacoNs) => {
     monacoRef.current = monacoNs;
-    defineEditorThemes(monacoNs);
-    setEditorTheme(monacoNs, theme === "dark");
+    applyEditorTheme(monacoNs, appearance.dark);
   };
 
+  // Tokens change with mode, palette, and contrast; rebuild the theme from them.
   useEffect(() => {
-    if (monacoRef.current) {
-      setEditorTheme(monacoRef.current, theme === "dark");
-    }
-  }, [theme]);
+    if (monacoRef.current) applyEditorTheme(monacoRef.current, appearance.dark);
+  }, [appearance.key, appearance.dark]);
 
   return (
-    <div
-      className={cx(
-        className ?? "h-[480px]",
-        "overflow-hidden rounded border border-[var(--border-soft)] bg-[var(--surface-primary)]",
-      )}
-    >
-      <Suspense fallback={<div className="h-full bg-[var(--surface-primary)]" />}>
+    <div className={cx(className, "overflow-hidden rounded-card border border-line bg-surface")}>
+      <Suspense fallback={<div className="h-full bg-surface" />}>
         <MonacoEditor
           className="h-full"
           defaultLanguage="json"

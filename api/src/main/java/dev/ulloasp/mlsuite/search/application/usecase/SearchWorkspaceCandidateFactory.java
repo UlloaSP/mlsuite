@@ -59,7 +59,7 @@ final class SearchWorkspaceCandidateFactory {
                 + "v" + version.getVersion();
         return candidate(
                 "bookmark", bookmark.getId(), bookmark.getName(), subtitle,
-                "/schemas/" + schema.getId() + "/bookmarks/" + bookmark.getId(),
+                "/predict/" + bookmark.getId(),
                 schema.getOrganization().getId(), null, bookmark.getUpdatedAt(),
                 bookmark.getName(), schema.getName(), versionName, "v" + version.getVersion());
     }

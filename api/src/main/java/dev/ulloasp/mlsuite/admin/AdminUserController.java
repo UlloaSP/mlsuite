@@ -14,17 +14,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/admin/users")
 @PreAuthorize("hasRole('SUPERADMIN')")
+@RequiredArgsConstructor
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
-
-    public AdminUserController(AdminUserService adminUserService) {
-        this.adminUserService = adminUserService;
-    }
 
     @GetMapping
     public ResponseEntity<AdminUserPageDto> list(

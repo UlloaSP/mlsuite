@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-root=$(cd "$(dirname "$0")/.." && pwd -P)
-cd "$root"
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+cd "$MLSUITE_ROOT"
 ENV_FILE=${ENV_FILE:-.env}
 [[ -f "$ENV_FILE" ]] || { echo "$ENV_FILE does not exist" >&2; exit 1; }
-
-env_value() {
-  local line
-  line=$(grep -E "^${1}=" "$ENV_FILE" | tail -n1) || return 1
-  printf '%s' "${line#*=}"
-}
 
 backup_root=$(env_value LOCAL_BACKUP_ROOT || true)
 backup_root=${backup_root:-backups}

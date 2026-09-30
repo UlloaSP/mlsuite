@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.plugin;
 
+import static org.mockito.Mockito.lenient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,6 +16,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -29,7 +31,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
-import dev.ulloasp.mlsuite.plugin.application.dto.PluginPageDto;
+import dev.ulloasp.mlsuite.plugin.application.dto.PluginDto;
+import dev.ulloasp.mlsuite.util.PageDto;
 import dev.ulloasp.mlsuite.plugin.application.service.PluginServiceImpl;
 import dev.ulloasp.mlsuite.plugin.application.service.PluginObjectReader;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
@@ -43,7 +46,6 @@ import dev.ulloasp.mlsuite.storage.StoredObjectMetadata;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,8 +55,6 @@ class PluginServiceImplTest {
     private ObjectStorageService objectStorageService;
     @Mock
     private UserLookupService userLookupService;
-    @Mock
-    private WorkspaceAccessService workspaceAccessService;
     @Mock
     private WorkspaceAuthorizationService workspaceAuthorizationService;
     @Mock
@@ -80,7 +80,6 @@ class PluginServiceImplTest {
                 storageProperties,
                 objectMapper,
                 userLookupService,
-                workspaceAccessService,
                 workspaceAuthorizationService,
                 pluginMetadataRepository,
                 deletionQueue,
@@ -95,7 +94,7 @@ class PluginServiceImplTest {
                         "invalid", "invalid.ts", "not a plugin")));
         Organization organization = new Organization();
         organization.setId(41L);
-        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(workspaceAuthorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(organizations.lockById(41L)).thenReturn(Optional.of(organization));
     }
 
@@ -104,7 +103,7 @@ class PluginServiceImplTest {
                 .thenReturn(objects.keySet().stream()
                         .map(key -> new StoredObjectItem("bucket", key, objects.get(key).length, "etag", now()))
                         .toList());
-        when(objectStorageService.inspectOptional(eq("bucket"), anyString()))
+        when(objectStorageService.inspectOptional(eq("bucket"), anyString(), any()))
                 .thenAnswer(invocation -> {
                     String key = invocation.getArgument(1);
                     byte[] bytes = objects.get(key);
@@ -118,7 +117,7 @@ class PluginServiceImplTest {
     @Test
     void list_FiltersSearchesAndPaginatesPlugins() {
         prepareStoredObjects();
-        PluginPageDto page = service.list(7L, 0, 10, "report", "zeta", "updated");
+        PageDto<PluginDto> page = service.list(7L, 0, 10, "report", "zeta", "updated");
 
         assertEquals(1, page.items().size());
         assertEquals("zeta-report", page.items().getFirst().kind());
@@ -139,7 +138,7 @@ class PluginServiceImplTest {
     @Test
     void list_SortsByBackendDisplayName() {
         prepareStoredObjects();
-        PluginPageDto page = service.list(7L, 0, 10, "all", "", "name");
+        PageDto<PluginDto> page = service.list(7L, 0, 10, "all", "", "name");
 
         assertEquals(List.of("alpha-field", "invalid.ts", "zeta-report"),
                 page.items().stream().map(item -> item.kind() == null ? item.fileName() : item.kind()).toList());
@@ -167,12 +166,12 @@ class PluginServiceImplTest {
         prepareStoredObjects();
         User user = new User();
         user.setId(7L);
-        when(userLookupService.requireById(7L)).thenReturn(user);
+        lenient().when(userLookupService.requireById(7L)).thenReturn(user);
         when(deletionQueue.isDeletionRequested(
                 "bucket", "organizations/41/plugins/items/field.json")).thenReturn(false, true);
 
         service.delete(7L, "field");
-        PluginPageDto page = service.list(7L, 0, 10, "all", "", "name");
+        PageDto<PluginDto> page = service.list(7L, 0, 10, "all", "", "name");
 
         assertEquals(2, page.totalItems());
         verify(deletionQueue).enqueue("bucket", "organizations/41/plugins/items/field.json", null);
@@ -182,7 +181,7 @@ class PluginServiceImplTest {
     void failedUploadCommitDeletesTheExactStoredVersion() {
         User user = new User();
         user.setId(7L);
-        when(userLookupService.requireById(7L)).thenReturn(user);
+        lenient().when(userLookupService.requireById(7L)).thenReturn(user);
         when(objectStorageService.store(anyString(), anyString(), eq("application/json"), any(byte[].class)))
                 .thenAnswer(invocation -> new StoredObject(
                         "bucket", invocation.getArgument(0), 10, "etag", "version-1", "sha"));

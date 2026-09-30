@@ -4,12 +4,15 @@ import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 
+import jakarta.annotation.Nullable;
+
 public record SchemaBookmarkDto(
         Long id,
         Long schemaId,
+        String schemaName,
         Long versionId,
         int version,
-        String versionName,
+        @Nullable String versionName,
         String name,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
@@ -18,6 +21,7 @@ public record SchemaBookmarkDto(
         return new SchemaBookmarkDto(
                 bookmark.getId(),
                 bookmark.getSchema().getId(),
+                bookmark.getSchema().getName(),
                 bookmark.getVersion().getId(),
                 bookmark.getVersion().getVersion(),
                 bookmark.getVersion().getName(),

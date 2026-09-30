@@ -10,7 +10,6 @@ import {
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
 } from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
-import { saveSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-save";
 import { ReportQuestionnaireMount } from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
 import { buildQuestionnaireFormSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
@@ -18,23 +17,20 @@ import {
   isCombinedSchemaFeedbackComplete,
   isSchemaFeedbackComplete,
 } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
-import type {
-  ReviewPredictionResultFeedbackDto,
-  ReviewPredictionRunDto,
-  ReviewSchemaVersionDto,
-} from "@/features/reviews/api/review-types";
 import { REVIEW_STEP_CONTEXT_EVENT } from "@/features/reviews/components/ReviewStepContextPanel";
-import {
-  createSchemaReviewFeedback,
-  updateSchemaReviewFeedback,
-} from "@/features/reviews/api/review-api";
+import { useSaveSchemaReviewFeedbackMutation } from "@/features/reviews/api/review-mutations";
+import type {
+  PredictionResultFeedbackDto,
+  PredictionRunDto,
+  SchemaVersionDto,
+} from "@/shared/api/openapi.gen";
 
 type Props = {
   reviewId: string;
   reviewRunId: string;
-  run: ReviewPredictionRunDto;
-  version: ReviewSchemaVersionDto;
-  feedback: ReviewPredictionResultFeedbackDto[];
+  run: PredictionRunDto;
+  version: SchemaVersionDto;
+  feedback: PredictionResultFeedbackDto[];
   onSaved: () => Promise<unknown> | unknown;
 };
 
@@ -67,6 +63,7 @@ export function SchemaReviewCombinedFeedbackForm({
   onSaved,
 }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
+  const { mutateAsync: saveFeedback } = useSaveSchemaReviewFeedbackMutation(reviewId, reviewRunId);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
   const [submitting, setSubmitting] = useState(false);
   const [savedValues, setSavedValues] = useState<Record<string, unknown> | null>(null);
@@ -83,7 +80,7 @@ export function SchemaReviewCombinedFeedbackForm({
     savedValues !== null && isCombinedSchemaFeedbackComplete(steps, savedValues);
   const displayComplete = complete || savedValuesComplete;
   const activeStepIdRef = useRef<string | undefined>(undefined);
-  const labels = useMemo(() => ({ submit: "Save review", submitting: "Saving review..." }), []);
+  const labels = useMemo(() => ({ submit: "Save review", submitting: "Saving review…" }), []);
 
   useEffect(() => {
     const firstStep = displayComplete && !editing ? undefined : steps[0];
@@ -98,22 +95,9 @@ export function SchemaReviewCombinedFeedbackForm({
   const transport = useMemo(
     () =>
       createCombinedQuestionnaireTransport(async (values) => {
-        await saveSchemaFeedbackSteps(steps, values, {
-          create: (step, target, value) =>
-            createSchemaReviewFeedback(reviewId, reviewRunId, {
-              resultId: target.resultId,
-              type: step.type,
-              order: step.order,
-              value,
-            }),
-          update: (_step, _target, feedback, value) =>
-            updateSchemaReviewFeedback(reviewId, reviewRunId, {
-              feedbackId: feedback.id,
-              value,
-            }),
-        });
+        await saveFeedback({ steps, values });
       }),
-    [reviewId, reviewRunId, steps],
+    [saveFeedback, steps],
   );
 
   if (steps.length === 0)
@@ -128,25 +112,19 @@ export function SchemaReviewCombinedFeedbackForm({
     return (
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
-          <AppButton
-            variant="secondary"
-            className="rounded-none px-4 py-2"
-            onClick={() => setEditing(true)}
-          >
+          <h2 className="text-xl font-semibold text-fg">Review questionnaire</h2>
+          <AppButton variant="secondary" size="sm" onClick={() => setEditing(true)}>
             Edit
           </AppButton>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="divide-y divide-[var(--border-soft)] border border-[var(--border-strong)] bg-[var(--surface-primary)] md:col-span-2">
+          <div className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface md:col-span-2">
             {steps.map((step) => (
               <div key={step.id} className="p-4">
-                <p className="text-sm font-semibold text-[var(--text-primary)]">{step.title}</p>
+                <p className="text-sm font-semibold text-fg">{step.title}</p>
                 {buildQuestionnaireFormSchema(step.schema).fields.map((field: FieldConfig) => (
-                  <p key={String(field.id)} className="mt-2 text-sm text-[var(--text-secondary)]">
-                    <span className="font-medium text-[var(--text-primary)]">
-                      {String(field.label ?? field.id)}:
-                    </span>{" "}
+                  <p key={String(field.id)} className="mt-2 text-sm text-fg-secondary">
+                    <span className="font-medium text-fg">{String(field.label ?? field.id)}:</span>{" "}
                     {displayValue(
                       (savedValues ? valuesForCombinedStep(savedValues, step) : step.initialValues)[
                         String(field.id)
@@ -164,9 +142,9 @@ export function SchemaReviewCombinedFeedbackForm({
   }
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold text-[var(--text-primary)]">Review questionnaire</h2>
+      <h2 className="text-xl font-semibold text-fg">Review questionnaire</h2>
       <ReportQuestionnaireMount
-        title="Schema Review"
+        title="Schema review"
         schema={combined.schema}
         initialValues={savedValues ?? combined.initialValues}
         editable
@@ -181,7 +159,6 @@ export function SchemaReviewCombinedFeedbackForm({
           toast.success("Review feedback saved");
         }}
         labels={labels}
-        square
         onStepChange={(stepId) => {
           const nextId = stepId ?? steps[0]?.id;
           if (activeStepIdRef.current === nextId) return;

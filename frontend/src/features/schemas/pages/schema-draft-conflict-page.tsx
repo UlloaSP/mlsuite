@@ -3,11 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { CheckCircle2, GitMerge, PencilLine, RefreshCcw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, GitMerge, PencilLine } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
@@ -17,10 +18,8 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { isHttpError } from "@/shared/api/http";
 import type {
   SchemaDraftBindingDto,
-  SchemaDraftChangeDto,
   SchemaDraftMergeSide,
 } from "@/features/schemas/api/draft-types";
-import type { SchemaModelBindingDto } from "@/features/schemas/api/schema-types";
 import {
   useMergeSchemaDraftMutation,
   usePublishSchemaDraftMutation,
@@ -32,6 +31,13 @@ import {
   useSchemaVersion,
 } from "@/features/schemas/api/schema-queries";
 import { SchemaMergeDiffViewer } from "@/features/schemas/components/SchemaMergeDiffViewer";
+import { schemaVersionName } from "@/features/schemas/lib/version-selection";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
+import type {
+  SchemaDraftChangeDto,
+  SchemaDraftDiffDto,
+  SchemaModelBindingDto,
+} from "@/shared/api/openapi.gen";
 
 export function SchemaDraftConflictPage() {
   const { schemaId, draftId } = useParams<{ schemaId: string; draftId: string }>();
@@ -53,13 +59,16 @@ export function SchemaDraftConflictPage() {
   );
   const mergeMutation = useMergeSchemaDraftMutation(draftId ?? "", schemaId ?? "");
   const publishMutation = usePublishSchemaDraftMutation(draftId ?? "", schemaId ?? "");
-  const [resolutions, setResolutions] = useState<Record<string, SchemaDraftMergeSide | undefined>>(
-    {},
-  );
+  // Sides the user picked, valid only for the diff they were picked on.
+  const [picked, setPicked] = useState<{
+    diff?: SchemaDraftDiffDto;
+    sides: Record<string, SchemaDraftMergeSide>;
+  }>({ sides: {} });
+  const resolutions = picked.diff === diff ? picked.sides : {};
   const staleBase = Boolean(draft && diff && draft.baseVersionId !== diff.currentVersionId);
   const needsMerge = Boolean(diff?.hasConflicts || staleBase);
   const currentLabel = currentVersion
-    ? `snapshot/${toCodeLabel(currentVersion.name)}@v${currentVersion.version}`
+    ? `snapshot/${toCodeLabel(schemaVersionName(currentVersion))}@v${currentVersion.version}`
     : "snapshot/latest";
   const incomingLabel = draft ? `change/${toCodeLabel(draft.name)}` : "change/incoming";
   const currentDocument = useMemo(
@@ -79,23 +88,10 @@ export function SchemaDraftConflictPage() {
         : undefined,
     [draft],
   );
-  const unresolved = useMemo(() => {
-    if (!diff || !needsMerge) return 0;
-    return diff.changes.filter((change) => change.conflict && !resolutions[change.path]).length;
-  }, [diff, needsMerge, resolutions]);
-
-  useEffect(() => {
-    if (!diff) return;
-    setResolutions(
-      Object.fromEntries(
-        diff.changes.flatMap((change) =>
-          change.conflict
-            ? [[change.path, needsMerge ? undefined : defaultSide(change)] as const]
-            : [],
-        ),
-      ),
-    );
-  }, [diff, needsMerge]);
+  const unresolved =
+    diff && needsMerge
+      ? diff.changes.filter((change) => change.conflict && !resolutions[change.path]).length
+      : 0;
 
   const publish = async () => {
     if (!schemaId || !draft) return;
@@ -156,9 +152,12 @@ export function SchemaDraftConflictPage() {
   };
 
   const setResolution = (paths: string[], side: SchemaDraftMergeSide) => {
-    setResolutions((current) => ({
-      ...current,
-      ...Object.fromEntries(paths.map((path) => [path, side])),
+    setPicked((current) => ({
+      diff,
+      sides: {
+        ...(current.diff === diff ? current.sides : {}),
+        ...Object.fromEntries(paths.map((path) => [path, side])),
+      },
     }));
   };
 
@@ -172,7 +171,7 @@ export function SchemaDraftConflictPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-w-0 flex-1 flex-col gap-5 overflow-hidden">
+      <AppSurface className="flex min-w-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title="Review changes"
           description={draft ? `${draft.name} · base v${draft.baseVersion}` : undefined}
@@ -186,44 +185,41 @@ export function SchemaDraftConflictPage() {
             { label: "Review changes" },
           ]}
           actions={
-            <div className="flex flex-wrap gap-2">
-              {schemaId && draftId ? (
-                <Link to={`/schemas/${schemaId}/drafts/${draftId}`}>
-                  <AppButton variant="secondary">
-                    <PencilLine size={16} />
-                    Manual edit
-                  </AppButton>
-                </Link>
-              ) : null}
+            <>
               {needsMerge ? (
                 <AppButton
                   disabled={!draft || !diff || mergeMutation.isPending || unresolved > 0}
                   onClick={applyMerge}
                 >
-                  {mergeMutation.isPending ? (
-                    <RefreshCcw className="animate-spin" size={16} />
-                  ) : (
-                    <GitMerge size={16} />
-                  )}
+                  {mergeMutation.isPending ? <AppSpinner size={16} /> : <GitMerge size={16} />}
                   {unresolved > 0 ? `Resolve ${unresolved} paths` : "Apply merge"}
                 </AppButton>
               ) : (
                 <AppButton disabled={!draft || publishMutation.isPending} onClick={publish}>
                   {publishMutation.isPending ? (
-                    <RefreshCcw className="animate-spin" size={16} />
+                    <AppSpinner size={16} />
                   ) : (
                     <CheckCircle2 size={16} />
                   )}
                   Publish snapshot
                 </AppButton>
               )}
-            </div>
+              {schemaId && draftId ? (
+                <Link
+                  to={`/schemas/${schemaId}/drafts/${draftId}`}
+                  className={appButtonClass({ variant: "secondary" })}
+                >
+                  <PencilLine size={16} />
+                  Manual edit
+                </Link>
+              ) : null}
+            </>
           }
         />
         {showLoading ? (
           <AppLoadingState label="Loading diff." />
         ) : loadError || missingConflictData ? (
-          <AppPanel className="flex flex-col items-start gap-3 border-[var(--status-danger-border)] text-sm text-[var(--status-danger-text)]">
+          <AppPanel className="flex flex-col items-start gap-3 border-danger-border text-sm text-danger-fg">
             <p>Could not load the comparison.</p>
             <AppButton variant="secondary" onClick={retryLoad}>
               Retry

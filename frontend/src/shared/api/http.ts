@@ -3,14 +3,8 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import type { ErrorDto } from "@/shared/api/openapi.gen";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
-
-export type ErrorDto = {
-  timestamp: string;
-  status: number;
-  message: string;
-  path: string;
-};
 
 export class HttpError extends Error {
   readonly dto: ErrorDto;

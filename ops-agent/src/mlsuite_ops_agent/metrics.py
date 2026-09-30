@@ -1,97 +1,50 @@
-"""Service aggregate metrics collection."""
+"""Service aggregate metrics collection.
+
+Points are stored in the camelCase shape sent to clients, so snapshots,
+history, and stream deltas share one payload.
+"""
 
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 from .config import Settings
 
 
-@dataclass
-class ServiceMetricSnapshot:
-    name: str
-    cpu_percent: float
-    ram_percent: float
-    disk_read_bytes: int
-    disk_write_bytes: int
-    network_rx_bytes: int
-    network_tx_bytes: int
-
-
-@dataclass
-class MetricsSnapshot:
-    timestamp: str
-    cpu_percent: float
-    ram_percent: float
-    disk_read_bytes: int
-    disk_write_bytes: int
-    network_rx_bytes: int
-    network_tx_bytes: int
-    services: list[ServiceMetricSnapshot]
-
-
 class MetricsBuffer:
     def __init__(self, settings: Settings):
         max_points = max(1, (settings.retention_minutes * 60) // settings.sample_interval_seconds)
-        self.points: deque[MetricsSnapshot] = deque(maxlen=max_points)
-        self.settings = settings
+        self.points: deque[dict[str, Any]] = deque(maxlen=max_points)
 
-    def append(self, snapshot: MetricsSnapshot) -> None:
-        self.points.append(snapshot)
+    def append(self, point: dict[str, Any]) -> None:
+        self.points.append(point)
 
-    def as_points(self) -> list[dict[str, object]]:
-        return [
+
+def collect_metrics(services: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "timestamp": datetime.now(UTC).isoformat(),
+        "cpuPercent": _sum_numeric(services, "cpuPercent"),
+        "ramPercent": _memory_percent(services),
+        "diskReadBytes": _sum_int(services, "diskReadBytes"),
+        "diskWriteBytes": _sum_int(services, "diskWriteBytes"),
+        "networkRxBytes": _sum_int(services, "networkRxBytes"),
+        "networkTxBytes": _sum_int(services, "networkTxBytes"),
+        "services": [
             {
-                "timestamp": point.timestamp,
-                "cpuPercent": point.cpu_percent,
-                "ramPercent": point.ram_percent,
-                "diskReadBytes": point.disk_read_bytes,
-                "diskWriteBytes": point.disk_write_bytes,
-                "networkRxBytes": point.network_rx_bytes,
-                "networkTxBytes": point.network_tx_bytes,
-                "services": [
-                    {
-                        "name": service.name,
-                        "cpuPercent": service.cpu_percent,
-                        "ramPercent": service.ram_percent,
-                        "diskReadBytes": service.disk_read_bytes,
-                        "diskWriteBytes": service.disk_write_bytes,
-                        "networkRxBytes": service.network_rx_bytes,
-                        "networkTxBytes": service.network_tx_bytes,
-                    }
-                    for service in point.services
-                ],
+                "name": str(service.get("name")),
+                "cpuPercent": _numeric_value(service.get("cpuPercent")),
+                "ramPercent": _service_memory_percent(service),
+                "diskReadBytes": _int_value(service.get("diskReadBytes")),
+                "diskWriteBytes": _int_value(service.get("diskWriteBytes")),
+                "networkRxBytes": _int_value(service.get("networkRxBytes")),
+                "networkTxBytes": _int_value(service.get("networkTxBytes")),
             }
-            for point in self.points
-        ]
-
-
-def collect_metrics(services: list[dict[str, Any]]) -> MetricsSnapshot:
-    return MetricsSnapshot(
-        timestamp=datetime.now(UTC).isoformat(),
-        cpu_percent=_sum_numeric(services, "cpuPercent"),
-        ram_percent=_memory_percent(services),
-        disk_read_bytes=_sum_int(services, "diskReadBytes"),
-        disk_write_bytes=_sum_int(services, "diskWriteBytes"),
-        network_rx_bytes=_sum_int(services, "networkRxBytes"),
-        network_tx_bytes=_sum_int(services, "networkTxBytes"),
-        services=[
-            ServiceMetricSnapshot(
-                name=str(service.get("name")),
-                cpu_percent=_numeric_value(service.get("cpuPercent")),
-                ram_percent=_service_memory_percent(service),
-                disk_read_bytes=_int_value(service.get("diskReadBytes")),
-                disk_write_bytes=_int_value(service.get("diskWriteBytes")),
-                network_rx_bytes=_int_value(service.get("networkRxBytes")),
-                network_tx_bytes=_int_value(service.get("networkTxBytes")),
-            )
             for service in services
             if service.get("name")
         ],
-    )
+    }
 
 
 def _sum_numeric(rows: list[dict[str, Any]], key: str) -> float:

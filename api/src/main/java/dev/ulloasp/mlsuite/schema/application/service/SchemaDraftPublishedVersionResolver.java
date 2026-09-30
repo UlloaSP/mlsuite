@@ -15,17 +15,13 @@ import dev.ulloasp.mlsuite.schema.application.dto.SchemaModelBindingDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaVersionUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaDraft;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class SchemaDraftPublishedVersionResolver {
     private final SchemaVersionRepository versions;
     private final SchemaVersionUseCase versionUseCase;
-
-    public SchemaDraftPublishedVersionResolver(SchemaVersionRepository versions,
-            SchemaVersionUseCase versionUseCase) {
-        this.versions = versions;
-        this.versionUseCase = versionUseCase;
-    }
 
     public SchemaVersion resolve(Long userId, SchemaDraft draft) {
         List<SchemaVersion> matches = versions.findBySchemaIdOrderByVersionDesc(draft.getSchema().getId()).stream()

@@ -38,14 +38,14 @@ export function InvitationsPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           title="Invitations"
           description="Invite users, assign starting role, and revoke pending access."
-          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Invitations" }]}
+          breadcrumbs={[{ label: "Invitations" }]}
         />
         {canInvite ? (
-          <section className="border-y border-[var(--border-soft)] py-5">
+          <section className="border-y border-line py-5">
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <AppSectionTitle>Invite member</AppSectionTitle>

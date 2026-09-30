@@ -6,25 +6,18 @@ STATE_FILE=${2:?restore state file is required}
 ENV_FILE=${3:-.env}
 RELEASE_COMPOSE=${4:-docker-compose.release.yml}
 BASELINE=${5:-}
-
-read_state() {
-  sed -n "s/^${1}=//p" "$STATE_FILE" | tail -n 1
-}
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 [[ -f "$STATE_FILE" ]] || { echo "restore state not found: $STATE_FILE" >&2; exit 1; }
-api_container=$(read_state RESTORE_API_CONTAINER)
+api_container=$(read_state RESTORE_API_CONTAINER "$STATE_FILE")
 [[ "$api_container" =~ ^mlsuite-restore-api-[0-9]+-[0-9]+$ ]] || {
   echo "unsafe restore API container name: $api_container" >&2
   exit 1
 }
 smoke_project=${api_container/mlsuite-restore-api-/mlsuite-restore-smoke-}
 
-[[ -f "$ENV_FILE" && -f "$RELEASE_COMPOSE" ]] || {
-  echo "environment or release Compose file not found" >&2
-  exit 1
-}
-python3 deploy/verify_release_images.py \
-  --env-file "$ENV_FILE" --release-compose "$RELEASE_COMPOSE" >/dev/null
+[[ -f "$ENV_FILE" ]] || { echo "environment file not found: $ENV_FILE" >&2; exit 1; }
+require_release_compose "$RELEASE_COMPOSE" "$ENV_FILE"
 COMPOSE=(docker compose --project-name "$smoke_project" --env-file "$ENV_FILE" \
   -f docker-compose.yml -f docker-compose.prod.yml -f "$RELEASE_COMPOSE")
 cleanup_smoke() {
@@ -40,18 +33,18 @@ fi
 [[ "$ACTION" == start ]] || { echo "action must be start or stop" >&2; exit 1; }
 trap cleanup_smoke EXIT INT TERM
 
-db_host=$(read_state RESTORE_DB_HOST)
-db_port=$(read_state RESTORE_DB_PORT)
-db_name=$(read_state RESTORE_DB_NAME)
-db_user=$(read_state RESTORE_DB_USER)
-db_pass=$(read_state RESTORE_DB_PASS)
-storage_endpoint=$(read_state RESTORE_STORAGE_ENDPOINT)
-storage_access=$(read_state RESTORE_STORAGE_ACCESS_KEY)
-storage_secret=$(read_state RESTORE_STORAGE_SECRET_KEY)
-storage_bucket=$(read_state RESTORE_STORAGE_BUCKET)
-spring_port=$(sed -n 's/^SPRING_PORT=//p' "$ENV_FILE" | tail -n 1)
+db_host=$(read_state RESTORE_DB_HOST "$STATE_FILE")
+db_port=$(read_state RESTORE_DB_PORT "$STATE_FILE")
+db_name=$(read_state RESTORE_DB_NAME "$STATE_FILE")
+db_user=$(read_state RESTORE_DB_USER "$STATE_FILE")
+db_pass=$(read_state RESTORE_DB_PASS "$STATE_FILE")
+storage_endpoint=$(read_state RESTORE_STORAGE_ENDPOINT "$STATE_FILE")
+storage_access=$(read_state RESTORE_STORAGE_ACCESS_KEY "$STATE_FILE")
+storage_secret=$(read_state RESTORE_STORAGE_SECRET_KEY "$STATE_FILE")
+storage_bucket=$(read_state RESTORE_STORAGE_BUCKET "$STATE_FILE")
+spring_port=$(read_state SPRING_PORT "$ENV_FILE")
 spring_port=${spring_port:-8080}
-smoke_port=$(sed -n 's/^RESTORE_SMOKE_PORT=//p' "$ENV_FILE" | tail -n 1)
+smoke_port=$(read_state RESTORE_SMOKE_PORT "$ENV_FILE")
 smoke_port=${smoke_port:-18080}
 [[ "$db_port" =~ ^[0-9]+$ && "$spring_port" =~ ^[0-9]+$ && "$smoke_port" =~ ^[0-9]+$ ]] || {
   echo "restore ports must be numeric" >&2

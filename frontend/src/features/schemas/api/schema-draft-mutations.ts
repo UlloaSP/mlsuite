@@ -6,20 +6,16 @@ import {
   publishSchemaDraft,
   updateSchemaDraft,
 } from "./schema-draft-api";
-import type {
-  CreateSchemaDraftRequest,
-  SchemaDraftDto,
-  SchemaDraftMergeRequest,
-  UpdateSchemaDraftRequest,
-} from "./draft-types";
+import type { SchemaDraftDto, UpdateSchemaDraftRequest } from "./draft-types";
 import {
   SCHEMA_DRAFTS_QUERY_KEY,
   SCHEMA_DRAFT_DIFF_QUERY_KEY,
   SCHEMA_DRAFT_QUERY_KEY,
   SCHEMA_VERSIONS_QUERY_KEY,
 } from "./schema-keys";
+import type { CreateSchemaDraftRequest, SchemaDraftMergeRequest } from "@/shared/api/openapi.gen";
 
-export function useCreateSchemaDraftMutation(schemaId: string) {
+export function useCreateSchemaDraftMutation(schemaId: number | string) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
   return useMutation({
@@ -30,7 +26,7 @@ export function useCreateSchemaDraftMutation(schemaId: string) {
   });
 }
 
-export function useUpdateSchemaDraftMutation(draftId: string) {
+export function useUpdateSchemaDraftMutation(draftId: number | string) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
   return useMutation({
@@ -46,7 +42,7 @@ export function useUpdateSchemaDraftMutation(draftId: string) {
   });
 }
 
-export function useMergeSchemaDraftMutation(draftId: string, schemaId: string) {
+export function useMergeSchemaDraftMutation(draftId: number | string, schemaId: number | string) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
   return useMutation({
@@ -60,7 +56,7 @@ export function useMergeSchemaDraftMutation(draftId: string, schemaId: string) {
   });
 }
 
-export function usePublishSchemaDraftMutation(draftId: string, schemaId: string) {
+export function usePublishSchemaDraftMutation(draftId: number | string, schemaId: number | string) {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
   return useMutation({

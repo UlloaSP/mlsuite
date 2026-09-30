@@ -7,6 +7,8 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
+import jakarta.annotation.Nullable;
+
 public record PredictionRunCatalogItemDto(
         Long id,
         String name,
@@ -17,11 +19,11 @@ public record PredictionRunCatalogItemDto(
         String schemaName,
         Long schemaVersionId,
         int schemaVersion,
-        String schemaVersionName,
-        Long bookmarkId,
-        String bookmarkName,
-        String createdByName,
-        String createdByEmail) {
+        @Nullable String schemaVersionName,
+        @Nullable Long bookmarkId,
+        @Nullable String bookmarkName,
+        @Nullable String createdByName,
+        @Nullable String createdByEmail) {
 
     public static PredictionRunCatalogItemDto from(PredictionRun run) {
         SchemaVersion version = run.getSchemaVersion();

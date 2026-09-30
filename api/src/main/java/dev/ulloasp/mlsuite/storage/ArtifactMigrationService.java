@@ -2,7 +2,6 @@ package dev.ulloasp.mlsuite.storage;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -13,7 +12,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.model.ModelArtifactState;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class ArtifactMigrationService {
 
     private static final Logger log = LoggerFactory.getLogger(ArtifactMigrationService.class);
@@ -23,21 +24,6 @@ public class ArtifactMigrationService {
     private final ArtifactMigrationQueue queue;
     private final TransactionTemplate transactions;
     private final StorageDeletionQueue deletionQueue;
-
-    public ArtifactMigrationService(
-            ModelRepository models,
-            ObjectStorageService objectStorage,
-            ModelArtifactWriter writer,
-            ArtifactMigrationQueue queue,
-            TransactionTemplate transactions,
-            StorageDeletionQueue deletionQueue) {
-        this.models = models;
-        this.objectStorage = objectStorage;
-        this.writer = writer;
-        this.queue = queue;
-        this.transactions = transactions;
-        this.deletionQueue = deletionQueue;
-    }
 
     public ArtifactMigrationReport migrate(ArtifactMigrationProperties properties) {
         long examined = 0;

@@ -13,3 +13,6 @@
 *.woff2 binary
 *.p12 binary
 *.pfx binary
+
+api/openapi.json linguist-generated=true
+frontend/src/shared/api/openapi.gen.ts linguist-generated=true

@@ -159,7 +159,7 @@ class PluginObjectReaderTest {
         PluginMetadata record = metadata(bytes);
         record.setStorageVersionId(null);
         when(storage.loadOptional("plugins", KEY, "legacy-v1")).thenReturn(Optional.of(bytes));
-        when(storage.inspectOptional("plugins", KEY)).thenReturn(Optional.of(
+        when(storage.inspectOptional("plugins", KEY, null)).thenReturn(Optional.of(
                 new dev.ulloasp.mlsuite.storage.StoredObjectMetadata(
                         "plugins", KEY, bytes.length, "etag", "legacy-v1", ArtifactHash.sha256(bytes))));
         when(metadata.findByObjectKeyAndOrganizationId(KEY, 41L)).thenReturn(Optional.of(record));
@@ -174,7 +174,7 @@ class PluginObjectReaderTest {
         byte[] bytes = pluginJson("safe");
         PluginMetadata record = metadata(bytes);
         record.setStorageVersionId(null);
-        when(storage.inspectOptional("plugins", KEY)).thenReturn(Optional.of(
+        when(storage.inspectOptional("plugins", KEY, null)).thenReturn(Optional.of(
                 new dev.ulloasp.mlsuite.storage.StoredObjectMetadata(
                         "plugins", KEY, bytes.length, "etag", null, ArtifactHash.sha256(bytes))));
         when(storage.loadOptional("plugins", KEY, null)).thenReturn(Optional.of(bytes));

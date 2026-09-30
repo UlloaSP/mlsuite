@@ -27,9 +27,10 @@ export function CatalogPaginationFooter({
   totalPages,
 }: CatalogPaginationFooterProps) {
   return (
-    <footer className="flex shrink-0 items-center justify-center gap-2 border-t border-[var(--border-soft)] pt-4">
+    <footer className="flex shrink-0 flex-wrap items-center justify-center gap-1.5 border-t border-line pt-4">
       <AppButton
         disabled={page === 0 || disabled}
+        size="sm"
         variant="ghost"
         onClick={() => setPage((value) => Math.max(0, value - 1))}
       >
@@ -40,7 +41,7 @@ export function CatalogPaginationFooter({
         typeof item !== "number" ? (
           <span
             key={`ellipsis-before-${item.before}`}
-            className="px-2 text-sm text-[var(--text-muted)]"
+            className="hidden px-1 text-sm text-fg-muted sm:inline"
           >
             ...
           </span>
@@ -48,20 +49,23 @@ export function CatalogPaginationFooter({
           <AppButton
             key={item}
             aria-current={page === item ? "page" : undefined}
-            className={cx(
-              page === item &&
-                "border-[var(--border-strong)] bg-[var(--surface-primary)] text-[var(--text-primary)]",
-            )}
+            // Page numbers need room; phones get the "Page x of y" line instead.
+            className={cx("hidden min-w-8 sm:inline-flex", page === item && "border-line-strong")}
             disabled={disabled}
-            variant="secondary"
+            size="sm"
+            variant={page === item ? "secondary" : "ghost"}
             onClick={() => setPage(item)}
           >
             {item + 1}
           </AppButton>
         ),
       )}
+      <span className="px-2 text-xs text-fg-secondary sm:hidden">
+        Page {page + 1} of {Math.max(totalPages, 1)}
+      </span>
       <AppButton
         disabled={!hasNext || disabled}
+        size="sm"
         variant="ghost"
         onClick={() => setPage((value) => value + 1)}
       >

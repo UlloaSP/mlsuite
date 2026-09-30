@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultFeedbackRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -16,32 +17,20 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PredictionResultFeedbackService implements PredictionResultFeedbackUseCase {
 
     private final UserLookupService userLookupService;
-    private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
     private final PredictionResultRepository resultRepository;
     private final PredictionResultFeedbackRepository feedbackRepository;
     private final PredictionRunRepository runRepository;
-
-    public PredictionResultFeedbackService(UserLookupService userLookupService,
-            WorkspaceAccessService workspaceAccessService, WorkspaceAuthorizationService authorizationService,
-            PredictionResultRepository resultRepository, PredictionResultFeedbackRepository feedbackRepository,
-            PredictionRunRepository runRepository) {
-        this.userLookupService = userLookupService;
-        this.workspaceAccessService = workspaceAccessService;
-        this.authorizationService = authorizationService;
-        this.resultRepository = resultRepository;
-        this.feedbackRepository = feedbackRepository;
-        this.runRepository = runRepository;
-    }
 
     @Override
     public PredictionResultFeedback create(Long userId, CreatePredictionResultFeedbackRequest request) {
@@ -58,7 +47,6 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
 
     @Override
     public PredictionResultFeedback update(Long userId, UpdatePredictionResultFeedbackRequest request) {
-        userLookupService.requireById(userId);
         Long orgId = requireOrg(userId);
         PredictionResultFeedback feedback = feedbackRepository.findByIdAndOrganizationId(request.feedbackId(), orgId)
                 .orElseThrow(() -> notFound("Prediction result feedback not found"));
@@ -68,7 +56,6 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
 
     @Override
     public List<PredictionResultFeedback> listByResult(Long userId, Long resultId) {
-        userLookupService.requireById(userId);
         Long orgId = requireRead(userId);
         if (resultRepository.findByIdAndOrganizationId(resultId, orgId).isEmpty()) {
             throw notFound("Prediction result not found");
@@ -78,7 +65,6 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
 
     @Override
     public List<PredictionResultFeedback> listByRuns(Long userId, List<Long> runIds) {
-        userLookupService.requireById(userId);
         Long orgId = requireRead(userId);
         if (runIds == null || runIds.isEmpty() || runIds.size() > 100) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "runIds must contain 1 to 100 ids");
@@ -91,15 +77,11 @@ public class PredictionResultFeedbackService implements PredictionResultFeedback
     }
 
     private Long requireRead(Long userId) {
-        Long orgId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, orgId);
-        return orgId;
+        return authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
     }
 
     private Long requireOrg(Long userId) {
-        Long orgId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireOrganizationRead(userId, orgId);
-        return orgId;
+        return authorizationService.requireCurrent(userId, PermissionKey.VIEW_ORGANIZATION).getId();
     }
 
     private ResponseStatusException notFound(String message) {

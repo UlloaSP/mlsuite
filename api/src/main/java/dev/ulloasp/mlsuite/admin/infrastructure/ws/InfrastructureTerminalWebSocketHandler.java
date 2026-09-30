@@ -4,19 +4,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class InfrastructureTerminalWebSocketHandler extends TextWebSocketHandler {
 
     private final SuperadminWebSocketGuard guard;
     private final OpsAgentBridgeFactory bridgeFactory;
-
-    public InfrastructureTerminalWebSocketHandler(
-            SuperadminWebSocketGuard guard,
-            OpsAgentBridgeFactory bridgeFactory) {
-        this.guard = guard;
-        this.bridgeFactory = bridgeFactory;
-    }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {

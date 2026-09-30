@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { Download, Pause, Play, Search } from "lucide-react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { cx } from "@/shared/ui/cx";
 import type { ServiceStatusDto } from "@/features/infrastructure/api/infrastructure.types";
+import { FIELD_FOCUS_RING } from "@/shared/ui/focus-ring";
+import { downloadTextFile } from "@/shared/lib/download-text-file";
 
 type Props = {
   services: ServiceStatusDto[];
@@ -20,7 +23,7 @@ export function LogsView({
   services,
   selectedService,
   logLines,
-  streamConnected: _streamConnected,
+  streamConnected,
   onSelectService,
 }: Props) {
   const [query, setQuery] = useState("");
@@ -49,6 +52,17 @@ export function LogsView({
     return true;
   });
 
+  const exportVisibleLines = () =>
+    downloadTextFile(
+      filtered.map((line) => line.text).join("\n"),
+      `${selectedService ?? "service"}-logs.txt`,
+    );
+  const tail = !streamConnected
+    ? { tone: "warning" as const, dot: "bg-warning-fg", label: "Stream disconnected" }
+    : follow
+      ? { tone: "success" as const, dot: "bg-success-fg", label: "Live tail" }
+      : { tone: "neutral" as const, dot: "bg-fg-muted", label: "Paused" };
+
   useEffect(() => {
     if (follow && termRef.current) {
       termRef.current.scrollTop = termRef.current.scrollHeight;
@@ -56,54 +70,57 @@ export function LogsView({
   }, [follow, filtered.length]);
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-[var(--text-secondary)]">
-            Observability
-          </p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Service logs
-          </h1>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            {filtered.length} of {logLines.length} lines &middot; multi-service tail with live
-            filtering.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <AppButton
-            variant={follow ? "primary" : "secondary"}
-            className="gap-2 px-3 py-2 text-xs"
-            onClick={() => setFollow((f) => !f)}
-          >
-            {follow ? <Pause size={13} /> : <Play size={13} />}
-            {follow ? "Pause" : "Follow"}
-          </AppButton>
-          <AppButton variant="secondary" className="gap-2 px-3 py-2 text-xs">
-            <Download size={13} /> Export
-          </AppButton>
-        </div>
-      </div>
+    <>
+      <AppPageHeader
+        breadcrumbScope="platform"
+        breadcrumbs={[{ label: "Infrastructure", to: "/admin/infrastructure" }, { label: "Logs" }]}
+        eyebrow="Observability"
+        title="Service logs"
+        description={`${filtered.length} of ${logLines.length} lines · multi-service tail with live filtering.`}
+        actions={
+          <>
+            <AppButton
+              variant="secondary"
+              disabled={filtered.length === 0}
+              onClick={exportVisibleLines}
+            >
+              <Download size={15} /> Export
+            </AppButton>
+            <AppButton
+              variant={follow ? "primary" : "secondary"}
+              onClick={() => setFollow((f) => !f)}
+            >
+              {follow ? <Pause size={15} /> : <Play size={15} />}
+              {follow ? "Pause" : "Follow"}
+            </AppButton>
+          </>
+        }
+      />
 
       {/* Main card */}
-      <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
+      <div className="flex min-h-96 flex-1 flex-col overflow-hidden rounded-card border border-line bg-surface">
         {/* Filter toolbar */}
-        <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-soft)] px-4 py-3">
-          <label className="flex items-center gap-2 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] px-3 py-1.5">
-            <Search size={14} className="text-[var(--text-muted)]" />
+        <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
+          <label
+            className={cx(
+              "flex items-center gap-2 rounded-control border border-line bg-surface px-3 py-1.5 transition",
+              FIELD_FOCUS_RING,
+            )}
+          >
+            <Search size={14} className="text-fg-muted" />
             <input
               aria-label="Search log message"
               type="text"
               placeholder="Search log message…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-52 bg-transparent text-xs text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+              className="w-52 bg-transparent text-xs text-fg outline-none placeholder:text-fg-muted"
             />
           </label>
           <AppSelect
             aria-label="Select log service"
-            className="h-8 min-w-40 px-3 text-xs"
+            className="min-w-40"
+            size="sm"
             value={selectedService ?? ""}
             onValueChange={onSelectService}
             options={services.map((service) => ({
@@ -117,10 +134,10 @@ export function LogsView({
                 type="button"
                 key={lv}
                 className={cx(
-                  "rounded-md border px-2 py-0.5 text-[0.65rem] font-medium transition",
+                  "rounded-md border px-2 py-0.5 text-3xs font-medium transition",
                   levels[lv]
-                    ? "border-transparent bg-[var(--accent-quiet)] text-[var(--accent-primary-strong)]"
-                    : "border-[var(--border-soft)] text-[var(--text-muted)]",
+                    ? "border-transparent bg-accent-subtle text-accent-strong"
+                    : "border-line text-fg-muted",
                 )}
                 onClick={() => toggleLevel(lv)}
               >
@@ -129,28 +146,23 @@ export function LogsView({
             ))}
           </div>
           <div className="flex-1" />
-          <AppBadge tone={follow ? "success" : "neutral"} className="px-2 py-0.5 text-[0.6rem]">
-            <span
-              className={cx(
-                "inline-block size-1.5 rounded-full",
-                follow ? "bg-[var(--success-text)]" : "bg-[var(--text-muted)]",
-              )}
-            />
-            {follow ? "live tail" : "paused"}
+          <AppBadge tone={tail.tone}>
+            <span className={cx("inline-block size-1.5 rounded-full", tail.dot)} />
+            {tail.label}
           </AppBadge>
         </div>
 
         {/* Log output */}
         <pre
           ref={termRef}
-          className="h-[540px] overflow-auto bg-[#111114] p-4 font-mono text-[0.72rem] leading-relaxed text-[#e2dde0]"
+          className="min-h-0 flex-1 overflow-auto bg-code p-4 font-mono text-2xs leading-relaxed text-code-fg"
         >
           {filtered.length > 0 ? (
             filtered.map((l) => (
               <div key={l.id} className="whitespace-pre-wrap break-words">
                 <span
                   className={cx(
-                    "mr-2 inline-block rounded px-1 py-px text-[0.6rem] font-semibold",
+                    "mr-2 inline-block rounded px-1 py-px text-3xs font-semibold",
                     levelClass(l.level),
                   )}
                 >
@@ -160,28 +172,28 @@ export function LogsView({
               </div>
             ))
           ) : (
-            <span className="text-[#555]">
+            <span className="text-code-muted">
               {logLines.length === 0
                 ? "No log lines yet. Select a service to start tailing."
                 : "No lines match your filters."}
             </span>
           )}
-          {follow && <span className="inline-block h-3.5 w-1.5 animate-pulse bg-emerald-400" />}
+          {follow && <span className="inline-block h-3.5 w-1.5 animate-pulse bg-success" />}
         </pre>
       </div>
-    </div>
+    </>
   );
 }
 
 function levelClass(level: LogLevel) {
   switch (level) {
     case "ERROR":
-      return "bg-rose-900/60 text-rose-300";
+      return "bg-danger/30 text-code-fg";
     case "WARN":
-      return "bg-amber-900/50 text-amber-300";
+      return "bg-warning/30 text-code-fg";
     case "DEBUG":
-      return "bg-slate-800 text-slate-400";
+      return "bg-code-muted/20 text-code-muted";
     default:
-      return "bg-indigo-900/40 text-indigo-300";
+      return "bg-accent/25 text-code-fg";
   }
 }

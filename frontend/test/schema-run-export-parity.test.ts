@@ -5,19 +5,20 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { describe, expect, test } from "vite-plus/test";
 import { buildSchemaRunExport } from "@/features/schemas/lib/export";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import type {
-  PredictionResultFeedbackDto,
-  PredictionRunDto,
-} from "@/features/schemas/api/prediction-types";
+import type { PredictionResultFeedbackDto } from "@/shared/api/openapi.gen";
+import {
+  binding,
+  predictionResult,
+  predictionRun,
+  resultFeedback,
+  schemaVersion,
+} from "./support/api-fixtures";
 
-const version: SchemaVersionDto = {
-  id: "version-1",
-  schemaId: "schema-1",
+const version = schemaVersion({
   version: 1,
   name: "Risk schema",
   createdAt: "2026-06-02T00:00:00Z",
-  bindings: [{ modelId: "model-1" }],
+  bindings: [binding(1)],
   formSchema: {
     fields: [{ id: "age", label: "age", kind: "number", mappedTo: "age" }],
     reports: [
@@ -45,20 +46,17 @@ const version: SchemaVersionDto = {
       },
     ],
   },
-};
+});
 
-const run: PredictionRunDto = {
-  id: "run-1",
-  schemaVersionId: "version-1",
+const run = predictionRun({
   name: "case-1",
   status: "SUCCESS",
   createdAt: "2026-06-02T10:00:00Z",
   inputData: { age: 52 },
   results: [
-    {
-      id: "result-1",
-      runId: "run-1",
-      modelId: "model-1",
+    predictionResult({
+      id: 1,
+      modelId: 1,
       status: "SUCCESS",
       createdAt: "2026-06-02T10:00:00Z",
       modelInput: { age: 52 },
@@ -68,23 +66,23 @@ const run: PredictionRunDto = {
           { mappedTo: "crystal", explanation: "tree path" },
         ],
       },
-    },
+    }),
   ],
-};
+});
 
 describe("schema run export parity", () => {
   test("exports report feedback with signature-style columns", () => {
     const feedback: PredictionResultFeedbackDto[] = [
-      {
-        id: "feedback-1",
-        resultId: "result-1",
-        userId: "7",
+      resultFeedback({
+        id: 1,
+        resultId: 1,
+        userId: 7,
         userEmail: "reviewer@example.com",
         type: "EXPLANATION",
         order: 1,
         value: { clarity: 5 },
         createdAt: "2026-06-02T10:00:00Z",
-      },
+      }),
     ];
 
     const exported = buildSchemaRunExport([run], version, feedback);

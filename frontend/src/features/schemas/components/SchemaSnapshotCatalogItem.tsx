@@ -3,14 +3,12 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Copy, GitCommitHorizontal, MoreHorizontal, PencilLine, Tag } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
-import { schemaVersionId } from "@/features/schemas/lib/version-selection";
-import { AppIconButton } from "@/shared/ui/AppIconButton";
-import { cx } from "@/shared/ui/cx";
+import { Copy, GitCommitHorizontal, PencilLine, Tag } from "lucide-react";
+import { schemaVersionId, schemaVersionName } from "@/features/schemas/lib/version-selection";
+import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
+import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   onBookmark: (version: SchemaVersionDto) => void;
@@ -27,92 +25,42 @@ export function SchemaSnapshotCatalogItem({
   schemaId,
   version,
 }: Props) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const versionId = schemaVersionId(version);
-
-  useEffect(() => {
-    const close = (event: PointerEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
-    };
-    window.addEventListener("pointerdown", close);
-    return () => window.removeEventListener("pointerdown", close);
-  }, []);
+  const actions: AppMenuAction[] = [
+    {
+      key: "change",
+      label: "New change",
+      icon: PencilLine,
+      onSelect: () => onCreateChange(version),
+    },
+    { key: "bookmark", label: "Bookmark", icon: Tag, onSelect: () => onBookmark(version) },
+    ...(onClone
+      ? [
+          {
+            key: "clone",
+            label: "Create schema from snapshot",
+            icon: Copy,
+            onSelect: () => onClone(version),
+          },
+        ]
+      : []),
+  ];
 
   return (
-    <article
-      className={cx(
-        "relative grid rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] transition hover:border-[var(--text-primary)] lg:grid-cols-[minmax(0,1fr)_auto]",
-        menuOpen ? "z-30" : "z-0",
-      )}
-    >
-      <Link
-        to={`/schemas/${schemaId}/versions/${versionId}`}
-        aria-label={`Open ${version.name} v${version.version}`}
-        className="absolute inset-0 rounded outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
-      />
-      <div className="pointer-events-none relative min-w-0 p-4">
-        <div className="flex items-center gap-2">
-          <GitCommitHorizontal size={16} className="shrink-0 text-[var(--text-secondary)]" />
-          <h2 className="truncate text-base font-semibold text-[var(--text-primary)]">
-            {version.name}
-          </h2>
-        </div>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">
-          v{version.version} · published <LiveRelativeTime value={version.createdAt} /> ago
-        </p>
-      </div>
-      <div ref={menuRef} className="relative z-10 flex items-center p-4 lg:justify-end">
-        <AppIconButton
-          type="button"
-          aria-label={`Open actions for ${version.name} v${version.version}`}
-          onClick={() => setMenuOpen((current) => !current)}
-        >
-          <MoreHorizontal size={18} />
-        </AppIconButton>
-        {menuOpen ? (
-          <div className="absolute right-4 top-[calc(100%-0.25rem)] z-20 min-w-[170px] rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false);
-                onCreateChange(version);
-              }}
-              className={menuItemClass}
-            >
-              <PencilLine size={15} />
-              New change
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false);
-                onBookmark(version);
-              }}
-              className={menuItemClass}
-            >
-              <Tag size={15} />
-              Bookmark
-            </button>
-            {onClone ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onClone(version);
-                }}
-                className={menuItemClass}
-              >
-                <Copy size={15} />
-                Create schema from snapshot
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </article>
+    <CatalogEntry
+      title={schemaVersionName(version)}
+      icon={<GitCommitHorizontal size={16} className="mt-1 text-fg-secondary" />}
+      metadata={
+        <span>
+          v{version.version} · Published <LiveRelativeTime value={version.createdAt} /> ago
+        </span>
+      }
+      actions={
+        <AppActionsMenu
+          label={`Open actions for ${version.name} v${version.version}`}
+          actions={actions}
+        />
+      }
+      to={`/schemas/${schemaId}/versions/${schemaVersionId(version)}`}
+    />
   );
 }
-
-const menuItemClass =
-  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--surface-muted)]";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { shortcutDigit } from "@/app/utils/keyboard-shortcuts";
+import { shortcutDigit } from "@/app/components/use-navigation-shortcuts";
 import {
   bindingFromKeyboardEvent,
   DEFAULT_SHORTCUTS,

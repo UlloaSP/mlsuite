@@ -7,7 +7,6 @@ import type { ReactNode } from "react";
 import { createBrowserRouter, Outlet, type RouteObject } from "react-router";
 import { AppShellFrame } from "@/app/layouts/AppShellLayout";
 import { PublicLayout } from "@/app/layouts/PublicLayout";
-import { lazyPage } from "./lazy-route";
 import { protectedPages } from "./protected-routes";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
@@ -24,7 +23,9 @@ export const routes: RouteObject[] = [
         children: [
           {
             index: true,
-            lazy: () => lazyPage(() => import("@/app/pages/AuthLandingPage"), "AuthLandingPage"),
+            lazy: async () => ({
+              Component: (await import("@/app/pages/AuthLandingPage")).AuthLandingPage,
+            }),
           },
         ],
       },

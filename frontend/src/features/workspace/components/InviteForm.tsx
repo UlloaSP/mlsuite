@@ -2,10 +2,7 @@ import { useState } from "react";
 import { AppCombobox } from "@/shared/ui/AppCombobox";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
-import type {
-  InvitationCandidateDto,
-  RoleDefinitionDto,
-} from "@/features/workspace/api/workspace.types";
+import type { InvitationCandidateDto, RoleDefinitionDto } from "@/shared/api/openapi.gen";
 
 const defaultRoleId = (roles: RoleDefinitionDto[]) =>
   roles.find((role) => role.systemKey === "MEMBER")?.id ?? roles[0]?.id ?? null;
@@ -52,7 +49,6 @@ export function InviteForm({
         }
       />
       <AppSelect
-        className="rounded shadow-none"
         value={selectedRoleId ? String(selectedRoleId) : ""}
         onValueChange={setRoleDefinitionId}
         disabled={roleOptions.length === 0}
@@ -61,13 +57,8 @@ export function InviteForm({
           label: option.name,
         }))}
       />
-      <AppButton
-        type="button"
-        className="w-full rounded-xl px-5 lg:w-auto"
-        disabled={!canSubmit}
-        onClick={submit}
-      >
-        Send Invite
+      <AppButton type="button" className="w-full lg:w-auto" disabled={!canSubmit} onClick={submit}>
+        Send invite
       </AppButton>
     </div>
   );

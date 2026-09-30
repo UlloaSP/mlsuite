@@ -1,9 +1,8 @@
-import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppSelect } from "@/shared/ui/AppSelect";
-import { AppTextField } from "@/shared/ui/AppTextField";
+import { AppSearchField } from "@/shared/ui/AppSearchField";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { AppToolbar } from "@/shared/ui/AppToolbar";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
@@ -24,9 +23,8 @@ export function InvitationCatalog({
   organizationId: number;
   canManage: boolean;
 }) {
-  const [params, setParams] = useSearchParams();
-  const query = params.get("q") ?? "";
-  const status = params.get("status") ?? "ALL";
+  const filters = useUrlFilters({ q: "", status: "ALL" });
+  const { q: query, status } = filters.values;
   const [selected, setSelected] = useState<number[]>([]);
   const request = useOrganizationInvitationsQuery(organizationId);
   const invitations = useMemo(() => request.data ?? [], [request.data]);
@@ -50,45 +48,35 @@ export function InvitationCatalog({
   const selectedVisible = selected.filter((id) =>
     pagination.visibleItems.some((invite) => invite.id === id),
   );
-  const setFilter = (key: string, value: string) => {
+  const setFilter = (changes: { q?: string; status?: string }) => {
     setSelected([]);
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        if (value && value !== "ALL") next.set(key, value);
-        else next.delete(key);
-        next.delete("page");
-        return next;
-      },
-      { replace: true },
-    );
+    filters.setFilters(changes);
   };
   return (
-    <>
+    <section className="flex min-h-0 flex-1 flex-col">
       <AppToolbar variant="flat">
-        <AppTextField
+        <AppSearchField
           className="min-w-[min(100%,260px)] flex-1"
-          aria-label="Search invitations"
-          placeholder="Search invitations by email..."
-          prefix={<Search className="size-4 text-[var(--text-muted)]" />}
-          suffix={
-            request.isSuccess ? (
-              <span className="shrink-0 whitespace-nowrap border-l border-[var(--border-soft)] pl-3 text-sm font-semibold text-[var(--text-secondary)]">
-                {query || status !== "ALL"
-                  ? `${filtered.length} of ${invitations.length}`
-                  : invitations.length}{" "}
-                {invitations.length === 1 ? "invitation" : "invitations"}
-              </span>
-            ) : undefined
+          label="Search invitations"
+          placeholder="Search invitations by email…"
+          count={
+            request.isSuccess
+              ? {
+                  shown: filtered.length,
+                  total: invitations.length,
+                  filtered: filters.isFiltered,
+                  noun: invitations.length === 1 ? "invitation" : "invitations",
+                }
+              : undefined
           }
           value={query}
-          onChange={(event) => setFilter("q", event.target.value)}
+          onChange={(value) => setFilter({ q: value })}
         />
         <AppSelect
           aria-label="Filter by status"
           className="min-w-44"
           value={status}
-          onValueChange={(value) => setFilter("status", value)}
+          onValueChange={(value) => setFilter({ status: value })}
           options={statuses.map((value) => ({
             value,
             label:
@@ -114,17 +102,16 @@ export function InvitationCatalog({
         itemCount={filtered.length}
         isLoading={request.isPending}
         isBusy={request.isFetching}
-        loadingLabel="Loading invitations..."
+        loadingLabel="Loading invitations…"
         errorMessage={request.isError ? "Could not load invitations." : null}
         onRetry={() => {
           void request.refetch();
         }}
         emptyState={{
-          title: query || status !== "ALL" ? "No matching invitations" : "No invitations yet",
-          description:
-            query || status !== "ALL"
-              ? "Try another email or status."
-              : "Invitations will appear here once created.",
+          title: filters.isFiltered ? "No matching invitations" : "No invitations yet",
+          description: filters.isFiltered
+            ? "Try another email or status."
+            : "Invitations will appear here once created.",
         }}
       >
         {pagination.visibleItems.map((invite) => (
@@ -143,6 +130,6 @@ export function InvitationCatalog({
           />
         ))}
       </CatalogListPanel>
-    </>
+    </section>
   );
 }

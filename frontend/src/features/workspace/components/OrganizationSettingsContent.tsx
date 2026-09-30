@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import type {
-  OrganizationDto,
-  WorkspacePermissionsDto,
-} from "@/capabilities/workspace-context/workspace-context.types";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppCopy } from "@/shared/ui/AppCopy";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
+import { cx } from "@/shared/ui/cx";
+import { FORM_MAX_WIDTH } from "@/shared/ui/page-layout";
 import { AppTextArea } from "@/shared/ui/AppTextArea";
 import { AppTextField } from "@/shared/ui/AppTextField";
 import {
@@ -16,6 +15,7 @@ import {
 import { useOrganizationMembersQuery } from "@/features/workspace/api/workspace.queries";
 import { DeleteOrganizationDialog } from "./DeleteOrganizationDialog";
 import { TransferOrganizationOwnerDialog } from "./TransferOrganizationOwnerDialog";
+import type { OrganizationDto, WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
 type OrganizationDraft = { description?: string; name?: string; slug?: string };
 
@@ -34,7 +34,7 @@ export function OrganizationSettingsContent({
   const navigate = useNavigate();
   const id = organization.id;
   const members = useOrganizationMembersQuery(id, permissions.canTransferOwnership);
-  const update = useUpdateOrganizationMutation(id);
+  const update = useUpdateOrganizationMutation();
   const transfer = useTransferOrganizationOwnershipMutation();
   const remove = useDeleteOrganizationMutation();
   const [draft, setDraft] = useState<OrganizationDraft>({});
@@ -49,20 +49,20 @@ export function OrganizationSettingsContent({
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+      <div className={cx(FORM_MAX_WIDTH, "flex flex-col gap-6")}>
         {permissions.canEditOrganization ? (
           <form
-            className="grid max-w-3xl gap-5 border-t border-[var(--border-soft)] pt-6"
+            className="grid gap-5 border-t border-line pt-6"
             onSubmit={(event) => {
               event.preventDefault();
               update.mutate(
-                { name: name.trim(), slug: slug.trim(), description },
+                { id, name: name.trim(), slug: slug.trim(), description },
                 { onSuccess: () => setDraft({}) },
               );
             }}
           >
             <div>
-              <h2 className="text-xl font-semibold text-[var(--text-primary)]">Identity</h2>
+              <h2 className="text-xl font-semibold text-fg">Identity</h2>
               <AppCopy className="mt-1">Shown across this organization's workspace.</AppCopy>
             </div>
             <div className="grid gap-2">
@@ -107,13 +107,9 @@ export function OrganizationSettingsContent({
                 }
               />
             </div>
-            {update.isError ? (
-              <p role="alert" className="text-sm text-[var(--danger-text)]">
-                {errorMessage(update.error)}
-              </p>
-            ) : null}
+            {update.isError ? <AppInlineAlert>{errorMessage(update.error)}</AppInlineAlert> : null}
             {update.isSuccess ? (
-              <p role="status" className="text-sm text-[var(--success-text)]">
+              <p role="status" className="text-sm text-success-fg">
                 Organization saved.
               </p>
             ) : null}
@@ -122,25 +118,25 @@ export function OrganizationSettingsContent({
               className="w-fit"
               disabled={update.isPending || !name.trim() || !slug.trim()}
             >
-              {update.isPending ? "Saving..." : "Save changes"}
+              {update.isPending ? "Saving…" : "Save changes"}
             </AppButton>
           </form>
         ) : null}
 
         {permissions.canTransferOwnership ? (
-          <section className="max-w-3xl border-t border-[var(--border-soft)] py-6">
-            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Ownership</h2>
+          <section className="border-t border-line py-6">
+            <h2 className="text-xl font-semibold text-fg">Ownership</h2>
             <AppCopy className="mt-1 max-w-2xl">
               Transfer full control to another active member. Your account will lose owner-only
               permissions as soon as the transfer completes.
             </AppCopy>
             {transfer.isError || members.isError ? (
-              <p role="alert" className="mt-3 text-sm text-[var(--danger-text)]">
+              <AppInlineAlert className="mt-3">
                 {errorMessage(transfer.error ?? members.error)}
-              </p>
+              </AppInlineAlert>
             ) : null}
             {transfer.isSuccess ? (
-              <p role="status" className="mt-3 text-sm text-[var(--success-text)]">
+              <p role="status" className="mt-3 text-sm text-success-fg">
                 Ownership transferred.
               </p>
             ) : null}
@@ -157,16 +153,14 @@ export function OrganizationSettingsContent({
         ) : null}
 
         {permissions.canDeleteOrganization ? (
-          <section className="max-w-3xl border-t border-[var(--border-soft)] py-6">
-            <h2 className="text-xl font-semibold text-[var(--danger-text)]">Danger zone</h2>
+          <section className="border-t border-line py-6">
+            <h2 className="text-xl font-semibold text-danger-fg">Danger zone</h2>
             <AppCopy className="mt-1 max-w-2xl">
               Delete this organization permanently. The API refuses deletion while organization
               resources still exist.
             </AppCopy>
             {remove.isError ? (
-              <p role="alert" className="mt-3 text-sm text-[var(--danger-text)]">
-                {errorMessage(remove.error)}
-              </p>
+              <AppInlineAlert className="mt-3">{errorMessage(remove.error)}</AppInlineAlert>
             ) : null}
             <AppButton
               type="button"

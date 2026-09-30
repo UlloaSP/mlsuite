@@ -1,107 +1,195 @@
-import type { FeedbackStatusDisplay } from "@/capabilities/prediction-runtime/feedback/FeedbackStatusBadge";
-import type { ReactNode } from "react";
-import { useSearchParams } from "react-router";
+import { useMemo, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { ReviewCreationButton } from "@/capabilities/review-creation/ReviewCreationButton";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
-import {
-  type InferenceCatalogItemDto,
-  useInferenceCatalog,
-} from "@/features/inferences/api/inference-api";
+import { useInferenceTableData } from "@/features/inferences/api/inference-api";
 import { useDeleteInferenceMutation } from "@/features/inferences/api/inference-mutations";
-import { InferenceCatalogList } from "@/features/inferences/components/InferenceCatalogList";
+import { InferenceActionsMenu } from "@/features/inferences/components/InferenceActionsMenu";
 import { InferenceCatalogToolbar } from "@/features/inferences/components/InferenceCatalogToolbar";
+import { InferenceColumnsMenu } from "@/features/inferences/components/InferenceColumnsMenu";
 import {
+  InferenceFiltersDialog,
+  type InferenceFilterChoice,
+} from "@/features/inferences/components/InferenceFiltersDialog";
+import { InferenceNameCell } from "@/features/inferences/components/InferenceNameCell";
+import { InferencePreviewSheet } from "@/features/inferences/components/InferencePreviewSheet";
+import { InferenceTable } from "@/features/inferences/components/InferenceTable";
+import {
+  parseConditions,
+  serializeConditions,
+} from "@/features/inferences/lib/inference-conditions";
+import {
+  activeFilterCount,
   filterInferences,
+  scopeInferences,
   type InferenceFilters,
 } from "@/features/inferences/lib/inference-filter";
+import {
+  buildInferenceTableRows,
+  inferenceDataColumns,
+  type InferenceTableRow,
+} from "@/features/inferences/lib/inference-table-rows";
+import { useInferenceTable } from "@/features/inferences/lib/use-inference-table";
+import { AppButton } from "@/shared/ui/AppButton";
+import { AppEmptyState } from "@/shared/ui/AppEmptyState";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
-import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
+import { useActionDialog } from "@/shared/ui/use-action-dialog";
+import { useStableLoading } from "@/shared/ui/useStableLoading";
+import { snapshotLabel } from "@/shared/lib/snapshot-label";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
-const validStatus = (value: string | null): InferenceFilters["status"] =>
+const URL_FILTER_DEFAULTS = {
+  q: "",
+  schema: "all",
+  bookmark: "all",
+  status: "all",
+  feedback: "all",
+  where: "",
+  sort: "createdAt.desc",
+  inference: "",
+};
+const EMPTY_ROWS: InferenceTableRow[] = [];
+
+const validStatus = (value: string): InferenceFilters["status"] =>
   value === "SUCCESS" || value === "PARTIAL_SUCCESS" || value === "FAILED" ? value : "all";
+const validFeedback = (value: string): InferenceFilters["feedback"] =>
+  value === "COMPLETED" || value === "PENDING" || value === "NOT_REQUIRED" ? value : "all";
 
 export function InferencesPage({
   renderExportAction,
-  renderFeedbackStatuses,
+  renderPreview,
 }: {
-  renderFeedbackStatuses?: (
-    items: InferenceCatalogItemDto[],
-    children: (statuses: Map<string, FeedbackStatusDisplay>) => ReactNode,
-  ) => ReactNode;
-  renderExportAction?: (items: InferenceCatalogItemDto[]) => ReactNode;
+  renderExportAction?: (items: PredictionRunCatalogItemDto[]) => ReactNode;
+  /** An inference's inputs and outputs, owned by the schemas feature. */
+  renderPreview: (item: PredictionRunCatalogItemDto) => ReactNode;
 }) {
-  const catalog = useInferenceCatalog();
+  const data = useInferenceTableData();
   const { data: workspace } = useWorkspaceContext();
   const deleteInference = useDeleteInferenceMutation();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const filters: InferenceFilters = {
-    query: searchParams.get("q") ?? "",
-    schemaId: searchParams.get("schema") ?? "all",
-    bookmarkId: searchParams.get("bookmark") ?? "all",
-    status: validStatus(searchParams.get("status")),
-  };
-  const items = catalog.data ?? [];
-  const filteredItems = filterInferences(items, filters);
-  const organizationId = workspace?.currentOrganization.id;
-  const pagination = useClientCatalogPage(
-    filteredItems,
-    JSON.stringify([organizationId, filters]),
-    catalog.isLoading,
+  const navigate = useNavigate();
+  const actionDialog = useActionDialog();
+  const urlFilters = useUrlFilters(URL_FILTER_DEFAULTS);
+  const { q, schema, bookmark, status, feedback, where, sort, inference } = urlFilters.values;
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filters = useMemo<InferenceFilters>(
+    () => ({
+      query: q,
+      schemaId: schema,
+      bookmarkId: bookmark,
+      status: validStatus(status),
+      feedback: validFeedback(feedback),
+      conditions: parseConditions(where),
+    }),
+    [q, schema, bookmark, status, feedback, where],
   );
+  const rows = useMemo(
+    () => (data.data ? buildInferenceTableRows(data.data) : EMPTY_ROWS),
+    [data.data],
+  );
+  const dataColumns = useMemo(
+    () => inferenceDataColumns(scopeInferences(rows, { schemaId: schema, bookmarkId: bookmark })),
+    [rows, schema, bookmark],
+  );
+  const visibleRows = useMemo(() => filterInferences(rows, filters), [rows, filters]);
+  const visibleItems = useMemo(() => visibleRows.map((row) => row.item), [visibleRows]);
+  const organizationId = workspace?.currentOrganization.id;
   const canDelete = workspace?.permissions.canRunPredictions ?? false;
   const canManageReviews = workspace?.permissions.canManageReviews ?? false;
-  const handleDelete = async (item: (typeof items)[number]) => {
-    if (!window.confirm(`Delete ${item.name}? This cannot be undone.`)) return;
-    try {
-      await deleteInference.mutateAsync(item.id);
-      toast.success("Inference deleted.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    }
+  const showLoading = useStableLoading(data.isLoading);
+  const openRow = rows.find((row) => String(row.item.id) === inference);
+  const setOpen = (id: string) => urlFilters.setFilters({ inference: id });
+
+  const handleDelete = async (item: PredictionRunCatalogItemDto) => {
+    const confirmed = await actionDialog.confirm({
+      title: `Delete ${item.name}?`,
+      description: "This cannot be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) return;
+    deleteInference.mutate(item.id, { onSuccess: () => toast.success("Inference deleted.") });
   };
-  const updateFilter = <K extends keyof InferenceFilters>(key: K, value: InferenceFilters[K]) => {
-    const keyMap: Record<keyof InferenceFilters, string> = {
-      query: "q",
-      schemaId: "schema",
-      bookmarkId: "bookmark",
-      status: "status",
-    };
-    const next = new URLSearchParams(searchParams);
-    if (value === "" || value === "all") next.delete(keyMap[key]);
-    else next.set(keyMap[key], value);
-    if (key === "schemaId") next.delete("bookmark");
-    next.delete("page");
-    setSearchParams(next, { replace: true });
+  const applyFilters = (choice: InferenceFilterChoice) => {
+    urlFilters.setFilters({
+      schema: choice.schemaId,
+      bookmark: choice.bookmarkId,
+      status: choice.status,
+      feedback: choice.feedback,
+      where: serializeConditions(choice.conditions),
+    });
+    setFiltersOpen(false);
   };
 
-  const renderList = (statuses?: Map<string, FeedbackStatusDisplay>) => (
-    <InferenceCatalogList
-      feedbackStatuses={statuses}
-      canDelete={canDelete}
-      canManageReviews={canManageReviews}
-      deletePending={deleteInference.isPending}
-      items={pagination.visibleItems}
-      onDelete={(item) => void handleDelete(item)}
+  const table = useInferenceTable({
+    rows: visibleRows,
+    dataColumns,
+    visibilityKey: `${organizationId ?? "none"}:${schema}`,
+    scoped: schema !== "all",
+    sort,
+    onSortChange: (next) => urlFilters.setFilters({ sort: next }),
+    renderName: ({ item }) => (
+      <InferenceNameCell id={item.id} name={item.name} onOpen={() => setOpen(String(item.id))} />
+    ),
+    renderActions: ({ item }) =>
+      canDelete || canManageReviews ? (
+        <InferenceActionsMenu
+          canDelete={canDelete}
+          canManageReviews={canManageReviews}
+          disabled={deleteInference.isPending}
+          inferenceName={item.name}
+          onDelete={() => void handleDelete(item)}
+          onReviewStatus={() => navigate(`/inferences/${item.id}?tab=reviews&section=reviews`)}
+        />
+      ) : null,
+  });
+
+  const body = showLoading ? (
+    <AppLoadingState label="Loading inferences…" />
+  ) : data.error && rows.length === 0 ? (
+    <div className="flex flex-col items-start gap-3">
+      <AppInlineAlert>Could not load inferences.</AppInlineAlert>
+      <AppButton size="sm" variant="secondary" onClick={() => void data.refetch()}>
+        Retry
+      </AppButton>
+    </div>
+  ) : visibleRows.length === 0 ? (
+    <AppEmptyState
+      compact
+      title={rows.length === 0 ? "No inferences yet" : "No matching inferences"}
+      description={
+        rows.length === 0
+          ? "Run a schema bookmark to populate this organization catalog."
+          : "Adjust the search or filters to see more results."
+      }
+    />
+  ) : (
+    <InferenceTable
+      table={table}
+      openId={openRow ? inference : undefined}
+      onOpen={({ item }) => setOpen(String(item.id))}
     />
   );
 
   return (
     <AppPage>
+      {actionDialog.dialog}
       <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
           eyebrow="Organization"
           title="Inferences"
-          description="Explore every inference in the current organization across schemas and bookmarks."
+          description="Every inference in the current organization, with each schema's inputs, outputs and reviewer answers as columns."
           actions={
             <>
-              {workspace?.permissions.canManageReviews && organizationId != null ? (
+              {canManageReviews && organizationId != null ? (
                 <ReviewCreationButton
                   organizationId={organizationId}
-                  candidates={filteredItems.map((item) => ({
+                  candidates={visibleItems.map((item) => ({
                     runId: String(item.id),
                     name: item.name,
                     createdAt: item.createdAt,
@@ -109,38 +197,48 @@ export function InferencesPage({
                     versionId: String(item.schemaVersionId),
                     bookmarkId: item.bookmarkId == null ? null : String(item.bookmarkId),
                     bookmarkName: item.bookmarkName,
-                    groupLabel: `${item.schemaName} · ${item.schemaVersionName} · v${item.schemaVersion}`,
+                    groupLabel: `${item.schemaName} · ${snapshotLabel(item.schemaVersionName, item.schemaVersion)}`,
                   }))}
                 />
               ) : null}
               {workspace?.permissions.canExportPredictions
-                ? renderExportAction?.(filteredItems)
+                ? renderExportAction?.(visibleItems)
                 : null}
             </>
           }
         />
-        <InferenceCatalogToolbar filters={filters} inferences={items} onChange={updateFilter} />
-        <CatalogListPanel
-          {...pagination}
-          itemCount={filteredItems.length}
-          isLoading={catalog.isLoading}
-          isBusy={catalog.isFetching || deleteInference.isPending}
-          loadingLabel="Loading inferences..."
-          errorMessage={catalog.error ? "Could not load inferences." : null}
-          onRetry={() => void catalog.refetch()}
-          emptyState={{
-            title: items.length === 0 ? "No inferences yet" : "No matching inferences",
-            description:
-              items.length === 0
-                ? "Run a schema bookmark to populate this organization catalog."
-                : "Adjust the search or filters to see more results.",
-          }}
-        >
-          {renderFeedbackStatuses
-            ? renderFeedbackStatuses(pagination.visibleItems, renderList)
-            : renderList()}
-        </CatalogListPanel>
+        <InferenceCatalogToolbar
+          query={q}
+          count={{ shown: visibleRows.length, total: rows.length }}
+          activeFilters={activeFilterCount(filters)}
+          onQueryChange={(query) => urlFilters.setFilters({ q: query })}
+          onOpenFilters={() => setFiltersOpen(true)}
+          onClearFilters={() =>
+            applyFilters({
+              schemaId: "all",
+              bookmarkId: "all",
+              status: "all",
+              feedback: "all",
+              conditions: [],
+            })
+          }
+          actions={<InferenceColumnsMenu table={table} />}
+        />
+        {body}
       </AppSurface>
+      {filtersOpen ? (
+        <InferenceFiltersDialog
+          filters={filters}
+          rows={rows}
+          onApply={applyFilters}
+          onClose={() => setFiltersOpen(false)}
+        />
+      ) : null}
+      {openRow ? (
+        <InferencePreviewSheet item={openRow.item} onClose={() => setOpen("")}>
+          {renderPreview(openRow.item)}
+        </InferencePreviewSheet>
+      ) : null}
     </AppPage>
   );
 }

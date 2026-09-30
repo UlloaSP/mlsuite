@@ -3,66 +3,65 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
-import { loadPredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions";
-import type { PredictionCatalogDefinitions } from "@/capabilities/prediction-runtime/plugins/prediction-catalog-definitions";
 import {
-  schemaRunDebug,
-  schemaRunDebugError,
-} from "@/capabilities/prediction-runtime/mlform/run-debug";
-import { pluginRuntimeSourcesQueryOptions } from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
+  getCatalogDefinitions,
+  type PredictionCatalogDefinitions,
+} from "@/capabilities/prediction-runtime/plugins/plugin-catalog";
+import {
+  PLUGIN_RUNTIME_SOURCES_QUERY_KEY,
+  pluginRuntimeSourcesQueryOptions,
+} from "@/capabilities/prediction-runtime/plugins/plugin-runtime-sources";
 
-const emptyCatalog: PredictionCatalogDefinitions = {
+const EMPTY_CATALOG: PredictionCatalogDefinitions = {
   fieldDefinitions: [],
   reportDefinitions: [],
 };
 
-type CatalogState =
-  | { status: "loading"; data: PredictionCatalogDefinitions; error: null }
-  | { status: "ready"; data: PredictionCatalogDefinitions; error: null }
-  | { status: "error"; data: PredictionCatalogDefinitions; error: string };
+const CATALOG_ERROR_TOAST_ID = "plugin-catalog-unavailable";
 
-export const useSchemaPluginCatalog = (schema: unknown, organizationId: number | string) => {
-  const queryClient = useQueryClient();
-  const needsPlugins = useMemo(() => schemaNeedsPluginCatalog(schema), [schema]);
-  const [state, setState] = useState<CatalogState>({
-    status: needsPlugins ? "loading" : "ready",
-    data: emptyCatalog,
-    error: null,
+/**
+ * Compiled plugin definitions. The key nests under the runtime sources key, so
+ * invalidating the sources also recompiles the catalog.
+ */
+export const predictionCatalogQueryOptions = (organizationId: number | string) =>
+  queryOptions({
+    queryKey: [...PLUGIN_RUNTIME_SOURCES_QUERY_KEY(organizationId), "definitions"],
+    queryFn: async ({ client }) =>
+      getCatalogDefinitions(
+        organizationId,
+        await client.fetchQuery(pluginRuntimeSourcesQueryOptions(organizationId)),
+      ),
+    retry: false,
+    meta: { errorHandledLocally: true },
   });
 
-  const retry = useCallback(async () => {
-    if (!needsPlugins) {
-      schemaRunDebug("catalog.skip", { needsPlugins });
-      setState({ status: "ready", data: emptyCatalog, error: null });
-      return;
-    }
-    schemaRunDebug("catalog.load.start");
-    setState({ status: "loading", data: emptyCatalog, error: null });
-    try {
-      const sources = await queryClient.fetchQuery(
-        pluginRuntimeSourcesQueryOptions(organizationId),
-      );
-      const definitions = await loadPredictionCatalogDefinitions(organizationId, sources);
-      schemaRunDebug("catalog.load.ready", {
-        fields: definitions.fieldDefinitions.map((definition) => definition.kind),
-        reports: definitions.reportDefinitions.map((definition) => definition.kind),
-      });
-      setState({ status: "ready", data: definitions, error: null });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      schemaRunDebugError("catalog.load.error", error);
-      toast.error("Plugin catalog unavailable", { description: message });
-      setState({ status: "error", data: emptyCatalog, error: message });
-    }
-  }, [needsPlugins, organizationId, queryClient]);
+const errorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+export const useSchemaPluginCatalog = (schema: unknown, organizationId: number | string) => {
+  const needsPlugins = useMemo(() => schemaNeedsPluginCatalog(schema), [schema]);
+  const query = useQuery({
+    ...predictionCatalogQueryOptions(organizationId),
+    enabled: needsPlugins,
+  });
+  const error = needsPlugins && query.isError ? errorMessage(query.error) : null;
 
   useEffect(() => {
-    void retry();
-  }, [retry]);
+    // One toast per failure even when several views read the same catalog.
+    if (error)
+      toast.error("Plugin catalog unavailable", { id: CATALOG_ERROR_TOAST_ID, description: error });
+  }, [error, query.errorUpdatedAt]);
 
-  return { ...state, needsPlugins, retry };
+  const status = !needsPlugins || query.isSuccess ? "ready" : error ? "error" : "loading";
+  return {
+    status,
+    data: needsPlugins && query.data ? query.data : EMPTY_CATALOG,
+    error,
+    needsPlugins,
+    retry: () => query.refetch(),
+  } as const;
 };

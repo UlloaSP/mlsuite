@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.support.TestFixtures;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,7 +24,6 @@ import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.Organ
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
-import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.plugin.adapter.out.persistence.repository.PluginMetadataRepository;
 import dev.ulloasp.mlsuite.plugin.domain.model.PluginMetadata;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
@@ -218,7 +218,7 @@ class SearchWorkspaceServiceTest {
         OrganizationMembership membership = new OrganizationMembership();
         membership.setOrganization(organization);
         membership.setUser(user());
-        membership.setRole(OrganizationRole.OWNER);
+        membership.setRoleDefinition(TestFixtures.role(organization, "OWNER"));
         membership.setStatus(MembershipStatus.ACTIVE);
         return membership;
     }

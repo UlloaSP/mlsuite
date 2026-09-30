@@ -12,7 +12,6 @@ import dev.ulloasp.mlsuite.invitation.adapter.out.persistence.repository.Invitat
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationRepository;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
-import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleTemplateRepository;
 import dev.ulloasp.mlsuite.role.application.dto.CreateRoleFromTemplateRequest;
@@ -21,15 +20,16 @@ import dev.ulloasp.mlsuite.role.application.dto.DuplicateRoleRequest;
 import dev.ulloasp.mlsuite.role.application.dto.RoleDefinitionDto;
 import dev.ulloasp.mlsuite.role.application.dto.UpdateRoleRequest;
 import dev.ulloasp.mlsuite.role.application.port.in.RoleManagementUseCase;
-import dev.ulloasp.mlsuite.role.domain.model.OrganizationSystemRole;
 import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
 import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class RoleManagementService implements RoleManagementUseCase {
 
     private final WorkspaceAuthorizationService authorizationService;
@@ -42,30 +42,9 @@ public class RoleManagementService implements RoleManagementUseCase {
     private final UserLookupService userLookupService;
     private final AuditLogService auditLogService;
 
-    public RoleManagementService(
-            WorkspaceAuthorizationService authorizationService,
-            RoleCatalogService catalogService,
-            RoleDefinitionRepository roleRepository,
-            RoleTemplateRepository templateRepository,
-            OrganizationRepository organizationRepository,
-            OrganizationMembershipRepository membershipRepository,
-            InvitationRepository invitationRepository,
-            UserLookupService userLookupService,
-            AuditLogService auditLogService) {
-        this.authorizationService = authorizationService;
-        this.catalogService = catalogService;
-        this.roleRepository = roleRepository;
-        this.templateRepository = templateRepository;
-        this.organizationRepository = organizationRepository;
-        this.membershipRepository = membershipRepository;
-        this.invitationRepository = invitationRepository;
-        this.userLookupService = userLookupService;
-        this.auditLogService = auditLogService;
-    }
-
     @Override
     public RoleDefinitionDto create(Long userId, Long organizationId, CreateRoleRequest request) {
-        requireManage(userId, organizationId);
+        authorizationService.require(userId, organizationId, PermissionKey.MANAGE_MEMBER_ROLES);
         var org = organizationRepository.findById(organizationId).orElseThrow(() -> new OrganizationNotFoundException(organizationId));
         RoleDefinition role = new RoleDefinition(org, RoleScope.ORGANIZATION, request.name().strip(), uniqueSlug(organizationId, request.name()), null);
         role.setDescription(request.description());
@@ -98,7 +77,7 @@ public class RoleManagementService implements RoleManagementUseCase {
 
     @Override
     public RoleDefinitionDto update(Long userId, Long organizationId, Long roleId, UpdateRoleRequest request) {
-        requireManage(userId, organizationId);
+        authorizationService.require(userId, organizationId, PermissionKey.MANAGE_MEMBER_ROLES);
         RoleDefinition role = requireRole(organizationId, roleId);
         if (role.isLocked()) {
             throw new IllegalArgumentException("Locked role cannot be edited.");
@@ -112,7 +91,7 @@ public class RoleManagementService implements RoleManagementUseCase {
 
     @Override
     public RoleDefinitionDto duplicate(Long userId, Long organizationId, Long roleId, DuplicateRoleRequest request) {
-        requireManage(userId, organizationId);
+        authorizationService.require(userId, organizationId, PermissionKey.MANAGE_MEMBER_ROLES);
         RoleDefinition source = requireRole(organizationId, roleId);
         RoleDefinition copy = new RoleDefinition(source.getOrganization(), RoleScope.ORGANIZATION, request.name().strip(), uniqueSlug(organizationId, request.name()), null);
         copy.setDescription(source.getDescription());
@@ -125,7 +104,7 @@ public class RoleManagementService implements RoleManagementUseCase {
 
     @Override
     public void delete(Long userId, Long organizationId, Long roleId, Long replacementRoleId) {
-        requireManage(userId, organizationId);
+        authorizationService.require(userId, organizationId, PermissionKey.MANAGE_MEMBER_ROLES);
         RoleDefinition role = requireRole(organizationId, roleId);
         if (role.isLocked()) throw new IllegalArgumentException("Locked role cannot be deleted.");
         var assignedMemberships = membershipRepository.findByRoleDefinitionId(roleId);
@@ -133,24 +112,11 @@ public class RoleManagementService implements RoleManagementUseCase {
         if (!assignedMemberships.isEmpty() || !assignedInvitations.isEmpty()) {
             if (replacementRoleId == null || replacementRoleId.equals(roleId)) throw new IllegalArgumentException("Replacement role is required.");
             RoleDefinition replacement = requireRole(organizationId, replacementRoleId);
-            var legacyRole = OrganizationSystemRole.legacyRole(replacement, OrganizationRole.MEMBER);
-            assignedMemberships.forEach(membership -> {
-                membership.setRoleDefinition(replacement);
-                membership.setRole(legacyRole);
-            });
-            assignedInvitations.forEach(invitation -> {
-                invitation.setRoleDefinition(replacement);
-                invitation.setRole(legacyRole);
-            });
+            assignedMemberships.forEach(membership -> membership.setRoleDefinition(replacement));
+            assignedInvitations.forEach(invitation -> invitation.setRoleDefinition(replacement));
         }
         roleRepository.delete(role);
         auditLogService.record(role.getOrganization(), userLookupService.requireById(userId), "ROLE_DELETE", "ROLE", roleId.toString(), role.getName());
-    }
-
-    private void requireManage(Long userId, Long organizationId) {
-        if (!authorizationService.workspacePermissions(userId, organizationId).canManageMemberRoles()) {
-            throw new dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException(organizationId);
-        }
     }
 
     private RoleDefinition requireRole(Long organizationId, Long roleId) {
@@ -161,7 +127,7 @@ public class RoleManagementService implements RoleManagementUseCase {
     private Set<PermissionKey> parsePermissions(Long userId, Long orgId, List<String> keys) {
         if (keys == null || keys.isEmpty()) throw new IllegalArgumentException("At least one permission is required.");
         Set<PermissionKey> parsed = new LinkedHashSet<>(keys.stream().map(PermissionKey::valueOf).toList());
-        if (!authorizationService.workspacePermissions(userId, orgId).canTransferOwnership()) {
+        if (!authorizationService.has(userId, orgId, PermissionKey.TRANSFER_OWNERSHIP)) {
             parsed.remove(PermissionKey.TRANSFER_OWNERSHIP);
         }
         return parsed;

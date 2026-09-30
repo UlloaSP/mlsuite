@@ -5,68 +5,46 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
-import { toast } from "sonner";
 import { AppButton } from "@/shared/ui/AppButton";
+import { appButtonClass } from "@/shared/ui/button-styles";
 import { AppPage } from "@/shared/ui/AppPage";
+import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { AppPanel } from "@/shared/ui/AppPanel";
 import { AppSectionTitle } from "@/shared/ui/AppSectionTitle";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
-import {
-  useSchema,
-  useSchemaBookmarks,
-  useSchemaDrafts,
-  useSchemaVersions,
-} from "@/features/schemas/api/schema-queries";
-import { useCreateSchemaDraftMutation } from "@/features/schemas/api/schema-draft-mutations";
-import { schemaVersionId, sortSchemaVersions } from "@/features/schemas/lib/version-selection";
-import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
+import { useSchema, useSchemaVersions } from "@/features/schemas/api/schema-queries";
+import { latestSchemaVersion } from "@/features/schemas/lib/version-selection";
+import { CreateSchemaChangeDialog } from "@/features/schemas/components/CreateSchemaChangeDialog";
 import { SchemaRepoNav } from "@/features/schemas/components/SchemaRepoNav";
 import { SchemaSnapshotPreviewPanel } from "@/features/schemas/components/SchemaSnapshotPreviewPanel";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 export function SchemaDetailPage() {
   const { schemaId } = useParams<{ schemaId: string }>();
-  const navigate = useNavigate();
   const { data: schema, isLoading, isError } = useSchema(schemaId);
   const showLoader = useStableLoading(isLoading);
-  const { data: versions = [] } = useSchemaVersions(schemaId);
-  const { data: bookmarks = [] } = useSchemaBookmarks(schemaId);
-  const { data: drafts = [] } = useSchemaDrafts(schemaId);
-  const draftMutation = useCreateSchemaDraftMutation(schemaId ?? "");
-  const [changeDialogOpen, setChangeDialogOpen] = useState(false);
-  const sortedVersions = useMemo(() => sortSchemaVersions(versions), [versions]);
-  const latestVersion = sortedVersions[0];
-
-  const createChange = async (name: string) => {
-    if (!schemaId || !latestVersion) return;
-    try {
-      const draft = await draftMutation.mutateAsync({
-        name,
-        baseVersionId: schemaVersionId(latestVersion),
-      });
-      setChangeDialogOpen(false);
-      void navigate(`/schemas/${schemaId}/drafts/${draft.id}`);
-    } catch (error) {
-      toast.error("Schema change creation failed", {
-        description: error instanceof Error ? error.message : String(error),
-      });
-    }
-  };
+  const versionsQuery = useSchemaVersions(schemaId);
+  const [changeBase, setChangeBase] = useState<SchemaVersionDto | null>(null);
+  const latestVersion = useMemo(
+    () => latestSchemaVersion(versionsQuery.data ?? []),
+    [versionsQuery.data],
+  );
 
   if (showLoader || isError || !schema) {
-    if (showLoader) return <AppPageLoader label="Loading schema..." />;
+    if (showLoader) return <AppPageLoader label="Loading schema…" />;
     return (
       <AppPage>
         <AppEmptyState
           title="Schema unavailable"
           description="The schema could not be loaded. It may no longer exist or you may not have access."
           action={
-            <Link to="/schemas">
-              <AppButton>Back to schemas</AppButton>
+            <Link to="/schemas" className={appButtonClass()}>
+              Back to schemas
             </Link>
           }
         />
@@ -84,8 +62,8 @@ export function SchemaDetailPage() {
           actions={
             schemaId ? (
               <AppButton
-                disabled={!latestVersion || draftMutation.isPending}
-                onClick={() => setChangeDialogOpen(true)}
+                disabled={!latestVersion}
+                onClick={() => setChangeBase(latestVersion ?? null)}
               >
                 <Plus size={16} />
                 New change
@@ -93,42 +71,27 @@ export function SchemaDetailPage() {
             ) : null
           }
         />
-        {schemaId ? (
-          <div className="flex shrink-0 flex-col gap-6 lg:min-h-0 lg:flex-1">
-            <SchemaRepoNav
-              active="overview"
-              schemaId={schemaId}
-              changes={drafts.length}
-              bookmarks={bookmarks.length}
-              snapshots={versions.length}
-            />
-            {latestVersion ? (
-              <SchemaSnapshotPreviewPanel version={latestVersion} />
-            ) : (
-              <AppPanel className="flex flex-col gap-3">
-                <AppSectionTitle>No published snapshots</AppSectionTitle>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  Create a change and publish it to establish the schema document.
-                </p>
-              </AppPanel>
-            )}
-          </div>
-        ) : null}
+        {schemaId ? <SchemaRepoNav active="overview" schemaId={schemaId} /> : null}
+        {!schemaId ? null : versionsQuery.isLoading ? (
+          <AppLoadingState label="Loading latest snapshot…" rows={2} />
+        ) : latestVersion ? (
+          <SchemaSnapshotPreviewPanel version={latestVersion} />
+        ) : (
+          <AppPanel className="flex flex-col gap-3">
+            <AppSectionTitle>No published snapshots</AppSectionTitle>
+            <p className="text-sm text-fg-secondary">
+              Create a change and publish it to establish the schema document.
+            </p>
+          </AppPanel>
+        )}
       </AppSurface>
-      <SchemaChangeNameDialog
-        defaultName="Update schema"
-        description={
-          latestVersion
-            ? `${latestVersion.name} · v${latestVersion.version}`
-            : "Latest published snapshot"
-        }
-        open={changeDialogOpen}
-        pending={draftMutation.isPending}
-        submitLabel="Create change"
-        title="New change"
-        onClose={() => setChangeDialogOpen(false)}
-        onConfirm={(name) => void createChange(name)}
-      />
+      {schemaId ? (
+        <CreateSchemaChangeDialog
+          schemaId={schemaId}
+          baseVersion={changeBase}
+          onClose={() => setChangeBase(null)}
+        />
+      ) : null}
     </AppPage>
   );
 }

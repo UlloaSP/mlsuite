@@ -10,6 +10,20 @@ import org.springframework.data.domain.Pageable;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
 public interface SchemaVersionRepository extends JpaRepository<SchemaVersion, Long> {
+    interface LatestSchemaVersion {
+        Long getSchemaId();
+
+        int getLatestVersion();
+    }
+
+    @Query("""
+            SELECT sv.schema.id AS schemaId, MAX(sv.version) AS latestVersion
+            FROM SchemaVersion sv
+            WHERE sv.schema.organization.id = :organizationId
+            GROUP BY sv.schema.id
+            """)
+    List<LatestSchemaVersion> findLatestVersions(Long organizationId);
+
     List<SchemaVersion> findBySchemaIdOrderByVersionDesc(Long schemaId);
 
     Optional<SchemaVersion> findTopBySchemaIdOrderByVersionDesc(Long schemaId);

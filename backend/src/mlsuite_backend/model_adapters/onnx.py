@@ -1,4 +1,4 @@
-"""ONNX tabular model execution behind the runtime adapter contract."""
+"""ONNX tabular model execution behind the estimator interface."""
 
 from dataclasses import dataclass
 
@@ -8,7 +8,6 @@ import onnxruntime as ort
 import pandas as pd
 
 from ..utils.errors import bad_request
-from .features import feature_names_from_count
 
 
 INPUT_DTYPES = {
@@ -21,6 +20,8 @@ INPUT_DTYPES = {
 
 @dataclass
 class OnnxModel:
+    """ONNX session exposing the estimator attributes the runtime reads."""
+
     session: ort.InferenceSession
     kind: str
     labels: list[str | int]
@@ -30,6 +31,34 @@ class OnnxModel:
     n_features_in_: int
     probability_output: int | None
     specific_type: str = "ONNX"
+
+    @property
+    def classes_(self) -> list[str | int]:
+        return self.labels
+
+    def predict_proba(self, frame: pd.DataFrame) -> np.ndarray:
+        probabilities = _run(self, frame)[self.probability_output]
+        if isinstance(probabilities, list) and all(isinstance(row, dict) for row in probabilities):
+            values = np.asarray(
+                [[row[label] for label in self.labels] for row in probabilities],
+                dtype=float,
+            )
+        else:
+            values = np.asarray(probabilities)
+        if values.ndim != 2 or values.shape[1] != len(self.labels):
+            raise bad_request("ONNX probability output does not match its class labels.")
+        values = values.astype(float)
+        if not np.all(np.isfinite(values) & (values >= 0) & (values <= 1)) or not np.allclose(
+            values.sum(axis=1), 1, atol=1e-5
+        ):
+            raise bad_request("ONNX classifier output must contain class probabilities.")
+        return values
+
+    def predict(self, frame: pd.DataFrame) -> np.ndarray:
+        values = np.asarray(_run(self, frame)[0])
+        if values.ndim not in (1, 2) or (values.ndim == 2 and values.shape[1] != 1):
+            raise bad_request("ONNX regression output must contain one value per row.")
+        return values.reshape(-1)
 
 
 def _class_labels(graph: onnx.GraphProto) -> list[str | int]:
@@ -129,43 +158,3 @@ def _run(model: OnnxModel, frame: pd.DataFrame) -> list[object]:
         return model.session.run(None, feeds)
     except (ValueError, TypeError, OverflowError) as exc:
         raise bad_request(f"Invalid ONNX input values: {exc}") from exc
-
-
-class OnnxAdapter:
-    library = "onnx"
-
-    def supports(self, model: object) -> bool:
-        return isinstance(model, OnnxModel)
-
-    def model_kind(self, model: OnnxModel) -> str:
-        return model.kind
-
-    def feature_names(self, model: OnnxModel) -> list[str]:
-        return model.feature_names_in_ or feature_names_from_count(model.n_features_in_)
-
-    def class_labels(self, model: OnnxModel) -> list[str]:
-        return [str(label) for label in model.labels]
-
-    def predict_classifier(self, model: OnnxModel, frame: pd.DataFrame) -> list[list[float]]:
-        probabilities = _run(model, frame)[model.probability_output]
-        if isinstance(probabilities, list) and all(isinstance(row, dict) for row in probabilities):
-            values = np.asarray(
-                [[row[label] for label in model.labels] for row in probabilities],
-                dtype=float,
-            )
-        else:
-            values = np.asarray(probabilities)
-        if values.ndim != 2 or values.shape[1] != len(model.labels):
-            raise bad_request("ONNX probability output does not match its class labels.")
-        values = values.astype(float)
-        if not np.all(np.isfinite(values) & (values >= 0) & (values <= 1)) or not np.allclose(
-            values.sum(axis=1), 1, atol=1e-5
-        ):
-            raise bad_request("ONNX classifier output must contain class probabilities.")
-        return values.tolist()
-
-    def predict_regressor(self, model: OnnxModel, frame: pd.DataFrame) -> list[object]:
-        values = np.asarray(_run(model, frame)[0])
-        if values.ndim not in (1, 2) or (values.ndim == 2 and values.shape[1] != 1):
-            raise bad_request("ONNX regression output must contain one value per row.")
-        return values.reshape(-1).tolist()

@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { useState } from "react";
 // react-doctor-disable-next-line react-doctor/prefer-dynamic-import -- Overview chart is first-viewport dashboard content.
 import {
@@ -15,7 +16,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Download } from "lucide-react";
 import { AppBadge } from "@/shared/ui/AppBadge";
 import { AppSelect } from "@/shared/ui/AppSelect";
 import { formatTimestamp } from "@/features/infrastructure/lib/formatters";
@@ -28,6 +28,7 @@ import {
   yAxisMode,
 } from "@/features/infrastructure/lib/overview-metrics";
 import { ChartTooltip } from "./ChartTooltip";
+import { AppCheckbox } from "@/shared/ui/AppCheckbox";
 
 export function OverviewChartPanel({
   overview,
@@ -38,7 +39,7 @@ export function OverviewChartPanel({
   streamConnected: boolean;
   chartRange: string;
 }) {
-  const [chartService, setChartService] = useState("all");
+  const [chartService, setChartService] = useSearchParamState<string>("service", "all");
   const [layers, setLayers] = useState<Record<ChartLayer, boolean>>({
     cpu: true,
     ram: true,
@@ -56,20 +57,21 @@ export function OverviewChartPanel({
   const toggleLayer = (key: ChartLayer) => setLayers((prev) => ({ ...prev, [key]: !prev[key] }));
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-soft)] px-5 py-3.5">
+    <div className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5">
         <div>
-          <p className="text-sm font-semibold text-[var(--text-primary)]">
+          <p className="text-sm font-semibold text-fg">
             Service aggregate load &middot; last {chartRange}
           </p>
-          <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+          <p className="mt-0.5 text-xs text-fg-secondary">
             Toggle layers to compare Docker CPU, memory, disk, and network metrics.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <AppSelect
             aria-label="Select chart service"
-            className="h-8 min-w-36 px-3 text-xs"
+            className="min-w-36"
+            size="sm"
             value={chartService}
             onValueChange={setChartService}
             options={[
@@ -80,60 +82,54 @@ export function OverviewChartPanel({
               })),
             ]}
           />
-          <AppBadge
-            tone={streamConnected ? "success" : "warning"}
-            className="px-2 py-0.5 text-[0.6rem]"
-          >
-            {streamConnected ? "live" : "snapshot"}
+          <AppBadge tone={streamConnected ? "success" : "warning"}>
+            {streamConnected ? "Live" : "Snapshot"}
           </AppBadge>
-          <AppBadge className="px-2 py-0.5 text-[0.6rem]">
-            {overview.history.sampleIntervalSeconds}s sample
-          </AppBadge>
+          <AppBadge>{overview.history.sampleIntervalSeconds}s sample</AppBadge>
         </div>
       </div>
-      <div className="flex flex-wrap gap-4 border-b border-[var(--border-soft)] px-5 py-2.5">
+      <div className="flex flex-wrap gap-4 border-b border-line px-5 py-2.5">
         {(Object.entries(LAYER_CONFIG) as [ChartLayer, typeof LAYER_CONFIG.cpu][]).map(
           ([key, cfg]) => (
             <label
               key={key}
-              className="flex cursor-pointer select-none items-center gap-2 text-xs text-[var(--text-secondary)]"
+              className="flex cursor-pointer select-none items-center gap-2 text-xs text-fg-secondary"
             >
-              <input
-                aria-label={`Toggle ${cfg.label} layer`}
-                type="checkbox"
+              <AppCheckbox
+                aria-label={`Show ${cfg.label} layer`}
                 checked={layers[key]}
                 onChange={() => toggleLayer(key)}
-                className="accent-[var(--accent-primary)]"
               />
               <span
                 className="inline-block size-2.5 rounded-sm"
                 style={{ background: cfg.color }}
               />
               {cfg.label}
-              <span className="font-mono text-[var(--text-muted)]">
+              <span className="font-mono text-fg-muted">
                 {formatChartValue(cfg.unit, curValue(cfg.dataKey) as number | null)}
               </span>
             </label>
           ),
         )}
       </div>
-      <div className="px-3 pb-3 pt-2">
-        <div className="h-[240px]">
+      {/* The chart grows with its row (next to the signals panel) instead of a fixed height. */}
+      <div className="flex flex-1 flex-col px-3 pb-3 pt-2">
+        <div className="min-h-60 flex-1">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartPoints} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-              <CartesianGrid stroke="var(--border-soft)" strokeDasharray="2 4" vertical={false} />
+              <CartesianGrid stroke="var(--color-line)" strokeDasharray="2 4" vertical={false} />
               <XAxis
                 dataKey="timestamp"
                 tickFormatter={formatTimestamp}
                 minTickGap={50}
-                tick={{ fill: "var(--text-muted)", fontSize: 10 }}
-                stroke="var(--border-soft)"
+                tick={{ fill: "var(--color-fg-muted)", fontSize: 10 }}
+                stroke="var(--color-line)"
               />
               <YAxis
                 domain={axisMode === "bytes" ? [0, "auto"] : [0, 100]}
                 tickFormatter={(v: number) => formatChartValue(axisMode, v)}
-                tick={{ fill: "var(--text-muted)", fontSize: 10 }}
-                stroke="var(--border-soft)"
+                tick={{ fill: "var(--color-fg-muted)", fontSize: 10 }}
+                stroke="var(--color-line)"
                 width={46}
               />
               <Tooltip content={<ChartTooltip />} />
@@ -167,17 +163,11 @@ export function OverviewChartPanel({
           </ResponsiveContainer>
         </div>
       </div>
-      <div className="flex items-center justify-between border-t border-[var(--border-soft)] px-5 py-2.5 text-xs text-[var(--text-secondary)]">
+      <div className="flex items-center justify-between border-t border-line px-5 py-2.5 text-xs text-fg-secondary">
         <span>
           {Object.values(layers).filter(Boolean).length} layers &middot;{" "}
           {overview.history.points.length} samples
         </span>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-        >
-          <Download size={12} /> CSV
-        </button>
       </div>
     </div>
   );

@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   LOADING_MIN_VISIBLE_MS,
   LOADING_REVEAL_DELAY_MS,
   useStableLoading,
 } from "@/shared/ui/useStableLoading";
+import { mount, type Mounted } from "./support/dom";
 
 function LoadingProbe({ loading }: { loading: boolean }) {
   const stable = useStableLoading(loading);
@@ -15,26 +15,21 @@ function LoadingProbe({ loading }: { loading: boolean }) {
 }
 
 describe("stable loading", () => {
-  let container: HTMLDivElement;
-  let root: Root;
+  let view: Mounted;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useFakeTimers();
     vi.setSystemTime(0);
-    container = document.createElement("div");
-    root = createRoot(container);
+    view = await mount(null);
   });
 
-  afterEach(async () => {
-    await act(async () => root.unmount());
+  afterEach(() => {
     vi.useRealTimers();
   });
 
-  const render = async (loading: boolean) => {
-    await act(async () => root.render(<LoadingProbe loading={loading} />));
-  };
+  const render = (loading: boolean) => view.rerender(<LoadingProbe loading={loading} />);
 
-  const loading = () => container.firstElementChild?.getAttribute("data-loading");
+  const loading = () => view.host.firstElementChild?.getAttribute("data-loading");
 
   it("drops fast loading states before the visual reveal", async () => {
     await render(true);

@@ -4,7 +4,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,28 +17,22 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceBootstrapService;
 import jakarta.persistence.criteria.Predicate;
+import dev.ulloasp.mlsuite.util.PageDto;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class AdminUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final WorkspaceBootstrapService workspaceBootstrapService;
 
-    public AdminUserService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            WorkspaceBootstrapService workspaceBootstrapService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.workspaceBootstrapService = workspaceBootstrapService;
-    }
-
     public AdminUserPageDto list(int page, int size, String search, String sort, String role) {
         Page<User> users = userRepository.findAll(
                 filter(search, role),
-                PageRequest.of(Math.max(0, page), Math.max(1, Math.min(size, 100)), sort(sort)));
+                PageDto.request(page, size, sort(sort)));
         return new AdminUserPageDto(
                 users.getContent().stream().map(AdminUserDto::from).toList(),
                 users.getTotalElements(),

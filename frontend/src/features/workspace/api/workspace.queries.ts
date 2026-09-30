@@ -6,7 +6,6 @@ Copyright (c) 2025 Pablo Ulloa Santin
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { getInvitationCandidates, getInvitations, getPendingInvitations } from "./invitations.api";
 import {
-  getOrganization,
   getOrganizationAdminDashboard,
   getOrganizationMembers,
   getOrganizationPage,
@@ -17,7 +16,6 @@ import {
   PENDING_INVITATIONS_QUERY_KEY,
   organizationAdminDashboardQueryKey,
   organizationCatalogPageQueryKey,
-  organizationDetailsQueryKey,
   organizationInvitationCandidatesQueryKey,
   organizationInvitationsQueryKey,
   organizationMembersQueryKey,
@@ -37,13 +35,6 @@ export const organizationCatalogPageQueryOptions = (page: number, search: string
     queryFn: ({ signal }) =>
       getOrganizationPage({ page, search, size: ORGANIZATION_CATALOG_PAGE_SIZE, sort }, signal),
     placeholderData: (previous) => previous,
-  });
-
-export const organizationDetailsQueryOptions = (organizationId: number) =>
-  queryOptions({
-    queryKey: organizationDetailsQueryKey(organizationId),
-    queryFn: ({ signal }) => getOrganization(organizationId, signal),
-    enabled: Boolean(organizationId),
   });
 
 export const organizationAdminDashboardQueryOptions = (organizationId: number) =>
@@ -100,9 +91,6 @@ export const usePendingInvitations = () =>
     ...pendingInvitationsQueryOptions(),
     refetchInterval: 60_000,
   });
-
-export const useOrganizationDetailsQuery = (organizationId: number) =>
-  useQuery(organizationDetailsQueryOptions(organizationId));
 
 export const useOrganizationAdminDashboardQuery = (organizationId: number) =>
   useQuery(organizationAdminDashboardQueryOptions(organizationId));

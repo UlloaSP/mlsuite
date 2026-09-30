@@ -20,7 +20,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClientResponseException;
@@ -42,7 +41,10 @@ import dev.ulloasp.mlsuite.storage.ObjectStorageService;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
+import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
+import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 
 @ExtendWith(MockitoExtension.class)
 class AnalyzerServiceTest {
@@ -60,7 +62,7 @@ class AnalyzerServiceTest {
     private RestTemplate restTemplate;
 
     @Mock
-    private WorkspaceAccessService workspaceAccessService;
+    private WorkspaceAuthorizationService authorizationService;
 
     @Mock
     private MultipartFile artifactFile;
@@ -72,14 +74,13 @@ class AnalyzerServiceTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         service = new AnalyzerServiceImpl(
-                restTemplate,
+                new AnalyzerClient(restTemplate, "http://py-analyzer:8000"),
                 modelRepository,
                 new ModelArtifactContentReader(objectStorageService),
                 userLookupService,
-                workspaceAccessService,
+                authorizationService,
                 objectMapper);
-        ReflectionTestUtils.setField(service, "analyzerUrl", "http://py-analyzer:8000");
-        lenient().when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
+        lenient().when(authorizationService.requireCurrent(3L, PermissionKey.RUN_PREDICTIONS)).thenReturn(organization());
     }
 
     @Test
@@ -242,6 +243,25 @@ class AnalyzerServiceTest {
         when(modelRepository.findByIdAndOrganizationId(11L, 5L)).thenReturn(Optional.empty());
 
         assertThrows(ModelDoesNotExistsException.class, () -> service.predict(3L, 11L, Map.of("x", 1)));
+    }
+
+    @Test
+    void predict_RequiresRunPredictionsPermission() {
+        when(authorizationService.requireCurrent(3L, PermissionKey.RUN_PREDICTIONS))
+                .thenThrow(new OrganizationAccessDeniedException(5L));
+
+        assertThrows(OrganizationAccessDeniedException.class, () -> service.predict(3L, 11L, Map.of("x", 1)));
+        org.mockito.Mockito.verifyNoInteractions(modelRepository, restTemplate);
+    }
+
+    @Test
+    void explain_RequiresRunPredictionsPermission() {
+        when(authorizationService.requireCurrent(3L, PermissionKey.RUN_PREDICTIONS))
+                .thenThrow(new OrganizationAccessDeniedException(5L));
+
+        assertThrows(OrganizationAccessDeniedException.class,
+                () -> service.explain(3L, 11L, new ExplainRequest(Map.of("x", 1), List.of())));
+        org.mockito.Mockito.verifyNoInteractions(modelRepository, restTemplate);
     }
 
     private User user() {

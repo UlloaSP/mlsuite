@@ -3,15 +3,28 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { CalendarDays, Mail, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
+import {
+  CalendarDays,
+  KeyRound,
+  Mail,
+  ShieldCheck,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  UserCheck,
+  UserX,
+} from "lucide-react";
+import { formatDate } from "@/shared/lib/date-time";
 import { useState } from "react";
-import type { AdminUser } from "@/features/admin/api/admin-user.types";
-import { UserActionsMenu } from "./UserActionsMenu";
+import { toast } from "sonner";
+import { AppActionsMenu } from "@/shared/ui/AppActionsMenu";
+import { CatalogEntry } from "@/shared/ui/catalog/CatalogEntry";
 import { ChangeRoleDialog } from "./ChangeRoleDialog";
 import { DeleteUserDialog } from "./DeleteUserDialog";
 import { UserInfoBadge } from "./UserInfoBadge";
+import type { AdminUserDto } from "@/shared/api/openapi.gen";
 
-type Role = AdminUser["systemRole"];
+type Role = AdminUserDto["systemRole"];
 
 export function UserCatalogTile({
   disabled,
@@ -21,87 +34,116 @@ export function UserCatalogTile({
   onUpdate,
 }: {
   disabled: boolean;
-  item: AdminUser;
+  item: AdminUserDto;
   onDelete: () => Promise<void>;
   onResetPassword: () => void;
   onUpdate: (payload: { enabled?: boolean; systemRole?: Role }) => Promise<void>;
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
+  const [dialogError, setDialogError] = useState<string>();
+  const closeDialogs = () => {
+    setDialogError(undefined);
+    setDeleteOpen(false);
+    setRoleOpen(false);
+  };
+  // Dialog actions keep the dialog open and show the failure inside it.
+  const runInDialog = async (action: () => Promise<void>) => {
+    try {
+      await action();
+      closeDialogs();
+    } catch (error) {
+      setDialogError(error instanceof Error ? error.message : String(error));
+    }
+  };
   const displayName = item.fullName || item.username || item.email;
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <article className="grid gap-5 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 md:grid-cols-[minmax(0,1fr)_auto]">
-      <div className="flex min-w-0 items-start gap-3">
-        {item.avatarUrl ? (
-          <img
-            src={item.avatarUrl}
-            alt=""
-            className="size-12 shrink-0 rounded object-cover"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <span className="grid size-12 shrink-0 place-items-center rounded bg-[var(--accent-quiet)] text-sm font-semibold text-[var(--accent-primary-strong)]">
-            {initials}
-          </span>
-        )}
-        <div className="min-w-0 space-y-2">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold text-[var(--text-primary)]">
-              {displayName}
-            </h2>
-            <p className="truncate text-sm text-[var(--text-secondary)]">{item.email}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
+    <>
+      <CatalogEntry
+        title={displayName}
+        icon={
+          item.avatarUrl ? (
+            <img
+              src={item.avatarUrl}
+              alt=""
+              className="size-12 shrink-0 rounded-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent-subtle text-sm font-semibold text-accent-strong">
+              {initials}
+            </span>
+          )
+        }
+        description={item.email}
+        metadata={
+          <>
             <UserInfoBadge icon={<ShieldCheck size={14} />} label={item.systemRole} />
             <UserInfoBadge
               icon={item.enabled ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
               label={item.enabled ? "Enabled" : "Disabled"}
             />
-            <UserInfoBadge
-              icon={<CalendarDays size={14} />}
-              label={formatCreatedAt(item.createdAt)}
-            />
+            <UserInfoBadge icon={<CalendarDays size={14} />} label={formatDate(item.createdAt)} />
             <UserInfoBadge icon={<Mail size={14} />} label={item.username} />
-          </div>
-        </div>
-      </div>
-      <UserActionsMenu
-        disabled={disabled}
-        enabled={item.enabled}
-        onChangeRole={() => setRoleOpen(true)}
-        onDelete={() => setDeleteOpen(true)}
-        onResetPassword={onResetPassword}
-        onToggleEnabled={() => void onUpdate({ enabled: !item.enabled })}
+          </>
+        }
+        actions={
+          <AppActionsMenu
+            label={`Open actions for ${displayName}`}
+            disabled={disabled}
+            actions={[
+              {
+                key: "password",
+                label: "Change password",
+                icon: KeyRound,
+                onSelect: onResetPassword,
+              },
+              {
+                key: "role",
+                label: "Change role",
+                icon: ShieldCheck,
+                onSelect: () => setRoleOpen(true),
+              },
+              {
+                key: "enabled",
+                label: item.enabled ? "Disable user" : "Enable user",
+                icon: item.enabled ? UserX : UserCheck,
+                onSelect: () =>
+                  void onUpdate({ enabled: !item.enabled }).catch((error: unknown) =>
+                    toast.error(error instanceof Error ? error.message : String(error)),
+                  ),
+              },
+              {
+                key: "delete",
+                label: "Delete",
+                icon: Trash2,
+                tone: "danger",
+                onSelect: () => setDeleteOpen(true),
+              },
+            ]}
+          />
+        }
       />
       {deleteOpen ? (
         <DeleteUserDialog
           disabled={disabled}
+          error={dialogError}
           user={item}
-          onCancel={() => setDeleteOpen(false)}
-          onConfirm={async () => {
-            await onDelete();
-            setDeleteOpen(false);
-          }}
+          onCancel={closeDialogs}
+          onConfirm={() => runInDialog(onDelete)}
         />
       ) : null}
       {roleOpen ? (
         <ChangeRoleDialog
           disabled={disabled}
+          error={dialogError}
           user={item}
-          onCancel={() => setRoleOpen(false)}
-          onConfirm={async (systemRole) => {
-            await onUpdate({ systemRole });
-            setRoleOpen(false);
-          }}
+          onCancel={closeDialogs}
+          onConfirm={(systemRole) => runInDialog(() => onUpdate({ systemRole }))}
         />
       ) : null}
-    </article>
+    </>
   );
-}
-
-function formatCreatedAt(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString();
 }

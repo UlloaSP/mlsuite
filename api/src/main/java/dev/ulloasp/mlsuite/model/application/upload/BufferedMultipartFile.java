@@ -14,20 +14,16 @@ import java.nio.file.Files;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.RequiredArgsConstructor;
+import lombok.AccessLevel;
 
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class BufferedMultipartFile implements MultipartFile {
 
     private final String name;
     private final String originalFilename;
     private final String contentType;
     private final byte[] content;
-
-    private BufferedMultipartFile(String name, String originalFilename, String contentType, byte[] content) {
-        this.name = name;
-        this.originalFilename = originalFilename;
-        this.contentType = contentType;
-        this.content = content;
-    }
 
     public static MultipartFile from(MultipartFile file) {
         try {

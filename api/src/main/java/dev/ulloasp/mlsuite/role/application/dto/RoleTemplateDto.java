@@ -2,11 +2,16 @@ package dev.ulloasp.mlsuite.role.application.dto;
 
 import java.util.List;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import dev.ulloasp.mlsuite.role.domain.model.RoleScope;
+
+import jakarta.annotation.Nullable;
+
 public record RoleTemplateDto(
         Long id,
         String name,
-        String description,
+        @Nullable String description,
         String category,
-        String scope,
-        List<String> permissionKeys) {
+        RoleScope scope,
+        List<PermissionKey> permissionKeys) {
 }

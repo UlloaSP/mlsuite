@@ -7,19 +7,14 @@ import dev.ulloasp.mlsuite.plugin.application.dto.PluginRuntimeSourceDto;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class PluginRuntimeService implements ListPluginRuntimeSourcesUseCase {
     private final WorkspaceAccessService access;
     private final WorkspaceAuthorizationService authorization;
     private final PluginObjectReader objects;
-
-    public PluginRuntimeService(WorkspaceAccessService access, WorkspaceAuthorizationService authorization,
-            PluginObjectReader objects) {
-        this.access = access;
-        this.authorization = authorization;
-        this.objects = objects;
-    }
 
     @Override
     public List<PluginRuntimeSourceDto> list(Long userId) {

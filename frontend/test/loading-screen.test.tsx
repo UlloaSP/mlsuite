@@ -5,11 +5,13 @@ import { ProtectedRoute } from "@/app/router/ProtectedRoute";
 import { StartupGate } from "@/app/startup/StartupGate";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
-import { EditorAssemblyLoader } from "@/shared/ui/EditorAssemblyLoader";
+import { AppSkeleton } from "@/shared/ui/AppSkeleton";
+import { AppSkeletonScope } from "@/shared/ui/AppSkeletonScope";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 
 vi.mock("@/app/startup/startup-query", () => ({
   useStartupReadinessQuery: () => ({ data: undefined }),
+  useStartupServicesQuery: () => ({ data: undefined }),
 }));
 vi.mock("@/capabilities/workspace-context/session", () => ({
   useUser: () => ({ data: undefined, error: null, isLoading: true }),
@@ -18,30 +20,67 @@ vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useWorkspaceContext: () => ({ data: undefined, error: null, isLoading: false }),
 }));
 
-describe("application loading screen", () => {
-  it("fills the viewport and follows the active semantic theme", () => {
-    const markup = renderToStaticMarkup(<EditorAssemblyLoader scope="viewport" />);
+const count = (markup: string, needle: string) => markup.split(needle).length - 1;
 
-    expect(markup).toContain('data-loading-scope="viewport"');
-    expect(markup).toContain("h-svh");
-    expect(markup).toContain("var(--accent-primary)");
-    expect(markup).toContain("var(--page-bg)");
+describe("loading skeletons", () => {
+  it("draws skeleton blocks from theme tokens and respects reduced motion", () => {
+    const markup = renderToStaticMarkup(<AppSkeleton className="h-4 w-12" />);
+
+    expect(markup).toContain('aria-hidden="true"');
+    expect(markup).toContain("bg-surface-muted");
+    expect(markup).toContain("motion-reduce:animate-none");
+    expect(markup).toContain("h-4 w-12");
+    expect(markup).not.toMatch(/#[0-9a-f]{3,6}/i);
+  });
+
+  it("draws real children as a skeleton only while loading, announced outside the inert subtree", () => {
+    const loading = renderToStaticMarkup(
+      <AppSkeletonScope loading label="Loading inference…">
+        <h2>Previous inference</h2>
+      </AppSkeletonScope>,
+    );
+    const ready = renderToStaticMarkup(
+      <AppSkeletonScope loading={false} label="Loading inference…">
+        <h2>Current inference</h2>
+      </AppSkeletonScope>,
+    );
+
+    expect(loading).toMatch(/^<span role="status" class="sr-only">Loading inference…<\/span><div/);
+    expect(loading).toContain('data-skeleton=""');
+    expect(loading).toContain('aria-busy="true"');
+    expect(loading).toContain("inert");
+    expect(ready).toBe('<div class="contents"><h2>Current inference</h2></div>');
+  });
+
+  it("announces a local request once and renders neutral skeleton rows", () => {
+    const markup = renderToStaticMarkup(<AppLoadingState compact label="Loading members…" />);
+
+    expect(markup).toContain('role="status"');
+    expect(markup).toContain(">Loading members…</span>");
     expect(markup).toContain("app-loading-reveal");
-    expect(markup).not.toContain("#FF385C");
-    expect(markup).not.toContain("#F7F7F7");
-    expect(markup).not.toContain("#050505");
-    expect(markup).toContain("motion-reduce:hidden");
+    expect(markup).not.toContain("bg-accent");
+    expect(count(markup, "rounded-full")).toBe(2);
   });
 
-  it("uses its parent height when mounted inside the application shell", () => {
-    const markup = renderToStaticMarkup(<EditorAssemblyLoader />);
+  it("renders the requested number of catalog rows in the requested layout", () => {
+    const markup = renderToStaticMarkup(
+      <AppLoadingState label="Loading models…" layout="grid" rows={3} />,
+    );
 
-    expect(markup).toContain('data-loading-scope="container"');
-    expect(markup).toContain("min-h-full");
-    expect(markup).not.toContain("min-h-[460px]");
+    expect(markup).toContain("md:grid-cols-2");
+    expect(count(markup, "rounded-card")).toBe(3);
   });
 
-  it("keeps startup and protected-route loading at viewport height", () => {
+  it("shapes a whole-page request like a page header and body", () => {
+    const markup = renderToStaticMarkup(<AppPageLoader label="Loading schema…" />);
+
+    expect(markup).toContain('role="status"');
+    expect(markup).toContain(">Loading schema…</span>");
+    expect(markup).toContain("h-8 w-72");
+    expect(count(markup, "rounded-card")).toBe(3);
+  });
+
+  it("shows the same viewport skeleton while checking readiness and loading the session", () => {
     const startup = renderToStaticMarkup(<StartupGate>Ready</StartupGate>);
     const protectedRoute = renderToStaticMarkup(
       <MemoryRouter>
@@ -49,36 +88,14 @@ describe("application loading screen", () => {
       </MemoryRouter>,
     );
 
-    expect(startup).toContain('data-loading-scope="viewport"');
-    expect(protectedRoute).toContain('data-loading-scope="viewport"');
+    expect(startup).toContain("h-svh");
+    expect(startup).toContain(">Loading MLsuite…</span>");
+    expect(startup).not.toContain("startup-screen");
+    expect(protectedRoute).toContain("h-svh");
+    expect(protectedRoute).toContain(">Loading workspace…</span>");
   });
 
-  it("announces progress without rendering visible loading copy", () => {
-    const markup = renderToStaticMarkup(<EditorAssemblyLoader label="Loading models" />);
-
-    expect(markup).toContain('role="status"');
-    expect(markup).toContain('class="sr-only"');
-    expect(markup).toContain(">Loading models</span>");
-  });
-
-  it("uses the contained loader inside a page shell", () => {
-    const markup = renderToStaticMarkup(<AppPageLoader label="Loading schema" />);
-
-    expect(markup).toContain('data-loading-scope="container"');
-    expect(markup).toContain('class="sr-only"');
-    expect(markup).toContain(">Loading schema</span>");
-  });
-
-  it("offers a lightweight compact state for local requests", () => {
-    const markup = renderToStaticMarkup(<AppLoadingState compact label="Loading members" />);
-
-    expect(markup).toContain("min-h-16");
-    expect(markup).toContain("app-loading-reveal");
-    expect(markup).toContain('class="sr-only"');
-    expect(markup).toContain(">Loading members</span>");
-  });
-
-  it("uses the visual loader for an empty catalog request", () => {
+  it("matches the catalog layout while an empty catalog loads", () => {
     const markup = renderToStaticMarkup(
       <CatalogListPanel
         emptyState={{ description: "No models", title: "Empty" }}
@@ -87,7 +104,8 @@ describe("application loading screen", () => {
         isBusy
         isLoading
         itemCount={0}
-        loadingLabel="Loading models"
+        layout="grid"
+        loadingLabel="Loading models…"
         page={0}
         setPage={() => undefined}
         totalPages={1}
@@ -96,7 +114,8 @@ describe("application loading screen", () => {
       </CatalogListPanel>,
     );
 
-    expect(markup).toContain('class="sr-only"');
-    expect(markup).toContain(">Loading models</span>");
+    expect(markup).toContain(">Loading models…</span>");
+    expect(markup).toContain("md:grid-cols-2");
+    expect(markup).not.toContain("Empty");
   });
 });

@@ -1,14 +1,17 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
@@ -18,6 +21,11 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookm
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackDto;
+import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableRunDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaVersionDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
@@ -29,12 +37,13 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PredictionRunServiceImpl implements PredictionRunUseCase {
 
     private final UserLookupService userLookupService;
@@ -44,31 +53,17 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     private final PredictionResultRepository resultRepository;
     private final PredictionResultFeedbackRepository feedbackRepository;
     private final ModelRepository modelRepository;
-    private final WorkspaceAccessService workspaceAccessService;
     private final WorkspaceAuthorizationService authorizationService;
-
-    public PredictionRunServiceImpl(UserLookupService userLookupService, SchemaBookmarkRepository bookmarkRepository,
-            SchemaModelBindingRepository bindingRepository,
-            PredictionRunRepository runRepository, PredictionResultRepository resultRepository,
-            PredictionResultFeedbackRepository feedbackRepository, ModelRepository modelRepository,
-            WorkspaceAccessService workspaceAccessService,
-            WorkspaceAuthorizationService authorizationService) {
-        this.userLookupService = userLookupService;
-        this.bookmarkRepository = bookmarkRepository;
-        this.bindingRepository = bindingRepository;
-        this.runRepository = runRepository;
-        this.resultRepository = resultRepository;
-        this.feedbackRepository = feedbackRepository;
-        this.modelRepository = modelRepository;
-        this.workspaceAccessService = workspaceAccessService;
-        this.authorizationService = authorizationService;
-    }
 
     @Override
     public PredictionRun createRunForBookmark(Long userId, Long schemaBookmarkId, CreatePredictionRunRequest request) {
         User user = userLookupService.requireById(userId);
         Long organizationId = requireRunPredictions(userId);
         SchemaBookmark bookmark = requireBookmark(schemaBookmarkId, organizationId);
+        if (!bookmark.getVersion().getId().equals(request.schemaVersionId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "The bookmark moved to another snapshot; reload before saving");
+        }
         return createRun(organizationId, user, bookmark, bookmark.getVersion(), request);
     }
 
@@ -82,6 +77,24 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     @Override
     public List<PredictionRun> listOrganizationRuns(Long userId) {
         return runRepository.findByOrganizationIdOrderByCreatedAtDesc(requireRead(userId));
+    }
+
+    @Override
+    public InferenceTableDto getOrganizationInferenceTable(Long userId) {
+        Long organizationId = requireRead(userId);
+        List<PredictionRun> runs = runRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId);
+        Map<Long, SchemaVersion> versions = new LinkedHashMap<>();
+        runs.forEach(run -> versions.putIfAbsent(run.getSchemaVersion().getId(), run.getSchemaVersion()));
+        Map<Long, List<SchemaModelBinding>> bindings = versions.isEmpty() ? Map.of()
+                : bindingRepository.findBySchemaVersionIdIn(versions.keySet()).stream()
+                        .collect(Collectors.groupingBy(binding -> binding.getSchemaVersion().getId()));
+        return new InferenceTableDto(
+                runs.stream().map(InferenceTableRunDto::from).toList(),
+                PredictionResultDto.fromList(resultRepository.findByOrganizationId(organizationId)),
+                PredictionResultFeedbackDto.fromList(feedbackRepository.findByOrganizationId(organizationId)),
+                versions.values().stream()
+                        .map(version -> SchemaVersionDto.from(version, bindings.getOrDefault(version.getId(), List.of())))
+                        .toList());
     }
 
     @Override
@@ -112,17 +125,11 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     }
 
     private Long requireRead(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireModelView(userId, organizationId);
-        return organizationId;
+        return authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
     }
 
     private Long requireRunPredictions(Long userId) {
-        userLookupService.requireById(userId);
-        Long organizationId = workspaceAccessService.requireCurrentOrganization(userId).getId();
-        authorizationService.requireRunPredictions(userId, organizationId);
-        return organizationId;
+        return authorizationService.requireCurrent(userId, PermissionKey.RUN_PREDICTIONS).getId();
     }
 
     private SchemaBookmark requireBookmark(Long schemaBookmarkId, Long organizationId) {

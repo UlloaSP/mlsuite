@@ -1,9 +1,9 @@
 package dev.ulloasp.mlsuite.model;
 
+import static org.mockito.Mockito.lenient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -16,31 +16,29 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.model.domain.exception.ModelAlreadyExistsException;
+import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.model.application.service.ModelServiceImpl;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.storage.ObjectStorageService;
-import dev.ulloasp.mlsuite.storage.StoredObject;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 import dev.ulloasp.mlsuite.storage.ModelArtifactWriter;
 import dev.ulloasp.mlsuite.storage.StorageDeletionQueue;
 import dev.ulloasp.mlsuite.user.domain.model.User;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
-import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,9 +63,6 @@ class ModelServiceTest {
     private MultipartFile modelFile;
 
     @Mock
-    private WorkspaceAccessService workspaceAccessService;
-
-    @Mock
     private WorkspaceAuthorizationService workspaceAuthorizationService;
 
     @Mock
@@ -89,14 +84,13 @@ class ModelServiceTest {
                 objectStorageService,
                 bindingRepository,
                 resultRepository,
-                workspaceAccessService,
                 workspaceAuthorizationService,
                 artifactWriter,
                 artifactReader,
-                deletionQueue);
-        ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
-        ReflectionTestUtils.setField(service, "analyzerUrl", "http://analyzer");
-        when(workspaceAccessService.requireCurrentOrganization(3L)).thenReturn(organization());
+                deletionQueue,
+                new AnalyzerClient(restTemplate, "http://analyzer"),
+                false);
+        lenient().when(workspaceAuthorizationService.requireCurrent(eq(3L), any(PermissionKey[].class))).thenReturn(organization());
     }
 
     @Test
@@ -122,7 +116,7 @@ class ModelServiceTest {
 
     @Test
     void createModel_ThrowsWhenNameExistsInOrganization() {
-        when(userLookupService.requireById(3L)).thenReturn(user());
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(true);
 
         assertThrows(ModelAlreadyExistsException.class, () -> service.createModel(3L, "demo", modelFile));
@@ -131,10 +125,9 @@ class ModelServiceTest {
     @Test
     void renameModel_UpdatesNameWhenUnique() {
         Model model = model("old");
-        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
         when(modelRepository.existsByNameAndOrganizationIdAndIdNot("new", 41L, 9L)).thenReturn(false);
-        when(userLookupService.requireById(3L)).thenReturn(user());
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
         assertEquals("new", service.renameModel(3L, 9L, " new ", 0L).getName());
@@ -144,9 +137,8 @@ class ModelServiceTest {
     @Test
     void archiveModel_SetsArchivedAt() {
         Model model = model("demo");
-        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
-        when(userLookupService.requireById(3L)).thenReturn(user());
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.save(model)).thenReturn(model);
 
         service.archiveModel(3L, 9L, 0L);
@@ -156,7 +148,6 @@ class ModelServiceTest {
 
     @Test
     void deleteModel_BlocksWhenModelIsReferenced() {
-        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model("demo")));
         when(bindingRepository.existsByModelId(9L)).thenReturn(true);
 
@@ -171,21 +162,19 @@ class ModelServiceTest {
         model.setStorageBucket("models");
         model.setStorageObjectKey("organizations/41/models/9/artifacts/hash/model.pkl");
         model.setStorageVersionId("version-7");
-        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
 
         service.deleteModel(3L, 9L, 0L);
 
         verify(deletionQueue).enqueue("models", model.getStorageObjectKey(), "version-7");
         verify(modelRepository).delete(model);
-        verify(objectStorageService, never()).delete(anyString(), anyString());
+        verify(objectStorageService, never()).delete(anyString(), anyString(), any());
     }
 
     @Test
     void renameModelRejectsASequentiallyStaleClientVersion() {
         Model model = model("current");
         model.setVersion(4L);
-        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(model));
 
         var error = assertThrows(org.springframework.web.server.ResponseStatusException.class,
@@ -200,8 +189,7 @@ class ModelServiceTest {
         Model source = model("demo");
         source.setStorageBucket("bucket");
         source.setStorageObjectKey("old-key");
-        when(userLookupService.requireById(3L)).thenReturn(user());
-        when(workspaceAuthorizationService.workspacePermissions(3L, 41L)).thenReturn(allPermissions());
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.findByIdAndOrganizationId(9L, 41L)).thenReturn(java.util.Optional.of(source));
         when(modelRepository.existsByNameAndOrganizationId("copy", 41L)).thenReturn(false);
         when(artifactReader.loadVerified(source)).thenReturn("bytes".getBytes());
@@ -222,7 +210,7 @@ class ModelServiceTest {
 
     @Test
     void createModel_StoresObjectAndPersistsModel() throws Exception {
-        when(userLookupService.requireById(3L)).thenReturn(user());
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
                 .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.pkl"));
@@ -243,7 +231,7 @@ class ModelServiceTest {
     @Test
     void createModel_DeletesStoredObjectWhenPersistFails() throws Exception {
         RuntimeException failure = new RuntimeException("persist failed");
-        when(userLookupService.requireById(3L)).thenReturn(user());
+        lenient().when(userLookupService.requireById(3L)).thenReturn(user());
         when(modelRepository.existsByNameAndOrganizationId("demo", 41L)).thenReturn(false);
         when(restTemplate.postForObject(anyString(), any(), eq(Map.class)))
                 .thenReturn(Map.of("type", "clf", "specificType", "rf", "fileName", "model.pkl"));
@@ -290,10 +278,5 @@ class ModelServiceTest {
         model.setCreatedAt(OffsetDateTime.now());
         model.setUpdatedAt(OffsetDateTime.now());
         return model;
-    }
-
-    private WorkspacePermissionsDto allPermissions() {
-        return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true);
     }
 }

@@ -1,5 +1,3 @@
-import json
-
 from fastapi import UploadFile
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
@@ -21,16 +19,9 @@ async def explain(model_upload: UploadFile, data: str, traces: str) -> dict[str,
         raise bad_request(message)
 
     record = parse_record_json(data, "Invalid data JSON")
-    try:
-        raw_traces = json.loads(traces)
-    except json.JSONDecodeError as exc:
-        raise bad_request(f"Invalid traces JSON: {exc}") from exc
-    if not isinstance(raw_traces, list):
-        raise bad_request("Invalid traces JSON: traces must be a JSON array")
-
+    trace_definitions = parse_trace_definitions(traces)
     frame = build_prediction_dataframe(runtime.feature_metadata(), record)
     feature_names = list(frame.columns)
-    trace_definitions = parse_trace_definitions(raw_traces)
 
     try:
         generated_trees = explain_with_feature_name_aliases(

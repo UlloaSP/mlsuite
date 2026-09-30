@@ -3,17 +3,14 @@ package dev.ulloasp.mlsuite.storage;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class ObjectStorageHealthIndicator implements HealthIndicator {
 
     private final ObjectStorageService objectStorage;
     private final StorageProperties properties;
-
-    public ObjectStorageHealthIndicator(ObjectStorageService objectStorage, StorageProperties properties) {
-        this.objectStorage = objectStorage;
-        this.properties = properties;
-    }
 
     @Override
     public Health health() {

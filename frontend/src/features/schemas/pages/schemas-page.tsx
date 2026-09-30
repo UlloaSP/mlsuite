@@ -3,7 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ import {
   useRenameSchemaMutation,
 } from "@/features/schemas/api/schema-mutations";
 import { useSchemaCatalogPageQuery } from "@/features/schemas/api/schema-queries";
-import type { SchemaCatalogItemDto } from "@/features/schemas/api/schema-types";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -25,6 +24,7 @@ import { NotFoundError } from "@/shared/ui/RouteStatusPage";
 import type { SchemaAction } from "@/features/schemas/components/SchemaActionsMenu";
 import { SchemaActionDialog } from "@/features/schemas/components/SchemaActionDialog";
 import { SchemaListItem } from "@/features/schemas/components/SchemaListItem";
+import type { SchemaCatalogItemDto } from "@/shared/api/openapi.gen";
 
 type SchemaSortMode = "updated" | "created" | "name";
 type SchemaStatusFilter = "active" | "archived" | "all";
@@ -68,8 +68,9 @@ export function SchemasPage() {
     action: SchemaAction;
     schema: SchemaCatalogItemDto;
   } | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
 
-  const canCreateSchemas = workspace?.permissions.canEditModels ?? false;
+  const canCreateSchemas = workspace?.permissions.canCreateModels ?? false;
   const canDeleteSchemas = workspace?.permissions.canDeleteModels ?? false;
   const canEditSchemas = workspace?.permissions.canEditModels ?? false;
 
@@ -95,7 +96,8 @@ export function SchemasPage() {
       }
       setDialog(null);
     } catch (actionError: unknown) {
-      toast.error(actionError instanceof Error ? actionError.message : String(actionError));
+      // Shown inside the dialog, which stays open for a retry.
+      setDialogError(actionError instanceof Error ? actionError.message : String(actionError));
     }
   };
 
@@ -116,18 +118,18 @@ export function SchemasPage() {
         header={{
           eyebrow: "Schemas",
           title: "Schemas",
-          breadcrumbs: [{ label: "Workspace", to: "/workspace" }, { label: "Schemas" }],
+          breadcrumbs: [{ label: "Schemas" }],
           description: `Navigate schema snapshots for ${
             workspace?.currentOrganization.name ?? "the current workspace"
           }.`,
           actions: canCreateSchemas ? (
             <AppButton type="button" onClick={() => navigate("/schemas/create")}>
-              + New Schema
+              <Plus size={16} /> New schema
             </AppButton>
           ) : null,
         }}
         isActionPending={isActionPending}
-        loadingLabel="Loading schemas..."
+        loadingLabel="Loading schemas…"
         pageSize={SCHEMA_CATALOG_PAGE_SIZE}
         filterLabel="Filter by schema status"
         filters={STATUS_FILTERS}
@@ -143,7 +145,7 @@ export function SchemasPage() {
         emptyAction={
           canCreateSchemas ? (
             <AppButton type="button" onClick={() => navigate("/schemas/create")}>
-              + New Schema
+              <Plus size={16} /> New schema
             </AppButton>
           ) : undefined
         }
@@ -153,7 +155,7 @@ export function SchemasPage() {
             canDelete={canDeleteSchemas}
             canEdit={canEditSchemas}
             item={schema}
-            onOpen={() => navigate(`/schemas/${schema.id}`)}
+            to={`/schemas/${schema.id}`}
             onAction={(action) => setDialog({ action, schema })}
           />
         )}
@@ -163,8 +165,12 @@ export function SchemasPage() {
           key={`${dialog.action}-${dialog.schema.id}`}
           action={dialog.action}
           disabled={isActionPending}
+          error={dialogError ?? undefined}
           item={dialog.schema}
-          onCancel={() => setDialog(null)}
+          onCancel={() => {
+            setDialogError(null);
+            setDialog(null);
+          }}
           onConfirm={handleDialogConfirm}
         />
       ) : null}

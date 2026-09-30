@@ -15,17 +15,10 @@ import {
 } from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
 import type { SchemaFeedbackStep } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
 import { saveSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-save";
+import { resultFeedback } from "./support/api-fixtures";
 
-const feedback = (resultId: string, value: Record<string, unknown>, id = "feedback-1") => ({
-  id,
-  resultId,
-  userId: "user-1",
-  userEmail: "reviewer@example.com",
-  type: "OUTPUT" as const,
-  order: 0,
-  value,
-  createdAt: "2026-06-04T00:00:00Z",
-});
+const feedback = (resultId: number, value: Record<string, unknown>, id = 1) =>
+  resultFeedback({ id, resultId, value, createdAt: "2026-06-04T00:00:00Z" });
 
 const step = (
   value?: Record<string, unknown>,
@@ -36,9 +29,9 @@ const step = (
   type: "OUTPUT",
   targets: [
     {
-      resultId: "result-1",
-      modelId: "model-1",
-      feedback: value ? feedback("result-1", value) : undefined,
+      resultId: 1,
+      modelId: 1,
+      feedback: value ? feedback(1, value) : undefined,
     },
   ],
   order: 0,
@@ -105,7 +98,7 @@ describe("schema feedback state", () => {
 
   test("does not complete when one mapped result lacks feedback", () => {
     const shared = step({ assessment: 4 });
-    shared.targets.push({ resultId: "result-2", modelId: "model-2" });
+    shared.targets.push({ resultId: 2, modelId: 2 });
 
     expect(isSchemaFeedbackComplete([shared])).toBe(false);
   });
@@ -113,9 +106,9 @@ describe("schema feedback state", () => {
   test("does not complete when mapped results have divergent feedback", () => {
     const shared = step({ assessment: 4 });
     shared.targets.push({
-      resultId: "result-2",
-      modelId: "model-2",
-      feedback: feedback("result-2", { assessment: 2 }, "feedback-2"),
+      resultId: 2,
+      modelId: 2,
+      feedback: feedback(2, { assessment: 2 }, 2),
     });
 
     expect(isSchemaFeedbackComplete([shared])).toBe(false);
@@ -172,7 +165,7 @@ describe("schema feedback state", () => {
 
   test("fans saved values out through create and update targets", async () => {
     const shared = step({ assessment: 2 });
-    shared.targets.push({ resultId: "result-2", modelId: "model-2" });
+    shared.targets.push({ resultId: 2, modelId: 2 });
     const writes: string[] = [];
 
     await saveSchemaFeedbackSteps(
@@ -188,7 +181,7 @@ describe("schema feedback state", () => {
       },
     );
 
-    expect(writes.sort()).toEqual(["create:result-2:5", "update:result-1:5"]);
+    expect(writes.sort()).toEqual(["create:2:5", "update:1:5"]);
   });
 
   test("propagates a target persistence failure", async () => {

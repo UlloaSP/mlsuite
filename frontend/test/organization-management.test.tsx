@@ -6,13 +6,13 @@ Copyright (c) 2025 Pablo Ulloa Santin
 // @vitest-environment jsdom
 
 import { act } from "react";
-import { createRoot, type Root } from "react-dom/client";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { Route, Routes } from "react-router";
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
-import type { WorkspacePermissionsDto } from "@/capabilities/workspace-context/workspace-context.types";
 import { InvitationsPage } from "@/features/workspace/pages/invitations-page";
 import { OrganizationSettingsPage } from "@/features/workspace/pages/organization-settings-page";
 import { RolesPage } from "@/features/workspace/pages/roles-page";
+import { click, mount, type Mounted } from "./support/dom";
+import type { WorkspacePermissionsDto } from "@/shared/api/openapi.gen";
 
 const hooks = vi.hoisted(() => ({
   dashboard: vi.fn(),
@@ -25,6 +25,11 @@ const hooks = vi.hoisted(() => ({
   update: vi.fn(),
 }));
 
+// The organization under test is not the member's current one: its pages are administration.
+vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  useWorkspaceContext: () => ({ data: undefined }),
+  useCurrentOrganizationId: () => undefined,
+}));
 vi.mock("@/features/workspace/api/workspace.queries", () => ({
   useOrganizationAdminDashboardQuery: hooks.dashboard,
   useOrganizationInvitationCandidatesQuery: hooks.invitationCandidates,
@@ -114,67 +119,47 @@ const mutation = (patch = {}) => ({
 });
 
 describe("organization management", () => {
-  let root: Root | null = null;
+  let view: Mounted | null = null;
 
   afterEach(() => {
-    act(() => root?.unmount());
-    root = null;
-    document.body.innerHTML = "";
+    view = null;
     vi.clearAllMocks();
   });
 
   async function renderSettings() {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    await act(async () => {
-      root?.render(
-        <MemoryRouter initialEntries={["/workspace/organizations/7/settings"]}>
-          <Routes>
-            <Route
-              path="/workspace/organizations/:organizationId/settings"
-              element={<OrganizationSettingsPage />}
-            />
-          </Routes>
-        </MemoryRouter>,
-      );
-    });
-    return container;
+    view = await mount(
+      <Routes>
+        <Route
+          path="/workspace/organizations/:organizationId/settings"
+          element={<OrganizationSettingsPage />}
+        />
+      </Routes>,
+      { route: "/workspace/organizations/7/settings" },
+    );
+    return view.host;
   }
 
   async function renderInvitations() {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    await act(async () => {
-      root?.render(
-        <MemoryRouter initialEntries={["/workspace/organizations/7/invitations"]}>
-          <Routes>
-            <Route
-              path="/workspace/organizations/:organizationId/invitations"
-              element={<InvitationsPage />}
-            />
-          </Routes>
-        </MemoryRouter>,
-      );
-    });
-    return container;
+    view = await mount(
+      <Routes>
+        <Route
+          path="/workspace/organizations/:organizationId/invitations"
+          element={<InvitationsPage />}
+        />
+      </Routes>,
+      { route: "/workspace/organizations/7/invitations" },
+    );
+    return view.host;
   }
 
   async function renderRoles() {
-    const container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    await act(async () => {
-      root?.render(
-        <MemoryRouter initialEntries={["/workspace/organizations/7/roles"]}>
-          <Routes>
-            <Route path="/workspace/organizations/:organizationId/roles" element={<RolesPage />} />
-          </Routes>
-        </MemoryRouter>,
-      );
-    });
-    return container;
+    view = await mount(
+      <Routes>
+        <Route path="/workspace/organizations/:organizationId/roles" element={<RolesPage />} />
+      </Routes>,
+      { route: "/workspace/organizations/7/roles" },
+    );
+    return view.host;
   }
 
   function mockSettings(permissionPatch: Partial<WorkspacePermissionsDto> = {}) {
@@ -196,14 +181,11 @@ describe("organization management", () => {
 
     const container = await renderSettings();
     const description = container.querySelector<HTMLTextAreaElement>("#organization-description");
-    const submit = [...container.querySelectorAll("button")].find(
-      (button) => button.textContent === "Save changes",
-    );
 
     expect(description?.value).toBe("");
-    await act(async () => submit?.click());
+    await click("Save changes", container);
     expect(save).toHaveBeenCalledWith(
-      { name: "Acme", slug: "acme", description: "" },
+      { id: 7, name: "Acme", slug: "acme", description: "" },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
     expect(container.textContent).toContain("Organization saved.");
@@ -244,14 +226,9 @@ describe("organization management", () => {
     hooks.remove.mockReturnValue(mutation({ mutateAsync: remove }));
 
     const container = await renderSettings();
-    const action = [...container.querySelectorAll("button")].find(
-      (button) => button.textContent === "Delete organization",
-    );
-    await act(async () => action?.click());
-    const confirm = [...container.querySelectorAll("button")].find(
-      (button) => button.textContent === "Delete permanently",
-    );
-    await act(async () => confirm?.click());
+    await click("Delete organization", container);
+    // Dialogs render in a portal on document.body.
+    await click("Delete permanently");
 
     expect(remove).toHaveBeenCalledWith(7);
   });
@@ -311,22 +288,23 @@ describe("organization management", () => {
     const role = [...container.querySelectorAll("button")].find((button) =>
       button.textContent?.includes("Reviewer"),
     );
-    await act(async () => role?.click());
+    await click(role!);
 
-    const dialog = container.querySelector("dialog");
+    const dialog = document.querySelector('[role="dialog"]');
     expect(dialog?.textContent).toContain("Reviewer");
-    expect(document.activeElement?.getAttribute("aria-label")).toBe("Close role details");
-    await act(async () => dialog?.dispatchEvent(new Event("cancel", { cancelable: true })));
-    expect(container.querySelector("dialog")).toBeNull();
+    expect(document.activeElement?.getAttribute("aria-label")).toBe("Close");
+    await act(async () =>
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
+    );
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
   });
 
   test("shows loading and rejects a failed target organization query", async () => {
     mockSettings();
     hooks.dashboard.mockReturnValueOnce({ data: undefined, isError: false, isLoading: true });
-    expect((await renderSettings()).textContent).toContain("Loading organization settings...");
+    expect((await renderSettings()).textContent).toContain("Loading organization settings…");
 
-    act(() => root?.unmount());
-    root = null;
+    await view?.unmount();
     hooks.dashboard.mockReturnValueOnce({
       data: undefined,
       error: new Error("Server failed"),

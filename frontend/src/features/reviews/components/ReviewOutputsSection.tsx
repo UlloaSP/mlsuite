@@ -7,17 +7,14 @@ import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { getSchemaResultReports } from "@/capabilities/prediction-runtime/data/report-display";
 import { SchemaRunReportRenderer } from "@/capabilities/prediction-runtime/reports/SchemaRunReportRenderer";
 import { useSchemaPluginCatalog } from "@/capabilities/prediction-runtime/plugins/schema-plugin-catalog";
-import type {
-  ReviewPredictionResultDto,
-  ReviewSchemaVersionDto,
-} from "@/features/reviews/api/review-types";
+import type { PredictionResultDto, SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 export function ReviewOutputsSection({
   version,
   results,
 }: {
-  version: ReviewSchemaVersionDto;
-  results: ReviewPredictionResultDto[];
+  version: SchemaVersionDto;
+  results: PredictionResultDto[];
 }) {
   const catalog = useSchemaPluginCatalog(version.formSchema, useCurrentOrganizationId() ?? "none");
   const showLoading = useStableLoading(catalog.status === "loading");
@@ -28,7 +25,7 @@ export function ReviewOutputsSection({
       ),
     [results, version],
   );
-  if (showLoading) return <AppLoadingState compact label="Loading report renderers..." />;
+  if (showLoading) return <AppLoadingState compact label="Loading report renderers…" />;
   if (catalog.status === "error")
     return (
       <div role="alert">

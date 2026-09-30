@@ -7,23 +7,24 @@ import { appFetch } from "@/shared/api/http";
 import type {
   ArtifactInspectionDto,
   ArtifactMatchDto,
-  CreateModelDto,
   CreateModelRequest,
   MatchArtifactsRequest,
-  ModelDto,
   ModelNameRequest,
-  ModelVersionRequest,
-  ModelPageDto,
   ModelPageRequest,
+  ModelVersionRequest,
 } from "./model.types";
+import type { CreateModelDto, ModelDto, PageDtoModelDto } from "@/shared/api/openapi.gen";
 
 export const getModels = (signal?: AbortSignal): Promise<ModelDto[]> =>
   appFetch<ModelDto[]>("/api/models/all", { signal });
 
+export const getModel = (modelId: number | string, signal?: AbortSignal): Promise<ModelDto> =>
+  appFetch<ModelDto>(`/api/models/${encodeURIComponent(modelId)}`, { signal });
+
 export const getModelPage = (
   { page, search = "", size, sort = "updated", status = "active" }: ModelPageRequest,
   signal?: AbortSignal,
-): Promise<ModelPageDto> => {
+): Promise<PageDtoModelDto> => {
   const params = new URLSearchParams({
     page: String(page),
     search,
@@ -31,7 +32,7 @@ export const getModelPage = (
     sort,
     status,
   });
-  return appFetch<ModelPageDto>(`/api/models?${params.toString()}`, { signal });
+  return appFetch<PageDtoModelDto>(`/api/models?${params.toString()}`, { signal });
 };
 
 export const createModel = ({
@@ -49,7 +50,9 @@ export const createModel = ({
 };
 
 export const archiveModel = ({ id, version }: ModelVersionRequest): Promise<ModelDto> =>
-  appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}/archive?version=${version}`, { method: "POST" });
+  appFetch<ModelDto>(`/api/models/${encodeURIComponent(id)}/archive?version=${version}`, {
+    method: "POST",
+  });
 
 export const deleteModel = async ({ id, version }: ModelVersionRequest): Promise<void> => {
   await appFetch(`/api/models/${encodeURIComponent(id)}?version=${version}`, { method: "DELETE" });

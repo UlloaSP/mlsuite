@@ -3,13 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { LoaderCircle, Square, Upload } from "lucide-react";
+import { Square, Upload } from "lucide-react";
 import { useRef, type ChangeEvent } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { useSchemaRunBulkUpload } from "@/features/schemas/lib/use-schema-run-bulk-upload";
-import type { SchemaVersionDto } from "@/features/schemas/api/schema-types";
 
 import { bulkUploadSummary } from "@/features/schemas/lib/bulk-upload";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
+import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
   version: SchemaVersionDto;
@@ -28,15 +29,15 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
   const processing = bulk.status === "processing" || bulk.status === "parsing";
   const label =
     bulk.status === "parsing"
-      ? "Parsing..."
+      ? "Parsing…"
       : bulk.status === "processing"
         ? `Bulk ${bulk.processed}/${bulk.total}`
         : bulk.status === "done"
           ? summary.message
-          : "Bulk Upload";
+          : "Bulk upload";
   const icon =
     bulk.status === "parsing" ? (
-      <LoaderCircle size={16} className="animate-spin" />
+      <AppSpinner size={16} />
     ) : bulk.status === "processing" ? (
       <Square size={14} className="fill-current" />
     ) : (
@@ -79,18 +80,17 @@ export function SchemaRunBulkUploadButton({ version, bookmarkId }: Props) {
               ? `Processing ${bulk.processed} of ${bulk.total}. Click to cancel.`
               : "Upload a CSV or XLSX file with up to 10000 records."
         }
-        className="justify-between"
       >
         <span className="inline-flex items-center gap-2">
           {icon}
           {label}
         </span>
         {processing ? (
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--danger-text)]">
+          <span className="text-2xs font-semibold uppercase tracking-eyebrow text-danger-fg">
             Stop
           </span>
         ) : bulk.status === "done" ? (
-          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span className="text-2xs font-semibold uppercase tracking-eyebrow text-fg-muted">
             Again
           </span>
         ) : null}

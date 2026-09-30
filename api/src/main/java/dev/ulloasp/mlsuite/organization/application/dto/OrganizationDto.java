@@ -4,12 +4,14 @@ import java.time.OffsetDateTime;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 
+import jakarta.annotation.Nullable;
+
 public record OrganizationDto(
         Long id,
         String slug,
         String name,
-        String description,
-        String avatarUrl,
+        @Nullable String description,
+        @Nullable String avatarUrl,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
 

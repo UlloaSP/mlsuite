@@ -1,13 +1,14 @@
 import { PermissionCatalog } from "@/features/workspace/components/PermissionCatalog";
 import { Copy, Plus } from "lucide-react";
 import { useState } from "react";
-import { useParams, useSearchParams } from "react-router";
+import { useParams } from "react-router";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { AppSurface } from "@/shared/ui/AppSurface";
 import { AppTabs } from "@/shared/ui/AppTabs";
 import { RouteStatusPage } from "@/shared/ui/RouteStatusPage";
+import { useUrlFilters } from "@/shared/lib/use-url-filters";
 import { useRoleMutations } from "@/features/workspace/api/role.mutations";
 import { RoleDetailsDialog } from "@/features/workspace/components/RoleDetailsDialog";
 import { RoleForm } from "@/features/workspace/components/RoleForm";
@@ -15,14 +16,10 @@ import {
   useOrganizationAdminDashboardQuery,
   useOrganizationRolesQuery,
 } from "@/features/workspace/api/workspace.queries";
-import type {
-  PermissionKey,
-  RoleDefinitionDto,
-  RoleTemplateDto,
-} from "@/features/workspace/api/workspace.types";
 import { organizationRouteErrorStatus } from "@/features/workspace/lib/organization-route-error";
 
 import { RolesCatalog, type RolesTab } from "@/features/workspace/components/RolesCatalog";
+import type { RoleDefinitionDto, RoleTemplateDto } from "@/shared/api/openapi.gen";
 
 // react-doctor-disable-next-line react-doctor/prefer-useReducer -- Dialog, tab, and search state are separate controls with separate lifetimes.
 export function RolesPage() {
@@ -37,19 +34,12 @@ export function RolesPage() {
   );
   const rolesQuery = useOrganizationRolesQuery(id, canAccessRoles);
   const data = rolesQuery.data;
-  const [params, setParams] = useSearchParams();
-  const requestedTab = params.get("tab");
+  const tabFilter = useUrlFilters({ tab: "roles", q: "" });
+  const requestedTab = tabFilter.values.tab;
   const tab: RolesTab =
     requestedTab === "templates" || requestedTab === "permissions" ? requestedTab : "roles";
-  const setTab = (value: RolesTab) =>
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      if (value === "roles") next.delete("tab");
-      else next.set("tab", value);
-      next.delete("q");
-      next.delete("page");
-      return next;
-    });
+  // Each tab searches a different catalog, so switching tabs clears the search.
+  const setTab = (value: RolesTab) => tabFilter.setFilters({ tab: value, q: "" });
   const [selected, setSelected] = useState<RoleDefinitionDto | null>(null);
   const [editing, setEditing] = useState<RoleDefinitionDto | null>(null);
   const [template, setTemplate] = useState<RoleTemplateDto | null>(null);
@@ -63,17 +53,17 @@ export function RolesPage() {
 
   return (
     <AppPage>
-      <AppSurface className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <AppSurface className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
         <AppPageHeader
-          title="Roles & Templates"
+          title="Roles & templates"
           description="Manage role definitions, templates, and permission coverage."
-          breadcrumbs={[{ label: "Workspace", to: "/workspace" }, { label: "Roles & Templates" }]}
+          breadcrumbs={[{ label: "Roles & templates" }]}
           actions={
             canManage ? (
               <>
                 <AppButton variant="secondary" onClick={() => setTab("templates")}>
                   <Copy size={16} />
-                  From Template
+                  From template
                 </AppButton>
                 <AppButton
                   onClick={() =>
@@ -84,6 +74,7 @@ export function RolesPage() {
                       description: "",
                       scope: "ORGANIZATION",
                       locked: false,
+                      systemKey: null,
                       userCount: 0,
                       permissions: [],
                       actions: {
@@ -97,7 +88,7 @@ export function RolesPage() {
                   }
                 >
                   <Plus size={16} />
-                  Create Role
+                  Create role
                 </AppButton>
               </>
             ) : undefined
@@ -105,15 +96,14 @@ export function RolesPage() {
         />
         <AppTabs<RolesTab>
           items={[
-            { label: data ? `Roles (${data.roles.length})` : "Roles", value: "roles" },
+            { label: "Roles", count: data?.roles.length, value: "roles" },
+            { label: "Templates", count: data?.templates.length, value: "templates" },
             {
-              label: data ? `Templates (${data.templates.length})` : "Templates",
-              value: "templates",
-            },
-            {
-              label: data
-                ? `All Permissions (${data.permissionCatalog.reduce((total, group) => total + group.permissions.length, 0)})`
-                : "All Permissions",
+              label: "All permissions",
+              count: data?.permissionCatalog.reduce(
+                (total, group) => total + group.permissions.length,
+                0,
+              ),
               value: "permissions",
             },
           ]}
@@ -185,8 +175,8 @@ export function RolesPage() {
             roleDefinition={null}
             initial={{
               name: template.name,
-              description: template.description,
-              permissionKeys: template.permissionKeys as PermissionKey[],
+              description: template.description ?? undefined,
+              permissionKeys: template.permissionKeys,
             }}
             permissionGroups={data?.permissionCatalog ?? []}
             onClose={() => setTemplate(null)}

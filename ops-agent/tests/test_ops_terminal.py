@@ -41,20 +41,27 @@ def test_terminal_creation_uses_pty_backed_compose_exec(monkeypatch) -> None:
     assert "spring-app" in command
 
 
-def test_stats_are_collected_one_service_at_a_time(monkeypatch) -> None:
+def test_stats_are_collected_in_one_project_wide_call(monkeypatch) -> None:
     gateway = ComposeGateway(Settings(managed_services=("spring-app", "frontend")))
     calls: list[tuple[str, ...]] = []
 
     async def fake_run(*args: str) -> str:
         calls.append(args)
-        if args == ("ps", "--services"):
-            return "spring-app\nfrontend\n"
-        return f'{{"Name":"{args[-1]}","CPUPerc":"1.0%","MemUsage":"1MiB / 2MiB"}}'
+        if args == ("ps", "--all", "--format", "json"):
+            return (
+                '{"Service":"spring-app","Name":"mlsuite-spring-app-1","State":"running"}\n'
+                '{"Service":"frontend","Name":"mlsuite-frontend-1","State":"running"}'
+            )
+        return (
+            '{"Name":"mlsuite-spring-app-1","CPUPerc":"1.0%","MemUsage":"1MiB / 2MiB"}\n'
+            '{"Name":"mlsuite-frontend-1","CPUPerc":"2.0%","MemUsage":"1MiB / 4MiB"}'
+        )
 
     monkeypatch.setattr(gateway, "run", fake_run)
 
-    output = asyncio.run(gateway._docker_stats())
+    services = {row["name"]: row for row in asyncio.run(gateway.service_snapshot())}
 
-    assert output.count("CPUPerc") == 2
-    assert ("stats", "--no-stream", "--format", "json", "spring-app") in calls
-    assert ("stats", "--no-stream", "--format", "json", "frontend") in calls
+    assert calls == [("ps", "--all", "--format", "json"), ("stats", "--no-stream", "--format", "json")]
+    assert services["spring-app"]["cpuPercent"] == 1.0
+    assert services["frontend"]["cpuPercent"] == 2.0
+    assert services["frontend"]["memoryLimitBytes"] == 4 * 1024 * 1024

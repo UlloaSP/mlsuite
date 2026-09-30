@@ -81,11 +81,6 @@ class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public byte[] load(String bucket, String objectKey) {
-        return load(bucket, objectKey, null);
-    }
-
-    @Override
     public byte[] load(String bucket, String objectKey, String versionId) {
         ensureBucketExists();
 
@@ -98,11 +93,6 @@ class MinioObjectStorageService implements ObjectStorageService {
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudo cargar el modelo desde MinIO", ex);
         }
-    }
-
-    @Override
-    public Optional<byte[]> loadOptional(String bucket, String objectKey) {
-        return loadOptional(bucket, objectKey, null);
     }
 
     @Override
@@ -130,11 +120,6 @@ class MinioObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey) {
-        return inspectOptional(bucket, objectKey, null);
-    }
-
-    @Override
     public Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey, String versionId) {
         ensureBucketExists();
         try {
@@ -158,11 +143,6 @@ class MinioObjectStorageService implements ObjectStorageService {
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudo comprobar el objeto en MinIO", ex);
         }
-    }
-
-    @Override
-    public StoredObjectVerification verify(String bucket, String objectKey) {
-        return verify(bucket, objectKey, null);
     }
 
     @Override
@@ -217,11 +197,6 @@ class MinioObjectStorageService implements ObjectStorageService {
         } catch (Exception ex) {
             throw new ObjectStorageException("No se pudieron listar objetos de MinIO", ex);
         }
-    }
-
-    @Override
-    public void delete(String bucket, String objectKey) {
-        delete(bucket, objectKey, null);
     }
 
     @Override

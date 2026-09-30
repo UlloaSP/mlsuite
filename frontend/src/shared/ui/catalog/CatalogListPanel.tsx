@@ -8,7 +8,7 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { AppButton } from "@/shared/ui/AppButton";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
-import { AppPanel } from "@/shared/ui/AppPanel";
+import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
 import { cx } from "@/shared/ui/cx";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { CatalogPaginationFooter } from "./CatalogPaginationFooter";
@@ -23,7 +23,6 @@ export type CatalogEmptyState = {
 export type CatalogListPanelProps = {
   children: ReactNode;
   emptyState: CatalogEmptyState;
-  emptyWrapperClassName?: string;
   errorMessage: string | null;
   hasNext: boolean;
   isBusy: boolean;
@@ -40,7 +39,6 @@ export type CatalogListPanelProps = {
 export function CatalogListPanel({
   children,
   emptyState,
-  emptyWrapperClassName,
   errorMessage,
   hasNext,
   isBusy,
@@ -60,34 +58,35 @@ export function CatalogListPanel({
     showItems && layout === "grid"
       ? "grid gap-3 pr-1 md:grid-cols-2 xl:grid-cols-3"
       : "flex flex-col gap-3 pr-1",
-    !showItems && "min-h-full",
   );
 
   return (
     <>
-      <section className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4">
+      <section
+        data-scroll-memory="list"
+        className="app-scroll min-h-0 flex-1 basis-0 overflow-y-auto py-4"
+      >
         <div className={bodyClassName}>
-          {showLoading ? <AppLoadingState label={loadingLabel} /> : null}
+          {showLoading ? <AppLoadingState label={loadingLabel} layout={layout} /> : null}
           {!hasItems && !showLoading && errorMessage ? (
-            <AppPanel className="flex flex-col gap-3 border-[var(--status-danger-border)] text-sm text-[var(--status-danger-text)]">
-              <p>{errorMessage}</p>
+            <div className="flex flex-col items-start gap-3">
+              <AppInlineAlert>{errorMessage}</AppInlineAlert>
               {onRetry ? (
-                <AppButton className="w-fit" variant="secondary" onClick={onRetry}>
+                <AppButton size="sm" variant="secondary" onClick={onRetry}>
                   Retry
                 </AppButton>
               ) : null}
-            </AppPanel>
+            </div>
           ) : null}
           {!hasItems && !showLoading && !errorMessage ? (
-            <div className={cx("flex min-h-full", emptyWrapperClassName)}>
-              <AppEmptyState
-                className="flex-1"
-                action={emptyState.action}
-                description={emptyState.description}
-                icon={emptyState.icon}
-                title={emptyState.title}
-              />
-            </div>
+            <AppEmptyState
+              compact
+              className="rounded-card border border-dashed border-line"
+              action={emptyState.action}
+              description={emptyState.description}
+              icon={emptyState.icon}
+              title={emptyState.title}
+            />
           ) : null}
           {!showLoading ? children : null}
         </div>

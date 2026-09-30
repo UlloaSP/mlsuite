@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static dev.ulloasp.mlsuite.support.TestFixtures.organization;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,6 +18,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -23,7 +28,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import dev.ulloasp.mlsuite.model.domain.model.Model;
-import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
@@ -35,8 +39,6 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.dto.WorkspacePermissionsDto;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,7 +50,6 @@ class SchemaDuplicateServiceTest {
     @Mock private SchemaModelBindingRepository bindingRepository;
     @Mock private PredictionRunRepository runRepository;
     @Mock private SchemaReviewRepository reviewRepository;
-    @Mock private WorkspaceAccessService workspaceAccessService;
     @Mock private WorkspaceAuthorizationService authorizationService;
 
     private SchemaServiceImpl service;
@@ -57,11 +58,21 @@ class SchemaDuplicateServiceTest {
     void setUp() {
         service = new SchemaServiceImpl(userLookupService, schemaRepository, versionRepository,
                 bindingRepository, runRepository, reviewRepository,
-                workspaceAccessService, authorizationService, org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository.class),
+                authorizationService, org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaDraftRepository.class),
                 org.mockito.Mockito.mock(dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository.class));
-        when(userLookupService.requireById(7L)).thenReturn(user());
-        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization());
-        when(authorizationService.workspacePermissions(7L, 41L)).thenReturn(permissions());
+        lenient().when(userLookupService.requireById(7L)).thenReturn(user());
+        lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
+    }
+
+    @Test
+    void duplicateSchema_RequiresCreatePermissionLikeCreation() {
+        when(authorizationService.requireCurrent(7L, PermissionKey.CREATE_MODELS))
+                .thenThrow(new OrganizationAccessDeniedException(41L));
+
+        assertThrows(OrganizationAccessDeniedException.class,
+                () -> service.duplicateSchema(7L, 5L, null, "Copy"));
+
+        verifyNoInteractions(schemaRepository);
     }
 
     @Test
@@ -176,23 +187,10 @@ class SchemaDuplicateServiceTest {
         return model;
     }
 
-    private Organization organization() {
-        Organization organization = new Organization();
-        organization.setId(41L);
-        organization.setName("Org");
-        organization.setSlug("org");
-        return organization;
-    }
-
     private User user() {
         User user = new User();
         user.setId(7L);
         user.setUsername("alice");
         return user;
-    }
-
-    private WorkspacePermissionsDto permissions() {
-        return new WorkspacePermissionsDto(true, true, true, true, true, true, true, true, true, true, true,
-                true, true, true, true, true, true, true, true, true, true);
     }
 }

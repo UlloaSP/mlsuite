@@ -9,10 +9,6 @@ import { createFanoutTransport } from "mlform/transport";
 import { getBackendBaseUrl } from "@/shared/config/runtime";
 import { normalizeAnalyzerPredictionResult } from "@/capabilities/prediction-runtime/data/analyzer-result-normalization";
 import { applySchemaRunInputMapping } from "@/capabilities/prediction-runtime/mlform/model-input-mapping";
-import {
-  schemaRunDebug,
-  schemaRunDebugError,
-} from "@/capabilities/prediction-runtime/mlform/run-debug";
 import { reportTargetForBinding } from "@/capabilities/prediction-runtime/mlform/schema-run-report-mapping";
 import {
   type JsonRecord,
@@ -21,13 +17,13 @@ import {
 } from "@/capabilities/prediction-runtime/mlform/shared";
 
 type SchemaRunBinding = {
-  modelId: string;
+  modelId: number;
   modelName?: string;
   pluginPolicy?: JsonRecord | null;
 };
 
 type BindingResult = {
-  modelId: string;
+  modelId: number;
   modelInput: JsonRecord;
   output: JsonRecord;
   status: "SUCCESS" | "FAILED";
@@ -47,7 +43,7 @@ const parseResponse = async (response: Response): Promise<unknown> => {
   }
 };
 
-const failureOutput = (modelId: string, modelInput: JsonRecord): JsonRecord => ({
+const failureOutput = (modelId: number, modelInput: JsonRecord): JsonRecord => ({
   meta: { modelId, backendUrl: getBackendBaseUrl(), backendFieldValues: modelInput },
 });
 
@@ -96,7 +92,6 @@ const runBinding = async (
       errorJson: isRecord(parsed) ? parsed : { raw: parsed },
     };
   } catch (error) {
-    schemaRunDebugError("transport.model.exception", error, { modelId: binding.modelId });
     return {
       modelId: binding.modelId,
       modelInput,
@@ -173,7 +168,6 @@ export const createSchemaRunTransport = (
         backendFieldValues: canonical,
         schemaRun: true,
       };
-      schemaRunDebug("transport.submit.done", { results, reportPayloads });
       return {
         reports: reportPayloads,
         meta,

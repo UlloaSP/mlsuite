@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDeniedException;
@@ -29,8 +30,7 @@ class PluginRuntimePermissionTest {
     void setUp() {
         organization.setId(41L);
         when(access.requireCurrentOrganization(3L)).thenReturn(organization);
-        authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class),
-                mock(RoleSeedService.class), new LegacyRolePermissionMapper());
+        authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
         runtime = new PluginRuntimeService(access, authorization, objects);
     }
 
@@ -47,7 +47,7 @@ class PluginRuntimePermissionTest {
         verify(objects).list(41L);
         verifyNoMoreInteractions(objects);
         if (permission != PermissionKey.VIEW_PLUGINS) {
-            assertThrows(OrganizationAccessDeniedException.class, () -> authorization.requirePluginView(3L, 41L));
+            assertThrows(OrganizationAccessDeniedException.class, () -> authorization.require(3L, 41L, PermissionKey.VIEW_PLUGINS));
         }
     }
 

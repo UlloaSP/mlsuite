@@ -1,38 +1,36 @@
 import { useState } from "react";
-import type { AdminUser } from "@/features/admin/api/admin-user.types";
+import { SYSTEM_ROLE_OPTIONS } from "@/features/admin/api/admin-user.types";
 import { AppButton } from "@/shared/ui/AppButton";
+import { AppDialog } from "@/shared/ui/AppDialog";
 import { AppSelect } from "@/shared/ui/AppSelect";
+import type { AdminUserDto } from "@/shared/api/openapi.gen";
 
-type Role = AdminUser["systemRole"];
-const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
-  { value: "USER", label: "User" },
-  { value: "SUPERADMIN", label: "Superadmin" },
-];
+type Role = AdminUserDto["systemRole"];
 
 export function ChangeRoleDialog({
   disabled,
+  error,
   user,
   onCancel,
   onConfirm,
 }: {
   disabled: boolean;
-  user: AdminUser;
+  error?: string;
+  user: AdminUserDto;
   onCancel: () => void;
   onConfirm: (role: Role) => Promise<void>;
 }) {
   const [role, setRole] = useState<Role>(user.systemRole);
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
-      <div className="w-full max-w-sm rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-5 shadow-[var(--shadow-hover)]">
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Change role</h2>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">{user.fullName}</p>
-        <AppSelect
-          value={role}
-          onValueChange={(value) => setRole(value as Role)}
-          className="mt-4 w-full"
-          options={ROLE_OPTIONS}
-        />
-        <div className="mt-5 flex justify-end gap-2">
+    <AppDialog
+      open
+      busy={disabled}
+      error={error}
+      onClose={onCancel}
+      title="Change role"
+      description={user.fullName}
+      footer={
+        <>
           <AppButton type="button" variant="secondary" onClick={onCancel} disabled={disabled}>
             Cancel
           </AppButton>
@@ -43,8 +41,16 @@ export function ChangeRoleDialog({
           >
             Save role
           </AppButton>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <AppSelect
+        aria-label="System role"
+        value={role}
+        onValueChange={(value) => setRole(value as Role)}
+        className="w-full"
+        options={SYSTEM_ROLE_OPTIONS}
+      />
+    </AppDialog>
   );
 }

@@ -7,15 +7,18 @@ package dev.ulloasp.mlsuite.user.application.dto;
 
 import java.time.format.DateTimeFormatter;
 
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
+
+import jakarta.annotation.Nullable;
 
 public record UserDto(
         Long id,
         String userName,
         String email,
         String fullName,
-        String avatarUrl,
-        String systemRole,
+        @Nullable String avatarUrl,
+        SystemRole systemRole,
         boolean enabled,
         String createdAt) {
 
@@ -26,7 +29,7 @@ public record UserDto(
                 user.getEmail(),
                 user.getFullName(),
                 user.getAvatarUrl(),
-                user.getSystemRole().name(),
+                user.getSystemRole(),
                 user.isEnabled(),
                 user.getCreatedAt() == null
                         ? null

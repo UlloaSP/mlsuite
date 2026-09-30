@@ -3,9 +3,10 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { RefreshCcw, Save } from "lucide-react";
-import { cx } from "@/shared/ui/cx";
-import { SummaryRow } from "./SummaryRow";
+import { Save } from "lucide-react";
+import { AppSummaryRow } from "@/shared/ui/AppSummaryRow";
+import { AppButton } from "@/shared/ui/AppButton";
+import { AppSpinner } from "@/shared/ui/AppSpinner";
 
 type Props = {
   total: number;
@@ -29,70 +30,51 @@ export function BundleSummaryPanel({
   const canSave = unsavedReady > 0 && !anySaving;
 
   const bundleVal = total ? String(total) : "—";
-  const bundleCls = total
-    ? "font-bold text-[var(--text-primary)]"
-    : "font-normal text-[var(--text-muted)]";
+  const bundleCls = total ? "font-semibold text-fg" : "font-normal text-fg-muted";
 
   const dfVal = total ? `${withDf} / ${total}` : "—";
   const dfCls = !total
-    ? "font-normal text-[var(--text-muted)]"
+    ? "font-normal text-fg-muted"
     : withDf === total
-      ? "font-bold text-green-500"
-      : "font-bold text-amber-500";
+      ? "font-semibold text-success-fg"
+      : "font-semibold text-warning-fg";
 
   const savedVal = total ? `${saved} / ${total}` : "—";
   const savedCls = !total
-    ? "font-normal text-[var(--text-muted)]"
+    ? "font-normal text-fg-muted"
     : saved === total
-      ? "font-bold text-green-500"
+      ? "font-semibold text-success-fg"
       : saved > 0
-        ? "font-bold text-amber-500"
-        : "font-normal text-[var(--text-muted)]";
+        ? "font-semibold text-warning-fg"
+        : "font-normal text-fg-muted";
 
   return (
     <aside
       aria-label="Summary"
-      className="flex w-full flex-shrink-0 flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-primary)] shadow-[var(--shadow-card)] lg:w-[288px]"
+      className="flex w-full flex-shrink-0 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card lg:w-72"
     >
       {/* Header */}
-      <div className="flex flex-shrink-0 items-center justify-between border-b border-[var(--border-soft)] px-[18px] py-[15px]">
-        <span className="text-[13px] font-bold text-[var(--text-primary)]">Summary</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--text-muted)]">
-          Session
-        </span>
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-line px-5 py-4">
+        <span className="text-sm font-semibold text-fg">Summary</span>
+        <span className="font-mono text-2xs uppercase tracking-eyebrow text-fg-muted">Session</span>
       </div>
 
       {/* Stats */}
-      <div className="flex-shrink-0 px-[18px] py-[14px]">
-        <SummaryRow first label="Bundles" value={bundleVal} valueClass={bundleCls} />
-        <SummaryRow label="With dataframe" value={dfVal} valueClass={dfCls} />
-        <SummaryRow label="Saved" value={savedVal} valueClass={savedCls} />
+      <div className="flex-shrink-0 px-5 py-3.5">
+        <AppSummaryRow first label="Bundles" value={bundleVal} valueClass={bundleCls} />
+        <AppSummaryRow label="With dataframe" value={dfVal} valueClass={dfCls} />
+        <AppSummaryRow label="Saved" value={savedVal} valueClass={savedCls} />
       </div>
 
       {/* Actions */}
-      <div className="mt-auto flex flex-shrink-0 flex-col gap-2 border-t border-[var(--border-soft)] px-[18px] py-[14px]">
-        <button
-          type="button"
-          disabled={!canSave}
-          onClick={onSaveAll}
-          className={cx(
-            "flex w-full items-center justify-center gap-[7px] rounded-[9px] border-none px-3 py-[11px] text-[13px] font-bold text-white transition-all duration-150",
-            canSave
-              ? "cursor-pointer bg-[var(--accent-primary)] hover:-translate-y-px hover:bg-[var(--accent-primary-strong)]"
-              : "cursor-not-allowed bg-[var(--accent-primary)] opacity-40",
-          )}
-        >
-          {anySaving ? <RefreshCcw size={13} className="animate-spin" /> : <Save size={13} />}
-          {anySaving ? "Saving…" : "Save All"}
-        </button>
-
-        <button
-          type="button"
-          onClick={onClear}
-          className="flex w-full cursor-pointer items-center justify-center rounded-[9px] border border-[var(--border-soft)] bg-transparent px-3 py-[11px] text-[13px] font-bold text-[var(--text-secondary)] transition-all duration-150 hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-        >
+      <div className="mt-auto flex flex-shrink-0 flex-col gap-2 border-t border-line px-5 py-3.5">
+        <AppButton className="w-full" disabled={!canSave} onClick={onSaveAll}>
+          {anySaving ? <AppSpinner size={14} /> : <Save size={14} />}
+          {anySaving ? "Saving…" : "Save all"}
+        </AppButton>
+        <AppButton variant="secondary" className="w-full" onClick={onClear}>
           Clear
-        </button>
+        </AppButton>
       </div>
     </aside>
   );

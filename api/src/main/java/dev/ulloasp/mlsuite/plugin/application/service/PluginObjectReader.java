@@ -80,7 +80,7 @@ public class PluginObjectReader {
         var persisted = metadata.findByObjectKeyAndOrganizationId(objectKey, organizationId);
         String versionId = persisted.map(PluginMetadata::getStorageVersionId)
                 .filter(value -> !value.isBlank())
-                .orElseGet(() -> storage.inspectOptional(properties.getBucket(), objectKey)
+                .orElseGet(() -> storage.inspectOptional(properties.getBucket(), objectKey, null)
                         .map(item -> item.versionId())
                         .orElse(null));
         byte[] bytes = storage.loadOptional(properties.getBucket(), objectKey, versionId)

@@ -19,17 +19,7 @@ class DisabledObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public byte[] load(String bucket, String objectKey) {
-        throw new ObjectStorageException(MESSAGE);
-    }
-
-    @Override
     public byte[] load(String bucket, String objectKey, String versionId) {
-        throw new ObjectStorageException(MESSAGE);
-    }
-
-    @Override
-    public Optional<byte[]> loadOptional(String bucket, String objectKey) {
         throw new ObjectStorageException(MESSAGE);
     }
 
@@ -39,17 +29,7 @@ class DisabledObjectStorageService implements ObjectStorageService {
     }
 
     @Override
-    public Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey) {
-        throw new ObjectStorageException(MESSAGE);
-    }
-
-    @Override
     public Optional<StoredObjectMetadata> inspectOptional(String bucket, String objectKey, String versionId) {
-        throw new ObjectStorageException(MESSAGE);
-    }
-
-    @Override
-    public StoredObjectVerification verify(String bucket, String objectKey) {
         throw new ObjectStorageException(MESSAGE);
     }
 
@@ -61,10 +41,6 @@ class DisabledObjectStorageService implements ObjectStorageService {
     @Override
     public List<StoredObjectItem> list(String prefix) {
         throw new ObjectStorageException(MESSAGE);
-    }
-
-    @Override
-    public void delete(String bucket, String objectKey) {
     }
 
     @Override

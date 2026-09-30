@@ -21,12 +21,10 @@ export type MetricPointDto = {
 
 export type ServiceAggregateMetricValueDto = {
   percent: number | null;
-  supported: boolean;
 };
 
 export type ServiceAggregateByteValueDto = {
   bytes: number | null;
-  supported: boolean;
 };
 
 export type ServiceAggregateMetricsDto = {
@@ -70,11 +68,6 @@ export type InfrastructureOverviewDto = {
 export type ServiceLogsSnapshotDto = {
   serviceName: string;
   lines: string[];
-};
-
-export type TerminalSessionDto = {
-  sessionId: string;
-  wsPath: string;
 };
 
 export type OverviewDeltaEvent = {

@@ -1,6 +1,13 @@
+/*
+SPDX-License-Identifier: MIT
+Copyright (c) 2025 Pablo Ulloa Santin
+*/
+
 import { Check, ChevronDown } from "lucide-react";
 import { useId, useMemo, useState } from "react";
+import { CONTROL_HEIGHT } from "./control-size";
 import { cx } from "./cx";
+import { FIELD_FOCUS_RING } from "./focus-ring";
 
 export interface AppComboboxItem {
   id: number;
@@ -39,6 +46,8 @@ export function AppCombobox({
         : items,
     [items, normalizedQuery],
   );
+  const expanded = open && !disabled;
+  const optionId = (index: number) => `${listboxId}-option-${index}`;
   const choose = (item: AppComboboxItem) => {
     onChange(item);
     setQuery(item.label);
@@ -49,7 +58,9 @@ export function AppCombobox({
     <div className="relative">
       <label
         className={cx(
-          "inline-flex w-full items-center gap-3 rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] px-4 py-3 text-sm text-[var(--text-secondary)]",
+          "inline-flex w-full items-center gap-3 rounded-control border border-line bg-surface px-3 text-sm text-fg-secondary transition",
+          CONTROL_HEIGHT.md,
+          FIELD_FOCUS_RING,
           disabled && "cursor-not-allowed opacity-50",
         )}
       >
@@ -57,8 +68,13 @@ export function AppCombobox({
           value={open ? query : (selected?.label ?? query)}
           disabled={disabled}
           placeholder={placeholder}
+          role="combobox"
           aria-label={placeholder}
           aria-controls={listboxId}
+          aria-expanded={expanded}
+          aria-activedescendant={
+            expanded && filtered[activeIndex] ? optionId(activeIndex) : undefined
+          }
           aria-autocomplete="list"
           onFocus={() => {
             setOpen(true);
@@ -89,58 +105,57 @@ export function AppCombobox({
               setOpen(false);
             }
           }}
-          className="w-full bg-transparent text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
+          className="w-full bg-transparent text-fg outline-none placeholder:text-fg-muted"
         />
-        <ChevronDown size={16} className="shrink-0 text-[var(--text-muted)]" />
+        <ChevronDown size={16} className="shrink-0 text-fg-muted" />
       </label>
-      {open && !disabled ? (
+      {expanded ? (
         <div
           id={listboxId}
-          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-card)]"
+          role="listbox"
+          aria-label={placeholder}
+          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-64 overflow-y-auto rounded-menu border border-line bg-surface p-2 shadow-card"
         >
           {filtered.length ? (
             filtered.map((item, index) => (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                aria-current={selected?.id === item.id}
+                id={optionId(index)}
+                role="option"
+                aria-selected={index === activeIndex}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   choose(item);
                 }}
                 className={cx(
-                  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left transition",
-                  index === activeIndex
-                    ? "rounded bg-[var(--surface-muted)]"
-                    : "hover:bg-[var(--surface-muted)]",
+                  "flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left transition",
+                  index === activeIndex ? "bg-surface-muted" : "hover:bg-surface-muted",
                 )}
               >
                 {item.avatarUrl ? (
                   <img
                     src={item.avatarUrl}
                     alt=""
-                    className="size-9 shrink-0 rounded object-cover"
+                    className="size-9 shrink-0 rounded-control object-cover"
                   />
                 ) : (
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded bg-[var(--accent-quiet)] text-xs font-semibold text-[var(--accent-primary-strong)]">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent-subtle text-xs font-semibold text-accent-strong">
                     {item.label.slice(0, 1).toUpperCase()}
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
-                    {item.label}
-                  </span>
+                  <span className="block truncate text-sm font-semibold text-fg">{item.label}</span>
                   {item.description ? (
-                    <span className="block truncate text-xs text-[var(--text-secondary)]">
+                    <span className="block truncate text-xs text-fg-secondary">
                       {item.description}
                     </span>
                   ) : null}
                 </span>
-                {selected?.id === item.id ? <Check size={16} /> : null}
-              </button>
+                {selected?.id === item.id ? <Check size={16} aria-label="Selected" /> : null}
+              </div>
             ))
           ) : (
-            <div className="px-3 py-4 text-sm text-[var(--text-secondary)]">{emptyLabel}</div>
+            <div className="px-3 py-4 text-sm text-fg-secondary">{emptyLabel}</div>
           )}
         </div>
       ) : null}

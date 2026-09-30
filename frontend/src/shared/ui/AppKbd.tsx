@@ -11,7 +11,7 @@ export function AppKbd({ className, ...props }: ComponentProps<"kbd">) {
     <kbd
       {...props}
       className={cx(
-        "inline-flex h-5 min-w-5 items-center justify-center rounded border border-[var(--border-soft)] bg-[var(--surface-secondary)] px-1 text-[0.68rem] font-semibold text-[var(--text-muted)]",
+        "inline-flex h-5 min-w-5 items-center justify-center rounded border border-line bg-surface-subtle px-1 text-2xs font-semibold text-fg-muted",
         className,
       )}
     />

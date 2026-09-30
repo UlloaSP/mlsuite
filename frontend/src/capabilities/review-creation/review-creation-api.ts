@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { appFetch, json } from "@/shared/api/http";
+import type { CreateSchemaReviewRequest, SchemaReviewReviewerDto } from "@/shared/api/openapi.gen";
 import { organizationQueryKey } from "@/shared/api/organization-query-key";
 
 export type ReviewCandidate = {
@@ -21,20 +22,6 @@ export type ReviewCandidateGroup = {
   candidates: ReviewCandidate[];
 };
 
-export type ReviewReviewerDto = {
-  id: number;
-  fullName: string;
-  email: string;
-};
-
-type CreateReviewRequest = {
-  schemaId: number;
-  versionId: number;
-  runIds: number[];
-  reviewerIds: number[];
-  expiresAt?: string;
-};
-
 export const REVIEWS_ROOT_QUERY_KEY = (organizationId: number | string) =>
   [...organizationQueryKey(organizationId), "schemaReviews"] as const;
 export const INFERENCE_REVIEW_ASSIGNMENTS_ROOT_QUERY_KEY = (organizationId: number | string) =>
@@ -48,7 +35,7 @@ export const eligibleReviewersQueryOptions = (organizationId: number | string) =
   queryOptions({
     queryKey: [...REVIEWS_ROOT_QUERY_KEY(organizationId), "eligibleReviewers"],
     queryFn: ({ signal }) =>
-      appFetch<ReviewReviewerDto[]>("/api/schema-reviews/eligible-reviewers", { signal }),
+      appFetch<SchemaReviewReviewerDto[]>("/api/schema-reviews/eligible-reviewers", { signal }),
     enabled: organizationId !== "none",
   });
 
@@ -78,7 +65,7 @@ export function useCreateReviewMutation(organizationId: number | string) {
   const queryClient = useQueryClient();
   return useMutation({
     meta: { errorHandledLocally: true },
-    mutationFn: (request: CreateReviewRequest) =>
+    mutationFn: (request: CreateSchemaReviewRequest) =>
       appFetch<void>("/api/schema-reviews", json("POST", request)),
     onSuccess: () =>
       Promise.all([

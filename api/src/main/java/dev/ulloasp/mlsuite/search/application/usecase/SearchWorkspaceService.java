@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.model.adapter.out.persistence.repository.ModelRepository;
 import dev.ulloasp.mlsuite.organization.adapter.out.persistence.repository.OrganizationMembershipRepository;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
@@ -102,7 +103,7 @@ public class SearchWorkspaceService implements SearchWorkspaceUseCase {
                 predictionRunRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
                 searchQuery,
                 SearchWorkspaceCandidateFactory::fromPredictionRun));
-        workspaceAuthorizationService.requirePluginView(userId, organization.getId());
+        workspaceAuthorizationService.require(userId, organization.getId(), PermissionKey.VIEW_PLUGINS);
         addGroup(groups, "Plugins", rank(
                 pluginMetadataRepository.searchByOrganizationId(organization.getId(), prefilter, candidates),
                 searchQuery,

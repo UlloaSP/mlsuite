@@ -29,7 +29,6 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.organization.domain.model.MembershipStatus;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.organization.domain.model.OrganizationMembership;
-import dev.ulloasp.mlsuite.organization.domain.model.OrganizationRole;
 import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitionRepository;
 import dev.ulloasp.mlsuite.role.application.service.RoleSeedService;
 import dev.ulloasp.mlsuite.role.domain.model.RoleDefinition;
@@ -95,18 +94,15 @@ class ActiveMembershipRuleTest {
         Invitation invitation = new Invitation(
                 organization,
                 user.getEmail(),
-                OrganizationRole.VIEWER,
                 viewer,
                 "token",
                 user(8L),
                 OffsetDateTime.now().plusDays(1));
         OrganizationMembership inactive = membership(organization, user, inactiveStatus);
         inactive.setId(9L);
-        inactive.setRole(OrganizationRole.MEMBER);
         InvitationRepository invitations = mock();
         OrganizationMembershipRepository memberships = mock();
         UserLookupService users = mock();
-        RoleSeedService roles = mock();
         InvitationManagementService service = new InvitationManagementService(
                 mock(WorkspaceAccessService.class),
                 invitations,
@@ -115,7 +111,6 @@ class ActiveMembershipRuleTest {
                 users,
                 mock(WorkspaceAuthorizationService.class),
                 mock(AuditLogService.class),
-                roles,
                 mock(RoleDefinitionRepository.class),
                 mock(UserRepository.class));
         when(users.requireById(7L)).thenReturn(user);
@@ -125,7 +120,6 @@ class ActiveMembershipRuleTest {
         service.acceptInvitation(7L, "token");
 
         assertEquals(MembershipStatus.ACTIVE, inactive.getStatus());
-        assertEquals(OrganizationRole.VIEWER, inactive.getRole());
         assertSame(viewer, inactive.getRoleDefinition());
         assertSame(organization, user.getCurrentOrganization());
         assertEquals(InvitationStatus.ACCEPTED, invitation.getStatus());
@@ -143,13 +137,11 @@ class ActiveMembershipRuleTest {
         Invitation invitation = new Invitation(
                 organization,
                 user.getEmail(),
-                OrganizationRole.VIEWER,
                 viewer,
                 "token",
                 user(8L),
                 OffsetDateTime.now().plusDays(1));
         OrganizationMembership active = membership(organization, user, MembershipStatus.ACTIVE);
-        active.setRole(OrganizationRole.ADMIN);
         active.setRoleDefinition(admin);
         InvitationRepository invitations = mock();
         OrganizationMembershipRepository memberships = mock();
@@ -162,7 +154,6 @@ class ActiveMembershipRuleTest {
                 users,
                 mock(WorkspaceAuthorizationService.class),
                 mock(AuditLogService.class),
-                mock(RoleSeedService.class),
                 mock(RoleDefinitionRepository.class),
                 mock(UserRepository.class));
         when(users.requireById(7L)).thenReturn(user);
@@ -171,7 +162,6 @@ class ActiveMembershipRuleTest {
 
         service.acceptInvitation(7L, "token");
 
-        assertEquals(OrganizationRole.ADMIN, active.getRole());
         assertSame(admin, active.getRoleDefinition());
         assertEquals(InvitationStatus.ACCEPTED, invitation.getStatus());
         verify(memberships, never()).save(any());
@@ -181,7 +171,8 @@ class ActiveMembershipRuleTest {
             Organization organization,
             User user,
             MembershipStatus status) {
-        return new OrganizationMembership(organization, user, OrganizationRole.MEMBER, status);
+        return new OrganizationMembership(organization, user,
+                new RoleDefinition(organization, RoleScope.ORGANIZATION, "Member", "member", "MEMBER"), status);
     }
 
     private Organization organization(Long id) {

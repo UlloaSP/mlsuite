@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -7,8 +10,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Set;
+
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
+import org.springframework.http.HttpStatus;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -23,11 +31,21 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
+import dev.ulloasp.mlsuite.schema.adapter.in.web.PredictionRunController;
+import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.service.PredictionRunServiceImpl;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedbackType;
+import dev.ulloasp.mlsuite.schema.domain.model.PredictionRunStatus;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionRun;
+import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
+import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,44 +57,91 @@ class PredictionRunCatalogTest {
     @Mock private PredictionResultRepository results;
     @Mock private PredictionResultFeedbackRepository feedback;
     @Mock private ModelRepository models;
-    @Mock private WorkspaceAccessService workspace;
     @Mock private WorkspaceAuthorizationService authorization;
     @InjectMocks private PredictionRunServiceImpl service;
+    private CurrentUser user;
 
     @Test
     void listsOnlyCurrentOrganizationRunsNewestFirst() {
         Organization organization = organization();
         PredictionRun run = new PredictionRun();
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(runs.findByOrganizationIdOrderByCreatedAtDesc(41L)).thenReturn(List.of(run));
 
         assertEquals(List.of(run), service.listOrganizationRuns(7L));
-        verify(authorization).requireModelView(7L, 41L);
+        verify(authorization).requireCurrent(7L, PermissionKey.VIEW_MODELS);
     }
 
     @Test
     void rejectsCatalogWithoutModelViewPermission() {
         Organization organization = organization();
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
-        org.mockito.Mockito.doThrow(new OrganizationAccessDeniedException(41L))
-                .when(authorization).requireModelView(7L, 41L);
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
+        when(authorization.requireCurrent(7L, PermissionKey.VIEW_MODELS)).thenThrow(new OrganizationAccessDeniedException(41L));
 
         assertThrows(OrganizationAccessDeniedException.class, () -> service.listOrganizationRuns(7L));
+    }
+
+    @Test
+    void tableJoinsRunsWithResultsFeedbackAndEachVersionOnce() {
+        allowRead();
+        PredictionRun first = tableRun(12L);
+        PredictionRun second = tableRun(13L);
+        PredictionResult result = SchemaFlowFixtures.predictionResult();
+        PredictionResultFeedback answer = new PredictionResultFeedback(result, SchemaFlowFixtures.user(),
+                PredictionResultFeedbackType.OUTPUT, 0, JsonNodeFactory.instance.textNode("Yes"));
+        when(runs.findByOrganizationIdOrderByCreatedAtDesc(41L)).thenReturn(List.of(first, second));
+        when(results.findByOrganizationId(41L)).thenReturn(List.of(result));
+        when(feedback.findByOrganizationId(41L)).thenReturn(List.of(answer));
+        when(bindings.findBySchemaVersionIdIn(Set.of(9L)))
+                .thenReturn(List.of(SchemaFlowFixtures.binding(first.getSchemaVersion(), 11L)));
+
+        InferenceTableDto table = controller().table(user).getBody();
+
+        assertEquals(List.of(12L, 13L), table.runs().stream().map(run -> run.summary().id()).toList());
+        assertEquals(52, table.runs().getFirst().inputData().get("age"));
+        assertEquals(List.of(77L), table.results().stream().map(PredictionResultDto::id).toList());
+        assertEquals(List.of(77L), table.feedback().stream().map(PredictionResultFeedbackDto::resultId).toList());
+        assertEquals(1, table.versions().size());
+        assertEquals(9L, table.versions().getFirst().id());
+        assertEquals(11L, table.versions().getFirst().bindings().getFirst().modelId());
+        verify(authorization).requireCurrent(7L, PermissionKey.VIEW_MODELS);
+    }
+
+    @Test
+    void emptyOrganizationTableSkipsVersionBindings() {
+        allowRead();
+        when(runs.findByOrganizationIdOrderByCreatedAtDesc(41L)).thenReturn(List.of());
+
+        InferenceTableDto table = service.getOrganizationInferenceTable(7L);
+
+        assertEquals(List.of(), table.runs());
+        assertEquals(List.of(), table.versions());
+        verify(bindings, never()).findBySchemaVersionIdIn(any());
+    }
+
+    @Test
+    void tableRejectsUserWithoutModelViewPermission() {
+        allowRead();
+        when(authorization.requireCurrent(7L, PermissionKey.VIEW_MODELS)).thenThrow(new OrganizationAccessDeniedException(41L));
+
+        assertThrows(OrganizationAccessDeniedException.class, () -> service.getOrganizationInferenceTable(7L));
+        verify(runs, never()).findByOrganizationIdOrderByCreatedAtDesc(any());
+        verify(feedback, never()).findByOrganizationId(any());
     }
 
     @Test
     void deletesOrganizationInferenceAndItsDependentResults() {
         Organization organization = organization();
         PredictionRun run = new PredictionRun();
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
 
         service.deleteRun(7L, 12L);
 
-        verify(authorization).requireRunPredictions(7L, 41L);
+        verify(authorization).requireCurrent(7L, PermissionKey.RUN_PREDICTIONS);
         verify(feedback).deleteByResult_Run_Id(12L);
         verify(results).deleteByRun_Id(12L);
         verify(runs).delete(run);
@@ -86,8 +151,8 @@ class PredictionRunCatalogTest {
     void rejectsDeletingInferenceIncludedInReview() {
         Organization organization = organization();
         PredictionRun run = new PredictionRun();
-        when(users.requireById(7L)).thenReturn(new User());
-        when(workspace.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
         when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
         when(runs.isIncludedInReview(12L)).thenReturn(true);
 
@@ -95,6 +160,59 @@ class PredictionRunCatalogTest {
 
         verify(results, never()).deleteByRun_Id(12L);
         verify(runs, never()).delete(run);
+    }
+
+    @Test
+    void summaryReturnsTheCatalogItemOfAnOrganizationRun() {
+        allowRead();
+        PredictionRun run = new PredictionRun(SchemaFlowFixtures.bookmark(), SchemaFlowFixtures.version(), "case-1",
+                java.util.Map.of(), PredictionRunStatus.SUCCESS);
+        run.setId(12L);
+        when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.of(run));
+
+        var response = controller().summary(user, 12L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(PredictionRunCatalogItemDto.from(run), response.getBody());
+        assertEquals(70L, response.getBody().bookmarkId());
+        verify(authorization).requireCurrent(7L, PermissionKey.VIEW_MODELS);
+    }
+
+    @Test
+    void summaryIsNotFoundForUnknownOrOtherOrganizationRun() {
+        allowRead();
+        when(runs.findByIdAndOrganizationId(12L, 41L)).thenReturn(java.util.Optional.empty());
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> controller().summary(user, 12L));
+
+        assertEquals(HttpStatus.NOT_FOUND, error.getStatusCode());
+    }
+
+    @Test
+    void summaryRejectsUserWithoutModelViewPermission() {
+        allowRead();
+        when(authorization.requireCurrent(7L, PermissionKey.VIEW_MODELS)).thenThrow(new OrganizationAccessDeniedException(41L));
+
+        assertThrows(OrganizationAccessDeniedException.class, () -> controller().summary(user, 12L));
+        verify(runs, never()).findByIdAndOrganizationId(12L, 41L);
+    }
+
+    private PredictionRunController controller() {
+        user = new CurrentUser(7L, "alice", SystemRole.USER);
+        return new PredictionRunController(service, results);
+    }
+
+    private PredictionRun tableRun(Long id) {
+        PredictionRun run = new PredictionRun(SchemaFlowFixtures.bookmark(), SchemaFlowFixtures.version(), "case-" + id,
+                java.util.Map.of("age", 52), PredictionRunStatus.SUCCESS);
+        run.setId(id);
+        return run;
+    }
+
+    private void allowRead() {
+        lenient().when(users.requireById(7L)).thenReturn(new User());
+        lenient().when(authorization.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization());
     }
 
     private Organization organization() {

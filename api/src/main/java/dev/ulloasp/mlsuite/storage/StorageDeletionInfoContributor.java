@@ -5,15 +5,13 @@ import java.util.Map;
 import org.springframework.boot.actuate.info.Info;
 import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class StorageDeletionInfoContributor implements InfoContributor {
 
     private final StorageDeletionTaskRepository tasks;
-
-    public StorageDeletionInfoContributor(StorageDeletionTaskRepository tasks) {
-        this.tasks = tasks;
-    }
 
     @Override
     public void contribute(Info.Builder builder) {

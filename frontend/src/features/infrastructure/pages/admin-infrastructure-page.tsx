@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppLoadingState } from "@/shared/ui/AppLoadingState";
 import { AppPage } from "@/shared/ui/AppPage";
 import { AppSurface } from "@/shared/ui/AppSurface";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
 import { useUser } from "@/capabilities/workspace-context/session";
 import { AlertsView } from "@/features/infrastructure/components/AlertsView";
@@ -12,26 +14,26 @@ import { OverviewView } from "@/features/infrastructure/components/OverviewView"
 import { ServicesView } from "@/features/infrastructure/components/ServicesView";
 import { TerminalView } from "@/features/infrastructure/components/TerminalView";
 import {
+  infrastructureOverviewQueryOptions,
   useInfrastructureOverview,
   useServiceLogsSnapshot,
 } from "@/features/infrastructure/api/infrastructure.queries";
 import { useServiceAction } from "@/features/infrastructure/api/infrastructure.mutations";
 import {
   appendLogLine,
-  confirmServiceAction,
+  serviceActionConfirmation,
   applyInfrastructureEvent,
   resolveSelectedService,
 } from "@/features/infrastructure/lib/infrastructure-state";
 import {
-  isOverviewSnapshotEvent,
   isServiceLogEvent,
   type InfrastructureEvent,
-  type InfrastructureOverviewDto,
 } from "@/features/infrastructure/api/infrastructure.types";
 import {
   openInfrastructureSocket,
   subscribeToServiceLogs,
 } from "@/features/infrastructure/lib/infrastructure-socket";
+import { useActionDialog } from "@/shared/ui/use-action-dialog";
 
 type InfraTab = "overview" | "services" | "logs" | "terminal" | "alerts";
 
@@ -39,11 +41,13 @@ const INFRA_TABS: InfraTab[] = ["overview", "services", "logs", "terminal", "ale
 
 export function AdminInfrastructurePage() {
   const { data: user } = useUser();
-  const { data, isLoading } = useInfrastructureOverview();
+  const queryClient = useQueryClient();
+  const { data: overview, isLoading, refetch } = useInfrastructureOverview();
   const showLoading = useStableLoading(isLoading);
   const action = useServiceAction();
-  const [overview, setOverview] = useState<InfrastructureOverviewDto | null>(null);
-  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const actionDialog = useActionDialog();
+  const [requestedService, setRequestedService] = useState<string | null>(null);
+  const selectedService = overview ? resolveSelectedService(requestedService, overview) : null;
   const [logLines, setLogLines] = useState<string[]>([]);
   const [streamConnected, setStreamConnected] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -62,12 +66,6 @@ export function AdminInfrastructurePage() {
     selectedServiceRef.current = selectedService;
   }, [selectedService]);
 
-  useEffect(() => {
-    if (!data) return;
-    setOverview(data);
-    setSelectedService((current) => resolveSelectedService(current, data));
-  }, [data]);
-
   // react-doctor-disable-next-line react-doctor/no-effect-chain, react-doctor/no-derived-state -- Log snapshot is keyed by selected service and must reset only after that query resolves.
   useEffect(() => {
     if (!selectedServiceLogs.data || selectedServiceLogs.data.serviceName !== selectedService)
@@ -83,10 +81,9 @@ export function AdminInfrastructurePage() {
       onClose: () => setStreamConnected(false),
       onError: () => setStreamConnected(false),
       onMessage: (event: InfrastructureEvent) => {
-        setOverview((current) => applyInfrastructureEvent(current, event));
-        if (isOverviewSnapshotEvent(event)) {
-          setSelectedService((current) => resolveSelectedService(current, event.payload));
-        }
+        queryClient.setQueryData(infrastructureOverviewQueryOptions().queryKey, (current) =>
+          applyInfrastructureEvent(current, event),
+        );
         if (isServiceLogEvent(event)) {
           setLogLines((current) => appendLogLine(current, event, selectedServiceRef.current));
         }
@@ -97,7 +94,7 @@ export function AdminInfrastructurePage() {
       socket.close();
       socketRef.current = null;
     };
-  }, []);
+  }, [queryClient]);
 
   // react-doctor-disable-next-line react-doctor/no-effect-chain -- Socket subscription must follow the latest selected service and connection state.
   useEffect(() => {
@@ -110,76 +107,88 @@ export function AdminInfrastructurePage() {
     return <Navigate to="/workspace" replace />;
   }
 
-  const currentOverview = overview ?? data;
   const selectedStatus =
-    currentOverview?.services.find((service) => service.name === selectedService) ?? null;
+    overview?.services.find((service) => service.name === selectedService) ?? null;
 
   const handleSelectService = (serviceName: string) => {
-    setSelectedService(serviceName);
+    setRequestedService(serviceName);
     setLogLines([]);
   };
 
   return (
     <AppPage>
-      <AppSurface className="flex flex-1 flex-col overflow-auto app-scroll bg-[var(--page-bg)]">
-        <div className="flex-1 px-6 py-5">
-          {currentOverview && !showLoading ? (
-            <>
-              {activeTab === "overview" && (
-                <OverviewView
-                  overview={currentOverview}
-                  streamConnected={streamConnected}
-                  onNavigateTab={setActiveTab}
-                />
-              )}
-              {activeTab === "services" && (
-                <ServicesView
-                  services={currentOverview.services}
-                  selectedService={selectedService}
-                  busyService={action.isPending ? (action.variables?.serviceName ?? null) : null}
-                  onSelect={(name) => {
-                    handleSelectService(name);
-                  }}
-                  onAction={(name, a) => {
-                    if (confirmServiceAction(name, a))
-                      action.mutate({ serviceName: name, action: a });
-                  }}
-                />
-              )}
-              {activeTab === "logs" && (
-                <LogsView
-                  services={currentOverview.services}
-                  selectedService={selectedService}
-                  logLines={logLines}
-                  streamConnected={streamConnected}
-                  onSelectService={handleSelectService}
-                />
-              )}
-              {activeTab === "terminal" && (
-                <TerminalView
-                  services={currentOverview.services}
-                  selectedService={selectedService}
-                  terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
-                  onSelectService={handleSelectService}
-                />
-              )}
-              {activeTab === "alerts" && (
-                <AlertsView
-                  overview={currentOverview}
-                  streamConnected={streamConnected}
-                  selectedService={selectedService}
-                />
-              )}
-            </>
-          ) : showLoading ? (
-            <AppLoadingState label="Loading infrastructure snapshot" />
-          ) : (
-            <AppEmptyState
-              title="No infrastructure snapshot"
-              description="The dashboard needs an ops-agent overview before it can render service metrics and controls."
+      {actionDialog.dialog}
+      {/* Each view renders its own page header; the loading and empty states share this one. */}
+      <AppSurface className="app-scroll flex flex-1 flex-col gap-6 overflow-auto">
+        {overview && !showLoading ? (
+          <>
+            {activeTab === "overview" && (
+              <OverviewView
+                overview={overview}
+                streamConnected={streamConnected}
+                onNavigateTab={setActiveTab}
+              />
+            )}
+            {activeTab === "services" && (
+              <ServicesView
+                services={overview.services}
+                selectedService={selectedService}
+                busyService={action.isPending ? (action.variables?.serviceName ?? null) : null}
+                onSelect={handleSelectService}
+                onSync={() => void refetch()}
+                onAction={(name, a) => {
+                  const confirmation = serviceActionConfirmation(name, a);
+                  void (async () => {
+                    if (confirmation && !(await actionDialog.confirm(confirmation))) return;
+                    action.mutate({ serviceName: name, action: a });
+                  })();
+                }}
+              />
+            )}
+            {activeTab === "logs" && (
+              <LogsView
+                services={overview.services}
+                selectedService={selectedService}
+                logLines={logLines}
+                streamConnected={streamConnected}
+                onSelectService={handleSelectService}
+              />
+            )}
+            {activeTab === "terminal" && (
+              <TerminalView
+                services={overview.services}
+                selectedService={selectedService}
+                terminalEnabled={Boolean(selectedStatus?.terminalEnabled)}
+                onSelectService={handleSelectService}
+              />
+            )}
+            {activeTab === "alerts" && (
+              <AlertsView
+                overview={overview}
+                streamConnected={streamConnected}
+                selectedService={selectedService}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <AppPageHeader
+              breadcrumbScope="platform"
+              breadcrumbs={[{ label: "Infrastructure" }]}
+              eyebrow="Superadmin"
+              title="Infrastructure"
+              description="Managed services, live logs, shell access, and aggregate resource use."
             />
-          )}
-        </div>
+            {showLoading ? (
+              <AppLoadingState label="Loading infrastructure snapshot…" />
+            ) : (
+              <AppEmptyState
+                title="No infrastructure snapshot"
+                description="The dashboard needs an ops-agent overview before it can render service metrics and controls."
+              />
+            )}
+          </>
+        )}
       </AppSurface>
     </AppPage>
   );

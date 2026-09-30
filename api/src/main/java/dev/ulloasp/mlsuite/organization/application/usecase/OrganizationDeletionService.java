@@ -15,8 +15,10 @@ import dev.ulloasp.mlsuite.role.adapter.out.persistence.repository.RoleDefinitio
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.review.adapter.out.persistence.repository.SchemaReviewRepository;
 import dev.ulloasp.mlsuite.user.adapter.out.persistence.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class OrganizationDeletionService {
 
     private final OrganizationRepository organizationRepository;
@@ -29,29 +31,6 @@ public class OrganizationDeletionService {
     private final SchemaReviewRepository reviewRepository;
     private final AuditEventRepository auditRepository;
     private final UserRepository userRepository;
-
-    public OrganizationDeletionService(
-            OrganizationRepository organizationRepository,
-            OrganizationMembershipRepository membershipRepository,
-            ModelRepository modelRepository,
-            SchemaRepository schemaRepository,
-            PluginMetadataRepository pluginRepository,
-            InvitationRepository invitationRepository,
-            RoleDefinitionRepository roleRepository,
-            SchemaReviewRepository reviewRepository,
-            AuditEventRepository auditRepository,
-            UserRepository userRepository) {
-        this.organizationRepository = organizationRepository;
-        this.membershipRepository = membershipRepository;
-        this.modelRepository = modelRepository;
-        this.schemaRepository = schemaRepository;
-        this.pluginRepository = pluginRepository;
-        this.invitationRepository = invitationRepository;
-        this.roleRepository = roleRepository;
-        this.reviewRepository = reviewRepository;
-        this.auditRepository = auditRepository;
-        this.userRepository = userRepository;
-    }
 
     public void delete(Long organizationId) {
         var organization = organizationRepository.findById(organizationId)

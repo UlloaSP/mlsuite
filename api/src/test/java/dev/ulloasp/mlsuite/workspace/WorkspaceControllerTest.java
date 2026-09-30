@@ -13,14 +13,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
-import dev.ulloasp.mlsuite.security.identity.CurrentUserResolver;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
-import dev.ulloasp.mlsuite.workspace.adapter.in.web.WorkspaceControllerImpl;
+import dev.ulloasp.mlsuite.workspace.adapter.in.web.WorkspaceController;
 import dev.ulloasp.mlsuite.workspace.application.dto.WorkspaceContextDto;
 import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase;
 
@@ -28,19 +26,14 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
 class WorkspaceControllerTest {
 
     @Mock
-    private CurrentUserResolver currentUserResolver;
-
-    @Mock
     private WorkspaceContextUseCase workspaceContextUseCase;
+    private CurrentUser user;
 
-    @Mock
-    private Authentication authentication;
-
-    private WorkspaceControllerImpl controller;
+    private WorkspaceController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new WorkspaceControllerImpl(currentUserResolver, workspaceContextUseCase);
+        controller = new WorkspaceController(workspaceContextUseCase);
     }
 
     @Test
@@ -52,10 +45,10 @@ class WorkspaceControllerTest {
                 null,
                 null,
                 null);
-        when(currentUserResolver.resolve(authentication)).thenReturn(new CurrentUser(7L, "alice", SystemRole.USER));
+        user = new CurrentUser(7L, "alice", SystemRole.USER);
         when(workspaceContextUseCase.getContext(7L)).thenReturn(context);
 
-        var response = controller.getContext(authentication);
+        var response = controller.getContext(user);
         var json = new ObjectMapper().valueToTree(response.getBody());
 
         assertEquals(HttpStatus.OK, response.getStatusCode());

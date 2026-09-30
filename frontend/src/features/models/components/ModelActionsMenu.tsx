@@ -3,17 +3,15 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Archive, Copy, Ellipsis, Pencil, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { AppIconButton } from "@/shared/ui/AppIconButton";
-import { cx } from "@/shared/ui/cx";
+import { Archive, Copy, Pencil, Trash2 } from "lucide-react";
+import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
 
 export type ModelAction = "archive" | "delete" | "duplicate" | "edit";
 
 const ACTIONS: Array<{
   value: ModelAction;
   label: string;
-  icon: typeof Pencil;
+  icon: AppMenuAction["icon"];
 }> = [
   { value: "edit", label: "Edit", icon: Pencil },
   { value: "duplicate", label: "Duplicate", icon: Copy },
@@ -36,65 +34,15 @@ export function ModelActionsMenu({
   modelName,
   onAction,
 }: ModelActionsMenuProps) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
+  const actions = ACTIONS.filter(
+    ({ value }) => !(archived && value === "archive") && (value === "delete" ? canDelete : canEdit),
+  ).map<AppMenuAction>(({ value, label, icon }) => ({
+    key: value,
+    label,
+    icon,
+    onSelect: () => onAction(value),
+    tone: value === "delete" ? "danger" : undefined,
+  }));
 
-  useEffect(() => {
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
-  }, []);
-
-  return (
-    <div ref={rootRef} className="relative">
-      <AppIconButton
-        type="button"
-        aria-label={`Open actions for ${modelName}`}
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((current) => !current);
-        }}
-      >
-        <Ellipsis size={18} />
-      </AppIconButton>
-
-      {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 min-w-[180px] rounded border border-[var(--border-soft)] bg-[var(--surface-primary)] p-2 shadow-[var(--shadow-hover)]">
-          {ACTIONS.reduce<React.JSX.Element[]>((items, action) => {
-            if (archived && action.value === "archive") return items;
-            if (!(action.value === "delete" ? canDelete : canEdit)) {
-              return items;
-            }
-            const Icon = action.icon;
-            items.push(
-              <button
-                key={action.value}
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onAction(action.value);
-                  setOpen(false);
-                }}
-                className={cx(
-                  "flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium transition",
-                  action.value === "delete"
-                    ? "text-[var(--danger-text)] hover:bg-[var(--danger-quiet)]"
-                    : "text-[var(--text-primary)] hover:bg-[var(--surface-muted)]",
-                )}
-              >
-                <Icon size={15} />
-                {action.label}
-              </button>,
-            );
-            return items;
-          }, [])}
-        </div>
-      ) : null}
-    </div>
-  );
+  return <AppActionsMenu label={`Open actions for ${modelName}`} actions={actions} />;
 }

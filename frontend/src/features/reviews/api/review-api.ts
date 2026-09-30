@@ -1,11 +1,12 @@
 import { appFetch, json } from "@/shared/api/http";
 import type {
-  CreateReviewFeedbackRequest,
-  ReviewPredictionResultFeedbackDto,
+  CreatePredictionResultFeedbackRequest,
+  PredictionResultFeedbackDto,
   SchemaReviewContextDto,
   SchemaReviewRunDetailDto,
-  UpdateReviewFeedbackRequest,
-} from "./review-types";
+  SubmitSchemaReviewRunsRequest,
+  UpdatePredictionResultFeedbackRequest,
+} from "@/shared/api/openapi.gen";
 
 export const getSchemaReviewInbox = (signal?: AbortSignal) =>
   appFetch<SchemaReviewContextDto[]>("/api/schema-reviews/inbox", { signal });
@@ -23,9 +24,9 @@ export const getSchemaReviewRunDetail = (
 export const createSchemaReviewFeedback = (
   reviewId: string,
   reviewRunId: string,
-  request: CreateReviewFeedbackRequest,
+  request: CreatePredictionResultFeedbackRequest,
 ) =>
-  appFetch<ReviewPredictionResultFeedbackDto>(
+  appFetch<PredictionResultFeedbackDto>(
     `/api/schema-reviews/${encodeURIComponent(reviewId)}/runs/${encodeURIComponent(reviewRunId)}/feedback`,
     json("POST", request),
   );
@@ -33,9 +34,9 @@ export const createSchemaReviewFeedback = (
 export const updateSchemaReviewFeedback = (
   reviewId: string,
   reviewRunId: string,
-  request: UpdateReviewFeedbackRequest,
+  request: UpdatePredictionResultFeedbackRequest,
 ) =>
-  appFetch<ReviewPredictionResultFeedbackDto>(
+  appFetch<PredictionResultFeedbackDto>(
     `/api/schema-reviews/${encodeURIComponent(reviewId)}/runs/${encodeURIComponent(reviewRunId)}/feedback`,
     json("PATCH", request),
   );
@@ -43,5 +44,5 @@ export const updateSchemaReviewFeedback = (
 export const submitSchemaReviewRuns = (reviewId: string, reviewRunIds: string[]) =>
   appFetch<void>(
     `/api/schema-reviews/${encodeURIComponent(reviewId)}/submit`,
-    json("POST", { reviewRunIds }),
+    json("POST", { reviewRunIds } satisfies SubmitSchemaReviewRunsRequest),
   );

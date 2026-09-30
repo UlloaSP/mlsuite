@@ -1,5 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
+import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -9,6 +12,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,14 +26,12 @@ import dev.ulloasp.mlsuite.schema.application.service.PredictionResultFeedbackSe
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
 import dev.ulloasp.mlsuite.user.application.service.UserLookupService;
 import dev.ulloasp.mlsuite.user.domain.model.User;
-import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAccessService;
 import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationService;
 
 @ExtendWith(MockitoExtension.class)
 class PredictionFeedbackBatchServiceTest {
 
     @Mock private UserLookupService userLookupService;
-    @Mock private WorkspaceAccessService workspaceAccessService;
     @Mock private WorkspaceAuthorizationService authorizationService;
     @Mock private PredictionResultRepository resultRepository;
     @Mock private PredictionResultFeedbackRepository feedbackRepository;
@@ -38,12 +40,12 @@ class PredictionFeedbackBatchServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PredictionResultFeedbackService(userLookupService, workspaceAccessService,
+        service = new PredictionResultFeedbackService(userLookupService,
                 authorizationService, resultRepository, feedbackRepository, runRepository);
         Organization organization = new Organization();
         organization.setId(41L);
-        when(userLookupService.requireById(7L)).thenReturn(new User());
-        when(workspaceAccessService.requireCurrentOrganization(7L)).thenReturn(organization);
+        lenient().when(userLookupService.requireById(7L)).thenReturn(new User());
+        lenient().when(authorizationService.requireCurrent(eq(7L), any(PermissionKey[].class))).thenReturn(organization);
     }
 
     @Test

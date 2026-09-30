@@ -5,11 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { getPluginPage, getPluginStats } from "./plugin.api";
-import {
-  PLUGIN_CATALOG_PAGE_SIZE,
-  PLUGIN_CATALOG_STATS_QUERY_KEY,
-  pluginCatalogPageQueryKey,
-} from "./plugin.keys";
+import { PLUGIN_CATALOG_PAGE_SIZE, pluginCatalogKeys } from "./plugin.keys";
 import type { PluginCatalogSort, PluginCatalogType } from "./plugin.types";
 
 export const pluginCatalogPageQueryOptions = (
@@ -20,7 +16,7 @@ export const pluginCatalogPageQueryOptions = (
   sort: PluginCatalogSort,
 ) =>
   queryOptions({
-    queryKey: pluginCatalogPageQueryKey(organizationId, page, type, search, sort),
+    queryKey: pluginCatalogKeys.page(organizationId, page, type, search, sort),
     queryFn: ({ signal }) =>
       getPluginPage({ page, search, size: PLUGIN_CATALOG_PAGE_SIZE, sort, type }, signal),
     enabled: Boolean(organizationId),
@@ -29,7 +25,7 @@ export const pluginCatalogPageQueryOptions = (
 
 export const pluginCatalogStatsQueryOptions = (organizationId: number | string | undefined) =>
   queryOptions({
-    queryKey: PLUGIN_CATALOG_STATS_QUERY_KEY(organizationId ?? "none"),
+    queryKey: pluginCatalogKeys.stats(organizationId),
     queryFn: ({ signal }) => getPluginStats(signal),
     enabled: Boolean(organizationId),
     placeholderData: keepPreviousData,

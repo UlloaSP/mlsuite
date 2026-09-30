@@ -7,7 +7,5 @@ import type { HTMLAttributes } from "react";
 import { cx } from "./cx";
 
 export function AppCopy({ children, className }: HTMLAttributes<HTMLParagraphElement>) {
-  return (
-    <p className={cx("text-sm leading-7 text-[var(--text-secondary)]", className)}>{children}</p>
-  );
+  return <p className={cx("text-sm leading-7 text-fg-secondary", className)}>{children}</p>;
 }
