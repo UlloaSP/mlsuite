@@ -4,6 +4,7 @@ import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs
 import { INFERENCE_REVIEW_ASSIGNMENTS_QUERY_KEY } from "@/capabilities/review-creation/review-creation-api";
 import { appFetch } from "@/shared/api/http";
 import type {
+  InferenceTableDto,
   PredictionRunCatalogItemDto,
   SchemaReviewAssignmentStatusDto,
 } from "@/shared/api/openapi.gen";
@@ -21,6 +22,14 @@ export const inferenceCatalogQueryOptions = (organizationId: number | string) =>
     queryKey: INFERENCES_QUERY_KEY(organizationId),
     queryFn: ({ signal }) =>
       appFetch<PredictionRunCatalogItemDto[]>("/api/prediction-runs", { signal }),
+    enabled: organizationId !== "none",
+  });
+
+/** Nested under the catalog key, so creating or deleting a run refreshes the table too. */
+export const inferenceTableQueryOptions = (organizationId: number | string) =>
+  queryOptions({
+    queryKey: [...INFERENCES_QUERY_KEY(organizationId), "table"] as const,
+    queryFn: ({ signal }) => appFetch<InferenceTableDto>("/api/prediction-runs/table", { signal }),
     enabled: organizationId !== "none",
   });
 
@@ -59,6 +68,11 @@ export const inferenceReviewAssignmentsQueryOptions = (
 export const useInferenceCatalog = () => {
   const organizationId = useCurrentOrganizationId() ?? "none";
   return useQuery(inferenceCatalogQueryOptions(organizationId));
+};
+
+export const useInferenceTableData = () => {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  return useQuery(inferenceTableQueryOptions(organizationId));
 };
 
 export const useInference = (inferenceId: string) => {

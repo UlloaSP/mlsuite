@@ -756,6 +756,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/prediction-runs/table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["table"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/prediction-runs/{runId}": {
         parameters: {
             query?: never;
@@ -1483,6 +1499,18 @@ export interface components {
                 [key: string]: unknown;
             };
             traces?: components["schemas"]["TraceRequest"][] | null;
+        };
+        InferenceTableDto: {
+            feedback: components["schemas"]["PredictionResultFeedbackDto"][];
+            results: components["schemas"]["PredictionResultDto"][];
+            runs: components["schemas"]["InferenceTableRunDto"][];
+            versions: components["schemas"]["SchemaVersionDto"][];
+        };
+        InferenceTableRunDto: {
+            inputData: {
+                [key: string]: unknown;
+            };
+            summary: components["schemas"]["PredictionRunCatalogItemDto"];
         };
         InvitationCandidateDto: {
             avatarUrl: string | null;
@@ -2269,6 +2297,8 @@ export type Dependency = components['schemas']['Dependency'];
 export type DuplicateRoleRequest = components['schemas']['DuplicateRoleRequest'];
 export type ErrorDto = components['schemas']['ErrorDto'];
 export type ExplainRequest = components['schemas']['ExplainRequest'];
+export type InferenceTableDto = components['schemas']['InferenceTableDto'];
+export type InferenceTableRunDto = components['schemas']['InferenceTableRunDto'];
 export type InvitationCandidateDto = components['schemas']['InvitationCandidateDto'];
 export type InvitationDto = components['schemas']['InvitationDto'];
 export type JsonNode = components['schemas']['JsonNode'];
@@ -3838,6 +3868,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionRunSequenceDto"];
+                };
+            };
+        };
+    };
+    table: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InferenceTableDto"];
                 };
             };
         };

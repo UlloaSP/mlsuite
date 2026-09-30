@@ -1,9 +1,11 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,11 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookm
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionResultRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PredictionResultFeedbackDto;
+import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableRunDto;
+import dev.ulloasp.mlsuite.schema.application.dto.SchemaVersionDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 import dev.ulloasp.mlsuite.schema.domain.model.PredictionResultFeedback;
@@ -70,6 +77,24 @@ public class PredictionRunServiceImpl implements PredictionRunUseCase {
     @Override
     public List<PredictionRun> listOrganizationRuns(Long userId) {
         return runRepository.findByOrganizationIdOrderByCreatedAtDesc(requireRead(userId));
+    }
+
+    @Override
+    public InferenceTableDto getOrganizationInferenceTable(Long userId) {
+        Long organizationId = requireRead(userId);
+        List<PredictionRun> runs = runRepository.findByOrganizationIdOrderByCreatedAtDesc(organizationId);
+        Map<Long, SchemaVersion> versions = new LinkedHashMap<>();
+        runs.forEach(run -> versions.putIfAbsent(run.getSchemaVersion().getId(), run.getSchemaVersion()));
+        Map<Long, List<SchemaModelBinding>> bindings = versions.isEmpty() ? Map.of()
+                : bindingRepository.findBySchemaVersionIdIn(versions.keySet()).stream()
+                        .collect(Collectors.groupingBy(binding -> binding.getSchemaVersion().getId()));
+        return new InferenceTableDto(
+                runs.stream().map(InferenceTableRunDto::from).toList(),
+                PredictionResultDto.fromList(resultRepository.findByOrganizationId(organizationId)),
+                PredictionResultFeedbackDto.fromList(feedbackRepository.findByOrganizationId(organizationId)),
+                versions.values().stream()
+                        .map(version -> SchemaVersionDto.from(version, bindings.getOrDefault(version.getId(), List.of())))
+                        .toList());
     }
 
     @Override

@@ -3,7 +3,6 @@ import { useLocation, useSearchParams } from "react-router";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { CatalogListPanel } from "@/shared/ui/catalog/CatalogListPanel";
 import { useClientCatalogPage } from "@/shared/ui/catalog/useClientCatalogPage";
-import { InferenceCatalogList } from "@/features/inferences/components/InferenceCatalogList";
 import { buttonByText, click, mount, type Mounted } from "./support/dom";
 
 let host: HTMLDivElement;
@@ -151,43 +150,4 @@ test("shows empty and request failure states with retry", async () => {
   expect(host.textContent).toContain(error);
   await click("Retry", host);
   expect(retry).toHaveBeenCalledOnce();
-});
-
-test("renders inferences as individual keyboard-focusable catalog entries", async () => {
-  ({ host } = await mount(
-    <InferenceCatalogList
-      canDelete={false}
-      canManageReviews={false}
-      deletePending={false}
-      onDelete={vi.fn()}
-      items={[
-        {
-          id: 1,
-          name: "Organization run",
-          createdByName: "Ada Lovelace",
-          createdByEmail: "ada@example.com",
-          schemaId: 2,
-          schemaName: "Risk",
-          schemaVersionId: 3,
-          schemaVersion: 1,
-          schemaVersionName: "First",
-          bookmarkId: null,
-          bookmarkName: null,
-          createdAt: "2026-09-09T10:00:00Z",
-          updatedAt: "2026-09-09T10:00:00Z",
-          status: "PARTIAL_SUCCESS",
-        },
-      ]}
-    />,
-    { route: "/" },
-  ));
-  expect(host.querySelectorAll("article")).toHaveLength(1);
-  expect(host.querySelector("table")).toBeNull();
-  expect(host.textContent).toContain("Partial success");
-  expect(host.textContent).toContain("By Ada Lovelace");
-  // Rows are real links, so they can be focused and opened in a new tab.
-  const entries = [...host.querySelectorAll<HTMLAnchorElement>("article a")];
-  expect(entries.map((entry) => entry.getAttribute("href"))).toContain("/inferences/1");
-  entries[0].focus();
-  expect(document.activeElement).toBe(entries[0]);
 });

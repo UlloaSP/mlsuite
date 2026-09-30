@@ -769,6 +769,57 @@
         ],
         "type": "object"
       },
+      "InferenceTableDto": {
+        "properties": {
+          "feedback": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionResultFeedbackDto"
+            },
+            "type": "array"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/PredictionResultDto"
+            },
+            "type": "array"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/InferenceTableRunDto"
+            },
+            "type": "array"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/SchemaVersionDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "feedback",
+          "results",
+          "runs",
+          "versions"
+        ],
+        "type": "object"
+      },
+      "InferenceTableRunDto": {
+        "properties": {
+          "inputData": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/PredictionRunCatalogItemDto"
+          }
+        },
+        "required": [
+          "inputData",
+          "summary"
+        ],
+        "type": "object"
+      },
       "InvitationCandidateDto": {
         "properties": {
           "avatarUrl": {
@@ -5768,6 +5819,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PredictionRunSequenceDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/prediction-runs/table": {
+      "get": {
+        "operationId": "table",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InferenceTableDto"
                 }
               }
             },

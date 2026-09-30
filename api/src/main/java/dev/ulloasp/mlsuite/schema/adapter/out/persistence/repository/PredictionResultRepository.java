@@ -20,5 +20,12 @@ public interface PredictionResultRepository extends JpaRepository<PredictionResu
             """)
     Optional<PredictionResult> findByIdAndOrganizationId(Long id, Long organizationId);
 
+    @Query("""
+            SELECT r FROM PredictionResult r
+            WHERE r.run.schemaVersion.schema.organization.id = :organizationId
+            ORDER BY r.run.id ASC, r.id ASC
+            """)
+    List<PredictionResult> findByOrganizationId(Long organizationId);
+
     boolean existsByModelId(Long modelId);
 }

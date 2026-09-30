@@ -10,7 +10,6 @@ import {
   createCombinedQuestionnaireTransport,
   valuesForCombinedStep,
 } from "@/capabilities/prediction-runtime/feedback/combined-feedback-questionnaire";
-import { saveSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-save";
 import { ReportQuestionnaireMount } from "@/capabilities/prediction-runtime/feedback/ReportQuestionnaireMount";
 import { buildQuestionnaireFormSchema } from "@/capabilities/prediction-runtime/feedback/questionnaire-schema";
 import { buildSchemaFeedbackSteps } from "@/capabilities/prediction-runtime/feedback/feedback-steps";
@@ -19,10 +18,7 @@ import {
   isSchemaFeedbackComplete,
 } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
 import { REVIEW_STEP_CONTEXT_EVENT } from "@/features/reviews/components/ReviewStepContextPanel";
-import {
-  createSchemaReviewFeedback,
-  updateSchemaReviewFeedback,
-} from "@/features/reviews/api/review-api";
+import { useSaveSchemaReviewFeedbackMutation } from "@/features/reviews/api/review-mutations";
 import type {
   PredictionResultFeedbackDto,
   PredictionRunDto,
@@ -67,6 +63,7 @@ export function SchemaReviewCombinedFeedbackForm({
   onSaved,
 }: Props) {
   const [theme] = useAtom(themeWithHtmlAtom);
+  const { mutateAsync: saveFeedback } = useSaveSchemaReviewFeedbackMutation(reviewId, reviewRunId);
   const [editing, setEditing] = useReducer((_: boolean, next: boolean) => next, false);
   const [submitting, setSubmitting] = useState(false);
   const [savedValues, setSavedValues] = useState<Record<string, unknown> | null>(null);
@@ -98,22 +95,9 @@ export function SchemaReviewCombinedFeedbackForm({
   const transport = useMemo(
     () =>
       createCombinedQuestionnaireTransport(async (values) => {
-        await saveSchemaFeedbackSteps(steps, values, {
-          create: (step, target, value) =>
-            createSchemaReviewFeedback(reviewId, reviewRunId, {
-              resultId: target.resultId,
-              type: step.type,
-              order: step.order,
-              value,
-            }),
-          update: (_step, _target, feedback, value) =>
-            updateSchemaReviewFeedback(reviewId, reviewRunId, {
-              feedbackId: feedback.id,
-              value,
-            }),
-        });
+        await saveFeedback({ steps, values });
       }),
-    [reviewId, reviewRunId, steps],
+    [saveFeedback, steps],
   );
 
   if (steps.length === 0)

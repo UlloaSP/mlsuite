@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionResultRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreatePredictionRunRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.InferenceTableDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunCatalogItemDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictionRunSequenceDto;
@@ -57,6 +58,11 @@ public class PredictionRunController {
         return ResponseEntity.ok(predictionRunUseCase.listOrganizationRuns(user.userId()).stream()
                 .map(PredictionRunCatalogItemDto::from)
                 .toList());
+    }
+
+    @GetMapping("/prediction-runs/table")
+    public ResponseEntity<InferenceTableDto> table(CurrentUser user) {
+        return ResponseEntity.ok(predictionRunUseCase.getOrganizationInferenceTable(user.userId()));
     }
 
     @GetMapping("/prediction-runs/{runId}")
