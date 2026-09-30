@@ -125,6 +125,27 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     [],
   );
 
+  /** Completed bulk rows join the same reviewable session as individual runs. */
+  const addResult = useCallback(
+    (name: string, inputData: JsonRecord, raw: JsonRecord) => {
+      if (schemaVersionId === undefined) return;
+      setEntries((current) => [
+        {
+          key: crypto.randomUUID(),
+          schemaVersionId,
+          name,
+          state: "ready",
+          inputData,
+          results: toResults(raw),
+          reportsPending: false,
+          createdAt: new Date().toISOString(),
+        },
+        ...current,
+      ]);
+    },
+    [schemaVersionId, setEntries],
+  );
+
   /** The form remounted (e.g. prefilled from a saved run); earlier entries stop being live. */
   const detachForm = useCallback(() => setLiveKey(null), [setLiveKey]);
 
@@ -187,6 +208,7 @@ export function useInferenceSession(bookmarkId: string, schemaVersionId: number 
     unsavedCount: entries.filter((entry) => entry.state !== "saved").length,
     onRunningChange,
     onResult,
+    addResult,
     detachForm,
     save,
     saveAll,

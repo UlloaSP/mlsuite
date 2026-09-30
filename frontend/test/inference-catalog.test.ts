@@ -57,12 +57,7 @@ describe("organization inference catalog", () => {
       new URL("../src/features/schemas/api/schema-prediction-mutations.ts", import.meta.url),
       "utf8",
     );
-    const bulkCreation = readFileSync(
-      new URL("../src/features/schemas/lib/use-schema-run-bulk-upload.ts", import.meta.url),
-      "utf8",
-    );
     expect(manualCreation).toContain("invalidatePredictionRunCollections(qc");
-    expect(bulkCreation).toContain("invalidatePredictionRunCollections(queryClient");
   });
 
   test("keeps review candidates grouped by schema snapshot", () => {

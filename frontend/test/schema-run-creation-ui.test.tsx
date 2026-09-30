@@ -51,6 +51,7 @@ vi.mock("@/capabilities/prediction-runtime/plugins/schema-plugin-catalog", () =>
 
 vi.mock("@/features/schemas/api/schema-queries", () => ({
   usePredictionRun: () => ({ data: undefined }),
+  useSchemaVersion: () => ({ data: undefined }),
 }));
 
 vi.mock("@/features/schemas/api/schema-prediction-mutations", () => ({

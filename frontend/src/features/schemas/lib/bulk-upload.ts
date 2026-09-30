@@ -3,7 +3,11 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { mappedTargets } from "@/capabilities/prediction-runtime/mlform/mapped-to";
+import {
+  mappedRoutes,
+  mappedTargets,
+  targetKey,
+} from "@/capabilities/prediction-runtime/mlform/mapped-to";
 import type { JsonRecord } from "@/features/schemas/api/schema-types";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
@@ -46,8 +50,17 @@ const modelInputFields = (version: SchemaVersionDto): FieldRecord[] => {
       });
       return;
     }
-    mappedTargets(field.mappedTo).forEach((key) => {
-      byKey.set(key, { ...field, id: key, label: key, displayKey: key, hidden: false });
+    mappedRoutes(field.mappedTo).forEach(({ mappedTo }) => {
+      const key = targetKey(mappedTo)!;
+      const positional = typeof mappedTo === "number";
+      byKey.set(key, {
+        ...field,
+        id: key,
+        label: positional ? field.label : key,
+        displayKey: positional ? field.displayKey : key,
+        mappedTo,
+        hidden: false,
+      });
     });
   });
   return [...byKey.values()];
@@ -98,10 +111,10 @@ export const toSchemaRunFieldValues = (
   return values;
 };
 
-export function bulkUploadSummary(saved: number, failed: number, skipped: number, remaining = 0) {
-  const summary = `${saved} saved, ${failed} failed, ${skipped} skipped`;
+export function bulkUploadSummary(added: number, failed: number, skipped: number, remaining = 0) {
+  const summary = `${added} uploaded, ${failed} failed, ${skipped} skipped`;
   return {
     message: remaining > 0 ? `${summary}, ${remaining} not processed` : summary,
-    warning: failed > 0 || skipped > 0 || remaining > 0 || saved === 0,
+    warning: failed > 0 || skipped > 0 || remaining > 0 || added === 0,
   };
 }
