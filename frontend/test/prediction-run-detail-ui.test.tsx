@@ -5,6 +5,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 // @vitest-environment jsdom
 
+import { QueryClient } from "@tanstack/react-query";
 import { act } from "react";
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import { PredictionRunDetails } from "@/features/schemas/components/PredictionRunDetails";
@@ -14,6 +15,7 @@ import { binding, predictionResult, predictionRun, schemaVersion } from "./suppo
 const queryState = vi.hoisted(() => ({ refetch: vi.fn(), runError: false }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
   useCurrentOrganizationId: () => 1,
+  useCan: () => false,
   useWorkspaceContext: () => ({
     data: { permissions: { canRunPredictions: true, canViewOrganization: true } },
   }),
@@ -72,6 +74,7 @@ vi.mock("@/features/schemas/api/schema-queries", () => ({
   useSchemaBookmark: () => ({
     data: { id: 1, schemaId: 1, name: "Ward bookmark" },
   }),
+  useBookmarkExamples: () => ({ data: [] }),
   useSchemaVersion: () => ({ data: version }),
   usePredictionRunFeedback: () => ({ data: [], refetch: queryState.refetch }),
 }));
@@ -122,7 +125,7 @@ describe("prediction run details", () => {
           withReviews ? { content: <section>Review management</section>, count: "1/2" } : undefined
         }
       />,
-      { route: "/" },
+      { route: "/", queryClient: new QueryClient() },
     );
     return host;
   };

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.Map;
 
 import org.flywaydb.core.Flyway;
@@ -29,9 +30,9 @@ class FlywayMigrationTest {
     void appliesCompleteHistoryToEmptyPostgresAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh", null);
 
-        assertEquals(7, flyway.migrate().migrationsExecuted);
+        assertEquals(8, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("7", flyway.info().current().getVersion().toString());
+        assertEquals("8", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -96,7 +97,7 @@ class FlywayMigrationTest {
                 .baselineOnMigrate(true)
                 .baselineVersion(MigrationVersion.fromVersion("1"))
                 .load();
-        assertEquals(6, upgraded.migrate().migrationsExecuted);
+        assertEquals(7, upgraded.migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -118,6 +119,51 @@ class FlywayMigrationTest {
         assertLegacyRoleBackfilled("organization_membership", "OWNER", 22);
         assertLegacyRoleBackfilled("invitation", "VIEWER", 4);
         assertPublishPermissionIsStorable();
+        assertExamplesLeaveWithTheirRunOrBookmark();
+    }
+
+    /** V8: deleting a run or a bookmark takes its example rows along, so none is orphaned. */
+    private void assertExamplesLeaveWithTheirRunOrBookmark() throws Exception {
+        try (var connection = DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                var statement = connection.createStatement()) {
+            statement.execute("SET search_path TO upgrade_path");
+            statement.execute("""
+                    INSERT INTO schema_artifact (organization_id, name, created_at, updated_at)
+                    VALUES (1, 'Risk', now(), now())
+                    """);
+            statement.execute("""
+                    INSERT INTO schema_version (schema_id, version_number, form_schema_json, created_at)
+                    VALUES (1, 1, '{}', now())
+                    """);
+            statement.execute("""
+                    INSERT INTO schema_bookmark (schema_id, schema_version_id, name, created_at, updated_at)
+                    VALUES (1, 1, 'production', now(), now()), (1, 1, 'staging', now(), now())
+                    """);
+            statement.execute("""
+                    INSERT INTO prediction_run
+                        (schema_version_id, schema_bookmark_id, name, input_data_json, status, created_at, updated_at)
+                    VALUES (1, 1, 'first', '{}', 'SUCCESS', now(), now()),
+                           (1, NULL, 'second', '{}', 'SUCCESS', now(), now())
+                    """);
+            statement.execute("""
+                    INSERT INTO schema_bookmark_example (schema_bookmark_id, prediction_run_id, public_id, created_at)
+                    VALUES (1, 1, 'example-1', now()), (1, 2, 'example-2', now()), (2, 2, 'example-3', now())
+                    """);
+
+            statement.execute("DELETE FROM prediction_run WHERE id = 2");
+            assertEquals(1, exampleRows(statement));
+            statement.execute("UPDATE prediction_run SET schema_bookmark_id = NULL");
+            statement.execute("DELETE FROM schema_bookmark WHERE id = 1");
+            assertEquals(0, exampleRows(statement));
+        }
+    }
+
+    private int exampleRows(Statement statement) throws Exception {
+        try (var result = statement.executeQuery("SELECT COUNT(*) FROM schema_bookmark_example")) {
+            assertTrue(result.next());
+            return result.getInt(1);
+        }
     }
 
     /** V7 widens the permission checks; existing bookmarks stay private. */

@@ -50,6 +50,15 @@ export const SCHEMA_BOOKMARK_QUERY_KEY = (
     "schemaBookmark",
     { bookmarkId: String(bookmarkId) },
   ] as const;
+export const SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY = (
+  organizationId: number | string,
+  bookmarkId: number | string,
+) =>
+  [
+    ...organizationQueryKey(organizationId),
+    "schemaBookmarkExamples",
+    { bookmarkId: String(bookmarkId) },
+  ] as const;
 export const SCHEMA_DRAFTS_QUERY_KEY = (
   organizationId: number | string,
   schemaId: number | string,

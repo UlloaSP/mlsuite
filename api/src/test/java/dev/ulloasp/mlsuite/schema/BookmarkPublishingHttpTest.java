@@ -35,6 +35,7 @@ import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkController;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkExampleUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -49,7 +50,8 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, RestTemplate.class, UserDetailsService.class })
+@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, RestTemplate.class, SchemaBookmarkExampleUseCase.class,
+        UserDetailsService.class })
 class BookmarkPublishingHttpTest {
 
     private static final long USER_ID = 7L;

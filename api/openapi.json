@@ -2253,6 +2253,26 @@
         ],
         "type": "object"
       },
+      "PublicBookmarkExampleDto": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "inputs",
+          "name"
+        ],
+        "type": "object"
+      },
       "PublicBookmarkSummaryDto": {
         "properties": {
           "name": {
@@ -2567,6 +2587,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "exampleCount": {
+            "format": "int64",
+            "type": "integer"
+          },
           "id": {
             "format": "int64",
             "type": "integer"
@@ -2586,6 +2610,10 @@
           },
           "schemaName": {
             "type": "string"
+          },
+          "staleExampleCount": {
+            "format": "int64",
+            "type": "integer"
           },
           "updatedAt": {
             "format": "date-time",
@@ -2615,16 +2643,55 @@
         },
         "required": [
           "createdAt",
+          "exampleCount",
           "id",
           "name",
           "publicId",
           "schemaId",
           "schemaName",
+          "staleExampleCount",
           "updatedAt",
           "version",
           "versionId",
           "versionName",
           "visibility"
+        ],
+        "type": "object"
+      },
+      "SchemaBookmarkExampleDto": {
+        "properties": {
+          "runId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "runName": {
+            "type": "string"
+          },
+          "runVersion": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "runVersionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "SERVED",
+              "BOOKMARK_PRIVATE",
+              "BOOKMARK_MOVED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "runId",
+          "runName",
+          "runVersion",
+          "runVersionName",
+          "status"
         ],
         "type": "object"
       },
@@ -3936,7 +4003,7 @@
     },
     "/api/admin/public-bookmarks": {
       "get": {
-        "operationId": "list_10",
+        "operationId": "list_11",
         "parameters": [
           {
             "in": "query",
@@ -5164,7 +5231,7 @@
     },
     "/api/organizations/{organizationId}/audit-events": {
       "get": {
-        "operationId": "list_9",
+        "operationId": "list_10",
         "parameters": [
           {
             "in": "path",
@@ -5945,7 +6012,7 @@
     },
     "/api/plugins/runtime": {
       "get": {
-        "operationId": "list_8",
+        "operationId": "list_9",
         "responses": {
           "200": {
             "content": {
@@ -6262,7 +6329,7 @@
     },
     "/api/public/bookmarks": {
       "get": {
-        "operationId": "list_7",
+        "operationId": "list_8",
         "parameters": [
           {
             "in": "query",
@@ -6339,6 +6406,39 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}/examples": {
+      "get": {
+        "operationId": "examples",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PublicBookmarkExampleDto"
+                  },
+                  "type": "array"
                 }
               }
             },
@@ -6460,6 +6560,111 @@
         },
         "tags": [
           "schema-bookmark-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/examples": {
+      "get": {
+        "operationId": "list_7",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchemaBookmarkExampleDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-example-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/examples/{runId}": {
+      "delete": {
+        "operationId": "unmark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-example-controller"
+        ]
+      },
+      "put": {
+        "operationId": "mark",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkExampleDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-example-controller"
         ]
       }
     },

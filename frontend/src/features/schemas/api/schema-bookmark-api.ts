@@ -3,6 +3,7 @@ import type {
   CreateSchemaBookmarkRequest,
   PredictBookmarkDto,
   SchemaBookmarkDto,
+  SchemaBookmarkExampleDto,
 } from "@/shared/api/openapi.gen";
 
 export const getSchemaBookmarks = (
@@ -44,4 +45,31 @@ export const publishSchemaBookmark = (bookmarkId: number | string): Promise<Sche
 export const unpublishSchemaBookmark = (bookmarkId: number | string): Promise<SchemaBookmarkDto> =>
   appFetch<SchemaBookmarkDto>(`/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/unpublish`, {
     method: "POST",
+  });
+
+const bookmarkExamplesPath = (bookmarkId: number | string) =>
+  `/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/examples`;
+
+/** Every run marked as a public example of the bookmark, with whether it is being served. */
+export const getBookmarkExamples = (
+  bookmarkId: number | string,
+  signal?: AbortSignal,
+): Promise<SchemaBookmarkExampleDto[]> =>
+  appFetch<SchemaBookmarkExampleDto[]>(bookmarkExamplesPath(bookmarkId), { signal });
+
+export const markBookmarkExample = (
+  bookmarkId: number | string,
+  runId: number | string,
+): Promise<SchemaBookmarkExampleDto> =>
+  appFetch<SchemaBookmarkExampleDto>(
+    `${bookmarkExamplesPath(bookmarkId)}/${encodeURIComponent(runId)}`,
+    { method: "PUT" },
+  );
+
+export const unmarkBookmarkExample = (
+  bookmarkId: number | string,
+  runId: number | string,
+): Promise<void> =>
+  appFetch<void>(`${bookmarkExamplesPath(bookmarkId)}/${encodeURIComponent(runId)}`, {
+    method: "DELETE",
   });

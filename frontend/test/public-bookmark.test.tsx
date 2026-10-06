@@ -49,6 +49,8 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   name: "production",
   visibility: "PRIVATE",
   publicId: null,
+  exampleCount: 0,
+  staleExampleCount: 0,
   createdAt: AT,
   updatedAt: AT,
   ...overrides,
@@ -82,11 +84,16 @@ const settle = async () => {
 const newClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false, retryDelay: 0 } } });
 
-let fetchMock: ReturnType<typeof vi.fn>;
+type Fetch = (url: unknown, init?: RequestInit) => unknown;
+let fetchMock: ReturnType<typeof vi.fn<Fetch>>;
 beforeEach(() => {
   Object.assign(session, { signedIn: false, canPublish: false });
-  fetchMock = vi.fn();
-  vi.stubGlobal("fetch", fetchMock);
+  fetchMock = vi.fn<Fetch>();
+  // The page also asks for the bookmark's examples; these bookmarks have none. Examples have
+  // their own tests, so that request is answered here and never counted.
+  vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) =>
+    String(url).endsWith("/examples") ? Promise.resolve(json([])) : fetchMock(url, init),
+  );
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -115,8 +122,8 @@ describe("bookmark visibility in the schema repository", () => {
     expect(host.textContent).toContain("Private");
 
     const items = await openActions();
-    expect(labels(items)).toEqual(["Publish"]);
-    await click(items![0]);
+    expect(labels(items)).toEqual(["Public examples", "Publish"]);
+    await click(items![1]);
     expect(document.body.textContent).toContain("Anyone with the link");
     expect(fetchMock).not.toHaveBeenCalled();
     await click("Publish");
@@ -136,13 +143,18 @@ describe("bookmark visibility in the schema repository", () => {
     expect(host.textContent).not.toContain("Private");
 
     let items = await openActions();
-    expect(labels(items)).toEqual(["Copy public link", "Open public page", "Unpublish"]);
+    expect(labels(items)).toEqual([
+      "Copy public link",
+      "Open public page",
+      "Public examples",
+      "Unpublish",
+    ]);
     await click(items![0]);
     await settle();
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/explore/${PUBLIC_ID}`);
 
     items = await openActions();
-    await click(items![2]);
+    await click(items![3]);
     await settle();
     expect(calledPaths()).toEqual(["/api/schema-bookmarks/70/unpublish"]);
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "POST" });

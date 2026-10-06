@@ -24,6 +24,8 @@ const bookmark: SchemaBookmarkDto = {
   name: "Risk model",
   visibility: "PRIVATE",
   publicId: null,
+  exampleCount: 0,
+  staleExampleCount: 0,
   createdAt: "2026-09-24T12:00:00Z",
   updatedAt: "2026-09-24T12:00:00Z",
 };

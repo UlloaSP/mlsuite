@@ -8,6 +8,7 @@ import { Building2, FileJson2, GitCommitHorizontal } from "lucide-react";
 import { useParams } from "react-router";
 import {
   isPublicBookmarkMissing,
+  publicBookmarkExamplesQueryOptions,
   publicBookmarkQueryOptions,
 } from "@/features/explore/api/public-bookmark-api";
 import { PublicBookmarkForm } from "@/features/explore/components/PublicBookmarkForm";
@@ -32,6 +33,7 @@ export function PublicBookmarkPage() {
   const { publicId = "" } = useParams<{ publicId: string }>();
   const query = useQuery(publicBookmarkQueryOptions(publicId));
   const bookmark = query.data;
+  const examples = useQuery(publicBookmarkExamplesQueryOptions(publicId)).data;
 
   if (query.isPending) return <AppPageLoader label="Loading public bookmark…" />;
 
@@ -102,6 +104,7 @@ export function PublicBookmarkPage() {
           <PublicBookmarkForm
             key={`${bookmark.publicId}:${bookmark.version}`}
             formSchema={bookmark.formSchema}
+            examples={examples}
           />
         </section>
       </AppSurface>

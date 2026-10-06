@@ -5,7 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { appFetch, isHttpError } from "@/shared/api/http";
-import type { PageDtoPublicBookmarkSummaryDto, PublicBookmarkDto } from "@/shared/api/openapi.gen";
+import type {
+  PageDtoPublicBookmarkSummaryDto,
+  PublicBookmarkDto,
+  PublicBookmarkExampleDto,
+} from "@/shared/api/openapi.gen";
 
 export const PUBLIC_BOOKMARK_PAGE_SIZE = 24;
 
@@ -28,6 +32,15 @@ const getPublicBookmarkPage = (
 
 const getPublicBookmark = (publicId: string, signal?: AbortSignal): Promise<PublicBookmarkDto> =>
   appFetch<PublicBookmarkDto>(`/api/public/bookmarks/${encodeURIComponent(publicId)}`, { signal });
+
+const getPublicBookmarkExamples = (
+  publicId: string,
+  signal?: AbortSignal,
+): Promise<PublicBookmarkExampleDto[]> =>
+  appFetch<PublicBookmarkExampleDto[]>(
+    `/api/public/bookmarks/${encodeURIComponent(publicId)}/examples`,
+    { signal },
+  );
 
 /** A bookmark that is private, unknown, or whose schema was archived answers 404. */
 export const isPublicBookmarkMissing = (error: unknown) =>
@@ -54,6 +67,19 @@ export const publicBookmarkQueryOptions = (publicId: string) =>
   queryOptions({
     queryKey: ["public", "bookmark", publicId] as const,
     queryFn: ({ signal }) => getPublicBookmark(publicId, signal),
+    enabled: publicId !== "",
+    retry: (failures, error) => !isPublicBookmarkMissing(error) && failures < 1,
+    meta: { errorHandledLocally: true },
+  });
+
+/**
+ * The curated examples a public bookmark serves. They only help fill the form, so a failed
+ * request is not an error state: the page simply offers no examples.
+ */
+export const publicBookmarkExamplesQueryOptions = (publicId: string) =>
+  queryOptions({
+    queryKey: ["public", "bookmark", publicId, "examples"] as const,
+    queryFn: ({ signal }) => getPublicBookmarkExamples(publicId, signal),
     enabled: publicId !== "",
     retry: (failures, error) => !isPublicBookmarkMissing(error) && failures < 1,
     meta: { errorHandledLocally: true },
