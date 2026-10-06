@@ -67,7 +67,7 @@ export function PublicBookmarkPage() {
         <AppPageHeader
           className={FORM_MAX_WIDTH}
           breadcrumbScope="public"
-          breadcrumbs={[]}
+          breadcrumbs={[{ label: bookmark.name }]}
           title={bookmark.name}
           description={bookmark.schemaDescription ?? undefined}
         />

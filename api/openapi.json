@@ -1562,6 +1562,39 @@
         ],
         "type": "object"
       },
+      "PageDtoPublicBookmarkSummaryDto": {
+        "properties": {
+          "hasNext": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicBookmarkSummaryDto"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalItems": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasNext",
+          "items",
+          "page",
+          "size",
+          "totalItems"
+        ],
+        "type": "object"
+      },
       "PageDtoSchemaCatalogItemDto": {
         "properties": {
           "hasNext": {
@@ -2209,6 +2242,53 @@
         },
         "required": [
           "formSchema",
+          "name",
+          "organizationName",
+          "publicId",
+          "schemaDescription",
+          "schemaName",
+          "updatedAt",
+          "version",
+          "versionName"
+        ],
+        "type": "object"
+      },
+      "PublicBookmarkSummaryDto": {
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "publicId": {
+            "type": "string"
+          },
+          "schemaDescription": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "versionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
           "name",
           "organizationName",
           "publicId",
@@ -3856,7 +3936,7 @@
     },
     "/api/admin/public-bookmarks": {
       "get": {
-        "operationId": "list_9",
+        "operationId": "list_10",
         "parameters": [
           {
             "in": "query",
@@ -5084,7 +5164,7 @@
     },
     "/api/organizations/{organizationId}/audit-events": {
       "get": {
-        "operationId": "list_8",
+        "operationId": "list_9",
         "parameters": [
           {
             "in": "path",
@@ -5865,7 +5945,7 @@
     },
     "/api/plugins/runtime": {
       "get": {
-        "operationId": "list_7",
+        "operationId": "list_8",
         "responses": {
           "200": {
             "content": {
@@ -6177,6 +6257,66 @@
         },
         "tags": [
           "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks": {
+      "get": {
+        "operationId": "list_7",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 24,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "default": "",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "updated",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDtoPublicBookmarkSummaryDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
         ]
       }
     },

@@ -29,9 +29,9 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
   const bindings = useAtomValue(shortcutBindingsAtom);
   const setSearchOpen = useSetAtom(globalSearchOpenAtom);
   const startGuide = useUserGuideLauncher(false);
-  const { navigation, administration, isParentActive, currentPath, pathname } =
-    useNavigationItems();
-  const allItems = [...navigation, ...administration];
+  const { groups, isParentActive, currentPath, pathname } = useNavigationItems();
+  const allItems = groups.flatMap((group) => group.items);
+  const groupStarts = new Set(groups.slice(1).map((group) => group.items[0]));
   const showShortcuts = useNavigationShortcuts({
     navigation: allItems,
     showHints: true,
@@ -104,10 +104,10 @@ export function Navbar({ position }: { position: "top" | "bottom" }) {
         )}
       >
         {allItems.map((item, index) => [
-          // Administration starts after a divider, like its own sidebar group.
-          index === navigation.length && index > 0 ? (
+          // Each group after the first starts after a divider, like its own sidebar group.
+          groupStarts.has(item) ? (
             <span
-              key="administration-divider"
+              key={`${item.root}-divider`}
               aria-hidden="true"
               className="mx-1 h-6 w-px shrink-0 bg-line"
             />

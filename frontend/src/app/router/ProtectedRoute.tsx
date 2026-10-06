@@ -4,7 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { Navigate, Outlet, useLocation } from "react-router";
-import { useUser } from "@/capabilities/workspace-context/session";
+import { signInHref, useUser } from "@/capabilities/workspace-context/session";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { AppPageLoader } from "@/shared/ui/AppPageLoader";
 import { useStableLoading } from "@/shared/ui/useStableLoading";
@@ -20,8 +20,7 @@ export function ProtectedRoute() {
   }
 
   if (!user || error || workspace.error) {
-    const returnTo = encodeURIComponent(`${location.pathname}${location.search}`);
-    return <Navigate to={`/?returnTo=${returnTo}`} replace />;
+    return <Navigate to={signInHref(`${location.pathname}${location.search}`)} replace />;
   }
 
   return <Outlet />;

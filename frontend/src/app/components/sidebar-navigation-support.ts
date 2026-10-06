@@ -30,6 +30,8 @@ export type NavigationItem = {
   children?: NavigationChild[];
 };
 
+export type NavigationGroup = { label: string; items: NavigationItem[] };
+
 export const INFRA_CHILDREN: NavigationChild[] = [
   { to: "/admin/infrastructure", icon: LayoutGrid, label: "Overview", exact: true },
   { to: "/admin/infrastructure?tab=services", icon: Server, label: "Services" },

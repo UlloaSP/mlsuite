@@ -91,7 +91,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -475,7 +475,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -699,7 +699,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -828,6 +828,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1806,6 +1822,16 @@ export interface components {
             /** Format: int64 */
             totalItems: number;
         };
+        PageDtoPublicBookmarkSummaryDto: {
+            hasNext: boolean;
+            items: components["schemas"]["PublicBookmarkSummaryDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
         PageDtoSchemaCatalogItemDto: {
             hasNext: boolean;
             items: components["schemas"]["SchemaCatalogItemDto"][];
@@ -1983,6 +2009,18 @@ export interface components {
             formSchema: {
                 [key: string]: unknown;
             };
+            name: string;
+            organizationName: string;
+            publicId: string;
+            schemaDescription: string | null;
+            schemaName: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int32 */
+            version: number;
+            versionName: string | null;
+        };
+        PublicBookmarkSummaryDto: {
             name: string;
             organizationName: string;
             publicId: string;
@@ -2440,6 +2478,7 @@ export type PageDtoModelDto = components['schemas']['PageDtoModelDto'];
 export type PageDtoModeratedBookmarkDto = components['schemas']['PageDtoModeratedBookmarkDto'];
 export type PageDtoOrganizationCatalogItemDto = components['schemas']['PageDtoOrganizationCatalogItemDto'];
 export type PageDtoPluginDto = components['schemas']['PageDtoPluginDto'];
+export type PageDtoPublicBookmarkSummaryDto = components['schemas']['PageDtoPublicBookmarkSummaryDto'];
 export type PageDtoSchemaCatalogItemDto = components['schemas']['PageDtoSchemaCatalogItemDto'];
 export type PermissionDto = components['schemas']['PermissionDto'];
 export type PermissionGroupDto = components['schemas']['PermissionGroupDto'];
@@ -2453,6 +2492,7 @@ export type PredictionRunCatalogItemDto = components['schemas']['PredictionRunCa
 export type PredictionRunDto = components['schemas']['PredictionRunDto'];
 export type PredictionRunSequenceDto = components['schemas']['PredictionRunSequenceDto'];
 export type PublicBookmarkDto = components['schemas']['PublicBookmarkDto'];
+export type PublicBookmarkSummaryDto = components['schemas']['PublicBookmarkSummaryDto'];
 export type PublishSchemaDraftRequest = components['schemas']['PublishSchemaDraftRequest'];
 export type RoleActionsDto = components['schemas']['RoleActionsDto'];
 export type RoleDefinitionDto = components['schemas']['RoleDefinitionDto'];
@@ -2611,7 +2651,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 page?: number;
@@ -3393,7 +3433,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3873,7 +3913,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -4125,6 +4165,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionRunCatalogItemDto"];
+                };
+            };
+        };
+    };
+    list_7: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoPublicBookmarkSummaryDto"];
                 };
             };
         };

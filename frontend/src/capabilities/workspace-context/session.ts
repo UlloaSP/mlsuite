@@ -31,6 +31,13 @@ export const useUser = () =>
 
 export const useCurrentUserIsSuperadmin = () => useUser().data?.systemRole === "SUPERADMIN";
 
+/** The one address of the sign-in and register screen. */
+export const SIGN_IN_PATH = "/login";
+
+/** The sign-in screen, set to come back to `returnTo` once signed in. */
+export const signInHref = (returnTo: string) =>
+  `${SIGN_IN_PATH}?returnTo=${encodeURIComponent(returnTo)}`;
+
 export const safeReturnTo = (value: string | null | undefined, fallback = "/home") =>
   value?.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : fallback;
 
@@ -51,14 +58,14 @@ export const useLogin = () => useSessionMutation(login);
 
 export const useRegister = () => useSessionMutation(register);
 
-export const useLogout = (redirectTo = "/") => {
+export const useLogout = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   return useMutation({
     mutationFn: logout,
     onSuccess: () => {
       queryClient.clear();
-      void navigate(redirectTo, { replace: true });
+      void navigate(SIGN_IN_PATH, { replace: true });
     },
   });
 };

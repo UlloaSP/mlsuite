@@ -7,6 +7,7 @@ import {
   Blocks,
   BrainCircuit,
   Building2,
+  Compass,
   FileJson2,
   Gavel,
   GitCommitHorizontal,
@@ -41,4 +42,5 @@ export const SECTION_ICONS = {
   users: ShieldCheck,
   moderation: Gavel,
   infrastructure: ServerCog,
+  explore: Compass,
 } as const satisfies Record<string, LucideIcon>;
