@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersi
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.MoveSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
+import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
@@ -68,12 +70,31 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         return bookmark;
     }
 
+    @Override
+    public SchemaBookmark publishBookmark(Long userId, Long bookmarkId) {
+        SchemaBookmark bookmark = requireBookmark(bookmarkId, requirePublish(userId));
+        if (bookmark.getPublicId() == null) bookmark.setPublicId(UUID.randomUUID().toString());
+        bookmark.setVisibility(BookmarkVisibility.PUBLIC);
+        return bookmark;
+    }
+
+    @Override
+    public SchemaBookmark unpublishBookmark(Long userId, Long bookmarkId) {
+        SchemaBookmark bookmark = requireBookmark(bookmarkId, requirePublish(userId));
+        bookmark.setVisibility(BookmarkVisibility.PRIVATE);
+        return bookmark;
+    }
+
     private Long requireRead(Long userId) {
         return authorizationService.requireCurrent(userId, PermissionKey.VIEW_MODELS).getId();
     }
 
     private Long requireOperate(Long userId) {
         return authorizationService.requireCurrent(userId, PermissionKey.CREATE_MODELS).getId();
+    }
+
+    private Long requirePublish(Long userId) {
+        return authorizationService.requireCurrent(userId, PermissionKey.PUBLISH_BOOKMARKS).getId();
     }
 
     private Schema requireSchema(Long schemaId, Long orgId) {

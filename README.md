@@ -26,6 +26,7 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 - Collect reviews, corrections, questionnaires, and explanation feedback.
 - Extend reports and fields through plugins.
 - Export inputs, outputs, and feedback for downstream work.
+- Publish a schema bookmark to a public page at `/explore/<id>` that shows its form to anyone, signed in or not.
 - Manage organizations, teams, roles, invitations, and workspace permissions.
 - Monitor the local Compose stack through the operations service.
 
@@ -360,7 +361,7 @@ flowchart LR
     ML --> API
 ```
 
-The browser sends authenticated requests to Spring. Spring enforces workspace permissions, stores durable state, and delegates artifact analysis or prediction to Python. Results return through Spring so model, schema, input, output, and feedback identities remain traceable.
+The browser sends authenticated requests to Spring; only `/api/public/**` answers without a session, and it serves nothing but bookmarks a member with the publish permission made public. Spring enforces workspace permissions, stores durable state, and delegates artifact analysis or prediction to Python. Results return through Spring so model, schema, input, output, and feedback identities remain traceable.
 
 ## License
 

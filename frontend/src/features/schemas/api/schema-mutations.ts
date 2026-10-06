@@ -7,14 +7,18 @@ import {
   duplicateSchema,
   renameSchema,
 } from "./schema-api";
-import { createSchemaBookmark } from "./schema-bookmark-api";
+import {
+  createSchemaBookmark,
+  publishSchemaBookmark,
+  unpublishSchemaBookmark,
+} from "./schema-bookmark-api";
 import {
   ORGANIZATION_BOOKMARKS_QUERY_KEY,
   SCHEMA_BOOKMARKS_QUERY_KEY,
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_CATALOG_PAGE_QUERY_KEY,
 } from "./schema-keys";
-import type { CreateSchemaBookmarkRequest } from "@/shared/api/openapi.gen";
+import type { CreateSchemaBookmarkRequest, SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
 export const useInvalidateSchemaQueries = () => {
   const queryClient = useQueryClient();
@@ -74,6 +78,27 @@ export function useCreateSchemaBookmarkMutation(schemaId: number | string) {
       qc.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
       void qc.invalidateQueries({ queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, schemaId) });
       void qc.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) });
+    },
+  });
+}
+
+/** Publishes or unpublishes a bookmark; a failure is reported by the global error handler. */
+export function useSetBookmarkVisibilityMutation() {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      bookmarkId,
+      visibility,
+    }: Pick<SchemaBookmarkDto, "visibility"> & { bookmarkId: number }) =>
+      visibility === "PUBLIC"
+        ? publishSchemaBookmark(bookmarkId)
+        : unpublishSchemaBookmark(bookmarkId),
+    onSuccess: (bookmark) => {
+      qc.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
+      void qc.invalidateQueries({
+        queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, bookmark.schemaId),
+      });
     },
   });
 }

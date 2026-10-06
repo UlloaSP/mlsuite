@@ -62,4 +62,16 @@ public class SchemaBookmarkController {
         return ResponseEntity.ok(SchemaBookmarkDto.from(
                 bookmarkUseCase.moveBookmark(user.userId(), bookmarkId, request)));
     }
+
+    @PostMapping("/schema-bookmarks/{bookmarkId}/publish")
+    public ResponseEntity<SchemaBookmarkDto> publish(CurrentUser user, @PathVariable Long bookmarkId) {
+        return ResponseEntity.ok(SchemaBookmarkDto.from(
+                bookmarkUseCase.publishBookmark(user.userId(), bookmarkId)));
+    }
+
+    @PostMapping("/schema-bookmarks/{bookmarkId}/unpublish")
+    public ResponseEntity<SchemaBookmarkDto> unpublish(CurrentUser user, @PathVariable Long bookmarkId) {
+        return ResponseEntity.ok(SchemaBookmarkDto.from(
+                bookmarkUseCase.unpublishBookmark(user.userId(), bookmarkId)));
+    }
 }

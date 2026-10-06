@@ -92,6 +92,7 @@ const permissions = (patch: Partial<WorkspacePermissionsDto> = {}): WorkspacePer
   canDeleteModels: false,
   canRunPredictions: false,
   canExportPredictions: false,
+  canPublishBookmarks: false,
   canReview: false,
   canManageReviews: false,
   canViewPlugins: false,

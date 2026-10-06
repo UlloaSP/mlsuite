@@ -7,8 +7,10 @@ import type { ReactNode } from "react";
 import { createBrowserRouter, Outlet, type RouteObject } from "react-router";
 import { AppShellFrame } from "@/app/layouts/AppShellLayout";
 import { PublicLayout } from "@/app/layouts/PublicLayout";
+import { SessionFrameLayout } from "@/app/layouts/SessionFrameLayout";
 import { protectedPages } from "./protected-routes";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { publicPages } from "./public-routes";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { enableViewTransitions } from "./view-transitions";
 
@@ -29,6 +31,7 @@ export const routes: RouteObject[] = [
           },
         ],
       },
+      { element: <SessionFrameLayout />, children: publicPages },
       {
         element: <ProtectedRoute />,
         children: [{ element: app(<Outlet />), children: protectedPages }],
