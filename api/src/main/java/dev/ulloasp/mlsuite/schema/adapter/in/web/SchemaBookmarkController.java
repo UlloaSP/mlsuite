@@ -86,9 +86,6 @@ public class SchemaBookmarkController {
     private List<SchemaBookmarkDto> toDtos(List<SchemaBookmark> bookmarks) {
         Map<Long, BookmarkExampleCounts> counts = examples.countExamples(
                 bookmarks.stream().map(SchemaBookmark::getId).toList());
-        return bookmarks.stream()
-                .map(bookmark -> SchemaBookmarkDto.from(bookmark,
-                        counts.getOrDefault(bookmark.getId(), BookmarkExampleCounts.NONE)))
-                .toList();
+        return bookmarks.stream().map(bookmark -> SchemaBookmarkDto.from(bookmark, counts)).toList();
     }
 }

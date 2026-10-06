@@ -1,6 +1,7 @@
 package dev.ulloasp.mlsuite.schema.application.dto;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -26,7 +27,9 @@ public record SchemaBookmarkDto(
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
 
-    public static SchemaBookmarkDto from(SchemaBookmark bookmark, BookmarkExampleCounts examples) {
+    /** {@code exampleCounts} is keyed by bookmark id; a bookmark it does not name has no examples. */
+    public static SchemaBookmarkDto from(SchemaBookmark bookmark, Map<Long, BookmarkExampleCounts> exampleCounts) {
+        BookmarkExampleCounts examples = exampleCounts.getOrDefault(bookmark.getId(), BookmarkExampleCounts.NONE);
         return new SchemaBookmarkDto(
                 bookmark.getId(),
                 bookmark.getSchema().getId(),

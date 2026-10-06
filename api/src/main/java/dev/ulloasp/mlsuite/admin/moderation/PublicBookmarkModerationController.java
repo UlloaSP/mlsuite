@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.admin.moderation;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaBookmarkDto;
+import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkExampleUseCase;
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
 import dev.ulloasp.mlsuite.util.PageDto;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class PublicBookmarkModerationController {
 
     private final PublicBookmarkModerationService moderationService;
+    private final SchemaBookmarkExampleUseCase examples;
 
     @GetMapping
     public ResponseEntity<PageDto<ModeratedBookmarkDto>> list(
@@ -33,6 +38,7 @@ public class PublicBookmarkModerationController {
 
     @PostMapping("/{bookmarkId}/unpublish")
     public ResponseEntity<SchemaBookmarkDto> unpublish(CurrentUser user, @PathVariable Long bookmarkId) {
-        return ResponseEntity.ok(SchemaBookmarkDto.from(moderationService.unpublish(user.userId(), bookmarkId)));
+        SchemaBookmark bookmark = moderationService.unpublish(user.userId(), bookmarkId);
+        return ResponseEntity.ok(SchemaBookmarkDto.from(bookmark, examples.countExamples(List.of(bookmarkId))));
     }
 }
