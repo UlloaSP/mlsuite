@@ -129,7 +129,7 @@ describe("bookmark visibility in the schema repository", () => {
     session.canPublish = true;
     fetchMock.mockResolvedValue(json(bookmark({ publicId: PUBLIC_ID })));
     const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     const { host } = await row(bookmark({ visibility: "PUBLIC", publicId: PUBLIC_ID }));
     expect(host.textContent).toContain("Public");
     expect(host.textContent).not.toContain("Private");
