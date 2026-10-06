@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import java.util.List;
 import java.util.Map;
@@ -17,10 +18,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.MultiValueMap;
@@ -43,6 +49,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
@@ -177,6 +184,22 @@ abstract class PublicPredictionFixture {
 
     ResponseStatusException refused(String publicId, PublicPredictionRequest request) {
         return assertThrows(ResponseStatusException.class, () -> run(publicId, request));
+    }
+
+    /** The request of one valid public run of the bookmark, from a caller without a session. */
+    MockHttpServletRequestBuilder runRequest(String publicId) {
+        return post("/api/public/bookmarks/{publicId}/predictions", publicId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":" + version.getVersion() + ",\"values\":{\"in0\":52}}");
+    }
+
+    /** The same request with a logged-in session, as the login endpoint leaves it for the filter chain. */
+    static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId) {
+        var principal = new AuthenticatedUserPrincipal(userId, "member@example.test", "hash", SystemRole.USER, true);
+        var authentication = UsernamePasswordAuthenticationToken.authenticated(
+                principal, null, principal.getAuthorities());
+        return request.sessionAttr(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                new SecurityContextImpl(authentication));
     }
 
     void inTransaction(Runnable work) {

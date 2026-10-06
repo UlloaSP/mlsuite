@@ -11,11 +11,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -23,23 +23,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextImpl;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import dev.ulloasp.mlsuite.model.domain.exception.AnalyzerServiceException;
@@ -49,10 +43,8 @@ import dev.ulloasp.mlsuite.schema.application.service.PublicPredictionQuota;
 import dev.ulloasp.mlsuite.schema.domain.exception.PublicRunLimitException;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
-import dev.ulloasp.mlsuite.security.auth.AuthenticatedUserPrincipal;
 import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.security.identity.PublicCallerArgumentResolver;
-import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 
 /**
  * The quota of public runs: the count itself against a clock the test moves, then the running
@@ -68,7 +60,17 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
     private static final PublicCaller MEMBER = new PublicCaller(true, "user:7");
     private static final String CLIENT_ADDRESS = PublicCallerArgumentResolver.CLIENT_ADDRESS_HEADER;
 
-    private final MovingClock clock = new MovingClock();
+    private final Clock clock = mock(Clock.class);
+    private Instant now = START;
+
+    @BeforeEach
+    void theClockReadsWhatTheTestSet() {
+        when(clock.instant()).thenAnswer(call -> now);
+    }
+
+    private void advance(Duration duration) {
+        now = now.plus(duration);
+    }
 
     @Test
     void eachCallerHasItsOwnCountOnEachBookmarkAndAnAccountAHigherOne() {
@@ -92,15 +94,15 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
     void theCountStartsAgainTwentyFourHoursAfterTheFirstCountedRun() {
         PublicPredictionQuota quota = new PublicPredictionQuota(2, 4, 100, clock);
         quota.admit(VISITOR, "a");
-        clock.advance(Duration.ofHours(5));
+        advance(Duration.ofHours(5));
         quota.admit(VISITOR, "a");
 
-        clock.advance(Duration.ofHours(19).minusSeconds(1));
+        advance(Duration.ofHours(19).minusSeconds(1));
         PublicRunLimitException refused = assertThrows(PublicRunLimitException.class, () -> quota.admit(VISITOR, "a"));
         assertEquals(START.plus(Duration.ofHours(24)), refused.getResetsAt());
         assertEquals(Duration.ofSeconds(1), refused.getRetryAfter());
 
-        clock.advance(Duration.ofSeconds(1));
+        advance(Duration.ofSeconds(1));
         assertEquals(new PublicRunQuotaDto(2, 2, null), quota.status(VISITOR, "a"));
         quota.admit(VISITOR, "a");
         assertEquals(new PublicRunQuotaDto(2, 1, START.plus(Duration.ofHours(48))), quota.status(VISITOR, "a"));
@@ -123,9 +125,9 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
         PublicPredictionQuota quota = new PublicPredictionQuota(1, 1, 2, clock);
         PublicCaller third = new PublicCaller(false, "address:third");
         quota.admit(VISITOR, "a");
-        clock.advance(Duration.ofMinutes(1));
+        advance(Duration.ofMinutes(1));
         quota.admit(OTHER_VISITOR, "a");
-        clock.advance(Duration.ofMinutes(1));
+        advance(Duration.ofMinutes(1));
 
         // No room for a third window: the oldest goes, and a new caller is never turned away for it.
         quota.admit(third, "a");
@@ -134,7 +136,7 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
         assertEquals(0, quota.status(OTHER_VISITOR, "a").remaining());
         assertEquals(0, quota.status(third, "a").remaining());
         // A window that expired makes the room, so the one still counting beside it is kept.
-        clock.advance(Duration.ofHours(24).minusMinutes(1));
+        advance(Duration.ofHours(24).minusMinutes(1));
         quota.admit(VISITOR, "a");
         assertEquals(0, quota.status(third, "a").remaining());
     }
@@ -176,7 +178,7 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
         assertEquals(409, refused(publicId, new PublicPredictionRequest(version.getVersion() - 1, Map.of()))
                 .getStatusCode().value());
         assertEquals(400, refused(publicId, request(Map.of("in9", 1))).getStatusCode().value());
-        run(publicId, "{\"values\":{\"in0\":52}}").andExpect(status().isBadRequest());
+        mockMvc.perform(runRequest(publicId).content("{\"values\":{\"in0\":52}}")).andExpect(status().isBadRequest());
 
         assertEquals(new PublicRunQuotaDto(3, 3, null), service.quota(publicId, VISITOR));
         quota(publicId).andExpect(jsonPath("$.remaining").value(3)).andExpect(jsonPath("$.resetsAt").isEmpty());
@@ -301,54 +303,10 @@ class PublicPredictionQuotaTest extends PublicPredictionFixture {
         return mockMvc.perform(runRequest(publicId));
     }
 
-    private ResultActions run(String publicId, String body) throws Exception {
-        return mockMvc.perform(post("/api/public/bookmarks/{publicId}/predictions", publicId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body));
-    }
-
-    private MockHttpServletRequestBuilder runRequest(String publicId) {
-        return post("/api/public/bookmarks/{publicId}/predictions", publicId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"version\":" + version.getVersion() + ",\"values\":{\"in0\":52}}");
-    }
-
-    /** A logged-in session, as the login endpoint leaves it for the filter chain to read. */
-    private static MockHttpServletRequestBuilder signedIn(MockHttpServletRequestBuilder request, long userId) {
-        var principal = new AuthenticatedUserPrincipal(userId, "member@example.test", "hash", SystemRole.USER, true);
-        var authentication = UsernamePasswordAuthenticationToken.authenticated(
-                principal, null, principal.getAuthorities());
-        return request.sessionAttr(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                new SecurityContextImpl(authentication));
-    }
-
     private static PublicCaller caller(PublicCallerArgumentResolver resolver, String socket, String header) {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr(socket);
         if (header != null) request.addHeader(CLIENT_ADDRESS, header);
         return resolver.resolveArgument(null, null, new ServletWebRequest(request), null);
-    }
-
-    private static final class MovingClock extends Clock {
-        private Instant now = START;
-
-        void advance(Duration duration) {
-            now = now.plus(duration);
-        }
-
-        @Override
-        public Instant instant() {
-            return now;
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneOffset.UTC;
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return this;
-        }
     }
 }
