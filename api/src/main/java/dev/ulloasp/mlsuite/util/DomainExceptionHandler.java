@@ -14,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -77,9 +78,11 @@ public class DomainExceptionHandler {
 
     // ---- 403 FORBIDDEN ----
 
+    // AccessDeniedException is what method security (@PreAuthorize) throws for a signed-in user.
     @ExceptionHandler({
             ModelNotFromUserException.class,
-            OrganizationAccessDeniedException.class
+            OrganizationAccessDeniedException.class,
+            AccessDeniedException.class
     })
     public ResponseEntity<ErrorDto> handleForbidden(RuntimeException ex, HttpServletRequest req) {
         return respond(HttpStatus.FORBIDDEN, ex, req);

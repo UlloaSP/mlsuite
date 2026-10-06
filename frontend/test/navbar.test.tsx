@@ -97,12 +97,14 @@ describe("navigation bar", () => {
       "nav:Review",
       "nav:Organizations",
       "nav:Users",
+      "nav:Moderation",
       "nav:Infra",
     ]);
     expect(entries[6].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
     expect(entries[2].getAttribute("href")).toBe("/schemas");
-    expect(entries[8].tagName).toBe("BUTTON");
-    expect(entries[8].getAttribute("aria-haspopup")).toBe("menu");
+    expect(entries[8].getAttribute("href")).toBe("/admin/public-bookmarks");
+    expect(entries[9].tagName).toBe("BUTTON");
+    expect(entries[9].getAttribute("aria-haspopup")).toBe("menu");
     expect(entries[0].getAttribute("href")).toBe("/predict");
     expect(entries[0].getAttribute("aria-keyshortcuts")).toBe("Alt+1");
     expect(entries[6].getAttribute("aria-keyshortcuts")).toBe("Alt+7");
@@ -161,7 +163,12 @@ describe("navigation bar", () => {
       "nav:Plugins",
       "nav:Review",
     ]);
-    expect(group("Administration")).toEqual(["nav:Organizations", "nav:Users", "nav:Infra"]);
+    expect(group("Administration")).toEqual([
+      "nav:Organizations",
+      "nav:Users",
+      "nav:Moderation",
+      "nav:Infra",
+    ]);
     expect(
       container
         .querySelector('[data-user-guide-item="nav:Organizations"]')

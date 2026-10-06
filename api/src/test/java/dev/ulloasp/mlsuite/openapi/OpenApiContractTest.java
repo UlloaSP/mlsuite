@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import dev.ulloasp.mlsuite.admin.AdminUserService;
 import dev.ulloasp.mlsuite.admin.infrastructure.InfrastructureService;
+import dev.ulloasp.mlsuite.admin.moderation.PublicBookmarkModerationService;
 import dev.ulloasp.mlsuite.audit.application.port.in.AuditLogUseCase;
 import dev.ulloasp.mlsuite.invitation.application.port.in.InvitationManagementUseCase;
 import dev.ulloasp.mlsuite.model.application.port.in.AnalyzerUseCase;
@@ -83,8 +84,8 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         InvitationManagementUseCase.class, ListPluginRuntimeSourcesUseCase.class, ModelCatalogUseCase.class,
         ModelCreationUseCase.class, OrganizationCatalogService.class, OrganizationManagementUseCase.class,
         PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
-        PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkUseCase.class,
-        RoleCatalogUseCase.class,
+        PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,
+        PublicBookmarkUseCase.class, RoleCatalogUseCase.class,
         RoleManagementUseCase.class, SchemaBookmarkUseCase.class, SchemaCatalogUseCase.class,
         SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaReviewManagementUseCase.class,
         SchemaReviewUseCase.class, SchemaVersionUseCase.class, SearchWorkspaceUseCase.class,

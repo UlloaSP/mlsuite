@@ -28,6 +28,7 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 - Export inputs, outputs, and feedback for downstream work.
 - Publish a schema bookmark to a public page at `/explore/<id>` that shows its form to anyone, signed in or not.
 - Manage organizations, teams, roles, invitations, and workspace permissions.
+- Let superadmins review every public bookmark on the instance and unpublish any of them.
 - Monitor the local Compose stack through the operations service.
 
 ### Model artifacts

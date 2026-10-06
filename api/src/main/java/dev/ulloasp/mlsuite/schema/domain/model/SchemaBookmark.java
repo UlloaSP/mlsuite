@@ -67,4 +67,9 @@ public class SchemaBookmark {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private OffsetDateTime updatedAt;
+
+    /** Makes the bookmark private again; its public id is kept for a later publish. */
+    public void unpublish() {
+        this.visibility = BookmarkVisibility.PRIVATE;
+    }
 }

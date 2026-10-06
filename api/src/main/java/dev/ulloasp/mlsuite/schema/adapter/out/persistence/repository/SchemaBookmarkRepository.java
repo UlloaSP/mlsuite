@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
@@ -33,6 +34,19 @@ public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, 
             AND b.schema.archivedAt IS NULL
             """)
     Optional<SchemaBookmark> findPublishedByPublicId(String publicId);
+
+    /** Every bookmark flagged public on the instance, whether or not its schema is archived. */
+    @Query("""
+            SELECT b FROM SchemaBookmark b
+            WHERE b.visibility = dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility.PUBLIC
+            AND (
+                :search = ''
+                OR lower(b.name) LIKE lower(concat('%', :search, '%'))
+                OR lower(b.schema.name) LIKE lower(concat('%', :search, '%'))
+                OR lower(b.schema.organization.name) LIKE lower(concat('%', :search, '%'))
+            )
+            """)
+    Page<SchemaBookmark> findPublicPage(String search, Pageable pageable);
 
     @Query("""
             SELECT b FROM SchemaBookmark b

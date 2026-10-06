@@ -96,6 +96,12 @@ export function useNavigationItems() {
         },
         { root: "/admin/users", to: "/admin/users", icon: SECTION_ICONS.users, label: "Users" },
         {
+          root: "/admin/public-bookmarks",
+          to: "/admin/public-bookmarks",
+          icon: SECTION_ICONS.moderation,
+          label: "Moderation",
+        },
+        {
           root: "/admin/infrastructure",
           to: "/admin/infrastructure",
           icon: SECTION_ICONS.infrastructure,
