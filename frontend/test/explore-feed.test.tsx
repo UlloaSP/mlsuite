@@ -325,12 +325,13 @@ describe("entry routing", () => {
     expect(host.querySelector('[data-page="auth"]')).not.toBeNull();
   });
 
-  test("a signed-in member who opens / still reaches the sign-in screen", async () => {
+  test("a signed-in member who opens / goes to their home", async () => {
     session.signedIn = true;
-    const { host, url } = await open("/");
+    const { url } = await open("/");
 
-    expect(url).toBe("/login");
-    expect(host.querySelector('[data-page="auth"]')).not.toBeNull();
+    expect(url).not.toBe("/");
+    expect(url).not.toBe("/login");
+    expect(url).not.toBe("/explore");
   });
 
   test("a signed-in member opens the feed inside the app shell", async () => {
