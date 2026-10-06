@@ -97,7 +97,10 @@ const respond = (url: unknown, init?: RequestInit): Response => {
   requests.push(`${method} ${path}`);
   if (path === `/api/public/bookmarks/${PUBLIC_ID}/predictions`) {
     publicRuns.push(JSON.parse(init?.body as string));
-    return json({ reports: [] });
+    return json({ reports: [], quota: { limit: 5, remaining: 4, resetsAt: AT } });
+  }
+  if (path === `/api/public/bookmarks/${PUBLIC_ID}/quota`) {
+    return json({ limit: 5, remaining: 5, resetsAt: null });
   }
   const example = /^\/api\/schema-bookmarks\/70\/examples\/(\d+)$/.exec(path);
   if (example) {

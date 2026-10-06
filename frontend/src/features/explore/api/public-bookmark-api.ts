@@ -12,6 +12,7 @@ import type {
   PublicBookmarkExampleDto,
   PublicPredictionDto,
   PublicPredictionRequest,
+  PublicRunQuotaDto,
   SchemaBookmarkDto,
 } from "@/shared/api/openapi.gen";
 
@@ -86,6 +87,21 @@ export const publicBookmarkExamplesQueryOptions = (publicId: string) =>
     queryFn: ({ signal }) => getPublicBookmarkExamples(publicId, signal),
     enabled: publicId !== "",
     retry: (failures, error) => !isPublicBookmarkMissing(error) && failures < 1,
+    meta: { errorHandledLocally: true },
+  });
+
+/**
+ * How many runs of the bookmark the caller has left. The server counts a visitor without a
+ * session by network and a signed-in member by account, so each has its own entry; it is asked
+ * on every visit, and a run replaces it with the count that came back.
+ */
+export const publicRunQuotaQueryOptions = (publicId: string, caller: "visitor" | "member") =>
+  queryOptions({
+    queryKey: ["public", "bookmark", publicId, "quota", caller] as const,
+    queryFn: ({ signal }) =>
+      appFetch<PublicRunQuotaDto>(`${publicBookmarkPath(publicId)}/quota`, { signal }),
+    staleTime: 0,
+    retry: false,
     meta: { errorHandledLocally: true },
   });
 

@@ -19,6 +19,7 @@ const ME_PATH = "/api/users/me";
 const CONTEXT_PATH = "/api/workspace/context";
 const BOOKMARK_PATH = `/api/public/bookmarks/${PUBLIC_ID}`;
 const EXAMPLES_PATH = `${BOOKMARK_PATH}/examples`;
+const QUOTA_PATH = `${BOOKMARK_PATH}/quota`;
 const RUN_PATH = `${BOOKMARK_PATH}/predictions`;
 const WORKSPACE_PATH = `/api/schema-bookmarks/public/${PUBLIC_ID}`;
 
@@ -67,6 +68,7 @@ const classified = (low: number, high: number) =>
         payload: { kind: "classifier", mapping: ["low", "high"], probabilities: [[low, high]] },
       },
     ],
+    quota: { limit: 50, remaining: 49, resetsAt: AT },
   });
 const flush = () => act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 const settle = async () => {
@@ -88,6 +90,8 @@ beforeEach(() => {
     [ME_PATH]: [json({ status: 401, message: "Unauthorized", path: ME_PATH, timestamp: AT }, 401)],
     [BOOKMARK_PATH]: [json(publicBookmark())],
     [EXAMPLES_PATH]: [json([])],
+    // Plenty of runs left: the quota has its own tests.
+    [QUOTA_PATH]: [json({ limit: 50, remaining: 50, resetsAt: null })],
   };
   fetchMock = vi.fn(async (url: string) => {
     const queue = answers[new URL(url).pathname];
@@ -156,7 +160,7 @@ describe("running a public bookmark", () => {
     expect(reportText(host)).toContain("high 80.0 %");
     expect(alertText(host)).toBeNull();
     // After the frame's session probe, only public reads and the run: no model, no saved run.
-    expect(requestedPaths()).toEqual([ME_PATH, BOOKMARK_PATH, EXAMPLES_PATH, RUN_PATH]);
+    expect(requestedPaths()).toEqual([ME_PATH, BOOKMARK_PATH, EXAMPLES_PATH, QUOTA_PATH, RUN_PATH]);
   });
 
   test("the form is busy while the run is in flight", async () => {
@@ -289,7 +293,7 @@ describe("the way from a public page into its workspace", () => {
     expect(host.querySelector("mlf-kit-tabs")).not.toBeNull();
     expect(link(host)).toBeUndefined();
     // The failed session probe is not repeated by the page, and no workspace is asked.
-    expect(requestedPaths()).toEqual([ME_PATH, BOOKMARK_PATH, EXAMPLES_PATH]);
+    expect(requestedPaths()).toEqual([ME_PATH, BOOKMARK_PATH, EXAMPLES_PATH, QUOTA_PATH]);
   });
 
   test("a member of the owning organization can open the bookmark where runs are saved", async () => {
