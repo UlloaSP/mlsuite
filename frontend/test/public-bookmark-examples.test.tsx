@@ -58,6 +58,12 @@ const marked = (
 const run = (id: number, schemaVersionId = PINNED_VERSION_ID) =>
   predictionRun({ id, name: `case-${id}`, schemaBookmarkId: BOOKMARK_ID, schemaVersionId });
 
+const FORM_SCHEMA = {
+  fields: [
+    { kind: "number", label: "Age" },
+    { kind: "text", label: "Notes" },
+  ],
+};
 const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
@@ -66,12 +72,7 @@ const publicBookmark: PublicBookmarkDto = {
   version: 2,
   versionName: "Baseline",
   organizationName: "Acme Health",
-  formSchema: {
-    fields: [
-      { kind: "number", label: "Age" },
-      { kind: "text", label: "Notes" },
-    ],
-  },
+  formSchema: FORM_SCHEMA,
   updatedAt: AT,
 };
 
@@ -121,6 +122,7 @@ const changes = () => requests.filter((request) => !request.startsWith("GET "));
 beforeEach(() => {
   session.canPublish = false;
   Object.assign(server, { bookmark: bookmark(), examples: [], publicExamples: [] });
+  publicBookmark.formSchema = FORM_SCHEMA;
   requests = [];
   vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) => Promise.resolve(respond(url, init)));
 });
@@ -349,6 +351,16 @@ describe("examples on the public page", () => {
     // The second example replaces every value, including the ones it does not set.
     await choose(host, "Elderly case");
     expect(values(host)).toEqual(["81", ""]);
+    expect(host.querySelectorAll("mlf-form")).toHaveLength(1);
+  });
+
+  test("a form that cannot be shown offers no examples either", async () => {
+    server.publicExamples = [typical];
+    publicBookmark.formSchema = { fields: [{ kind: "body-map", label: "Pain" }] };
+    const host = await page();
+
+    expect(host.textContent).toContain("This form cannot be shown here");
+    expect(selector(host)).toBeNull();
   });
 
   test("when the examples cannot be loaded the form is still there, without a selector", async () => {

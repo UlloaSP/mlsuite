@@ -12,6 +12,7 @@ import {
   mountSchemaInputs,
   type MountedSchemaInputs,
 } from "@/capabilities/prediction-runtime/mlform/schema-inputs-mount";
+import { PublicBookmarkExampleSelect } from "@/features/explore/components/PublicBookmarkExampleSelect";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { cx } from "@/shared/ui/cx";
@@ -25,16 +26,17 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * compiled from an organization's private catalog, so a form that uses them says so
  * instead of borrowing the visitor's own catalog.
  *
- * `initialInputs` are an example's values, keyed like the form's fields. They become the fields'
- * starting values, as a saved run's do in the workspace form, so the visitor can edit them. A
- * form is mounted once: the page remounts it to load another example.
+ * A form that can be shown offers the bookmark's curated examples above it. Loading one starts
+ * the form again with the example's inputs as the fields' starting values, as a saved run's are
+ * in the workspace form, so the visitor can edit them. The loaded example is kept as it was
+ * chosen: a later refetch of the list never resets what the visitor is editing.
  */
 export function PublicBookmarkForm({
   formSchema,
-  initialInputs,
+  examples = [],
 }: {
   formSchema: PublicBookmarkDto["formSchema"];
-  initialInputs?: PublicBookmarkExampleDto["inputs"];
+  examples?: readonly PublicBookmarkExampleDto[];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedSchemaInputs | null>(null);
@@ -44,9 +46,10 @@ export function PublicBookmarkForm({
   const empty = !hasFields(formSchema);
   const needsPlugins = schemaNeedsPluginCatalog(formSchema);
   const mountable = !empty && !needsPlugins;
+  const [example, setExample] = useState<PublicBookmarkExampleDto>();
   const schema = useMemo(
-    () => (initialInputs ? applyPredictionInputsToSchema(formSchema, initialInputs) : formSchema),
-    [formSchema, initialInputs],
+    () => (example ? applyPredictionInputsToSchema(formSchema, example.inputs) : formSchema),
+    [example, formSchema],
   );
 
   useEffect(() => {
@@ -91,7 +94,14 @@ export function PublicBookmarkForm({
     );
   }
   return (
-    <>
+    <div className="flex flex-col gap-6">
+      {examples.length > 0 ? (
+        <PublicBookmarkExampleSelect
+          examples={examples}
+          value={example?.id}
+          onChange={(id) => setExample(examples.find((item) => item.id === id))}
+        />
+      ) : null}
       {mountError ? (
         <AppEmptyState compact title="This form could not be displayed" description={mountError} />
       ) : null}
@@ -99,6 +109,6 @@ export function PublicBookmarkForm({
         ref={containerRef}
         className={cx("min-h-0 w-full", MLFORM_INPUTS_ONLY_CONTAINER_CLASS, mountError && "hidden")}
       />
-    </>
+    </div>
   );
 }
