@@ -5,7 +5,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 export const PASSWORD_MIN_LENGTH = 10;
 
-export type AuthMode = "login" | "register";
+export const AUTH_MODES = ["login", "register"] as const;
+export type AuthMode = (typeof AUTH_MODES)[number];
 
 export const AUTH_COPY = {
   login: {

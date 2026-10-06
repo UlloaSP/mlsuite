@@ -305,7 +305,11 @@ describe("entry routing", () => {
     expect(url).toBe("/explore");
     expect(host.querySelector("h1")?.textContent).toBe("Explore");
     expect(host.querySelector('[data-frame="app-shell"]')).toBeNull();
-    expect(hrefs(host, "header a")).toEqual(["/explore", "/login?returnTo=%2Fexplore"]);
+    expect(hrefs(host, "header a")).toEqual([
+      "/explore",
+      "/login?returnTo=%2Fexplore",
+      "/login?returnTo=%2Fexplore&mode=register",
+    ]);
   });
 
   test("the sign-in screen has its own address", async () => {

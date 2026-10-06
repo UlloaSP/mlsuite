@@ -87,7 +87,7 @@ database, audit it against the baseline first and set
 `FLYWAY_BASELINE_ON_MIGRATE=true` for exactly one startup; return it to `false`
 immediately afterwards.
 
-Then open [http://localhost:5173](http://localhost:5173). Without a session it shows the public feed at `/explore`; sign in at [`/login`](http://localhost:5173/login) with the superadmin account configured in `.env`.
+Then open [http://localhost:5173](http://localhost:5173). Without a session it shows the public feed at `/explore`, whose header offers **Sign in** and **Create account** and brings you back to the page you were on. Sign in at [`/login`](http://localhost:5173/login) with the superadmin account configured in `.env`, or register at [`/login?mode=register`](http://localhost:5173/login?mode=register): a new account gets its own personal organization.
 
 Inspect service state or logs with:
 
