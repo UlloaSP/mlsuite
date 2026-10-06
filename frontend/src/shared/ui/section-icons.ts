@@ -8,6 +8,7 @@ import {
   BrainCircuit,
   Building2,
   FileJson2,
+  Gavel,
   GitCommitHorizontal,
   GitCompareArrows,
   Play,
@@ -38,5 +39,6 @@ export const SECTION_ICONS = {
   plugins: Blocks,
   reviews: MessageSquareText,
   users: ShieldCheck,
+  moderation: Gavel,
   infrastructure: ServerCog,
 } as const satisfies Record<string, LucideIcon>;

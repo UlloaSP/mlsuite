@@ -84,6 +84,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/public-bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/public-bookmarks/{bookmarkId}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unpublish_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -1620,6 +1652,20 @@ export interface components {
             /** Format: int64 */
             version: number;
         };
+        ModeratedBookmarkDto: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            organizationName: string;
+            publicId: string;
+            schemaArchived: boolean;
+            schemaName: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int32 */
+            version: number;
+            versionName: string | null;
+        };
         MoveSchemaBookmarkRequest: {
             /** Format: int64 */
             versionId: number;
@@ -1723,6 +1769,16 @@ export interface components {
         PageDtoModelDto: {
             hasNext: boolean;
             items: components["schemas"]["ModelDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            size: number;
+            /** Format: int64 */
+            totalItems: number;
+        };
+        PageDtoModeratedBookmarkDto: {
+            hasNext: boolean;
+            items: components["schemas"]["ModeratedBookmarkDto"][];
             /** Format: int32 */
             page: number;
             /** Format: int32 */
@@ -2372,6 +2428,7 @@ export type JsonNode = components['schemas']['JsonNode'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MembershipActionsDto = components['schemas']['MembershipActionsDto'];
 export type ModelDto = components['schemas']['ModelDto'];
+export type ModeratedBookmarkDto = components['schemas']['ModeratedBookmarkDto'];
 export type MoveSchemaBookmarkRequest = components['schemas']['MoveSchemaBookmarkRequest'];
 export type OrganizationAdminDashboardDto = components['schemas']['OrganizationAdminDashboardDto'];
 export type OrganizationAdminStatsDto = components['schemas']['OrganizationAdminStatsDto'];
@@ -2380,6 +2437,7 @@ export type OrganizationDto = components['schemas']['OrganizationDto'];
 export type OrganizationMembershipDto = components['schemas']['OrganizationMembershipDto'];
 export type OrganizationMembershipRowDto = components['schemas']['OrganizationMembershipRowDto'];
 export type PageDtoModelDto = components['schemas']['PageDtoModelDto'];
+export type PageDtoModeratedBookmarkDto = components['schemas']['PageDtoModeratedBookmarkDto'];
 export type PageDtoOrganizationCatalogItemDto = components['schemas']['PageDtoOrganizationCatalogItemDto'];
 export type PageDtoPluginDto = components['schemas']['PageDtoPluginDto'];
 export type PageDtoSchemaCatalogItemDto = components['schemas']['PageDtoSchemaCatalogItemDto'];
@@ -2550,6 +2608,53 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_9: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                search?: string;
+                sort?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDtoModeratedBookmarkDto"];
+                };
+            };
+        };
+    };
+    unpublish_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
+                };
             };
         };
     };

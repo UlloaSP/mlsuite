@@ -81,7 +81,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     @Override
     public SchemaBookmark unpublishBookmark(Long userId, Long bookmarkId) {
         SchemaBookmark bookmark = requireBookmark(bookmarkId, requirePublish(userId));
-        bookmark.setVisibility(BookmarkVisibility.PRIVATE);
+        bookmark.unpublish();
         return bookmark;
     }
 

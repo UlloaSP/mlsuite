@@ -61,6 +61,11 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
     title: "Users",
     description: "Manage platform accounts and their system roles.",
   },
+  "nav:Moderation": {
+    title: "Moderation",
+    description:
+      "See every bookmark published on this MLsuite instance, open its public page, and unpublish what should not be public.",
+  },
   "nav:Infra": {
     title: "Infrastructure",
     description:

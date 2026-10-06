@@ -59,6 +59,11 @@ export const protectedPages: RouteObject[] = [
     page("admin/users/create", () =>
       import("@/features/admin/pages/create-admin-user-page").then((m) => m.CreateAdminUserPage),
     ),
+    page("admin/public-bookmarks", () =>
+      import("@/features/admin/pages/admin-public-bookmarks-page").then(
+        (m) => m.AdminPublicBookmarksPage,
+      ),
+    ),
     page("admin/infrastructure", () =>
       import("@/features/infrastructure/pages/admin-infrastructure-page").then(
         (m) => m.AdminInfrastructurePage,
