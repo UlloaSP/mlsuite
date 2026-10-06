@@ -11,6 +11,12 @@ import org.springframework.data.domain.Pageable;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 
 public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, Long> {
+    /** The one rule for what anyone may read: a published bookmark whose schema is not archived. */
+    String PUBLISHED = """
+            b.visibility = dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility.PUBLIC
+            AND b.schema.archivedAt IS NULL
+            """;
+
     void deleteBySchemaId(Long schemaId);
     List<SchemaBookmark> findBySchemaIdOrderByNameAsc(Long schemaId);
 
@@ -26,14 +32,20 @@ public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, 
     @Query("SELECT b FROM SchemaBookmark b WHERE b.id = :id AND b.schema.organization.id = :organizationId")
     Optional<SchemaBookmark> findByIdAndOrganizationId(Long id, Long organizationId);
 
-    /** A bookmark anyone may read: published, and its schema not archived. */
-    @Query("""
-            SELECT b FROM SchemaBookmark b
-            WHERE b.publicId = :publicId
-            AND b.visibility = dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility.PUBLIC
-            AND b.schema.archivedAt IS NULL
-            """)
+    @Query("SELECT b FROM SchemaBookmark b WHERE b.publicId = :publicId AND " + PUBLISHED)
     Optional<SchemaBookmark> findPublishedByPublicId(String publicId);
+
+    /** One page of what anyone may read, for the public feed. */
+    @Query("SELECT b FROM SchemaBookmark b WHERE " + PUBLISHED + """
+            AND (
+                :search = ''
+                OR lower(b.name) LIKE lower(concat('%', :search, '%'))
+                OR lower(b.schema.name) LIKE lower(concat('%', :search, '%'))
+                OR lower(b.schema.description) LIKE lower(concat('%', :search, '%'))
+                OR lower(b.schema.organization.name) LIKE lower(concat('%', :search, '%'))
+            )
+            """)
+    Page<SchemaBookmark> findPublishedPage(String search, Pageable pageable);
 
     /** Every bookmark flagged public on the instance, whether or not its schema is archived. */
     @Query("""

@@ -24,7 +24,7 @@ export function AppPageHeader({
   description?: ReactNode;
   /** The levels below the root; the root crumb comes from `breadcrumbScope`. */
   breadcrumbs?: AppBreadcrumbItem[];
-  /** Who the page belongs to: the current organization (default), your account, the platform, or nobody (public). */
+  /** Who the page belongs to: the current organization (default), your account, the platform, or the public feed. */
   breadcrumbScope?: BreadcrumbScope;
   actions?: ReactNode;
 }) {

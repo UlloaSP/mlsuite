@@ -12,7 +12,8 @@ import type { PublicBookmarkDto, SchemaBookmarkDto } from "@/shared/api/openapi.
 import { click, mount } from "./support/dom";
 
 const session = vi.hoisted(() => ({ signedIn: false, canPublish: false }));
-vi.mock("@/capabilities/workspace-context/session", () => ({
+vi.mock("@/capabilities/workspace-context/session", async (original) => ({
+  ...(await original<typeof import("@/capabilities/workspace-context/session")>()),
   useUser: () =>
     session.signedIn
       ? { data: { id: 9 }, error: null, isLoading: false }
@@ -253,7 +254,7 @@ describe("public page frame", () => {
     expect(host.querySelector('nav[aria-label="Sidebar"]')).toBeNull();
     const signIn = [...host.querySelectorAll("a")].find((link) => link.textContent === "Sign in");
     expect(signIn?.getAttribute("href")).toBe(
-      `/?returnTo=${encodeURIComponent(`/explore/${PUBLIC_ID}?tab=form`)}`,
+      `/login?returnTo=${encodeURIComponent(`/explore/${PUBLIC_ID}?tab=form`)}`,
     );
   });
 
@@ -269,6 +270,6 @@ describe("public page frame", () => {
     const root = routes[0].children ?? [];
     const publicBranch = root.find((route) => route.children === publicPages);
     expect(publicBranch).toBeDefined();
-    expect(publicPages.map((route) => route.path)).toEqual(["explore/:publicId"]);
+    expect(publicPages.map((route) => route.path)).toContain("explore/:publicId");
   });
 });

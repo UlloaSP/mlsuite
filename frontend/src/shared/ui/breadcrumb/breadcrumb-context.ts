@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useRef, type ReactNode } from "re
 
 /**
  * Who a page belongs to, which decides the first crumb. A `public` page belongs to no
- * workspace, so it has no root crumb, whoever is looking at it.
+ * workspace: its root is the public feed, whoever is looking at it.
  */
 export type BreadcrumbScope = "organization" | "account" | "platform" | "public";
 

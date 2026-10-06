@@ -26,7 +26,7 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 - Collect reviews, corrections, questionnaires, and explanation feedback.
 - Extend reports and fields through plugins.
 - Export inputs, outputs, and feedback for downstream work.
-- Publish a schema bookmark to a public page at `/explore/<id>` that shows its form to anyone, signed in or not.
+- Publish a schema bookmark to a public page at `/explore/<id>` that shows its form to anyone, signed in or not, and list every published bookmark in the public feed at `/explore`.
 - Manage organizations, teams, roles, invitations, and workspace permissions.
 - Let superadmins review every public bookmark on the instance and unpublish any of them.
 - Monitor the local Compose stack through the operations service.
@@ -87,7 +87,7 @@ database, audit it against the baseline first and set
 `FLYWAY_BASELINE_ON_MIGRATE=true` for exactly one startup; return it to `false`
 immediately afterwards.
 
-Then open [http://localhost:5173](http://localhost:5173) and sign in with the superadmin account configured in `.env`.
+Then open [http://localhost:5173](http://localhost:5173). Without a session it shows the public feed at `/explore`; sign in at [`/login`](http://localhost:5173/login) with the superadmin account configured in `.env`.
 
 Inspect service state or logs with:
 

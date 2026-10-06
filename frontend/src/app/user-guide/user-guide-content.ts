@@ -71,6 +71,11 @@ export const GUIDE_CONTENT: Record<string, GuideContent> = {
     description:
       "Monitor services, tail logs, open a terminal, and review alerts for this deployment.",
   },
+  "nav:Explore": {
+    title: "Explore",
+    description:
+      "Browse the bookmarks every organization has published. Anyone can open these pages, signed in or not.",
+  },
   "global-search": {
     title: "Global search",
     description:

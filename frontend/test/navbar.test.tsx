@@ -87,7 +87,8 @@ describe("navigation bar", () => {
 
     const nav = container.querySelector('nav[aria-label="Main navigation"]')!;
     const entries = [...nav.querySelectorAll<HTMLElement>("[data-user-guide-item]")];
-    // The organization's work first, then platform administration after a divider.
+    // The organization's work first, then platform administration and the public feed,
+    // each after a divider.
     expect(entries.map((entry) => entry.dataset.userGuideItem)).toEqual([
       "nav:Predict",
       "nav:Models",
@@ -99,8 +100,11 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Moderation",
       "nav:Infra",
+      "nav:Explore",
     ]);
     expect(entries[6].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    expect(entries[10].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    expect(nav.querySelectorAll(":scope > span[aria-hidden='true']")).toHaveLength(2);
     expect(entries[2].getAttribute("href")).toBe("/schemas");
     expect(entries[8].getAttribute("href")).toBe("/admin/public-bookmarks");
     expect(entries[9].tagName).toBe("BUTTON");
@@ -142,7 +146,7 @@ describe("navigation bar", () => {
     expect(infra.querySelector(".lucide-chevron-down")).toBeNull();
   });
 
-  test("the sidebar splits the organization's work from platform administration", async () => {
+  test("the sidebar splits the organization's work, platform administration and the public feed", async () => {
     const container = await render(
       <SidebarProvider open onOpenChange={() => undefined}>
         <SidebarNavigation />
@@ -169,6 +173,7 @@ describe("navigation bar", () => {
       "nav:Moderation",
       "nav:Infra",
     ]);
+    expect(group("Public")).toEqual(["nav:Explore"]);
     expect(
       container
         .querySelector('[data-user-guide-item="nav:Organizations"]')
