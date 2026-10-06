@@ -51,6 +51,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/actuator/**").permitAll()
                                                 .requestMatchers("/api/readiness").permitAll()
                                                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                                                .requestMatchers("/api/public/**").permitAll()
                                                 .requestMatchers("/", "/assets/**").permitAll()
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(e -> e.authenticationEntryPoint(

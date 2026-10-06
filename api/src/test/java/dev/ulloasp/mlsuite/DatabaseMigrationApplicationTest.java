@@ -32,7 +32,7 @@ class DatabaseMigrationApplicationTest {
                 "--spring.flyway.user=" + POSTGRES.getUsername(),
                 "--spring.flyway.password=" + POSTGRES.getPassword(),
                 "--logging.file.name=target/database-migration-test.log")) {
-            assertEquals("6", context.getBean(Flyway.class).info().current().getVersion().toString());
+            assertEquals("7", context.getBean(Flyway.class).info().current().getVersion().toString());
         }
     }
 }

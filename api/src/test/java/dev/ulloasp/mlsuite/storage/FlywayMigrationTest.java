@@ -29,9 +29,9 @@ class FlywayMigrationTest {
     void appliesCompleteHistoryToEmptyPostgresAndIsRepeatable() throws Exception {
         Flyway flyway = flyway("fresh", null);
 
-        assertEquals(6, flyway.migrate().migrationsExecuted);
+        assertEquals(7, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("6", flyway.info().current().getVersion().toString());
+        assertEquals("7", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -96,7 +96,7 @@ class FlywayMigrationTest {
                 .baselineOnMigrate(true)
                 .baselineVersion(MigrationVersion.fromVersion("1"))
                 .load();
-        assertEquals(5, upgraded.migrate().migrationsExecuted);
+        assertEquals(6, upgraded.migrate().migrationsExecuted);
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -117,6 +117,29 @@ class FlywayMigrationTest {
         }
         assertLegacyRoleBackfilled("organization_membership", "OWNER", 22);
         assertLegacyRoleBackfilled("invitation", "VIEWER", 4);
+        assertPublishPermissionIsStorable();
+    }
+
+    /** V7 widens the permission checks; existing bookmarks stay private. */
+    private void assertPublishPermissionIsStorable() throws Exception {
+        try (var connection = DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                var statement = connection.createStatement()) {
+            assertEquals(2, statement.executeUpdate("""
+                    INSERT INTO upgrade_path.role_permission (role_definition_id, permission_key)
+                    SELECT id, 'PUBLISH_BOOKMARKS' FROM upgrade_path.role_definition
+                    """));
+            try (var result = statement.executeQuery("""
+                    SELECT column_default, is_nullable
+                    FROM information_schema.columns
+                    WHERE table_schema = 'upgrade_path' AND table_name = 'schema_bookmark'
+                      AND column_name = 'visibility'
+                    """)) {
+                assertTrue(result.next());
+                assertTrue(result.getString(1).startsWith("'PRIVATE'"));
+                assertEquals("NO", result.getString(2));
+            }
+        }
     }
 
     private void assertLegacyRoleBackfilled(String table, String systemKey, int permissions) throws Exception {

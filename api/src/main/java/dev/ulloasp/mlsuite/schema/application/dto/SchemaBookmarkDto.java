@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.schema.application.dto;
 
 import java.time.OffsetDateTime;
 
+import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 
 import jakarta.annotation.Nullable;
@@ -14,6 +15,8 @@ public record SchemaBookmarkDto(
         int version,
         @Nullable String versionName,
         String name,
+        BookmarkVisibility visibility,
+        @Nullable String publicId,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
 
@@ -26,6 +29,8 @@ public record SchemaBookmarkDto(
                 bookmark.getVersion().getVersion(),
                 bookmark.getVersion().getName(),
                 bookmark.getName(),
+                bookmark.getVisibility(),
+                bookmark.getPublicId(),
                 bookmark.getCreatedAt(),
                 bookmark.getUpdatedAt());
     }

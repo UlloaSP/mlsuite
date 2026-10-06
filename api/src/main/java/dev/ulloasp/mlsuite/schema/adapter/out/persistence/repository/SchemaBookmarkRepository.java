@@ -25,6 +25,15 @@ public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, 
     @Query("SELECT b FROM SchemaBookmark b WHERE b.id = :id AND b.schema.organization.id = :organizationId")
     Optional<SchemaBookmark> findByIdAndOrganizationId(Long id, Long organizationId);
 
+    /** A bookmark anyone may read: published, and its schema not archived. */
+    @Query("""
+            SELECT b FROM SchemaBookmark b
+            WHERE b.publicId = :publicId
+            AND b.visibility = dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility.PUBLIC
+            AND b.schema.archivedAt IS NULL
+            """)
+    Optional<SchemaBookmark> findPublishedByPublicId(String publicId);
+
     @Query("""
             SELECT b FROM SchemaBookmark b
             WHERE b.schema.organization.id = :organizationId

@@ -46,6 +46,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionR
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCreationUseCase;
@@ -82,7 +83,8 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         InvitationManagementUseCase.class, ListPluginRuntimeSourcesUseCase.class, ModelCatalogUseCase.class,
         ModelCreationUseCase.class, OrganizationCatalogService.class, OrganizationManagementUseCase.class,
         PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
-        PredictionResultRepository.class, PredictionRunUseCase.class, RoleCatalogUseCase.class,
+        PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkUseCase.class,
+        RoleCatalogUseCase.class,
         RoleManagementUseCase.class, SchemaBookmarkUseCase.class, SchemaCatalogUseCase.class,
         SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaReviewManagementUseCase.class,
         SchemaReviewUseCase.class, SchemaVersionUseCase.class, SearchWorkspaceUseCase.class,

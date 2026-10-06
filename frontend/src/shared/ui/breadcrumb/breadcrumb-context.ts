@@ -5,8 +5,11 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
 
-/** Who a page belongs to, which decides the first crumb. */
-export type BreadcrumbScope = "organization" | "account" | "platform";
+/**
+ * Who a page belongs to, which decides the first crumb. A `public` page belongs to no
+ * workspace, so it has no root crumb, whoever is looking at it.
+ */
+export type BreadcrumbScope = "organization" | "account" | "platform" | "public";
 
 export type BreadcrumbTrailItem = { label: ReactNode; to?: string };
 

@@ -33,3 +33,15 @@ export const createSchemaBookmark = (
     `/api/schemas/${encodeURIComponent(schemaId)}/bookmarks`,
     json("POST", req),
   );
+
+/** Opens the bookmark at its public link; the first publish assigns its public id. */
+export const publishSchemaBookmark = (bookmarkId: number | string): Promise<SchemaBookmarkDto> =>
+  appFetch<SchemaBookmarkDto>(`/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/publish`, {
+    method: "POST",
+  });
+
+/** Makes the bookmark private again; it keeps its public id for a later publish. */
+export const unpublishSchemaBookmark = (bookmarkId: number | string): Promise<SchemaBookmarkDto> =>
+  appFetch<SchemaBookmarkDto>(`/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}/unpublish`, {
+    method: "POST",
+  });

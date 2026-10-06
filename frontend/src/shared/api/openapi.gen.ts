@@ -779,7 +779,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_4"];
+        get: operations["get_5"];
         put?: never;
         post?: never;
         delete: operations["delete_5"];
@@ -796,6 +796,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/bookmarks/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -852,6 +868,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schema-bookmarks/{bookmarkId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publish_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schema-bookmarks/{bookmarkId}/runs": {
         parameters: {
             query?: never;
@@ -862,6 +894,22 @@ export interface paths {
         get: operations["listForBookmark"];
         put?: never;
         post: operations["createForBookmark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/{bookmarkId}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unpublish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1716,7 +1764,7 @@ export interface components {
             dangerous: boolean;
             description: string;
             /** @enum {string} */
-            key: "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG";
+            key: "VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG";
             label: string;
         };
         PermissionGroupDto: {
@@ -1875,6 +1923,21 @@ export interface components {
             /** Format: int64 */
             lastId: number;
         };
+        PublicBookmarkDto: {
+            formSchema: {
+                [key: string]: unknown;
+            };
+            name: string;
+            organizationName: string;
+            publicId: string;
+            schemaDescription: string | null;
+            schemaName: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int32 */
+            version: number;
+            versionName: string | null;
+        };
         PublishSchemaDraftRequest: {
             /** Format: int64 */
             expectedDraftRevision: number;
@@ -1925,7 +1988,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
-            permissionKeys: ("VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG")[];
+            permissionKeys: ("VIEW_WORKSPACE" | "VIEW_ORGANIZATION" | "EDIT_ORGANIZATION" | "DELETE_ORGANIZATION" | "TRANSFER_OWNERSHIP" | "VIEW_MEMBERS" | "INVITE_MEMBERS" | "MANAGE_MEMBER_ROLES" | "REMOVE_MEMBERS" | "VIEW_INVITATIONS" | "MANAGE_INVITATIONS" | "VIEW_MODELS" | "CREATE_MODELS" | "EDIT_MODELS" | "DELETE_MODELS" | "RUN_PREDICTIONS" | "EXPORT_PREDICTIONS" | "PUBLISH_BOOKMARKS" | "REVIEW" | "MANAGE_REVIEWS" | "VIEW_PLUGINS" | "MANAGE_PLUGINS" | "VIEW_AUDIT_LOG")[];
             /** @enum {string} */
             scope: "SYSTEM" | "ORGANIZATION";
         };
@@ -1941,6 +2004,7 @@ export interface components {
             /** Format: int64 */
             id: number;
             name: string;
+            publicId: string | null;
             /** Format: int64 */
             schemaId: number;
             schemaName: string;
@@ -1951,6 +2015,8 @@ export interface components {
             /** Format: int64 */
             versionId: number;
             versionName: string | null;
+            /** @enum {string} */
+            visibility: "PRIVATE" | "PUBLIC";
         };
         SchemaCatalogItemDto: {
             /** Format: date-time */
@@ -2243,6 +2309,7 @@ export interface components {
             canManageMemberRoles: boolean;
             canManagePlugins: boolean;
             canManageReviews: boolean;
+            canPublishBookmarks: boolean;
             canRemoveMembers: boolean;
             canReview: boolean;
             canRunPredictions: boolean;
@@ -2327,6 +2394,7 @@ export type PredictionResultFeedbackDto = components['schemas']['PredictionResul
 export type PredictionRunCatalogItemDto = components['schemas']['PredictionRunCatalogItemDto'];
 export type PredictionRunDto = components['schemas']['PredictionRunDto'];
 export type PredictionRunSequenceDto = components['schemas']['PredictionRunSequenceDto'];
+export type PublicBookmarkDto = components['schemas']['PublicBookmarkDto'];
 export type PublishSchemaDraftRequest = components['schemas']['PublishSchemaDraftRequest'];
 export type RoleActionsDto = components['schemas']['RoleActionsDto'];
 export type RoleDefinitionDto = components['schemas']['RoleDefinitionDto'];
@@ -3892,7 +3960,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -3952,6 +4020,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionRunCatalogItemDto"];
+                };
+            };
+        };
+    };
+    get_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBookmarkDto"];
                 };
             };
         };
@@ -4044,6 +4134,28 @@ export interface operations {
             };
         };
     };
+    publish_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
+                };
+            };
+        };
+    };
     listForBookmark: {
         parameters: {
             query?: never;
@@ -4088,6 +4200,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictionRunDto"];
+                };
+            };
+        };
+    };
+    unpublish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
                 };
             };
         };

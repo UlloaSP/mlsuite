@@ -1540,6 +1540,7 @@
               "DELETE_MODELS",
               "RUN_PREDICTIONS",
               "EXPORT_PREDICTIONS",
+              "PUBLISH_BOOKMARKS",
               "REVIEW",
               "MANAGE_REVIEWS",
               "VIEW_PLUGINS",
@@ -2085,6 +2086,58 @@
         ],
         "type": "object"
       },
+      "PublicBookmarkDto": {
+        "properties": {
+          "formSchema": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "publicId": {
+            "type": "string"
+          },
+          "schemaDescription": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schemaName": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "versionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "formSchema",
+          "name",
+          "organizationName",
+          "publicId",
+          "schemaDescription",
+          "schemaName",
+          "updatedAt",
+          "version",
+          "versionName"
+        ],
+        "type": "object"
+      },
       "PublishSchemaDraftRequest": {
         "properties": {
           "expectedDraftRevision": {
@@ -2285,6 +2338,7 @@
                 "DELETE_MODELS",
                 "RUN_PREDICTIONS",
                 "EXPORT_PREDICTIONS",
+                "PUBLISH_BOOKMARKS",
                 "REVIEW",
                 "MANAGE_REVIEWS",
                 "VIEW_PLUGINS",
@@ -2358,6 +2412,12 @@
           "name": {
             "type": "string"
           },
+          "publicId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "schemaId": {
             "format": "int64",
             "type": "integer"
@@ -2382,18 +2442,27 @@
               "string",
               "null"
             ]
+          },
+          "visibility": {
+            "enum": [
+              "PRIVATE",
+              "PUBLIC"
+            ],
+            "type": "string"
           }
         },
         "required": [
           "createdAt",
           "id",
           "name",
+          "publicId",
           "schemaId",
           "schemaName",
           "updatedAt",
           "version",
           "versionId",
-          "versionName"
+          "versionName",
+          "visibility"
         ],
         "type": "object"
       },
@@ -3462,6 +3531,9 @@
           "canManageReviews": {
             "type": "boolean"
           },
+          "canPublishBookmarks": {
+            "type": "boolean"
+          },
           "canRemoveMembers": {
             "type": "boolean"
           },
@@ -3505,6 +3577,7 @@
           "canManageMemberRoles",
           "canManagePlugins",
           "canManageReviews",
+          "canPublishBookmarks",
           "canRemoveMembers",
           "canReview",
           "canRunPredictions",
@@ -5874,7 +5947,7 @@
         ]
       },
       "get": {
-        "operationId": "get_4",
+        "operationId": "get_5",
         "parameters": [
           {
             "in": "path",
@@ -5931,6 +6004,36 @@
         },
         "tags": [
           "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}": {
+      "get": {
+        "operationId": "get_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
         ]
       }
     },
@@ -6047,6 +6150,37 @@
         ]
       }
     },
+    "/api/schema-bookmarks/{bookmarkId}/publish": {
+      "post": {
+        "operationId": "publish_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      }
+    },
     "/api/schema-bookmarks/{bookmarkId}/runs": {
       "get": {
         "operationId": "listForBookmark",
@@ -6117,6 +6251,37 @@
         },
         "tags": [
           "prediction-run-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/{bookmarkId}/unpublish": {
+      "post": {
+        "operationId": "unpublish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
         ]
       }
     },
