@@ -24,8 +24,10 @@ import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionReportDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunQuotaDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.service.PublicPredictionPlan.ModelCall;
+import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.storage.ModelArtifactContentReader;
 
 /**
@@ -42,6 +44,7 @@ public class PublicPredictionService implements PublicPredictionUseCase {
     private static final Logger log = LoggerFactory.getLogger(PublicPredictionService.class);
 
     private final PublicBookmarkService publicBookmarks;
+    private final PublicPredictionQuota quota;
     private final ModelRepository modelRepository;
     private final ModelArtifactContentReader artifactReader;
     private final AnalyzerClient analyzerClient;
@@ -51,12 +54,14 @@ public class PublicPredictionService implements PublicPredictionUseCase {
 
     public PublicPredictionService(
             PublicBookmarkService publicBookmarks,
+            PublicPredictionQuota quota,
             ModelRepository modelRepository,
             ModelArtifactContentReader artifactReader,
             AnalyzerClient analyzerClient,
             ObjectMapper objectMapper,
             @Value("${mlsuite.public-prediction.max-concurrent}") int maxConcurrent) {
         this.publicBookmarks = publicBookmarks;
+        this.quota = quota;
         this.modelRepository = modelRepository;
         this.artifactReader = artifactReader;
         this.analyzerClient = analyzerClient;
@@ -64,9 +69,34 @@ public class PublicPredictionService implements PublicPredictionUseCase {
         this.runtimeSlots = new Semaphore(maxConcurrent);
     }
 
+    /**
+     * A run is counted only after the bookmark and its values were accepted, so a missing
+     * bookmark or a refused body costs the caller nothing, and before the runtime is asked, so
+     * requests sent together cannot pass the limit. The caller gets the run back when the server
+     * could not perform it: the runtime was busy (503) or failed (502). A run the runtime
+     * answered counts, including one whose values it could not use (422).
+     */
     @Override
-    public PublicPredictionDto run(String publicId, PublicPredictionRequest request) {
+    public PublicPredictionDto run(String publicId, PublicPredictionRequest request, PublicCaller caller) {
         PublicPredictionPlan plan = publicBookmarks.planPrediction(publicId, request);
+        quota.admit(caller, publicId);
+        try {
+            return new PublicPredictionDto(perform(plan), quota.status(caller, publicId));
+        } catch (RuntimeException ex) {
+            if (!(ex instanceof ResponseStatusException answer && answer.getStatusCode().is4xxClientError())) {
+                quota.giveBack(caller, publicId);
+            }
+            throw ex;
+        }
+    }
+
+    @Override
+    public PublicRunQuotaDto quota(String publicId, PublicCaller caller) {
+        publicBookmarks.requirePublic(publicId);
+        return quota.status(caller, publicId);
+    }
+
+    private List<PublicPredictionReportDto> perform(PublicPredictionPlan plan) {
         // Admission follows the cheap checks and precedes the first artifact read.
         if (!runtimeSlots.tryAcquire()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
@@ -79,17 +109,17 @@ public class PublicPredictionService implements PublicPredictionUseCase {
         }
     }
 
-    private PublicPredictionDto execute(PublicPredictionPlan plan) {
+    private List<PublicPredictionReportDto> execute(PublicPredictionPlan plan) {
         Map<Long, List<?>> outputs = new LinkedHashMap<>();
         for (ModelCall call : plan.calls()) {
             outputs.put(call.modelId(), predict(plan.publicId(), call));
         }
-        return new PublicPredictionDto(plan.reports().stream()
+        return plan.reports().stream()
                 .flatMap(route -> outputs.getOrDefault(route.modelId(), List.of()).stream()
                         .filter(output -> output instanceof Map<?, ?> report && route.kind().equals(report.get("kind")))
                         .limit(1)
                         .map(output -> new PublicPredictionReportDto(route.key(), payload((Map<?, ?>) output))))
-                .toList());
+                .toList();
     }
 
     private List<?> predict(String publicId, ModelCall call) {

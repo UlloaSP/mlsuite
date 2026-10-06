@@ -12,5 +12,6 @@ public class CurrentUserWebConfig implements WebMvcConfigurer {
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(new CurrentUserArgumentResolver());
+        resolvers.add(new PublicCallerArgumentResolver());
     }
 }

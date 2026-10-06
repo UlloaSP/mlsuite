@@ -16,8 +16,10 @@ import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunQuotaDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
+import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.util.PageDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -50,10 +52,16 @@ public class PublicBookmarkController {
         return ResponseEntity.ok(publicBookmarks.listPublishedExamples(publicId));
     }
 
-    /** Runs the bookmark once and returns the result; no session is read and nothing is stored. */
+    /** The caller's remaining runs of the bookmark: theirs alone, unlike every read above. */
+    @GetMapping("/{publicId}/quota")
+    public ResponseEntity<PublicRunQuotaDto> quota(@PathVariable String publicId, PublicCaller caller) {
+        return ResponseEntity.ok(publicPredictions.quota(publicId, caller));
+    }
+
+    /** Runs the bookmark once and returns the result; the caller is counted and nothing is stored. */
     @PostMapping("/{publicId}/predictions")
     public ResponseEntity<PublicPredictionDto> runPrediction(@PathVariable String publicId,
-            @Valid @RequestBody PublicPredictionRequest request) {
-        return ResponseEntity.ok(publicPredictions.run(publicId, request));
+            @Valid @RequestBody PublicPredictionRequest request, PublicCaller caller) {
+        return ResponseEntity.ok(publicPredictions.run(publicId, request, caller));
     }
 }

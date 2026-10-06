@@ -1,6 +1,8 @@
 package dev.ulloasp.mlsuite.schema;
 
 import static dev.ulloasp.mlsuite.schema.SchemaFlowFixtures.bookmark;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -38,6 +40,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionReportDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunQuotaDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
@@ -182,13 +185,16 @@ class BookmarkPublishingHttpTest {
 
     @Test
     void anonymousVisitorsRunAPublishedBookmarkAndGetOnlyItsReports() throws Exception {
-        when(publicPredictions.run(PUBLIC_ID, new PublicPredictionRequest(3, Map.of("in0", 52))))
-                .thenReturn(new PublicPredictionDto(List.of(new PublicPredictionReportDto("out0",
-                        Map.of("kind", "regressor", "values", List.of(41.5))))));
+        when(publicPredictions.run(eq(PUBLIC_ID), eq(new PublicPredictionRequest(3, Map.of("in0", 52))), any()))
+                .thenReturn(new PublicPredictionDto(
+                        List.of(new PublicPredictionReportDto("out0",
+                                Map.of("kind", "regressor", "values", List.of(41.5)))),
+                        new PublicRunQuotaDto(5, 4, OffsetDateTime.parse("2026-10-02T10:00:00Z").toInstant())));
 
         mockMvc.perform(run(PUBLIC_ID, "{\"version\":3,\"values\":{\"in0\":52}}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.quota.length()").value(3))
                 .andExpect(jsonPath("$.reports.length()").value(1))
                 .andExpect(jsonPath("$.reports[0].length()").value(2))
                 .andExpect(jsonPath("$.reports[0].key").value("out0"))
@@ -204,7 +210,7 @@ class BookmarkPublishingHttpTest {
             "502|The prediction could not be completed. Try again later.",
             "503|Too many public runs are in progress. Try again in a moment." })
     void aPublicRunThatDoesNotHappenAnswersWithItsMessageAndNothingElse(int status, String message) throws Exception {
-        when(publicPredictions.run(PUBLIC_ID, new PublicPredictionRequest(3, Map.of())))
+        when(publicPredictions.run(eq(PUBLIC_ID), eq(new PublicPredictionRequest(3, Map.of())), any()))
                 .thenThrow(new ResponseStatusException(HttpStatus.valueOf(status), message));
 
         mockMvc.perform(run(PUBLIC_ID, "{\"version\":3,\"values\":{}}"))

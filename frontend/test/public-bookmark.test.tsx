@@ -94,11 +94,16 @@ beforeEach(() => {
   Object.assign(session, { signedIn: false, canPublish: false });
   toasts.error.mockClear();
   fetchMock = vi.fn<Fetch>();
-  // The page also asks for the bookmark's examples; these bookmarks have none. Examples have
-  // their own tests, so that request is answered here and never counted.
-  vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) =>
-    String(url).endsWith("/examples") ? Promise.resolve(json([])) : fetchMock(url, init),
-  );
+  // The page also asks for the bookmark's examples and for the caller's remaining runs; these
+  // bookmarks have no examples and every run left. Both have their own tests, so those requests
+  // are answered here and never counted.
+  vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) => {
+    if (String(url).endsWith("/examples")) return Promise.resolve(json([]));
+    if (String(url).endsWith("/quota")) {
+      return Promise.resolve(json({ limit: 5, remaining: 5, resetsAt: null }));
+    }
+    return fetchMock(url, init);
+  });
 });
 afterEach(() => vi.unstubAllGlobals());
 

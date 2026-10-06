@@ -286,6 +286,34 @@ the artifact to the runtime. `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) is
 many public runs may execute at once; further ones receive `503 Service Unavailable`
 until a slot frees. Public runs store nothing.
 
+Each caller may run one public bookmark a limited number of times in 24 hours, counted
+from their first run of it: `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` (default `5`) for
+each client address without a session (an IPv6 address counts as its /64 network), and
+`PUBLIC_PREDICTION_SIGNED_IN_RUNS_PER_DAY` (default `50`) for each signed-in account,
+wherever it connects from. Past the limit the run receives `429 Too Many Requests` with
+`Retry-After`. A run the server could not perform (`502`, `503`) is not counted. The
+counts are kept in the memory of the API process: they start again when the API
+restarts, and they are correct only with a single API instance, because each further
+instance would allow the full limit on its own.
+
+The client address comes from one place: the bundled nginx sends the peer it accepted
+as `X-MLSuite-Client-Address`, overwriting any value the client sent, and the API reads
+only that header, never `X-Forwarded-For`. Keep the API reachable only through that
+nginx, as the Compose files do. When another reverse proxy or TLS terminator sits in
+front of nginx, every visitor arrives from that proxy's address and would share one
+count, so tell nginx which proxy to trust for the real address. Mount a file such as
+this one into the `frontend` container as `/etc/nginx/conf.d/real-ip.conf`, naming the
+address or network your proxy connects from:
+
+```nginx
+set_real_ip_from 10.0.0.5;
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+```
+
+The proxy must set or append to `X-Forwarded-For` itself. Do not list a network that
+visitors can connect from, or they could choose their own address again.
+
 Persistence is abstracted by capability, not by a generic database wrapper.
 Spring Data repository interfaces isolate aggregate persistence, while
 `ArtifactMigrationQueue` hides the PostgreSQL-specific claiming implementation.

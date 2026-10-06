@@ -12,6 +12,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -32,6 +33,8 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAlreadyExis
 import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationNotFoundException;
 import dev.ulloasp.mlsuite.admin.infrastructure.OpsAgentException;
 import dev.ulloasp.mlsuite.plugin.domain.exception.PluginNotFoundException;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
+import dev.ulloasp.mlsuite.schema.domain.exception.PublicRunLimitException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserAlreadyExistsException;
 import dev.ulloasp.mlsuite.user.domain.exception.UserDoesNotExistException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -96,6 +99,17 @@ public class DomainExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorDto> handleBadCredentials(BadCredentialsException ex, HttpServletRequest req) {
         return respond(HttpStatus.UNAUTHORIZED, ex, req);
+    }
+
+    // ---- 429 TOO MANY REQUESTS ----
+
+    /** Retry-After is whole seconds, rounded up so a client that waits them is never early. */
+    @ExceptionHandler(PublicRunLimitException.class)
+    public ResponseEntity<PublicRunLimitDto> handlePublicRunLimit(PublicRunLimitException ex, HttpServletRequest req) {
+        long retryAfterSeconds = ex.getRetryAfter().plusMillis(999).toSeconds();
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
+                .body(PublicRunLimitDto.of(ex, HttpStatus.TOO_MANY_REQUESTS.value(), req.getRequestURI()));
     }
 
     // ---- 400 BAD REQUEST ----

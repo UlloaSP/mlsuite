@@ -2322,6 +2322,9 @@
       },
       "PublicPredictionDto": {
         "properties": {
+          "quota": {
+            "$ref": "#/components/schemas/PublicRunQuotaDto"
+          },
           "reports": {
             "items": {
               "$ref": "#/components/schemas/PublicPredictionReportDto"
@@ -2330,6 +2333,7 @@
           }
         },
         "required": [
+          "quota",
           "reports"
         ],
         "type": "object"
@@ -2364,6 +2368,68 @@
         "required": [
           "values",
           "version"
+        ],
+        "type": "object"
+      },
+      "PublicRunLimitDto": {
+        "properties": {
+          "code": {
+            "enum": [
+              "ANONYMOUS_RUN_LIMIT_REACHED",
+              "SIGNED_IN_RUN_LIMIT_REACHED"
+            ],
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "quota": {
+            "$ref": "#/components/schemas/PublicRunQuotaDto"
+          },
+          "status": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "path",
+          "quota",
+          "status",
+          "timestamp"
+        ],
+        "type": "object"
+      },
+      "PublicRunQuotaDto": {
+        "properties": {
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "remaining": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "resetsAt": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "limit",
+          "remaining",
+          "resetsAt"
         ],
         "type": "object"
       },
@@ -6526,6 +6592,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicPredictionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}/quota": {
+      "get": {
+        "operationId": "quota",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRunQuotaDto"
                 }
               }
             },

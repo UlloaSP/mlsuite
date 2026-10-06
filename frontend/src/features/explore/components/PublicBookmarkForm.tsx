@@ -3,6 +3,7 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -12,9 +13,15 @@ import {
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
-import { runPublicBookmark } from "@/features/explore/api/public-bookmark-api";
+import { useAccountEntry } from "@/capabilities/workspace-context/account-entry";
+import {
+  publicRunQuotaQueryOptions,
+  runPublicBookmark,
+} from "@/features/explore/api/public-bookmark-api";
 import { PublicBookmarkExampleSelect } from "@/features/explore/components/PublicBookmarkExampleSelect";
+import { PublicRunQuota } from "@/features/explore/components/PublicRunQuota";
 import { publicRunFailure, type PublicRunFailure } from "@/features/explore/lib/public-run-failure";
+import { publicRunLimitQuota } from "@/features/explore/lib/public-run-limit";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { AppInlineAlert } from "@/shared/ui/AppInlineAlert";
@@ -38,6 +45,9 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * the form again with the example's inputs as the fields' starting values, as a saved run's are
  * in the workspace form, so the visitor can edit them and run. The loaded example is kept as it
  * was chosen: a later refetch of the list never resets what the visitor is editing.
+ *
+ * The server limits how often one caller runs one bookmark. The count it reports is shown under
+ * the form, and with no run left the run action is withheld: the values and the last result stay.
  */
 export function PublicBookmarkForm({ publicId, version, formSchema, examples = [] }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,6 +60,13 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
   const empty = !hasFields(formSchema);
   const needsPlugins = schemaNeedsPluginCatalog(formSchema);
   const mountable = !empty && !needsPlugins;
+  const queryClient = useQueryClient();
+  // The frame offers an account only to a visitor without a session, whom the server counts apart.
+  const caller = useAccountEntry() ? "visitor" : "member";
+  const quota = useQuery({
+    ...publicRunQuotaQueryOptions(publicId, caller),
+    enabled: mountable,
+  }).data;
   const [example, setExample] = useState<PublicBookmarkExampleDto>();
   const schema = useMemo(
     () => (example ? applyPredictionInputsToSchema(formSchema, example.inputs) : formSchema),
@@ -66,11 +83,25 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
         schema,
         theme: initialTheme,
         run: async (values, signal) => {
-          const result = await runPublicBookmark(publicId, { version, values }, signal);
-          return result.reports.map((report) => ({
-            key: report.key,
-            payload: isRecord(report.payload) ? report.payload : {},
-          }));
+          const { queryKey } = publicRunQuotaQueryOptions(publicId, caller);
+          if (queryClient.getQueryData(queryKey)?.remaining === 0) return null;
+          try {
+            const result = await runPublicBookmark(publicId, { version, values }, signal);
+            queryClient.setQueryData(queryKey, result.quota);
+            return result.reports.map((report) => ({
+              key: report.key,
+              payload: isRecord(report.payload) ? report.payload : {},
+            }));
+          } catch (error) {
+            const used = publicRunLimitQuota(error);
+            if (used) {
+              queryClient.setQueryData(queryKey, used);
+              return null;
+            }
+            // Some refused runs count and some do not, so the server is asked again.
+            void queryClient.invalidateQueries({ queryKey });
+            throw error;
+          }
         },
         onRunningChange: (next) => {
           setRunning(next);
@@ -86,7 +117,12 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
     } catch (error) {
       setMountError(error instanceof Error ? error.message : String(error));
     }
-  }, [initialTheme, mountable, publicId, schema, version]);
+  }, [caller, initialTheme, mountable, publicId, queryClient, schema, version]);
+
+  // After every render, because loading an example mounts a new form that must be told too.
+  useEffect(() => {
+    mountedRef.current?.setRunOffered(quota?.remaining !== 0);
+  });
 
   useEffect(() => {
     mountedRef.current?.updateTheme(theme);
@@ -140,6 +176,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
           aria-busy={running}
           className={cx("min-h-0 w-full", running && "cursor-progress", mountError && "hidden")}
         />
+        {quota && !mountError ? <PublicRunQuota quota={quota} /> : null}
       </div>
     </div>
   );

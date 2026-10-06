@@ -12,9 +12,11 @@ import { toAnalyzerReportPayload } from "@/capabilities/prediction-runtime/data/
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
 import {
+  allowWithholdingRun,
   hideRunTabTitles,
   runTabsLayout,
   showRunResults,
+  withholdRun,
 } from "@/capabilities/prediction-runtime/mlform/run-tabs-layout";
 import {
   type JsonRecord,
@@ -33,14 +35,19 @@ type Options = {
    */
   schema: unknown;
   theme: PredictionTheme;
-  /** Runs the form's values, keyed by input key, and resolves with the reports that have a result. */
-  run: (values: JsonRecord, signal?: AbortSignal) => Promise<readonly PublicRunReport[]>;
+  /**
+   * Runs the form's values, keyed by input key, and resolves with the reports that have a
+   * result, or with null when no run was made: the form then keeps the result it shows.
+   */
+  run: (values: JsonRecord, signal?: AbortSignal) => Promise<readonly PublicRunReport[] | null>;
   onRunningChange?: (running: boolean) => void;
   onRunError?: (error: unknown) => void;
 };
 
 export type MountedPublicRunForm = {
   updateTheme: (theme: PredictionTheme) => void;
+  /** Shows or withholds the Run action; the fields and the shown result are left as they are. */
+  setRunOffered: (offered: boolean) => void;
   unmount: () => void;
 };
 
@@ -76,8 +83,9 @@ export const mountPublicRunForm = ({
   const result = validateSchema(withResolvedDisplayKeys(schema), pack.registry);
   if (!result.success) throw new Error(result.issues[0]?.message ?? "Invalid MLForm schema.");
   const normalized = normalizeSchema(result.data, pack.registry);
-  // The outcome of the last run; the hooks below read it once MLForm has settled the submit.
-  let failed = false;
+  // The outcome of the last submit; the hooks below read it once MLForm has settled it.
+  let ran = false;
+  let shown: readonly PublicRunReport[] = [];
   const transport: Transport = {
     /**
      * A failed run resolves with no results instead of rejecting: MLForm would show the raw
@@ -85,18 +93,19 @@ export const mountPublicRunForm = ({
      */
     submit: async (request: SubmitRequest) => {
       const reports = request.reports as readonly ReportConfig[];
-      failed = false;
+      ran = false;
       try {
         const answered = await run(
           isRecord(request.modelValues) ? request.modelValues : {},
           request.signal,
         );
-        return { reports: reports.map((report) => toReportResult(report, answered)) };
+        ran = answered !== null;
+        shown = answered ?? shown;
       } catch (error) {
-        failed = true;
+        shown = [];
         onRunError?.(error);
-        return { reports: reports.map((report) => toReportResult(report, [])) };
       }
+      return { reports: reports.map((report) => toReportResult(report, shown)) };
     },
   };
   const mounted = mountForm(container, {
@@ -111,7 +120,7 @@ export const mountPublicRunForm = ({
       },
       afterSubmit() {
         onRunningChange?.(false);
-        if (!failed && normalized.reports.length > 0) showRunResults(mounted.host);
+        if (ran && normalized.reports.length > 0) showRunResults(mounted.host);
       },
       // Reached when MLForm itself cannot submit; a failed run is reported by the transport.
       onSubmitError({ error }: SubmitErrorContext) {
@@ -128,8 +137,10 @@ export const mountPublicRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   hideRunTabTitles(mounted.host);
+  allowWithholdingRun(mounted.host);
   return {
     updateTheme: (nextTheme) => mounted.replaceDesignSystem(getPredictionDesignSystem(nextTheme)),
+    setRunOffered: (offered) => withholdRun(mounted.host, !offered),
     unmount: () => mounted.unmount(),
   };
 };
