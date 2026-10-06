@@ -4,7 +4,8 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { useAtom } from "jotai";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
 import {
   MLFORM_INPUTS_ONLY_CONTAINER_CLASS,
@@ -14,7 +15,7 @@ import {
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import { AppEmptyState } from "@/shared/ui/AppEmptyState";
 import { cx } from "@/shared/ui/cx";
-import type { PublicBookmarkDto } from "@/shared/api/openapi.gen";
+import type { PublicBookmarkDto, PublicBookmarkExampleDto } from "@/shared/api/openapi.gen";
 
 const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
   Array.isArray(schema.fields) && schema.fields.length > 0;
@@ -23,11 +24,17 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
  * The inputs of a public bookmark, fillable but with nothing to run. Plugin fields are
  * compiled from an organization's private catalog, so a form that uses them says so
  * instead of borrowing the visitor's own catalog.
+ *
+ * `initialInputs` are an example's values, keyed like the form's fields. They become the fields'
+ * starting values, as a saved run's do in the workspace form, so the visitor can edit them. A
+ * form is mounted once: the page remounts it to load another example.
  */
 export function PublicBookmarkForm({
   formSchema,
+  initialInputs,
 }: {
   formSchema: PublicBookmarkDto["formSchema"];
+  initialInputs?: PublicBookmarkExampleDto["inputs"];
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedSchemaInputs | null>(null);
@@ -37,6 +44,10 @@ export function PublicBookmarkForm({
   const empty = !hasFields(formSchema);
   const needsPlugins = schemaNeedsPluginCatalog(formSchema);
   const mountable = !empty && !needsPlugins;
+  const schema = useMemo(
+    () => (initialInputs ? applyPredictionInputsToSchema(formSchema, initialInputs) : formSchema),
+    [formSchema, initialInputs],
+  );
 
   useEffect(() => {
     if (!mountable || !containerRef.current) return;
@@ -44,7 +55,7 @@ export function PublicBookmarkForm({
     try {
       const mounted = mountSchemaInputs({
         container: containerRef.current,
-        schema: formSchema,
+        schema,
         theme: initialTheme,
       });
       mountedRef.current = mounted;
@@ -55,7 +66,7 @@ export function PublicBookmarkForm({
     } catch (error) {
       setMountError(error instanceof Error ? error.message : String(error));
     }
-  }, [formSchema, initialTheme, mountable]);
+  }, [initialTheme, mountable, schema]);
 
   useEffect(() => {
     mountedRef.current?.updateTheme(theme);

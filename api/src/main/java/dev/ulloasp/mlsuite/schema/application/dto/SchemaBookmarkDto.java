@@ -7,6 +7,10 @@ import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 
 import jakarta.annotation.Nullable;
 
+/**
+ * {@code exampleCount} is the marked runs of the pinned snapshot, served while the bookmark is
+ * public; {@code staleExampleCount} is the marked runs it left behind when it moved, never served.
+ */
 public record SchemaBookmarkDto(
         Long id,
         Long schemaId,
@@ -17,10 +21,12 @@ public record SchemaBookmarkDto(
         String name,
         BookmarkVisibility visibility,
         @Nullable String publicId,
+        long exampleCount,
+        long staleExampleCount,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
 
-    public static SchemaBookmarkDto from(SchemaBookmark bookmark) {
+    public static SchemaBookmarkDto from(SchemaBookmark bookmark, BookmarkExampleCounts examples) {
         return new SchemaBookmarkDto(
                 bookmark.getId(),
                 bookmark.getSchema().getId(),
@@ -31,6 +37,8 @@ public record SchemaBookmarkDto(
                 bookmark.getName(),
                 bookmark.getVisibility(),
                 bookmark.getPublicId(),
+                examples.current(),
+                examples.stale(),
                 bookmark.getCreatedAt(),
                 bookmark.getUpdatedAt());
     }

@@ -4,6 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { AppBadge } from "@/shared/ui/AppBadge";
+import { RunPublicExampleControl } from "@/features/schemas/components/RunPublicExampleControl";
 import { formatTimestamp } from "@/shared/lib/date-time";
 import type { SchemaFeedbackStatus } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
 import type { PredictionRunDto } from "@/shared/api/openapi.gen";
@@ -43,6 +44,7 @@ export function SchemaRunMetadataRow({ run, bookmarkName, feedbackStatus }: Prop
       <span>
         {run.results.length} {run.results.length === 1 ? "model" : "models"}
       </span>
+      <RunPublicExampleControl run={run} />
     </div>
   );
 }

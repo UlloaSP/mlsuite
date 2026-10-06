@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { getSchema, getSchemaPage, getSchemaVersion, getSchemaVersions } from "./schema-api";
 import {
+  getBookmarkExamples,
   getOrganizationBookmarks,
   getSchemaBookmark,
   getSchemaBookmarks,
@@ -24,6 +25,7 @@ import {
   PREDICTION_RUNS_FEEDBACK_QUERY_KEY,
   PREDICTION_RUN_QUERY_KEY,
   SCHEMA_BOOKMARKS_QUERY_KEY,
+  SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY,
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_CATALOG_PAGE_SIZE,
   SCHEMA_DRAFTS_QUERY_KEY,
@@ -76,6 +78,7 @@ const schemaVersionsQuery = byIdQuery(SCHEMA_VERSIONS_QUERY_KEY, getSchemaVersio
 const schemaVersionQuery = byIdQuery(SCHEMA_VERSION_QUERY_KEY, getSchemaVersion);
 const schemaBookmarksQuery = byIdQuery(SCHEMA_BOOKMARKS_QUERY_KEY, getSchemaBookmarks);
 const schemaBookmarkQuery = byIdQuery(SCHEMA_BOOKMARK_QUERY_KEY, getSchemaBookmark);
+const bookmarkExamplesQuery = byIdQuery(SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY, getBookmarkExamples);
 const schemaDraftsQuery = byIdQuery(SCHEMA_DRAFTS_QUERY_KEY, getSchemaDrafts);
 const schemaDraftQuery = byIdQuery(SCHEMA_DRAFT_QUERY_KEY, getSchemaDraft);
 const schemaDraftDiffQuery = byIdQuery(SCHEMA_DRAFT_DIFF_QUERY_KEY, getSchemaDraftDiff);
@@ -94,6 +97,7 @@ export const useSchemaVersions = schemaVersionsQuery.useById;
 export const useSchemaVersion = schemaVersionQuery.useById;
 export const useSchemaBookmarks = schemaBookmarksQuery.useById;
 export const useSchemaBookmark = schemaBookmarkQuery.useById;
+export const useBookmarkExamples = bookmarkExamplesQuery.useById;
 export const useSchemaDrafts = schemaDraftsQuery.useById;
 export const useSchemaDraft = schemaDraftQuery.useById;
 export const useSchemaDraftDiff = schemaDraftDiffQuery.useById;

@@ -3,7 +3,17 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { ExternalLink, GitCommitHorizontal, Globe, Link2, Lock, Play, Tag } from "lucide-react";
+import {
+  ExternalLink,
+  GitCommitHorizontal,
+  Globe,
+  Link2,
+  ListChecks,
+  Lock,
+  Play,
+  Tag,
+} from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
@@ -15,18 +25,23 @@ import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { useSetBookmarkVisibilityMutation } from "@/features/schemas/api/schema-mutations";
+import { BookmarkExamplesDialog } from "@/features/schemas/components/BookmarkExamplesDialog";
+import { bookmarkExampleSummary } from "@/features/schemas/lib/bookmark-example-status";
 import { publicBookmarkHref } from "@/features/schemas/lib/public-bookmark-href";
 import type { SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
 /**
  * A bookmark in its schema's repository; opening it goes to its Predict workspace.
- * Everyone sees whether it is public; only members who may publish can change that.
+ * Everyone sees whether it is public and which examples it serves; only members who may
+ * publish can change either.
  */
 export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookmarkDto }) {
   const workspacePath = `/predict/${bookmark.id}`;
   const canPublish = useCan("canPublishBookmarks");
   const visibility = useSetBookmarkVisibilityMutation();
   const { confirm, dialog } = useActionDialog();
+  const [examplesOpen, setExamplesOpen] = useState(false);
+  const examples = bookmarkExampleSummary(bookmark);
   const publicPath =
     bookmark.visibility === "PUBLIC" && bookmark.publicId
       ? publicBookmarkHref(bookmark.publicId)
@@ -54,6 +69,9 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
     }
   };
 
+  // Offered when there are examples to review, or to the members who choose them.
+  const hasExamples = bookmark.exampleCount + bookmark.staleExampleCount > 0;
+
   const actions: AppMenuAction[] = [
     ...(publicPath
       ? [
@@ -63,6 +81,16 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
             label: "Open public page",
             icon: ExternalLink,
             onSelect: () => window.open(publicPath, "_blank", "noopener"),
+          },
+        ]
+      : []),
+    ...(canPublish || hasExamples
+      ? [
+          {
+            key: "examples",
+            label: "Public examples",
+            icon: ListChecks,
+            onSelect: () => setExamplesOpen(true),
           },
         ]
       : []),
@@ -104,6 +132,13 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
               <GitCommitHorizontal size={14} />
               {snapshotLabel(bookmark.versionName, bookmark.version)}
             </span>
+            {examples.served ? (
+              <span className="inline-flex items-center gap-1">
+                <ListChecks size={14} />
+                {examples.served}
+              </span>
+            ) : null}
+            {examples.stale ? <span className="text-warning-fg">{examples.stale}</span> : null}
             <span>
               Updated <LiveRelativeTime value={bookmark.updatedAt} /> ago
             </span>
@@ -121,6 +156,11 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
         to={workspacePath}
       />
       {dialog}
+      <BookmarkExamplesDialog
+        bookmark={bookmark}
+        open={examplesOpen}
+        onClose={() => setExamplesOpen(false)}
+      />
     </>
   );
 }

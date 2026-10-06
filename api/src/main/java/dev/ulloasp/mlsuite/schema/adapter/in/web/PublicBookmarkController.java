@@ -1,5 +1,7 @@
 package dev.ulloasp.mlsuite.schema.adapter.in.web;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.util.PageDto;
@@ -33,5 +36,10 @@ public class PublicBookmarkController {
     @GetMapping("/{publicId}")
     public ResponseEntity<PublicBookmarkDto> get(@PathVariable String publicId) {
         return ResponseEntity.ok(publicBookmarks.getPublishedBookmark(publicId));
+    }
+
+    @GetMapping("/{publicId}/examples")
+    public ResponseEntity<List<PublicBookmarkExampleDto>> examples(@PathVariable String publicId) {
+        return ResponseEntity.ok(publicBookmarks.listPublishedExamples(publicId));
     }
 }
