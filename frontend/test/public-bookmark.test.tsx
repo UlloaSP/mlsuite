@@ -11,6 +11,9 @@ import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaB
 import type { PublicBookmarkDto, SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 import { click, mount } from "./support/dom";
 
+const toasts = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
+vi.mock("sonner", () => ({ toast: toasts }));
+
 const session = vi.hoisted(() => ({ signedIn: false, canPublish: false }));
 vi.mock("@/capabilities/workspace-context/session", async (original) => ({
   ...(await original<typeof import("@/capabilities/workspace-context/session")>()),
@@ -66,9 +69,10 @@ const publicBookmark: PublicBookmarkDto = {
   organizationName: "Acme Health",
   formSchema: {
     fields: [
-      { kind: "number", label: "Age" },
-      { kind: "text", label: "Notes" },
+      { kind: "number", label: "Age", mappedTo: "in0" },
+      { kind: "text", label: "Notes", mappedTo: "in1" },
     ],
+    reports: [{ kind: "classifier", label: "Risk", id: "out0", mappedTo: "out0" }],
   },
   updatedAt: AT,
 };
@@ -88,6 +92,7 @@ type Fetch = (url: unknown, init?: RequestInit) => unknown;
 let fetchMock: ReturnType<typeof vi.fn<Fetch>>;
 beforeEach(() => {
   Object.assign(session, { signedIn: false, canPublish: false });
+  toasts.error.mockClear();
   fetchMock = vi.fn<Fetch>();
   // The page also asks for the bookmark's examples; these bookmarks have none. Examples have
   // their own tests, so that request is answered here and never counted.
@@ -131,6 +136,26 @@ describe("bookmark visibility in the schema repository", () => {
 
     expect(calledPaths()).toEqual(["/api/schema-bookmarks/70/publish"]);
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "POST" });
+  });
+
+  test("a refused publication shows the reason the API gave", async () => {
+    session.canPublish = true;
+    const reason =
+      'This bookmark cannot be published. Model "huge" is 62.0 MB; public bookmarks can only run models up to 50 MB.';
+    fetchMock.mockResolvedValue(
+      json({ status: 409, message: reason, path: "/", timestamp: AT }, 409),
+    );
+    const { host } = await row(bookmark());
+
+    const items = await openActions();
+    await click(items!.find((item) => item.textContent === "Publish")!);
+    await click("Publish");
+    await settle();
+
+    expect(toasts.error).toHaveBeenCalledExactlyOnceWith("production was not published", {
+      description: reason,
+    });
+    expect(host.textContent).toContain("Private");
   });
 
   test("a public bookmark shows its state and link, and can be unpublished", async () => {
@@ -191,7 +216,7 @@ describe("public bookmark page", () => {
     expect(host.textContent).not.toContain("not found");
   });
 
-  test("renders the metadata and a fillable form with nothing to run", async () => {
+  test("renders the metadata and the form with its inputs and its run action", async () => {
     fetchMock.mockResolvedValue(json(publicBookmark));
     const { host } = await page();
     await settle();
@@ -201,24 +226,22 @@ describe("public bookmark page", () => {
     for (const fact of ["Estimates cardiovascular risk.", "Acme Health", "Risk", "Baseline · v2"]) {
       expect(host.textContent).toContain(fact);
     }
-    const form = host.querySelector("mlf-form");
-    expect(form?.shadowRoot?.querySelectorAll("mlf-field-frame")).toHaveLength(2);
-    // The submit row is the part the container class hides; no other run control exists.
-    expect(form?.shadowRoot?.querySelectorAll('[part="actions"] mlf-submit-button')).toHaveLength(
-      1,
-    );
-    expect(form?.parentElement?.className).toContain("[&_mlf-form::part(actions)]:hidden");
-    expect(host.querySelectorAll("button")).toHaveLength(0);
+    const form = host.querySelector("mlf-kit-tabs")?.shadowRoot;
+    expect(form?.querySelectorAll("mlf-field-frame")).toHaveLength(2);
+    expect(form?.querySelectorAll(".btn-submit")).toHaveLength(1);
   });
 
   test("says so when the form needs plugin fields a public page cannot load", async () => {
     fetchMock.mockResolvedValue(
-      json({ ...publicBookmark, formSchema: { fields: [{ kind: "body-map", label: "Pain" }] } }),
+      json({
+        ...publicBookmark,
+        formSchema: { fields: [{ kind: "body-map", label: "Pain", mappedTo: "in0" }], reports: [] },
+      }),
     );
     const { host } = await page();
     await settle();
     expect(host.textContent).toContain("This form cannot be shown here");
-    expect(host.querySelector("mlf-form")).toBeNull();
+    expect(host.querySelector("mlf-kit-tabs")).toBeNull();
   });
 
   test("a private or unknown link is not found, without a retry", async () => {

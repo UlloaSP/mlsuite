@@ -4,11 +4,15 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
-import { appFetch, isHttpError } from "@/shared/api/http";
+import { appFetch, isHttpError, json } from "@/shared/api/http";
+import { organizationQueryKey } from "@/shared/api/organization-query-key";
 import type {
   PageDtoPublicBookmarkSummaryDto,
   PublicBookmarkDto,
   PublicBookmarkExampleDto,
+  PublicPredictionDto,
+  PublicPredictionRequest,
+  SchemaBookmarkDto,
 } from "@/shared/api/openapi.gen";
 
 export const PUBLIC_BOOKMARK_PAGE_SIZE = 24;
@@ -30,17 +34,17 @@ const getPublicBookmarkPage = (
   });
 };
 
+const publicBookmarkPath = (publicId: string) =>
+  `/api/public/bookmarks/${encodeURIComponent(publicId)}`;
+
 const getPublicBookmark = (publicId: string, signal?: AbortSignal): Promise<PublicBookmarkDto> =>
-  appFetch<PublicBookmarkDto>(`/api/public/bookmarks/${encodeURIComponent(publicId)}`, { signal });
+  appFetch<PublicBookmarkDto>(publicBookmarkPath(publicId), { signal });
 
 const getPublicBookmarkExamples = (
   publicId: string,
   signal?: AbortSignal,
 ): Promise<PublicBookmarkExampleDto[]> =>
-  appFetch<PublicBookmarkExampleDto[]>(
-    `/api/public/bookmarks/${encodeURIComponent(publicId)}/examples`,
-    { signal },
-  );
+  appFetch<PublicBookmarkExampleDto[]>(`${publicBookmarkPath(publicId)}/examples`, { signal });
 
 /** A bookmark that is private, unknown, or whose schema was archived answers 404. */
 export const isPublicBookmarkMissing = (error: unknown) =>
@@ -82,5 +86,34 @@ export const publicBookmarkExamplesQueryOptions = (publicId: string) =>
     queryFn: ({ signal }) => getPublicBookmarkExamples(publicId, signal),
     enabled: publicId !== "",
     retry: (failures, error) => !isPublicBookmarkMissing(error) && failures < 1,
+    meta: { errorHandledLocally: true },
+  });
+
+/**
+ * Runs the bookmark once. The server routes the values to its models and stores nothing, so
+ * the result exists only in this response; it is not a query and is never cached.
+ */
+export const runPublicBookmark = (
+  publicId: string,
+  request: PublicPredictionRequest,
+  signal?: AbortSignal,
+): Promise<PublicPredictionDto> =>
+  appFetch<PublicPredictionDto>(`${publicBookmarkPath(publicId)}/predictions`, {
+    ...json("POST", request),
+    signal,
+  });
+
+/**
+ * The workspace bookmark behind a public page, which only members of the organization that
+ * owns it can resolve: for anyone else the request fails and there is nothing to link to.
+ */
+export const workspaceBookmarkQueryOptions = (organizationId: number, publicId: string) =>
+  queryOptions({
+    queryKey: [...organizationQueryKey(organizationId), "public-bookmark", publicId] as const,
+    queryFn: ({ signal }) =>
+      appFetch<SchemaBookmarkDto>(`/api/schema-bookmarks/public/${encodeURIComponent(publicId)}`, {
+        signal,
+      }),
+    retry: false,
     meta: { errorHandledLocally: true },
   });

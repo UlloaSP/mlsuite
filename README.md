@@ -26,7 +26,7 @@ If MLSuite goes in the wrong direction, the full stack is here for you to inspec
 - Collect reviews, corrections, questionnaires, and explanation feedback.
 - Extend reports and fields through plugins.
 - Export inputs, outputs, and feedback for downstream work.
-- Publish a schema bookmark to a public page at `/explore/<id>` that shows its form to anyone, signed in or not, with saved runs you mark as examples to fill it, and list every published bookmark in the public feed at `/explore`.
+- Publish a schema bookmark to a public page at `/explore/<id>` where anyone, signed in or not, can fill its form and run it, with saved runs you mark as examples to fill it, and list every published bookmark in the public feed at `/explore`. Public runs are not saved.
 - Manage organizations, teams, roles, invitations, and workspace permissions.
 - Let superadmins review every public bookmark on the instance and unpublish any of them.
 - Monitor the local Compose stack through the operations service.
@@ -278,6 +278,14 @@ frontend to mutate models without the new parameter. The production cutover requ
 Required`, and mismatched versions receive `409 Conflict`. New clients always send
 the version and therefore retain stale-write protection.
 
+Public bookmarks run on the same runtime as every workspace, for visitors who have no
+account. `PUBLIC_PREDICTION_MAX_MODEL_SIZE_MB` (default `50`) is the largest model
+artifact a bookmark may bind and still be public: publishing, moving a public bookmark
+to another snapshot, and each public run are refused above it, because every run ships
+the artifact to the runtime. `PUBLIC_PREDICTION_MAX_CONCURRENT` (default `2`) is how
+many public runs may execute at once; further ones receive `503 Service Unavailable`
+until a slot frees. Public runs store nothing.
+
 Persistence is abstracted by capability, not by a generic database wrapper.
 Spring Data repository interfaces isolate aggregate persistence, while
 `ArtifactMigrationQueue` hides the PostgreSQL-specific claiming implementation.
@@ -362,7 +370,7 @@ flowchart LR
     ML --> API
 ```
 
-The browser sends authenticated requests to Spring; only `/api/public/**` answers without a session, and it serves nothing but bookmarks a member with the publish permission made public and the form inputs of the runs that member marked as their examples. Spring enforces workspace permissions, stores durable state, and delegates artifact analysis or prediction to Python. Results return through Spring so model, schema, input, output, and feedback identities remain traceable.
+The browser sends authenticated requests to Spring; only `/api/public/**` answers without a session, and it serves nothing but bookmarks a member with the publish permission made public: their form, the form inputs of the runs that member marked as their examples, and a run of their models that is routed by Spring and never stored. Spring enforces workspace permissions, stores durable state, and delegates artifact analysis or prediction to Python. Results return through Spring so model, schema, input, output, and feedback identities remain traceable.
 
 ## License
 

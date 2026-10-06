@@ -32,12 +32,14 @@ import dev.ulloasp.mlsuite.role.domain.model.PermissionKey;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.BookmarkExampleCounts;
 import dev.ulloasp.mlsuite.schema.application.dto.MoveSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkExampleDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaBookmarkExampleDto;
+import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkExampleService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkServiceImpl;
@@ -78,9 +80,11 @@ class BookmarkExampleServiceTest {
         var authorization = new WorkspaceAuthorizationService(access, mock(RoleDefinitionRepository.class));
         stored = BookmarkExampleFixtures.stored(examples);
         service = new SchemaBookmarkExampleService(bookmarks, runs, examples, authorization);
+        // No snapshot here binds a model, so nothing stands between these bookmarks and being public.
+        var publishability = new BookmarkPublishability(mock(SchemaModelBindingRepository.class), 50);
         bookmarkService = new SchemaBookmarkServiceImpl(mock(SchemaRepository.class), versions, bookmarks,
-                authorization);
-        publicService = new PublicBookmarkService(bookmarks, examples);
+                authorization, publishability);
+        publicService = new PublicBookmarkService(bookmarks, examples, publishability);
         bookmark.setPublicId(PUBLIC_ID);
         when(bookmarks.findByIdAndOrganizationId(BOOKMARK_ID, ORG_ID)).thenReturn(Optional.of(bookmark));
         // The public lookup answers only while the bookmark is published, as the query does.

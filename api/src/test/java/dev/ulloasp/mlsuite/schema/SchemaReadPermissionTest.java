@@ -58,7 +58,8 @@ class SchemaReadPermissionTest {
         draftService = new SchemaDraftServiceImpl(users, schemas, versions, drafts,
                 mock(SchemaVersionUseCase.class), mock(SchemaDraftDiffService.class),
                 mock(SchemaDraftPublishedVersionResolver.class), auth);
-        bookmarkService = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks, auth);
+        bookmarkService = new SchemaBookmarkServiceImpl(schemas, versions, bookmarks, auth,
+                new BookmarkPublishability(bindings, 50));
         predictCatalog = new PredictBookmarkCatalogService(auth, bookmarks, versions, bindings, runs);
         runService = new PredictionRunServiceImpl(users, bookmarks, bindings, runs, results, feedback,
                 mock(ModelRepository.class), auth);

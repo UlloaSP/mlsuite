@@ -44,9 +44,12 @@ import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkExampleController
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.PredictionRunRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkExampleRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaBookmarkRepository;
+import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepository;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
+import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkExampleService;
 import dev.ulloasp.mlsuite.schema.application.service.SchemaBookmarkServiceImpl;
@@ -72,9 +75,10 @@ import dev.ulloasp.mlsuite.workspace.application.service.WorkspaceAuthorizationS
                 "server.port=0",
                 "cors.allow-origins=http://localhost:5173" })
 @Import({ SecurityConfig.class, SchemaBookmarkServiceImpl.class, SchemaBookmarkExampleService.class,
-        PublicBookmarkService.class, WorkspaceAuthorizationService.class })
-@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, RestTemplate.class, UserDetailsService.class,
-        SchemaRepository.class, RoleDefinitionRepository.class })
+        PublicBookmarkService.class, BookmarkPublishability.class, WorkspaceAuthorizationService.class })
+@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicPredictionUseCase.class, RestTemplate.class,
+        UserDetailsService.class, SchemaRepository.class, SchemaModelBindingRepository.class,
+        RoleDefinitionRepository.class })
 class BookmarkExampleHttpTest {
 
     private static final long USER_ID = 7L;

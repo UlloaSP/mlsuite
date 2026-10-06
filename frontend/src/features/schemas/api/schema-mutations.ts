@@ -94,6 +94,8 @@ export function useSetBookmarkVisibilityMutation() {
   const organizationId = useCurrentOrganizationId() ?? "none";
   const qc = useQueryClient();
   return useMutation({
+    // The row that asked says why a publication was refused.
+    meta: { errorHandledLocally: true },
     mutationFn: ({
       bookmarkId,
       visibility,

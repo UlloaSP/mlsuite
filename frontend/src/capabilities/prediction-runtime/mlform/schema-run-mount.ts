@@ -10,6 +10,11 @@ import { normalizeSchema, type ReportContext } from "mlform/schema";
 import { createSchemaRunRuntime } from "@/capabilities/prediction-runtime/mlform/runtime-assembly";
 import { getPredictionDesignSystem } from "./headless-prediction";
 import {
+  hideRunTabTitles,
+  runTabsLayout,
+  showRunResults,
+} from "@/capabilities/prediction-runtime/mlform/run-tabs-layout";
+import {
   type JsonRecord,
   type MountedPredictionForm,
   type PredictionTheme,
@@ -38,55 +43,6 @@ type Options = {
   onSubmit?: (inputData: JsonRecord, raw: JsonRecord, reportsPending: boolean) => void;
   onSubmitError?: (error: unknown) => void;
   onRunningChange?: (running: boolean) => void;
-};
-
-const RESULTS_TAB = "results";
-
-/** The tabs view MLForm attaches to its host element in tabs layout. */
-type TabsHost = HTMLElement & { view?: { setActiveTab: (tabId: string) => void } };
-
-/** Inputs in one tab, model results in the other (when the schema has reports). */
-const tabsLayout = (fieldIds: string[], reportIds: string[]) => ({
-  kind: "tabs" as const,
-  tabs: [
-    {
-      id: "inputs",
-      title: "Inputs",
-      children: fieldIds.map((field) => ({ kind: "field" as const, field })),
-    },
-    ...(reportIds.length > 0
-      ? [
-          {
-            id: RESULTS_TAB,
-            title: "Results",
-            children: reportIds.map((report) => ({ kind: "report" as const, report })),
-          },
-        ]
-      : []),
-  ],
-});
-
-/**
- * MLForm's tabs repeat each tab's title as a heading inside the panel ("Inputs"
- * under the "Inputs" tab). The kit exposes no option or part for it, so hide it
- * in the tabs element's shadow root. Skipped where stylesheets can't be built (jsdom).
- */
-const hideTabTitles = (host: HTMLElement) => {
-  const root = host.shadowRoot;
-  if (
-    !root ||
-    typeof CSSStyleSheet === "undefined" ||
-    !("replaceSync" in CSSStyleSheet.prototype)
-  ) {
-    return;
-  }
-  try {
-    const sheet = new CSSStyleSheet();
-    sheet.replaceSync(".tab-header { display: none; }");
-    root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
-  } catch {
-    // Cosmetic only; the duplicate heading is harmless.
-  }
 };
 
 export const mountSchemaRunForm = ({
@@ -131,9 +87,7 @@ export const mountSchemaRunForm = ({
       raw: isRecord(result.raw) ? result.raw : { raw: result.raw },
       contexts: (result.reportContexts ?? {}) as Record<string, ReportContext>,
     };
-    if (mounted && normalized.reports.length > 0) {
-      (mounted.host as TabsHost).view?.setActiveTab(RESULTS_TAB);
-    }
+    if (mounted && normalized.reports.length > 0) showRunResults(mounted.host);
     completeWhenSettled();
   };
   mounted = mountForm(container, {
@@ -153,7 +107,7 @@ export const mountSchemaRunForm = ({
         onSubmitError?.(error);
       },
     },
-    layout: tabsLayout(
+    layout: runTabsLayout(
       normalized.fields.map((field) => field.id),
       normalized.reports.map((report) => report.id),
     ),
@@ -166,7 +120,7 @@ export const mountSchemaRunForm = ({
     designSystem: getPredictionDesignSystem(theme),
   });
   const form = mounted;
-  hideTabTitles(form.host);
+  hideRunTabTitles(form.host);
   const unsubscribe = form.form.subscribe(completeWhenSettled);
   return {
     form: form.form,

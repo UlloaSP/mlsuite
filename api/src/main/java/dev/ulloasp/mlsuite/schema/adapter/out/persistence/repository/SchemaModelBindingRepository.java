@@ -7,10 +7,21 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 
 public interface SchemaModelBindingRepository extends JpaRepository<SchemaModelBinding, Long> {
     List<SchemaModelBinding> findBySchemaVersionId(Long schemaVersionId);
+
+    /** The snapshot's models in binding order, without loading any artifact. */
+    @Query("""
+            SELECT new dev.ulloasp.mlsuite.schema.domain.model.BoundModel(
+                b.model.id, b.model.name, b.model.modelSizeBytes)
+            FROM SchemaModelBinding b
+            WHERE b.schemaVersion.id = :schemaVersionId
+            ORDER BY b.id
+            """)
+    List<BoundModel> findBoundModels(Long schemaVersionId);
 
     List<SchemaModelBinding> findBySchemaVersionIdIn(Collection<Long> schemaVersionIds);
 

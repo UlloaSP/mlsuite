@@ -14,11 +14,13 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -33,8 +35,12 @@ import dev.ulloasp.mlsuite.organization.domain.exception.OrganizationAccessDenie
 import dev.ulloasp.mlsuite.schema.adapter.in.web.PublicBookmarkController;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkController;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionReportDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkExampleUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
@@ -64,6 +70,8 @@ class BookmarkPublishingHttpTest {
     private SchemaBookmarkUseCase bookmarks;
     @MockitoBean
     private PublicBookmarkUseCase publicBookmarks;
+    @MockitoBean
+    private PublicPredictionUseCase publicPredictions;
 
     @ParameterizedTest
     @ValueSource(strings = { "publish", "unpublish" })
@@ -144,6 +152,90 @@ class BookmarkPublishingHttpTest {
     void theWorkspaceBookmarkEndpointsStayBehindLogin() throws Exception {
         mockMvc.perform(get("/api/schema-bookmarks/{id}", BOOKMARK_ID)).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/schema-bookmarks")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/schema-bookmarks/public/{publicId}", PUBLIC_ID)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void aRefusedPublicationTellsTheMemberWhy() throws Exception {
+        String reason = "This bookmark cannot be published. Model \"huge\" is 62.0 MB; public bookmarks can only "
+                + "run models up to 50 MB.";
+        when(bookmarks.publishBookmark(USER_ID, BOOKMARK_ID))
+                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, reason));
+
+        mockMvc.perform(signedIn(post("/api/schema-bookmarks/{id}/publish", BOOKMARK_ID)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value(reason));
+    }
+
+    @Test
+    void membersResolveTheirBookmarkFromItsPublicId() throws Exception {
+        when(bookmarks.getBookmarkByPublicId(USER_ID, PUBLIC_ID)).thenReturn(stored(BookmarkVisibility.PUBLIC));
+        when(bookmarks.getBookmarkByPublicId(USER_ID, "of-another-organization"))
+                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
+
+        mockMvc.perform(signedIn(get("/api/schema-bookmarks/public/{publicId}", PUBLIC_ID)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(BOOKMARK_ID));
+        mockMvc.perform(signedIn(get("/api/schema-bookmarks/public/{publicId}", "of-another-organization")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void anonymousVisitorsRunAPublishedBookmarkAndGetOnlyItsReports() throws Exception {
+        when(publicPredictions.run(PUBLIC_ID, new PublicPredictionRequest(3, Map.of("in0", 52))))
+                .thenReturn(new PublicPredictionDto(List.of(new PublicPredictionReportDto("out0",
+                        Map.of("kind", "regressor", "values", List.of(41.5))))));
+
+        mockMvc.perform(run(PUBLIC_ID, "{\"version\":3,\"values\":{\"in0\":52}}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$.reports.length()").value(1))
+                .andExpect(jsonPath("$.reports[0].length()").value(2))
+                .andExpect(jsonPath("$.reports[0].key").value("out0"))
+                .andExpect(jsonPath("$.reports[0].payload.values[0]").value(41.5));
+    }
+
+    /** Private, unknown and archived bookmarks, a moved or oversized one, a bad run, a failed one, a busy runtime. */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "404|Public bookmark not found",
+            "409|This bookmark cannot be run publicly.",
+            "422|The models could not use these values. Check the inputs and try again.",
+            "502|The prediction could not be completed. Try again later.",
+            "503|Too many public runs are in progress. Try again in a moment." })
+    void aPublicRunThatDoesNotHappenAnswersWithItsMessageAndNothingElse(int status, String message) throws Exception {
+        when(publicPredictions.run(PUBLIC_ID, new PublicPredictionRequest(3, Map.of())))
+                .thenThrow(new ResponseStatusException(HttpStatus.valueOf(status), message));
+
+        mockMvc.perform(run(PUBLIC_ID, "{\"version\":3,\"values\":{}}"))
+                .andExpect(status().is(status))
+                .andExpect(jsonPath("$.length()").value(4))
+                .andExpect(jsonPath("$.status").value(status))
+                .andExpect(jsonPath("$.message").value(message))
+                .andExpect(jsonPath("$.path").value("/api/public/bookmarks/" + PUBLIC_ID + "/predictions"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "{}", "{\"version\":3}", "{\"values\":{}}" })
+    void aPublicRunNeedsItsSnapshotAndItsValues(String body) throws Exception {
+        mockMvc.perform(run(PUBLIC_ID, body)).andExpect(status().isBadRequest());
+
+        verifyNoInteractions(publicPredictions);
+    }
+
+    @Test
+    void aPublicRequestLargerThanAFormIsRefusedBeforeItIsRead() throws Exception {
+        String oversized = "{\"version\":3,\"values\":{\"in0\":\"" + "x".repeat(64 * 1024) + "\"}}";
+
+        mockMvc.perform(run(PUBLIC_ID, oversized))
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(jsonPath("$.message").value("The request is too large."));
+        mockMvc.perform(post("/api/public/bookmarks/{publicId}/predictions", PUBLIC_ID)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isLengthRequired());
+
+        verifyNoInteractions(publicPredictions);
     }
 
     private static SchemaBookmark stored(BookmarkVisibility visibility) {
@@ -151,6 +243,12 @@ class BookmarkPublishingHttpTest {
         bookmark.setVisibility(visibility);
         bookmark.setPublicId(PUBLIC_ID);
         return bookmark;
+    }
+
+    private static MockHttpServletRequestBuilder run(String publicId, String body) {
+        return post("/api/public/bookmarks/{publicId}/predictions", publicId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body);
     }
 
     /** A logged-in session, as the login endpoint leaves it for the filter chain to read. */

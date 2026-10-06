@@ -59,6 +59,13 @@ public class SchemaBookmarkController {
                 bookmarkUseCase.getBookmark(user.userId(), bookmarkId)));
     }
 
+    /** Lets the public page offer its owners the way into the workspace without naming ids publicly. */
+    @GetMapping("/schema-bookmarks/public/{publicId}")
+    public ResponseEntity<SchemaBookmarkDto> getByPublicId(CurrentUser user, @PathVariable String publicId) {
+        return ResponseEntity.ok(toDto(
+                bookmarkUseCase.getBookmarkByPublicId(user.userId(), publicId)));
+    }
+
     @PutMapping("/schema-bookmarks/{bookmarkId}")
     public ResponseEntity<SchemaBookmarkDto> move(CurrentUser user, @PathVariable Long bookmarkId,
             @Valid @RequestBody MoveSchemaBookmarkRequest request) {

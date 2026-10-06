@@ -12,6 +12,7 @@ import {
   publicBookmarkQueryOptions,
 } from "@/features/explore/api/public-bookmark-api";
 import { PublicBookmarkForm } from "@/features/explore/components/PublicBookmarkForm";
+import { WorkspaceBookmarkLink } from "@/features/explore/components/WorkspaceBookmarkLink";
 import { formatDate } from "@/shared/lib/date-time";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { AppButton } from "@/shared/ui/AppButton";
@@ -26,8 +27,9 @@ import { AppPageHeader } from "@/shared/ui/PageHeader";
 const FACT = "inline-flex items-center gap-1.5";
 
 /**
- * A published bookmark, the same for anonymous visitors and members of any organization.
- * It reads only the public API; the frame around it is chosen by the router.
+ * A published bookmark, the same for anonymous visitors and members of any organization:
+ * its form is read and run through the public API, and the frame around it is chosen by the
+ * router. Members of the organization that owns it also get the way into their workspace.
  */
 export function PublicBookmarkPage() {
   const { publicId = "" } = useParams<{ publicId: string }>();
@@ -72,6 +74,7 @@ export function PublicBookmarkPage() {
           breadcrumbs={[{ label: bookmark.name }]}
           title={bookmark.name}
           description={bookmark.schemaDescription ?? undefined}
+          actions={<WorkspaceBookmarkLink publicId={bookmark.publicId} />}
         />
         <dl
           className={cx(
@@ -99,10 +102,12 @@ export function PublicBookmarkPage() {
             <dd>{formatDate(bookmark.updatedAt)}</dd>
           </div>
         </dl>
-        <section aria-label="Form inputs" className={FORM_MAX_WIDTH}>
+        <section aria-label="Form" className={FORM_MAX_WIDTH}>
           {/* A republished or moved bookmark is a new form, not an update of the mounted one. */}
           <PublicBookmarkForm
             key={`${bookmark.publicId}:${bookmark.version}`}
+            publicId={bookmark.publicId}
+            version={bookmark.version}
             formSchema={bookmark.formSchema}
             examples={examples}
           />

@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import { isHttpError } from "@/shared/api/http";
 import { useCan } from "@/capabilities/workspace-context/workspace-context";
 import { AppActionsMenu, type AppMenuAction } from "@/shared/ui/AppActionsMenu";
 import { AppBadge } from "@/shared/ui/AppBadge";
@@ -47,6 +48,21 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
       ? publicBookmarkHref(bookmark.publicId)
       : null;
 
+  /** The API explains a refusal (a bound model over the public size limit); show its words. */
+  const setVisibility = (next: SchemaBookmarkDto["visibility"]) =>
+    visibility.mutate(
+      { bookmarkId: bookmark.id, visibility: next },
+      {
+        onError: (error) =>
+          toast.error(
+            next === "PUBLIC"
+              ? `${bookmark.name} was not published`
+              : `${bookmark.name} was not unpublished`,
+            { description: isHttpError(error) ? error.message : "The request failed. Try again." },
+          ),
+      },
+    );
+
   const publish = async () => {
     const confirmed = await confirm({
       title: `Publish ${bookmark.name}?`,
@@ -54,7 +70,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
         "Anyone with the link will see this bookmark's name, its schema and organization names, and the form of the snapshot it points to. Models, runs and members stay private.",
       confirmLabel: "Publish",
     });
-    if (confirmed) visibility.mutate({ bookmarkId: bookmark.id, visibility: "PUBLIC" });
+    if (confirmed) setVisibility("PUBLIC");
   };
 
   const copyLink = async () => {
@@ -102,8 +118,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
                 label: "Unpublish",
                 icon: Lock,
                 disabled: visibility.isPending,
-                onSelect: () =>
-                  visibility.mutate({ bookmarkId: bookmark.id, visibility: "PRIVATE" }),
+                onSelect: () => setVisibility("PRIVATE"),
               }
             : {
                 key: "publish",

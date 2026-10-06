@@ -17,6 +17,8 @@ import { buttonByText, changeValue, click, mount } from "./support/dom";
 
 const session = vi.hoisted(() => ({ canPublish: false }));
 vi.mock("@/capabilities/workspace-context/workspace-context", () => ({
+  // The public page is opened without a session here, so no workspace is cached.
+  useWorkspaceContext: () => ({ data: undefined }),
   useCurrentOrganizationId: () => 3,
   useCan: (permission: string) => permission === "canPublishBookmarks" && session.canPublish,
 }));
@@ -60,9 +62,10 @@ const run = (id: number, schemaVersionId = PINNED_VERSION_ID) =>
 
 const FORM_SCHEMA = {
   fields: [
-    { kind: "number", label: "Age" },
-    { kind: "text", label: "Notes" },
+    { kind: "number", label: "Age", mappedTo: "in0" },
+    { kind: "text", label: "Notes", mappedTo: "in1" },
   ],
+  reports: [{ kind: "regressor", label: "Score", id: "out0", mappedTo: "out0" }],
 };
 const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
@@ -87,10 +90,15 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
 let requests: string[];
+let publicRuns: unknown[];
 const respond = (url: unknown, init?: RequestInit): Response => {
   const path = new URL(String(url)).pathname;
   const method = init?.method ?? "GET";
   requests.push(`${method} ${path}`);
+  if (path === `/api/public/bookmarks/${PUBLIC_ID}/predictions`) {
+    publicRuns.push(JSON.parse(init?.body as string));
+    return json({ reports: [] });
+  }
   const example = /^\/api\/schema-bookmarks\/70\/examples\/(\d+)$/.exec(path);
   if (example) {
     const runId = Number(example[1]);
@@ -124,6 +132,7 @@ beforeEach(() => {
   Object.assign(server, { bookmark: bookmark(), examples: [], publicExamples: [] });
   publicBookmark.formSchema = FORM_SCHEMA;
   requests = [];
+  publicRuns = [];
   vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) => Promise.resolve(respond(url, init)));
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -304,7 +313,7 @@ describe("examples on the public page", () => {
         if (child.shadowRoot) walk(child.shadowRoot);
       }
     };
-    const form = host.querySelector("mlf-form");
+    const form = host.querySelector("mlf-kit-tabs");
     if (form?.shadowRoot) walk(form.shadowRoot);
     return found;
   };
@@ -351,7 +360,22 @@ describe("examples on the public page", () => {
     // The second example replaces every value, including the ones it does not set.
     await choose(host, "Elderly case");
     expect(values(host)).toEqual(["81", ""]);
-    expect(host.querySelectorAll("mlf-form")).toHaveLength(1);
+    expect(host.querySelectorAll("mlf-kit-tabs")).toHaveLength(1);
+  });
+
+  test("a run submits the example the form was loaded with, and the visitor's edits to it", async () => {
+    server.publicExamples = [typical];
+    const host = await page();
+
+    await choose(host, "Typical case");
+    await changeValue(fields(host)[0], "60");
+    const run = host
+      .querySelector("mlf-kit-tabs")
+      ?.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit");
+    await act(async () => run?.click());
+    await settle();
+
+    expect(publicRuns).toEqual([{ version: 2, values: { in0: 60, in1: "Non-smoker" } }]);
   });
 
   test("a form that cannot be shown offers no examples either", async () => {
