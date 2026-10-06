@@ -32,6 +32,9 @@ public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, 
     @Query("SELECT b FROM SchemaBookmark b WHERE b.id = :id AND b.schema.organization.id = :organizationId")
     Optional<SchemaBookmark> findByIdAndOrganizationId(Long id, Long organizationId);
 
+    @Query("SELECT b FROM SchemaBookmark b WHERE b.publicId = :publicId AND b.schema.organization.id = :organizationId")
+    Optional<SchemaBookmark> findByPublicIdAndOrganizationId(String publicId, Long organizationId);
+
     @Query("SELECT b FROM SchemaBookmark b WHERE b.publicId = :publicId AND " + PUBLISHED)
     Optional<SchemaBookmark> findPublishedByPublicId(String publicId);
 

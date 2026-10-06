@@ -31,6 +31,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     private final SchemaVersionRepository versionRepository;
     private final SchemaBookmarkRepository bookmarkRepository;
     private final WorkspaceAuthorizationService authorizationService;
+    private final BookmarkPublishability publishability;
 
     @Override
     public List<SchemaBookmark> listBookmarks(Long userId, Long schemaId) {
@@ -46,6 +47,12 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     }
 
     @Override
+    public SchemaBookmark getBookmarkByPublicId(Long userId, String publicId) {
+        return bookmarkRepository.findByPublicIdAndOrganizationId(publicId, requireRead(userId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Schema bookmark not found"));
+    }
+
+    @Override
     public SchemaBookmark createBookmark(Long userId, Long schemaId, CreateSchemaBookmarkRequest request) {
         Long orgId = requireOperate(userId);
         Schema schema = requireSchema(schemaId, orgId);
@@ -54,7 +61,7 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         String name = cleanName(request.name());
         SchemaBookmark bookmark = bookmarkRepository.findBySchemaIdAndName(schemaId, name)
                 .orElseGet(() -> new SchemaBookmark(schema, version, name));
-        bookmark.setVersion(version);
+        point(bookmark, version);
         return bookmarkRepository.save(bookmark);
     }
 
@@ -66,13 +73,14 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         if (!version.getSchema().getId().equals(bookmark.getSchema().getId())) {
             throw badRequest("Bookmark version outside schema");
         }
-        bookmark.setVersion(version);
+        point(bookmark, version);
         return bookmark;
     }
 
     @Override
     public SchemaBookmark publishBookmark(Long userId, Long bookmarkId) {
         SchemaBookmark bookmark = requireBookmark(bookmarkId, requirePublish(userId));
+        requirePublishable(bookmark.getVersion(), "This bookmark cannot be published. ");
         if (bookmark.getPublicId() == null) bookmark.setPublicId(UUID.randomUUID().toString());
         bookmark.setVisibility(BookmarkVisibility.PUBLIC);
         return bookmark;
@@ -83,6 +91,24 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         SchemaBookmark bookmark = requireBookmark(bookmarkId, requirePublish(userId));
         bookmark.unpublish();
         return bookmark;
+    }
+
+    /**
+     * A public bookmark stays public only on a snapshot that may be public. The move is refused
+     * rather than unpublishing the bookmark behind the member's back: its public page keeps working.
+     */
+    private void point(SchemaBookmark bookmark, SchemaVersion version) {
+        if (bookmark.getVisibility() == BookmarkVisibility.PUBLIC) {
+            requirePublishable(version,
+                    "This bookmark is public, so it cannot move to this snapshot until it is unpublished. ");
+        }
+        bookmark.setVersion(version);
+    }
+
+    private void requirePublishable(SchemaVersion version, String context) {
+        publishability.refusal(publishability.models(version)).ifPresent(reason -> {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, context + reason);
+        });
     }
 
     private Long requireRead(Long userId) {

@@ -884,6 +884,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/bookmarks/{publicId}/predictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["runPrediction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/readiness": {
         parameters: {
             query?: never;
@@ -908,6 +924,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listOrganization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schema-bookmarks/public/{publicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getByPublicId"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2087,6 +2119,22 @@ export interface components {
             version: number;
             versionName: string | null;
         };
+        PublicPredictionDto: {
+            reports: components["schemas"]["PublicPredictionReportDto"][];
+        };
+        PublicPredictionReportDto: {
+            key: string;
+            payload: {
+                [key: string]: unknown;
+            };
+        };
+        PublicPredictionRequest: {
+            values: {
+                [key: string]: unknown;
+            };
+            /** Format: int32 */
+            version: number;
+        };
         PublishSchemaDraftRequest: {
             /** Format: int64 */
             expectedDraftRevision: number;
@@ -2563,6 +2611,9 @@ export type PredictionRunSequenceDto = components['schemas']['PredictionRunSeque
 export type PublicBookmarkDto = components['schemas']['PublicBookmarkDto'];
 export type PublicBookmarkExampleDto = components['schemas']['PublicBookmarkExampleDto'];
 export type PublicBookmarkSummaryDto = components['schemas']['PublicBookmarkSummaryDto'];
+export type PublicPredictionDto = components['schemas']['PublicPredictionDto'];
+export type PublicPredictionReportDto = components['schemas']['PublicPredictionReportDto'];
+export type PublicPredictionRequest = components['schemas']['PublicPredictionRequest'];
 export type PublishSchemaDraftRequest = components['schemas']['PublishSchemaDraftRequest'];
 export type RoleActionsDto = components['schemas']['RoleActionsDto'];
 export type RoleDefinitionDto = components['schemas']['RoleDefinitionDto'];
@@ -4309,6 +4360,32 @@ export interface operations {
             };
         };
     };
+    runPrediction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicPredictionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicPredictionDto"];
+                };
+            };
+        };
+    };
     readiness: {
         parameters: {
             query?: never;
@@ -4345,6 +4422,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PredictBookmarkDto"][];
+                };
+            };
+        };
+    };
+    getByPublicId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
                 };
             };
         };

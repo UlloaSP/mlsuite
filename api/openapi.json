@@ -2320,6 +2320,53 @@
         ],
         "type": "object"
       },
+      "PublicPredictionDto": {
+        "properties": {
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/PublicPredictionReportDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "reports"
+        ],
+        "type": "object"
+      },
+      "PublicPredictionReportDto": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": { },
+            "type": "object"
+          }
+        },
+        "required": [
+          "key",
+          "payload"
+        ],
+        "type": "object"
+      },
+      "PublicPredictionRequest": {
+        "properties": {
+          "values": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "values",
+          "version"
+        ],
+        "type": "object"
+      },
       "PublishSchemaDraftRequest": {
         "properties": {
           "expectedDraftRevision": {
@@ -6450,6 +6497,46 @@
         ]
       }
     },
+    "/api/public/bookmarks/{publicId}/predictions": {
+      "post": {
+        "operationId": "runPrediction",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPredictionDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
     "/api/readiness": {
       "get": {
         "operationId": "readiness",
@@ -6482,6 +6569,36 @@
                     "$ref": "#/components/schemas/PredictBookmarkDto"
                   },
                   "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      }
+    },
+    "/api/schema-bookmarks/public/{publicId}": {
+      "get": {
+        "operationId": "getByPublicId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
                 }
               }
             },

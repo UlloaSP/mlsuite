@@ -28,6 +28,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
+import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
@@ -47,7 +48,7 @@ import jakarta.persistence.EntityManager;
         "spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(PublicBookmarkService.class)
+@Import({ PublicBookmarkService.class, BookmarkPublishability.class })
 @ContextConfiguration(classes = PublicBookmarkFeedServiceTest.PersistenceConfig.class)
 class PublicBookmarkFeedServiceTest {
 

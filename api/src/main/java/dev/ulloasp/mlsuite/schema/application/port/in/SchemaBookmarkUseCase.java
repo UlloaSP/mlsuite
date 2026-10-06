@@ -11,11 +11,17 @@ public interface SchemaBookmarkUseCase {
 
     SchemaBookmark getBookmark(Long userId, Long bookmarkId);
 
+    /** The workspace bookmark behind a public id, for members of the organization that owns it. */
+    SchemaBookmark getBookmarkByPublicId(Long userId, String publicId);
+
     SchemaBookmark createBookmark(Long userId, Long schemaId, CreateSchemaBookmarkRequest request);
 
     SchemaBookmark moveBookmark(Long userId, Long bookmarkId, MoveSchemaBookmarkRequest request);
 
-    /** Makes the bookmark readable at its public id, assigning that id on the first publish. */
+    /**
+     * Makes the bookmark readable at its public id, assigning that id on the first publish.
+     * Refused while its snapshot may not be public.
+     */
     SchemaBookmark publishBookmark(Long userId, Long bookmarkId);
 
     /** Makes the bookmark private again; its public id is kept for a later publish. */
