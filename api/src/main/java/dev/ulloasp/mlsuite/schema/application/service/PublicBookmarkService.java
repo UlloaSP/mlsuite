@@ -76,6 +76,11 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
         return PageDto.of(bookmarks, bookmarks.getContent().stream().map(PublicBookmarkSummaryDto::from).toList());
     }
 
+    /** Answers 404 unless the bookmark is public now, as every public read of it does. */
+    public void requirePublic(String publicId) {
+        requirePublished(publicId);
+    }
+
     /** Checks a public run against the bookmark as it is now and routes its values to each model. */
     public PublicPredictionPlan planPrediction(String publicId, PublicPredictionRequest request) {
         SchemaVersion version = requirePublished(publicId).getVersion();

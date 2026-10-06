@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.ulloasp.mlsuite.model.adapter.out.analyzer.AnalyzerClient;
 import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.application.service.PublicPredictionService;
@@ -42,6 +43,7 @@ import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.storage.ArtifactHash;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -94,6 +96,8 @@ abstract class PublicPredictionFixture {
             "mapping", List.of("low", "high"), "probabilities", List.of(List.of(0.2, 0.8)));
     static final Map<String, Object> REGRESSOR = Map.of("kind", "regressor", "label", "Predicted value",
             "values", List.of(41.5));
+    /** The caller of every run made through the service: a network without a session. */
+    static final PublicCaller VISITOR = new PublicCaller(false, "address:visitor");
 
     @Autowired EntityManager entityManager;
     @Autowired PlatformTransactionManager transactionManager;
@@ -167,8 +171,12 @@ abstract class PublicPredictionFixture {
         return new PublicPredictionRequest(version.getVersion(), values);
     }
 
+    PublicPredictionDto run(String publicId, PublicPredictionRequest request) {
+        return service.run(publicId, request, VISITOR);
+    }
+
     ResponseStatusException refused(String publicId, PublicPredictionRequest request) {
-        return assertThrows(ResponseStatusException.class, () -> service.run(publicId, request));
+        return assertThrows(ResponseStatusException.class, () -> run(publicId, request));
     }
 
     void inTransaction(Runnable work) {

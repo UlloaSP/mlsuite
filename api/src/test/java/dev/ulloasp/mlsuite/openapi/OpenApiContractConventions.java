@@ -19,7 +19,9 @@ import org.springframework.context.annotation.Bean;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunLimitDto;
 import dev.ulloasp.mlsuite.security.identity.CurrentUser;
+import dev.ulloasp.mlsuite.security.identity.PublicCaller;
 import dev.ulloasp.mlsuite.util.ErrorDto;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
@@ -48,7 +50,7 @@ class OpenApiContractConventions {
     private static final String REF_PREFIX = "#/components/schemas/";
 
     static {
-        SpringDocUtils.getConfig().addRequestWrapperToIgnore(CurrentUser.class);
+        SpringDocUtils.getConfig().addRequestWrapperToIgnore(CurrentUser.class, PublicCaller.class);
     }
 
     @Bean
@@ -80,11 +82,15 @@ class OpenApiContractConventions {
         };
     }
 
-    /** Every error response carries ErrorDto, but no controller names it in a signature. */
+    /**
+     * Every error response carries ErrorDto, and the 429 of a public run adds to it, but no
+     * controller names either in a signature.
+     */
     @Bean
-    OpenApiCustomizer errorSchema() {
-        return openApi -> openApi.getComponents().getSchemas()
-                .putAll(ModelConverters.getInstance(true).readAll(new AnnotatedType(ErrorDto.class)));
+    OpenApiCustomizer errorSchemas() {
+        return openApi -> Stream.of(ErrorDto.class, PublicRunLimitDto.class)
+                .forEach(error -> openApi.getComponents().getSchemas()
+                        .putAll(ModelConverters.getInstance(true).readAll(new AnnotatedType(error))));
     }
 
     /**

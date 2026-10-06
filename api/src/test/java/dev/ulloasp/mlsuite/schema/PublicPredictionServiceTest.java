@@ -84,7 +84,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
                     "meta", Map.of("modelId", "leaked"));
         });
 
-        PublicPredictionDto result = service.run(bookmark.getPublicId(),
+        PublicPredictionDto result = run(bookmark.getPublicId(),
                 request(Map.of("in0", 52, "in1", 240.5, "in2", 1, "in3", 0)));
 
         assertEquals(2, calls.size());
@@ -137,7 +137,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
     void aReportNoModelAnsweredIsLeftOut() {
         when(analyzer.post(eq("/predict"), any())).thenReturn(Map.of("reports", List.of(REGRESSOR)));
 
-        PublicPredictionDto result = service.run(bookmark.getPublicId(), request(Map.of("in0", 52)));
+        PublicPredictionDto result = run(bookmark.getPublicId(), request(Map.of("in0", 52)));
 
         assertEquals(List.of("out2"), result.reports().stream().map(report -> report.key()).toList());
     }
@@ -196,7 +196,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         }
         verifyNoInteractions(analyzer);
 
-        service.run(bookmark.getPublicId(), request(Map.of("in0", "52", "in1", true, "in2", 1L)));
+        run(bookmark.getPublicId(), request(Map.of("in0", "52", "in1", true, "in2", 1L)));
     }
 
     @Test
@@ -238,7 +238,7 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
             return Map.of("reports", List.of(CLASSIFIER));
         });
         var first = CompletableFuture.supplyAsync(
-                () -> service.run(bookmark.getPublicId(), request(Map.of("in0", 52))));
+                () -> run(bookmark.getPublicId(), request(Map.of("in0", 52))));
         assertTrue(running.await(10, TimeUnit.SECONDS));
 
         ResponseStatusException busy = refused(bookmark.getPublicId(), request(Map.of("in0", 52)));

@@ -900,6 +900,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/bookmarks/{publicId}/quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["quota"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/readiness": {
         parameters: {
             query?: never;
@@ -2120,6 +2136,7 @@ export interface components {
             versionName: string | null;
         };
         PublicPredictionDto: {
+            quota: components["schemas"]["PublicRunQuotaDto"];
             reports: components["schemas"]["PublicPredictionReportDto"][];
         };
         PublicPredictionReportDto: {
@@ -2134,6 +2151,25 @@ export interface components {
             };
             /** Format: int32 */
             version: number;
+        };
+        PublicRunLimitDto: {
+            /** @enum {string} */
+            code: "ANONYMOUS_RUN_LIMIT_REACHED" | "SIGNED_IN_RUN_LIMIT_REACHED";
+            message: string;
+            path: string;
+            quota: components["schemas"]["PublicRunQuotaDto"];
+            /** Format: int32 */
+            status: number;
+            /** Format: date-time */
+            timestamp: string;
+        };
+        PublicRunQuotaDto: {
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            remaining: number;
+            /** Format: date-time */
+            resetsAt: string | null;
         };
         PublishSchemaDraftRequest: {
             /** Format: int64 */
@@ -2614,6 +2650,8 @@ export type PublicBookmarkSummaryDto = components['schemas']['PublicBookmarkSumm
 export type PublicPredictionDto = components['schemas']['PublicPredictionDto'];
 export type PublicPredictionReportDto = components['schemas']['PublicPredictionReportDto'];
 export type PublicPredictionRequest = components['schemas']['PublicPredictionRequest'];
+export type PublicRunLimitDto = components['schemas']['PublicRunLimitDto'];
+export type PublicRunQuotaDto = components['schemas']['PublicRunQuotaDto'];
 export type PublishSchemaDraftRequest = components['schemas']['PublishSchemaDraftRequest'];
 export type RoleActionsDto = components['schemas']['RoleActionsDto'];
 export type RoleDefinitionDto = components['schemas']['RoleDefinitionDto'];
@@ -4382,6 +4420,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicPredictionDto"];
+                };
+            };
+        };
+    };
+    quota: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                publicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicRunQuotaDto"];
                 };
             };
         };
