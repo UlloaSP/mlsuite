@@ -32,7 +32,7 @@ class FlywayMigrationTest {
 
         assertEquals(8, flyway.migrate().migrationsExecuted);
         assertEquals(0, flyway.migrate().migrationsExecuted);
-        assertEquals("9", flyway.info().current().getVersion().toString());
+        assertEquals("8", flyway.info().current().getVersion().toString());
 
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
@@ -122,7 +122,7 @@ class FlywayMigrationTest {
         assertExamplesLeaveWithTheirRunOrBookmark();
     }
 
-    /** V9: deleting a run or a bookmark takes its example rows along, so none is orphaned. */
+    /** V8: deleting a run or a bookmark takes its example rows along, so none is orphaned. */
     private void assertExamplesLeaveWithTheirRunOrBookmark() throws Exception {
         try (var connection = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
