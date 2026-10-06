@@ -5,17 +5,20 @@ Copyright (c) 2025 Pablo Ulloa Santin
 
 import type { CSSProperties, FormEvent } from "react";
 import { useAtom } from "jotai";
-import { useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { ArrowLeft } from "lucide-react";
+import { useRef } from "react";
+import { Link, useSearchParams } from "react-router";
+import { EXPLORE_PATH } from "@/app/components/explore-navigation";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import type { AuthRequest, LoginRequest } from "@/shared/api/openapi.gen";
-import { useLogin, useRegister } from "@/capabilities/workspace-context/session";
+import { AUTH_MODE_PARAM, useLogin, useRegister } from "@/capabilities/workspace-context/session";
+import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { AuthAccessOverlay } from "./auth-landing/AuthAccessOverlay";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
 import { AuthHorizon } from "./auth-landing/AuthHorizon";
 import { AuthPassStub } from "./auth-landing/AuthPassStub";
 import { AuthTypeBands } from "./auth-landing/AuthTypeBands";
-import type { AuthMode } from "./auth-landing/authLandingCopy";
+import { AUTH_MODES, type AuthMode } from "./auth-landing/authLandingCopy";
 import { signInDestination } from "./auth-landing/sign-in-destination";
 import { useAuthAccess } from "./auth-landing/useAuthAccess";
 import { useAuthStageScale } from "./auth-landing/useAuthStageScale";
@@ -31,7 +34,8 @@ function readFormValue(formData: FormData, name: string) {
 export function AuthLandingPage() {
   const [theme] = useAtom(themeWithHtmlAtom);
   const [searchParams] = useSearchParams();
-  const [mode, setMode] = useState<AuthMode>("login");
+  // The form on screen is part of the address, so a link can open registration directly.
+  const [mode, setMode] = useSearchParamState<AuthMode>(AUTH_MODE_PARAM, "login", AUTH_MODES);
   const access = useAuthAccess(signInDestination(mode, searchParams.get("returnTo")));
   const passRef = useRef<HTMLDivElement>(null);
   const scale = useAuthStageScale();
@@ -77,6 +81,11 @@ export function AuthLandingPage() {
     >
       <AuthTypeBands />
       <AuthHorizon />
+      {/* Nothing public needs an account, so the screen never traps a visitor. */}
+      <Link to={EXPLORE_PATH} className="auth-exit">
+        <ArrowLeft aria-hidden="true" size={14} />
+        Explore without signing in
+      </Link>
 
       <div ref={passRef} className="auth-pass" data-phase={access.phase}>
         <div className="auth-pass-top">

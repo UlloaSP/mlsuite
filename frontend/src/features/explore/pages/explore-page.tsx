@@ -8,6 +8,7 @@ import {
   PUBLIC_BOOKMARK_PAGE_SIZE,
   publicBookmarkPageQueryOptions,
 } from "@/features/explore/api/public-bookmark-api";
+import { ExploreVisitorIntro } from "@/features/explore/components/ExploreVisitorIntro";
 import { PublicBookmarkCard } from "@/features/explore/components/PublicBookmarkCard";
 import { CatalogResourcePage } from "@/shared/ui/catalog/CatalogResourcePage";
 import { useCatalogControls } from "@/shared/ui/catalog/useCatalogControls";
@@ -49,6 +50,7 @@ export function ExplorePage() {
         breadcrumbs: [{ label: "Explore" }],
         breadcrumbScope: "public",
       }}
+      navigation={<ExploreVisitorIntro />}
       layout="grid"
       loadingLabel="Loading public bookmarks…"
       pageSize={PUBLIC_BOOKMARK_PAGE_SIZE}

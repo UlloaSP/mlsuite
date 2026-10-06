@@ -3,10 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import type { PropsWithChildren } from "react";
+import { useMemo, type PropsWithChildren } from "react";
 import { Link, useLocation } from "react-router";
 import { EXPLORE_BREADCRUMB_ROOT, EXPLORE_PATH } from "@/app/components/explore-navigation";
-import { signInHref } from "@/capabilities/workspace-context/session";
+import {
+  AccountEntryContext,
+  type AccountEntry,
+} from "@/capabilities/workspace-context/account-entry";
+import { registerHref, signInHref } from "@/capabilities/workspace-context/session";
 import { BreadcrumbProvider } from "@/shared/ui/breadcrumb/BreadcrumbProvider";
 import { appButtonClass } from "@/shared/ui/button-styles";
 import { cx } from "@/shared/ui/cx";
@@ -18,32 +22,48 @@ const BREADCRUMB_ROOTS = { public: EXPLORE_BREADCRUMB_ROOT };
 
 /**
  * The frame of a public page for a visitor without a session: the brand leading to the
- * feed, a way to sign in and come back, and the page in the same sized box the app shell
- * gives it.
+ * feed, ways to sign in or create an account and come back to this page, and the page in
+ * the same sized box the app shell gives it. Pages reach the same ways in through
+ * AccountEntryContext.
  */
 export function PublicFrame({ children }: PropsWithChildren) {
   const location = useLocation();
+  const returnTo = `${location.pathname}${location.search}`;
+  const entry = useMemo<AccountEntry>(
+    () => ({ signInHref: signInHref(returnTo), registerHref: registerHref(returnTo) }),
+    [returnTo],
+  );
 
   return (
     <BreadcrumbProvider roots={BREADCRUMB_ROOTS}>
       <div className="flex h-dvh w-screen flex-col overflow-clip bg-surface text-fg">
-        <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line px-6">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:px-6">
           <Link
             to={EXPLORE_PATH}
             aria-label="MLSuite"
-            className={cx("flex items-center gap-2 rounded-control text-xl", FOCUS_RING)}
+            className={cx("flex shrink-0 items-center gap-2 rounded-control text-xl", FOCUS_RING)}
           >
             <MLSuiteMark />
-            <MLSuiteWordmark />
+            {/* The narrowest phones keep the mark alone so both actions stay on one line. */}
+            <span className="max-[359px]:hidden">
+              <MLSuiteWordmark />
+            </span>
           </Link>
-          <Link
-            to={signInHref(`${location.pathname}${location.search}`)}
-            className={appButtonClass({ size: "sm", variant: "secondary" })}
-          >
-            Sign in
-          </Link>
+          <nav aria-label="Account" className="flex shrink-0 items-center gap-2">
+            <Link
+              to={entry.signInHref}
+              className={appButtonClass({ size: "sm", variant: "secondary" })}
+            >
+              Sign in
+            </Link>
+            <Link to={entry.registerHref} className={appButtonClass({ size: "sm" })}>
+              Create account
+            </Link>
+          </nav>
         </header>
-        <main className="relative min-h-0 min-w-0 flex-1 overflow-clip">{children}</main>
+        <main className="relative min-h-0 min-w-0 flex-1 overflow-clip">
+          <AccountEntryContext.Provider value={entry}>{children}</AccountEntryContext.Provider>
+        </main>
       </div>
     </BreadcrumbProvider>
   );
