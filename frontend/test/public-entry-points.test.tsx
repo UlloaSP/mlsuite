@@ -19,7 +19,7 @@ const BOOKMARK_URL = `/explore/${PUBLIC_ID}`;
 const SUMMARY: PublicBookmarkSummaryDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaDescription: "Estimates cardiovascular risk.",
+  description: "Estimates cardiovascular risk.",
   inputCount: 0,
   reportCount: 0,
   organizationName: "Acme Health",

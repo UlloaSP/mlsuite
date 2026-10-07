@@ -2,6 +2,7 @@ package dev.ulloasp.mlsuite.schema;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -80,8 +81,8 @@ class PublicBookmarkFeedServiceTest {
         Organization acme = organization("acme", "Acme Health", owner);
         Organization globex = organization("globex", "Globex Retail", owner);
 
-        cardio = bookmark(schema(acme, "Cardio risk", "Estimates cardiovascular risk."), "production",
-                BookmarkVisibility.PUBLIC, DAY.plusDays(1));
+        cardio = bookmark(schema(acme, "Cardio risk", "Internal notes on the cohort."), "production",
+                "Estimates cardiovascular risk.", BookmarkVisibility.PUBLIC, DAY.plusDays(1));
         cardio.getVersion().setFormSchema(Map.of(
                 "fields", List.of(
                         Map.of("kind", "number", "label", "Age", "mappedTo", "age"),
@@ -95,12 +96,14 @@ class PublicBookmarkFeedServiceTest {
             entityManager.persist(new SchemaModelBinding(cardio.getVersion(), model, Map.of()));
         }
         entityManager.flush();
-        churn = bookmark(schema(globex, "Churn", null), "Beta", BookmarkVisibility.PUBLIC, DAY.plusDays(2));
-        draft = bookmark(schema(acme, "Internal triage", "Estimates triage priority."), "staging",
+        churn = bookmark(schema(globex, "Churn", "Scores churn."), "Beta", null,
+                BookmarkVisibility.PUBLIC, DAY.plusDays(2));
+        draft = bookmark(schema(acme, "Internal triage", null), "staging", "Estimates triage priority.",
                 BookmarkVisibility.PRIVATE, DAY.plusDays(3));
-        Schema retired = schema(globex, "Retired risk", "Estimates nothing any more.");
+        Schema retired = schema(globex, "Retired risk", null);
         retired.setArchivedAt(DAY);
-        archived = bookmark(retired, "legacy", BookmarkVisibility.PUBLIC, DAY.plusDays(4));
+        archived = bookmark(retired, "legacy", "Estimates nothing any more.",
+                BookmarkVisibility.PUBLIC, DAY.plusDays(4));
     }
 
     @Test
@@ -114,6 +117,8 @@ class PublicBookmarkFeedServiceTest {
                 "Estimates cardiovascular risk.", 2, 2, "Acme Health", page.items().get(1).updatedAt()),
                 page.items().get(1));
         assertEquals("Globex Retail", page.items().get(0).organizationName());
+        // The description is the bookmark's own: one without it shows none, whatever its schema says.
+        assertNull(page.items().get(0).description());
     }
 
     @Test
@@ -138,11 +143,11 @@ class PublicBookmarkFeedServiceTest {
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         PublicBookmarkSummaryDto card = service.getPublishedBookmarkPage(0, 24, "cardio", "updated").items().get(0);
 
-        assertEquals(Set.of("publicId", "name", "schemaDescription", "inputCount", "reportCount",
+        assertEquals(Set.of("publicId", "name", "description", "inputCount", "reportCount",
                 "organizationName", "updatedAt"), mapper.convertValue(card, Map.class).keySet());
         String json = mapper.writeValueAsString(card);
         // Neither the member's address nor the organization's names for its schema and snapshot.
-        for (String internal : List.of("qa@example.test", "Cardio risk", "Baseline")) {
+        for (String internal : List.of("qa@example.test", "Cardio risk", "Baseline", "Internal notes")) {
             assertFalse(json.contains(internal), internal);
         }
     }
@@ -152,9 +157,10 @@ class PublicBookmarkFeedServiceTest {
         assertEquals(List.of(churn.getPublicId()), publicIds(search("beta")));
         assertEquals(List.of(cardio.getPublicId()), publicIds(search("PRODUCTION")));
         assertEquals(List.of(cardio.getPublicId()), publicIds(search("  cardiovascular ")));
-        // A schema's name is not shown on a card, so it is not searched either.
+        // A schema's name and description are not shown on a card, so they are not searched either.
         assertTrue(search("churn").items().isEmpty());
         assertTrue(search("cardio risk").items().isEmpty());
+        assertTrue(search("cohort").items().isEmpty());
         assertEquals(List.of(churn.getPublicId()), publicIds(search("globex")));
         // "Estimates" is in the private and archived descriptions too; "staging" and "legacy" name them.
         assertEquals(List.of(cardio.getPublicId()), publicIds(search("estimates")));
@@ -209,10 +215,12 @@ class PublicBookmarkFeedServiceTest {
     }
 
     /** Every bookmark has a public id, as one that was published once and unpublished does. */
-    private SchemaBookmark bookmark(Schema schema, String name, BookmarkVisibility visibility, OffsetDateTime updatedAt) {
+    private SchemaBookmark bookmark(Schema schema, String name, String description,
+            BookmarkVisibility visibility, OffsetDateTime updatedAt) {
         SchemaVersion version = new SchemaVersion(schema, 3, "Baseline", Map.of());
         entityManager.persist(version);
         SchemaBookmark bookmark = new SchemaBookmark(schema, version, name);
+        bookmark.setDescription(description);
         bookmark.setVisibility(visibility);
         bookmark.setPublicId(UUID.randomUUID().toString());
         entityManager.persist(bookmark);

@@ -28,7 +28,7 @@ const publicBookmark = (
 ): PublicBookmarkDto => ({
   publicId: PUBLIC_ID,
   name: "production",
-  schemaDescription: null,
+  description: null,
   version: 2,
   inputCount: 1,
   reportCount: 1,
@@ -48,6 +48,7 @@ const workspaceBookmark: SchemaBookmarkDto = {
   version: 2,
   versionName: "Baseline",
   name: "production",
+  description: null,
   visibility: "PUBLIC",
   publicId: PUBLIC_ID,
   exampleCount: 0,

@@ -43,7 +43,7 @@ public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, 
             AND (
                 :search = ''
                 OR lower(b.name) LIKE lower(concat('%', :search, '%'))
-                OR lower(b.schema.description) LIKE lower(concat('%', :search, '%'))
+                OR lower(coalesce(b.description, '')) LIKE lower(concat('%', :search, '%'))
                 OR lower(b.schema.organization.name) LIKE lower(concat('%', :search, '%'))
             )
             """)

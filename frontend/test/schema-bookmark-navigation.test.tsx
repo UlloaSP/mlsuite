@@ -22,6 +22,7 @@ const bookmark: SchemaBookmarkDto = {
   version: 1,
   versionName: "Snapshot 1",
   name: "Risk model",
+  description: null,
   visibility: "PRIVATE",
   publicId: null,
   exampleCount: 0,

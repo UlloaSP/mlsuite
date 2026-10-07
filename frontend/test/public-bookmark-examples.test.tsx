@@ -36,6 +36,7 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   version: 2,
   versionName: "Baseline",
   name: "production",
+  description: null,
   visibility: "PUBLIC",
   publicId: PUBLIC_ID,
   exampleCount: 0,
@@ -70,7 +71,7 @@ const FORM_SCHEMA = {
 const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaDescription: null,
+  description: null,
   version: 2,
   inputCount: 2,
   reportCount: 1,

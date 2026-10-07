@@ -138,7 +138,8 @@ class BookmarkPublishingServiceTest {
     @Test
     void thePublicViewCarriesTheFormWithoutInternalIdentifiers() throws Exception {
         SchemaBookmark bookmark = bookmark();
-        bookmark.getSchema().setDescription("Estimates cardiovascular risk.");
+        bookmark.getSchema().setDescription("Internal notes on the cohort.");
+        bookmark.setDescription("Estimates cardiovascular risk.");
         bookmark.getVersion().setFormSchema(Map.of(
                 "fields", List.of(
                         Map.of("kind", "number", "label", "Age", "mappedTo", Map.of("model-11", "age")),
@@ -155,7 +156,7 @@ class BookmarkPublishingServiceTest {
         PublicBookmarkDto view = publicService.getPublishedBookmark("public-1");
 
         assertEquals("production", view.name());
-        assertEquals("Estimates cardiovascular risk.", view.schemaDescription());
+        assertEquals("Estimates cardiovascular risk.", view.description());
         assertEquals(1, view.version());
         // A hidden field stays on the server: it is neither counted nor sent with the form.
         assertEquals(2, view.inputCount());
@@ -171,10 +172,10 @@ class BookmarkPublishingServiceTest {
                         Map.of("kind", "classifier", "label", "Risk", "id", "out0", "mappedTo", "out0"))),
                 view.formSchema());
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        assertEquals(Set.of("publicId", "name", "schemaDescription", "version", "inputCount", "reportCount",
+        assertEquals(Set.of("publicId", "name", "description", "version", "inputCount", "reportCount",
                 "organizationName", "formSchema", "updatedAt"), mapper.convertValue(view, Map.class).keySet());
         String json = mapper.writeValueAsString(view);
-        for (String secret : List.of("model-11", "model-99", "smoker__1", "gone", "site", "Site")) {
+        for (String secret : List.of("model-11", "model-99", "smoker__1", "gone", "site", "Site", "cohort")) {
             assertFalse(json.contains(secret), secret);
         }
     }
@@ -243,7 +244,7 @@ class BookmarkPublishingServiceTest {
         ResponseStatusException moved = assertThrows(ResponseStatusException.class,
                 () -> service.moveBookmark(USER_ID, BOOKMARK_ID, new MoveSchemaBookmarkRequest(NEXT_VERSION_ID)));
         ResponseStatusException recreated = assertThrows(ResponseStatusException.class, () -> service.createBookmark(
-                USER_ID, 5L, new CreateSchemaBookmarkRequest("production", NEXT_VERSION_ID)));
+                USER_ID, 5L, new CreateSchemaBookmarkRequest("production", NEXT_VERSION_ID, null)));
 
         for (ResponseStatusException refused : List.of(moved, recreated)) {
             assertEquals(409, refused.getStatusCode().value());

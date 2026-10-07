@@ -53,6 +53,7 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   version: 1,
   versionName: "v1",
   name: "production",
+  description: null,
   visibility: "PRIVATE",
   publicId: null,
   exampleCount: 0,
@@ -65,7 +66,7 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
 const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaDescription: "Estimates cardiovascular risk.",
+  description: "Estimates cardiovascular risk.",
   version: 2,
   inputCount: 2,
   reportCount: 1,

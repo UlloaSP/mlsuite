@@ -75,7 +75,7 @@ export function PublicBookmarkPage() {
           breadcrumbScope="public"
           breadcrumbs={[{ label: bookmark.name }]}
           title={bookmark.name}
-          description={bookmark.schemaDescription ?? undefined}
+          description={bookmark.description ?? undefined}
           actions={<WorkspaceBookmarkLink publicId={bookmark.publicId} />}
         />
         <dl className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2 text-sm text-fg-secondary">

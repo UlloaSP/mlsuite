@@ -539,8 +539,17 @@
       },
       "CreateSchemaBookmarkRequest": {
         "properties": {
+          "description": {
+            "maxLength": 800,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "name": {
-            "minLength": 1,
+            "maxLength": 180,
+            "minLength": 0,
             "type": "string"
           },
           "versionId": {
@@ -2203,6 +2212,12 @@
       },
       "PublicBookmarkDto": {
         "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "formSchema": {
             "additionalProperties": { },
             "type": "object"
@@ -2224,12 +2239,6 @@
             "format": "int32",
             "type": "integer"
           },
-          "schemaDescription": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "updatedAt": {
             "format": "date-time",
             "type": "string"
@@ -2240,13 +2249,13 @@
           }
         },
         "required": [
+          "description",
           "formSchema",
           "inputCount",
           "name",
           "organizationName",
           "publicId",
           "reportCount",
-          "schemaDescription",
           "updatedAt",
           "version"
         ],
@@ -2274,6 +2283,12 @@
       },
       "PublicBookmarkSummaryDto": {
         "properties": {
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "inputCount": {
             "format": "int32",
             "type": "integer"
@@ -2291,24 +2306,18 @@
             "format": "int32",
             "type": "integer"
           },
-          "schemaDescription": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
           "updatedAt": {
             "format": "date-time",
             "type": "string"
           }
         },
         "required": [
+          "description",
           "inputCount",
           "name",
           "organizationName",
           "publicId",
           "reportCount",
-          "schemaDescription",
           "updatedAt"
         ],
         "type": "object"
@@ -2693,6 +2702,12 @@
             "format": "date-time",
             "type": "string"
           },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "exampleCount": {
             "format": "int64",
             "type": "integer"
@@ -2749,6 +2764,7 @@
         },
         "required": [
           "createdAt",
+          "description",
           "exampleCount",
           "id",
           "name",
@@ -3715,6 +3731,27 @@
         ],
         "type": "object"
       },
+      "UpdateSchemaBookmarkRequest": {
+        "properties": {
+          "description": {
+            "maxLength": 800,
+            "minLength": 0,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 180,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
       "UpdateSchemaDraftRequest": {
         "properties": {
           "bindings": {
@@ -4319,7 +4356,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_3",
+        "operationId": "update_4",
         "parameters": [
           {
             "in": "path",
@@ -5851,7 +5888,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_2",
+        "operationId": "update_3",
         "parameters": [
           {
             "in": "path",
@@ -6193,7 +6230,7 @@
         ]
       },
       "patch": {
-        "operationId": "update_1",
+        "operationId": "update_2",
         "requestBody": {
           "content": {
             "application/json": {
@@ -6713,6 +6750,45 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBookmarkDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "schema-bookmark-controller"
+        ]
+      },
+      "patch": {
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bookmarkId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSchemaBookmarkRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
