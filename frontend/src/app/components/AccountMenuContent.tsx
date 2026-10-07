@@ -9,6 +9,7 @@ import { useLocation } from "react-router";
 import { useLogout } from "@/capabilities/workspace-context/session";
 import { cx } from "@/shared/ui/cx";
 import { ACCOUNT_LINKS, countLabel, isAccountLinkActive } from "./account-navigation";
+import { EXPLORE_PATH } from "./explore-navigation";
 import { SidebarMenuLink } from "./SidebarMenuLink";
 import {
   SIDEBAR_MENU_ITEM,
@@ -29,7 +30,7 @@ export function AccountMenuContent({
   side: "top" | "bottom";
 }) {
   const location = useLocation();
-  const { mutate: logout } = useLogout();
+  const { mutate: logout } = useLogout(EXPLORE_PATH);
 
   return (
     <DropdownMenu.Portal>

@@ -16,3 +16,6 @@ export const register = (payload: AuthRequest): Promise<UserDto> =>
   appFetch<UserDto>("/api/auth/register", json("POST", payload));
 
 export const logout = (): Promise<void> => appFetch<void>("/api/logout", { method: "POST" });
+
+/** Replaces the app with a newly loaded document at `path`; nothing in memory survives it. */
+export const openDocument = (path: string): void => window.location.replace(path);
