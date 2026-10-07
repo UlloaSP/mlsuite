@@ -7,22 +7,16 @@ import { createMlRegistryPack } from "mlform/builtins";
 import { mountForm } from "mlform/kit";
 import { createBuiltinPrimitiveRegistry } from "mlform/primitives";
 import type { ReportConfig, SubmitErrorContext, SubmitRequest, Transport } from "mlform/runtime";
-import { normalizeSchema, validateSchema, type ReportResult } from "mlform/schema";
+import { validateSchema, type ReportResult } from "mlform/schema";
 import { toAnalyzerReportPayload } from "@/capabilities/prediction-runtime/data/report-normalization";
 import { withResolvedDisplayKeys } from "@/capabilities/prediction-runtime/mlform/display-key";
 import { getPredictionDesignSystem } from "@/capabilities/prediction-runtime/mlform/headless-prediction";
-import {
-  allowWithholdingRun,
-  hideRunTabTitles,
-  runTabsLayout,
-  showRunResults,
-  withholdRun,
-} from "@/capabilities/prediction-runtime/mlform/run-tabs-layout";
 import {
   type JsonRecord,
   type PredictionTheme,
   isRecord,
 } from "@/capabilities/prediction-runtime/mlform/shared";
+import { adoptShadowRules } from "@/capabilities/prediction-runtime/mlform/shadow-rules";
 
 /** What the runtime returned for the report of the public form that carries this key. */
 export type PublicRunReport = { key: string; payload: JsonRecord };
@@ -51,6 +45,19 @@ export type MountedPublicRunForm = {
   unmount: () => void;
 };
 
+const RUN_WITHHELD = "data-run-withheld";
+
+/**
+ * What the kit always draws and a public page must not show. Its count of fields, reports and
+ * submits repeats the page's own, and counts fields a visitor never sees. Its status reads
+ * "success" whenever the transport answered, and a refused or failed run answers too: the host
+ * tells what happened to a run. Its submit action is hidden while the host withholds the run.
+ */
+const PUBLIC_RUN_RULES = `
+  .meta, .left-section .sticky-meta { display: none; }
+  :host([${RUN_WITHHELD}]) .form-actions { display: none; }
+`;
+
 /** MLForm's name for the backend behind a `mappedTo` that is a bare key. */
 const BACKEND = "default";
 
@@ -68,8 +75,9 @@ const toReportResult = (
 };
 
 /**
- * Mounts a public form to be filled and run: the same inputs, Results tab and report rendering
- * as a workspace run, but one request decides the whole run and nothing here names a model.
+ * Mounts a public form to be filled and run, inputs beside results: the same fields and report
+ * rendering as a workspace run, but one request decides the whole run and nothing here names a
+ * model.
  */
 export const mountPublicRunForm = ({
   container,
@@ -82,9 +90,7 @@ export const mountPublicRunForm = ({
   const pack = createMlRegistryPack();
   const result = validateSchema(withResolvedDisplayKeys(schema), pack.registry);
   if (!result.success) throw new Error(result.issues[0]?.message ?? "Invalid MLForm schema.");
-  const normalized = normalizeSchema(result.data, pack.registry);
-  // The outcome of the last submit; the hooks below read it once MLForm has settled it.
-  let ran = false;
+  // The reports of the last run that was made: a refused one leaves them on screen.
   let shown: readonly PublicRunReport[] = [];
   const transport: Transport = {
     /**
@@ -93,13 +99,11 @@ export const mountPublicRunForm = ({
      */
     submit: async (request: SubmitRequest) => {
       const reports = request.reports as readonly ReportConfig[];
-      ran = false;
       try {
         const answered = await run(
           isRecord(request.modelValues) ? request.modelValues : {},
           request.signal,
         );
-        ran = answered !== null;
         shown = answered ?? shown;
       } catch (error) {
         shown = [];
@@ -120,7 +124,6 @@ export const mountPublicRunForm = ({
       },
       afterSubmit() {
         onRunningChange?.(false);
-        if (ran && normalized.reports.length > 0) showRunResults(mounted.host);
       },
       // Reached when MLForm itself cannot submit; a failed run is reported by the transport.
       onSubmitError({ error }: SubmitErrorContext) {
@@ -128,19 +131,26 @@ export const mountPublicRunForm = ({
         onRunError?.(error);
       },
     },
-    layout: runTabsLayout(
-      normalized.fields.map((field) => field.id),
-      normalized.reports.map((report) => report.id),
-    ),
+    layout: { kind: "split" },
+    reportPane: "always",
     reportFetchMode: "none",
-    labels: { submit: "Run", validating: "Checking inputs…", submitting: "Running…" },
+    labels: {
+      form: "Inputs",
+      reports: "Results",
+      submit: "Run",
+      validating: "Checking inputs…",
+      submitting: "Running…",
+    },
+    primitiveText: {
+      reportsEmptyTitle: "No results yet",
+      reportsEmptyBody: "Run the form to see its results here.",
+    },
     designSystem: getPredictionDesignSystem(theme),
   });
-  hideRunTabTitles(mounted.host);
-  allowWithholdingRun(mounted.host);
+  adoptShadowRules(mounted.host, PUBLIC_RUN_RULES);
   return {
     updateTheme: (nextTheme) => mounted.replaceDesignSystem(getPredictionDesignSystem(nextTheme)),
-    setRunOffered: (offered) => withholdRun(mounted.host, !offered),
+    setRunOffered: (offered) => mounted.host.toggleAttribute(RUN_WITHHELD, !offered),
     unmount: () => mounted.unmount(),
   };
 };

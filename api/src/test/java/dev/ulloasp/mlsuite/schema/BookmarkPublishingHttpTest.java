@@ -119,7 +119,7 @@ class BookmarkPublishingHttpTest {
     @Test
     void anonymousVisitorsReadAPublishedBookmarkWithoutInternalFields() throws Exception {
         when(publicBookmarks.getPublishedBookmark(PUBLIC_ID)).thenReturn(new PublicBookmarkDto(
-                PUBLIC_ID, "production", "Risk", null, 1, "v1", "Org",
+                PUBLIC_ID, "production", null, 1, 1, 0, "Org",
                 Map.of("fields", List.of(Map.of("kind", "number", "label", "Age"))),
                 OffsetDateTime.parse("2026-10-01T10:00:00Z")));
 
@@ -128,15 +128,17 @@ class BookmarkPublishingHttpTest {
                 .andExpect(jsonPath("$.length()").value(9))
                 .andExpect(jsonPath("$.publicId").value(PUBLIC_ID))
                 .andExpect(jsonPath("$.name").value("production"))
-                .andExpect(jsonPath("$.schemaName").value("Risk"))
                 .andExpect(jsonPath("$.schemaDescription").isEmpty())
                 .andExpect(jsonPath("$.version").value(1))
-                .andExpect(jsonPath("$.versionName").value("v1"))
+                .andExpect(jsonPath("$.inputCount").value(1))
+                .andExpect(jsonPath("$.reportCount").value(0))
                 .andExpect(jsonPath("$.organizationName").value("Org"))
                 .andExpect(jsonPath("$.formSchema.fields[0].label").value("Age"))
                 .andExpect(jsonPath("$.updatedAt").exists())
                 .andExpect(jsonPath("$.id").doesNotExist())
                 .andExpect(jsonPath("$.schemaId").doesNotExist())
+                .andExpect(jsonPath("$.schemaName").doesNotExist())
+                .andExpect(jsonPath("$.versionName").doesNotExist())
                 .andExpect(jsonPath("$.versionId").doesNotExist());
     }
 

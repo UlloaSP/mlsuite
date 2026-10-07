@@ -2105,16 +2105,18 @@ export interface components {
             formSchema: {
                 [key: string]: unknown;
             };
+            /** Format: int32 */
+            inputCount: number;
             name: string;
             organizationName: string;
             publicId: string;
+            /** Format: int32 */
+            reportCount: number;
             schemaDescription: string | null;
-            schemaName: string;
             /** Format: date-time */
             updatedAt: string;
             /** Format: int32 */
             version: number;
-            versionName: string | null;
         };
         PublicBookmarkExampleDto: {
             id: string;
@@ -2124,16 +2126,16 @@ export interface components {
             name: string;
         };
         PublicBookmarkSummaryDto: {
+            /** Format: int32 */
+            inputCount: number;
             name: string;
             organizationName: string;
             publicId: string;
+            /** Format: int32 */
+            reportCount: number;
             schemaDescription: string | null;
-            schemaName: string;
             /** Format: date-time */
             updatedAt: string;
-            /** Format: int32 */
-            version: number;
-            versionName: string | null;
         };
         PublicPredictionDto: {
             quota: components["schemas"]["PublicRunQuotaDto"];

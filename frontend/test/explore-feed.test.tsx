@@ -63,20 +63,18 @@ const AT = "2026-10-01T10:00:00Z";
 const CARDIO: PublicBookmarkSummaryDto = {
   publicId: "8f6f3c0e-58a2-4c0b-9d0c-0d5c1f6e2a11",
   name: "production",
-  schemaName: "Cardio risk",
   schemaDescription: "Estimates cardiovascular risk.",
-  version: 2,
-  versionName: "Baseline",
+  inputCount: 16,
+  reportCount: 2,
   organizationName: "Acme Health",
   updatedAt: AT,
 };
 const CHURN: PublicBookmarkSummaryDto = {
   publicId: "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed",
   name: "beta",
-  schemaName: "Churn",
   schemaDescription: null,
-  version: 1,
-  versionName: null,
+  inputCount: 1,
+  reportCount: 1,
   organizationName: "Bob Other Personal",
   updatedAt: AT,
 };
@@ -154,20 +152,35 @@ describe("public feed page", () => {
     expect(host.querySelector("h1")?.textContent).toBe("Explore");
     expect(cards(host)).toEqual([`/explore/${CARDIO.publicId}`, `/explore/${CHURN.publicId}`]);
     const [cardio, churn] = [...host.querySelectorAll("a[aria-label^='Open ']")];
-    for (const fact of [
-      "production",
-      "Cardio risk",
-      "Estimates cardiovascular risk.",
-      "Baseline · v2",
-      "Acme Health",
-      "Updated",
-    ]) {
-      expect(cardio.textContent).toContain(fact);
-    }
-    // The publisher is the organization as it is named, personal or not.
+    expect(cardio.getAttribute("aria-label")).toBe("Open production by Acme Health");
+    expect(cardio.querySelector("h2")?.textContent).toBe("production");
+    expect(cardio.querySelector("p")?.textContent).toBe("Estimates cardiovascular risk.");
+    const size = (card: Element) =>
+      [...card.querySelectorAll("dl dd")].map((fact) => fact.textContent);
+    expect(size(cardio)).toEqual(["16 inputs", "2 reports"]);
+    expect(cardio.querySelector("footer")?.textContent).toContain("Acme Health");
+    expect(cardio.querySelector("footer")?.textContent).toContain("Updated");
+    // The publisher is the organization as it is named, personal or not; no description, no line.
     expect(churn.textContent).toContain("Bob Other Personal");
-    expect(churn.textContent).toContain("v1");
+    expect(churn.querySelector("p")).toBeNull();
+    expect(size(churn)).toEqual(["1 input", "1 report"]);
     expect(host.textContent).toContain("2 results");
+  });
+
+  test("a card names neither the schema nor the snapshot behind the bookmark", async () => {
+    // An API that still sent them would not get them on screen.
+    const stale = { ...CARDIO, schemaName: "Cardio risk", version: 2, versionName: "Baseline" };
+    fetchMock.mockResolvedValue(json(feed(stale)));
+    const host = await page();
+    await settle();
+
+    const [card] = [...host.querySelectorAll("a[aria-label^='Open ']")];
+    for (const internal of ["Cardio risk", "Baseline", "v2"]) {
+      expect(card.textContent).not.toContain(internal);
+    }
+    expect(host.querySelector("input")?.getAttribute("placeholder")).toBe(
+      "Search by bookmark, description, or publisher",
+    );
   });
 
   test("says that nothing has been published when the feed is empty", async () => {
@@ -217,7 +230,7 @@ describe("public feed page", () => {
   });
 
   test("a bookmark page's trail leads back to the feed", async () => {
-    const bookmark: PublicBookmarkDto = { ...CARDIO, formSchema: { fields: [] } };
+    const bookmark: PublicBookmarkDto = { ...CARDIO, version: 2, formSchema: { fields: [] } };
     fetchMock.mockResolvedValue(json(bookmark));
     const host = await page(`/explore/${CARDIO.publicId}`);
     await settle();
@@ -265,21 +278,34 @@ describe("Explore navigation entry", () => {
     },
   );
 
-  test("it follows the organization's work without renumbering its shortcuts", async () => {
+  const FIRST = ["nav:Explore", "nav:Predict", "nav:Models", "nav:Schemas", "nav:Inferences"];
+  const shortcut = (scope: ParentNode, item: string) =>
+    scope.querySelector(`[data-user-guide-item="${item}"]`)?.getAttribute("aria-keyshortcuts");
+
+  test("it is the first entry of the sidebar, ahead of the organization's work", async () => {
     Object.assign(session, { signedIn: true, permissions: { canViewModels: true } });
     const { host } = await inShell(<SidebarNavigation />);
 
-    expect(guideItems(host).map(([item]) => item)).toEqual([
-      "nav:Predict",
-      "nav:Models",
-      "nav:Schemas",
-      "nav:Inferences",
-      "nav:Explore",
-    ]);
-    const explore = host.querySelector('[data-user-guide-item="nav:Explore"]')!;
-    expect(explore.getAttribute("aria-keyshortcuts")).toBe("Alt+5");
-    expect(explore.closest("ul")?.getAttribute("aria-label")).toBe("Public");
+    expect(guideItems(host).map(([item]) => item)).toEqual(FIRST);
+    expect(
+      [...host.querySelectorAll("ul[aria-label]")].map((list) => list.getAttribute("aria-label")),
+    ).toEqual(["Public", "Workspace"]);
+    // The shortcut numbers follow the order on screen.
+    expect(shortcut(host, "nav:Explore")).toBe("Alt+1");
+    expect(shortcut(host, "nav:Predict")).toBe("Alt+2");
   });
+
+  test.each(["top", "bottom"] as const)(
+    "it is the first entry of the %s bar, ahead of the organization's work",
+    async (position) => {
+      Object.assign(session, { signedIn: true, permissions: { canViewModels: true } });
+      const { host } = await inShell(<Navbar position={position} />);
+      const nav = host.querySelector('nav[aria-label="Main navigation"]')!;
+
+      expect(guideItems(nav).map(([item]) => item)).toEqual(FIRST);
+      expect(shortcut(nav, "nav:Explore")).toBe("Alt+1");
+    },
+  );
 });
 
 describe("entry routing", () => {

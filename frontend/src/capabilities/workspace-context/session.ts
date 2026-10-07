@@ -58,7 +58,7 @@ const staysOnSite = (path: string) => {
 };
 
 /** `value` when it is a path inside the app; otherwise `fallback`, never another site. */
-export const safeReturnTo = (value: string | null | undefined, fallback = "/home") =>
+export const safeReturnTo = (value: string | null | undefined, fallback: string) =>
   value?.startsWith("/") && staysOnSite(value) ? value : fallback;
 
 /** Signs in through `authenticate` and adopts the returned user as the session. */

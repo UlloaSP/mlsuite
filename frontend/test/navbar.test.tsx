@@ -87,9 +87,10 @@ describe("navigation bar", () => {
 
     const nav = container.querySelector('nav[aria-label="Main navigation"]')!;
     const entries = [...nav.querySelectorAll<HTMLElement>("[data-user-guide-item]")];
-    // The organization's work first, then platform administration and the public feed,
+    // The public feed first, then the organization's work and platform administration,
     // each after a divider.
     expect(entries.map((entry) => entry.dataset.userGuideItem)).toEqual([
+      "nav:Explore",
       "nav:Predict",
       "nav:Models",
       "nav:Schemas",
@@ -100,18 +101,18 @@ describe("navigation bar", () => {
       "nav:Users",
       "nav:Moderation",
       "nav:Infra",
-      "nav:Explore",
     ]);
-    expect(entries[6].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
-    expect(entries[10].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    expect(entries[1].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    expect(entries[7].previousElementSibling?.getAttribute("aria-hidden")).toBe("true");
     expect(nav.querySelectorAll(":scope > span[aria-hidden='true']")).toHaveLength(2);
-    expect(entries[2].getAttribute("href")).toBe("/schemas");
-    expect(entries[8].getAttribute("href")).toBe("/admin/public-bookmarks");
-    expect(entries[9].tagName).toBe("BUTTON");
-    expect(entries[9].getAttribute("aria-haspopup")).toBe("menu");
-    expect(entries[0].getAttribute("href")).toBe("/predict");
+    expect(entries[3].getAttribute("href")).toBe("/schemas");
+    expect(entries[9].getAttribute("href")).toBe("/admin/public-bookmarks");
+    expect(entries[10].tagName).toBe("BUTTON");
+    expect(entries[10].getAttribute("aria-haspopup")).toBe("menu");
+    expect(entries[0].getAttribute("href")).toBe("/explore");
     expect(entries[0].getAttribute("aria-keyshortcuts")).toBe("Alt+1");
-    expect(entries[6].getAttribute("aria-keyshortcuts")).toBe("Alt+7");
+    expect(entries[1].getAttribute("href")).toBe("/predict");
+    expect(entries[7].getAttribute("aria-keyshortcuts")).toBe("Alt+8");
     for (const item of [
       "brand",
       "workspace-switcher",
@@ -146,7 +147,7 @@ describe("navigation bar", () => {
     expect(infra.querySelector(".lucide-chevron-down")).toBeNull();
   });
 
-  test("the sidebar splits the organization's work, platform administration and the public feed", async () => {
+  test("the sidebar splits the public feed, the organization's work and platform administration", async () => {
     const container = await render(
       <SidebarProvider open onOpenChange={() => undefined}>
         <SidebarNavigation />
@@ -159,6 +160,12 @@ describe("navigation bar", () => {
           .querySelector(`ul[aria-label="${label}"]`)!
           .querySelectorAll("[data-user-guide-item^='nav:']"),
       ].map((item) => item.getAttribute("data-user-guide-item"));
+    expect(
+      [...container.querySelectorAll("ul[aria-label]")].map((list) =>
+        list.getAttribute("aria-label"),
+      ),
+    ).toEqual(["Public", "Workspace", "Administration"]);
+    expect(group("Public")).toEqual(["nav:Explore"]);
     expect(group("Workspace")).toEqual([
       "nav:Predict",
       "nav:Models",
@@ -173,12 +180,11 @@ describe("navigation bar", () => {
       "nav:Moderation",
       "nav:Infra",
     ]);
-    expect(group("Public")).toEqual(["nav:Explore"]);
     expect(
       container
         .querySelector('[data-user-guide-item="nav:Organizations"]')
         ?.getAttribute("aria-keyshortcuts"),
-    ).toBe("Alt+7");
+    ).toBe("Alt+8");
   });
 
   test("opens entries with Alt+number", async () => {
@@ -190,7 +196,7 @@ describe("navigation bar", () => {
 
     act(() => {
       window.dispatchEvent(
-        new KeyboardEvent("keydown", { altKey: true, code: "Digit1", key: "1" }),
+        new KeyboardEvent("keydown", { altKey: true, code: "Digit2", key: "2" }),
       );
     });
 

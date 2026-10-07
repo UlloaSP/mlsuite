@@ -28,10 +28,10 @@ const publicBookmark = (
 ): PublicBookmarkDto => ({
   publicId: PUBLIC_ID,
   name: "production",
-  schemaName: "Risk",
   schemaDescription: null,
   version: 2,
-  versionName: "Baseline",
+  inputCount: 1,
+  reportCount: 1,
   organizationName: "Acme Health",
   formSchema: {
     fields: [{ kind: "number", label: "Age", mappedTo: "in0", ...age }],
@@ -120,10 +120,12 @@ async function openPage() {
   return view.host;
 }
 
-/** MLForm lays the form out as tabs (Inputs, Results) in one element. */
-const formRoot = (host: HTMLElement) => host.querySelector("mlf-kit-tabs")!.shadowRoot!;
+/** MLForm lays the form out as two panes (Inputs, Results) in one element. */
+const formRoot = (host: HTMLElement) => host.querySelector("mlf-form")!.shadowRoot!;
 async function run(host: HTMLElement) {
-  await act(async () => formRoot(host).querySelector<HTMLButtonElement>(".btn-submit")!.click());
+  await act(async () =>
+    formRoot(host).querySelector("mlf-submit-button")!.shadowRoot!.querySelector("button")!.click(),
+  );
   await settle();
 }
 /** Reports render inside nested shadow roots, which `textContent` does not cross. */
@@ -275,7 +277,7 @@ describe("running a public bookmark", () => {
     const host = await openPage();
 
     expect(host.textContent).toContain("This form cannot be shown here");
-    expect(host.querySelector("mlf-kit-tabs")).toBeNull();
+    expect(host.querySelector("mlf-form")).toBeNull();
   });
 });
 
@@ -290,7 +292,7 @@ describe("the way from a public page into its workspace", () => {
     await settle();
 
     expect(host.querySelector('[data-frame="app-shell"]')).toBeNull();
-    expect(host.querySelector("mlf-kit-tabs")).not.toBeNull();
+    expect(host.querySelector("mlf-form")).not.toBeNull();
     expect(link(host)).toBeUndefined();
     // The failed session probe is not repeated by the page, and no workspace is asked.
     expect(requestedPaths()).toEqual([ME_PATH, BOOKMARK_PATH, EXAMPLES_PATH, QUOTA_PATH]);

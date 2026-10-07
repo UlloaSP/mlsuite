@@ -25,14 +25,14 @@ export function PublicBookmarkExampleSelect({
   const hintId = useId();
 
   return (
-    <div className="grid gap-2">
+    <div className="flex shrink-0 flex-col gap-x-3 gap-y-2 sm:flex-row sm:flex-wrap sm:items-center">
       <span id={labelId} className="text-sm font-semibold text-fg-secondary">
         Start from an example
       </span>
       <AppSelect
         aria-labelledby={labelId}
         aria-describedby={hintId}
-        className="w-full text-left sm:w-80"
+        className="w-full text-left sm:w-72"
         options={examples.map((example) => ({ label: example.name, value: example.id }))}
         placeholder="Choose an example"
         value={value}

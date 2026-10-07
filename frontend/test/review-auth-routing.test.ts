@@ -39,7 +39,9 @@ describe("integrated review authentication and routes", () => {
   });
 
   test("keeps local review destinations after authentication", () => {
-    expect(safeReturnTo("/review/review-1/runs/run-1")).toBe("/review/review-1/runs/run-1");
+    expect(safeReturnTo("/review/review-1/runs/run-1", "/explore")).toBe(
+      "/review/review-1/runs/run-1",
+    );
     expect(paths(protectedPages).filter((path) => path.startsWith("review"))).toEqual([
       "review",
       "review/:reviewId",
@@ -69,7 +71,7 @@ describe("integrated review authentication and routes", () => {
   test.each(["https://evil.example/review", "//evil.example/review", "/\\evil", null])(
     "rejects unsafe return destination %s",
     (destination) => {
-      expect(safeReturnTo(destination)).toBe("/home");
+      expect(safeReturnTo(destination, "/explore")).toBe("/explore");
     },
   );
 });
