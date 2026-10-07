@@ -29,7 +29,7 @@ const PAGE = `/explore/${PUBLIC_ID}`;
 const bookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaDescription: null,
+  description: null,
   version: 2,
   inputCount: 1,
   reportCount: 1,

@@ -9,8 +9,30 @@ import { safeReturnTo } from "@/capabilities/workspace-context/session";
 import type { PublicBookmarkDto, PublicBookmarkSummaryDto } from "@/shared/api/openapi.gen";
 import { click, mount } from "./support/dom";
 
-vi.mock("@/app/layouts/AppShellLayout", () => ({
-  AppShellFrame: ({ children }: PropsWithChildren) => <div data-frame="app-shell">{children}</div>,
+/** The shell is a stub; it carries the real account menu, open, when a test asks for it. */
+const shell = vi.hoisted(() => ({ accountMenu: false }));
+vi.mock("@/app/layouts/AppShellLayout", async () => {
+  const { DropdownMenu } = await import("radix-ui");
+  const { AccountMenuContent } = await import("@/app/components/AccountMenuContent");
+  return {
+    AppShellFrame: ({ children }: PropsWithChildren) => (
+      <div data-frame="app-shell">
+        {shell.accountMenu ? (
+          <DropdownMenu.Root open modal={false}>
+            <DropdownMenu.Trigger>Account</DropdownMenu.Trigger>
+            <AccountMenuContent align="start" className="" notificationCount={0} side="top" />
+          </DropdownMenu.Root>
+        ) : null}
+        {children}
+      </div>
+    ),
+  };
+});
+/** jsdom loads no documents, so the ones the app asks for are recorded instead. */
+const documents = vi.hoisted(() => ({ opened: [] as string[] }));
+vi.mock("@/capabilities/workspace-context/session-api", async (original) => ({
+  ...(await original<typeof import("@/capabilities/workspace-context/session-api")>()),
+  openDocument: (path: string) => void documents.opened.push(path),
 }));
 
 const PUBLIC_ID = "8f6f3c0e-58a2-4c0b-9d0c-0d5c1f6e2a11";
@@ -19,7 +41,7 @@ const BOOKMARK_URL = `/explore/${PUBLIC_ID}`;
 const SUMMARY: PublicBookmarkSummaryDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaDescription: "Estimates cardiovascular risk.",
+  description: "Estimates cardiovascular risk.",
   inputCount: 0,
   reportCount: 0,
   organizationName: "Acme Health",
@@ -34,7 +56,11 @@ const WORKSPACE = {
 };
 
 /** The API as the browser sees it: a session that starts with signing in or registering. */
-const api = { signedIn: false, posts: [] as Array<{ path: string; body: unknown }> };
+const api = {
+  signedIn: false,
+  signOutFails: false,
+  posts: [] as Array<{ path: string; body: unknown }>,
+};
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -42,6 +68,12 @@ const json = (body: unknown, status = 200) =>
   });
 const respond = (url: string, init?: RequestInit) => {
   const { pathname } = new URL(url);
+  if (pathname === "/api/logout") {
+    api.posts.push({ path: pathname, body: null });
+    if (api.signOutFails) return json({ status: 500, message: "Sign-out failed" }, 500);
+    api.signedIn = false;
+    return new Response(null, { status: 204 });
+  }
   if (init?.method === "POST") {
     api.posts.push({ path: pathname, body: JSON.parse(init.body as string) });
     api.signedIn = true;
@@ -53,7 +85,7 @@ const respond = (url: string, init?: RequestInit) => {
   if (pathname === `/api/public/bookmarks/${PUBLIC_ID}`) return json(BOOKMARK);
   if (pathname === `/api/public/bookmarks/${PUBLIC_ID}/examples`) return json([]);
   if (pathname === `/api/public/bookmarks/${PUBLIC_ID}/quota`) {
-    return json({ limit: 5, remaining: 5, resetsAt: null });
+    return json({ limit: 50, remaining: 50, resetsAt: null });
   }
   if (!api.signedIn) return json({ status: 401, message: "Unauthorized" }, 401);
   if (pathname === "/api/users/me") return json(USER);
@@ -82,7 +114,7 @@ const open = async (entry: string) => {
     await act(async () => router.navigate(-1));
     await settle();
   };
-  return { host, url, back };
+  return { host, url, back, client };
 };
 const link = (host: ParentNode, text: string) =>
   [...host.querySelectorAll("a")].find((node) => node.textContent?.trim() === text);
@@ -120,7 +152,9 @@ const authenticate = async (host: ParentNode) => {
 
 beforeEach(() => {
   localStorage.clear();
-  Object.assign(api, { signedIn: false, posts: [] });
+  shell.accountMenu = false;
+  documents.opened = [];
+  Object.assign(api, { signedIn: false, signOutFails: false, posts: [] });
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string, init?: RequestInit) => Promise.resolve(respond(String(url), init))),
@@ -343,5 +377,58 @@ describe("coming back after authenticating", () => {
 
     expect(api.posts.map((post) => post.path)).toEqual(["/api/auth/login"]);
     expect(url()).toBe("/profile?tab=security");
+  });
+});
+
+describe("leaving the session", () => {
+  const signOut = async () => {
+    const item = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+      (node) => node.textContent?.trim() === "Sign out",
+    );
+    await click(item!);
+    await settle();
+  };
+
+  test.each(["/settings", FEED_URL, BOOKMARK_URL])(
+    "signing out on %s ends the session and loads Explore afresh",
+    async (page) => {
+      Object.assign(api, { signedIn: true });
+      shell.accountMenu = true;
+      const { host, url } = await open(page);
+      expect(host.querySelector('[data-frame="app-shell"]')).not.toBeNull();
+
+      await signOut();
+
+      expect(api.posts.map((post) => post.path)).toEqual(["/api/logout"]);
+      expect(documents.opened).toEqual(["/explore"]);
+      // The app itself goes nowhere: in particular, not to the sign-in screen.
+      expect(url()).toBe(page);
+    },
+  );
+
+  test("a sign-out the API refused leaves the member where they were", async () => {
+    Object.assign(api, { signedIn: true, signOutFails: true });
+    shell.accountMenu = true;
+    const { host, url } = await open("/settings");
+
+    await signOut();
+
+    expect(documents.opened).toEqual([]);
+    expect(url()).toBe("/settings");
+    expect(host.querySelector('[data-frame="app-shell"]')).not.toBeNull();
+  });
+
+  test("a session that ends on its own still asks to sign in and come back", async () => {
+    api.signedIn = true;
+    const { host, url, client } = await open("/settings");
+    expect(host.querySelector('[data-frame="app-shell"]')).not.toBeNull();
+
+    api.signedIn = false;
+    await act(async () => client.invalidateQueries({ queryKey: ["user"] }));
+    await settle();
+
+    expect(documents.opened).toEqual([]);
+    expect(url()).toBe(signInHref("/settings"));
+    expect(input(host, "email")).not.toBeNull();
   });
 });

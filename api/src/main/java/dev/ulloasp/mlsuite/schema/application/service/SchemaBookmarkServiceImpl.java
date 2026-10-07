@@ -13,6 +13,7 @@ import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaRepos
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaVersionRepository;
 import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.MoveSchemaBookmarkRequest;
+import dev.ulloasp.mlsuite.schema.application.dto.UpdateSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
@@ -62,6 +63,8 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
         SchemaBookmark bookmark = bookmarkRepository.findBySchemaIdAndName(schemaId, name)
                 .orElseGet(() -> new SchemaBookmark(schema, version, name));
         point(bookmark, version);
+        String description = cleanDescription(request.description());
+        if (description != null) bookmark.setDescription(description);
         return bookmarkRepository.save(bookmark);
     }
 
@@ -74,6 +77,23 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
             throw badRequest("Bookmark version outside schema");
         }
         point(bookmark, version);
+        return bookmark;
+    }
+
+    @Override
+    public SchemaBookmark updateBookmark(Long userId, Long bookmarkId, UpdateSchemaBookmarkRequest request) {
+        Long orgId = requireOperate(userId);
+        SchemaBookmark bookmark = requireBookmark(bookmarkId, orgId);
+        String name = cleanName(request.name());
+        boolean taken = bookmarkRepository.findBySchemaIdAndName(bookmark.getSchema().getId(), name)
+                .filter(other -> !other.getId().equals(bookmark.getId()))
+                .isPresent();
+        if (taken) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This schema already has a bookmark named \"%s\".".formatted(name));
+        }
+        bookmark.setName(name);
+        bookmark.setDescription(cleanDescription(request.description()));
         return bookmark;
     }
 
@@ -141,6 +161,10 @@ public class SchemaBookmarkServiceImpl implements SchemaBookmarkUseCase {
     private String cleanName(String value) {
         if (value == null || value.isBlank()) throw badRequest("Bookmark name is required");
         return value.trim();
+    }
+
+    private String cleanDescription(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
     }
 
     private ResponseStatusException badRequest(String message) {

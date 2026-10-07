@@ -119,7 +119,7 @@ class BookmarkPublishingHttpTest {
     @Test
     void anonymousVisitorsReadAPublishedBookmarkWithoutInternalFields() throws Exception {
         when(publicBookmarks.getPublishedBookmark(PUBLIC_ID)).thenReturn(new PublicBookmarkDto(
-                PUBLIC_ID, "production", null, 1, 1, 0, "Org",
+                PUBLIC_ID, "production", "Estimates risk.", 1, 1, 0, "Org",
                 Map.of("fields", List.of(Map.of("kind", "number", "label", "Age"))),
                 OffsetDateTime.parse("2026-10-01T10:00:00Z")));
 
@@ -128,7 +128,7 @@ class BookmarkPublishingHttpTest {
                 .andExpect(jsonPath("$.length()").value(9))
                 .andExpect(jsonPath("$.publicId").value(PUBLIC_ID))
                 .andExpect(jsonPath("$.name").value("production"))
-                .andExpect(jsonPath("$.schemaDescription").isEmpty())
+                .andExpect(jsonPath("$.description").value("Estimates risk."))
                 .andExpect(jsonPath("$.version").value(1))
                 .andExpect(jsonPath("$.inputCount").value(1))
                 .andExpect(jsonPath("$.reportCount").value(0))

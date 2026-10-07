@@ -45,7 +45,7 @@ class PublicBookmarkFeedHttpTest {
     @Test
     void anonymousVisitorsListPublishedBookmarksWithoutInternalFields() throws Exception {
         when(publicBookmarks.getPublishedBookmarkPage(0, 24, "", "updated")).thenReturn(new PageDto<>(
-                List.of(new PublicBookmarkSummaryDto(PUBLIC_ID, "production", null, 16, 2, "Org",
+                List.of(new PublicBookmarkSummaryDto(PUBLIC_ID, "production", "Estimates risk.", 16, 2, "Org",
                         OffsetDateTime.parse("2026-10-01T10:00:00Z"))),
                 0, 24, 1, false));
 
@@ -60,7 +60,7 @@ class PublicBookmarkFeedHttpTest {
                 .andExpect(jsonPath("$.items[0].length()").value(7))
                 .andExpect(jsonPath("$.items[0].publicId").value(PUBLIC_ID))
                 .andExpect(jsonPath("$.items[0].name").value("production"))
-                .andExpect(jsonPath("$.items[0].schemaDescription").isEmpty())
+                .andExpect(jsonPath("$.items[0].description").value("Estimates risk."))
                 .andExpect(jsonPath("$.items[0].inputCount").value(16))
                 .andExpect(jsonPath("$.items[0].reportCount").value(2))
                 .andExpect(jsonPath("$.items[0].organizationName").value("Org"))
@@ -68,6 +68,7 @@ class PublicBookmarkFeedHttpTest {
                 .andExpect(jsonPath("$.items[0].id").doesNotExist())
                 .andExpect(jsonPath("$.items[0].schemaId").doesNotExist())
                 .andExpect(jsonPath("$.items[0].schemaName").doesNotExist())
+                .andExpect(jsonPath("$.items[0].schemaDescription").doesNotExist())
                 .andExpect(jsonPath("$.items[0].version").doesNotExist())
                 .andExpect(jsonPath("$.items[0].versionName").doesNotExist())
                 .andExpect(jsonPath("$.items[0].versionId").doesNotExist())

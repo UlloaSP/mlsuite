@@ -34,10 +34,8 @@ export function PublicBookmarkCard({ bookmark }: { bookmark: PublicBookmarkSumma
         </h2>
       </header>
 
-      {bookmark.schemaDescription?.trim() ? (
-        <p className="line-clamp-2 text-sm leading-5 text-fg-secondary">
-          {bookmark.schemaDescription}
-        </p>
+      {bookmark.description?.trim() ? (
+        <p className="line-clamp-2 text-sm leading-5 text-fg-secondary">{bookmark.description}</p>
       ) : null}
 
       <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-secondary">

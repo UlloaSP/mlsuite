@@ -30,6 +30,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SchemaBookmark {
 
+    public static final int NAME_MAX_LENGTH = 180;
+    public static final int DESCRIPTION_MAX_LENGTH = 800;
+
     public SchemaBookmark(Schema schema, SchemaVersion version, String name) {
         this.schema = schema;
         this.version = version;
@@ -49,8 +52,12 @@ public class SchemaBookmark {
             foreignKey = @ForeignKey(name = "fk_schema_bookmark_version"))
     private SchemaVersion version;
 
-    @Column(name = "name", nullable = false, length = 180)
+    @Column(name = "name", nullable = false, length = NAME_MAX_LENGTH)
     private String name;
+
+    /** The bookmark's own text, shown with it in the workspace and on its public page. */
+    @Column(name = "description", length = DESCRIPTION_MAX_LENGTH)
+    private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "visibility", nullable = false, length = 16)

@@ -1,8 +1,10 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +19,11 @@ import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
  * opaque key ({@code in0}, {@code out0}, ...) and expands each report once per model that produces
  * it. The keys follow from the stored form and its binding order, so nothing is persisted and the
  * form read by a page is the form its run is routed with.
+ *
+ * A {@code hidden} field never leaves the server. MLForm, which runs the form in the workspace,
+ * leaves a hidden field out of a run unless the field says {@code inactiveFieldPolicy: "include"},
+ * and then submits its {@code defaultValue}. A public run does the same here: the value the schema
+ * holds is routed to the models, and a visitor can neither read it nor replace it.
  */
 public final class PublicForm {
 
@@ -24,6 +31,8 @@ public final class PublicForm {
     private static final String REPORTS = "reports";
     private static final String MODEL_ROUTING = "mappedTo";
     private static final String DEFAULT_ROUTE = "default";
+    private static final String STORED_VALUE = "defaultValue";
+    private static final String ONE_HOT = "onehot-category";
     /** Report keys that belong to the workspace: editor bookkeeping and the feedback workflow. */
     private static final Set<String> PRIVATE_REPORT_KEYS = Set.of(MODEL_ROUTING, "id", "source", "feedbackQuestionnaire");
 
@@ -31,8 +40,14 @@ public final class PublicForm {
     public record ReportRoute(String key, Long modelId, String kind) {
     }
 
+    /** A value of a run and where it goes: a visitor's, sent under {@code key}, or the schema's own. */
+    private record InputRoute(Object mappedTo, String key, Object stored) {
+    }
+
     private final List<BoundModel> models;
-    private final Map<String, Object> inputRoutes = new LinkedHashMap<>();
+    /** In the order of the stored form, which is the order a run's values are routed in. */
+    private final List<InputRoute> inputRoutes = new ArrayList<>();
+    private final Set<String> inputKeys = new LinkedHashSet<>();
     private final List<ReportRoute> reportRoutes = new ArrayList<>();
     private final Map<String, Object> schema;
     private final int inputCount;
@@ -42,7 +57,15 @@ public final class PublicForm {
         Map<String, Object> source = formSchema == null ? Map.of() : formSchema;
         List<?> storedFields = source.get(FIELDS) instanceof List<?> items ? items : List.of();
         Object reports = source.get(REPORTS) instanceof List<?> items ? reportsPerModel(items) : List.of();
-        this.schema = Map.of(FIELDS, withInputKeys(storedFields), REPORTS, reports);
+        List<Object> shownFields = new ArrayList<>();
+        for (Object field : storedFields) {
+            if (field instanceof Map<?, ?> config && Boolean.TRUE.equals(config.get("hidden"))) {
+                routeStoredValue(config);
+            } else {
+                shownFields.add(withInputKeys(field));
+            }
+        }
+        this.schema = Map.of(FIELDS, Collections.unmodifiableList(shownFields), REPORTS, reports);
         this.inputCount = (int) storedFields.stream().filter(PublicForm::isShownField).count();
     }
 
@@ -55,7 +78,7 @@ public final class PublicForm {
         return schema;
     }
 
-    /** The inputs a visitor fills: a hidden field travels with the form but is never shown. */
+    /** The inputs a visitor fills: a hidden field is not one of them. */
     public int inputCount() {
         return inputCount;
     }
@@ -66,7 +89,7 @@ public final class PublicForm {
     }
 
     public Set<String> inputKeys() {
-        return inputRoutes.keySet();
+        return inputKeys;
     }
 
     public List<ReportRoute> reportRoutes() {
@@ -74,16 +97,22 @@ public final class PublicForm {
     }
 
     /**
-     * The record one model receives: each submitted value under the feature its input routes to.
-     * Positional models read features by position, so numeric features come first in ascending
-     * order, as the browser serializes the same record in the workspace.
+     * The record one model receives: each submitted value, and each value the schema holds for a
+     * hidden field, under the feature it routes to. Positional models read features by position,
+     * so numeric features come first in ascending order, as the browser serializes the same
+     * record in the workspace.
      */
     public Map<String, Object> modelInput(BoundModel model, Map<String, Object> values) {
         Map<String, Object> routed = new LinkedHashMap<>();
-        inputRoutes.forEach((key, mappedTo) -> {
-            Object feature = featureFor(mappedTo, model);
-            if (feature != null && values.containsKey(key)) routed.put(featureName(feature), values.get(key));
-        });
+        for (InputRoute route : inputRoutes) {
+            Object feature = featureFor(route.mappedTo(), model);
+            if (feature == null) continue;
+            if (route.key() == null) {
+                routed.put(featureName(feature), route.stored());
+            } else if (values.containsKey(route.key())) {
+                routed.put(featureName(feature), values.get(route.key()));
+            }
+        }
         Map<String, Object> ordered = new LinkedHashMap<>();
         routed.keySet().stream().filter(PublicForm::isPosition)
                 .sorted(Comparator.comparingLong(Long::parseLong))
@@ -103,14 +132,37 @@ public final class PublicForm {
                 if (!MODEL_ROUTING.equals(key)) {
                     copy.put(key, withInputKeys(entry));
                 } else if (isRouting(entry)) {
-                    String inputKey = "in" + inputRoutes.size();
-                    inputRoutes.put(inputKey, entry);
+                    String inputKey = "in" + inputKeys.size();
+                    inputKeys.add(inputKey);
+                    inputRoutes.add(new InputRoute(entry, inputKey, null));
                     copy.put(key, inputKey);
                 }
             });
             return copy;
         }
         return value;
+    }
+
+    /**
+     * What MLForm submits for a hidden field, routed without a key. A one-hot field sends each
+     * option's feature as 1 for the stored option and 0 for the others.
+     */
+    private void routeStoredValue(Map<?, ?> field) {
+        if (!"include".equals(field.get("inactiveFieldPolicy"))
+                || Boolean.FALSE.equals(field.get("includeInSubmission"))) {
+            return;
+        }
+        Object stored = field.get(STORED_VALUE);
+        if (ONE_HOT.equals(field.get("kind")) && field.get("options") instanceof List<?> options) {
+            for (Object item : options) {
+                if (item instanceof Map<?, ?> option && isRouting(option.get(MODEL_ROUTING))) {
+                    boolean selected = stored instanceof String value && value.equals(option.get("value"));
+                    inputRoutes.add(new InputRoute(option.get(MODEL_ROUTING), null, selected ? 1 : 0));
+                }
+            }
+        } else if (isRouting(field.get(MODEL_ROUTING))) {
+            inputRoutes.add(new InputRoute(field.get(MODEL_ROUTING), null, isScalar(stored) ? stored : null));
+        }
     }
 
     private List<Object> reportsPerModel(List<?> reports) {
@@ -158,6 +210,11 @@ public final class PublicForm {
 
     private static boolean isRouting(Object mappedTo) {
         return mappedTo instanceof String || mappedTo instanceof Number || mappedTo instanceof Map<?, ?>;
+    }
+
+    private static boolean isScalar(Object value) {
+        return value instanceof String || value instanceof Boolean
+                || (value instanceof Number number && Double.isFinite(number.doubleValue()));
     }
 
     private static String featureName(Object feature) {

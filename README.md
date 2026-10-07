@@ -287,9 +287,9 @@ many public runs may execute at once; further ones receive `503 Service Unavaila
 until a slot frees. Public runs store nothing.
 
 Each caller may run one public bookmark a limited number of times in 24 hours, counted
-from their first run of it: `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` (default `5`) for
+from their first run of it: `PUBLIC_PREDICTION_ANONYMOUS_RUNS_PER_DAY` (default `50`) for
 each client address without a session (an IPv6 address counts as its /64 network), and
-`PUBLIC_PREDICTION_SIGNED_IN_RUNS_PER_DAY` (default `50`) for each signed-in account,
+`PUBLIC_PREDICTION_SIGNED_IN_RUNS_PER_DAY` (default `500`) for each signed-in account,
 wherever it connects from. Past the limit the run receives `429 Too Many Requests` with
 `Retry-After`. A run the server could not perform (`502`, `503`) is not counted. The
 counts are kept in the memory of the API process: they start again when the API

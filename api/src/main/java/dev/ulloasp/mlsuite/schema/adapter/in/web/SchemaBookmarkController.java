@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -18,6 +19,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.CreateSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.MoveSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PredictBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.dto.SchemaBookmarkDto;
+import dev.ulloasp.mlsuite.schema.application.dto.UpdateSchemaBookmarkRequest;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkExampleUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
@@ -71,6 +73,14 @@ public class SchemaBookmarkController {
             @Valid @RequestBody MoveSchemaBookmarkRequest request) {
         return ResponseEntity.ok(toDto(
                 bookmarkUseCase.moveBookmark(user.userId(), bookmarkId, request)));
+    }
+
+    /** Renames the bookmark and replaces its description; PUT on the same path moves it. */
+    @PatchMapping("/schema-bookmarks/{bookmarkId}")
+    public ResponseEntity<SchemaBookmarkDto> update(CurrentUser user, @PathVariable Long bookmarkId,
+            @Valid @RequestBody UpdateSchemaBookmarkRequest request) {
+        return ResponseEntity.ok(toDto(
+                bookmarkUseCase.updateBookmark(user.userId(), bookmarkId, request)));
     }
 
     @PostMapping("/schema-bookmarks/{bookmarkId}/publish")

@@ -4,8 +4,7 @@ Copyright (c) 2025 Pablo Ulloa Santin
 */
 
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
-import { getProfile, login, logout, register } from "./session-api";
+import { getProfile, login, logout, openDocument, register } from "./session-api";
 import type { UserDto } from "@/shared/api/openapi.gen";
 
 export const USER_QUERY_KEY = ["user"] as const;
@@ -78,14 +77,13 @@ export const useLogin = () => useSessionMutation(login);
 
 export const useRegister = () => useSessionMutation(register);
 
-export const useLogout = () => {
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  return useMutation({
+/**
+ * Signs out because the member asked to, then loads `destination` as a new document: nothing
+ * the member loaded outlives the session, and no page still on screen sees it end. A session
+ * that ends on its own is not this: the page it ended on asks to sign in and come back.
+ */
+export const useLogout = (destination: string) =>
+  useMutation({
     mutationFn: logout,
-    onSuccess: () => {
-      queryClient.clear();
-      void navigate(SIGN_IN_PATH, { replace: true });
-    },
+    onSuccess: () => openDocument(destination),
   });
-};

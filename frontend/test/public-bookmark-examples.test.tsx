@@ -36,6 +36,7 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   version: 2,
   versionName: "Baseline",
   name: "production",
+  description: null,
   visibility: "PUBLIC",
   publicId: PUBLIC_ID,
   exampleCount: 0,
@@ -70,7 +71,7 @@ const FORM_SCHEMA = {
 const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaDescription: null,
+  description: null,
   version: 2,
   inputCount: 2,
   reportCount: 1,
@@ -97,10 +98,10 @@ const respond = (url: unknown, init?: RequestInit): Response => {
   requests.push(`${method} ${path}`);
   if (path === `/api/public/bookmarks/${PUBLIC_ID}/predictions`) {
     publicRuns.push(JSON.parse(init?.body as string));
-    return json({ reports: [], quota: { limit: 5, remaining: 4, resetsAt: AT } });
+    return json({ reports: [], quota: { limit: 50, remaining: 49, resetsAt: AT } });
   }
   if (path === `/api/public/bookmarks/${PUBLIC_ID}/quota`) {
-    return json({ limit: 5, remaining: 5, resetsAt: null });
+    return json({ limit: 50, remaining: 50, resetsAt: null });
   }
   const example = /^\/api\/schema-bookmarks\/70\/examples\/(\d+)$/.exec(path);
   if (example) {

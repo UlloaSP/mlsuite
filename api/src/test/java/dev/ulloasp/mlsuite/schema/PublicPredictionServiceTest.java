@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +42,7 @@ import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 
 /**
  * Ephemeral public execution, end to end: what a run sends to the runtime, what it answers,
@@ -108,6 +110,54 @@ class PublicPredictionServiceTest extends PublicPredictionFixture {
         for (String entity : List.of("PredictionRun", "PredictionResult", "PredictionResultFeedback")) {
             assertEquals(0L, count(entity), entity);
         }
+    }
+
+    @Test
+    void theSchemaSuppliesItsHiddenFieldsAndAVisitorNeitherReadsNorSetsThem() throws Exception {
+        inTransaction(() -> {
+            SchemaVersion stored = entityManager.find(SchemaVersion.class, version.getId());
+            Map<String, Object> form = new HashMap<>(stored.getFormSchema());
+            form.put("fields", List.of(
+                    Map.of("kind", "number", "label", "Age",
+                            "mappedTo", Map.of("risk-forest", "age", "risk-net", 1)),
+                    // Kept in a run by MLForm's own rule, with the value the schema holds.
+                    Map.of("kind", "number", "label", "Cholesterol", "hidden", true,
+                            "inactiveFieldPolicy", "include", "defaultValue", 190,
+                            "mappedTo", Map.of("risk-forest", "chol", "risk-net", 0)),
+                    Map.of("kind", "onehot-category", "label", "Smoker", "hidden", true,
+                            "inactiveFieldPolicy", "include", "defaultValue", "no", "options", List.of(
+                                    Map.of("label", "Yes", "value", "yes",
+                                            "mappedTo", Map.of("risk-forest", "smoker__yes")),
+                                    Map.of("label", "No", "value", "no",
+                                            "mappedTo", Map.of("risk-forest", "smoker__no")))),
+                    // Hidden and not kept: MLForm leaves it out of a workspace run, and so does this.
+                    Map.of("kind", "text", "label", "Site code", "hidden", true, "defaultValue", "north",
+                            "mappedTo", Map.of("risk-forest", "site"))));
+            stored.setFormSchema(form);
+        });
+        List<MultiValueMap<String, HttpEntity<?>>> calls = new ArrayList<>();
+        when(analyzer.post(eq("/predict"), any())).thenAnswer(call -> {
+            calls.add(call.getArgument(1));
+            return Map.of("reports", List.of(CLASSIFIER));
+        });
+
+        PublicBookmarkDto view = publicBookmarks.getPublishedBookmark(bookmark.getPublicId());
+        assertEquals(List.of(Map.of("kind", "number", "label", "Age", "mappedTo", "in0")),
+                view.formSchema().get("fields"));
+        assertEquals(1, view.inputCount());
+        String json = objectMapper.writeValueAsString(view);
+        for (String kept : List.of("Cholesterol", "190", "Smoker", "Site code", "north", "hidden")) {
+            assertFalse(json.contains(kept), kept);
+        }
+
+        run(bookmark.getPublicId(), request(Map.of("in0", 52)));
+
+        assertEquals("{\"age\":52,\"chol\":190,\"smoker__yes\":0,\"smoker__no\":1}", data(calls.get(0)));
+        assertEquals("{\"0\":190,\"1\":52}", data(calls.get(1)));
+        // The hidden inputs have no key a request could name.
+        assertEquals(400,
+                refused(bookmark.getPublicId(), request(Map.of("in0", 52, "in1", 999))).getStatusCode().value());
+        assertEquals(2, calls.size());
     }
 
     @Test

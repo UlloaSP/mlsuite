@@ -7,7 +7,10 @@ import { schemaVersionName } from "@/features/schemas/lib/version-selection";
 import { Tag } from "lucide-react";
 import { toast } from "sonner";
 import { useCreateSchemaBookmarkMutation } from "@/features/schemas/api/schema-mutations";
-import { SchemaChangeNameDialog } from "@/features/schemas/components/SchemaChangeNameDialog";
+import {
+  BookmarkDetailsDialog,
+  type BookmarkDetails,
+} from "@/features/schemas/components/BookmarkDetailsDialog";
 import type { SchemaVersionDto } from "@/shared/api/openapi.gen";
 
 type Props = {
@@ -20,10 +23,10 @@ type Props = {
 export function BookmarkSnapshotDialog({ schemaId, version, onClose }: Props) {
   const mutation = useCreateSchemaBookmarkMutation(schemaId);
 
-  const create = async (name: string) => {
+  const create = async (details: BookmarkDetails) => {
     if (!version) return;
     try {
-      await mutation.mutateAsync({ name, versionId: version.id });
+      await mutation.mutateAsync({ ...details, versionId: version.id });
       onClose();
       toast.success("Bookmark saved");
     } catch {
@@ -32,22 +35,21 @@ export function BookmarkSnapshotDialog({ schemaId, version, onClose }: Props) {
   };
 
   return (
-    <SchemaChangeNameDialog
+    <BookmarkDetailsDialog
+      title="Bookmark snapshot"
+      summary={version ? `${schemaVersionName(version)} · v${version.version}` : "Snapshot"}
       defaultName={version ? schemaVersionName(version).toLowerCase().replace(/\s+/g, "-") : ""}
-      description={version ? `${schemaVersionName(version)} · v${version.version}` : "Snapshot"}
-      fieldLabel="Bookmark name"
+      defaultDescription=""
       open={Boolean(version)}
       error={mutation.error?.message}
       pending={mutation.isPending}
-      placeholder="production"
       submitIcon={Tag}
       submitLabel="Save bookmark"
-      title="Bookmark snapshot"
       onClose={() => {
         mutation.reset();
         onClose();
       }}
-      onConfirm={(name) => void create(name)}
+      onConfirm={(details) => void create(details)}
     />
   );
 }

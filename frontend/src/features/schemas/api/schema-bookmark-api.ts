@@ -4,6 +4,7 @@ import type {
   PredictBookmarkDto,
   SchemaBookmarkDto,
   SchemaBookmarkExampleDto,
+  UpdateSchemaBookmarkRequest,
 } from "@/shared/api/openapi.gen";
 
 export const getSchemaBookmarks = (
@@ -33,6 +34,16 @@ export const createSchemaBookmark = (
   appFetch<SchemaBookmarkDto>(
     `/api/schemas/${encodeURIComponent(schemaId)}/bookmarks`,
     json("POST", req),
+  );
+
+/** Renames the bookmark and replaces its description; a blank description removes it. */
+export const updateSchemaBookmark = (
+  bookmarkId: number | string,
+  req: UpdateSchemaBookmarkRequest,
+): Promise<SchemaBookmarkDto> =>
+  appFetch<SchemaBookmarkDto>(
+    `/api/schema-bookmarks/${encodeURIComponent(bookmarkId)}`,
+    json("PATCH", req),
   );
 
 /** Opens the bookmark at its public link; the first publish assigns its public id. */

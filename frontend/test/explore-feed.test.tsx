@@ -63,7 +63,7 @@ const AT = "2026-10-01T10:00:00Z";
 const CARDIO: PublicBookmarkSummaryDto = {
   publicId: "8f6f3c0e-58a2-4c0b-9d0c-0d5c1f6e2a11",
   name: "production",
-  schemaDescription: "Estimates cardiovascular risk.",
+  description: "Estimates cardiovascular risk.",
   inputCount: 16,
   reportCount: 2,
   organizationName: "Acme Health",
@@ -72,7 +72,7 @@ const CARDIO: PublicBookmarkSummaryDto = {
 const CHURN: PublicBookmarkSummaryDto = {
   publicId: "1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed",
   name: "beta",
-  schemaDescription: null,
+  description: null,
   inputCount: 1,
   reportCount: 1,
   organizationName: "Bob Other Personal",
@@ -355,13 +355,12 @@ describe("entry routing", () => {
     expect(host.querySelector('[data-page="auth"]')).not.toBeNull();
   });
 
-  test("a signed-in member who opens / goes to their home", async () => {
+  test("a signed-in member who opens / lands on the feed inside the app shell", async () => {
     session.signedIn = true;
-    const { url } = await open("/");
+    const { host, url } = await open("/");
 
-    expect(url).not.toBe("/");
-    expect(url).not.toBe("/login");
-    expect(url).not.toBe("/explore");
+    expect(url).toBe("/explore");
+    expect(host.querySelector('[data-frame="app-shell"] h1')?.textContent).toBe("Explore");
   });
 
   test("a signed-in member opens the feed inside the app shell", async () => {

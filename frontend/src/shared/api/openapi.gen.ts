@@ -145,7 +145,7 @@ export interface paths {
         delete: operations["delete_4"];
         options?: never;
         head?: never;
-        patch: operations["update_3"];
+        patch: operations["update_4"];
         trace?: never;
     };
     "/api/admin/users/{id}/password": {
@@ -641,7 +641,7 @@ export interface paths {
         delete: operations["delete_2"];
         options?: never;
         head?: never;
-        patch: operations["update_2"];
+        patch: operations["update_3"];
         trace?: never;
     };
     "/api/organizations/{organizationId}/roles/{roleId}/duplicate": {
@@ -737,7 +737,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_1"];
+        patch: operations["update_2"];
         trace?: never;
     };
     "/api/prediction-result-feedback/by-runs": {
@@ -977,7 +977,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["update_1"];
         trace?: never;
     };
     "/api/schema-bookmarks/{bookmarkId}/examples": {
@@ -1629,6 +1629,7 @@ export interface components {
             permissionKeys: string[];
         };
         CreateSchemaBookmarkRequest: {
+            description?: string | null;
             name: string;
             /** Format: int64 */
             versionId: number;
@@ -2102,6 +2103,7 @@ export interface components {
             lastId: number;
         };
         PublicBookmarkDto: {
+            description: string | null;
             formSchema: {
                 [key: string]: unknown;
             };
@@ -2112,7 +2114,6 @@ export interface components {
             publicId: string;
             /** Format: int32 */
             reportCount: number;
-            schemaDescription: string | null;
             /** Format: date-time */
             updatedAt: string;
             /** Format: int32 */
@@ -2126,6 +2127,7 @@ export interface components {
             name: string;
         };
         PublicBookmarkSummaryDto: {
+            description: string | null;
             /** Format: int32 */
             inputCount: number;
             name: string;
@@ -2133,7 +2135,6 @@ export interface components {
             publicId: string;
             /** Format: int32 */
             reportCount: number;
-            schemaDescription: string | null;
             /** Format: date-time */
             updatedAt: string;
         };
@@ -2236,6 +2237,7 @@ export interface components {
         SchemaBookmarkDto: {
             /** Format: date-time */
             createdAt: string;
+            description: string | null;
             /** Format: int64 */
             exampleCount: number;
             /** Format: int64 */
@@ -2515,6 +2517,10 @@ export interface components {
             name: string;
             permissionKeys: string[];
         };
+        UpdateSchemaBookmarkRequest: {
+            description?: string | null;
+            name: string;
+        };
         UpdateSchemaDraftRequest: {
             bindings: {
                 [key: string]: unknown;
@@ -2694,6 +2700,7 @@ export type UpdateOrganizationMembershipRoleRequest = components['schemas']['Upd
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
 export type UpdatePredictionResultFeedbackRequest = components['schemas']['UpdatePredictionResultFeedbackRequest'];
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
+export type UpdateSchemaBookmarkRequest = components['schemas']['UpdateSchemaBookmarkRequest'];
 export type UpdateSchemaDraftRequest = components['schemas']['UpdateSchemaDraftRequest'];
 export type UserDto = components['schemas']['UserDto'];
 export type WorkspaceContextDto = components['schemas']['WorkspaceContextDto'];
@@ -2930,7 +2937,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3922,7 +3929,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -4161,7 +4168,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -4544,6 +4551,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MoveSchemaBookmarkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemaBookmarkDto"];
+                };
+            };
+        };
+    };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bookmarkId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSchemaBookmarkRequest"];
             };
         };
         responses: {

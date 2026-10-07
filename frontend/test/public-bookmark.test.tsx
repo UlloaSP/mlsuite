@@ -53,6 +53,7 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   version: 1,
   versionName: "v1",
   name: "production",
+  description: null,
   visibility: "PRIVATE",
   publicId: null,
   exampleCount: 0,
@@ -65,7 +66,7 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
 const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaDescription: "Estimates cardiovascular risk.",
+  description: "Estimates cardiovascular risk.",
   version: 2,
   inputCount: 2,
   reportCount: 1,
@@ -103,7 +104,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) => {
     if (String(url).endsWith("/examples")) return Promise.resolve(json([]));
     if (String(url).endsWith("/quota")) {
-      return Promise.resolve(json({ limit: 5, remaining: 5, resetsAt: null }));
+      return Promise.resolve(json({ limit: 50, remaining: 50, resetsAt: null }));
     }
     return fetchMock(url, init);
   });
@@ -140,7 +141,7 @@ describe("bookmark visibility in the schema repository", () => {
     const items = await openActions();
     expect(labels(items)).toEqual(["Public examples", "Publish"]);
     await click(items![1]);
-    expect(document.body.textContent).toContain("Anyone with the link");
+    expect(document.body.textContent).toContain("Anyone will find it in Explore");
     expect(fetchMock).not.toHaveBeenCalled();
     await click("Publish");
     await settle();
@@ -344,7 +345,14 @@ describe("public page frame", () => {
     expect(host.textContent).not.toContain("Sign in");
   });
 
-  test("the anonymous frame draws the page's trail where this device shows it", async () => {
+  describe("the page's trail", () => {
+    const DISPLAYS: LocationDisplay[] = [
+      "breadcrumb-top",
+      "breadcrumb-bottom",
+      "rail-left",
+      "rail-right",
+      "off",
+    ];
     const trailed = (display: LocationDisplay) => {
       const store = createStore();
       store.set(locationDisplayAtom, display);
@@ -371,22 +379,45 @@ describe("public page frame", () => {
     const trails = (host: HTMLElement) => [
       ...host.querySelectorAll('nav[aria-label="Breadcrumb"]'),
     ];
+    // A wide screen with a pointer that hovers, where a rail would be drawn if it were chosen.
+    beforeEach(() =>
+      vi.stubGlobal(
+        "matchMedia",
+        vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+      ),
+    );
 
-    const top = await trailed("breadcrumb-top");
-    expect(trails(top.host)).toHaveLength(1);
-    expect(trails(top.host)[0].textContent).toBe("Exploreproduction");
-    expect(trails(top.host)[0].querySelector("a")?.getAttribute("href")).toBe("/explore");
-    expect(trails(top.host)[0].closest("main")).not.toBeNull();
-    expect(top.host.querySelector("footer")).toBeNull();
-    await top.unmount();
+    test.each(DISPLAYS)(
+      "a visitor without a session gets it above the title with this device set to %s",
+      async (display) => {
+        const { host } = await trailed(display);
 
-    const bottom = await trailed("breadcrumb-bottom");
-    expect(trails(bottom.host)).toHaveLength(1);
-    expect(bottom.host.querySelector("main footer")?.textContent).toBe("Exploreproduction");
-    await bottom.unmount();
+        expect(trails(host)).toHaveLength(1);
+        const [trail] = trails(host);
+        expect(trail.textContent).toBe("Exploreproduction");
+        expect(trail.querySelector("a")?.getAttribute("href")).toBe("/explore");
+        expect(trail.closest("main")).not.toBeNull();
+        // Before the title in the document, and neither the bottom bar nor a rail.
+        const title = host.querySelector("h1")!;
+        expect(
+          trail.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+        expect(host.querySelector("footer")).toBeNull();
+        expect(host.querySelector("[data-location-rail]")).toBeNull();
+      },
+    );
 
-    const off = await trailed("off");
-    expect(trails(off.host)).toHaveLength(0);
+    test.each(DISPLAYS.filter((display) => display !== "breadcrumb-top"))(
+      "a signed-in member keeps the header free of it with this device set to %s",
+      async (display) => {
+        session.signedIn = true;
+        const { host } = await trailed(display);
+
+        // The shell, a stub here, is what draws the bottom bar and the rails.
+        expect(host.querySelector('[data-frame="app-shell"] h1')?.textContent).toBe("production");
+        expect(trails(host)).toHaveLength(0);
+      },
+    );
   });
 
   test("the explore route is registered outside the protected routes", () => {
