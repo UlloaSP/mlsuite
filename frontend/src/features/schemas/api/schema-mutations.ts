@@ -1,5 +1,6 @@
 import { useCurrentOrganizationId } from "@/capabilities/workspace-context/workspace-context";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { PREDICTION_RUN_CATALOG_QUERY_KEY } from "@/capabilities/prediction-runs/prediction-run-keys";
 import {
   archiveSchema,
   createSchemaWithInitialVersion,
@@ -13,6 +14,7 @@ import {
   publishSchemaBookmark,
   unmarkBookmarkExample,
   unpublishSchemaBookmark,
+  updateSchemaBookmark,
 } from "./schema-bookmark-api";
 import {
   ORGANIZATION_BOOKMARKS_QUERY_KEY,
@@ -21,7 +23,11 @@ import {
   SCHEMA_BOOKMARK_QUERY_KEY,
   SCHEMA_CATALOG_PAGE_QUERY_KEY,
 } from "./schema-keys";
-import type { CreateSchemaBookmarkRequest, SchemaBookmarkDto } from "@/shared/api/openapi.gen";
+import type {
+  CreateSchemaBookmarkRequest,
+  SchemaBookmarkDto,
+  UpdateSchemaBookmarkRequest,
+} from "@/shared/api/openapi.gen";
 
 export const useInvalidateSchemaQueries = () => {
   const queryClient = useQueryClient();
@@ -85,6 +91,26 @@ export function useCreateSchemaBookmarkMutation(schemaId: number | string) {
       void qc.invalidateQueries({
         queryKey: SCHEMA_BOOKMARK_EXAMPLES_QUERY_KEY(organizationId, bookmark.id),
       });
+    },
+  });
+}
+
+/** Renames a bookmark and replaces its description; the dialog that asked shows a refusal. */
+export function useUpdateSchemaBookmarkMutation() {
+  const organizationId = useCurrentOrganizationId() ?? "none";
+  const qc = useQueryClient();
+  return useMutation({
+    meta: { errorHandledLocally: true },
+    mutationFn: ({ bookmarkId, ...req }: UpdateSchemaBookmarkRequest & { bookmarkId: number }) =>
+      updateSchemaBookmark(bookmarkId, req),
+    onSuccess: (bookmark) => {
+      qc.setQueryData(SCHEMA_BOOKMARK_QUERY_KEY(organizationId, bookmark.id), bookmark);
+      void qc.invalidateQueries({
+        queryKey: SCHEMA_BOOKMARKS_QUERY_KEY(organizationId, bookmark.schemaId),
+      });
+      // The Predict launcher and the inferences name the bookmark.
+      void qc.invalidateQueries({ queryKey: ORGANIZATION_BOOKMARKS_QUERY_KEY(organizationId) });
+      void qc.invalidateQueries({ queryKey: PREDICTION_RUN_CATALOG_QUERY_KEY(organizationId) });
     },
   });
 }

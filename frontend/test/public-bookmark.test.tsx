@@ -141,7 +141,7 @@ describe("bookmark visibility in the schema repository", () => {
     const items = await openActions();
     expect(labels(items)).toEqual(["Public examples", "Publish"]);
     await click(items![1]);
-    expect(document.body.textContent).toContain("Anyone with the link");
+    expect(document.body.textContent).toContain("Anyone will find it in Explore");
     expect(fetchMock).not.toHaveBeenCalled();
     await click("Publish");
     await settle();

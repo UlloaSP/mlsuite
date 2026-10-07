@@ -10,6 +10,7 @@ import {
   Link2,
   ListChecks,
   Lock,
+  PencilLine,
   Play,
   Tag,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import { LiveRelativeTime } from "@/shared/ui/LiveRelativeTime";
 import { useActionDialog } from "@/shared/ui/use-action-dialog";
 import { snapshotLabel } from "@/shared/lib/snapshot-label";
 import { useSetBookmarkVisibilityMutation } from "@/features/schemas/api/schema-mutations";
+import { BookmarkEditDialog } from "@/features/schemas/components/BookmarkEditDialog";
 import { BookmarkExamplesDialog } from "@/features/schemas/components/BookmarkExamplesDialog";
 import { bookmarkExampleSummary } from "@/features/schemas/lib/bookmark-example-status";
 import { publicBookmarkHref } from "@/features/schemas/lib/public-bookmark-href";
@@ -33,15 +35,19 @@ import type { SchemaBookmarkDto } from "@/shared/api/openapi.gen";
 
 /**
  * A bookmark in its schema's repository; opening it goes to its Predict workspace.
- * Everyone sees whether it is public and which examples it serves; only members who may
- * publish can change either.
+ * Everyone sees its description, whether it is public and which examples it serves. Members
+ * who may save bookmarks can rename and describe it; only those who may publish can change
+ * what is public.
  */
 export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookmarkDto }) {
   const workspacePath = `/predict/${bookmark.id}`;
+  // Saving, moving and editing a bookmark share one permission in the API.
+  const canEdit = useCan("canCreateModels");
   const canPublish = useCan("canPublishBookmarks");
   const visibility = useSetBookmarkVisibilityMutation();
   const { confirm, dialog } = useActionDialog();
   const [examplesOpen, setExamplesOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const examples = bookmarkExampleSummary(bookmark);
   const publicPath =
     bookmark.visibility === "PUBLIC" && bookmark.publicId
@@ -67,7 +73,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
     const confirmed = await confirm({
       title: `Publish ${bookmark.name}?`,
       description:
-        "Anyone with the link will see this bookmark's name, its schema and organization names, and the form of the snapshot it points to. Models, runs and members stay private.",
+        "Anyone will find it in Explore and see this bookmark's name and description, your organization's name, and the form of the snapshot it points to. The schema's name, models, runs and members stay private.",
       confirmLabel: "Publish",
     });
     if (confirmed) setVisibility("PUBLIC");
@@ -89,6 +95,16 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
   const hasExamples = bookmark.exampleCount + bookmark.staleExampleCount > 0;
 
   const actions: AppMenuAction[] = [
+    ...(canEdit
+      ? [
+          {
+            key: "edit",
+            label: "Edit name and description",
+            icon: PencilLine,
+            onSelect: () => setEditOpen(true),
+          },
+        ]
+      : []),
     ...(publicPath
       ? [
           { key: "copy", label: "Copy public link", icon: Link2, onSelect: () => void copyLink() },
@@ -141,6 +157,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
           </AppBadge>
         }
         icon={<Tag size={16} className="mt-1 text-fg-secondary" />}
+        description={bookmark.description ?? undefined}
         metadata={
           <>
             <span className="inline-flex items-center gap-1">
@@ -171,6 +188,7 @@ export function SchemaBookmarkCatalogItem({ bookmark }: { bookmark: SchemaBookma
         to={workspacePath}
       />
       {dialog}
+      <BookmarkEditDialog bookmark={bookmark} open={editOpen} onClose={() => setEditOpen(false)} />
       <BookmarkExamplesDialog
         bookmark={bookmark}
         open={examplesOpen}
