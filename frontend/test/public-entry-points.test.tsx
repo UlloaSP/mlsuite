@@ -53,7 +53,7 @@ const respond = (url: string, init?: RequestInit) => {
   if (pathname === `/api/public/bookmarks/${PUBLIC_ID}`) return json(BOOKMARK);
   if (pathname === `/api/public/bookmarks/${PUBLIC_ID}/examples`) return json([]);
   if (pathname === `/api/public/bookmarks/${PUBLIC_ID}/quota`) {
-    return json({ limit: 5, remaining: 5, resetsAt: null });
+    return json({ limit: 50, remaining: 50, resetsAt: null });
   }
   if (!api.signedIn) return json({ status: 401, message: "Unauthorized" }, 401);
   if (pathname === "/api/users/me") return json(USER);

@@ -103,7 +103,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", (url: unknown, init?: RequestInit) => {
     if (String(url).endsWith("/examples")) return Promise.resolve(json([]));
     if (String(url).endsWith("/quota")) {
-      return Promise.resolve(json({ limit: 5, remaining: 5, resetsAt: null }));
+      return Promise.resolve(json({ limit: 50, remaining: 50, resetsAt: null }));
     }
     return fetchMock(url, init);
   });
