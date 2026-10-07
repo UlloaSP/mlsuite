@@ -126,7 +126,7 @@ class PublicBookmarkFeedServiceTest {
         assertEquals(2, card.reportCount());
         assertEquals(card.inputCount(), page.inputCount());
         assertEquals(card.reportCount(), page.reportCount());
-        assertEquals(3, ((List<?>) page.formSchema().get("fields")).size());
+        assertEquals(2, ((List<?>) page.formSchema().get("fields")).size());
         assertEquals(2, ((List<?>) page.formSchema().get("reports")).size());
         // A bookmark with an empty form and no model has nothing to count.
         assertEquals(0, search("beta").items().get(0).inputCount());
