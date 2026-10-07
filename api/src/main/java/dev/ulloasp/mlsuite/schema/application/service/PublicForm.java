@@ -35,13 +35,15 @@ public final class PublicForm {
     private final Map<String, Object> inputRoutes = new LinkedHashMap<>();
     private final List<ReportRoute> reportRoutes = new ArrayList<>();
     private final Map<String, Object> schema;
+    private final int inputCount;
 
     private PublicForm(Map<String, Object> formSchema, List<BoundModel> models) {
         this.models = models;
         Map<String, Object> source = formSchema == null ? Map.of() : formSchema;
-        Object fields = source.get(FIELDS) instanceof List<?> items ? withInputKeys(items) : List.of();
+        List<?> storedFields = source.get(FIELDS) instanceof List<?> items ? items : List.of();
         Object reports = source.get(REPORTS) instanceof List<?> items ? reportsPerModel(items) : List.of();
-        this.schema = Map.of(FIELDS, fields, REPORTS, reports);
+        this.schema = Map.of(FIELDS, withInputKeys(storedFields), REPORTS, reports);
+        this.inputCount = (int) storedFields.stream().filter(PublicForm::isShownField).count();
     }
 
     public static PublicForm of(Map<String, Object> formSchema, List<BoundModel> models) {
@@ -51,6 +53,16 @@ public final class PublicForm {
     /** {@code fields} and {@code reports} with no model identity and no feature name. */
     public Map<String, Object> schema() {
         return schema;
+    }
+
+    /** The inputs a visitor fills: a hidden field travels with the form but is never shown. */
+    public int inputCount() {
+        return inputCount;
+    }
+
+    /** The results a run shows: one per report and model that produces it. */
+    public int reportCount() {
+        return reportRoutes.size();
     }
 
     public Set<String> inputKeys() {
@@ -128,6 +140,10 @@ public final class PublicForm {
             expanded.add(copy);
         }
         return expanded.stream();
+    }
+
+    private static boolean isShownField(Object field) {
+        return field instanceof Map<?, ?> config && !Boolean.TRUE.equals(config.get("hidden"));
     }
 
     /** MLForm's resolution: a bare target serves every model; a map is read by model name, then id. */

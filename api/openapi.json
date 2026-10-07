@@ -2207,6 +2207,10 @@
             "additionalProperties": { },
             "type": "object"
           },
+          "inputCount": {
+            "format": "int32",
+            "type": "integer"
+          },
           "name": {
             "type": "string"
           },
@@ -2216,14 +2220,15 @@
           "publicId": {
             "type": "string"
           },
+          "reportCount": {
+            "format": "int32",
+            "type": "integer"
+          },
           "schemaDescription": {
             "type": [
               "string",
               "null"
             ]
-          },
-          "schemaName": {
-            "type": "string"
           },
           "updatedAt": {
             "format": "date-time",
@@ -2232,24 +2237,18 @@
           "version": {
             "format": "int32",
             "type": "integer"
-          },
-          "versionName": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
           "formSchema",
+          "inputCount",
           "name",
           "organizationName",
           "publicId",
+          "reportCount",
           "schemaDescription",
-          "schemaName",
           "updatedAt",
-          "version",
-          "versionName"
+          "version"
         ],
         "type": "object"
       },
@@ -2275,6 +2274,10 @@
       },
       "PublicBookmarkSummaryDto": {
         "properties": {
+          "inputCount": {
+            "format": "int32",
+            "type": "integer"
+          },
           "name": {
             "type": "string"
           },
@@ -2284,39 +2287,29 @@
           "publicId": {
             "type": "string"
           },
+          "reportCount": {
+            "format": "int32",
+            "type": "integer"
+          },
           "schemaDescription": {
             "type": [
               "string",
               "null"
             ]
           },
-          "schemaName": {
-            "type": "string"
-          },
           "updatedAt": {
             "format": "date-time",
             "type": "string"
-          },
-          "version": {
-            "format": "int32",
-            "type": "integer"
-          },
-          "versionName": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [
+          "inputCount",
           "name",
           "organizationName",
           "publicId",
+          "reportCount",
           "schemaDescription",
-          "schemaName",
-          "updatedAt",
-          "version",
-          "versionName"
+          "updatedAt"
         ],
         "type": "object"
       },

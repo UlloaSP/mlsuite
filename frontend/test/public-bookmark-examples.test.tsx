@@ -70,10 +70,10 @@ const FORM_SCHEMA = {
 const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaName: "Risk",
   schemaDescription: null,
   version: 2,
-  versionName: "Baseline",
+  inputCount: 2,
+  reportCount: 1,
   organizationName: "Acme Health",
   formSchema: FORM_SCHEMA,
   updatedAt: AT,
@@ -316,7 +316,7 @@ describe("examples on the public page", () => {
         if (child.shadowRoot) walk(child.shadowRoot);
       }
     };
-    const form = host.querySelector("mlf-kit-tabs");
+    const form = host.querySelector("mlf-form");
     if (form?.shadowRoot) walk(form.shadowRoot);
     return found;
   };
@@ -363,7 +363,7 @@ describe("examples on the public page", () => {
     // The second example replaces every value, including the ones it does not set.
     await choose(host, "Elderly case");
     expect(values(host)).toEqual(["81", ""]);
-    expect(host.querySelectorAll("mlf-kit-tabs")).toHaveLength(1);
+    expect(host.querySelectorAll("mlf-form")).toHaveLength(1);
   });
 
   test("a run submits the example the form was loaded with, and the visitor's edits to it", async () => {
@@ -373,8 +373,9 @@ describe("examples on the public page", () => {
     await choose(host, "Typical case");
     await changeValue(fields(host)[0], "60");
     const run = host
-      .querySelector("mlf-kit-tabs")
-      ?.shadowRoot?.querySelector<HTMLButtonElement>(".btn-submit");
+      .querySelector("mlf-form")
+      ?.shadowRoot?.querySelector("mlf-submit-button")
+      ?.shadowRoot?.querySelector("button");
     await act(async () => run?.click());
     await settle();
 

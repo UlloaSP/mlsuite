@@ -29,10 +29,10 @@ const PAGE = `/explore/${PUBLIC_ID}`;
 const bookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaName: "Risk",
   schemaDescription: null,
   version: 2,
-  versionName: "Baseline",
+  inputCount: 1,
+  reportCount: 1,
   organizationName: "Acme Health",
   formSchema: {
     fields: [{ kind: "number", label: "Age", mappedTo: "in0", defaultValue: 52 }],
@@ -125,11 +125,13 @@ async function openPage() {
   return view.host;
 }
 
-/** MLForm lays the form out as tabs (Inputs, Results) in one element. */
-const form = (host: HTMLElement) => host.querySelector("mlf-kit-tabs")!;
+/** MLForm lays the form out as two panes (Inputs, Results) in one element. */
+const form = (host: HTMLElement) => host.querySelector("mlf-form")!;
 const formRoot = (host: HTMLElement) => form(host).shadowRoot!;
 async function run(host: HTMLElement) {
-  await act(async () => formRoot(host).querySelector<HTMLButtonElement>(".btn-submit")!.click());
+  await act(async () =>
+    formRoot(host).querySelector("mlf-submit-button")!.shadowRoot!.querySelector("button")!.click(),
+  );
   await settle();
 }
 /** Reports render inside nested shadow roots, which `textContent` does not cross. */

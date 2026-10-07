@@ -38,12 +38,11 @@ public interface SchemaBookmarkRepository extends JpaRepository<SchemaBookmark, 
     @Query("SELECT b FROM SchemaBookmark b WHERE b.publicId = :publicId AND " + PUBLISHED)
     Optional<SchemaBookmark> findPublishedByPublicId(String publicId);
 
-    /** One page of what anyone may read, for the public feed. */
+    /** One page of what anyone may read, for the public feed, searched by what a card shows. */
     @Query("SELECT b FROM SchemaBookmark b WHERE " + PUBLISHED + """
             AND (
                 :search = ''
                 OR lower(b.name) LIKE lower(concat('%', :search, '%'))
-                OR lower(b.schema.name) LIKE lower(concat('%', :search, '%'))
                 OR lower(b.schema.description) LIKE lower(concat('%', :search, '%'))
                 OR lower(b.schema.organization.name) LIKE lower(concat('%', :search, '%'))
             )

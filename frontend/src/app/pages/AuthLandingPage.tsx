@@ -9,9 +9,15 @@ import { ArrowLeft } from "lucide-react";
 import { useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { EXPLORE_PATH } from "@/app/components/explore-navigation";
+import { isPublicPage } from "@/app/router/public-routes";
 import { themeWithHtmlAtom } from "@/shared/ui/appearance-state";
 import type { AuthRequest, LoginRequest } from "@/shared/api/openapi.gen";
-import { AUTH_MODE_PARAM, useLogin, useRegister } from "@/capabilities/workspace-context/session";
+import {
+  AUTH_MODE_PARAM,
+  safeReturnTo,
+  useLogin,
+  useRegister,
+} from "@/capabilities/workspace-context/session";
 import { useSearchParamState } from "@/shared/lib/use-search-param-state";
 import { AuthAccessOverlay } from "./auth-landing/AuthAccessOverlay";
 import { AuthFormPanel } from "./auth-landing/AuthFormPanel";
@@ -19,7 +25,6 @@ import { AuthHorizon } from "./auth-landing/AuthHorizon";
 import { AuthPassStub } from "./auth-landing/AuthPassStub";
 import { AuthTypeBands } from "./auth-landing/AuthTypeBands";
 import { AUTH_MODES, type AuthMode } from "./auth-landing/authLandingCopy";
-import { signInDestination } from "./auth-landing/sign-in-destination";
 import { useAuthAccess } from "./auth-landing/useAuthAccess";
 import { useAuthStageScale } from "./auth-landing/useAuthStageScale";
 import "./auth-landing/auth-landing.css";
@@ -36,7 +41,12 @@ export function AuthLandingPage() {
   const [searchParams] = useSearchParams();
   // The form on screen is part of the address, so a link can open registration directly.
   const [mode, setMode] = useSearchParamState<AuthMode>(AUTH_MODE_PARAM, "login", AUTH_MODES);
-  const access = useAuthAccess(signInDestination(mode, searchParams.get("returnTo")));
+  // Signing in or registering goes back to the page that sent the visitor here (an expired
+  // session, a public page's header); with none to go back to, it opens the public feed.
+  const destination = safeReturnTo(searchParams.get("returnTo"), EXPLORE_PATH);
+  // Leaving without an account goes back too, when that page needs no session.
+  const cameFromPublicPage = destination !== EXPLORE_PATH && isPublicPage(destination);
+  const access = useAuthAccess(destination);
   const passRef = useRef<HTMLDivElement>(null);
   const scale = useAuthStageScale();
   const login = useLogin();
@@ -82,9 +92,9 @@ export function AuthLandingPage() {
       <AuthTypeBands />
       <AuthHorizon />
       {/* Nothing public needs an account, so the screen never traps a visitor. */}
-      <Link to={EXPLORE_PATH} className="auth-exit">
+      <Link to={cameFromPublicPage ? destination : EXPLORE_PATH} className="auth-exit">
         <ArrowLeft aria-hidden="true" size={14} />
-        Explore without signing in
+        {cameFromPublicPage ? "Back without signing in" : "Explore without signing in"}
       </Link>
 
       <div ref={passRef} className="auth-pass" data-phase={access.phase}>

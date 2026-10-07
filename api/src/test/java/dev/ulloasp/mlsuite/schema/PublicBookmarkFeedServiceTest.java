@@ -26,13 +26,16 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import dev.ulloasp.mlsuite.model.domain.model.Model;
 import dev.ulloasp.mlsuite.organization.domain.model.Organization;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkSummaryDto;
 import dev.ulloasp.mlsuite.schema.application.service.BookmarkPublishability;
 import dev.ulloasp.mlsuite.schema.application.service.PublicBookmarkService;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
 import dev.ulloasp.mlsuite.schema.domain.model.Schema;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaBookmark;
+import dev.ulloasp.mlsuite.schema.domain.model.SchemaModelBinding;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
 import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
 import dev.ulloasp.mlsuite.user.domain.model.User;
@@ -79,6 +82,19 @@ class PublicBookmarkFeedServiceTest {
 
         cardio = bookmark(schema(acme, "Cardio risk", "Estimates cardiovascular risk."), "production",
                 BookmarkVisibility.PUBLIC, DAY.plusDays(1));
+        cardio.getVersion().setFormSchema(Map.of(
+                "fields", List.of(
+                        Map.of("kind", "number", "label", "Age", "mappedTo", "age"),
+                        Map.of("kind", "number", "label", "Income", "mappedTo", "income"),
+                        Map.of("kind", "number", "label", "Site", "hidden", true, "mappedTo", "site")),
+                "reports", List.of(Map.of("kind", "classifier", "label", "Risk", "mappedTo", "prediction"))));
+        for (String name : List.of("risk-model", "risk-net")) {
+            Model model = new Model(owner, name, "classifier", "Estimator", name + ".bin", new byte[] { 1 });
+            model.setOrganization(acme);
+            entityManager.persist(model);
+            entityManager.persist(new SchemaModelBinding(cardio.getVersion(), model, Map.of()));
+        }
+        entityManager.flush();
         churn = bookmark(schema(globex, "Churn", null), "Beta", BookmarkVisibility.PUBLIC, DAY.plusDays(2));
         draft = bookmark(schema(acme, "Internal triage", "Estimates triage priority."), "staging",
                 BookmarkVisibility.PRIVATE, DAY.plusDays(3));
@@ -94,10 +110,27 @@ class PublicBookmarkFeedServiceTest {
         assertEquals(List.of(churn.getPublicId(), cardio.getPublicId()), publicIds(page));
         assertEquals(2, page.totalItems());
         assertFalse(page.hasNext());
-        assertEquals(new PublicBookmarkSummaryDto(cardio.getPublicId(), "production", "Cardio risk",
-                "Estimates cardiovascular risk.", 3, "Baseline", "Acme Health", page.items().get(1).updatedAt()),
+        assertEquals(new PublicBookmarkSummaryDto(cardio.getPublicId(), "production",
+                "Estimates cardiovascular risk.", 2, 2, "Acme Health", page.items().get(1).updatedAt()),
                 page.items().get(1));
         assertEquals("Globex Retail", page.items().get(0).organizationName());
+    }
+
+    @Test
+    void aCardCountsWhatThePublicPageShows() {
+        PublicBookmarkSummaryDto card = search("production").items().get(0);
+        PublicBookmarkDto page = service.getPublishedBookmark(cardio.getPublicId());
+
+        // Three stored fields, one of them hidden; one stored report that each of the two models produces.
+        assertEquals(2, card.inputCount());
+        assertEquals(2, card.reportCount());
+        assertEquals(card.inputCount(), page.inputCount());
+        assertEquals(card.reportCount(), page.reportCount());
+        assertEquals(3, ((List<?>) page.formSchema().get("fields")).size());
+        assertEquals(2, ((List<?>) page.formSchema().get("reports")).size());
+        // A bookmark with an empty form and no model has nothing to count.
+        assertEquals(0, search("beta").items().get(0).inputCount());
+        assertEquals(0, search("beta").items().get(0).reportCount());
     }
 
     @Test
@@ -105,16 +138,23 @@ class PublicBookmarkFeedServiceTest {
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         PublicBookmarkSummaryDto card = service.getPublishedBookmarkPage(0, 24, "cardio", "updated").items().get(0);
 
-        assertEquals(Set.of("publicId", "name", "schemaName", "schemaDescription", "version", "versionName",
+        assertEquals(Set.of("publicId", "name", "schemaDescription", "inputCount", "reportCount",
                 "organizationName", "updatedAt"), mapper.convertValue(card, Map.class).keySet());
-        assertFalse(mapper.writeValueAsString(card).contains("qa@example.test"));
+        String json = mapper.writeValueAsString(card);
+        // Neither the member's address nor the organization's names for its schema and snapshot.
+        for (String internal : List.of("qa@example.test", "Cardio risk", "Baseline")) {
+            assertFalse(json.contains(internal), internal);
+        }
     }
 
     @Test
-    void searchMatchesNameSchemaDescriptionAndPublisherButNeverPrivateOrArchivedOnes() {
+    void searchMatchesNameDescriptionAndPublisherButNeverPrivateOrArchivedOnes() {
         assertEquals(List.of(churn.getPublicId()), publicIds(search("beta")));
-        assertEquals(List.of(cardio.getPublicId()), publicIds(search("CARDIO")));
+        assertEquals(List.of(cardio.getPublicId()), publicIds(search("PRODUCTION")));
         assertEquals(List.of(cardio.getPublicId()), publicIds(search("  cardiovascular ")));
+        // A schema's name is not shown on a card, so it is not searched either.
+        assertTrue(search("churn").items().isEmpty());
+        assertTrue(search("cardio risk").items().isEmpty());
         assertEquals(List.of(churn.getPublicId()), publicIds(search("globex")));
         // "Estimates" is in the private and archived descriptions too; "staging" and "legacy" name them.
         assertEquals(List.of(cardio.getPublicId()), publicIds(search("estimates")));

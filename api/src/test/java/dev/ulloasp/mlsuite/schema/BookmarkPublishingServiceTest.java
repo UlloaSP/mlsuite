@@ -142,6 +142,7 @@ class BookmarkPublishingServiceTest {
         bookmark.getVersion().setFormSchema(Map.of(
                 "fields", List.of(
                         Map.of("kind", "number", "label", "Age", "mappedTo", Map.of("model-11", "age")),
+                        Map.of("kind", "number", "label", "Site", "hidden", true, "mappedTo", Map.of("model-11", "site")),
                         Map.of("kind", "category", "label", "Smoker", "options", List.of(
                                 Map.of("label", "Yes", "value", "1", "mappedTo", Map.of("model-11", "smoker__1"))))),
                 "reports", List.of(
@@ -154,25 +155,27 @@ class BookmarkPublishingServiceTest {
         PublicBookmarkDto view = publicService.getPublishedBookmark("public-1");
 
         assertEquals("production", view.name());
-        assertEquals("Risk", view.schemaName());
         assertEquals("Estimates cardiovascular risk.", view.schemaDescription());
         assertEquals(1, view.version());
-        assertEquals("v1", view.versionName());
+        // A hidden field is sent with the form but is not an input a visitor fills.
+        assertEquals(2, view.inputCount());
+        assertEquals(1, view.reportCount());
         assertEquals("Org", view.organizationName());
         // Opaque keys stand where the routing was; a report that no bound model produces is gone.
         assertEquals(Map.of(
                 "fields", List.of(
                         Map.of("kind", "number", "label", "Age", "mappedTo", "in0"),
+                        Map.of("kind", "number", "label", "Site", "hidden", true, "mappedTo", "in1"),
                         Map.of("kind", "category", "label", "Smoker",
-                                "options", List.of(Map.of("label", "Yes", "value", "1", "mappedTo", "in1")))),
+                                "options", List.of(Map.of("label", "Yes", "value", "1", "mappedTo", "in2")))),
                 "reports", List.of(
                         Map.of("kind", "classifier", "label", "Risk", "id", "out0", "mappedTo", "out0"))),
                 view.formSchema());
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        assertEquals(Set.of("publicId", "name", "schemaName", "schemaDescription", "version", "versionName",
+        assertEquals(Set.of("publicId", "name", "schemaDescription", "version", "inputCount", "reportCount",
                 "organizationName", "formSchema", "updatedAt"), mapper.convertValue(view, Map.class).keySet());
         String json = mapper.writeValueAsString(view);
-        for (String secret : List.of("model-11", "model-99", "smoker__1", "gone")) {
+        for (String secret : List.of("model-11", "model-99", "smoker__1", "gone", "\"site\"")) {
             assertFalse(json.contains(secret), secret);
         }
     }

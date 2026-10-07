@@ -17,14 +17,15 @@ import { cx } from "@/shared/ui/cx";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
 import { MLSuiteMark } from "@/shared/ui/MLSuiteMark";
 import { MLSuiteWordmark } from "@/shared/ui/MLSuiteWordmark";
+import { FrameContent } from "./FrameContent";
 
 const BREADCRUMB_ROOTS = { public: EXPLORE_BREADCRUMB_ROOT };
 
 /**
  * The frame of a public page for a visitor without a session: the brand leading to the
  * feed, ways to sign in or create an account and come back to this page, and the page in
- * the same sized box the app shell gives it. Pages reach the same ways in through
- * AccountEntryContext.
+ * the box the app shell draws it in, with its breadcrumb trail where the visitor's device
+ * shows it. Pages reach the same ways in through AccountEntryContext.
  */
 export function PublicFrame({ children }: PropsWithChildren) {
   const location = useLocation();
@@ -61,8 +62,10 @@ export function PublicFrame({ children }: PropsWithChildren) {
             </Link>
           </nav>
         </header>
-        <main className="relative min-h-0 min-w-0 flex-1 overflow-clip">
-          <AccountEntryContext.Provider value={entry}>{children}</AccountEntryContext.Provider>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <FrameContent>
+            <AccountEntryContext.Provider value={entry}>{children}</AccountEntryContext.Provider>
+          </FrameContent>
         </main>
       </div>
     </BreadcrumbProvider>

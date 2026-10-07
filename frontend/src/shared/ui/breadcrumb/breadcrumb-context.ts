@@ -23,14 +23,10 @@ export type BreadcrumbRoot = {
 
 type Roots = Partial<Record<BreadcrumbScope, BreadcrumbRoot>>;
 
-/**
- * What the page on screen publishes: its full trail (root first), that root's
- * details, and its one-line description when it is plain text.
- */
+/** What the page on screen publishes: its full trail (root first) and that root's details. */
 export type PublishedTrail = {
   items: BreadcrumbTrailItem[];
   root?: BreadcrumbRoot;
-  description?: string;
 };
 
 export const BreadcrumbRootsContext = createContext<Roots>({});
@@ -40,11 +36,7 @@ export const BreadcrumbPublishContext = createContext<(trail: PublishedTrail | n
 );
 
 /** The page's full trail (root first) and, while mounted, publish it for the shell's location views. */
-export function usePageTrail(
-  items: BreadcrumbTrailItem[],
-  scope: BreadcrumbScope,
-  description?: string,
-) {
+export function usePageTrail(items: BreadcrumbTrailItem[], scope: BreadcrumbScope) {
   const root = useContext(BreadcrumbRootsContext)[scope];
   const publish = useContext(BreadcrumbPublishContext);
   // A page that is the root itself (the workspace home, titled with the
@@ -54,11 +46,11 @@ export function usePageTrail(
     ? [{ label: root.label, to: root.to }, ...(isRootPage ? [] : items)]
     : items;
   // Labels are ReactNodes; the joined text/paths are a stable enough identity.
-  const signature = `${trail.map((item) => `${String(item.label)}>${item.to ?? ""}`).join("|")}#${description ?? ""}`;
+  const signature = trail.map((item) => `${String(item.label)}>${item.to ?? ""}`).join("|");
 
-  const latest = useRef<PublishedTrail>({ items: trail, root, description });
+  const latest = useRef<PublishedTrail>({ items: trail, root });
   useEffect(() => {
-    latest.current = { items: trail, root, description };
+    latest.current = { items: trail, root };
   });
   useEffect(() => {
     publish(latest.current);

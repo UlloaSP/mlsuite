@@ -1,8 +1,11 @@
 package dev.ulloasp.mlsuite.schema.application.service;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -10,6 +13,7 @@ import org.springframework.stereotype.Service;
 import dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository.SchemaModelBindingRepository;
 import dev.ulloasp.mlsuite.schema.domain.model.BoundModel;
 import dev.ulloasp.mlsuite.schema.domain.model.SchemaVersion;
+import dev.ulloasp.mlsuite.schema.domain.model.SnapshotModel;
 
 /**
  * Whether a snapshot may be public. Anyone can run a public bookmark, and every run ships each
@@ -34,6 +38,14 @@ public class BookmarkPublishability {
     /** The models the snapshot runs, in binding order. */
     public List<BoundModel> models(SchemaVersion version) {
         return bindingRepository.findBoundModels(version.getId());
+    }
+
+    /** The models each of these snapshots runs, by snapshot id and in binding order, in one read. */
+    public Map<Long, List<BoundModel>> models(Collection<SchemaVersion> versions) {
+        if (versions.isEmpty()) return Map.of();
+        return bindingRepository.findBoundModelsIn(versions.stream().map(SchemaVersion::getId).toList()).stream()
+                .collect(Collectors.groupingBy(SnapshotModel::schemaVersionId,
+                        Collectors.mapping(SnapshotModel::model, Collectors.toList())));
     }
 
     /**

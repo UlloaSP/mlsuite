@@ -17,9 +17,9 @@ import {
 } from "./sidebar-navigation-support";
 
 /**
- * Navigation the member may open, shared by the sidebar and the bar: the
- * organization's work, platform administration (for superadmins), and the public
- * feed, which every member has. Alt+N shortcuts number the groups in that order.
+ * Navigation the member may open, shared by the sidebar and the bar: the public
+ * feed first, which every member has, then the organization's work and platform
+ * administration (for superadmins). Alt+N shortcuts number the entries in that order.
  * An entry for a workspace or administration section the member is not in resumes
  * where they last were in it; Explore always opens the feed.
  */
@@ -131,9 +131,9 @@ export function useNavigationItems() {
     administration: administration.map(resume),
   };
   const groups: NavigationGroup[] = [
+    { label: "Public", items: [EXPLORE_NAVIGATION_ITEM] },
     { label: "Workspace", items: sections.navigation },
     { label: "Administration", items: sections.administration },
-    { label: "Public", items: [EXPLORE_NAVIGATION_ITEM] },
   ].filter((group) => group.items.length > 0);
 
   return {

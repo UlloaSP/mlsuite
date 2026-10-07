@@ -56,7 +56,7 @@ export function ExplorePage() {
       pageSize={PUBLIC_BOOKMARK_PAGE_SIZE}
       filterLabel="Filter public bookmarks"
       filters={FILTERS}
-      placeholder="Search by bookmark, schema, description, or publisher"
+      placeholder="Search by bookmark, description, or publisher"
       query={query}
       sortLabel="Sort public bookmarks"
       sortOptions={SORTS}

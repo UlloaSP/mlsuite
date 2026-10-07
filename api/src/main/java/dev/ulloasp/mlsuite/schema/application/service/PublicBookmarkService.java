@@ -55,8 +55,8 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
     public PublicBookmarkDto getPublishedBookmark(String publicId) {
         SchemaBookmark bookmark = requirePublished(publicId);
         SchemaVersion version = bookmark.getVersion();
-        return PublicBookmarkDto.from(bookmark,
-                PublicForm.of(version.getFormSchema(), publishability.models(version)).schema());
+        PublicForm form = PublicForm.of(version.getFormSchema(), publishability.models(version));
+        return PublicBookmarkDto.from(bookmark, form.schema(), form.inputCount(), form.reportCount());
     }
 
     @Override
@@ -73,7 +73,14 @@ public class PublicBookmarkService implements PublicBookmarkUseCase {
         Page<SchemaBookmark> bookmarks = bookmarkRepository.findPublishedPage(
                 search == null ? "" : search.strip(),
                 PageDto.request(page, size, sort(sort)));
-        return PageDto.of(bookmarks, bookmarks.getContent().stream().map(PublicBookmarkSummaryDto::from).toList());
+        // A card counts what the bookmark's page shows, so it is read from the same public form.
+        Map<Long, List<BoundModel>> models = publishability.models(
+                bookmarks.getContent().stream().map(SchemaBookmark::getVersion).toList());
+        return PageDto.of(bookmarks, bookmarks.getContent().stream().map(bookmark -> {
+            SchemaVersion version = bookmark.getVersion();
+            PublicForm form = PublicForm.of(version.getFormSchema(), models.getOrDefault(version.getId(), List.of()));
+            return PublicBookmarkSummaryDto.from(bookmark, form.inputCount(), form.reportCount());
+        }).toList());
     }
 
     /** Answers 404 unless the bookmark is public now, as every public read of it does. */

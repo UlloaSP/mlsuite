@@ -19,14 +19,13 @@ const BOOKMARK_URL = `/explore/${PUBLIC_ID}`;
 const SUMMARY: PublicBookmarkSummaryDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaName: "Cardio risk",
   schemaDescription: "Estimates cardiovascular risk.",
-  version: 2,
-  versionName: "Baseline",
+  inputCount: 0,
+  reportCount: 0,
   organizationName: "Acme Health",
   updatedAt: "2026-10-01T10:00:00Z",
 };
-const BOOKMARK: PublicBookmarkDto = { ...SUMMARY, formSchema: { fields: [] } };
+const BOOKMARK: PublicBookmarkDto = { ...SUMMARY, version: 2, formSchema: { fields: [] } };
 const USER = { id: 9, fullName: "Ada Lovelace", email: "ada@acme.test", systemRole: "USER" };
 const WORKSPACE = {
   currentOrganization: { id: 3, name: "Ada Lovelace Personal", slug: "ada" },
@@ -78,7 +77,12 @@ const open = async (entry: string) => {
   );
   await settle();
   const url = () => `${router.state.location.pathname}${router.state.location.search}`;
-  return { host, url };
+  /** What the browser's back button does. */
+  const back = async () => {
+    await act(async () => router.navigate(-1));
+    await settle();
+  };
+  return { host, url, back };
 };
 const link = (host: ParentNode, text: string) =>
   [...host.querySelectorAll("a")].find((node) => node.textContent?.trim() === text);
@@ -213,8 +217,38 @@ describe("auth screen", () => {
     expect(authForm(host).submit).toBe("Sign in");
   });
 
-  test("leads back to Explore without signing in", async () => {
-    const { host, url } = await open(signInHref("/models"));
+  test.each([
+    ["Sign in", FEED_URL, "Explore"],
+    ["Sign in", BOOKMARK_URL, "production"],
+    ["Create account", FEED_URL, "Explore"],
+    ["Create account", BOOKMARK_URL, "production"],
+  ])(
+    "%s from %s can be left for that same page, by the screen's link or the browser's back",
+    async (action, page, title) => {
+      const { host, url, back } = await open(page);
+
+      await follow(host, action);
+      expect(link(host, "Explore without signing in")).toBeUndefined();
+      await follow(host, "Back without signing in");
+      expect(url()).toBe(page);
+      expect(host.querySelector("h1")?.textContent).toBe(title);
+      expect(host.querySelector('[data-frame="app-shell"]')).toBeNull();
+
+      await follow(host, action);
+      await back();
+      expect(url()).toBe(page);
+      expect(host.querySelector("h1")?.textContent).toBe(title);
+      expect(api.posts).toEqual([]);
+    },
+  );
+
+  test.each([
+    ["a page that needs a session", signInHref("/models")],
+    ["no page", "/login"],
+    ["another site", signInHref("//example.com/explore")],
+  ])("opened from %s, it leads to Explore without signing in", async (_from, entry) => {
+    const { host, url } = await open(entry);
+    expect(link(host, "Back without signing in")).toBeUndefined();
     await follow(host, "Explore without signing in");
 
     expect(url()).toBe("/explore");
@@ -262,13 +296,13 @@ describe("coming back after authenticating", () => {
     "javascript:alert(1)",
     "explore",
   ])("the unsafe return path %j is replaced by the default destination", (returnTo) => {
-    expect(safeReturnTo(returnTo, "/welcome")).toBe("/welcome");
+    expect(safeReturnTo(returnTo, "/explore")).toBe("/explore");
   });
 
   test.each(["/explore", FEED_URL, BOOKMARK_URL, "/explore?q=a%2Fb"])(
     "the local return path %s is kept",
     (returnTo) => {
-      expect(safeReturnTo(returnTo, "/welcome")).toBe(returnTo);
+      expect(safeReturnTo(returnTo, "/explore")).toBe(returnTo);
     },
   );
 
@@ -278,27 +312,36 @@ describe("coming back after authenticating", () => {
   }
 
   test.each([
-    ["https://example.com", signInHref, "/welcome"],
-    ["//example.com", signInHref, "/welcome"],
-    ["/\t/example.com", signInHref, "/welcome"],
-    ["https://example.com", registerHref, "/home"],
-    ["//example.com", registerHref, "/home"],
-  ])(
-    "authenticating with returnTo=%j opens the default destination",
-    async (returnTo, href, home) => {
-      const { host } = await mount(
-        <QueryClientProvider client={new QueryClient()}>
-          <Routes>
-            <Route path="/login" element={<AuthLandingPage />} />
-            <Route path="*" element={<Destination />} />
-          </Routes>
-        </QueryClientProvider>,
-        { route: href(returnTo) },
-      );
-      await authenticate(host);
+    ["/login"],
+    ["/login?mode=register"],
+    [signInHref("https://example.com")],
+    [signInHref("//example.com")],
+    [signInHref("/\t/example.com")],
+    [registerHref("https://example.com")],
+    [registerHref("//example.com")],
+  ])("authenticating at %j, with no page to return to, opens Explore", async (entry) => {
+    const { host } = await mount(
+      <QueryClientProvider client={new QueryClient()}>
+        <Routes>
+          <Route path="/login" element={<AuthLandingPage />} />
+          <Route path="*" element={<Destination />} />
+        </Routes>
+      </QueryClientProvider>,
+      { route: entry },
+    );
+    await authenticate(host);
 
-      expect(api.posts).toHaveLength(1);
-      expect(host.querySelector("output")?.textContent).toBe(home);
-    },
-  );
+    expect(api.posts).toHaveLength(1);
+    expect(host.querySelector("output")?.textContent).toBe("/explore");
+  });
+
+  test("a session that expired on a workspace page returns to that page", async () => {
+    const { host, url } = await open("/profile?tab=security");
+    expect(url()).toBe(signInHref("/profile?tab=security"));
+
+    await authenticate(host);
+
+    expect(api.posts.map((post) => post.path)).toEqual(["/api/auth/login"]);
+    expect(url()).toBe("/profile?tab=security");
+  });
 });

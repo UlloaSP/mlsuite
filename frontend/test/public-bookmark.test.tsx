@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient } from "@tanstack/react-query";
+import { Provider, createStore } from "jotai";
 import { act, type PropsWithChildren } from "react";
 import { Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vite-plus/test";
@@ -9,6 +10,8 @@ import { routes } from "@/app/router/routes";
 import { PublicBookmarkPage } from "@/features/explore/pages/public-bookmark-page";
 import { SchemaBookmarkCatalogItem } from "@/features/schemas/components/SchemaBookmarkCatalogItem";
 import type { PublicBookmarkDto, SchemaBookmarkDto } from "@/shared/api/openapi.gen";
+import { AppPageHeader } from "@/shared/ui/PageHeader";
+import { locationDisplayAtom, type LocationDisplay } from "@/shared/ui/sidebar-preferences";
 import { click, mount } from "./support/dom";
 
 const toasts = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
@@ -62,10 +65,10 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
 const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
-  schemaName: "Risk",
   schemaDescription: "Estimates cardiovascular risk.",
   version: 2,
-  versionName: "Baseline",
+  inputCount: 2,
+  reportCount: 1,
   organizationName: "Acme Health",
   formSchema: {
     fields: [
@@ -105,7 +108,10 @@ beforeEach(() => {
     return fetchMock(url, init);
   });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  localStorage.clear();
+});
 
 async function openActions() {
   const trigger = document.body.querySelector<HTMLButtonElement>(
@@ -221,19 +227,51 @@ describe("public bookmark page", () => {
     expect(host.textContent).not.toContain("not found");
   });
 
-  test("renders the metadata and the form with its inputs and its run action", async () => {
+  test("heads the page like a workspace page and tells what the form asks for and gives back", async () => {
     fetchMock.mockResolvedValue(json(publicBookmark));
     const { host } = await page();
     await settle();
 
     expect(calledPaths()).toEqual([`/api/public/bookmarks/${PUBLIC_ID}`]);
-    expect(host.querySelector("h1")?.textContent).toBe("production");
-    for (const fact of ["Estimates cardiovascular risk.", "Acme Health", "Risk", "Baseline · v2"]) {
-      expect(host.textContent).toContain(fact);
-    }
-    const form = host.querySelector("mlf-kit-tabs")?.shadowRoot;
-    expect(form?.querySelectorAll("mlf-field-frame")).toHaveLength(2);
-    expect(form?.querySelectorAll(".btn-submit")).toHaveLength(1);
+    const header = host.querySelector("header")!;
+    expect(header.querySelector("h1")?.textContent).toBe("production");
+    expect(header.querySelector("p")?.textContent).toBe("Estimates cardiovascular risk.");
+    // The standard page header at the page's own edge, not a centered column.
+    expect(header.className).not.toContain("mx-auto");
+    const facts = [...host.querySelectorAll("dl > div")].map((fact) => [
+      fact.querySelector("dt")?.textContent,
+      fact.querySelector("dd")?.textContent,
+    ]);
+    expect(facts).toEqual([
+      ["Published by", "Acme Health"],
+      ["Inputs", "2 inputs"],
+      ["Reports", "1 report"],
+      ["Updated", expect.stringContaining("2026")],
+    ]);
+  });
+
+  test("lays the form out as inputs beside results, with its run action", async () => {
+    fetchMock.mockResolvedValue(json(publicBookmark));
+    const { host } = await page();
+    await settle();
+
+    expect(host.querySelector("mlf-kit-tabs")).toBeNull();
+    const form = host.querySelector("mlf-form")!.shadowRoot!;
+    expect(form.querySelector(".root.split")).not.toBeNull();
+    const inputs = form.querySelector('[part="form-pane"]')!;
+    expect(inputs.querySelector("h2")?.textContent).toBe("Inputs");
+    expect(inputs.querySelectorAll("mlf-field-frame")).toHaveLength(2);
+    expect(inputs.querySelectorAll("mlf-submit-button")).toHaveLength(1);
+    expect(form.querySelector('[part="report-pane"] h2')?.textContent).toBe("Results");
+  });
+
+  test("a form without reports and with one input says so in the singular", async () => {
+    fetchMock.mockResolvedValue(json({ ...publicBookmark, inputCount: 1, reportCount: 0 }));
+    const { host } = await page();
+    await settle();
+    expect(host.querySelector("dl")?.textContent).toContain("1 input");
+    expect(host.querySelector("dl")?.textContent).not.toContain("1 inputs");
+    expect(host.querySelector("dl")?.textContent).toContain("0 reports");
   });
 
   test("says so when the form needs plugin fields a public page cannot load", async () => {
@@ -246,7 +284,7 @@ describe("public bookmark page", () => {
     const { host } = await page();
     await settle();
     expect(host.textContent).toContain("This form cannot be shown here");
-    expect(host.querySelector("mlf-kit-tabs")).toBeNull();
+    expect(host.querySelector("mlf-form")).toBeNull();
   });
 
   test("a private or unknown link is not found, without a retry", async () => {
@@ -304,6 +342,51 @@ describe("public page frame", () => {
     expect(host.querySelector('[data-frame="app-shell"]')?.textContent).toContain("Public content");
     expect(host.querySelector('nav[aria-label="Sidebar"]')).not.toBeNull();
     expect(host.textContent).not.toContain("Sign in");
+  });
+
+  test("the anonymous frame draws the page's trail where this device shows it", async () => {
+    const trailed = (display: LocationDisplay) => {
+      const store = createStore();
+      store.set(locationDisplayAtom, display);
+      return mount(
+        <Provider store={store}>
+          <Routes>
+            <Route element={<SessionFrameLayout />}>
+              <Route
+                path="/explore/:publicId"
+                element={
+                  <AppPageHeader
+                    title="production"
+                    breadcrumbScope="public"
+                    breadcrumbs={[{ label: "production" }]}
+                  />
+                }
+              />
+            </Route>
+          </Routes>
+        </Provider>,
+        { route: `/explore/${PUBLIC_ID}` },
+      );
+    };
+    const trails = (host: HTMLElement) => [
+      ...host.querySelectorAll('nav[aria-label="Breadcrumb"]'),
+    ];
+
+    const top = await trailed("breadcrumb-top");
+    expect(trails(top.host)).toHaveLength(1);
+    expect(trails(top.host)[0].textContent).toBe("Exploreproduction");
+    expect(trails(top.host)[0].querySelector("a")?.getAttribute("href")).toBe("/explore");
+    expect(trails(top.host)[0].closest("main")).not.toBeNull();
+    expect(top.host.querySelector("footer")).toBeNull();
+    await top.unmount();
+
+    const bottom = await trailed("breadcrumb-bottom");
+    expect(trails(bottom.host)).toHaveLength(1);
+    expect(bottom.host.querySelector("main footer")?.textContent).toBe("Exploreproduction");
+    await bottom.unmount();
+
+    const off = await trailed("off");
+    expect(trails(off.host)).toHaveLength(0);
   });
 
   test("the explore route is registered outside the protected routes", () => {

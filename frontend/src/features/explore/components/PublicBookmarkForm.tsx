@@ -13,6 +13,7 @@ import {
 import { applyPredictionInputsToSchema } from "@/capabilities/prediction-runtime/mlform/schema-inputs";
 import { schemaNeedsPluginCatalog } from "@/capabilities/prediction-runtime/mlform/schema-plugin-requirement";
 import { isRecord } from "@/capabilities/prediction-runtime/mlform/shared";
+import { MLFORM_SPLIT_CONTAINER_CLASS } from "@/capabilities/prediction-runtime/mlform/split-layout";
 import { useAccountEntry } from "@/capabilities/workspace-context/account-entry";
 import {
   publicRunQuotaQueryOptions,
@@ -36,9 +37,10 @@ const hasFields = (schema: PublicBookmarkDto["formSchema"]) =>
   Array.isArray(schema.fields) && schema.fields.length > 0;
 
 /**
- * The form of a public bookmark, to fill and run. A run is one request that the server routes
- * to the bookmark's models; its result lives in this form until the next run or until the page
- * is left. Plugin fields and reports are code from an organization's private catalog, so a form
+ * The form of a public bookmark, to fill and run: inputs beside results, as wide as the page
+ * and as tall as the page lets it be, each pane scrolling inside. A run is one request that the
+ * server routes to the bookmark's models; its result lives in this form until the next run or
+ * until the page is left. Plugin fields and reports are code from an organization's private catalog, so a form
  * that uses them says so instead of loading that code for a visitor.
  *
  * A form that can be shown offers the bookmark's curated examples above it. Loading one starts
@@ -147,7 +149,7 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
     );
   }
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
       {examples.length > 0 ? (
         <PublicBookmarkExampleSelect
           examples={examples}
@@ -155,28 +157,31 @@ export function PublicBookmarkForm({ publicId, version, formSchema, examples = [
           onChange={(id) => setExample(examples.find((item) => item.id === id))}
         />
       ) : null}
-      <div className="flex flex-col gap-4">
-        <p className="text-sm text-fg-secondary">
-          Runs from this page are not saved: a result stays here until you run again or leave.
-        </p>
-        {failure ? (
-          <AppInlineAlert>
-            <strong className="font-semibold">{failure.title}.</strong> {failure.detail}
-          </AppInlineAlert>
-        ) : null}
-        {mountError ? (
-          <AppEmptyState
-            compact
-            title="This form could not be displayed"
-            description={mountError}
-          />
-        ) : null}
+      {failure ? (
+        <AppInlineAlert>
+          <strong className="font-semibold">{failure.title}.</strong> {failure.detail}
+        </AppInlineAlert>
+      ) : null}
+      {mountError ? (
+        <AppEmptyState compact title="This form could not be displayed" description={mountError} />
+      ) : null}
+      <div
+        className={cx(
+          "overflow-hidden rounded-card border border-line lg:min-h-0 lg:flex-1",
+          mountError && "hidden",
+        )}
+      >
         <div
           ref={containerRef}
           aria-busy={running}
-          className={cx("min-h-0 w-full", running && "cursor-progress", mountError && "hidden")}
+          className={cx("size-full", MLFORM_SPLIT_CONTAINER_CLASS, running && "cursor-progress")}
         />
+      </div>
+      <div className="flex shrink-0 flex-col gap-2">
         {quota && !mountError ? <PublicRunQuota quota={quota} /> : null}
+        <p className="text-sm text-fg-muted">
+          Runs from this page are not saved: a result stays here until you run again or leave.
+        </p>
       </div>
     </div>
   );
