@@ -89,8 +89,9 @@ const reportValue = (report: SchemaDisplayReport): unknown => {
   return content || undefined;
 };
 
+/** A member by address or name; feedback with no user was given by a visitor of the public page. */
 const reviewerLabel = (item: PredictionResultFeedbackDto) =>
-  item.userEmail || item.userName || `user-${item.userId}`;
+  item.userEmail || item.userName || (item.userId == null ? "Visitor" : `user-${item.userId}`);
 
 export const formatInferenceCell = (value: unknown): string =>
   isFilled(value) ? formatDisplayValue(value) : "";
@@ -189,6 +190,7 @@ const buildRow = (
     item.bookmarkName ?? "",
     item.createdByName ?? "",
     item.createdByEmail ?? "",
+    item.origin === "PUBLIC" ? "visitor public page" : "workspace",
     String(item.id),
     ...[...values.values()].map(formatInferenceCell),
   ]

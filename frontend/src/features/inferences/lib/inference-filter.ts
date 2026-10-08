@@ -5,6 +5,7 @@ import {
 } from "@/features/inferences/lib/inference-conditions";
 import type { InferenceTableRow } from "@/features/inferences/lib/inference-table-rows";
 import type { SchemaFeedbackStatus } from "@/capabilities/prediction-runtime/feedback/feedback-completion";
+import type { PredictionRunCatalogItemDto } from "@/shared/api/openapi.gen";
 
 export type InferenceFilters = {
   query: string;
@@ -12,12 +13,14 @@ export type InferenceFilters = {
   bookmarkId: string;
   status: "all" | InferenceStatus;
   feedback: "all" | SchemaFeedbackStatus;
+  /** Where the run was made: the workspace form, or the bookmark's public page. */
+  origin: "all" | PredictionRunCatalogItemDto["origin"];
   conditions: InferenceCondition[];
 };
 
 /** How many filters besides the search narrow the table, for the Filters button. */
 export const activeFilterCount = (filters: InferenceFilters) =>
-  [filters.schemaId, filters.bookmarkId, filters.status, filters.feedback].filter(
+  [filters.schemaId, filters.bookmarkId, filters.status, filters.feedback, filters.origin].filter(
     (value) => value !== "all",
   ).length + filters.conditions.length;
 
@@ -39,6 +42,7 @@ export const filterInferences = (rows: readonly InferenceTableRow[], filters: In
       (query.length === 0 || row.searchText.includes(query)) &&
       (filters.status === "all" || row.item.status === filters.status) &&
       (filters.feedback === "all" || row.feedbackStatus === filters.feedback) &&
+      (filters.origin === "all" || row.item.origin === filters.origin) &&
       filters.conditions.every((condition) => matchesCondition(row, condition)),
   );
 };

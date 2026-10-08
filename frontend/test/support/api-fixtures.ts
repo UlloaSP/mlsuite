@@ -54,6 +54,7 @@ export const predictionRun = (overrides: Partial<PredictionRunDto> = {}): Predic
   schemaVersionId: 1,
   schemaBookmarkId: null,
   name: "run",
+  origin: "WORKSPACE",
   inputData: {},
   status: "SUCCESS",
   results: [],

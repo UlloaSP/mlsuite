@@ -32,7 +32,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,11 +79,18 @@ import jakarta.persistence.EntityManager;
 @Testcontainers(disabledWithoutDocker = true)
 abstract class PublicPredictionFixture {
 
-    @Container
+    /**
+     * One database for every test class on this fixture: the Spring context is cached across
+     * them, so the container must outlive each class rather than be started and stopped per class.
+     */
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.6")
             .withDatabaseName("mlsuite")
             .withUsername("mlsuite")
             .withPassword("mlsuite");
+
+    static {
+        POSTGRES.start();
+    }
 
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
@@ -104,7 +110,7 @@ abstract class PublicPredictionFixture {
     static final Map<String, Object> REGRESSOR = Map.of("kind", "regressor", "label", "Predicted value",
             "values", List.of(41.5));
     /** The caller of every run made through the service: a network without a session. */
-    static final PublicCaller VISITOR = new PublicCaller(false, "address:visitor");
+    static final PublicCaller VISITOR = PublicCaller.anonymous("address:visitor", null);
 
     @Autowired EntityManager entityManager;
     @Autowired PlatformTransactionManager transactionManager;
@@ -115,6 +121,7 @@ abstract class PublicPredictionFixture {
     @Autowired PublicBookmarkService publicBookmarks;
     @Autowired PublicPredictionService service;
 
+    User owner;
     Organization organization;
     Schema schema;
     SchemaVersion version;
@@ -128,7 +135,7 @@ abstract class PublicPredictionFixture {
         reset(analyzer);
         int n = SEQUENCE.incrementAndGet();
         inTransaction(() -> {
-            User owner = new User("owner" + n, "owner" + n + "@example.test", "unused", "Owner", SystemRole.USER);
+            owner = new User("owner" + n, "owner" + n + "@example.test", "unused", "Owner", SystemRole.USER);
             entityManager.persist(owner);
             organization = new Organization("acme-" + n, "Acme Health", null, owner);
             entityManager.persist(organization);
@@ -179,7 +186,7 @@ abstract class PublicPredictionFixture {
     }
 
     PublicPredictionDto run(String publicId, PublicPredictionRequest request) {
-        return service.run(publicId, request, VISITOR);
+        return service.run(publicId, request, VISITOR).result();
     }
 
     ResponseStatusException refused(String publicId, PublicPredictionRequest request) {

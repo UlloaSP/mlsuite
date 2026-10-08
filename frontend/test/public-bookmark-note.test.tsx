@@ -77,6 +77,7 @@ afterEach(() => {
 async function page(dto: PublicBookmarkDto) {
   vi.stubGlobal("fetch", (url: unknown) => {
     if (String(url).endsWith("/examples")) return Promise.resolve(json([]));
+    if (String(url).endsWith("/runs")) return Promise.resolve(json([]));
     if (String(url).endsWith("/quota")) {
       return Promise.resolve(json({ limit: 50, remaining: 50, resetsAt: null }));
     }

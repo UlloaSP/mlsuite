@@ -1,11 +1,8 @@
 package dev.ulloasp.mlsuite.schema.application.dto;
 
-import java.util.List;
-
 /**
- * The outcome of a public run, held only by this response: nothing about it is stored. A report
- * of the form that no model produced a result for is absent. {@code quota} is what the caller
- * may still run on this bookmark now that this run is counted.
+ * The outcome of a public run: the run as it was kept, for the caller to read back, and what
+ * the caller may still run on this bookmark now that this run is counted.
  */
-public record PublicPredictionDto(List<PublicPredictionReportDto> reports, PublicRunQuotaDto quota) {
+public record PublicPredictionDto(PublicRunDto run, PublicRunQuotaDto quota) {
 }

@@ -50,6 +50,7 @@ import dev.ulloasp.mlsuite.schema.application.port.in.PredictionResultFeedbackUs
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictionRunUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PublicRunUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkExampleUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaCatalogUseCase;
@@ -89,7 +90,7 @@ import dev.ulloasp.mlsuite.workspace.application.port.in.WorkspaceContextUseCase
         OrganizationManagementUseCase.class,
         PluginCatalogUseCase.class, PredictBookmarkCatalogUseCase.class, PredictionResultFeedbackUseCase.class,
         PredictionResultRepository.class, PredictionRunUseCase.class, PublicBookmarkModerationService.class,
-        PublicBookmarkUseCase.class, PublicPredictionUseCase.class, RoleCatalogUseCase.class,
+        PublicBookmarkUseCase.class, PublicPredictionUseCase.class, PublicRunUseCase.class, RoleCatalogUseCase.class,
         RoleManagementUseCase.class, SchemaBookmarkExampleUseCase.class, SchemaBookmarkUseCase.class,
         SchemaCatalogUseCase.class,
         SchemaCreationUseCase.class, SchemaDraftUseCase.class, SchemaReviewManagementUseCase.class,

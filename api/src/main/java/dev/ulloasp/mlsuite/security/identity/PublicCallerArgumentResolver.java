@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.UUID;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -29,7 +30,9 @@ import jakarta.servlet.http.HttpServletRequest;
  * one source of it is believed: the header the product's nginx sets from the connection it
  * accepted, overwriting anything the client sent. X-Forwarded-For is never read, because its
  * first value is whatever the client chose. Without the header the request reached the API
- * directly (tests, development), and the socket address is the client.
+ * directly (tests, development), and the socket address is the client. A visitor cookie, when
+ * the request carries one, names the visitor; whether that visitor exists is for the service
+ * that reads it to decide.
  */
 public class PublicCallerArgumentResolver implements HandlerMethodArgumentResolver {
 
@@ -53,14 +56,15 @@ public class PublicCallerArgumentResolver implements HandlerMethodArgumentResolv
             ModelAndViewContainer mavContainer,
             NativeWebRequest webRequest,
             WebDataBinderFactory binderFactory) {
+        HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
+        UUID visitorId = VisitorCookie.read(request);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof AuthenticatedUserPrincipal principal) {
-            return new PublicCaller(true, "user:" + principal.userId());
+            return PublicCaller.signedIn(principal.userId(), visitorId);
         }
-        HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
         String header = request.getHeader(CLIENT_ADDRESS_HEADER);
         String address = header == null || header.isBlank() ? request.getRemoteAddr() : header.strip();
-        return new PublicCaller(false, "address:" + hash(network(address)));
+        return PublicCaller.anonymous("address:" + hash(network(address)), visitorId);
     }
 
     private static String network(String address) {

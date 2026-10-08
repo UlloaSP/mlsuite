@@ -38,12 +38,15 @@ import dev.ulloasp.mlsuite.schema.adapter.in.web.PublicBookmarkController;
 import dev.ulloasp.mlsuite.schema.adapter.in.web.SchemaBookmarkController;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicBookmarkDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunDto;
+import dev.ulloasp.mlsuite.schema.application.dto.PublicRunOutcome;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionReportDto;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicPredictionRequest;
 import dev.ulloasp.mlsuite.schema.application.dto.PublicRunQuotaDto;
 import dev.ulloasp.mlsuite.schema.application.port.in.PredictBookmarkCatalogUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.PublicPredictionUseCase;
+import dev.ulloasp.mlsuite.schema.application.port.in.PublicRunUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkExampleUseCase;
 import dev.ulloasp.mlsuite.schema.application.port.in.SchemaBookmarkUseCase;
 import dev.ulloasp.mlsuite.schema.domain.model.BookmarkVisibility;
@@ -59,8 +62,8 @@ import dev.ulloasp.mlsuite.user.domain.model.SystemRole;
         "server.port=0",
         "cors.allow-origins=http://localhost:5173" })
 @Import(SecurityConfig.class)
-@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, RestTemplate.class, SchemaBookmarkExampleUseCase.class,
-        UserDetailsService.class })
+@MockitoBean(types = { PredictBookmarkCatalogUseCase.class, PublicRunUseCase.class, RestTemplate.class,
+        SchemaBookmarkExampleUseCase.class, UserDetailsService.class })
 class BookmarkPublishingHttpTest {
 
     private static final long USER_ID = 7L;
@@ -191,19 +194,22 @@ class BookmarkPublishingHttpTest {
     @Test
     void anonymousVisitorsRunAPublishedBookmarkAndGetOnlyItsReports() throws Exception {
         when(publicPredictions.run(eq(PUBLIC_ID), eq(new PublicPredictionRequest(3, Map.of("in0", 52))), any()))
-                .thenReturn(new PublicPredictionDto(
-                        List.of(new PublicPredictionReportDto("out0",
-                                Map.of("kind", "regressor", "values", List.of(41.5)))),
-                        new PublicRunQuotaDto(5, 4, OffsetDateTime.parse("2026-10-02T10:00:00Z").toInstant())));
+                .thenReturn(new PublicRunOutcome(new PublicPredictionDto(
+                        new PublicRunDto(81L, 3, OffsetDateTime.parse("2026-10-02T09:00:00Z"), Map.of("Age", 52),
+                                List.of(new PublicPredictionReportDto("out0",
+                                        Map.of("kind", "regressor", "values", List.of(41.5)))),
+                                List.of()),
+                        new PublicRunQuotaDto(5, 4, OffsetDateTime.parse("2026-10-02T10:00:00Z").toInstant())), null));
 
         mockMvc.perform(run(PUBLIC_ID, "{\"version\":3,\"values\":{\"in0\":52}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$.quota.length()").value(3))
-                .andExpect(jsonPath("$.reports.length()").value(1))
-                .andExpect(jsonPath("$.reports[0].length()").value(2))
-                .andExpect(jsonPath("$.reports[0].key").value("out0"))
-                .andExpect(jsonPath("$.reports[0].payload.values[0]").value(41.5));
+                .andExpect(jsonPath("$.run.id").value(81))
+                .andExpect(jsonPath("$.run.reports.length()").value(1))
+                .andExpect(jsonPath("$.run.reports[0].length()").value(2))
+                .andExpect(jsonPath("$.run.reports[0].key").value("out0"))
+                .andExpect(jsonPath("$.run.reports[0].payload.values[0]").value(41.5));
     }
 
     /** Private, unknown and archived bookmarks, a moved or oversized one, a bad run, a failed one, a busy runtime. */

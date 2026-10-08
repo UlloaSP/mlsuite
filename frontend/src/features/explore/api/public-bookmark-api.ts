@@ -12,6 +12,8 @@ import type {
   PublicBookmarkExampleDto,
   PublicPredictionDto,
   PublicPredictionRequest,
+  PublicRunDto,
+  PublicRunFeedbackRequest,
   PublicRunQuotaDto,
   SchemaBookmarkDto,
 } from "@/shared/api/openapi.gen";
@@ -106,8 +108,34 @@ export const publicRunQuotaQueryOptions = (publicId: string, caller: "visitor" |
   });
 
 /**
- * Runs the bookmark once. The server routes the values to its models and stores nothing, so
- * the result exists only in this response; it is not a query and is never cached.
+ * The runs this browser made on the bookmark, newest first: its session on the page, which the
+ * server keeps under the visitor cookie it gave the browser on its first run. A run made from
+ * the page is put at the front of this entry rather than fetched again.
+ */
+export const publicRunsQueryOptions = (publicId: string) =>
+  queryOptions({
+    queryKey: ["public", "bookmark", publicId, "runs"] as const,
+    queryFn: ({ signal }) =>
+      appFetch<PublicRunDto[]>(`${publicBookmarkPath(publicId)}/runs`, { signal }),
+    enabled: publicId !== "",
+    staleTime: 0,
+    retry: false,
+    meta: { errorHandledLocally: true },
+  });
+
+/** The caller's answers about one of their runs, replacing those given before; the run comes back. */
+export const savePublicRunFeedback = (
+  publicId: string,
+  runId: number,
+  request: PublicRunFeedbackRequest,
+): Promise<PublicRunDto> =>
+  appFetch<PublicRunDto>(`${publicBookmarkPath(publicId)}/runs/${runId}/feedback`, {
+    ...json("PUT", request),
+  });
+
+/**
+ * Runs the bookmark once. The server routes the values to its models, keeps the run as this
+ * browser's, and answers with it; it is not a query and is never cached.
  */
 export const runPublicBookmark = (
   publicId: string,

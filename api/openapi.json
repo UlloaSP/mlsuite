@@ -920,6 +920,30 @@
         ],
         "type": "object"
       },
+      "Item": {
+        "properties": {
+          "reportKey": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "OUTPUT",
+              "EXPLANATION"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        },
+        "required": [
+          "reportKey",
+          "type",
+          "value"
+        ],
+        "type": "object"
+      },
       "JsonNode": { },
       "LoginRequest": {
         "properties": {
@@ -2022,14 +2046,23 @@
             "type": "string"
           },
           "userEmail": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "userId": {
             "format": "int64",
-            "type": "integer"
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "userName": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "value": {
             "$ref": "#/components/schemas/JsonNode"
@@ -2087,6 +2120,13 @@
           "name": {
             "type": "string"
           },
+          "origin": {
+            "enum": [
+              "WORKSPACE",
+              "PUBLIC"
+            ],
+            "type": "string"
+          },
           "schemaId": {
             "format": "int64",
             "type": "integer"
@@ -2129,6 +2169,7 @@
           "createdByName",
           "id",
           "name",
+          "origin",
           "schemaId",
           "schemaName",
           "schemaVersion",
@@ -2168,6 +2209,13 @@
           "name": {
             "type": "string"
           },
+          "origin": {
+            "enum": [
+              "WORKSPACE",
+              "PUBLIC"
+            ],
+            "type": "string"
+          },
           "results": {
             "items": {
               "$ref": "#/components/schemas/PredictionResultDto"
@@ -2205,6 +2253,7 @@
           "id",
           "inputData",
           "name",
+          "origin",
           "results",
           "schemaBookmarkId",
           "schemaVersionId",
@@ -2363,16 +2412,13 @@
           "quota": {
             "$ref": "#/components/schemas/PublicRunQuotaDto"
           },
-          "reports": {
-            "items": {
-              "$ref": "#/components/schemas/PublicPredictionReportDto"
-            },
-            "type": "array"
+          "run": {
+            "$ref": "#/components/schemas/PublicRunDto"
           }
         },
         "required": [
           "quota",
-          "reports"
+          "run"
         ],
         "type": "object"
       },
@@ -2406,6 +2452,86 @@
         "required": [
           "values",
           "version"
+        ],
+        "type": "object"
+      },
+      "PublicRunDto": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "feedback": {
+            "items": {
+              "$ref": "#/components/schemas/PublicRunFeedbackDto"
+            },
+            "type": "array"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "inputs": {
+            "additionalProperties": { },
+            "type": "object"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/PublicPredictionReportDto"
+            },
+            "type": "array"
+          },
+          "version": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "feedback",
+          "id",
+          "inputs",
+          "reports",
+          "version"
+        ],
+        "type": "object"
+      },
+      "PublicRunFeedbackDto": {
+        "properties": {
+          "reportKey": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "OUTPUT",
+              "EXPLANATION"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        },
+        "required": [
+          "reportKey",
+          "type",
+          "value"
+        ],
+        "type": "object"
+      },
+      "PublicRunFeedbackRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            },
+            "maxItems": 50,
+            "minItems": 0,
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
         ],
         "type": "object"
       },
@@ -6811,6 +6937,127 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicRunQuotaDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}/runs": {
+      "get": {
+        "operationId": "runs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PublicRunDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}/runs/{runId}": {
+      "get": {
+        "operationId": "run",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRunDto"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "public-bookmark-controller"
+        ]
+      }
+    },
+    "/api/public/bookmarks/{publicId}/runs/{runId}/feedback": {
+      "put": {
+        "operationId": "saveFeedback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publicId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "runId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicRunFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRunDto"
                 }
               }
             },

@@ -1,5 +1,6 @@
 package dev.ulloasp.mlsuite.schema.adapter.out.persistence.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,6 +11,8 @@ import dev.ulloasp.mlsuite.schema.domain.model.PredictionResult;
 
 public interface PredictionResultRepository extends JpaRepository<PredictionResult, Long> {
     List<PredictionResult> findByRunIdOrderByIdAsc(Long runId);
+
+    List<PredictionResult> findByRunIdInOrderByRunIdAscIdAsc(Collection<Long> runIds);
 
     void deleteByRun_Id(Long runId);
 
