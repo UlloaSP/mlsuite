@@ -40,6 +40,7 @@ export function BookmarkSnapshotDialog({ schemaId, version, onClose }: Props) {
       summary={version ? `${schemaVersionName(version)} · v${version.version}` : "Snapshot"}
       defaultName={version ? schemaVersionName(version).toLowerCase().replace(/\s+/g, "-") : ""}
       defaultDescription=""
+      defaultPublicationNote=""
       open={Boolean(version)}
       error={mutation.error?.message}
       pending={mutation.isPending}

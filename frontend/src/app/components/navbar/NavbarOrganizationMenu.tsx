@@ -3,13 +3,14 @@ SPDX-License-Identifier: MIT
 Copyright (c) 2025 Pablo Ulloa Santin
 */
 
-import { Building2, ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { DropdownMenu } from "radix-ui";
 import { useLocation } from "react-router";
 import { useWorkspaceContext } from "@/capabilities/workspace-context/workspace-context";
 import { cx } from "@/shared/ui/cx";
 import { AppTooltip } from "@/shared/ui/AppTooltip";
 import { FOCUS_RING } from "@/shared/ui/focus-ring";
+import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 import { useMediaQuery } from "@/shared/ui/use-media-query";
 import { OrganizationMenuContent } from "@/app/components/OrganizationMenuContent";
 import { sidebarMenuContent } from "@/app/components/sidebar-menu-styles";
@@ -47,9 +48,12 @@ export function NavbarOrganizationMenu({
             FOCUS_RING,
           )}
         >
-          <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-fg text-fg-inverse">
-            <Building2 size={15} />
-          </span>
+          <OrganizationMark
+            className="size-8 rounded-xl"
+            fallbackClassName="bg-fg text-fg-inverse"
+            iconSize={15}
+            logoUrl={organization.logoUrl}
+          />
           <NavbarLabel compact={compact} className="max-w-44">
             <span className="block truncate text-sm font-semibold text-fg">
               {organization.name}

@@ -14,8 +14,13 @@ import { AppTextField } from "@/shared/ui/AppTextField";
 /** The API's limits, so a longer text is stopped while it is typed. */
 const NAME_MAX_LENGTH = 180;
 const DESCRIPTION_MAX_LENGTH = 800;
+const PUBLICATION_NOTE_MAX_LENGTH = 1000;
 
-export type BookmarkDetails = { name: string; description: string | null };
+export type BookmarkDetails = {
+  name: string;
+  description: string | null;
+  publicationNote: string | null;
+};
 
 type Props = {
   title: string;
@@ -23,6 +28,7 @@ type Props = {
   summary: string;
   defaultName: string;
   defaultDescription: string;
+  defaultPublicationNote: string;
   open: boolean;
   pending: boolean;
   submitIcon: LucideIcon;
@@ -33,12 +39,13 @@ type Props = {
   onConfirm: (details: BookmarkDetails) => void;
 };
 
-/** A bookmark's own name and description, asked when it is saved and when it is edited. */
+/** A bookmark's own name, description and publication note, asked when it is saved and edited. */
 export function BookmarkDetailsDialog({
   title,
   summary,
   defaultName,
   defaultDescription,
+  defaultPublicationNote,
   open,
   pending,
   submitIcon: SubmitIcon,
@@ -55,7 +62,12 @@ export function BookmarkDetailsDialog({
       return typeof value === "string" ? value.trim() : "";
     };
     const name = text("name");
-    if (name) onConfirm({ name, description: text("description") || null });
+    if (!name) return;
+    onConfirm({
+      name,
+      description: text("description") || null,
+      publicationNote: text("publicationNote") || null,
+    });
   };
 
   return (
@@ -107,6 +119,23 @@ export function BookmarkDetailsDialog({
           />
           <p className="text-xs leading-5 text-fg-muted">
             Optional. Shown with the bookmark here and, once it is published, on its public page.
+          </p>
+        </div>
+        <div className="grid gap-2">
+          <label htmlFor="bookmark-publication-note" className="text-sm font-semibold text-fg">
+            Publication note
+          </label>
+          <AppTextArea
+            id="bookmark-publication-note"
+            name="publicationNote"
+            defaultValue={defaultPublicationNote}
+            placeholder="Published in … (doi:10.1000/xyz). Research use only."
+            maxLength={PUBLICATION_NOTE_MAX_LENGTH}
+            rows={3}
+          />
+          <p className="text-xs leading-5 text-fg-muted">
+            Optional. A note to visitors of the public page: the paper this model was published in,
+            a DOI, terms of use. Links and DOIs in it open.
           </p>
         </div>
       </div>

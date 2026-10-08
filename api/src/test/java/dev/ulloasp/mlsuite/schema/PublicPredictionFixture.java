@@ -130,7 +130,7 @@ abstract class PublicPredictionFixture {
         inTransaction(() -> {
             User owner = new User("owner" + n, "owner" + n + "@example.test", "unused", "Owner", SystemRole.USER);
             entityManager.persist(owner);
-            organization = new Organization("acme-" + n, "Acme Health", null, null, owner);
+            organization = new Organization("acme-" + n, "Acme Health", null, owner);
             entityManager.persist(organization);
             joblibModel = model(owner, "risk-forest", "risk.joblib", JOBLIB_BYTES);
             onnxModel = model(owner, "risk-net", "risk.onnx", ONNX_BYTES);

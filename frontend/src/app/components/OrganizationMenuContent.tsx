@@ -8,6 +8,7 @@ import { DropdownMenu } from "radix-ui";
 import { useLocation, useNavigate } from "react-router";
 import { useSelectOrganization } from "@/features/workspace/api/workspace.mutations";
 import { cx } from "@/shared/ui/cx";
+import { OrganizationMark } from "@/shared/ui/OrganizationMark";
 import { SidebarMenuLink } from "./SidebarMenuLink";
 import {
   SIDEBAR_MENU_ITEM,
@@ -76,10 +77,18 @@ export function OrganizationMenuContent({
                 });
               }}
             >
-              <span className="min-w-0">
-                <span className="block truncate font-semibold">{organization.name}</span>
-                <span className="block truncate text-xs text-fg-secondary">
-                  {organization.slug}
+              <span className="flex min-w-0 items-center gap-2.5">
+                <OrganizationMark
+                  className="size-8 rounded-lg"
+                  fallbackClassName="bg-surface-muted text-fg-secondary"
+                  iconSize={14}
+                  logoUrl={organization.logoUrl}
+                />
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{organization.name}</span>
+                  <span className="block truncate text-xs text-fg-secondary">
+                    {organization.slug}
+                  </span>
                 </span>
               </span>
               {organization.id === context.currentOrganization.id ? (

@@ -63,6 +63,22 @@ export const getOrganizationPage = (
   );
 };
 
+/** Sends the picture as multipart; the API crops, shrinks and stores it. */
+export const replaceOrganizationLogo = (
+  organizationId: number,
+  file: File,
+): Promise<OrganizationDto> => {
+  const body = new FormData();
+  body.append("logo", file);
+  return appFetch<OrganizationDto>(`/api/organizations/${organizationId}/logo`, {
+    method: "PUT",
+    body,
+  });
+};
+
+export const removeOrganizationLogo = (organizationId: number): Promise<OrganizationDto> =>
+  appFetch<OrganizationDto>(`/api/organizations/${organizationId}/logo`, { method: "DELETE" });
+
 export const removeOrganizationMember = (
   organizationId: number,
   membershipId: number,

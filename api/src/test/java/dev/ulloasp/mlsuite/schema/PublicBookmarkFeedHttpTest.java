@@ -46,7 +46,7 @@ class PublicBookmarkFeedHttpTest {
     void anonymousVisitorsListPublishedBookmarksWithoutInternalFields() throws Exception {
         when(publicBookmarks.getPublishedBookmarkPage(0, 24, "", "updated")).thenReturn(new PageDto<>(
                 List.of(new PublicBookmarkSummaryDto(PUBLIC_ID, "production", "Estimates risk.", 16, 2, "Org",
-                        OffsetDateTime.parse("2026-10-01T10:00:00Z"))),
+                        "/api/public/organizations/3/logo?v=1", OffsetDateTime.parse("2026-10-01T10:00:00Z"))),
                 0, 24, 1, false));
 
         mockMvc.perform(get("/api/public/bookmarks"))
@@ -57,13 +57,14 @@ class PublicBookmarkFeedHttpTest {
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.hasNext").value(false))
                 .andExpect(jsonPath("$.items.length()").value(1))
-                .andExpect(jsonPath("$.items[0].length()").value(7))
+                .andExpect(jsonPath("$.items[0].length()").value(8))
                 .andExpect(jsonPath("$.items[0].publicId").value(PUBLIC_ID))
                 .andExpect(jsonPath("$.items[0].name").value("production"))
                 .andExpect(jsonPath("$.items[0].description").value("Estimates risk."))
                 .andExpect(jsonPath("$.items[0].inputCount").value(16))
                 .andExpect(jsonPath("$.items[0].reportCount").value(2))
                 .andExpect(jsonPath("$.items[0].organizationName").value("Org"))
+                .andExpect(jsonPath("$.items[0].organizationLogoUrl").value("/api/public/organizations/3/logo?v=1"))
                 .andExpect(jsonPath("$.items[0].updatedAt").exists())
                 .andExpect(jsonPath("$.items[0].id").doesNotExist())
                 .andExpect(jsonPath("$.items[0].schemaId").doesNotExist())

@@ -20,6 +20,8 @@ const hooks = vi.hoisted(() => ({
   invitationCandidates: vi.fn(),
   members: vi.fn(),
   remove: vi.fn(),
+  removeLogo: vi.fn(),
+  replaceLogo: vi.fn(),
   roles: vi.fn(),
   transfer: vi.fn(),
   update: vi.fn(),
@@ -70,6 +72,8 @@ vi.mock("@/features/workspace/api/role.mutations", () => {
 
 vi.mock("@/features/workspace/api/workspace.mutations", () => ({
   useDeleteOrganizationMutation: hooks.remove,
+  useRemoveOrganizationLogoMutation: hooks.removeLogo,
+  useReplaceOrganizationLogoMutation: hooks.replaceLogo,
   useTransferOrganizationOwnershipMutation: hooks.transfer,
   useUpdateOrganizationMutation: hooks.update,
 }));
@@ -105,6 +109,7 @@ const organization = {
   name: "Acme",
   slug: "acme",
   description: null,
+  logoUrl: null,
   createdAt: "2026-01-01T00:00:00Z",
   updatedAt: "2026-01-01T00:00:00Z",
 };
@@ -173,6 +178,8 @@ describe("organization management", () => {
     hooks.update.mockReturnValue(mutation());
     hooks.transfer.mockReturnValue(mutation());
     hooks.remove.mockReturnValue(mutation());
+    hooks.replaceLogo.mockReturnValue(mutation());
+    hooks.removeLogo.mockReturnValue(mutation());
   }
 
   test("saves name, slug, and an empty description", async () => {
@@ -190,6 +197,9 @@ describe("organization management", () => {
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
     expect(container.textContent).toContain("Organization saved.");
+    // The logo is edited under the same permission, in its own section.
+    expect(container.textContent).toContain("Logo");
+    expect(container.querySelector('input[aria-label="Choose a logo"]')).not.toBeNull();
   });
 
   test("shows organization and mutation failures", async () => {
@@ -217,6 +227,7 @@ describe("organization management", () => {
     const container = await renderSettings();
 
     expect(container.textContent).not.toContain("Identity");
+    expect(container.querySelector('input[aria-label="Choose a logo"]')).toBeNull();
     expect(container.textContent).not.toContain("Transfer ownership");
     expect(container.textContent).not.toContain("Danger zone");
   });

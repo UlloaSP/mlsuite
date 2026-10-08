@@ -11,7 +11,8 @@ public record OrganizationDto(
         String slug,
         String name,
         @Nullable String description,
-        @Nullable String avatarUrl,
+        /** Where its logo is read from, or null while it has none. */
+        @Nullable String logoUrl,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
 
@@ -21,7 +22,7 @@ public record OrganizationDto(
                 organization.getSlug(),
                 organization.getName(),
                 organization.getDescription(),
-                organization.getAvatarUrl(),
+                OrganizationLogoUrl.of(organization),
                 organization.getCreatedAt(),
                 organization.getUpdatedAt());
     }

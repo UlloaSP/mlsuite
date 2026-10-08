@@ -67,7 +67,7 @@ class BookmarkDetailsHttpTest {
 
     @Test
     void aBookmarkIsSavedWithItsDescription() throws Exception {
-        var request = new CreateSchemaBookmarkRequest("production", 9L, "Estimates risk.");
+        var request = new CreateSchemaBookmarkRequest("production", 9L, "Estimates risk.", null);
         when(bookmarks.createBookmark(USER_ID, SCHEMA_ID, request)).thenReturn(stored("production", "Estimates risk."));
 
         mockMvc.perform(signedIn(json(post("/api/schemas/{id}/bookmarks", SCHEMA_ID), request)))
@@ -78,7 +78,7 @@ class BookmarkDetailsHttpTest {
 
     @Test
     void theDescriptionIsOptionalWhenSaving() throws Exception {
-        when(bookmarks.createBookmark(USER_ID, SCHEMA_ID, new CreateSchemaBookmarkRequest("production", 9L, null)))
+        when(bookmarks.createBookmark(USER_ID, SCHEMA_ID, new CreateSchemaBookmarkRequest("production", 9L, null, null)))
                 .thenReturn(stored("production", null));
 
         mockMvc.perform(signedIn(post("/api/schemas/{id}/bookmarks", SCHEMA_ID)
@@ -89,7 +89,7 @@ class BookmarkDetailsHttpTest {
 
     @Test
     void anUpdateReturnsTheBookmarkWithItsNewNameAndDescription() throws Exception {
-        var request = new UpdateSchemaBookmarkRequest("cardio-screening", "Screens for cardiovascular risk.");
+        var request = new UpdateSchemaBookmarkRequest("cardio-screening", "Screens for cardiovascular risk.", null);
         when(bookmarks.updateBookmark(USER_ID, BOOKMARK_ID, request))
                 .thenReturn(stored("cardio-screening", "Screens for cardiovascular risk."));
 
@@ -97,13 +97,37 @@ class BookmarkDetailsHttpTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(BOOKMARK_ID))
                 .andExpect(jsonPath("$.name").value("cardio-screening"))
-                .andExpect(jsonPath("$.description").value("Screens for cardiovascular risk."));
+                .andExpect(jsonPath("$.description").value("Screens for cardiovascular risk."))
+                .andExpect(jsonPath("$.publicationNote").isEmpty());
+    }
+
+    @Test
+    void thePublicationNoteIsSavedEditedAndToldBack() throws Exception {
+        var saved = new CreateSchemaBookmarkRequest("production", 9L, null, "Published in Lancet 2026, doi:10.1000/xyz.");
+        SchemaBookmark noted = stored("production", null);
+        noted.setPublicationNote("Published in Lancet 2026, doi:10.1000/xyz.");
+        when(bookmarks.createBookmark(USER_ID, SCHEMA_ID, saved)).thenReturn(noted);
+        var edited = new UpdateSchemaBookmarkRequest("production", null, "Terms of use apply.");
+        SchemaBookmark renoted = stored("production", null);
+        renoted.setPublicationNote("Terms of use apply.");
+        when(bookmarks.updateBookmark(USER_ID, BOOKMARK_ID, edited)).thenReturn(renoted);
+
+        mockMvc.perform(signedIn(json(post("/api/schemas/{id}/bookmarks", SCHEMA_ID), saved)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.publicationNote").value("Published in Lancet 2026, doi:10.1000/xyz."));
+        mockMvc.perform(signedIn(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID), edited)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.publicationNote").value("Terms of use apply."));
+        mockMvc.perform(signedIn(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID),
+                new UpdateSchemaBookmarkRequest("fine", null, "n".repeat(SchemaBookmark.PUBLICATION_NOTE_MAX_LENGTH + 1)))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("publicationNote: must be at most 1000 characters"));
     }
 
     @Test
     void updatingRequiresASession() throws Exception {
         mockMvc.perform(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID),
-                new UpdateSchemaBookmarkRequest("renamed", null)))
+                new UpdateSchemaBookmarkRequest("renamed", null, null)))
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(bookmarks);
@@ -115,7 +139,7 @@ class BookmarkDetailsHttpTest {
                 .thenThrow(new OrganizationAccessDeniedException(41L));
 
         mockMvc.perform(signedIn(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID),
-                new UpdateSchemaBookmarkRequest("renamed", null))))
+                new UpdateSchemaBookmarkRequest("renamed", null, null))))
                 .andExpect(status().isForbidden());
     }
 
@@ -126,7 +150,7 @@ class BookmarkDetailsHttpTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, reason));
 
         mockMvc.perform(signedIn(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID),
-                new UpdateSchemaBookmarkRequest("staging", null))))
+                new UpdateSchemaBookmarkRequest("staging", null, null))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value(reason));
     }
@@ -137,21 +161,21 @@ class BookmarkDetailsHttpTest {
         String longDescription = "d".repeat(SchemaBookmark.DESCRIPTION_MAX_LENGTH + 1);
 
         mockMvc.perform(signedIn(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID),
-                new UpdateSchemaBookmarkRequest(longName, "fine"))))
+                new UpdateSchemaBookmarkRequest(longName, "fine", null))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("name: must be at most 180 characters"));
         mockMvc.perform(signedIn(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID),
-                new UpdateSchemaBookmarkRequest("fine", longDescription))))
+                new UpdateSchemaBookmarkRequest("fine", longDescription, null))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("description: must be at most 800 characters"));
         mockMvc.perform(signedIn(json(patch("/api/schema-bookmarks/{id}", BOOKMARK_ID), Map.of("description", "x"))))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(signedIn(json(post("/api/schemas/{id}/bookmarks", SCHEMA_ID),
-                new CreateSchemaBookmarkRequest(longName, 9L, null))))
+                new CreateSchemaBookmarkRequest(longName, 9L, null, null))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("name: must be at most 180 characters"));
         mockMvc.perform(signedIn(json(post("/api/schemas/{id}/bookmarks", SCHEMA_ID),
-                new CreateSchemaBookmarkRequest("fine", 9L, longDescription))))
+                new CreateSchemaBookmarkRequest("fine", 9L, longDescription, null))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("description: must be at most 800 characters"));
 

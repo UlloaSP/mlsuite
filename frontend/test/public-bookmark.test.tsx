@@ -54,6 +54,7 @@ const bookmark = (overrides: Partial<SchemaBookmarkDto> = {}): SchemaBookmarkDto
   versionName: "v1",
   name: "production",
   description: null,
+  publicationNote: null,
   visibility: "PRIVATE",
   publicId: null,
   exampleCount: 0,
@@ -67,10 +68,12 @@ const publicBookmark: PublicBookmarkDto = {
   publicId: PUBLIC_ID,
   name: "production",
   description: "Estimates cardiovascular risk.",
+  publicationNote: null,
   version: 2,
   inputCount: 2,
   reportCount: 1,
   organizationName: "Acme Health",
+  organizationLogoUrl: null,
   formSchema: {
     fields: [
       { kind: "number", label: "Age", mappedTo: "in0" },

@@ -172,8 +172,9 @@ class BookmarkPublishingServiceTest {
                         Map.of("kind", "classifier", "label", "Risk", "id", "out0", "mappedTo", "out0"))),
                 view.formSchema());
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        assertEquals(Set.of("publicId", "name", "description", "version", "inputCount", "reportCount",
-                "organizationName", "formSchema", "updatedAt"), mapper.convertValue(view, Map.class).keySet());
+        assertEquals(Set.of("publicId", "name", "description", "publicationNote", "version", "inputCount",
+                "reportCount", "organizationName", "organizationLogoUrl", "formSchema", "updatedAt"),
+                mapper.convertValue(view, Map.class).keySet());
         String json = mapper.writeValueAsString(view);
         for (String secret : List.of("model-11", "model-99", "smoker__1", "gone", "site", "Site", "cohort")) {
             assertFalse(json.contains(secret), secret);
@@ -244,7 +245,7 @@ class BookmarkPublishingServiceTest {
         ResponseStatusException moved = assertThrows(ResponseStatusException.class,
                 () -> service.moveBookmark(USER_ID, BOOKMARK_ID, new MoveSchemaBookmarkRequest(NEXT_VERSION_ID)));
         ResponseStatusException recreated = assertThrows(ResponseStatusException.class, () -> service.createBookmark(
-                USER_ID, 5L, new CreateSchemaBookmarkRequest("production", NEXT_VERSION_ID, null)));
+                USER_ID, 5L, new CreateSchemaBookmarkRequest("production", NEXT_VERSION_ID, null, null)));
 
         for (ResponseStatusException refused : List.of(moved, recreated)) {
             assertEquals(409, refused.getStatusCode().value());
